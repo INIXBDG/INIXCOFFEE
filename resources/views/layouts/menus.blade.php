@@ -1427,6 +1427,7 @@
                                             <div class="card-body">
                                                 <h5 class="text-center card-title">Fitur Menu Development</h5>
                                                 <div class="row">
+                                                    @can('Super Duper Admin')
                                                     <div class="col-sm-6 mt-2">
                                                         <div class="card"  id="card-hover">
                                                             <div class="card-body d-flex">
@@ -1442,6 +1443,7 @@
                                                             </div>
                                                         </div>
                                                     </div>
+                                                    @endcan
                                                     <div class="col-sm-6 mt-2">
                                                         <div class="card"  id="card-hover">
                                                             <div class="card-body d-flex">
