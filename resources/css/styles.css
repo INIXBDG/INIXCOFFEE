@@ -1,0 +1,348 @@
+
+        body {
+            overflow: hidden;
+        }
+        .notification p {
+            margin: 0;
+            padding: 0;
+        }
+
+        .notification {
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .link {
+        color: black;
+        background-color: transparent;
+        text-decoration: none;
+        }
+        .link:hover {
+        color: #182F51;
+        background-color: transparent;
+        text-decoration: none;
+        }
+        .link:active     {
+        color: black;
+        background-color: transparent;
+        text-decoration: none;
+        }
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            z-index: 1000;
+            display: none;
+            float: left;
+            min-width: 10rem;
+            padding: .5rem 0;
+            margin: .125rem 0 0;
+            font-size: 1rem;
+            color: #212529;
+            text-align: left;
+            list-style: none;
+            background-color: #fff;
+            background-clip: padding-box;
+            border: 1px solid rgba(0,0,0,.15);
+            border-radius: .25rem;
+        }
+
+        .dropdown-menu.show {
+            display: block;
+        }
+        .card {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            width: auto;
+            height: auto;
+            border: 1px solid rgba(255, 255, 255, .25);
+            border-radius: 20px;
+            background-color: rgba(255, 255, 255, 0.45);
+            box-shadow: 0 0 10px 1px rgba(0, 0, 0, 0.25);
+            backdrop-filter: blur(2px);
+            }
+
+        .card img {
+            height: 60%;
+        }
+
+        .circle {
+            background: #ffffff;
+            border-radius: 60%;
+            color: #fff;
+            height: 8.7em;
+            position: relative;
+            width: 8.7em;
+        }
+
+        .circle-content {
+            hyphens: auto;
+            margin: 0.75em;
+            text-align: center;
+        }
+        .click-primary {
+            border-radius: 5px;
+            padding:       5px 10px;
+            color:         #ffffff;
+            display:       inline-block;
+            font:          normal bold 14px/1 "Open Sans", sans-serif;
+            text-align:    center;
+            background:    #182f51;
+            transition:    color 0.1s linear, background-color 0.2s linear;
+        }
+
+        .click-primary:hover {
+            background:         #A5C7EF;
+            color:              #ffffff;
+            transition:    color 0.1s linear, background-color 0.2s linear;
+        }
+
+
+        .click-warning {
+            background:    #f8be00;
+            border-radius: 5px;
+            padding:       5px 10px;
+            color:         #000000;
+            display:       inline-block;
+            font:          normal bold 18px/1 "Open Sans", sans-serif;
+            text-align:    center;
+            transition:    color 0.1s linear, background-color 0.2s linear; /* Transisi warna teks selama 0.1 detik dan warna latar belakang selama 0.2 detik dengan perpindahan linear */
+        }
+
+        .click-warning:hover {
+            background:         #A5C7EF; /* Warna merah saat tombol dihover */
+            transition:    color 0.1s linear, background-color 0.2s linear; /* Transisi warna teks selama 0.1 detik dan warna latar belakang selama 0.2 detik dengan perpindahan linear */
+        }
+
+        .click-warning-icon {
+            background:    #f8be00;
+            border-radius: 1000px;
+            width:         45px;
+            height:        45px;
+            color:         #ffffff;
+            display:       flex;
+            justify-content: center; /* Posisikan ikon secara horizontal di tengah */
+            align-items:   center; /* Posisikan ikon secara vertikal di tengah */
+            text-align:    center;
+            text-decoration: none; /* Hilangkan dekorasi hyperlink */
+        }
+
+        .click-warning-icon i {
+            line-height:   45px; /* Sesuaikan tinggi ikon dengan tinggi tombol */
+        }
+
+        .click-danger {
+            background:         #983A3A;
+            border-radius: 5px;
+            padding:       5px 10px;
+            color:         #ffffff;
+            display:       inline-block;
+            font:          normal bold 14px/1 "Open Sans", sans-serif;
+            text-align:    center;
+            /* background:    #182f51; */
+            transition:    color 0.1s linear, background-color 0.2s linear;
+        }
+
+        .click-danger:hover {
+            background:         #e05555;
+            color:              #ffffff;
+            transition:    color 0.1s linear, background-color 0.2s linear;
+        }
+        .click-danger-icon {
+            background:    #983A3A;
+            border-radius: 1000px;
+            width:         45px;
+            height:        45px;
+            color:         #ffffff;
+            display:       flex;
+            justify-content: center; /* Posisikan ikon secara horizontal di tengah */
+            align-items:   center; /* Posisikan ikon secara vertikal di tengah */
+            text-align:    center;
+            text-decoration: none; /* Hilangkan dekorasi hyperlink */
+        }
+
+        .click-danger-icon i {
+            line-height:   45px; /* Sesuaikan tinggi ikon dengan tinggi tombol */
+        }
+
+        .click-secondary-icon {
+            background:    #355C7C;
+            border-radius: 5px;
+            padding:       10px 20px;
+            color:         #ffffff;
+            display:       inline-block;
+            font:          normal bold 12px/1 "Open Sans", sans-serif;
+            text-align:    center;
+            justify-content: center; /* Posisikan ikon secara horizontal di tengah */
+            align-items:   center; /* Posisikan ikon secara vertikal di tengah */
+            text-decoration: none; /* Hilangkan dekorasi hyperlink */
+        }
+        .click-secondary-icon i {
+            line-height: 45px; /* Sesuaikan tinggi ikon dengan tinggi tombol */
+        }
+        .click-secondary {
+            background:    #355C7C;
+            border-radius: 5px;
+            padding:       5px 10px;
+            color:         #ffffff;
+            display:       inline-block;
+            font:          normal bold 18px/1 "Open Sans", sans-serif;
+            text-align:    center;
+            transition:    color 0.1s linear, background-color 0.2s linear; /* Transisi warna teks selama 0.1 detik dan warna latar belakang selama 0.2 detik dengan perpindahan linear */
+        }
+
+
+        .click-secondary:hover {
+            color:         #A5C7EF; /* Warna merah saat tombol dihover */
+            transition:    color 0.1s linear, background-color 0.2s linear; /* Transisi warna teks selama 0.1 detik dan warna latar belakang selama 0.2 detik dengan perpindahan linear */
+        }
+
+        #bgsvg{
+            background-image: url('/css/background inix office-02.svg');
+            background-size: cover;
+            background-attachment:scroll;
+            height: 100vh;
+            overflow-y: scroll;
+        }
+
+        #logoinix {
+            width: 400px;
+        }
+
+        .alert-custom {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1050; /* Memastikan alert berada di atas elemen lain */
+            width: 100%; /* Atau sesuaikan dengan lebar yang diinginkan */
+        }
+
+
+
+    @media (max-width: 576px) {
+        body{
+            overflow-y: auto;
+        }
+        #bgsvg{
+            background-image: url('/css/background inix office-02.svg') repeat-y;
+            overflow-y: scroll;
+        }
+        .navbar-nav {
+            flex-direction: row;
+            padding-top: 10px;
+        }
+
+        #auth{
+            display: none;
+        }
+
+        .nav-item {
+            text-align: center;
+            width: 100%;
+            margin: 5px 0;
+        }
+
+        .navbar-brand {
+            text-align: center;
+            width: 100%;
+            margin: 5px 0;
+        }
+
+        .navbar-brand img {
+            margin-right: 0;
+        }
+
+        #logoinix {
+            width: 250px;
+        }
+    }
+    @media (min-width: 577px) and (max-width: 991px) {
+        #bgsvg {
+            background-image: url('/css/background inix office-02.svg') repeat-y;
+        }
+
+        .navbar-nav {
+            flex-direction: column;
+            padding-top: 10px;
+        }
+
+        #auth {
+            display: none;
+        }
+
+        .nav-item {
+            text-align: center;
+            width: 100%;
+            margin: 5px 0;
+        }
+
+        .navbar-brand {
+            text-align: center;
+            width: 100%;
+            margin: 5px 0;
+        }
+
+        .navbar-brand img {
+            margin-right: 0;
+        }
+
+        #logoinix {
+            width: 250px;
+        }
+    }
+    @media (max-width: 400px) {
+        body {
+            overflow-y: auto;
+        }
+
+        #bgsvg {
+            background-image: url('/css/background inix office-02.svg') repeat-y;
+            overflow-y: scroll;
+        }
+
+        .navbar-nav {
+            flex-direction: column;
+            padding-top: 5px;
+        }
+
+        #auth {
+            display: none;
+        }
+
+        .nav-item {
+            text-align: center;
+            width: 100%;
+            margin: 5px 0;
+        }
+
+        .navbar-brand {
+            text-align: center;
+            width: 100%;
+            margin: 5px 0;
+        }
+
+        .navbar-brand img {
+            margin-right: 0;
+            max-width: 200px; /* Lebih kecil untuk layar kecil */
+        }
+
+        #logoinix {
+            width: 250px; 
+        }
+
+        /* Tambahan styling untuk teks atau elemen kecil */
+        h1, h2, h3, h4, h5, h6 {
+            font-size: smaller;
+        }
+
+        p {
+            font-size: 14px;
+        }
+
+        button {
+            font-size: 12px;
+        }
+    }

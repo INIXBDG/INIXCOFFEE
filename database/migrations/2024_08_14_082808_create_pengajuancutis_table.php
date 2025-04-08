@@ -1,0 +1,37 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('pengajuancutis', function (Blueprint $table) {
+            $table->id();
+            $table->string('id_karyawan');
+            $table->string('tipe');
+            $table->date('tanggal_awal');
+            $table->date('tanggal_akhir');
+            $table->string('durasi');
+            $table->string('kontak')->nullable();
+            $table->string('alasan')->nullable();
+            $table->string('surat_sakit')->nullable();
+            $table->string('alasan_manager')->nullable();
+            $table->enum('approval_manager', ['0', '1', '2']);//0 = proses, 1 = disetujui, 2 = ditolak 
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('pengajuancutis');
+    }
+};

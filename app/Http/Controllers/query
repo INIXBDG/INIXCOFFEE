@@ -1,0 +1,70 @@
+UPDATE r_k_m_s
+SET bulan = CASE 
+    WHEN MONTH(tanggal_awal) = 1 THEN 'Januari'
+    WHEN MONTH(tanggal_awal) = 2 THEN 'Februari'
+    WHEN MONTH(tanggal_awal) = 3 THEN 'Maret'
+    WHEN MONTH(tanggal_awal) = 4 THEN 'April'
+    WHEN MONTH(tanggal_awal) = 5 THEN 'Mei'
+    WHEN MONTH(tanggal_awal) = 6 THEN 'Juni'
+    WHEN MONTH(tanggal_awal) = 7 THEN 'Juli'
+    WHEN MONTH(tanggal_awal) = 8 THEN 'Agustus'
+    WHEN MONTH(tanggal_awal) = 9 THEN 'September'
+    WHEN MONTH(tanggal_awal) = 10 THEN 'Oktober'
+    WHEN MONTH(tanggal_awal) = 11 THEN 'November'
+    WHEN MONTH(tanggal_awal) = 12 THEN 'Desember'
+    ELSE bulan -- pertahankan nilai bulan jika sudah ada
+END
+WHERE bulan IS NULL AND tanggal_awal IS NOT NULL;
+
+BEGIN
+    DECLARE currentDate DATE;
+    DECLARE endDate DATE;
+    DECLARE employeeId INT;
+    DECLARE jobTitle VARCHAR(50); -- Pindahkan deklarasi ke awal blok
+
+    SET currentDate = '2025-01-01';
+    SET endDate = '2025-01-31';
+
+    -- Loop through all dates in the range
+    WHILE currentDate <= endDate DO
+        -- Loop through employee IDs
+        SET employeeId = 4;
+        WHILE employeeId <= 40 DO
+            -- Get the job title for the current employee
+            SELECT jabatan INTO jobTitle
+            FROM karyawans
+            WHERE id = employeeId;
+
+            -- Insert based on job title and day
+            IF (jobTitle IN ('Driver', 'Technical Support') AND DAYOFWEEK(currentDate) IN (2, 3, 4, 5, 6, 7)) -- Monday to Saturday
+               OR (jobTitle = 'Office Boy') -- Every day
+               OR (jobTitle NOT IN ('Driver', 'Technical Support', 'Office Boy') AND DAYOFWEEK(currentDate) IN (2, 3, 4, 5, 6)) THEN -- Monday to Friday for others
+                INSERT INTO absensi_karyawans (
+                    id_karyawan, 
+                    tanggal, 
+                    jam_masuk, 
+                    jam_keluar, 
+                    keterangan, 
+                    waktu_keterlambatan, 
+                    foto, 
+                    created_at, 
+                    updated_at
+                ) VALUES (
+                    employeeId,
+                    currentDate,
+                    '08:00:00',
+                    '17:00:00',
+                    'Masuk (Kantor)',
+                    '00:00:00',
+                    NULL,
+                    NOW(),
+                    NOW()
+                );
+            END IF;
+
+            SET employeeId = employeeId + 1;
+        END WHILE;
+
+        SET currentDate = DATE_ADD(currentDate, INTERVAL 1 DAY);
+    END WHILE;
+END
