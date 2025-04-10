@@ -48,7 +48,7 @@
                                     <option value="Education">Education</option>
                                     <option value="Sales & Marketing">Sales & Marketing</option>
                                     <option value="Office">Office</option>
-                                    <option value="ITSM">ITSM</option>
+                                    <option value="IT Service Management">IT Service Management</option>
                                 </select>
                                 @error('divisi')
                                     <span class="invalid-feedback" role="alert">
