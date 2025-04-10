@@ -305,7 +305,7 @@
                     "data": null,
                     "render": function(data, type, row) {
                         var actions = "";
-                        var allowedRoles = ['Office Manager', 'Education Manager', 'SPV Sales', 'GM', 'Koordinator Office', 'Finance & Accounting', 'Koordinator SO'];
+                        var allowedRoles = ['Office Manager', 'Education Manager', 'SPV Sales', 'GM', 'Koordinator Office', 'Finance & Accounting', 'Koordinator ITSM'];
                         var userRole = '{{ auth()->user()->jabatan}}';
                         var requesterRole = data.karyawan.jabatan;
                         var userKaryawanId = {{ auth()->user()->karyawan_id }};
@@ -332,7 +332,7 @@
                                 actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Approve</button>';
                             } else if (userRole == 'Education Manager' && trackingStatus == 'Diajukan dan Sedang Ditinjau oleh Education Manager') {
                                 actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Approve</button>';
-                            } else if (userRole == 'Koordinator SO' && trackingStatus == 'Diajukan dan Sedang Ditinjau oleh Koordinator Service & Operation') {
+                            } else if (userRole == 'Koordinator ITSM' && trackingStatus == 'Diajukan dan Sedang Ditinjau oleh Koordinator IT Service Management') {
                                 actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Approve</button>';
                             } else if (userRole == 'SPV Sales' && trackingStatus == 'Diajukan dan Sedang Ditinjau oleh SPV Sales') {
                                 actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Approve</button>';
@@ -446,7 +446,7 @@
                                 "data": null,
                                 "render": function(data, type, row) {
                                     var actions = "";
-                                    var allowedRoles = ['Office Manager', 'Education Manager', 'SPV Sales', 'GM', 'Koordinator Office', 'Finance & Accounting'];
+                                    var allowedRoles = ['Office Manager', 'Education Manager', 'SPV Sales', 'GM', 'Koordinator Office', 'Finance & Accounting', 'Koordinator ITSM'];
                                     var userRole = '{{ auth()->user()->jabatan}}';
                                     var requesterRole = data.karyawan.jabatan;
                                     var userKaryawanId = {{ auth()->user()->karyawan_id }};

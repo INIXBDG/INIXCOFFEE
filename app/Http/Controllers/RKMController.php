@@ -614,7 +614,7 @@ class RKMController extends Controller
      */
     public function destroy($id): RedirectResponse
     {
-        // dd($id);
+        dd($id);
         $post = RKM::findOrFail($id);
         $registrasi = Registrasi::where('id_rkm', $id);
         $feedback = Nilaifeedback::where('id_rkm', $id);

@@ -102,7 +102,7 @@
                                         <option value="Education" @if ($users->divisi == "Education") selected @endif>Education</option>
                                         <option value="Sales & Marketing" @if ($users->divisi == "Sales & Marketing") selected @endif>Sales & Marketing</option>
                                         <option value="Office" @if ($users->divisi == "Office") selected @endif>Office</option>
-                                        <option value="Service & Operation" @if ($users->divisi == "Service & Operation") selected @endif>Service & Operation</option>
+                                        <option value="IT Service Management" @if ($users->divisi == "IT Service Management") selected @endif>IT Service Management</option>
                                     </select>
                                 @else
                                 <input type="hidden" name="jabatan" value="{{ old('divisi', $users->divisi ) }}">
@@ -112,6 +112,7 @@
                                         <option value="Education" @if ($users->divisi == "Education") selected @endif>Education</option>
                                         <option value="Sales & Marketing" @if ($users->divisi == "Sales & Marketing") selected @endif>Sales & Marketing</option>
                                         <option value="Office" @if ($users->divisi == "Office") selected @endif>Office</option>
+                                        <option value="IT Service Management" @if ($users->divisi == "IT Service Management") selected @endif>IT Service Management</option>
                                     </select>
                                 @endif
                                 

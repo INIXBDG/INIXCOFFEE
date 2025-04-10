@@ -30,7 +30,7 @@ class LemburController extends Controller
         // Inisialisasi $lembur sebagai koleksi kosong
         $lembur = collect();
 
-        if ($jabatan == 'Office Manager' || $jabatan == 'Koordinator Office' || $jabatan == 'Education Manager' || $jabatan == 'SPV Sales' || $jabatan == 'Koordinator SO') {
+        if ($jabatan == 'Office Manager' || $jabatan == 'Koordinator Office' || $jabatan == 'Education Manager' || $jabatan == 'SPV Sales' || $jabatan == 'Koordinator ITSM') {
             $lembur = lembur::with('karyawan')->whereHas('karyawan', function($query) use ($divisi) {
                 $query->where('divisi', $divisi);
             })->latest()->get();
@@ -55,7 +55,7 @@ class LemburController extends Controller
 
         $lembur = collect();
 
-        if ($jabatan == 'Office Manager' || $jabatan == 'Koordinator Office' || $jabatan == 'Education Manager' || $jabatan == 'SPV Sales' || $jabatan == 'Koordinator SO') {
+        if ($jabatan == 'Office Manager' || $jabatan == 'Koordinator Office' || $jabatan == 'Education Manager' || $jabatan == 'SPV Sales' || $jabatan == 'Koordinator ITSM') {
             $lembur = lembur::with('karyawan')->whereHas('karyawan', function($query) use ($divisi) {
                 $query->where('divisi', $divisi);
             })->latest()->get();
@@ -252,7 +252,7 @@ class LemburController extends Controller
         $jabatan = $karyawan->jabatan;
             $Offman = karyawan::where('jabatan', 'Office Manager')->first();
             $kooroff = karyawan::where('jabatan', 'Koordinator Office')->first();
-            $koorso = karyawan::where('jabatan', 'Koordinator SO')->first();
+            $koorso = karyawan::where('jabatan', 'Koordinator ITSM')->first();
             $Eduman = karyawan::where('jabatan', 'Education Manager')->first();
             $SPVSales = karyawan::where('jabatan', 'SPV Sales')->first();
             $GM = karyawan::where('jabatan', 'GM')->first();
@@ -262,7 +262,7 @@ class LemburController extends Controller
                 case 'Office Manager':
                 case 'Education Manager':
                 case 'Koordinator Office':
-                case 'Koordinator SO':
+                case 'Koordinator ITSM':
             break;
             
                 default:
@@ -275,7 +275,7 @@ class LemburController extends Controller
                             $users[] = $SPVSales->kode_karyawan; // SPVSales
                             break;
 
-                        case 'Service & Operation':
+                        case 'IT Service Management':
                             $users[] = $koorso->kode_karyawan; // SPVSales
                             break;
             

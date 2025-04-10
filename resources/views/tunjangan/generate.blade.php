@@ -16,6 +16,7 @@
         <div class="col-md-12">
             <div class="d-flex justify-content-end">
                 @can('Create Tunjangan')
+                    <a href="{{ route('penghitunganTunjangan') }}" class="btn btn-md click-primary mx-4"><img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> Penghitungan Tunjangan Umum Otomatis</a>
                     <a href="{{ route('tunjangan.create') }}" class="btn btn-md click-primary mx-4"><img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> Buat Jenis Tunjangan</a>
                     <a href="{{ route('createManual') }}" class="btn btn-md click-primary mx-4" id=""><img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> Manual Tunjangan</a>
                 @endcan
@@ -59,6 +60,7 @@
                                             </div>
                                             <div class="col-md-4 mx-1">
                                                 <a href="#" class="btn btn-danger" style="margin: 30px 8px 4px 8px;" id="exportpdf" onclick="exportPDF()">Export to PDF</a>
+                                                <a href="#" class="btn btn-success" style="margin: 30px 8px 4px 8px;" id="exportexcel" onclick="exportExcel()">Export to Excel</a>
                                             </div>
                                         </div>
                                         <table class="table table-bordered" id="tablekaryawan">
@@ -491,6 +493,17 @@
             alert('Silakan pilih bulan dan tahun terlebih dahulu.');
         }
     }
+    function exportExcel(){
+      var tahun = $('#tahun').val();  
+      var bulan = $('#bulan').val(); 
+      if (bulan && tahun) {
+            // Membangun URL untuk route
+            var url = "{{ url('tunjanganExportExcel') }}/" + bulan + "/" + tahun;
+            window.location.href = url; // Mengarahkan ke URL
+        } else {
+            alert('Silakan pilih bulan dan tahun terlebih dahulu.');
+        }
+    }
 
     function formatRupiah(angka, prefix) {
         // Mengecek apakah angka negatif
@@ -620,7 +633,7 @@
         return '0.00'; // Return 0 if no start or end time
     }
     function cekLembur(id) {
-        var bulan = $('#bulan').val();
+        var bulan = $('#bulan').val() - 1;
         var tahun = $('#tahun').val();
         var url = '/getOvertimeLemburByKaryawan/' + id + '/' + bulan + '/' + tahun;
 

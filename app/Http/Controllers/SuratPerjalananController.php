@@ -27,7 +27,7 @@ class SuratPerjalananController extends Controller
         // return $karyawan;
         $jabatan = $karyawan->jabatan;
         $divisi = $karyawan->divisi;
-        if ($jabatan == 'Office Manager' || $jabatan == 'Education Manager' || $jabatan == 'SPV Sales' || $jabatan == 'Koordinator SO') {
+        if ($jabatan == 'Office Manager' || $jabatan == 'Education Manager' || $jabatan == 'SPV Sales' || $jabatan == 'Koordinator ITSM') {
             $SuratPerjalanan = SuratPerjalanan::with('karyawan')->whereHas('karyawan', function($query) use ($divisi) {
                 $query->where('divisi', $divisi);
             })->latest()->get();
@@ -82,7 +82,7 @@ class SuratPerjalananController extends Controller
 
         $Offman = karyawan::where('jabatan' , 'Office Manager')->first();
         $kooroff = karyawan::where('jabatan', 'Koordinator Office')->first();
-        $koorso = karyawan::where('jabatan', 'Koordinator SO')->first();
+        $koorso = karyawan::where('jabatan', 'Koordinator ITSM')->first();
         $Eduman = karyawan::where('jabatan' , 'Education Manager')->first();
         $SPVSales = karyawan::where('jabatan' , 'SPV Sales')->first();
         $GM = karyawan::where('jabatan' , 'GM')->first();
@@ -93,7 +93,7 @@ class SuratPerjalananController extends Controller
             case 'Office Manager':
             case 'Education Manager':
             case 'Koordinator Office':
-            case 'Koordinator SO':
+            case 'Koordinator ITSM':
                 $users[] = $GM->kode_karyawan; // GM
         break;
         
@@ -111,7 +111,7 @@ class SuratPerjalananController extends Controller
                         // $users[] = $Offman->kode_karyawan; // Offman
                         $users[] = $kooroff->kode_karyawan; // Offman
                         break;
-                    case 'Service & Operation':
+                    case 'IT Service Management':
                         // $users[] = $Offman->kode_karyawan; // Offman
                         $users[] = $koorso->kode_karyawan; // Offman
                         break;

@@ -32,7 +32,7 @@ class PengajuancutiController extends Controller
         // return $karyawan;
         $jabatan = $karyawan->jabatan;
         $divisi = $karyawan->divisi;
-        if ($jabatan == 'Office Manager' || $jabatan == 'Education Manager' || $jabatan == 'SPV Sales' || $jabatan == 'Koordinator SO') {
+        if ($jabatan == 'Office Manager' || $jabatan == 'Education Manager' || $jabatan == 'SPV Sales' || $jabatan == 'Koordinator ITSM') {
             $pengajuancuti = PengajuanCuti::with('karyawan')->whereHas('karyawan', function($query) use ($divisi) {
                 $query->where('divisi', $divisi);
             })->latest()->get();
@@ -145,7 +145,7 @@ class PengajuancutiController extends Controller
     
         $Offman = karyawan::where('jabatan', 'Office Manager')->first();
         $kooroff = karyawan::where('jabatan', 'Koordinator Office')->first();
-        $koorSO = karyawan::where('jabatan', 'Koordinator SO')->first();
+        $koorSO = karyawan::where('jabatan', 'Koordinator ITSM')->first();
         $Eduman = karyawan::where('jabatan', 'Education Manager')->first();
         $SPVSales = karyawan::where('jabatan', 'SPV Sales')->first();
         $GM = karyawan::where('jabatan', 'GM')->first();
@@ -156,7 +156,7 @@ class PengajuancutiController extends Controller
             case 'Office Manager':
             case 'Education Manager':
             case 'Koordinator Office':
-            case 'Koordinator SO':
+            case 'Koordinator ITSM':
                 $users[] = $GM->kode_karyawan; // GM
         break;
         
@@ -234,8 +234,8 @@ class PengajuancutiController extends Controller
             $manager = karyawan::where('jabatan', 'GM')->first();
         } elseif($divisi == 'Office'){
             $manager = karyawan::where('jabatan', 'Koordinator Office')->first();
-        } elseif($divisi == 'Service & Operation'){
-            $manager = karyawan::where('jabatan', 'Koordinator SO')->first();
+        } elseif($divisi == 'IT Service Management'){
+            $manager = karyawan::where('jabatan', 'Koordinator ITSM')->first();
         } elseif($divisi == 'Sales & Marketing'){
             $manager = karyawan::where('jabatan', 'SPV Sales')->first();
         } elseif($divisi == 'Education' ){
@@ -275,7 +275,7 @@ class PengajuancutiController extends Controller
         $jabatan = auth()->user()->jabatan;
 
         // Update the record based on the user's role
-        if (in_array($jabatan, ['Office Manager', 'Koordinator Office', 'Education Manager', 'SPV Sales', 'GM', 'Koordinator SO'])) {
+        if (in_array($jabatan, ['Office Manager', 'Koordinator Office', 'Education Manager', 'SPV Sales', 'GM', 'Koordinator ITSM'])) {
             $post->update([
                 'approval_manager' => $request->approval,
                 'alasan_manager' => $request->alasan,

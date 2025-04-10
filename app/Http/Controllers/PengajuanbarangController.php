@@ -56,7 +56,7 @@ class PengajuanBarangController extends Controller
         // dd($year);
         if($jabatan == 'Finance & Accounting'){
             $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking')->whereMonth('created_at', $month)->whereYear('created_at', $year)->get();
-        }elseif ($jabatan == 'Office Manager' || $jabatan == 'Education Manager' || $jabatan == 'SPV Sales' || $jabatan == 'Koordinator SO'){
+        }elseif ($jabatan == 'Office Manager' || $jabatan == 'Education Manager' || $jabatan == 'SPV Sales' || $jabatan == 'Koordinator ITSM'){
             $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking')->whereHas('karyawan', function($query) use ($divisi) {
                 $query->where('divisi', $divisi);
             })->latest()->get();
@@ -137,8 +137,8 @@ class PengajuanBarangController extends Controller
             $tracking = 'Diajukan dan Sedang Ditinjau oleh General Manager';
         }elseif($karyawan->divisi == 'Sales & Marketing'){
             $tracking = 'Diajukan dan Sedang Ditinjau oleh SPV Sales';
-        }elseif($karyawan->divisi == 'Service & Operation'){
-            $tracking = 'Diajukan dan Sedang Ditinjau oleh Koordinator Service & Operation';
+        }elseif($karyawan->divisi == 'IT Service Management'){
+            $tracking = 'Diajukan dan Sedang Ditinjau oleh Koordinator IT Service Management';
         }
 
         $tracking_pengajuan_barang = tracking_pengajuan_barang::create([
@@ -160,7 +160,7 @@ class PengajuanBarangController extends Controller
     
         $Offman = karyawan::where('jabatan', 'Office Manager')->first();
         $kooroff = karyawan::where('jabatan', 'Koordinator Office')->first();
-        $koorSO = karyawan::where('jabatan', 'Koordinator SO')->first();
+        $koorSO = karyawan::where('jabatan', 'Koordinator ITSM')->first();
         $Eduman = karyawan::where('jabatan', 'Education Manager')->first();
         $SPVSales = karyawan::where('jabatan', 'SPV Sales')->first();
         $GM = karyawan::where('jabatan', 'GM')->first();
@@ -170,7 +170,7 @@ class PengajuanBarangController extends Controller
             case 'Office Manager':
             case 'Education Manager':
             case 'Koordinator Office':
-            case 'Koordinator SO':
+            case 'Koordinator ITSM':
                 $users[] = $GM->kode_karyawan; // GM
         break;
         
@@ -188,7 +188,7 @@ class PengajuanBarangController extends Controller
                         $users[] = $GM->kode_karyawan; // GM
                         break;
 
-                    case 'Service & Operation':
+                    case 'IT Service Management':
                         $users[] = $koorSO->kode_karyawan;
                         break;
                 }
@@ -354,9 +354,9 @@ class PengajuanBarangController extends Controller
         }elseif($data->karyawan->divisi == 'Office'){
             $users = karyawan::where('jabatan', 'Finance & Accounting')->first();
             $status = 'Telah disetujui oleh General Manager dan sedang diproses oleh Finance';
-        }elseif($data->karyawan->divisi == 'Service & Operation'){
+        }elseif($data->karyawan->divisi == 'IT Service Management'){
             $users = karyawan::where('jabatan', 'Finance & Accounting')->first();
-            $status = 'Telah disetujui oleh Koordinator Service & Operation dan sedang diproses oleh Finance';
+            $status = 'Telah disetujui oleh Koordinator IT Service Management dan sedang diproses oleh Finance';
         }elseif($data->karyawan->divisi == 'Sales & Marketing'){
             $status = 'Telah disetujui oleh SPV Sales dan sedang diproses oleh Finance';
             $users = karyawan::where('jabatan', 'Finance & Accounting')->first();
@@ -369,7 +369,7 @@ class PengajuanBarangController extends Controller
             }
         }
         // Update the record based on the user's role
-        if (in_array($jabatan, ['Office Manager', 'Koordinator Office', 'Education Manager', 'SPV Sales', 'GM', 'Koordinator SO'])){
+        if (in_array($jabatan, ['Office Manager', 'Koordinator Office', 'Education Manager', 'SPV Sales', 'GM', 'Koordinator ITSM'])){
             $e = tracking_pengajuan_barang::create([
                 'id_pengajuan_barang' => $id,
                 'tracking' => $status,
@@ -533,8 +533,8 @@ class PengajuanBarangController extends Controller
             $finance = karyawan::where('jabatan','SPV Sales')->latest()->first();
         }else if($data->karyawan->divisi == 'Office'){
             $finance = karyawan::where('jabatan','GM')->latest()->first();
-        }else if($data->karyawan->divisi == 'Service & Operation'){
-            $finance = karyawan::where('jabatan','Koordinator SO')->latest()->first();
+        }else if($data->karyawan->divisi == 'IT Service Management'){
+            $finance = karyawan::where('jabatan','Koordinator ITSM')->latest()->first();
         }
         $gm = karyawan::where('jabatan','GM')->latest()->first();
         // return $finance;

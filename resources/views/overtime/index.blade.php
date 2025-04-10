@@ -117,7 +117,7 @@
                                 </select>
                             </div>
                             <div class="col-md-4 mx-1">
-                                <button type="button" onclick="getDataFeedbacks()" class="btn click-primary" style="margin-top: 37px">Cari Data</button>
+                                <button type="button" onclick="getDataLembur()" class="btn click-primary" style="margin-top: 37px">Cari Data</button>
                                 <a href="{{ route('overtime.exportExcel', [$tahun_sekarang, $bulan_sekarang]) }}" id="export-link" target="_blank" class="btn click-primary" style="margin-top: 37px">Export to Excel</a>
                             </div>
                         </div>
@@ -203,6 +203,25 @@
     $(document).ready(function(){
         fetchTable();
     });
+    function getDataLembur() {
+        var year = $('#tahun').val();
+        var month = $('#bulan').val();
+
+        if (year && month) {
+            $('#loadingModal').modal('show'); // Tampilkan modal sebelum memulai pemanggilan Ajax
+
+            $('#hitunglembur').DataTable().ajax.url("{{ url('/getOvertimeLembur') }}/" + month + "/" + year).load(function(json) {
+                if (!json || json.data.length === 0) {
+                    alert("Tidak ada data untuk tahun dan bulan yang dipilih.");
+                }
+                setTimeout(() => {
+                    $('#loadingModal').modal('hide'); 
+                }, 100);
+            });
+        } else {
+            alert("Pilih tahun dan bulan terlebih dahulu.");
+        }
+    }
         function fetchTable(){
             var ApproveHitungLembur = {{ auth()->user()->can('Approve HitungLembur') ? 'true' : 'false' }};
             var JumlahHitungLembur = {{ auth()->user()->can('Jumlah HitungLembur') ? 'true' : 'false' }};
@@ -210,7 +229,7 @@
             console.log('JumlahHitungLembur:', JumlahHitungLembur);
 
             var userRole = '{{ auth()->user()->jabatan}}';
-            var tahun = $('#tahun').val()
+                var tahun = $('#tahun').val()
                 var bulan = $('#bulan').val()
                 $('#hitunglembur').DataTable({
                     "ajax": {

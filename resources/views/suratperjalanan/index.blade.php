@@ -216,7 +216,7 @@
                     "data": null,
                     "render": function(data, type, row) {
                         var actions = "";
-                        var allowedRoles = ['Office Manager', 'Education Manager', 'SPV Sales', 'GM', 'Direktur Utama', 'Direktur', 'Koordinator SO'];
+                        var allowedRoles = ['Office Manager', 'Education Manager', 'SPV Sales', 'GM', 'Direktur Utama', 'Direktur', 'Koordinator ITSM'];
                         var userRole = '{{ auth()->user()->jabatan}}';
                         var requesterRole = data.karyawan.jabatan; // Assuming this is passed in the row data
 
@@ -227,7 +227,7 @@
 
                             if (userRole == 'GM') {
                                 // GM can only approve if the requester is Office Manager, Education Manager, or SPV Sales
-                                if (['Office Manager', 'Education Manager', 'SPV Sales'].includes(requesterRole)) {
+                                if (['Office Manager', 'Education Manager', 'SPV Sales', 'Koordinator ITSM'].includes(requesterRole)) {
                                     if (data.approval_manager === '1') {
                                         actions += '<button type="button" class="dropdown-item disabled"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
                                     } else {

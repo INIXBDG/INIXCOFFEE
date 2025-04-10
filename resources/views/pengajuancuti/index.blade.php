@@ -205,8 +205,8 @@
                     "data": null,
                     "render": function(data, type, row) {
                         var actions = "";
-                        const allowedDeleteRoles = ['GM', 'Education Manager', 'Office Manager', 'Koordinator Office', 'SPV Sales', 'Koordinator SO'];
-                        var allowedRoles = ['Office Manager', 'Koordinator Office', 'Education Manager', 'SPV Sales', 'GM', 'Koordinator SO'];
+                        const allowedDeleteRoles = ['GM', 'Education Manager', 'Office Manager', 'Koordinator Office', 'SPV Sales', 'Koordinator ITSM'];
+                        var allowedRoles = ['Office Manager', 'Koordinator Office', 'Education Manager', 'SPV Sales', 'GM', 'Koordinator ITSM'];
                         var userRole = '{{ auth()->user()->jabatan}}';
                         var requesterRole = data.karyawan.jabatan; // Assuming this is passed in the row data
 
@@ -226,7 +226,7 @@
 
                             if (userRole == 'GM') {
                                 // GM can only approve if the requester is Office Manager, Education Manager, or SPV Sales
-                                if (['Office Manager', 'Education Manager', 'SPV Sales', 'Koordinator Office'].includes(requesterRole)) {
+                                if (['Office Manager', 'Education Manager', 'SPV Sales', 'Koordinator Office', 'Koordinator ITSM'].includes(requesterRole)) {
                                     if (data.approval_manager === '1') {
                                         actions += '<a class="dropdown-item" href="{{route('pengajuancuti.show', ':id')}}"><img src="{{ asset('icon/assept-document.svg') }}" style="width:24px" class=""> Form PDF</a>';
                                         actions = actions.replace(':id', data.id);

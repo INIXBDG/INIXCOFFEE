@@ -48,6 +48,13 @@
         <div class="panel panel-default">
             <div class="panel-body">
                     <a href="javascript:void(0);" class="btn btn-success m-4 d-print-none" id="printInvoice"><i class="fa fa-print"></i> Print Invoice</a>
+                    @php
+                    $grandTotalTunjangan = 0;
+                    $grandTotalPotongan = 0;
+                    $grandTotalPremiHadir = 0;
+                    $grandTotalTransaksi = 0;
+                @endphp
+                
                 <table class="table table-bordered">
                     <thead>
                         <tr>
@@ -58,32 +65,66 @@
                     <tbody>
                         @foreach ($post as $index => $item)
                             <tr>
-                                <td style="width: 20%">{{$index}}</td>
+                                <td style="width: 20%">{{ $index }}</td>
                                 <td style="width: 80%">
                                     <div class="row">
                                         @php
-                                            $total = 0; // Inisialisasi variabel total
+                                            $totalPerKaryawan = 0;
                                         @endphp
-                                    
+                
                                         @foreach ($item as $items)
-                                        <div class="col d-block">
+                                            <div class="col d-block">
                                                 <p>{{ $items->jenistunjangan->nama_tunjangan }}</p>
+                                                {{-- <p>{{ $items->jenistunjangan->tipe }}</p> --}}
                                                 <p>{{ formatRupiah(floatval($items->total)) }}</p>
-                                        </div>
+                                            </div>
+                
                                             @php
-                                                $total += floatval($items->total); // Tambahkan total setiap item
+                                                $totalPerKaryawan += floatval($items->total);
+                                                $grandTotalTransaksi += floatval($items->total);
+                
+                                                if ($items->jenistunjangan->tipe == 'Potongan') {
+                                                    $grandTotalPotongan += floatval($items->total);
+                                                }
+                                                elseif ($items->jenistunjangan->nama_tunjangan == 'Absensi') {
+                                                    $grandTotalPremiHadir += floatval($items->total);
+                                                } else {
+                                                    $grandTotalTunjangan += floatval($items->total);
+                                                }
+
+
                                             @endphp
                                         @endforeach
+                
                                         <hr>
-                                    
-                                        <p>Total : {{ formatRupiah($total) }}</p> <!-- Tampilkan total -->
-                                        <hr>
+                                        <p>Total Karyawan Ini: {{ formatRupiah($totalPerKaryawan) }}</p>
+                                        
                                     </div>
                                 </td>                                
                             </tr>
                         @endforeach
+                        <tr>
+                            <th>Total Tunjangan</th>
+                            <th>{{ formatRupiah($grandTotalTunjangan) }}</th>
+                        </tr>
+                        <tr>
+                            <th>Total Potongan</th>
+                            <th>{{ formatRupiah($grandTotalPotongan) }}</th>
+                        </tr>
+                        <tr>
+                            <th>Total Premi Hadir</th>
+                            <th>{{ formatRupiah($grandTotalPremiHadir) }}</th>
+                        </tr>
+                        <tr>
+                            <th>Total Transaksi</th>
+                            <th>{{ formatRupiah($grandTotalTransaksi) }}</th>
+                        </tr>
                     </tbody>
+                    {{-- <tfoot> --}}
+                        
+                    {{-- </tfoot> --}}
                 </table>
+                
                 {{-- {{$post}} --}}
             </div>
         </div>

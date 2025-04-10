@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AbsensiKaryawan;
 use App\Models\JenisTunjangan;
 use App\Models\karyawan;
+use App\Models\lembur;
 use App\Models\pengajuancuti;
 use App\Models\Tunjangan;
 use App\Models\TunjanganKaryawan;
@@ -14,15 +15,18 @@ use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-
+use App\Exports\TunjanganExport;
+use Maatwebsite\Excel\Facades\Excel;
 class TunjanganController extends Controller
 {
     protected $AbsensiKaryawanController;
+    protected $overtimeController;
 
-    public function __construct(AbsensiKaryawanController $AbsensiKaryawanController)
+    public function __construct(AbsensiKaryawanController $AbsensiKaryawanController, OvertimeController $overtimeController)
     {
         $this->middleware('auth');
         $this->AbsensiKaryawanController = $AbsensiKaryawanController;
+        $this->overtimeController = $overtimeController;
 
     }
     public function index()
@@ -330,10 +334,12 @@ class TunjanganController extends Controller
                                     ->first();
 
             if ($existingCalculation) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Tunjangan untuk karyawan ini sudah dihitung untuk bulan dan tahun yang sama.'
-                ], 400);
+                // return redirect()->route('tunjangangenerate.index')->with(['error' => 'Tunjangan sudah dihitung otomatis untuk bulan dan tahun yang sama']);
+
+                // return response()->json([
+                //     'success' => false,
+                //     'message' => 'Tunjangan untuk karyawan ini sudah dihitung untuk bulan dan tahun yang sama.'
+                // ], 400);
             }
 
             // Ambil absensi karyawan untuk bulan tertentu
@@ -354,7 +360,7 @@ class TunjanganController extends Controller
             });
 
             // $excludedTunjangan = ['PPH', 'BPJS Keluarga', 'BPJS', 'BPJS Ketenagakerjaan'];
-            $includeTunjangan = ['Makan', 'Transport'];
+            $includeTunjangan = ['Makan', 'Transport', 'Lembur'];
             if ($totalSeconds > 0) {
                 if ($totalSeconds > 900) {
                     $keterangan = "Terlambat > 15 menit";
@@ -394,10 +400,52 @@ class TunjanganController extends Controller
             // Variabel untuk total tunjangan dan potongan
             $totalTunjangan = 0;
             $totalPotongan = 0;
-    
+
             foreach ($jenisTunjangan as $tunjangan) {
-                // Jika jenis tunjangan dihitung per hari dan tipe tunjangan adalah 'Tunjangan'
-                if ($tunjangan->hitung == 'Perhari' && $tunjangan->tipe == 'Tunjangan') {
+                if($tunjangan->nama_tunjangan == 'Lembur'){
+                    $lembur = lembur::with('karyawan', 'hitunglembur')
+                                ->where('id_karyawan', $karyawanId)
+                                ->whereMonth('tanggal_spl', $bulan)
+                                ->whereYear('tanggal_spl', $tahun)
+                                ->get();
+                    // dd($lembur);
+                    $totalLemburan = 0;
+                    // $log = [];
+
+                    foreach($lembur as $data){
+                        if($data->id_hitung_lembur == null || $data->id_hitung_lembur == ''){
+                            // $log[] = 'Lewat karena id_hitung_lembur kosong/null';
+                            continue;
+                        }
+
+                        if ($data->hitunglembur === null) {
+                            // $log[] = 'Lewat karena relasi hitunglembur null';
+                            continue;
+                        }
+
+                        $nilaiLembur = $data->hitunglembur->nilai_lembur;
+                        $jamLembur = (strtotime($data->jam_selesai) - strtotime($data->jam_mulai)) / 3600;
+                        $subtotal = $jamLembur * $nilaiLembur;
+                        $totalLemburan += $subtotal;
+
+                    }
+                    // if($totalLembur > 0){
+                        $jenisTunjangans = JenisTunjangan::where('nama_tunjangan', 'Lembur')->first();
+                        $tunjanganKaryawan = new TunjanganKaryawan();
+                        $tunjanganKaryawan->id_karyawan = $karyawanId;
+                        $tunjanganKaryawan->bulan = $bulan;
+                        $tunjanganKaryawan->tahun = $tahun;
+                        $tunjanganKaryawan->jenis_tunjangan = $jenisTunjangans->id;
+                        $tunjanganKaryawan->keterangan = $tunjangan->tipe;
+                        // $tunjanganKaryawan->jumlah_absensi = '1';
+                        $tunjanganKaryawan->total = $totalLemburan; // Pastikan nilai adalah integer (casting)
+                        $tunjanganKaryawan->save();
+                    // }else{
+                        
+                    // }
+                    
+                    
+                }else if ($tunjangan->hitung == 'Perhari' && $tunjangan->tipe == 'Tunjangan') {
                     if ($karyawan->jabatan == 'Direktur Utama') {
                         $jumlahAbsensi = AbsensiKaryawan::whereMonth('tanggal', $bulan)  // Ganti dengan bulan yang ingin dihitung
                             ->whereYear('tanggal', $tahun)  // Ganti dengan tahun yang sesuai
@@ -424,9 +472,10 @@ class TunjanganController extends Controller
                     $tunjanganKaryawan->save();
                 }
                 
+                
 
                 // Jika jenis tunjangan dihitung sekali per bulan
-                if ($tunjangan->hitung == 'Perbulan' && $tunjangan->tipe == 'Tunjangan') {
+                else if ($tunjangan->hitung == 'Perbulan' && $tunjangan->tipe == 'Tunjangan') {
                     $tunjanganKaryawan = new TunjanganKaryawan();
                     $tunjanganKaryawan->id_karyawan = $karyawanId;
                     $tunjanganKaryawan->bulan = $bulan;
@@ -442,7 +491,7 @@ class TunjanganController extends Controller
             }
         }
 
-        return redirect()->route('tunjangan.index')->with(['success' => 'Penghitungan tunjangan berhasil!']);
+        return redirect()->route('tunjangangenerate.index')->with(['success' => 'Penghitungan tunjangan berhasil!']);
     }
 
     public function createManual()
@@ -607,6 +656,33 @@ class TunjanganController extends Controller
         }
     }
 
+
+
+    public function tunjanganExportExcel($month, $year)
+    {
+        if ($month == 1) {
+            $bulan = 12; // Desember
+            $tahun = $year - 1; // Tahun sebelumnya
+        } else {
+            $bulan = $month - 1;
+            $tahun = $year; // Untuk bulan lain, tetap bulan yang diminta
+        }
+    
+        $post = TunjanganKaryawan::where('bulan', $bulan)
+            ->where('tahun', $tahun)
+            ->with('karyawan', 'jenistunjangan') // Mengambil data karyawan terkait
+            ->get()
+            ->groupBy('karyawan.nama_lengkap') // Mengelompokkan berdasarkan nama karyawan
+            ->sortBy(function($group) {
+                return $group->first()->karyawan->divisi; // Mengurutkan berdasarkan divisi
+            });
+        $nama_tunjangan = JenisTunjangan::get();
+
+        return Excel::download(new TunjanganExport($post, $nama_tunjangan), 'rekap_tunjangan.xlsx');
+    }
+
+
+    
 
 }
 

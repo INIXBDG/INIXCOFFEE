@@ -238,6 +238,7 @@ Route::get('peserta/export/pdfs', [App\Http\Controllers\PesertaController::class
 Route::get('feedback/export/excels/{id}', [App\Http\Controllers\feedbackController::class, 'exportExcelKhusus'])->name('feedback.exportExcels');
 Route::get('feedback/export/pdfs/{id}', [App\Http\Controllers\feedbackController::class, 'exportPDFKhusus'])->name('feedback.exportPDFs');
 Route::get('tunjanganExportPDF/{month}/{year}', [App\Http\Controllers\TunjanganController::class, 'tunjanganExportPDF'])->name('tunjanganExportPDF');
+Route::get('tunjanganExportExcel/{month}/{year}', [App\Http\Controllers\TunjanganController::class, 'tunjanganExportExcel'])->name('tunjanganExportExcel');
 Route::get('editstatusmateri/{id}', [App\Http\Controllers\MateriController::class, 'editstatusmateri'])->name('editstatusmateri');
 Route::get('pengajuanbarang/uploadinvoice/{id}', [App\Http\Controllers\PengajuanBarangController::class, 'uploadInvoice'])->name('uploadInvoice');
 Route::put('pengajuanbarang/updateinvoice/{id}', [App\Http\Controllers\PengajuanBarangController::class, 'updateInvoice'])->name('updateInvoice');
