@@ -321,7 +321,7 @@
                     "data": null,
                     "render": function(data, type, row) {
                         var actions = "";
-                        if (canUpdateLembur) {
+                        // if (canUpdateLembur) {
                             actions += '<div class="dropdown">';
                             actions += '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
                             actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
@@ -342,11 +342,11 @@
                             }
                             actions += '</div>';
                             actions += '</div>';
-                        } else {
-                            actions += '<div class="dropdown">';
-                            actions += '<button class="btn dropdown-toggle disabled" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
-                            actions += '</div>';
-                        }
+                        // } else {
+                            // actions += '<div class="dropdown">';
+                            // actions += '<button class="btn dropdown-toggle disabled" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
+                            // actions += '</div>';
+                        // }
                         return actions;
                     }
                 }
