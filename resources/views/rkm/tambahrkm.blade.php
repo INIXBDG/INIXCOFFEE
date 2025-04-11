@@ -12,7 +12,7 @@
                         <div class="row mb-3">
                             <label for="sales_key" class="col-md-4 col-form-label text-md-start">{{ __('Nama Sales') }}</label>
                             <div class="col-md-6">
-                                @if (auth()->user()->jabatan == 'SPV Sales' || auth()->user()->jabatan == 'Adm Sales' )
+                                @if (auth()->user()->jabatan == 'SPV Sales' || auth()->user()->jabatan == 'Adm Sales' || auth()->user()->jabatan == 'Tim Digital')
                                 <select class="form-select @error('sales_key') is-invalid @enderror" name="sales_key" required autocomplete="sales_key">
                                     <option value="">Pilih Sales</option>
                                     @foreach ($sales as $salesis)
