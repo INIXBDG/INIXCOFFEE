@@ -1732,7 +1732,7 @@
                         },
                         success: function(response) {
                             alert(response.success);
-                            $('#modalPemberitahuan').modal('hide');
+                            $('#modalAbsen').modal('hide');
                             location.reload();
                         },
                         error: function(xhr, status, error) {
@@ -1784,8 +1784,9 @@
                     $('#modalPemberitahuan').modal('hide');
                     location.reload();
                 },
-                error: function(xhr, status, error) {
-                    alert(xhr.responseJSON.error);
+                error: function(response) {
+                    alert(response.responseJSON.error);
+                    console.log(response.responseJSON.error);
                     location.reload();
                 }
             });

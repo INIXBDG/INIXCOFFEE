@@ -382,7 +382,15 @@ class AbsensiKaryawanController extends Controller
             'shift' => 'required',
             'keterangan_pulang' => 'required',
             'id_karyawan' => 'required|integer',
+        ], [
+            'shift.required' => json_encode(['error' => 'Shift harus diisi.']),
+            'keterangan_pulang.required' => json_encode(['error' => 'Keterangan pulang harus diisi.']),
+            // 'id_karyawan.required' => json_encode(['error' => 'ID karyawan harus diisi.']),
+            // 'id_karyawan.integer' => json_encode(['error' => 'ID karyawan harus berupa angka.']),
         ]);
+        
+
+        // dd($request->all());
 
         // Ambil waktu sekarang
         $sekarang = \Carbon\Carbon::now();
@@ -403,6 +411,9 @@ class AbsensiKaryawanController extends Controller
 
         $shift = $request->shift;
 
+        if($request->keterangan_pulang == ''){
+            return response()->json(['error' => 'Pilih dahulu tipa absensi nya.'], 400);
+        }
         // Validasi shift
         if (!in_array($shift, ['1', '2'])) {
             return response()->json(['error' => 'Shift tidak valid.'], 400);
@@ -471,9 +482,8 @@ class AbsensiKaryawanController extends Controller
         if ($isAllowedTime) {
             $keterangan_pulang = 'Pulang ('.$request->keterangan_pulang.')';
             $absensi->keterangan_pulang = $keterangan_pulang;
-            // dd($request->keterangan_pulang);
-
             $absensi->jam_keluar = $jamKeluar->toTimeString(); // Gunakan waktu sekarang
+            // dd($absensi);
             $absensi->save();
             return response()->json(['success' => 'Terimakasih telah bekerja hari ini! Hati-hati di jalan.']);
         }
