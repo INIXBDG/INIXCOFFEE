@@ -46,7 +46,7 @@ class RKMController extends Controller
     public function create(): View
     {
         // $sales = karyawan::where('jabatan', 'sales')->get();
-        $sales = Karyawan::whereIn('jabatan', ['Sales', 'SPV Sales', 'Adm Sales'])
+        $sales = Karyawan::whereIn('jabatan', ['Sales', 'SPV Sales', 'Adm Sales', 'Tim Digital'])
                   ->where('status_aktif', '1')
                   ->get();
 
