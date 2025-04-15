@@ -583,44 +583,41 @@ class KelasAnalisisController extends Controller
 
     public function kalkulatorview($id)
     {
-        $rkm = RKM::with('perusahaan', 'materi')->findOrFail($id);
-        $exam = eksam::where('id_rkm', $rkm->id)->first();
-
-        if (!$exam) {
-            $exam = null;
-        } else {
-            $exam = $exam->total;
-            $exam = round($exam, 0);
+        $rkm = RKM::with('perusahaan', 'materi')->find($id); // pakai find tanpa fail untuk cek null
+    
+        if (!$rkm) {
+            return view('kelasanalisis.kalkulatorkelas'); // jika rkm kosong, langsung return view kosong
         }
-        $tanggalAwal = Carbon::parse($rkm->tanggal_awal);
-        $tanggalAkhir = Carbon::parse($rkm->tanggal_akhir);
-
-        $durasi = $tanggalAwal->diffInDays($tanggalAkhir);
-
+    
+        $examData = eksam::where('id_rkm', $rkm->id)->first();
+        $exam = $examData ? round($examData->total, 0) : null;
+    
+        $tanggalAwal = $rkm->tanggal_awal ? Carbon::parse($rkm->tanggal_awal) : null;
+        $tanggalAkhir = $rkm->tanggal_akhir ? Carbon::parse($rkm->tanggal_akhir) : null;
+        $durasi = ($tanggalAwal && $tanggalAkhir) ? $tanggalAwal->diffInDays($tanggalAkhir) : null;
+    
         $post = kelasanalisis::with('rkm.materi', 'rkm.perusahaan')->where('id_rkm', $id)->first();
-        $post->total_harga_jual = (float) $post->total_harga_jual;
-        $post->harga_modul_regular = (float) $post->harga_modul_regular;
-        $post->harga_modul_regular_dollar = (float) $post->harga_modul_regular_dollar;
-        $post->kurs_dollar = (float) $post->kurs_dollar;
-        $post->biaya_modul_regular = (float) $post->biaya_modul_regular;
-        $post->biaya_modul_regular_dollar = (float) $post->biaya_modul_regular_dollar;
-        $post->makan_siang = (float) $post->makan_siang;
-        $post->coffee_break = (float) $post->coffee_break;
-        $post->konsumsi = (float) $post->konsumsi;
-        $post->souvenir_satu = (float) $post->souvenir_satu;
-        $post->souvenir = (float) $post->souvenir;
-        $post->pa_hotel = (float) $post->pa_hotel;
-        $post->exam = (float) $post->exam;
-        $post->pc_pax = (float) $post->pc_pax;
-        $post->pc_instruktur = (float) $post->pc_instruktur;
-        $post->pc = (float) $post->pc;
-        $post->alat = (float) $post->alat;
-        $post->fee_instruktur = (float) $post->fee_instruktur;
-        $post->total_fee_instruktur = (float) $post->total_fee_instruktur;
-        $post->nett_penjualan = (float) $post->nett_penjualan;
-
-        
-
-        return view('kelasanalisis.kalkulatorkelas', compact('rkm', 'durasi', 'exam', 'post'));
+    
+        if ($post) {
+            // Konversi ke float string biar seragam
+            $fields = [
+                'total_harga_jual', 'harga_modul_regular', 'harga_modul_regular_dollar', 'kurs_dollar',
+                'biaya_modul_regular', 'biaya_modul_regular_dollar', 'makan_siang', 'coffee_break',
+                'konsumsi', 'souvenir_satu', 'souvenir', 'pa_hotel', 'exam', 'pc_pax', 'pc_instruktur',
+                'pc', 'alat', 'fee_instruktur', 'total_fee_instruktur', 'nett_penjualan','konsumsi_instruktur'
+            ];
+            foreach ($fields as $field) {
+                $post->{$field} = (string) (float) $post->{$field};
+            }
+        }
+    
+        // Kirim ke view hanya jika semua variabel ada nilainya
+        if ($rkm && $durasi !== null && $exam !== null && $post) {
+            return view('kelasanalisis.kalkulatorkelas', compact('rkm', 'durasi', 'exam', 'post'));
+        }
+    
+        // Jika ada yang null, kirim view tanpa data
+        return view('kelasanalisis.kalkulatorkelas');
     }
+    
 }
