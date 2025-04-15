@@ -33,6 +33,11 @@ class RKM extends Model
         'isi_pax'
     ];
 
+    public function netSales()
+    {
+        return $this->hasOne(netSales::class, 'id_rkm', 'id');
+    }    
+
     public function sales()
     {
         return $this->belongsTo(Karyawan::class, 'sales_key', 'kode_karyawan');

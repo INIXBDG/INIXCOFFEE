@@ -25,7 +25,7 @@ class KelasAnalisisController extends Controller
     }
     public function getRkmDataPerBulanPerMinggu($year)
     {
-        Carbon::setLocale('id'); // Set locale ke Bahasa Indonesia
+        Carbon::setLocale('id'); 
         $startDate = CarbonImmutable::create($year, 1, 1);
         $endDate = CarbonImmutable::create($year, 12, 1)->endOfMonth();
     
