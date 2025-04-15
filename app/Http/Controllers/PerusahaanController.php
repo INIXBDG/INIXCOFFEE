@@ -39,8 +39,12 @@ class PerusahaanController extends Controller
         return view('perusahaan.index', compact('perusahaans'));
     }
     public function getPerusahaanById(){
+        $jabatan = auth()->user()->jabatan;
         $idSales = auth()->user()->id_sales;
         if ($idSales == 'AM'){
+            $perusahaans = Perusahaan::where('nama_perusahaan', 'LIKE', '%'.request('q').'%')
+                    ->paginate(20);
+        }else if($jabatan == 'Customer Care' || $jabatan == 'Admin Holding'){
             $perusahaans = Perusahaan::where('nama_perusahaan', 'LIKE', '%'.request('q').'%')
                     ->paginate(20);
         }
