@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\KelasAnalisisController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
@@ -244,3 +245,6 @@ Route::get('pengajuanbarang/uploadinvoice/{id}', [App\Http\Controllers\Pengajuan
 Route::put('pengajuanbarang/updateinvoice/{id}', [App\Http\Controllers\PengajuanBarangController::class, 'updateInvoice'])->name('updateInvoice');
 Route::put('pengajuanbarang/updatebarang/{id}', [App\Http\Controllers\PengajuanBarangController::class, 'updateBarang'])->name('pengajuanbarang.updateBarang');
 Route::get('pengajuanbarang/pdf/{id}', [App\Http\Controllers\PengajuanBarangController::class, 'exportPDF'])->name('pengajuanbarang.pdf');
+
+
+Route::get('kalkulator/analisis/{id}/kelas', [KelasAnalisisController::class, 'kalkulatorview'])->name('kalkulatorview'); // Return view kalkulator kelas analisis
