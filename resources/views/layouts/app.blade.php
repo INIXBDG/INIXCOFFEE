@@ -6,7 +6,7 @@
 
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
-{{-- 
+{{--
     <meta name="mobile-web-app-capable" content="yes">
     <link rel="apple-touch-icon" sizes="180x180" href="{{asset('icon/apple-touch-icon-180x180.png')}}" /> --}}
 
@@ -24,10 +24,13 @@
     <link type="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/css/bootstrap-datetimepicker.min.css" />
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/timepicker/1.3.5/jquery.timepicker.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
     {{-- <link rel="stylesheet" href="//cdn.datatables.net/2.0.3/css/dataTables.dataTables.min.css"> --}}
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
-            /* From Uiverse.io by jamik-dev */ 
+            /* From Uiverse.io by jamik-dev */
         .cube {
             position: absolute;
             width: 100px;
@@ -419,7 +422,7 @@
             }
 
             #logoinix {
-                width: 250px; 
+                width: 250px;
             }
 
             /* Tambahan styling untuk teks atau elemen kecil */
@@ -509,7 +512,7 @@
                 </div>
             </div>
         </div>
-        
+
         <nav class="navbar navbar-expand-md navbar-dark bg-dark shadow-sm">
             <div class="container-fluid">
                 <div class="col-md-4 col-sm-4 col-xs-4 d-flex justify-content-start" id="navbarkiri">
@@ -526,7 +529,7 @@
                                         <span class="visually-hidden">unread notifications</span>
                                     </span>
                                 @endif
-                            </a>                            
+                            </a>
                         </li>
                         <li class="nav-item order-0 order-md-1" style="margin-left: 10px" id="auth">
                             <h6 class="nav-link mt-1" style="text-transform: capitalize; color:#fff; margin:0px; padding:8px;">

@@ -420,7 +420,7 @@
             background-image: url('/css/background inix office-02.svg');
             background-size: cover;
             background-attachment:scroll;
-           
+
         } */
         #logoinix {
             width: 400px;
@@ -754,6 +754,24 @@
             .horizontal-ruler-labels .label:nth-child(odd) {
                 display: none;
             }
+            /* Memberikan efek aktif pada tombol ketika dipilih */
+            .btn-check:checked + .btn {
+                background-color: #6c88ba; /* Warna biru Bootstrap */
+                color: #fff;
+                border-color: #0d6efd;
+            }
+
+            /* Untuk transisi halus saat hover dan aktif */
+            .btn-outline-primary,
+            .btn-outline-warning,
+            .btn-outline-success {
+                transition: all 0.2s ease;
+            }
+
+            /* Optional: tambahkan shadow saat aktif */
+            .btn-check:checked + .btn {
+                box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+            }
         }
     </style>
 </head>
@@ -882,20 +900,36 @@
                         <div id="camera" style="width: 320px; height: 320px; border: 2px solid #ddd; border-radius: 5px;"></div>
                         <br />
                         {{-- <div class="d-flex flex-wrap w-100" id="absen" style="margin: 0px;"> --}}
-                        <div class="row g-3" style="height:120px">
-                            <div class="col-6 d-flex align-items-center m-0">
-                                <input type="radio" class="form-check-input custom-radio" name="keterangan" id="normal" autocomplete="off" value="Kantor">
-                                <label class="form-check-label ms-2" for="normal">Absen Normal</label>
+                            <div class="row">
+                                <div class="btn-group w-100 flex-wrap" role="group" aria-label="Pilihan Absen">
+                                    <input type="radio" class="btn-check" name="keterangan" id="normal" value="Kantor" autocomplete="off">
+                                    <label class="btn btn-outline-primary m-1" for="normal">
+                                        <i class="bi bi-person-check"></i> Absen Normal
+                                    </label>
+
+                                    <input type="radio" class="btn-check" name="keterangan" id="inhouse" value="Inhouse Bandung" autocomplete="off">
+                                    <label class="btn btn-outline-warning m-1" for="inhouse">
+                                        <i class="bi bi-house-door"></i> Absen Inhouse
+                                    </label>
+
+                                    <input type="radio" class="btn-check" name="keterangan" id="spj" value="SPJ" autocomplete="off">
+                                    <label class="btn btn-outline-success m-1" for="spj">
+                                        <i class="bi bi-truck"></i> Absen SPJ
+                                    </label>
+                                </div>
                             </div>
-                            <div class="col-6 d-flex align-items-center m-0">
-                                <input type="radio" class="form-check-input custom-radio" name="keterangan" id="inhouse" autocomplete="off" value="Inhouse Bandung">
-                                <label class="form-check-label ms-2" for="inhouse">Absen Inhouse Bandung Raya</label>
-                            </div>
-                            <div class="col-6 d-flex align-items-center m-0">
-                                <input type="radio" class="form-check-input custom-radio" name="keterangan" id="spj" autocomplete="off" value="SPJ">
-                                <label class="form-check-label ms-2" for="spj">Absen SPJ</label>
-                            </div>
-                        </div>
+                            {{-- <div class="row">
+                                <div class="btn-group w-100 flex-wrap" role="group" aria-label="Pilihan Absen">
+                                    <input type="radio" class="btn-check" name="keterangan" id="normal" value="Kantor" autocomplete="off">
+                                    <label class="btn btn-outline-primary m-1" for="normal">Absen Normal</label>
+
+                                    <input type="radio" class="btn-check" name="keterangan" id="inhouse" value="Inhouse Bandung" autocomplete="off">
+                                    <label class="btn btn-outline-primary m-1" for="inhouse">Absen Inhouse Bandung Raya</label>
+
+                                    <input type="radio" class="btn-check" name="keterangan" id="spj" value="SPJ" autocomplete="off">
+                                    <label class="btn btn-outline-primary m-1" for="spj">Absen SPJ</label>
+                                </div>
+                            </div> --}}
                         {{-- </div> --}}
 
                         <br />
