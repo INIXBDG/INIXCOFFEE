@@ -279,7 +279,7 @@
                                         <div class="col-md-6">
                                             <div class="input-group">
                                                 <span class="input-group-text" id="currency-symbol">Rp.</span>
-                                                <input readonly id="pc" value="{{ isset($post) ? post->pc : ''}}"
+                                                <input readonly id="pc" value="{{ isset($post) ? $post->pc : ''}}"
                                                     type="text" class="form-control @error('pc') is-invalid @enderror"
                                                     name="pc" autocomplete="pc" autofocus>
                                             </div>
@@ -391,7 +391,7 @@
                                                 class="form-control @error('nama_materi') is-invalid @enderror"
                                                 name="nama_materi" value="{{ isset($post) ? $post->rkm->materi->nama_materi : ''}}"
                                                 autocomplete="nama_materi" autofocus>
-                                            <input type="hidden" name="id_rkm" value="{{ isset($rkm) ? $post->rkm->id : ''}}">
+                                            <input type="hidden" name="id_rkm" value="{{ isset($post) ? $post->rkm->id : ''}}">
                                             @error('nama_materi')
                                                 <span class="invalid-feedback" role="alert">
                                                     <strong>{{ $message }}</strong>
@@ -492,7 +492,7 @@
                                         <div class="col-md-6">
                                             <input id="pax" type="text" placeholder="Pax"
                                                 class="form-control @error('pax') is-invalid @enderror" name="pax"
-                                                value="{{ isset($rkm) ? $post->pax : ''}}" autocomplete="pax" autofocus>
+                                                value="{{ isset($post) ? $post->pax : ''}}" autocomplete="pax" autofocus>
                                             @error('pax')
                                                 <span class="invalid-feedback" role="alert">
                                                     <strong>{{ $message }}</strong>
@@ -509,7 +509,7 @@
                                                 <span class="input-group-text" id="currency-symbol">Rp.</span>
                                                 <input type="text" step="0.01"
                                                     class="form-control @error('harga_jual') is-invalid @enderror"
-                                                    name="harga_jual" value="{{ isset($rkm) ? $post->rkm->harga_jual : ''}}"
+                                                    name="harga_jual" value="{{ isset($post) ? $post->rkm->harga_jual : ''}}"
                                                     id="harga_jual" required>
                                             </div>
                                             @error('harga_jual')
@@ -526,7 +526,7 @@
                                         <div class="col-md-6">
                                             <div class="input-group">
                                                 <span class="input-group-text" id="currency-symbol">Rp.</span>
-                                                <input type="text" value="{{ isset($rkm) ? $post->total_harga_jual : ''}}"
+                                                <input type="text" value="{{ isset($post) ? $post->total_harga_jual : ''}}"
                                                     step="0.01"
                                                     class="form-control @error('total_harga_jual') is-invalid @enderror"
                                                     name="total_harga_jual" value="" id="total_harga_jual" required
@@ -547,7 +547,7 @@
                                             <div class="input-group">
                                                 <span class="input-group-text" id="currency-symbol">Rp.</span>
                                                 <input readonly type="text" step="0.01"
-                                                    value="{{ isset($rkm) ? $post->nett_penjualan : ''}}"
+                                                    value="{{ isset($post) ? $post->nett_penjualan : ''}}"
                                                     class="form-control @error('nett_penjualan') is-invalid @enderror"
                                                     name="nett_penjualan" value="" id="nett_penjualan" required>
                                                 <button class="btn btn-success" type="button"
