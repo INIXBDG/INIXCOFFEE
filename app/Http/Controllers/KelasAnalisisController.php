@@ -21,69 +21,69 @@ class KelasAnalisisController extends Controller
     }
     public function index()
     {
-        return view('kelasanalisis.index'); 
+        return view('kelasanalisis.index');
     }
     public function getRkmDataPerBulanPerMinggu($year)
     {
         Carbon::setLocale('id'); 
         $startDate = CarbonImmutable::create($year, 1, 1);
         $endDate = CarbonImmutable::create($year, 12, 1)->endOfMonth();
-    
+
         $monthRanges = [];
         $date = $startDate;
-    
+
         while ($date->month <= $endDate->month && $date->year <= $endDate->year) {
             $startOfMonth = $date->startOfMonth();
             $endOfMonth = $date->endOfMonth();
             $monthName = $startOfMonth->translatedFormat('F');
-    
+
             $weekRanges = [];
             $startOfWeek = $startOfMonth->startOfWeek();
             $weekNumber = 1;
-    
+
             while ($startOfWeek->lte($endOfMonth)) {
                 $endOfWeek = $startOfWeek->copy()->endOfWeek();
-                
+
                 // Kondisi untuk menghindari data duplikat di antara dua bulan
                 if ($startOfWeek->month != $date->month) {
-                    $startOfWeek = $startOfWeek->addWeek(); 
+                    $startOfWeek = $startOfWeek->addWeek();
                     $weekNumber++;
                     continue;
                 }
-    
+
                 $start = $startOfWeek->format('Y-m-d');
                 $end = $endOfWeek->format('Y-m-d');
-    
+
                 // Fetch RKM data only for the specified week
                 $rkm = RKM::with(['materi', 'analisisrkm', 'analisisrkm.analisisrkmmingguan'])
                     ->where('status', '0')
                     ->whereYear('tanggal_awal', $year)
                     ->whereBetween('tanggal_awal', [$start, $end])
                     ->get();
-    
+
                 // Check if all items have status "Hijau"
                 $allHijau = $rkm->isNotEmpty() && $rkm->every(function ($item) {
                     // dd($item->analisisrkm);
                     // return $item;
                     return $item->analisisrkm ? 'Hijau' : 'Merah' == 'Hijau';
                 });
-    
+
                 $rkmfull = $allHijau ? 'ok' : 'pending';
-    
+
                 $formattedItems = $rkm->map(function ($item) {
                     $status = $item->analisisrkm ? 'Hijau' : 'Merah';
                     $tanggalAwal = Carbon::parse($item->tanggal_awal);
                     $tanggalAkhir = Carbon::parse($item->tanggal_akhir);
                     $total_harga_jual = floatval($item->harga_jual) * intval($item->pax);
-    
+
                     $analisisRkmData = $item->analisisrkm ? $item->analisisrkm->toArray() : null;
-    
+
                     return [
                         'id'              => $item->id,
                         'nama_materi'     => $item->materi->nama_materi,
                         'pax'             => $item->pax,
                         'harga_jual'      => $item->harga_jual,
-                        'total_harga_jual'=> $total_harga_jual,
+                        'total_harga_jual' => $total_harga_jual,
                         'tanggal_awal'    => $tanggalAwal->translatedFormat('d F Y'),
                         'tanggal_akhir'   => $tanggalAkhir->translatedFormat('d F Y'),
                         'durasi'          => $tanggalAwal->diffInDays($tanggalAkhir) + 1,
@@ -91,7 +91,7 @@ class KelasAnalisisController extends Controller
                         'analisisrkm'     => $analisisRkmData
                     ];
                 });
-    
+
                 $weekRanges[] = [
                     'rkmfull'              => $formattedItems->isEmpty() ? 'no data' : $rkmfull,
                     'tahun'                => $year,
@@ -101,21 +101,21 @@ class KelasAnalisisController extends Controller
                     'tanggal_akhir_minggu' => $endOfWeek->translatedFormat('d F Y'),
                     'data'                 => $formattedItems->isEmpty() ? null : $formattedItems,
                 ];
-    
+
                 // Move to the next week
                 $startOfWeek = $startOfWeek->addWeek();
                 $weekNumber++;
             }
-    
+
             $monthRanges[] = [
                 'month' => $monthName,
                 'weeksData' => $weekRanges
             ];
-    
+
             // Move to the next month
             $date = $date->addMonth();
         }
-    
+
         $json = $monthRanges;
         return new PostResource(true, 'List Detail Bulan RKM', $json);
     }
@@ -126,7 +126,7 @@ class KelasAnalisisController extends Controller
         $exam = eksam::where('id_rkm', $rkm->id)->first();
         if (!$exam) {
             $exam = null;
-        }else{
+        } else {
             $exam = $exam->total;
             $exam = round($exam, 0);
         }
@@ -168,7 +168,7 @@ class KelasAnalisisController extends Controller
             'durasi'     => 'required',
             'id_rkm'     => 'required',
             'komentar'     => 'nullable',
-        ]); 
+        ]);
 
         kelasanalisis::create($data);
 
@@ -230,11 +230,11 @@ class KelasAnalisisController extends Controller
             'durasi'     => 'required',
             'id_rkm'     => 'required',
             'komentar'     => 'nullable',
-        ]); 
+        ]);
 
         $post = kelasanalisis::findOrFail($id);
 
-            $post->update($data);
+        $post->update($data);
 
         return redirect()->route('kelasanalisis.index')->with(['success' => 'Data Berhasil Diubah!']);
     }
@@ -242,7 +242,7 @@ class KelasAnalisisController extends Controller
     public function getRkmDataByMonthAndWeek($year, $month, $week)
     {
         Carbon::setLocale('id');
-    
+
         // Map Indonesian months to English months
         $indonesianToEnglishMonths = [
             'Januari' => 'January',
@@ -258,87 +258,87 @@ class KelasAnalisisController extends Controller
             'November' => 'November',
             'Desember' => 'December',
         ];
-    
+
         // Convert the Indonesian month to English
         $englishMonth = $indonesianToEnglishMonths[$month] ?? null;
-    
+
         if (!$englishMonth) {
             return new PostResource(false, "Bulan $month tidak valid.", null);
         }
-    
+
         // Create date range for the specified month and year
         $startOfMonth = CarbonImmutable::create($year, Carbon::parse($englishMonth)->month, 1);
         $endOfMonth = $startOfMonth->endOfMonth();
-    
+
         // Fetch RKM data for the specified year and status
         $rkm = RKM::with(['materi', 'analisisrkm', 'analisisrkm.analisisrkmmingguan'])
             ->where('status', '0')
             ->whereYear('tanggal_awal', $year)
             ->get();
-    
+
         // Filter data based on the translated month
         $rkmFiltered = $rkm->filter(function ($item) use ($year, $englishMonth) {
             $tanggalAwal = Carbon::parse($item->tanggal_awal);
             return $tanggalAwal->year == $year && $tanggalAwal->format('F') == $englishMonth;
         });
-    
+
         if ($rkmFiltered->isEmpty()) {
             return new PostResource(false, "Tidak ada data RKM untuk bulan $month", null);
         }
-    
+
         // Initialize weekly data processing
         $startOfWeek = $startOfMonth->startOfWeek(Carbon::MONDAY);
         $weekNumber = 1;
-    
+
         while ($startOfWeek->lte($endOfMonth)) {
             $endOfWeek = $startOfWeek->copy()->endOfWeek(Carbon::SUNDAY);
-    
+
             if ($weekNumber == $week) {
                 $start = $startOfWeek->format('Y-m-d');
                 $end = $endOfWeek->format('Y-m-d');
-    
+
                 // Filter RKM data for the current week
                 $weekData = $rkmFiltered->filter(function ($item) use ($start, $end) {
                     return Carbon::parse($item->tanggal_awal)->between($start, $end);
                 });
-    
+
                 if ($weekData->isEmpty()) {
                     return new PostResource(false, "Tidak ada data RKM untuk $month Minggu $week", null);
                 }
-    
+
                 $fixcost = [];
                 $profit = [];
-    
+
                 $formattedWeekData = $weekData->map(function ($item) use (&$fixcost, &$profit) {
                     $status = $item->analisisrkm ? 'Hijau' : 'Merah';
                     $tanggalAwal = Carbon::parse($item->tanggal_awal);
                     $tanggalAkhir = Carbon::parse($item->tanggal_akhir);
                     $total_harga_jual = floatval($item->harga_jual) * intval($item->pax);
-                
+
                     $analisisRkmData = $item->analisisrkm ? $item->analisisrkm->toArray() : null;
                     $analisisRkmmingguanData = $item->analisisrkm && $item->analisisrkm->analisisrkmmingguan ? $item->analisisrkm->analisisrkmmingguan : null;
-                
+
                     if ($analisisRkmmingguanData) {
                         foreach ($analisisRkmmingguanData as $data) {
                             $fix = $data['fixcost'] ?? null;
                             $prof = $data['profit'] ?? null;
-                
+
                             if ($fix !== null) {
                                 $fixcost[] = $fix;
                             }
-                
+
                             if ($prof !== null) {
                                 $profit[] = $prof;
                             }
                         }
                     }
-                
+
                     return [
                         'id'              => $item->id,
                         'nama_materi'     => $item->materi->nama_materi,
                         'pax'             => $item->pax,
                         'harga_jual'      => $item->harga_jual,
-                        'total_harga_jual'=> $total_harga_jual,
+                        'total_harga_jual' => $total_harga_jual,
                         'tanggal_awal'    => $tanggalAwal->translatedFormat('d F Y'),
                         'tanggal_akhir'   => $tanggalAkhir->translatedFormat('d F Y'),
                         'durasi'          => $tanggalAwal->diffInDays($tanggalAkhir) + 1,
@@ -349,13 +349,13 @@ class KelasAnalisisController extends Controller
                         ],
                     ];
                 })->values();
-    
+
                 $allHijau = $weekData->every(function ($item) {
                     return $item->analisisrkm ? 'Hijau' : 'Merah' == 'Hijau';
                 });
-    
+
                 $rkmfull = $allHijau ? 'ok' : 'pending';
-    
+
                 return new PostResource(true, "Data RKM untuk $month Minggu $week", [
                     'rkmfull' => $rkmfull,
                     'fixcost' => $fixcost,
@@ -363,14 +363,14 @@ class KelasAnalisisController extends Controller
                     'data'    => $formattedWeekData,
                 ]);
             }
-    
+
             $startOfWeek = $startOfWeek->addWeek();
             $weekNumber++;
         }
-    
+
         return new PostResource(false, "Tidak ada data RKM untuk $month Minggu $week", null);
     }
-    
+
 
     public function postAnalisisMingguan(Request $request)
     {
@@ -479,9 +479,9 @@ class KelasAnalisisController extends Controller
         // Initialize a total profit accumulator
         $totalProfit = 0;
         $firstFixCost = $monthData->pluck('analisisrkm.analisisrkmmingguan.*.fixcost')
-                                    ->flatten()
-                                    ->filter()
-                                    ->first() ?? 0;
+            ->flatten()
+            ->filter()
+            ->first() ?? 0;
         // Group month data by week and calculate total profit for each week
         $groupedByWeek = $monthData->groupBy(function ($item) {
             return Carbon::parse($item->tanggal_awal)->weekOfMonth;
@@ -525,7 +525,8 @@ class KelasAnalisisController extends Controller
     }
 
 
-    public function sinkronDataKelasAnalisis(){
+    public function sinkronDataKelasAnalisis()
+    {
         $data = kelasanalisis::with('rkm')->get();
         foreach ($data as $value) {
             $rkm = RKM::findOrFail($value->id_rkm);
@@ -536,7 +537,7 @@ class KelasAnalisisController extends Controller
             $durasi = $durasihari + 1;
             $total_harga_jual = $rkm->harga_jual * $pax;
             $kelas = $rkm->metode_kelas;
-            if($value->pax != $pax || $value->durasi != $durasi || $value->total_harga_jual != $total_harga_jual){
+            if ($value->pax != $pax || $value->durasi != $durasi || $value->total_harga_jual != $total_harga_jual) {
                 $biaya_modul_regular = $value->harga_modul_regular * $pax;
                 $biaya_dollar = $value->harga_modul_regular_dollar * $pax;
                 $biaya_modul_regular_dollar = $biaya_dollar * $value->kurs_dollar;
@@ -545,14 +546,14 @@ class KelasAnalisisController extends Controller
                 $makan_siang = ($durasi * $konsumsi_inst) * $value->makan_siang;
                 $coffee_break = ($durasi * $konsumsi_inst) * $value->coffee_break;
                 $konsumsi = $makan_siang + $coffee_break;
-                if($kelas == 'Virtual'){
+                if ($kelas == 'Virtual') {
                     $pc = $value->pc_pax * $durasi * $value->pc_instrukutur;
-                }else{
+                } else {
                     $pc = $value->pc_pax * $durasi * ($pax + $value->pc_instrukutur);
                 }
-                if($value->fee_instruktur == '0.00'){
+                if ($value->fee_instruktur == '0.00') {
                     $total_fee_instruktur = $value->total_fee_instruktur;
-                }else{
+                } else {
                     $total_fee_instruktur = $value->fee_instruktur * 5 * $durasi;
                 }
                 $nett_penjualan = $total_harga_jual - ($total_fee_instruktur + $pc + $souvenir + $konsumsi + $biaya_modul_regular + $biaya_modul_regular_dollar + $value->alat + $value->pa_hotel + $value->exam);
@@ -569,7 +570,7 @@ class KelasAnalisisController extends Controller
                     'pc' => $pc,
                     'nett_penjualan' => $nett_penjualan,
                 ]);
-            }else{
+            } else {
                 continue;
             }
             // dd($durasi + 1);
@@ -579,6 +580,44 @@ class KelasAnalisisController extends Controller
             'message' => 'Data telah Disinkronkan!',
         ]);
     }
-    
-}
 
+    public function kalkulatorview($id)
+    {
+        // Ambil data RKM, kalau tidak ketemu maka akan error 404
+        $rkm = RKM::with('perusahaan', 'materi')->findOrFail($id);
+    
+        // Ambil data exam (bisa null)
+        $examData = eksam::where('id_rkm', $rkm->id)->first();
+        $exam = $examData ? round($examData->total, 0) : null;
+    
+        // Hitung durasi dari tanggal_awal ke tanggal_akhir
+        $tanggalAwal = $rkm->tanggal_awal ? Carbon::parse($rkm->tanggal_awal) : null;
+        $tanggalAkhir = $rkm->tanggal_akhir ? Carbon::parse($rkm->tanggal_akhir) : null;
+        $durasi = ($tanggalAwal && $tanggalAkhir) ? $tanggalAwal->diffInDays($tanggalAkhir) : null;
+    
+        // Ambil data kelasanalisis berdasarkan id_rkm
+        $post = kelasanalisis::with('rkm.materi', 'rkm.perusahaan')->where('id_rkm', $id)->first();
+    
+        // Jika data kelasanalisis ditemukan, konversi nilai ke float
+        if ($post) {
+            $fields = [
+                'total_harga_jual', 'harga_modul_regular', 'harga_modul_regular_dollar', 'kurs_dollar',
+                'biaya_modul_regular', 'biaya_modul_regular_dollar', 'makan_siang', 'coffee_break',
+                'konsumsi', 'souvenir_satu', 'souvenir', 'pa_hotel', 'exam', 'pc_pax', 'pc_instruktur',
+                'pc', 'alat', 'fee_instruktur', 'total_fee_instruktur', 'nett_penjualan'
+            ];
+    
+            foreach ($fields as $field) {
+                // Pastikan property ada sebelum dikonversi, supaya tidak error kalau null
+                if (isset($post->{$field})) {
+                    $post->{$field} = (float) $post->{$field};
+                }
+            }
+        }
+    
+        // Kirim semua data ke view, biarkan blade yang handle pengecekan
+        return view('kelasanalisis.kalkulatorkelas', compact('rkm', 'durasi', 'exam', 'post'));
+    }
+    
+
+}

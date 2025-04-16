@@ -344,7 +344,7 @@
                         }
 
                         // Tambahkan tombol Upload Invoice dengan kondisi
-                        if (trackingStatus == 'Pencairan Sudah Selesai') {
+                        if (trackingStatus) {
                             var uploadInvoiceUrl = "{{ url('/pengajuanbarang/uploadinvoice') }}/" + row.id;
                             var uploadInvoiceIcon = 'icon/clipboard-primary.svg';
                             var uploadInvoiceLabel = 'Upload Invoice';
@@ -417,12 +417,16 @@
                                     actions += '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
                                     actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
                                     actions += '<a class="dropdown-item" disabled href="{{ url('/pengajuanbarang') }}/' + row.id + '" data-toggle="tooltip" data-placement="top" title="Detail User"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Detail</a>';
+                                    actions += '<a class="dropdown-item" disabled href="{{ url('/pengajuanbarang/uploadinvoice') }}/' + row.id + '" data-toggle="tooltip" data-placement="top" title="Detail User"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Upload Invoice</a>';
                                     actions += '</div>'
                                     actions += '</div>'
                                     return actions;
                                 },
                             },
-                        ]
+                        ],
+                        "order": [[0, 'desc']], // Ubah urutan menjadi descending untuk kolom ke-6
+                        "columnDefs" : [{"targets":[0], "type":"date"}],
+
                     });
 
                     // Inisialisasi DataTable untuk data yang belum selesai
@@ -475,7 +479,7 @@
                                     }
 
                                     // Tambahkan tombol Upload Invoice dengan kondisi
-                                    if (trackingStatus == 'Pencairan Sudah Selesai') {
+                                    if (trackingStatus) {
                                         var uploadInvoiceUrl = "{{ url('/pengajuanbarang/uploadinvoice') }}/" + row.id;
                                         var uploadInvoiceIcon = 'icon/clipboard-primary.svg';
                                         var uploadInvoiceLabel = 'Upload Invoice';
@@ -503,6 +507,8 @@
                                 }
                             }
                         ],
+                        "order": [[0, 'desc']], // Ubah urutan menjadi descending untuk kolom ke-6
+                        "columnDefs" : [{"targets":[0], "type":"date"}],
                     });
                 },
                 error: function(xhr) {
