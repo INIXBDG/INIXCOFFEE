@@ -583,41 +583,41 @@ class KelasAnalisisController extends Controller
 
     public function kalkulatorview($id)
     {
-        $rkm = RKM::with('perusahaan', 'materi')->find($id); // pakai find tanpa fail untuk cek null
+        // Ambil data RKM, kalau tidak ketemu maka akan error 404
+        $rkm = RKM::with('perusahaan', 'materi')->findOrFail($id);
     
-        if (!$rkm) {
-            return view('kelasanalisis.kalkulatorkelas'); // jika rkm kosong, langsung return view kosong
-        }
-    
+        // Ambil data exam (bisa null)
         $examData = eksam::where('id_rkm', $rkm->id)->first();
         $exam = $examData ? round($examData->total, 0) : null;
     
+        // Hitung durasi dari tanggal_awal ke tanggal_akhir
         $tanggalAwal = $rkm->tanggal_awal ? Carbon::parse($rkm->tanggal_awal) : null;
         $tanggalAkhir = $rkm->tanggal_akhir ? Carbon::parse($rkm->tanggal_akhir) : null;
         $durasi = ($tanggalAwal && $tanggalAkhir) ? $tanggalAwal->diffInDays($tanggalAkhir) : null;
     
+        // Ambil data kelasanalisis berdasarkan id_rkm
         $post = kelasanalisis::with('rkm.materi', 'rkm.perusahaan')->where('id_rkm', $id)->first();
     
+        // Jika data kelasanalisis ditemukan, konversi nilai ke float
         if ($post) {
-            // Konversi ke float string biar seragam
             $fields = [
                 'total_harga_jual', 'harga_modul_regular', 'harga_modul_regular_dollar', 'kurs_dollar',
                 'biaya_modul_regular', 'biaya_modul_regular_dollar', 'makan_siang', 'coffee_break',
                 'konsumsi', 'souvenir_satu', 'souvenir', 'pa_hotel', 'exam', 'pc_pax', 'pc_instruktur',
-                'pc', 'alat', 'fee_instruktur', 'total_fee_instruktur', 'nett_penjualan','konsumsi_instruktur'
+                'pc', 'alat', 'fee_instruktur', 'total_fee_instruktur', 'nett_penjualan'
             ];
+    
             foreach ($fields as $field) {
-                $post->{$field} = (string) (float) $post->{$field};
+                // Pastikan property ada sebelum dikonversi, supaya tidak error kalau null
+                if (isset($post->{$field})) {
+                    $post->{$field} = (float) $post->{$field};
+                }
             }
         }
     
-        // Kirim ke view hanya jika semua variabel ada nilainya
-        if ($rkm && $durasi !== null && $exam !== null && $post) {
-            return view('kelasanalisis.kalkulatorkelas', compact('rkm', 'durasi', 'exam', 'post'));
-        }
-    
-        // Jika ada yang null, kirim view tanpa data
-        return view('kelasanalisis.kalkulatorkelas');
+        // Kirim semua data ke view, biarkan blade yang handle pengecekan
+        return view('kelasanalisis.kalkulatorkelas', compact('rkm', 'durasi', 'exam', 'post'));
     }
     
+
 }
