@@ -270,7 +270,7 @@
             if(jabatan === 'SPV Sales'){
                 $('#kurs_dollar').prop('readonly', true);
                 $('#kurs').prop('readonly', true);
-            }else if(jabatan === 'Office Manager' || jabatan === 'GM' || jabatan === 'Koordinator Office'){
+            }else if(jabatan === 'Finance &amp; Accounting' ){
                 $('#kurs_dollar').prop('readonly', false);
                 $('#kurs').prop('readonly', false);
                 $('#total_rupiah').val('');
