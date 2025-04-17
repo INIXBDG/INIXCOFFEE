@@ -175,7 +175,7 @@
                                 <th scope="col">Jabatan</th>
                                 <th scope="col">Tipe</th>
                                 <th scope="col">Status</th>
-                                <th scope="col">Status</th>
+                                <th scope="col">Nama Barang</th>
                                 <th scope="col">Aksi</th>
                             </tr>
                         </thead>
