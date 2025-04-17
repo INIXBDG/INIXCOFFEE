@@ -25,6 +25,9 @@
     <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/timepicker/1.3.5/jquery.timepicker.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    {{-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"> --}}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
     {{-- <link rel="stylesheet" href="//cdn.datatables.net/2.0.3/css/dataTables.dataTables.min.css"> --}}
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
@@ -754,24 +757,13 @@
             .horizontal-ruler-labels .label:nth-child(odd) {
                 display: none;
             }
-            /* Memberikan efek aktif pada tombol ketika dipilih */
-            .btn-check:checked + .btn {
-                background-color: #6c88ba; /* Warna biru Bootstrap */
-                color: #fff;
-                border-color: #0d6efd;
-            }
-
-            /* Untuk transisi halus saat hover dan aktif */
-            .btn-outline-primary,
-            .btn-outline-warning,
-            .btn-outline-success {
-                transition: all 0.2s ease;
-            }
-
-            /* Optional: tambahkan shadow saat aktif */
-            .btn-check:checked + .btn {
-                box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-            }
+        }
+        input[type="radio"].btn-check:disabled + label.btn {
+            background-color: #bfc3c6 !important;
+            color: #fff !important;
+            border-color: #aeb6bd !important;
+            pointer-events: none !important;
+            opacity: 1 !important;
         }
     </style>
 </head>
@@ -902,32 +894,34 @@
                         {{-- <div class="d-flex flex-wrap w-100" id="absen" style="margin: 0px;"> --}}
                             <div class="row">
                                 <div class="btn-group w-100 flex-wrap" role="group" aria-label="Pilihan Absen">
-                                    <input type="radio" class="btn-check" name="keterangan" id="normal" value="Kantor" autocomplete="off">
+                                    <input type="radio" class="btn-check" name="keterangan" id="normal" value="Kantor" autocomplete="off" disabled>
                                     <label class="btn btn-outline-primary m-1" for="normal">
                                         <i class="bi bi-person-check"></i> Absen Normal
                                     </label>
 
-                                    <input type="radio" class="btn-check" name="keterangan" id="inhouse" value="Inhouse Bandung" autocomplete="off">
+                                    <input type="radio" class="btn-check" name="keterangan" id="inhouse" value="Inhouse Bandung" autocomplete="off" disabled>
                                     <label class="btn btn-outline-warning m-1" for="inhouse">
                                         <i class="bi bi-house-door"></i> Absen Inhouse
                                     </label>
 
-                                    <input type="radio" class="btn-check" name="keterangan" id="spj" value="SPJ" autocomplete="off">
+                                    <input type="radio" class="btn-check" name="keterangan" id="spj" value="SPJ" autocomplete="off" disabled>
                                     <label class="btn btn-outline-success m-1" for="spj">
                                         <i class="bi bi-truck"></i> Absen SPJ
                                     </label>
                                 </div>
                             </div>
-                            {{-- <div class="row">
-                                <div class="btn-group w-100 flex-wrap" role="group" aria-label="Pilihan Absen">
-                                    <input type="radio" class="btn-check" name="keterangan" id="normal" value="Kantor" autocomplete="off">
-                                    <label class="btn btn-outline-primary m-1" for="normal">Absen Normal</label>
-
-                                    <input type="radio" class="btn-check" name="keterangan" id="inhouse" value="Inhouse Bandung" autocomplete="off">
-                                    <label class="btn btn-outline-primary m-1" for="inhouse">Absen Inhouse Bandung Raya</label>
-
-                                    <input type="radio" class="btn-check" name="keterangan" id="spj" value="SPJ" autocomplete="off">
-                                    <label class="btn btn-outline-primary m-1" for="spj">Absen SPJ</label>
+                            {{-- <div class="row g-3" style="height:120px">
+                                <div class="col-6 d-flex align-items-center m-0">
+                                    <input type="radio" class="form-check-input custom-radio" name="keterangan" id="normal" autocomplete="off" value="Kantor">
+                                    <label class="form-check-label ms-2" for="normal">Absen Normal</label>
+                                </div>
+                                <div class="col-6 d-flex align-items-center m-0">
+                                    <input type="radio" class="form-check-input custom-radio" name="keterangan" id="inhouse" autocomplete="off" value="Inhouse Bandung">
+                                    <label class="form-check-label ms-2" for="inhouse">Absen Inhouse Bandung Raya</label>
+                                </div>
+                                <div class="col-6 d-flex align-items-center m-0">
+                                    <input type="radio" class="form-check-input custom-radio" name="keterangan" id="spj" autocomplete="off" value="SPJ">
+                                    <label class="form-check-label ms-2" for="spj">Absen SPJ</label>
                                 </div>
                             </div> --}}
                         {{-- </div> --}}
