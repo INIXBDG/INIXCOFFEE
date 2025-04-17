@@ -389,7 +389,7 @@
                                             <input readonly id="nama_materi" type="text"
                                                 placeholder="Masukan Nama Jabatan"
                                                 class="form-control @error('nama_materi') is-invalid @enderror"
-                                                name="nama_materi" value="{{ isset($post) ? $post->rkm->materi->nama_materi : ''}}"
+                                                name="nama_materi" value="{{ isset($rkm) ? $rkm->materi->nama_materi : ''}}"
                                                 autocomplete="nama_materi" autofocus>
                                             <input type="hidden" name="id_rkm" value="{{ isset($post) ? $post->rkm->id : ''}}">
                                             @error('nama_materi')
@@ -408,7 +408,7 @@
                                                 placeholder="Masukan Nama Jabatan"
                                                 class="form-control @error('nama_perusahaan') is-invalid @enderror"
                                                 name="nama_perusahaan"
-                                                value="{{ isset($post) ? $post->rkm->perusahaan->nama_perusahaan : ''}}"
+                                                value="{{ isset($rkm) ? $rkm->perusahaan->nama_perusahaan : ''}}"
                                                 autocomplete="nama_perusahaan" autofocus>
                                             @error('nama_perusahaan')
                                                 <span class="invalid-feedback" role="alert">
@@ -423,7 +423,7 @@
                                             class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Awal') }}</label>
                                         <div class="col-md-6">
                                             <input type="date" class="form-control"
-                                                value="{{ isset($post) ? $post->rkm->tanggal_awal : ''}}" name="tanggal_awal"
+                                                value="{{ isset($rkm) ? $rkm->tanggal_awal : ''}}" name="tanggal_awal"
                                                 id="tanggal_awal">
                                             @error('tanggal_awal')
                                                 <span class="invalid-feedback" role="alert">
@@ -438,7 +438,7 @@
                                             class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Akhir') }}</label>
                                         <div class="col-md-6">
                                             <input type="date" class="form-control"
-                                                value="{{ isset($post) ? $post->rkm->tanggal_akhir : ''}}" name="tanggal_akhir"
+                                                value="{{ isset($rkm) ? $rkm->tanggal_akhir : ''}}" name="tanggal_akhir"
                                                 id="tanggal_akhir">
                                             @error('tanggal_akhir')
                                                 <span class="invalid-feedback" role="alert">
@@ -492,7 +492,7 @@
                                         <div class="col-md-6">
                                             <input id="pax" type="text" placeholder="Pax"
                                                 class="form-control @error('pax') is-invalid @enderror" name="pax"
-                                                value="{{ isset($post) ? $post->pax : ''}}" autocomplete="pax" autofocus>
+                                                value="{{ isset($rkm) ? $rkm->pax : ''}}" autocomplete="pax" autofocus>
                                             @error('pax')
                                                 <span class="invalid-feedback" role="alert">
                                                     <strong>{{ $message }}</strong>
@@ -539,7 +539,6 @@
                                             @enderror
                                         </div>
                                     </div>
-
                                     <div class="row mb-3">
                                         <label for="nett_penjualan"
                                             class="col-md-4 col-form-label text-md-start">{{ __('Nett Penjualan') }}</label>
