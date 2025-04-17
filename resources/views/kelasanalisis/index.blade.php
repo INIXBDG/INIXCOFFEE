@@ -794,7 +794,7 @@
                                     `<td style="font-size: 14px;">${formatWithoutDecimals(item.analisisrkm.nett_penjualan ?? 0)}</td>`;
                             }
 
-                            if (jabatan == 'HRD' || jabatan === 'Koordinator Office') {
+                            if (jabatan == 'HRD' || jabatan === 'Koordinator Office' || jabatan == 'SPV Sales') {
                                 html += '<td style="font-size: 14px;">';
                                 html += '<div class="btn-group dropup">';
                                 html +=

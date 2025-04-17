@@ -64,7 +64,7 @@ class PengajuanBarangController extends Controller
             $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking')->latest()->get();
         }
         else{
-            $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking')->whereHas('karyawan', function($query) use ($user) {
+            $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')->whereHas('karyawan', function($query) use ($user) {
                 $query->where('id', $user);
             })->latest()->get();
         }

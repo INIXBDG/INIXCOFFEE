@@ -193,7 +193,7 @@
                                                 <table class="table table-bordered">
                                                     <thead>
                                                         <th>SPV Sales</th>
-                                                        <th>Office Manager</th>
+                                                        <th>Accounting</th>
                                                         <th>Technical Support</th>
                                                         <th>Status</th>
                                                     </thead>
@@ -211,7 +211,7 @@
                                                                 <td>{{ $approvalexam->spv_sales ? 'Approve' : 'Belum' }}</td>
                                                             @endif
 
-                                                            @if (auth()->user()->jabatan == 'Office Manager' || auth()->user()->jabatan == 'GM' || auth()->user()->jabatan == 'Koordinator Office')
+                                                            @if (auth()->user()->jabatan == 'Finance & Accounting')
                                                                 @if ($approvalexam->spv_sales == '1' && $approvalexam->office_manager == '0')
                                                                     <td><a href="{{ route('approvalexam', $approvalexam->id_exam) }}" class="btn btn-primary">Konfirmasi</a></td>
                                                                 @elseif ($approvalexam->office_manager == '1')
