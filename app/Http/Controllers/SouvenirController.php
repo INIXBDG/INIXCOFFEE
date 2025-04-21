@@ -79,11 +79,11 @@ class SouvenirController extends Controller
         // Validate form
         $this->validate($request, [
             'nama_souvenir'     => 'required',
-            'harga'     => 'required',
-            'stok'     => 'required',
-            'foto'     => 'nullable|image|mimes:jpeg,jpg,png|max:1024',
-            'min_harga_pelatihan'     => 'required',
-            'max_harga_pelatihan'     => 'required',
+            'harga'             => 'required',
+            'stok'              => 'required',
+            'foto'              => 'nullable|image|mimes:jpeg,jpg,png|max:1024',
+            'min_harga_pelatihan'=> 'required',
+            'max_harga_pelatihan'=> 'required',
         ]);
 
         // Remove dots from price inputs
@@ -120,15 +120,14 @@ class SouvenirController extends Controller
             }
 
             // Convert image to blob and limit size if necessary
-            $image = $image->encode($extension, 60); // Adjust quality (1-100)
+            $image = $image->encode($extension, 70); // Adjust quality (1-100)
             $fileContent = $image->getEncoded();
-            // dd(strlen($fileContent));
-            // Ensure blob content is within size limit
-            if (strlen($fileContent) > 65536) { // 64 KB limit
-                return back()->withErrors(['foto' => 'Gambar terlalu besar setelah dikompresi.']);
+
+            // Ensure blob content is within size limit (150 KB)
+            if (strlen($fileContent) > (150 * 1024)) { // 150 KB limit
+                return back()->withErrors(['foto' => 'Gambar terlalu besar setelah dikompresi. Maksimal ukuran adalah 300KB']);
             }
         }
-
 
         // Save to database
         Souvenir::create([
@@ -143,6 +142,7 @@ class SouvenirController extends Controller
 
         return redirect()->route('souvenir.index')->with(['success' => 'Data Berhasil Disimpan!']);
     }
+
     /**
      * show
      *
@@ -182,6 +182,7 @@ class SouvenirController extends Controller
      */
     public function update(Request $request, $id)
     {
+        // Debugging
         // dd($request->all());
         $stok = $request->stok + $request->new_stok;
         // return $stok;
@@ -200,9 +201,13 @@ class SouvenirController extends Controller
             ]);
 
         }else{
+            // Remove dots from price inputs
             $harga = str_replace('.', '', $request->harga);
             $min_harga_pelatihan = str_replace('.', '', $request->min_harga_pelatihan);
             $max_harga_pelatihan = str_replace('.', '', $request->max_harga_pelatihan);
+
+            // Calculate new stock
+            $stok = $request->stok + $request->new_stok;
 
             // Initialize the foto variable
             $foto = null;
@@ -233,37 +238,44 @@ class SouvenirController extends Controller
                 }
 
                 // Convert image to blob and limit size if necessary
-                $image = $image->encode($extension, 50); // Adjust quality (1-100)
+                $image = $image->encode($extension, 70); // Adjust quality (1-100)
                 $fileContent = $image->getEncoded();
-                // dd(strlen($fileContent));
+
                 // Ensure blob content is within size limit
-                if (strlen($fileContent) > 65536) { // 64 KB limit
-                    return back()->withErrors(['foto' => 'Gambar terlalu besar setelah dikompresi.']);
+                if (strlen($fileContent) > (150 * 1024)) { // 150 KB limit
+                    return back()->withErrors(['foto' => 'Gambar terlalu besar setelah dikompresi. Maksimal ukuran adalah 150KB']);
                 }
+
+                // Update foto variable
+                $foto = $filename;
             }
-            $post = souvenir::findOrFail($id);
-
-            catatansouvenir::create([
-                'id_souvenir'     => $id,
-                'catatan'     => $request->catatan,
-                'stok_perubahan'     => $request->new_stok,
-                'stok_terakhir'     => $post->stok,
-                'stok_terbaru'     => $stok,
-            ]);
-
-            // Update the souvenir record with the new data, including the image blob
-            $post->update([
-                'nama_souvenir'     => $request->nama_souvenir,
-                'harga'             => $harga,
-                'min_harga_pelatihan' => $min_harga_pelatihan,
-                'max_harga_pelatihan' => $max_harga_pelatihan,
-                'stok'              => $stok,
-                'foto_blob'         => $fileContent,  // Save the compressed image as blob here
-            ]);
         }
 
-        return redirect()->route('souvenir.index')->with(['success' => 'Data Berhasil Diubah!']);
+        // Find the souvenir by ID
+        $souvenir = souvenir::findOrFail($id);
+
+        // Update the souvenir data
+        $souvenir->update([
+            'nama_souvenir' => $request->nama_souvenir,
+            'harga' => $harga,
+            'stok' => $stok,
+            'foto' => $foto ?? $souvenir->foto, // Keep old foto if new one is not uploaded
+            'blob_foto' => $fileContent ?? $souvenir->blob_foto, // Keep old blob if new one is not uploaded
+            'min_harga_pelatihan' => $min_harga_pelatihan,
+            'max_harga_pelatihan' => $max_harga_pelatihan,
+        ]);
+
+        // Record stock change in catatansouvenir table
+        catatansouvenir::create([
+            'id_souvenir'     => $id,
+            'catatan'         => $request->catatan,
+            'stok_perubahan'  => $request->new_stok,
+            'stok_terakhir'   => $stok,
+        ]);
+
+        return redirect()->route('souvenir.index')->with(['success' => 'Data Berhasil Diperbarui!']);
     }
+
     /**
      * destroy
      *
