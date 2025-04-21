@@ -901,7 +901,7 @@
 
                                     <input type="radio" class="btn-check" name="keterangan" id="inhouse" value="Inhouse Bandung" autocomplete="off" disabled>
                                     <label class="btn btn-outline-warning m-1" for="inhouse">
-                                        <i class="bi bi-house-door"></i> Absen Inhouse
+                                        <i class="bi bi-house-door"></i> Absen Inhouse BDG
                                     </label>
 
                                     <input type="radio" class="btn-check" name="keterangan" id="spj" value="SPJ" autocomplete="off" disabled>
