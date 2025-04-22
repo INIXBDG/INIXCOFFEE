@@ -801,9 +801,11 @@
                                     '<button type="button" class="btn dropdown-toggle text-white" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
                                 html += '<div class="dropdown-menu">';
                                 if (item.status == 'Merah') {
+                                    if (jabatan == 'HRD') {
                                     html +=
                                         `<a class="dropdown-item" href="/analisisrkm/${item.id}/create" data-toggle="tooltip" title="Input Data"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Input Data</a>`;
-                                    html +=
+                                    }
+                                        html +=
                                         `<a class="dropdown-item" href="/kalkulator/analisis/${item.id}/kelas" data-toggle="tooltip" title="Input Data"><img src="{{ asset('icon/plus-square.svg') }}" class=""> Kalkulator Analisis</a>`;
                                 }
                                 // else if(analisisrkmmingguan){
@@ -811,10 +813,12 @@
                                 //     html += `<a class="dropdown-item disabled" href="/kelasanalisis/${item.id}/edit" data-toggle="tooltip" title="Edit Data"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Edit Data</a>`;
                                 // } 
                                 else {
+                                    if (jabatan == 'HRD') {
                                     html +=
                                         `<a class="dropdown-item disabled" href="/analisisrkm/${item.id}/create" data-toggle="tooltip" title="Input Data"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Input Data</a>`;
                                     html +=
                                         `<a class="dropdown-item" href="/kelasanalisis/${item.id}/edit" data-toggle="tooltip" title="Edit Data"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Edit Data</a>`;
+                                    }    
                                     html +=
                                         `<a class="dropdown-item" href="/kalkulator/analisis/${item.id}/kelas" data-toggle="tooltip" title="Input Data"><img src="{{ asset('icon/plus-square.svg') }}" class=""> Kalkulator Analisis</a>`;
                                 }
