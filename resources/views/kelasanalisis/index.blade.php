@@ -715,7 +715,7 @@
                     html +=
                         '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">Fee Instruktur / Hours (Rp.)</th>';
                     html += '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">Total (Rp.)</th>';
-                    if (jabatan === 'HRD' || jabatan === 'Koordinator Office') {
+                    if (jabatan === 'HRD' || jabatan === 'Koordinator Office' || jabatan === 'SPV Sales') {
                         html += '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">Aksi</th>';
                     }
                     html += '</tr>';

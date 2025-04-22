@@ -182,7 +182,7 @@ class examController extends Controller
                 'nama_materi' => $rkm->materi->nama_materi,
                 'nama_perusahaan' => $rkm->perusahaan->nama_perusahaan,
             ];
-            $Offman = karyawan::where('jabatan', 'Office Manager')->first();
+            $finance = karyawan::where('jabatan', 'Finance & Accounting')->first();
             $kooroff = karyawan::where('jabatan', 'Koordinator Office')->first();
             $Eduman = karyawan::where('jabatan', 'Education Manager')->first();
             $SPVSales = karyawan::where('jabatan', 'SPV Sales')->first();
@@ -193,7 +193,7 @@ class examController extends Controller
             }, [
                 $rkm->sales_key,
                 $Eduman->kode_karyawan,
-                $Offman->kode_karyawan,
+                $finance->kode_karyawan,
                 $kooroff->kode_karyawan,
                 $SPVSales->kode_karyawan,
                 $GM->kode_karyawan,
@@ -374,14 +374,14 @@ class examController extends Controller
             ]);
             $data = eksam::findOrfail($id);
             // return $data;
-            $Offman = karyawan::where('jabatan', 'Office Manager')->first();
+            $finance = karyawan::where('jabatan', 'Finance & Accounting')->first();
             $kooroff = karyawan::where('jabatan', 'Koordinator Office')->first();
             $GM = karyawan::where('jabatan', 'GM')->first();
 
             $users = array_map(function ($user) {
                 return $user === '-' ? null : $user;
             }, [
-                $Offman->kode_karyawan,
+                $finance->kode_karyawan,
                 $kooroff->kode_karyawan,
                 $GM->kode_karyawan,
                 $approval->sales
