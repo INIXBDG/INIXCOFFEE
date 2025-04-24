@@ -144,6 +144,12 @@
             function getDataRKM() {
                 var tahun = document.getElementById('tahun').value;
                 var bulan = document.getElementById('bulan').value;
+                const baseRkmApiUrl = @json(route('rkmAPI', ['year' => 'YEAR', 'month' => 'MONTH']));
+
+                var apiUrl = baseRkmApiUrl
+                    .replace('YEAR', tahun)
+                    .replace('MONTH', bulan);
+
                 // console.log(tahun);
                 // console.log(bulan);
 
@@ -151,7 +157,7 @@
                 $('#loadingModal').modal('show');
 
                 $.ajax({
-                    url: "http://127.0.0.1:8000/api/rkmAPI/" + tahun + "/" + bulan,
+                    url: apiUrl,
                     method: 'GET',
                     dataType: 'json',
                     beforeSend: function() {
@@ -185,7 +191,7 @@
                                 moment.locale('id');
                                 var startOfWeek = moment(weekData.start) // Mulai dari Senin
                                 var endOfWeek = startOfWeek.clone().add(4,
-                                'days'); // Akhiri di Jumat
+                                    'days'); // Akhiri di Jumat
                                 html += '<p class="card-title my-1">Periode : ' + moment(
                                     startOfWeek).format('DD MMMM YYYY') + ' - ' + moment(
                                     endOfWeek).format('DD MMMM YYYY') + '</p>';
