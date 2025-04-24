@@ -49,75 +49,40 @@
                                     value="{{ $rkm->tanggal_akhir }}">
                             </div>
                         </div>
+
+                        <form action="{{ route('storeSertifikat') }}" method="POST" enctype="multipart/form-data">
+                            @csrf
+
+                            <input type="hidden" name="id_rkm" value="{{ $rkm->id }}">
+
+                            <div class="mb-3">
+                                <label for="sertifikat" class="form-label">Upload Sertifikat (PDF)</label>
+                                <input type="file" name="sertifikat[]" class="form-control" multiple
+                                    accept="application/pdf" required>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">Upload</button>
+                        </form>
+
+                        @foreach ($rkm->sertifikatPDF as $sertifikat)
+                            <div class="card mb-4 shadow-sm">
+                                <div class="card-body">
+                                    <embed src="{{ Storage::url($sertifikat->pdf_path) }}" type="application/pdf"
+                                        width="100%" height="500px" style="border: 1px solid #ccc; border-radius: 8px;" />
+
+                                    <form method="POST" action="{{ route('deleteSertifikat') }}"
+                                        onsubmit="return confirm('Yakin ingin menghapus file ini?')">
+                                        @csrf
+                                        <input type="hidden" name="pdf_id" value="{{ $sertifikat->id }}">
+                                        <button type="submit" class="btn btn-danger btn-sm mt-2">Hapus PDF</button>
+                                    </form>
+                                </div>
+                            </div>
+                        @endforeach
+
+
                     </div>
                 </div>
-
-                {{-- Card Peserta --}}
-                @foreach ($rkm->registrasi as $reg)
-                    <div class="card mt-4 mb-8">
-                        <div class="card-body" id="card">
-                            <div class="row mb-3">
-                                <label class="col-md-4 col-form-label text-md-start">Nama Peserta</label>
-                                <div class="col-md-7">
-                                    <input readonly type="text" class="form-control" value="{{ $reg->peserta->nama }}">
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <label class="col-md-4 col-form-label text-md-start">Perusahaan</label>
-                                <div class="col-md-7">
-                                    <input readonly type="text" class="form-control"
-                                        value="{{ $reg->peserta->perusahaan->nama_perusahaan ?? 'Tidak Terdaftar' }}">
-                                </div>
-                            </div>
-                            <form action="{{ route('storeSertifikat') }}" method="POST" enctype="multipart/form-data">
-                                @csrf
-                                @method('POST')
-                                <div class="row mb-3">
-                                    <label class="col-md-4 col-form-label text-md-start">Upload Sertifikat (PDF)</label>
-                                    <div class="col-md-7">
-                                        <input type="file" class="form-control" name="sertifikat"
-                                            accept="application/pdf" required>
-                                        <input type="hidden" name="id_peserta" value="{{ $reg->peserta->id }}">
-                                        <input type="hidden" name="id_rkm" value="{{ $rkm->id }}">
-                                        <small class="text-muted">*File harus dalam format PDF. Maksimal ukuran file:
-                                            10MB</small>
-                                    </div>
-                                </div>
-                                <div class="row mb-0">
-                                    <div class="col-md-6 offset-md-4">
-                                        <button type="submit" class="btn click-primary">
-                                            {{ __('Simpan') }}
-                                        </button>
-                                    </div>
-                                </div>
-                            </form>
-                            @php
-                                $pdf = $rkm->sertifikatPdf->where('id_peserta', $reg->peserta->id)->first();
-                            @endphp
-
-                            {{-- Tampilkan PDF Jika Sudah Ada --}}
-                            @if ($pdf)
-                                <div class="mt-4 text-center">
-                                    <p class="fw-bold">PDF Sertifikat (Tersimpan):</p>
-                                    <embed src="{{ Storage::url($pdf->pdf_path) }}" type="application/pdf" width="100%"
-                                        height="400px" style="max-width: 500px;" />
-                                </div>
-
-                                <form method="POST" action="{{route('deleteSertifikat')}}"
-                                    onsubmit="return confirm('Yakin ingin menghapus file ini?')">
-                                    @csrf
-                                    <input type="hidden" name="pdf_id" value="{{ $pdf->id }}">
-                                    <button type="submit" class="btn btn-danger btn-sm mt-2">Hapus PDF</button>
-                                </form>
-                            @endif
-
-
-                        </div>
-                    </div>
-                    <div class="mb-5"></div>
-                @endforeach
-
             </div>
         </div>
     </div>

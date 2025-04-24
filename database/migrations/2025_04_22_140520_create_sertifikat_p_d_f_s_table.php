@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('sertifikat_p_d_f_s', function (Blueprint $table) {
             $table->id();
             $table->integer('id_rkm');
-            $table->integer('id_peserta');
             $table->string('pdf_name');
             $table->string('pdf_path');
             $table->timestamps();
