@@ -97,6 +97,14 @@ class RKM extends Model
     {
         return $this->hasMany(nilaifeedback::class, 'id_rkm', 'id');
     }
+
+    public function sertifikatPDF(){
+        return $this->hasMany(SertifikatPDF::class, 'id_rkm', 'id');
+    }
+
+    public function absensiPDF(){
+        return $this->hasOne(absensiPDF::class, 'id_rkm', 'id');
+    }
     
 
 }

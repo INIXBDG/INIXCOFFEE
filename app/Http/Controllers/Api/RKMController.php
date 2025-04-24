@@ -45,6 +45,7 @@ class RKMController extends Controller
                     ->whereBetween('r_k_m_s.tanggal_awal', [$start, $end])
                     // ->whereBetween('r_k_m_s.tanggal_akhir', [$start, $end])
                     ->select(
+                        'r_k_m_s.id',
                         'r_k_m_s.materi_key',
                         'r_k_m_s.ruang',
                         'r_k_m_s.metode_kelas',
@@ -58,6 +59,7 @@ class RKMController extends Controller
                         DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir') // Adding tanggal_akhir
                     )
                     ->groupBy(
+                        'r_k_m_s.id',
                         'r_k_m_s.materi_key',
                         'r_k_m_s.ruang',
                         'r_k_m_s.metode_kelas',
@@ -97,7 +99,6 @@ class RKMController extends Controller
 
         $json = $monthRanges;
         return new PostResource(true, 'List Detail Bulan RKM', $json);
-
     }
     public function getRKMRegist()
     {
