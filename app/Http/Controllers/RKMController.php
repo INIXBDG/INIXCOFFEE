@@ -775,7 +775,7 @@ class RKMController extends Controller
     {
         $pdfId = $request->input('pdf_id');
         $pdf = AbsensiPDF::where('id', $pdfId)->first();
-        
+
         if ($pdf) {
             if (Storage::exists($pdf->pdf_path)) {
                 Storage::delete($pdf->pdf_path);
@@ -807,36 +807,28 @@ class RKMController extends Controller
     public function storeSertifikat(Request $request)
     {
         $request->validate([
-            'sertifikat' => 'required|file|mimes:pdf|max:10240',
+            'sertifikat.*' => 'required|file|mimes:pdf|max:10240',
         ]);
 
-        $file = $request->file('sertifikat');
-        $fileName = 'sertifikat_peserta_rkm' . '_' . $request->id_rkm . '_' . $request->id_peserta . '_' . time() . '.' . $file->getClientOriginalExtension();
-        $path = $file->storeAs('public/sertifikat', $fileName);
+        if ($request->hasFile('sertifikat')) {
+            foreach ($request->file('sertifikat') as $file) {
+                $fileName = 'sertifikat_peserta_rkm' . '_' . $request->id_rkm . '_' . $request->id_peserta . '_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $path = $file->storeAs('public/sertifikat', $fileName);
 
-        $existingPdf = SertifikatPDF::where('id_peserta', $request->id_peserta)
-            ->where('id_rkm', $request->id_rkm)
-            ->first();
-
-        if ($existingPdf) {
-            if (Storage::exists($existingPdf->pdf_path)) {
-                Storage::delete($existingPdf->pdf_path);
+                // Simpan ke database sebagai entri baru
+                $pdf = new SertifikatPDF();
+                $pdf->id_rkm = $request->id_rkm;
+                $pdf->pdf_path = $path;
+                $pdf->pdf_name = $fileName;
+                $pdf->save();
             }
 
-            $existingPdf->pdf_path = $path;
-            $existingPdf->pdf_name = $fileName;
-            $existingPdf->save();
-        } else {
-            $pdf = new SertifikatPDF();
-            $pdf->id_rkm = $request->id_rkm;
-            $pdf->id_peserta = $request->id_peserta;
-            $pdf->pdf_path = $path;
-            $pdf->pdf_name = $fileName;
-            $pdf->save();
+            return back()->with('success', 'Semua sertifikat berhasil diupload.');
         }
 
-        return back()->with('success', 'Sertifikat berhasil diupload.');
+        return back()->with('error', 'Tidak ada file yang diupload.');
     }
+
 
     public function deleteSertifikat(Request $request)
     {
@@ -858,11 +850,13 @@ class RKMController extends Controller
         return back()->with('error', 'PDF sertifikat tidak ditemukan.');
     }
 
-    public function uploadPage(){
+    public function uploadPage()
+    {
         return view('rkm.uploadPage');
     }
 
-    public function dataPage(string $id){
+    public function dataPage(string $id)
+    {
         $array = explode('ixb', $id);
         $materi_key = $array[0];
         $bulans = $array[1];
@@ -915,5 +909,4 @@ class RKMController extends Controller
 
         return view('rkm.show', compact('rkm', 'comments', 'ids', 'params', 'materi_key', 'souvenir'));
     }
-
 }
