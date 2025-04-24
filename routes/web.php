@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Api\RKMController;
 use App\Http\Controllers\KelasAnalisisController;
+use App\Http\Controllers\RKMController as ControllersRKMController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
@@ -23,7 +25,7 @@ use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 
 Route::redirect('/', '/login');
 
-Auth::routes(['register'=> false, 'password.request' => false, 'password.email' =>  false, 'password.reset' =>  false, 'password.update' => false]);
+Auth::routes(['register' => false, 'password.request' => false, 'password.email' =>  false, 'password.reset' =>  false, 'password.update' => false]);
 
 Route::middleware('auth')->group(function () {
     Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
@@ -84,7 +86,7 @@ Route::put('/rkmUpdateInstruktur', [App\Http\Controllers\RKMController::class, '
 Route::get('/rkmEdit', [App\Http\Controllers\RKMController::class, 'editRKM'])->name('rkmEdit');
 Route::put('/rkmUpdate', [App\Http\Controllers\RKMController::class, 'updateRKM'])->name('rkmUpdate');
 
-Route::group(['middleware'=>'Admin'],function(){
+Route::group(['middleware' => 'Admin'], function () {
     Route::get('/user/register', [App\Http\Controllers\UserController::class, 'create'])->name('user.register');
     // Route::get('logs', [\Rap2hpoutre\LaravelLogViewer\LogViewerController::class, 'index']);
 
@@ -250,3 +252,12 @@ Route::get('pengajuanbarang/pdf/{id}', [App\Http\Controllers\PengajuanBarangCont
 Route::get('netsales/{id}/create', [App\Http\Controllers\netSalesController::class, 'create']);
 
 Route::get('kalkulator/analisis/{id}/kelas', [KelasAnalisisController::class, 'kalkulatorview'])->name('kalkulatorview'); // Return view kalkulator kelas analisis
+
+Route::get('/rkm/upload/page', [ControllersRKMController::class, 'uploadPage'])->name('uploadPage');
+Route::get('/rkm/data/page', [ControllersRKMController::class, 'dataPage'])->name('dataPage');
+Route::get('/rkm/uploadAbsensi/{id}', [ControllersRKMController::class, 'uploadAbsensi'])->name('uploadAbsensi');
+Route::post('/rkm/store/absensi', [ControllersRKMController::class, 'storeAbsensi'])->name('storeAbsensi');
+Route::post('/rkm/delete/absensi', [ControllersRKMController::class, 'deleteAbsensi'])->name('deleteAbsensi');
+Route::get('/rkm/uploadSertifikat/{id}', [ControllersRKMController::class, 'uploadSertifikat'])->name('uploadSertifikat');
+Route::post('/rkm/store/sertifikat', [ControllersRKMController::class, 'storeSertifikat'])->name('storeSertifikat');
+Route::post('/rkm/delete/sertifikat', [ControllersRKMController::class, 'deleteSertifikat'])->name('deleteSertifikat');

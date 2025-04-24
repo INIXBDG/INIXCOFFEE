@@ -442,7 +442,7 @@
 </head>
 <body>
             @if(session('success'))
-                <div class="alert alert-success alert-dismissible fade show m-0 alert-custom" role="alert">
+                <div class="alert alert-success alert-dismissible fade show m-0 alert-custom" role="alert" id="success-alert">
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
@@ -459,9 +459,17 @@
                     &nbsp {{ session('success') }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
+                <script>
+                    setTimeout(function() {
+                        let alert = document.getElementById('success-alert');
+                        if (alert) {
+                            alert.remove();
+                        }
+                    }, 5000); // 5000ms = 5 detik
+                </script>
             @endif
             @if(session('error'))
-                <div class="alert alert-danger alert-dismissible fade show m-0 alert-custom" role="alert">
+                <div class="alert alert-danger alert-dismissible fade show m-0 alert-custom" role="alert" id="error-alert">
                     <svg
                         class="error-svg"
                         xmlns="http://www.w3.org/2000/svg"
@@ -479,6 +487,14 @@
                     &nbsp {{ session('error') }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
+                <script>
+                    setTimeout(function() {
+                        let alert = document.getElementById('error-alert');
+                        if (alert) {
+                            alert.remove();
+                        }
+                    }, 5000); // 5000ms = 5 detik
+                </script>
             @endif
             @if($errors->any())
                 <div class="alert alert-danger alert-dismissible fade show m-0 alert-custom" role="alert">
