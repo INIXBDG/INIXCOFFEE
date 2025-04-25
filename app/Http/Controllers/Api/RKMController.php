@@ -11,14 +11,12 @@ use App\Models\karyawan;
 use Illuminate\Support\Carbon;
 use App\Models\Perusahaan;
 use App\Http\Resources\PostResource;
+use App\Models\AbsensiPDF;
 use App\Models\Nilaifeedback;
 
 class RKMController extends Controller
 {
-    public function index()
-    {
-        
-    }
+    public function index() {}
     public function showMonth($year, $month)
     {
         $bulan = $month + 1;
@@ -85,11 +83,12 @@ class RKMController extends Controller
                         $row->sales = Karyawan::whereIn('kode_karyawan', $sales_ids)->get();
                         $row->perusahaan = Perusahaan::whereIn('id', $perusahaan_ids)->get();
                     }
+                    $absensiExists = AbsensiPDF::where('id_rkm', $row->id)->exists();
+                    $row->absensi_status = $absensiExists ? 'green' : 'red';
                 }
                 // return $rows;
 
                 $weekRanges[] = ['start' => $start, 'end' =>  $end, 'data' => $rows];
-
             }
 
             $monthRanges[] = ['month' => $startOfMonth->translatedFormat('F-Y'), 'weeksData' => $weekRanges];
@@ -111,13 +110,13 @@ class RKMController extends Controller
             ->join('perusahaans', 'r_k_m_s.perusahaan_key', '=', 'perusahaans.id')
             // ->whereBetween('r_k_m_s.tanggal_awal', [$startDate, $endDate])
             // ->whereBetween('r_k_m_s.tanggal_akhir', [$startDate, $endDate])
-            ->where('materis.nama_materi', 'LIKE', '%'.request('q').'%')
+            ->where('materis.nama_materi', 'LIKE', '%' . request('q') . '%')
             ->select('r_k_m_s.*', 'perusahaans.nama_perusahaan')
             ->paginate(10);
         return response()->json($rows);
 
 
-            // $perusahaans = Perusahaan::where('nama_perusahaan', 'LIKE', '%'.request('q').'%')->paginate(10);
+        // $perusahaans = Perusahaan::where('nama_perusahaan', 'LIKE', '%'.request('q').'%')->paginate(10);
     }
 
     public function getRKMDetail(Request $request)
@@ -202,7 +201,4 @@ class RKMController extends Controller
             return response()->json(['rkm' => null]);
         }
     }
-
-
-
 }

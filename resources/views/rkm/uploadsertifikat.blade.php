@@ -8,7 +8,7 @@
                 {{-- Card Informasi Umum --}}
                 <div class="card mt-4">
                     <div class="card-body" id="card">
-                        <a href="{{ route('rkm.index') }}" class="btn click-primary my-2">
+                        <a href="{{ route('uploadPage') }}" class="btn click-primary my-2">
                             <img src="{{ asset('icon/arrow-left.svg') }}" class="img-responsive" width="20px"> Back
                         </a>
                         <h5 class="card-title text-center mb-4">{{ __('Upload Sertifikat Peserta') }}</h5>
