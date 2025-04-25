@@ -247,16 +247,24 @@
                                             } else {
                                                 var kelas = "vir"
                                             }
-                                            if (rkm.status_all == '0') {
-                                                html +=
-                                                    '<tr style="background-color: rgba(255, 0, 0, 0.5); color: #fff">';
+                                            var rowStyle = '';
+                                            if (rkm.absensi_status === 'green' || rkm
+                                                .absensi_pdf) {
+                                                rowStyle =
+                                                    'background-color: rgba(0, 255, 0, 0.4); color: #000';
+                                            } else if (rkm.status_all == '0') {
+                                                rowStyle =
+                                                    'background-color: rgba(255, 0, 0, 0.5); color: #fff';
                                             } else if (rkm.status_all == '1') {
-                                                html +=
-                                                    '<tr style="background-color: rgba(0, 0, 255, 0.5); color: #fff">';
+                                                rowStyle =
+                                                    'background-color: rgba(0, 0, 255, 0.5); color: #fff';
                                             } else {
-                                                html +=
-                                                    '<tr style="background-color: rgba(0, 0, 0, 0.5); color: #fff">';
+                                                rowStyle =
+                                                    'background-color: rgba(0, 0, 0, 0.5); color: #fff';
                                             }
+
+                                            html += `<tr style="${rowStyle}">`;
+
                                             html += '<td>' + (index + 1) + '</td>';
                                             html += '<td>' + rkm.materi.nama_materi +
                                                 '</td>';

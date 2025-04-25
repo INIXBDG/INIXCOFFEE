@@ -694,7 +694,6 @@ class RKMController extends Controller
         return response()->file($path);
     }
 
-
     public function uploadAbsensi(string $id)
     {
         $array = explode('ixb', $id);
