@@ -811,7 +811,7 @@ class RKMController extends Controller
 
         if ($request->hasFile('sertifikat')) {
             foreach ($request->file('sertifikat') as $file) {
-                $fileName = 'sertifikat_peserta_rkm' . '_' . $request->id_rkm . '_' . $request->id_peserta . '_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $fileName = 'sertifikat_peserta_rkm' . '_' . $request->id_rkm . '_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
                 $path = $file->storeAs('public/sertifikat', $fileName);
 
                 // Simpan ke database sebagai entri baru
