@@ -33,9 +33,9 @@ class RKM extends Model
         'isi_pax'
     ];
 
-    public function netSales()
+    public function perhitunganNetSales()
     {
-        return $this->hasOne(netSales::class, 'id_rkm', 'id');
+        return $this->hasOne(perhitunganNetSales::class, 'id_rkm', 'id');
     }    
 
     public function sales()

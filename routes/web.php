@@ -3,6 +3,8 @@
 use App\Http\Controllers\Api\RKMController;
 use App\Http\Controllers\KelasAnalisisController;
 use App\Http\Controllers\RKMController as ControllersRKMController;
+use App\Http\Controllers\aprovedNetSalesController;
+use App\Http\Controllers\netSalesController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
@@ -48,7 +50,7 @@ Route::get('/datarkm/{tahun}/{bulan}', [App\Http\Controllers\PerusahaanControlle
 // Route::post('/change-year', 'HomeController@changeYear')->name('changeYear');
 // test
 
-Route::get('netsales/{year}', [App\Http\Controllers\netSalesController::class, 'getRkmDataPerBulanPerMinggu']);
+Route::get('paymantAdvance/{year}', [App\Http\Controllers\netSalesController::class, 'getRkmDataPerBulanPerMinggu']);
 Route::resource('/comment', \App\Http\Controllers\CommentController::class);
 
 Route::resource('/perusahaan', \App\Http\Controllers\PerusahaanController::class);
@@ -70,7 +72,7 @@ Route::resource('/pengajuanbarang', \App\Http\Controllers\PengajuanBarangControl
 Route::resource('/suratperjalanan', \App\Http\Controllers\SuratPerjalananController::class);
 Route::resource('/rekapitulasiabsen', \App\Http\Controllers\RekapitulasiAbsenController::class);
 Route::resource('/kelasanalisis', \App\Http\Controllers\KelasAnalisisController::class);
-Route::resource('/netsales', \App\Http\Controllers\netSalesController::class);
+Route::resource('/paymantAdvance', \App\Http\Controllers\netSalesController::class)->except(['show']);
 Route::resource('/target', \App\Http\Controllers\targetController::class);
 Route::resource('/outstanding', \App\Http\Controllers\OutstandingController::class);
 Route::resource('/tunjangan', \App\Http\Controllers\TunjanganController::class);
@@ -251,7 +253,7 @@ Route::get('pengajuanbarang/uploadinvoice/{id}', [App\Http\Controllers\Pengajuan
 Route::put('pengajuanbarang/updateinvoice/{id}', [App\Http\Controllers\PengajuanBarangController::class, 'updateInvoice'])->name('updateInvoice');
 Route::put('pengajuanbarang/updatebarang/{id}', [App\Http\Controllers\PengajuanBarangController::class, 'updateBarang'])->name('pengajuanbarang.updateBarang');
 Route::get('pengajuanbarang/pdf/{id}', [App\Http\Controllers\PengajuanBarangController::class, 'exportPDF'])->name('pengajuanbarang.pdf');
-Route::get('netsales/{id}/create', [App\Http\Controllers\netSalesController::class, 'create']);
+Route::get('paymantAdvance/{id}/create', [App\Http\Controllers\netSalesController::class, 'create']);
 
 Route::get('kalkulator/analisis/{id}/kelas', [KelasAnalisisController::class, 'kalkulatorview'])->name('kalkulatorview'); // Return view kalkulator kelas analisis
 
@@ -263,3 +265,9 @@ Route::post('/rkm/delete/absensi', [ControllersRKMController::class, 'deleteAbse
 Route::get('/rkm/uploadSertifikat/{id}', [ControllersRKMController::class, 'uploadSertifikat'])->name('uploadSertifikat');
 Route::post('/rkm/store/sertifikat', [ControllersRKMController::class, 'storeSertifikat'])->name('storeSertifikat');
 Route::post('/rkm/delete/sertifikat', [ControllersRKMController::class, 'deleteSertifikat'])->name('deleteSertifikat');
+Route::get('/paymantAdvance/detail/{id}', [netSalesController::class, 'detail'])->name('netsales.detail');
+Route::post('/paymantAdvance/detail/data/get', [netSalesController::class, 'dataDetail'])->name('netsales.data.detail.get');
+Route::post('/paymantAdvance/aproved', [aprovedNetSalesController::class, 'aproved'])->name('netsales.aproved');
+Route::get('/paymantAdvance/edit/{id}', [netSalesController::class,'edit'])->name('netSales.edit.index');
+Route::post('/paymantAdvance/data/get/', [netSalesController::class, 'dataEdit'])->name('netSales.edit.get');
+Route::post('/paymantAdvance/data/update', [netSalesController::class, 'updateNetSales'])->name('netSales.update');

@@ -222,7 +222,7 @@ class PengajuanBarangController extends Controller
         $data = PengajuanBarang::with('karyawan', 'tracking')->findOrFail($id);
         $detail = detailPengajuanBarang::where('id_pengajuan_barang', $id)->get();
         $tracking = tracking_pengajuan_barang::where('id_pengajuan_barang', $id)->get();
-        return view('pengajuanbarang.show', compact('data', 'detail', 'tracking'));
+        return view('netSales.detail', compact('data', 'detail', 'tracking'));
     }
 
     /**
