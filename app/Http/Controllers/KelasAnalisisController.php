@@ -23,16 +23,22 @@ class KelasAnalisisController extends Controller
     {
         return view('kelasanalisis.index');
     }
-    public function getRkmDataPerBulanPerMinggu($year)
+    public function getRkmDataPerBulanPerMinggu($year, $monthStart, $monthEnd)
     {
-        Carbon::setLocale('id'); 
-        $startDate = CarbonImmutable::create($year, 1, 1);
-        $endDate = CarbonImmutable::create($year, 12, 1)->endOfMonth();
+        Carbon::setLocale('id');
+
+        // Validasi sederhana
+        if ($monthStart < 1 || $monthStart > 12 || $monthEnd < 1 || $monthEnd > 12 || $monthStart > $monthEnd) {
+            return new PostResource(false, 'Parameter bulan tidak valid', null);
+        }
+
+        $startDate = CarbonImmutable::create($year, $monthStart, 1);
+        $endDate = CarbonImmutable::create($year, $monthEnd, 1)->endOfMonth();
 
         $monthRanges = [];
         $date = $startDate;
 
-        while ($date->month <= $endDate->month && $date->year <= $endDate->year) {
+        while ($date->lte($endDate)) {
             $startOfMonth = $date->startOfMonth();
             $endOfMonth = $date->endOfMonth();
             $monthName = $startOfMonth->translatedFormat('F');
@@ -44,7 +50,7 @@ class KelasAnalisisController extends Controller
             while ($startOfWeek->lte($endOfMonth)) {
                 $endOfWeek = $startOfWeek->copy()->endOfWeek();
 
-                // Kondisi untuk menghindari data duplikat di antara dua bulan
+                // Hindari minggu dari luar bulan target
                 if ($startOfWeek->month != $date->month) {
                     $startOfWeek = $startOfWeek->addWeek();
                     $weekNumber++;
@@ -54,17 +60,13 @@ class KelasAnalisisController extends Controller
                 $start = $startOfWeek->format('Y-m-d');
                 $end = $endOfWeek->format('Y-m-d');
 
-                // Fetch RKM data only for the specified week
                 $rkm = RKM::with(['materi', 'analisisrkm', 'analisisrkm.analisisrkmmingguan'])
                     ->where('status', '0')
                     ->whereYear('tanggal_awal', $year)
                     ->whereBetween('tanggal_awal', [$start, $end])
                     ->get();
 
-                // Check if all items have status "Hijau"
                 $allHijau = $rkm->isNotEmpty() && $rkm->every(function ($item) {
-                    // dd($item->analisisrkm);
-                    // return $item;
                     return $item->analisisrkm ? 'Hijau' : 'Merah' == 'Hijau';
                 });
 
@@ -75,20 +77,19 @@ class KelasAnalisisController extends Controller
                     $tanggalAwal = Carbon::parse($item->tanggal_awal);
                     $tanggalAkhir = Carbon::parse($item->tanggal_akhir);
                     $total_harga_jual = floatval($item->harga_jual) * intval($item->pax);
-
                     $analisisRkmData = $item->analisisrkm ? $item->analisisrkm->toArray() : null;
 
                     return [
-                        'id'              => $item->id,
-                        'nama_materi'     => $item->materi->nama_materi,
-                        'pax'             => $item->pax,
-                        'harga_jual'      => $item->harga_jual,
-                        'total_harga_jual' => $total_harga_jual,
-                        'tanggal_awal'    => $tanggalAwal->translatedFormat('d F Y'),
-                        'tanggal_akhir'   => $tanggalAkhir->translatedFormat('d F Y'),
-                        'durasi'          => $tanggalAwal->diffInDays($tanggalAkhir) + 1,
-                        'status'          => $status,
-                        'analisisrkm'     => $analisisRkmData
+                        'id'                => $item->id,
+                        'nama_materi'       => $item->materi->nama_materi,
+                        'pax'               => $item->pax,
+                        'harga_jual'        => $item->harga_jual,
+                        'total_harga_jual'  => $total_harga_jual,
+                        'tanggal_awal'      => $tanggalAwal->translatedFormat('d F Y'),
+                        'tanggal_akhir'     => $tanggalAkhir->translatedFormat('d F Y'),
+                        'durasi'            => $tanggalAwal->diffInDays($tanggalAkhir) + 1,
+                        'status'            => $status,
+                        'analisisrkm'       => $analisisRkmData
                     ];
                 });
 
@@ -102,7 +103,6 @@ class KelasAnalisisController extends Controller
                     'data'                 => $formattedItems->isEmpty() ? null : $formattedItems,
                 ];
 
-                // Move to the next week
                 $startOfWeek = $startOfWeek->addWeek();
                 $weekNumber++;
             }
@@ -112,12 +112,9 @@ class KelasAnalisisController extends Controller
                 'weeksData' => $weekRanges
             ];
 
-            // Move to the next month
             $date = $date->addMonth();
         }
-
-        $json = $monthRanges;
-        return new PostResource(true, 'List Detail Bulan RKM', $json);
+        return new PostResource(true, 'List Detail Bulan RKM', $monthRanges);
     }
 
     public function create($id)
@@ -585,28 +582,44 @@ class KelasAnalisisController extends Controller
     {
         // Ambil data RKM, kalau tidak ketemu maka akan error 404
         $rkm = RKM::with('perusahaan', 'materi')->findOrFail($id);
-    
+
         // Ambil data exam (bisa null)
         $examData = eksam::where('id_rkm', $rkm->id)->first();
         $exam = $examData ? round($examData->total, 0) : null;
-    
+
         // Hitung durasi dari tanggal_awal ke tanggal_akhir
         $tanggalAwal = $rkm->tanggal_awal ? Carbon::parse($rkm->tanggal_awal) : null;
         $tanggalAkhir = $rkm->tanggal_akhir ? Carbon::parse($rkm->tanggal_akhir) : null;
         $durasi = ($tanggalAwal && $tanggalAkhir) ? $tanggalAwal->diffInDays($tanggalAkhir) : null;
-    
+
         // Ambil data kelasanalisis berdasarkan id_rkm
         $post = kelasanalisis::with('rkm.materi', 'rkm.perusahaan')->where('id_rkm', $id)->first();
-    
+
         // Jika data kelasanalisis ditemukan, konversi nilai ke float
         if ($post) {
             $fields = [
-                'total_harga_jual', 'harga_modul_regular', 'harga_modul_regular_dollar', 'kurs_dollar',
-                'biaya_modul_regular', 'biaya_modul_regular_dollar', 'makan_siang', 'coffee_break',
-                'konsumsi', 'souvenir_satu', 'souvenir', 'pa_hotel', 'exam', 'pc_pax', 'pc_instruktur',
-                'pc', 'alat', 'fee_instruktur', 'total_fee_instruktur', 'nett_penjualan'
+                'total_harga_jual',
+                'harga_modul_regular',
+                'harga_modul_regular_dollar',
+                'kurs_dollar',
+                'biaya_modul_regular',
+                'biaya_modul_regular_dollar',
+                'makan_siang',
+                'coffee_break',
+                'konsumsi',
+                'souvenir_satu',
+                'souvenir',
+                'pa_hotel',
+                'exam',
+                'pc_pax',
+                'pc_instruktur',
+                'pc',
+                'alat',
+                'fee_instruktur',
+                'total_fee_instruktur',
+                'nett_penjualan'
             ];
-    
+
             foreach ($fields as $field) {
                 // Pastikan property ada sebelum dikonversi, supaya tidak error kalau null
                 if (isset($post->{$field})) {
@@ -614,10 +627,8 @@ class KelasAnalisisController extends Controller
                 }
             }
         }
-    
+
         // Kirim semua data ke view, biarkan blade yang handle pengecekan
         return view('kelasanalisis.kalkulatorkelas', compact('rkm', 'durasi', 'exam', 'post'));
     }
-    
-
 }

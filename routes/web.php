@@ -226,7 +226,7 @@ Route::post('/absensi/manual', [\App\Http\Controllers\AbsensiKaryawanController:
 Route::get('/cekip', [App\Http\Controllers\AbsensiKaryawanController::class, 'cekip'])->name('cekip');
 Route::get('/rkm/{id}/registform', [App\Http\Controllers\RKMController::class, 'createRegistForm'])->name('createRegistForm');
 Route::put('/rkm/{id}/registformupdate', [App\Http\Controllers\RKMController::class, 'uploadRegistForm'])->name('uploadRegistForm');
-Route::get('analisisrkm/{year}', [App\Http\Controllers\KelasAnalisisController::class, 'getRkmDataPerBulanPerMinggu']);
+Route::get('analisisrkm/{year}/{monthStart}/{monthEnd}', [App\Http\Controllers\KelasAnalisisController::class, 'getRkmDataPerBulanPerMinggu']);
 Route::get('analisisrkm/{id}/create', [App\Http\Controllers\KelasAnalisisController::class, 'create']);
 Route::get('analisisrkm/{year}/{month}/{week}', [App\Http\Controllers\KelasAnalisisController::class, 'getRkmDataByMonthAndWeek']);
 Route::post('analisisrkm/{year}/{month}/{week}/post', [App\Http\Controllers\KelasAnalisisController::class, 'postAnalisisMingguan']);
