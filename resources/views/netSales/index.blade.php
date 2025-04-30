@@ -743,8 +743,7 @@
                         html += `<a class="dropdown-item disabled" href="/paymantAdvance/${item.id}/create" data-toggle="tooltip" title="Input Data" disabled><img src="{{ asset('icon/clipboard-primary.svg') }}"> Input Data</a>`;  
                     }
                 } else {
-                    html += `<a class="dropdown-item disabled" href="/paymantAdvance/${item.id}/create" data-toggle="tooltip" title="Input Data"><img src="{{ asset('icon/clipboard-primary.svg') }}"> Input Data</a>`;
-                    html += `<a class="dropdown-item" href="/paymantAdvance/detail/${item.id}" data-toggle="tooltip" title="Detail"><i class="fa-solid fa-magnifying-glass" style="font-size: 20px;"></i> Detail</a>`;
+                    html += `<a class="dropdown-item" href="/paymantAdvance/detail/${item.id}" data-toggle="tooltip" title="Detail"><img src="{{ asset('icon/clipboard-primary.svg') }}"> Detail</a>`;
                     
                     if (sales.level_status === null || sales.level_status === 'Belum disetujui') {
                         if (jabatan === "SPV Sales") {
@@ -798,7 +797,7 @@
                         }
                     }
                     const editUrlBase = "{{ url('/paymantAdvance/edit') }}/";
-                    html += `<a class="dropdown-item" href="${editUrlBase}${sales.id}" data-toggle="tooltip" title="Edit Data"><i class="fa-solid fa-pen-to-square"></i> Edit Data</a>`;
+                    html += `<a class="dropdown-item" href="${editUrlBase}${sales.id}" data-toggle="tooltip" title="Edit Data"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Edit Data</a>`;
                 }
                 html += '</div></div></td>';
             }
