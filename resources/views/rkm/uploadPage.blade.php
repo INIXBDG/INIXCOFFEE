@@ -144,7 +144,7 @@
             function getDataRKM() {
                 var tahun = document.getElementById('tahun').value;
                 var bulan = document.getElementById('bulan').value;
-                const baseRkmApiUrl = @json(route('rkmAPI', ['year' => 'YEAR', 'month' => 'MONTH']));
+                const baseRkmApiUrl = @json(route('RKMAPIabsensi', ['year' => 'YEAR', 'month' => 'MONTH']));
 
                 var apiUrl = baseRkmApiUrl
                     .replace('YEAR', tahun)

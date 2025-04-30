@@ -35,7 +35,7 @@
                             <hr>
                             <div class="card">
                                 <div class="card-body">
-                                    <h5 class="card-title">Status Approvell</h5>
+                                    <h5 class="card-title">Status Approval</h5>
                                     <table class="table table-striped">
                                         <thead>
                                             <tr>
