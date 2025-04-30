@@ -27,8 +27,8 @@
                                         </div>
                                     </div>
                                     <table class="table table-striped">
-                                    <tbody id="tbody_content"></tbody>
-                                </table>
+                                        <tbody id="tbody_content"></tbody>
+                                    </table>
 
                                 </div>
                             </div>
@@ -232,8 +232,8 @@
             },
             dataType: 'json',
             success: function(response) {
-                let content_utama  = $('#content_data_utama');
-                let tbody_content  = $('#tbody_content');
+                let content_utama = $('#content_data_utama');
+                let tbody_content = $('#tbody_content');
                 let tbody_approved = $('#tbody_approved');
 
                 content_utama.empty();
@@ -347,18 +347,35 @@
                     `);
                 }
 
-                        tbody_content.empty();
-                        if (!response.dataNetSales || Object.keys(response.dataNetSales).length === 0) {
-                            tbody_content.append(`
+                tbody_content.empty();
+                if (!response.dataNetSales || Object.keys(response.dataNetSales).length === 0) {
+                    tbody_content.append(`
                                 <tr>
                                     <td colspan="2">Tidak ada data</td>
                                 </tr>
                             `);
-                        } else {
-                            let data = response.dataNetSales;
-                            let formatRupiah = (angka) => `Rp${new Intl.NumberFormat('id-ID').format(angka)}`;
+                } else {
+                    let data = response.dataNetSales;
+                    let formatRupiah = (angka) => `Rp${new Intl.NumberFormat('id-ID').format(angka)}`;
 
-                            tbody_content.append(`
+                    let tanggalObj = new Date(data.tgl_pa);
+
+                    const hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                    const bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+                    ];
+
+                    let namaHari = hari[tanggalObj.getDay()];
+                    let tanggal = tanggalObj.getDate();
+                    let namaBulan = bulan[tanggalObj.getMonth()];
+                    let tahun = tanggalObj.getFullYear();
+
+                    let jam = tanggalObj.getHours().toString().padStart(2, '0');
+                    let menit = tanggalObj.getMinutes().toString().padStart(2, '0');
+
+                    let tglPaFormatted = `${namaHari}, ${tanggal} ${namaBulan} ${tahun} ${jam}:${menit}`;
+
+                    tbody_content.append(`
                                 <tr><th>Transportasi</th><td>${formatRupiah(data.transportasi)}</td></tr>
                                 <tr><th>Penginapan</th><td>${formatRupiah(data.penginapan)}</td></tr>
                                 <tr><th>Fresh Money</th><td>${formatRupiah(data.fresh_money)}</td></tr>
@@ -366,10 +383,10 @@
                                 <tr><th>Souvenir</th><td>${formatRupiah(data.souvenir)}</td></tr>
                                 <tr><th>Harga Penawaran</th><td>${formatRupiah(data.harga_penawaran)}</td></tr>
                                 <tr><th>Total Payment Advance</th><td>${formatRupiah(data.total)}</td></tr>
-                                <tr><th>Tanggal Payment Advance</th><td>${data.tgl_pa}</td></tr>
+                                <tr><th>Tanggal Payment Advance</th><td>${tglPaFormatted}</td></tr>
                                 <tr><th>Tipe Pembayaran</th><td>${data.tipe_pembayaran}</td></tr>
                             `);
-                        }
+                }
                 tbody_approved.empty();
                 if (!response.dataApproved || response.dataApproved.length === 0) {
                     tbody_approved.append(`
@@ -383,10 +400,28 @@
                     let no = 1;
                     response.dataApproved.forEach(function(data) {
                         let status = data.status === 1 ? "Disetujui" : (data.status === 0 ? "Ditolak" : "Belum diketahui");
+
+                        let tanggalObj = new Date(data.tanggal);
+
+                        const hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                        const bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                            'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+                        ];
+
+                        let namaHari = hari[tanggalObj.getDay()];
+                        let tanggal = tanggalObj.getDate();
+                        let namaBulan = bulan[tanggalObj.getMonth()];
+                        let tahun = tanggalObj.getFullYear();
+
+                        let jam = tanggalObj.getHours().toString().padStart(2, '0');
+                        let menit = tanggalObj.getMinutes().toString().padStart(2, '0');
+
+                        let tanggalLengkap = `${namaHari}, ${tanggal} ${namaBulan} ${tahun} ${jam}:${menit}`;
+
                         tbody_approved.append(`
                             <tr>
                                 <td>${no++}</td>
-                                <td>${data.tanggal}</td>
+                                <td>${tanggalLengkap}</td>
                                 <td>${status}</td>
                                 <td>${data.keterangan}</td>
                             </tr>

@@ -233,7 +233,7 @@ class netSalesController extends Controller
         $dataMateri = Materi::where('id', $dataRKM->materi_key)->first();
         $dataNetSales = perhitunganNetSales::where('id_rkm', $dataRKM->id)->first();
         $dataApproved = aprovedNetSales::where('id_NetSales', $dataNetSales->id)->get();
-        $mulai = Carbon::parse($dataRKM->tanggal_mulai)->timezone('Asia/Jakarta');
+        $mulai = Carbon::parse($dataRKM->tanggal_awal)->timezone('Asia/Jakarta');
         $akhir = Carbon::parse($dataRKM->tanggal_akhir)->timezone('Asia/Jakarta');
     
         $arrayRKM = [
@@ -244,7 +244,7 @@ class netSalesController extends Controller
             'harga_jual'      => $dataRKM->harga_jual,
             'pax'             => $dataRKM->pax,
             'metode_kelas'    => $dataRKM->metode_kelas,
-            'durasi_kelas'    => $mulai->diffInDays($akhir),
+            'durasi_kelas' => $mulai->startOfDay()->diffInDays($akhir->startOfDay()) + 1,
         ];
     
         $arrayNetSales = [
