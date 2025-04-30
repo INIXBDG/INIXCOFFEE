@@ -1528,30 +1528,6 @@
                                                                 </div>
                                                             </div>
                                                         @endcan
-                                                        @if (auth()->user()->jabatan == 'Adm Sales' ||
-                                                                auth()->user()->jabatan == 'Sales' ||
-                                                                auth()->user()->jabatan == 'SPV Sales' ||
-                                                                auth()->user()->jabatan == 'GM' ||
-                                                                auth()->user()->jabatan == 'HRD')
-                                                            <div class="col-sm-6 mt-2">
-                                                                <div class="card" id="card-hover">
-                                                                    <div class="card-body d-flex">
-                                                                        <div class="col-md-2">
-                                                                            <i class="fa fa-cart-shopping"
-                                                                                style="font-size: 30px;"></i>
-                                                                        </div>
-                                                                        <div class="col-md-10" style="margin-left: 10px">
-                                                                            <a href="/netsales"
-                                                                                class="link stretched-link text-decoration-none">
-                                                                                <h5 class="card-title">Net Sales</h5>
-                                                                            </a>
-                                                                            <p class="card-text">Analisis Perhitungan Harga
-                                                                                RKM.</p>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        @endif
                                                     </div>
                                                 </div>
                                             </div>

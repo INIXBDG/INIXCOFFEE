@@ -155,14 +155,59 @@ class apiController extends Controller
 
     public function getMateri()
     {
-        $materi = Materi::all();
-
+        $materi = Materi::whereIn('tipe_materi', ['Normal', 'Webinar/Workshop'])->get();
+        
+        $groupMateri = $materi->groupBy(function ($item) {
+            return $item->kategori_materi;
+        })->map(function ($group) {
+            return $group->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'nama_materi' => $item->nama_materi,
+                    'kategori_materi' => $item->kategori_materi,
+                    'kode_materi' => $item->kode_materi ? $item->kode_materi : '-',
+                    'vendor' => $item->vendor,
+                    'durasi' => $item->durasi,
+                    'tipe_materi' => $item->tipe_materi,
+                    'status' => $item->status ? $item->status : 'Nonaktif',
+                    'deskripsi' => 'test',
+                    'harga' => '5000000',
+                    'created_at' => $item->created_at,
+                    'updated_at' => $item->updated_at,
+                ];
+            });
+        });
         return response()->json([
             'success' => true,
             'message' => 'List Materi',
-            'data' => $materi
+            'data' => $groupMateri
         ]);
     }
+    public function getMateriByID($id)
+    {
+        $materi = Materi::findOrFail($id);
+        
+        $materiData = [
+            'id' => $materi->id,
+            'nama_materi' => $materi->nama_materi,
+            'kategori_materi' => $materi->kategori_materi,
+            'kode_materi' => $materi->kode_materi ? $materi->kode_materi : '-',
+            'vendor' => $materi->vendor,
+            'durasi' => $materi->durasi,
+            'status' => $materi->status ? $materi->status : 'Nonaktif',
+            'deskripsi' => 'test',
+            'harga' => '5000000', 
+            'created_at' => $materi->created_at,
+            'updated_at' => $materi->updated_at,
+        ];
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Detail Materi',
+            'data' => $materiData        
+        ]);
+    }
+
 
     public function getMateris(){
         $perusahaans = Materi::where('nama_materi', 'LIKE', '%'.request('q').'%')->where('status', 'Aktif')->paginate(20);

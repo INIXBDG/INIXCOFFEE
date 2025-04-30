@@ -13,51 +13,6 @@
             </div>
         </div>
     </div>
-    <div class="modal fade" id="modalAnalisis" tabindex="-1" aria-labelledby="modalAnalisisLabel" aria-hidden="true" aria-modal="true">
-        <div class="modal-dialog" style="max-width: 90% !important">
-        <div class="modal-content">
-            <div class="modal-header">
-            <h1 class="modal-title fs-5" id="modalAnalisisLabel">Analisis</h1>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-            <div id="dataRKM"></div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" id="submitForm" class="btn btn-primary">Submit</button>
-            </div>
-        </div>
-        </div>
-    </div>
-    <div class="modal fade" id="modalAnalisaMargin" tabindex="-1" aria-labelledby="modalAnalisaMarginLabel" aria-hidden="true" aria-modal="true">
-        <div class="modal-dialog" style="max-width: 90% !important">
-            <div class="modal-content">
-                <div class="modal-body">
-                    <div id="analisaMargin">
-                        <table class="table table-bordered text-center">
-                            <thead>
-                                <tr>
-                                    <th>MINGGU</th>
-                                    <th>MINUS</th>
-                                    <th>PROFIT</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tableBody"></tbody>
-                            <tfoot>
-                                <tr>
-                                    <th>TOTAL</th>
-                                    <th id="overallSubtotal" colspan="2"></th>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    {{-- <button type="button" id="submitForm" class="btn btn-primary">Submit</button> --}}
-                </div>
-            </div>
-        </div>
-    </div>
 
     <div class="row justify-content-center">
         <div class="col-md-12">
@@ -113,7 +68,7 @@
                         <p>Apakah Disetujui?</p>
                         <div id="manager-row">
                             <div class="btn-group" role="group" aria-label="Approval Options">
-                                <input type="hidden" value="" id="id_rkm" name="id_rkm">
+                                <input type="hidden" value="" id="id_net_sales" name="id_net_sales">
                                 <button class="btn btn-outline-primary" type="submit">Ya</button>
 
                                 <input type="radio" class="btn-check" name="approval" id="approveNo" value="2" autocomplete="off">
@@ -217,389 +172,7 @@
         });
     });
 
-    function analisaMargin(tahun, bulan) {
-        // console.log(tahun, bulan);
-        // Kirim request ke server melalui AJAX
-        $.ajax({
-            url: '/paymantAdvance/' + tahun + '/' + bulan,
-            type: 'GET',
-            success: function(response) {
-                var html = '';
-                var totalMinus = 0;
-                var totalProfit = 0;
-                var dataRKM = response.data.weeklyProfit;
-                
-                // Iterate over each week's profit
-                $.each(dataRKM, function(week, value) {
-                        var minusValue = '';
-                        var profitValue = '';
-                        if (value < 0) {
-                            minusValue = formatRupiah(value, true); // Format as rupiah and make it red
-                            totalMinus += value;
-                        } else {
-                            profitValue = formatRupiah(value);
-                            totalProfit += value;
-                        }
-                        
-                        html += `<tr>
-                                    <td>${week}</td>
-                                    <td class="text-danger">${minusValue}</td>
-                                    <td>${profitValue}</td>
-                                </tr>`;
-                    });
-                    var overallSubtotal = totalMinus + totalProfit;
-                    // Append the rows to the table body
-                    $('#tableBody').html(html);
-
-                    // Update the totals
-                    $('#totalMinus').html(`<span class="text-danger">${formatRupiah(totalMinus, true)}</span>`);
-                    $('#totalProfit').html(formatRupiah(totalProfit));
-                    $('#overallSubtotal').html(formatRupiah(overallSubtotal, overallSubtotal < 0));
-
-                    // Show the modal
-                    $('#modalAnalisaMargin').modal('show');
-                },
-            });
-    }
-
-    function analisisData(formId, tahun, bulan, minggu) {
-        console.log(`Form ID: ${formId}`);
-        console.log(`Year: ${tahun}, Month: ${bulan}, Week: ${minggu}`);
-
-        // Kirim request ke server melalui AJAX
-        $.ajax({
-            url: '/analisisrkm/' + tahun + '/' + bulan + '/' + minggu,
-            type: 'GET',
-            success: function(response) {
-                var html = '';
-                var totalNettPenjualan = 0;
-                var dataRKM = response.data.data;
-                console.log(dataRKM[0].analisisrkmmingguan.data);
-                if (!dataRKM[0].analisisrkmmingguan.data || dataRKM[0].analisisrkmmingguan.data.length === 0 || dataRKM[0].analisisrkmmingguan.data == null) {
-                    html += '<form id="kirimData" method="POST" action="/analisisrkm/'+ tahun +'/'+ bulan +'/'+ minggu +'/post">'; // Lengkapi form dengan method POST dan action
-                    html += '@csrf'; // Tambahkan token CSRF untuk keamanan Laravel
-                    html += '<table class="table table-bordered">';
-                    html += '<thead>';
-                    html += '<tr>';
-                    html += '<th scope="col" style="font-size: 14px;text-align: center;">No</th>';
-                    html += '<th scope="col" style="font-size: 14px;text-align: center;">Kelas</th>';
-                    html += '<th scope="col" style="font-size: 14px;text-align: center;">Nett Penjualan</th>';
-                    html += '</tr>';
-                    html += '</thead>';
-                    html += '<tbody>';
-                    // Array untuk menyimpan nett_penjualan
-                    var nettPenjualanArray = [];
-                                    
-                    $.each(response.data.data, function(index, value) {
-                        var nett_penjualan = value.analisisrkm.nett_penjualan;
-                        var kelasId = value.analisisrkm.id;
-                        nettPenjualanArray.push(Math.floor(nett_penjualan)); // Simpan nett_penjualan ke array
-                        // console.log(response.data.data);
-                        html += '<tr>';
-                        html += '<input type="hidden" class="form-control" name="id_kelasanalisis[]" value="'+ (kelasId) +'">'; // Tambahkan array untuk multiple data
-                        html += '<input type="hidden" class="form-control" name="tahun[]" value="'+ (tahun) +'">';
-                        html += '<input type="hidden" class="form-control" name="bulan[]" value="'+ (bulan) +'">';
-                        html += '<input type="hidden" class="form-control" name="minggu[]" value="'+ (minggu) +'">';
-                        html += '<input type="hidden" class="form-control" name="nama_materi[]" value="'+ (value.nama_materi) +'">';
-                        html += '<input type="hidden" class="form-control" name="nett_penjualan[]" value="'+(nett_penjualan) +'">';
-                        html += '<td style="font-size: 14px;">' + (index + 1) + '</td>';
-                        html += '<td style="font-size: 14px;">' + (value.nama_materi) + '</td>';
-                        html += '<td style="font-size: 14px;">' + formatWithoutDecimals(nett_penjualan) + '</td>';
-                        html += '</tr>';
-                    });
-
-                    html += '</tbody>';
-                    html += '</table>';
-                    
-                    // Tambahkan input fixcost dan profit di bawah tabel
-                    html += '<div class="row">';
-                    html += '<div class="col-md-6">';
-                    html += '<label>Fix Cost:</label>';
-                    html += '<input type="text" class="form-control fixcost" name="fixcost">';
-                    html += '</div>';
-                    html += '<div class="col-md-6">';
-                    html += '<label>Profit:</label>';
-                    html += '<input type="text" class="form-control profit" id="profit" name="profit" readonly>';
-                    html += '</div>';
-                    html += '</div>';
-                    html += '</form>';
-                }
-                else {
-                    var dataRKM = response.data.data;
-
-                    // Check if all fixcost and profit values are the same across all data
-                    var firstFixcost = dataRKM[0]?.analisisrkmmingguan?.data?.[0]?.fixcost ?? 'N/A';
-                    var firstProfit = dataRKM[0]?.analisisrkmmingguan?.data?.[0]?.profit ?? 'N/A';
-                    var allSameFixcost = dataRKM.every(item => item.analisisrkmmingguan?.data?.[0]?.fixcost === firstFixcost);
-                    var allSameProfit = dataRKM.every(item => item.analisisrkmmingguan?.data?.[0]?.profit === firstProfit);
-
-                    // Group data by 'nama_materi' and sum 'nett_penjualan' for each group
-                    var groupedData = {};
-                    var totalNettPenjualanAll = 0; // Initialize total for all nett_penjualan
-                    console.log(dataRKM);
-                    $.each(dataRKM, function(index, item) {
-                        var materi = item.nama_materi;
-                        var nettPenjualan = parseFloat(item.analisisrkm?.nett_penjualan ?? 0);
-                        var komentar = item.komentar;
-                        if (!groupedData[materi]) {
-                            groupedData[materi] = {
-                                items: [],
-                                totalNettPenjualan: 0
-                            };
-                        }
-                        
-                        groupedData[materi].items.push(item);
-                        groupedData[materi].totalNettPenjualan += nettPenjualan;
-                        totalNettPenjualanAll += nettPenjualan; // Add to overall total
-                    });
-
-                    // Start table creation
-                    var html = '<table class="table table-bordered">';
-                    html += '<thead>';
-                    html += '<tr>';
-                    html += '<th scope="col" style="font-size: 14px;text-align: center;">No</th>';
-                    html += '<th scope="col" style="font-size: 14px;text-align: center;">Kelas</th>';
-                    html += '<th scope="col" style="font-size: 14px;text-align: center;">Total Nett Penjualan</th>';
-                    html += '<th scope="col" style="font-size: 14px;text-align: center;">Fix Cost</th>';
-                    html += '<th scope="col" style="font-size: 14px;text-align: center;">Profit</th>';
-                    html += '</tr>';
-                    html += '</thead>';
-                    html += '<tbody>';
-
-                    // Initialize row counter
-                    var rowIndex = 1;
-                    var commentsArray = [];
-                    // Loop through each unique 'nama_materi' group
-                    $.each(groupedData, function(materi, group) {
-                        // Extract the first item in the group to access fixcost and profit values
-                        $.each(group.items, function(itemIndex, item) {
-                            var komentar = item.analisisrkm.komentar ?? 'Tidak ada komentar';
-                            // Collect komentar for each item
-                            commentsArray.push(komentar);
-                        });
-                        var firstItem = group.items[0];
-                        var fixcost = firstItem.analisisrkmmingguan?.data?.[0]?.fixcost ?? 'N/A';
-                        var profit = firstItem.analisisrkmmingguan?.data?.[0]?.profit ?? 'N/A';
-                        var komentar = firstItem.komentar ?? 'Tidak ada komentar'; // Get komentar value
-                        html += '<tr>';
-                        html += '<td style="font-size: 14px;">' + rowIndex + '</td>';
-                        html += '<td style="font-size: 14px;">' + materi + '</td>';
-                        html += '<td style="font-size: 14px;">' + formatWithoutDecimals(group.totalNettPenjualan) + '</td>';
-
-                        // Only show 'fixcost' and 'profit' once, with rowspan if they are the same across all items
-                        if (rowIndex === 1 && allSameFixcost) {
-                            html += '<td style="font-size: 14px;text-align:center;padding: 70px 0;" rowspan="' + Object.keys(groupedData).length + '">' + formatWithoutDecimals(firstFixcost) + '</td>';
-                        } else if (!allSameFixcost) {
-                            html += '<td style="font-size: 14px;text-align:center;padding: 70px 0;">' + fixcost + '</td>';
-                        }
-                        
-                        if (rowIndex === 1 && allSameProfit) {
-                            html += '<td style="font-size: 14px;text-align:center;padding: 70px 0;" rowspan="' + Object.keys(groupedData).length + '">' + formatWithoutDecimals(firstProfit) + '</td>';
-                        } else if (!allSameProfit) {
-                            html += '<td style="font-size: 14px;text-align:center;padding: 70px 0;">' + profit + '</td>';
-                        }
-                        
-                        html += '</tr>';
-                        rowIndex++;
-                    });
-
-                    html += '</tbody>';
-
-                    // Add a footer with the total nett penjualan
-                    html += '<tfoot>';
-                    html += '<tr>';
-                    html += '<td colspan="2" style="font-size: 14px; text-align: right; font-weight: bold;">Total</td>';
-                    html += '<td style="font-size: 14px; font-weight: bold;">' + formatWithoutDecimals(totalNettPenjualanAll) + '</td>';
-                    html += '<td colspan="2"></td>'; // Empty cells for Fix Cost and Profit columns
-                    html += '</tr>';
-                    html += '<tr>';
-                    html += '<td colspan="2" style="font-size: 14px; text-align: right; font-weight: bold;">Keterangan</td>';
-                    html += '<td colspan="3"></td>'; // Empty cells for Fix Cost and Profit columns
-                    html += '</tr>';
-                    $.each(commentsArray, function(index, komentar) {
-                        html += '<tr>';
-                        html += '<td colspan="2"></td>';
-                        html += '<td colspan="3" style="font-size: 14px;">' + komentar + '</td>';
-                        html += '</tr>';
-                    });
-                    html += '<tr>';
-                    html += '<td colspan="5" style="text-align: center;">';
-                    html += '<button type="button" class="btn btn-primary" id="updateButton">Update Data</button>';
-                    html += '</td>';
-                    html += '</tr>';
-                    html += '</tfoot>';
-
-                    html += '</table>';
-
-                    html += '</tbody>';
-                    html += '</table>';
-                    $('#submitForm').prop('hidden', true);
-
-
-                }
-                $('#dataRKM').html(html); // Sesuaikan dengan respons data yang kamu kirim
-                $('#modalAnalisis').modal('show'); // Tampilkan modal
-                $('#updateButton').on('click', function() {
-                    $("dataRKM").empty();
-                    analisisDataUpdate(formId, tahun, bulan, minggu);
-                });
-                // Event listener untuk menghitung profit saat fixcost berubah
-                $('.fixcost').on('input', function() {
-                    var fixcostFormatted = $(this).val();
-                    var fixcost = parseFloat(fixcostFormatted.replace(/[^0-9,-]+/g, "")); 
-                    var totalNettPenjualan = nettPenjualanArray.reduce((a, b) => a + b, 0);
-                    var profit = totalNettPenjualan - fixcost;
-                    $(this).val(formatRupiah(fixcost)); 
-                    $('#profit').val(formatRupiah(profit)); 
-                    $('#submitForm').prop('hidden', false);
-
-                });
-
-                // Event listener untuk submit form
-                $('#submitForm').on('click', function() {
-                    $('#kirimData').submit();
-                });
-            },
-
-            error: function(xhr) {
-                console.error(xhr.responseText); // Menampilkan error jika request gagal
-            }
-        });
-    }
-
-    function analisisDataUpdate(formId, tahun, bulan, minggu) {
-        console.log(`Form ID: ${formId}`);
-        console.log(`Year: ${tahun}, Month: ${bulan}, Week: ${minggu}`);
-
-        $.ajax({
-            url: '/analisisrkm/' + tahun + '/' + bulan + '/' + minggu,
-            type: 'GET',
-            success: function(response) {
-                var html = '';
-                var nettPenjualanArray = []; // Initialize nettPenjualanArray to store nett_penjualan values
-                var totalNettPenjualan = 0;
-                var dataRKM = response.data.data;
-                
-                if (dataRKM[0].analisisrkmmingguan?.data && dataRKM[0].analisisrkmmingguan.data.length > 0) {
-                    // Load existing data for editing
-                    html += '<form id="updateData" method="POST" action="/analisisrkm/'+ tahun +'/'+ bulan +'/'+ minggu +'/update">';
-                    html += '@csrf';
-                    html += '@method("PUT")';
-                    html += '<table class="table table-bordered">';
-                    html += '<thead>';
-                    html += '<tr>';
-                    html += '<th scope="col" style="font-size: 14px;text-align: center;">No</th>';
-                    html += '<th scope="col" style="font-size: 14px;text-align: center;">Kelas</th>';
-                    html += '<th scope="col" style="font-size: 14px;text-align: center;">Nett Penjualan</th>';
-                    html += '</tr>';
-                    html += '</thead>';
-                    html += '<tbody>';
-
-                    // Load data into form fields for each entry
-                    $.each(dataRKM, function(index, value) {
-                        var nett_penjualan = parseFloat(value.analisisrkm.nett_penjualan) || 0;
-                        var kelasId = value.analisisrkm.id;
-                        
-                        // Push nett_penjualan into nettPenjualanArray for profit calculation later
-                        nettPenjualanArray.push(nett_penjualan);
-
-                        html += '<tr>';
-                        html += '<input type="hidden" class="form-control" name="id_kelasanalisis[]" value="'+ (kelasId) +'">';
-                        html += '<input type="hidden" class="form-control" name="tahun[]" value="'+ (tahun) +'">';
-                        html += '<input type="hidden" class="form-control" name="bulan[]" value="'+ (bulan) +'">';
-                        html += '<input type="hidden" class="form-control" name="minggu[]" value="'+ (minggu) +'">';
-                        html += '<input type="text" class="form-control" name="nama_materi[]" value="'+ (value.nama_materi) +'" readonly>';
-                        html += '<input type="number" class="form-control" name="nett_penjualan[]" value="'+ (nett_penjualan) +'">';
-                        html += '<td style="font-size: 14px;">' + (index + 1) + '</td>';
-                        html += '<td style="font-size: 14px;">' + (value.nama_materi) + '</td>';
-                        html += '<td style="font-size: 14px;">' + formatWithoutDecimals(nett_penjualan) + '</td>';
-                        html += '</tr>';
-                    });
-
-                    html += '</tbody>';
-                    html += '</table>';
-
-                    // Add input fields for fixcost and profit for update
-                    html += '<div class="row">';
-                    html += '<div class="col-md-6">';
-                    html += '<label>Fix Cost:</label>';
-                    html += '<input type="text" class="form-control fixcost" name="fixcost" value="'+ (dataRKM[0].analisisrkmmingguan?.data[0]?.fixcost || '') +'">';
-                    html += '</div>';
-                    html += '<div class="col-md-6">';
-                    html += '<label>Profit:</label>';
-                    html += '<input type="text" class="form-control profit" id="profit" name="profit" readonly value="'+ (dataRKM[0].analisisrkmmingguan?.data[0]?.profit || '') +'">';
-                    html += '</div>';
-                    html += '</div>';
-                    
-                    html += '<button type="button" class="btn btn-primary" id="submitUpdateForm">Update Data</button>';
-                    html += '</form>';
-                } else {
-                    // Data does not exist, render form for new data creation
-                    html += '<form id="kirimData" method="POST" action="/analisisrkm/'+ tahun +'/'+ bulan +'/'+ minggu +'/post">';
-                    html += '@csrf';
-                    html += '<table class="table table-bordered">';
-                    // Table structure and data entry as shown before for new entry
-                    // Add logic here as per your original code if no data exists
-                    html += '</form>';
-                }
-
-                $('#dataRKM').html(html); // Populate modal with HTML content
-                $('#modalAnalisis').modal('show'); // Show the modal
-                
-                // Event listener to handle update form submission
-                $('#submitUpdateForm').on('click', function() {
-                    $('#updateData').submit();
-                });
-
-                // Calculate profit when fixcost changes
-                $('.fixcost').on('input', function() {
-                    var fixcostFormatted = $(this).val();
-                    var fixcost = parseFloat(fixcostFormatted.replace(/[^0-9,-]+/g, "")); 
-                    var totalNettPenjualan = nettPenjualanArray.reduce((a, b) => a + b, 0);
-                    var profit = totalNettPenjualan - fixcost;
-                    $(this).val(formatRupiah(fixcost)); 
-                    $('#profit').val(formatRupiah(profit));
-                });
-            },
-
-            error: function(xhr) {
-                console.error(xhr.responseText);
-            }
-        });
-    }
-
-    function sinkronData() {
-        $.ajax({
-            url: "sinkronDataKelasAnalisis/",
-            // url: "sinkronDataKelasAnalisis/" + tahun,
-            method: 'GET',
-            dataType: 'json',
-            beforeSend: function () {
-                $('#loadingModal').modal('show');
-                $('#loadingModal').on('show.bs.modal', function () {
-                    $('#loadingModal').removeAttr('inert');
-                });
-            },
-            complete: function () {
-                setTimeout(() => {
-                    $('#loadingModal').modal('hide');
-                    $('#loadingModal').on('hidden.bs.modal', function () {
-                        $('#loadingModal').attr('inert', true);
-                    });
-                }, 1000);
-            },
-            success: function(response) {
-                $('#loadingModal').modal('hide');
-                alert(response.message);
-                getData();
-
-            },
-            error: function() {
-                $('#loadingModal').modal('hide');
-                alert("Error fetching data. Please try again.");
-            }
-        });
-    }
+    
 
     function getData() {
         var tahun = document.getElementById('tahun').value;
@@ -842,38 +415,38 @@
                 return new Intl.NumberFormat('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
             }
         }
-</script>
-<script>
-    let approvalSelected = false;
 
-    function openApproveModal(id) {
-        console.log('ID yang dikirim ke modal:', id);
-        $('#id_rkm').val(id);
-        $('#approveModal').modal('show');
-        approvalSelected = false;
+        let approvalSelected = false;
 
-        $('#approveYes').prop('checked', true);
-        $('#approveNo').prop('checked', false);
-        toggleAlasanManager(false); 
+        function openApproveModal(id) {
+            console.log('ID yang dikirim ke modal:', id);
+            $('#id_net_sales').val(id);
+            $('#approveModal').modal('show');
+            approvalSelected = false;
 
-        setTimeout(() => {
-            if (!approvalSelected) {
-                toggleAlasanManager(true); 
-            }
-        }, 3000);
-    }
+            $('#approveYes').prop('checked', true);
+            $('#approveNo').prop('checked', false);
+            toggleAlasanManager(false); 
 
-
-    function toggleAlasanManager(show) {
-        approvalSelected = true;
-        if (show) {
-            $('#alasanManagerInput').show();
-        } else {
-            $('#alasanManagerInput').hide();
-            $('#alasan_manager').val('');
+            setTimeout(() => {
+                if (!approvalSelected) {
+                    toggleAlasanManager(true); 
+                }
+            }, 3000);
         }
-    }
+
+
+        function toggleAlasanManager(show) {
+            approvalSelected = true;
+            if (show) {
+                $('#alasanManagerInput').show();
+            } else {
+                $('#alasanManagerInput').hide();
+                $('#alasan_manager').val('');
+            }
+        }
 </script>
+
 
 @endpush
 @endsection
