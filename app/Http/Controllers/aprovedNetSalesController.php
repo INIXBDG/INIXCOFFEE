@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\perhitunganNetSales;
 use App\Models\aprovedNetSales;
+use App\Models\karyawan;
+use App\Models\RKM;
 use App\Models\User;
 use App\Notifications\CommentNotification;
 use Illuminate\Support\Facades\Auth;
@@ -14,9 +16,14 @@ class AprovedNetSalesController extends Controller
 {
     public function aproved(Request $request)
     {
-        $id = $request->input('id_rkm');
+        $id = $request->input('id_net_sales');
         $netSales = perhitunganNetSales::where('id', $id)->first();
-    
+        $rkm = RKM::findOrFail($netSales->id_rkm);
+        $sales = $rkm->sales_key;
+        $SPVSales = karyawan::where('jabatan', 'SPV Sales')->first();
+        
+        $users = [];
+        $users[] = $sales;
         if (!$netSales) {
             return response()->json(['error' => 'Data tidak ditemukan.'], 404);
         }
@@ -27,18 +34,21 @@ class AprovedNetSalesController extends Controller
         $jabatanNormalized = $jabatan;
         if ($jabatan === "GM") {
             $jabatanNormalized = "General Manager";
+            $GM = karyawan::where('jabatan', 'GM')->first(); 
+            $users[] = $GM->kode_karyawan;
+            
+
         } elseif ($jabatan === "Finance & Accounting") {
             $jabatanNormalized = "Finance & Accounting";
+            $Finance = karyawan::where('jabatan', 'Finance & Accounting')->first();
+            $users[] = $Finance->kode_karyawan;
         }
-    
-        $salesUser = Auth::user();
-        if (!$salesUser) {
-            return response()->json(['error' => 'User pengaju tidak ditemukan.'], 404);
-        }
-    
         $url = route('paymantAdvance.index');
         $path = request()->path();
-    
+        // dd($users);
+        $users = User::whereHas('karyawan', function ($query) use ($users) {
+            $query->whereIn('kode_karyawan', $users);
+        })->get();
         if (!empty($keteranganInput)) {
             $addAproved = new aprovedNetSales();
             $addAproved->id_netSales = $netSales->id;
@@ -54,8 +64,8 @@ class AprovedNetSalesController extends Controller
                 'materi_key' => null,
                 'rkm_key' => $netSales->id,
             ];
-    
-            Notification::send($salesUser, new CommentNotification($dummyComment, $url, $path));
+
+            Notification::send($users, new CommentNotification($dummyComment, $url, $path));
     
             return response()->json(['success' => true, 'message' => 'Data ditolak dan notifikasi dikirim.']);
         }
