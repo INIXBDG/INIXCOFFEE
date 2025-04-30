@@ -187,6 +187,8 @@ Route::get('/suratperjalanan/{id}/editspj', [App\Http\Controllers\SuratPerjalana
 Route::get('/tunjangangenerate', [App\Http\Controllers\TunjanganController::class, 'indexGenerate'])->name('tunjangangenerate.index');
 Route::put('/lembur/{id}/updateKaryawan', [App\Http\Controllers\lemburController::class, 'updateKaryawan'])->name('lembur.updateKaryawan');
 Route::get('/lembur/{id}/editKaryawan', [App\Http\Controllers\lemburController::class, 'editKaryawan'])->name('lembur.editKaryawan');
+Route::post('/lembur/masuk', [App\Http\Controllers\lemburController::class, 'absenMasuk'])->name('lembur.masuk');
+Route::post('/lembur/pulang', [App\Http\Controllers\lemburController::class, 'absenPulang'])->name('lembur.pulang');
 Route::put('/lembur/approval/{id}', [App\Http\Controllers\lemburController::class, 'approvalLemburKaryawan'])->name('lembur.approvalLemburKaryawan');
 Route::put('/overtimeApproving', [App\Http\Controllers\OvertimeController::class, 'approvalHitungLemburKaryawan'])->name('overtime.approvalHitungLemburKaryawan');
 Route::get('/export-lembur-excel/{year}/{month}', [App\Http\Controllers\OvertimeController::class, 'exportExcel'])->name('overtime.exportExcel');

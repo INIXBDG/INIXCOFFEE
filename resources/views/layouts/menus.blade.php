@@ -925,7 +925,6 @@
                         <div id="camera"
                             style="width: 320px; height: 320px; border: 2px solid #ddd; border-radius: 5px;"></div>
                         <br />
-                        {{-- <div class="d-flex flex-wrap w-100" id="absen" style="margin: 0px;"> --}}
                         <div class="row">
                             <div class="btn-group w-100 flex-wrap" role="group" aria-label="Pilihan Absen">
                                 <input type="radio" class="btn-check" name="keterangan" id="normal"
@@ -947,21 +946,6 @@
                                 </label>
                             </div>
                         </div>
-                        {{-- <div class="row g-3" style="height:120px">
-                                <div class="col-6 d-flex align-items-center m-0">
-                                    <input type="radio" class="form-check-input custom-radio" name="keterangan" id="normal" autocomplete="off" value="Kantor">
-                                    <label class="form-check-label ms-2" for="normal">Absen Normal</label>
-                                </div>
-                                <div class="col-6 d-flex align-items-center m-0">
-                                    <input type="radio" class="form-check-input custom-radio" name="keterangan" id="inhouse" autocomplete="off" value="Inhouse Bandung">
-                                    <label class="form-check-label ms-2" for="inhouse">Absen Inhouse Bandung Raya</label>
-                                </div>
-                                <div class="col-6 d-flex align-items-center m-0">
-                                    <input type="radio" class="form-check-input custom-radio" name="keterangan" id="spj" autocomplete="off" value="SPJ">
-                                    <label class="form-check-label ms-2" for="spj">Absen SPJ</label>
-                                </div>
-                            </div> --}}
-                        {{-- </div> --}}
 
                         <br />
                         <div class="d-flex flex-row justify-content-between w-100">
