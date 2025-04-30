@@ -19,7 +19,7 @@
                                     @foreach ($karyawanall as $item)
                                         <option value="{{$item->id}}" @if($item->id == $data->id_karyawan) selected @endif>{{$item->nama_lengkap}}</option>
                                     @endforeach
-                                </select>                           
+                                </select>
                                 @error('tipe')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -52,22 +52,28 @@
                             </div>
                         </div>
 
-                        <div class="row mb-3" id="jam_mulai">
-                            <label for="jam_mulai" class="col-md-4 col-form-label text-md-start">{{ __('Jam Mulai') }}</label>
+                        <div class="row mb-3 align-items-center">
+                            <label for="jam_mulai" class="col-md-4 col-form-label text-md-start">Jam Mulai</label>
                             <div class="col-md-6">
-                                <input type="time" class="form-control" name="jam_mulai" id="jam_mulai" value="{{ $data->jam_mulai }}">
+                                <input type="time" readonly class="form-control" name="jam_mulai" id="jam_mulai" value="{{ $data->jam_mulai }}">
                                 @error('jam_mulai')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
                                     </span>
                                 @enderror
                             </div>
+                            <div class="col-md-2">
+                                <button type="button" class="btn btn-primary btn-sm w-100" data-bs-toggle="modal" data-bs-target="#modalAbsen">
+                                    Absen Lembur
+                                </button>
+                            </div>
                         </div>
-                        
+
+
                         <div class="row mb-3" id="jam_selesai">
                             <label for="jam_selesai" class="col-md-4 col-form-label text-md-start">{{ __('Jam Selesai') }}</label>
                             <div class="col-md-6">
-                                <input type="time" class="form-control" name="jam_selesai" id="jam_selesai" value="{{ $data->jam_selesai }}">
+                                <input type="time" readonly class="form-control" name="jam_selesai" id="jam_selesai" value="{{ $data->jam_selesai }}">
                                 @error('jam_selesai')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -133,7 +139,7 @@
                                 <div class="btn-group" role="group" aria-label="Approval Options">
                                     <input type="radio" class="btn-check" name="approval" id="approveYes" value="1" autocomplete="off" checked>
                                     <label class="btn btn-outline-primary" for="approveYes" onclick="toggleAlasanManager(false)">Ya</label>
-            
+
                                     <input type="radio" class="btn-check" name="approval" id="approveNo" value="2" autocomplete="off">
                                     <label class="btn btn-outline-danger" for="approveNo" onclick="toggleAlasanManager(true)">Tidak</label>
                                 </div>
@@ -150,10 +156,168 @@
                     </form>
                 </div>
             </div>
+            <div class="modal fade" id="modalAbsen" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title" id="exampleModalLabel">Absensi Lembur</h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+
+                    <div class="modal-body d-flex flex-column align-items-center justify-content-center">
+                      <!-- Kamera -->
+                      <div id="camera" style="width: 320px; height: 320px; border: 2px solid #ddd; border-radius: 5px;"></div>
+
+                      <br />
+
+                      <!-- Tombol Mulai dan Selesai -->
+                      <div class="d-flex flex-row justify-content-between w-100">
+                        <button id="startOvertime" class="btn btn-success mx-2">Mulai Lembur</button>
+                        <button id="endOvertime" class="btn btn-danger mx-2">Selesai Lembur</button>
+                      </div>
+
+                      <br />
+
+                      <!-- Hasil Snapshot -->
+                      <div id="result" style="width: 320px; text-align: center;"></div>
+                    </div>
+
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                    </div>
+                  </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
-<style>
 
-</style>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/webcamjs/1.0.26/webcam.min.js"></script>
+<script src="{{ asset('js/webcam.js') }}"></script>
+<script>
+    let stream;
+
+    Webcam.set({
+        width: 320,
+        height: 320,
+        image_format: 'jpeg',
+        jpeg_quality: 50,
+        force_flash: false,
+        flip_horiz: true,
+        constraints: {
+            facingMode: "user",
+            width: { ideal: 320 },
+            height: { ideal: 320 }
+        }
+    });
+
+
+    // ✅ Attach webcam hanya saat modal dibuka
+    $('#modalAbsen').on('shown.bs.modal', function () {
+        Webcam.attach('#camera');
+    });
+
+    // ✅ Reset kamera ketika modal ditutup
+    $('#modalAbsen').on('hidden.bs.modal', function () {
+        Webcam.reset();
+        $('#result').html(''); // Kosongkan hasil snapshot jika perlu
+    });
+
+    // Tombol Mulai Lembur
+    $('#startOvertime').on('click', function () {
+        Webcam.snap(function (data_uri) {
+            $('#result').html('<p><b>Foto Mulai Lembur:</b></p><img src="' + data_uri + '" class="img-thumbnail"/>');
+
+            const now = new Date();
+            const tanggal = now.toISOString().split('T')[0];
+            const jam_mulai = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+
+            const karyawan = "{{ auth()->user()->karyawan_id }}";
+            const jabatan = "{{ auth()->user()->jabatan }}";
+
+            $.ajax({
+                url: "{{ route('lembur.masuk') }}",
+                method: 'POST',
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    id_karyawan: karyawan,
+                    jam_mulai: jam_mulai,
+                    tanggal: tanggal,
+                    jabatan: jabatan,
+                    foto_mulai: data_uri
+                },
+                success: function (res) {
+                    alert(res.success);
+                    $('#modalAbsen').modal('hide');
+                    location.reload();
+                },
+                error: function (xhr) {
+                    alert(xhr.responseJSON?.error || 'Terjadi kesalahan');
+                    location.reload();
+                }
+            });
+        });
+    });
+
+    // Tombol Selesai Lembur
+    $('#endOvertime').on('click', function () {
+        Webcam.snap(function (data_uri) {
+            $('#result').append('<p><b>Foto Selesai Lembur:</b></p><img src="' + data_uri + '" class="img-thumbnail mt-2"/>');
+
+            const now = new Date();
+            const tanggal = now.toISOString().split('T')[0];
+            const jam_selesai = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+
+
+            const karyawan = "{{ auth()->user()->karyawan_id }}";
+
+            $.ajax({
+                url: "{{ route('lembur.pulang') }}",
+                method: 'POST',
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    id_karyawan: karyawan,
+                    tanggal: tanggal,
+                    jam_selesai: jam_selesai,
+                    foto_selesai: data_uri
+                },
+                success: function (res) {
+                    alert(res.success);
+                    $('#modalAbsen').modal('hide');
+                    location.reload();
+                },
+                error: function (xhr) {
+                    alert(xhr.responseJSON?.error || 'Terjadi kesalahan');
+                    location.reload();
+                }
+            });
+        });
+    });
+
+    // Aktifkan tombol selesai lembur jika sudah lewat 1 jam
+    document.addEventListener("DOMContentLoaded", function () {
+        const jamMulaiValue = "{{ $data->jam_mulai }}";
+
+        if (jamMulaiValue) {
+            const now = new Date();
+            const [jam, menit, detik] = jamMulaiValue.split(':');
+            const waktuMulai = new Date(now.toDateString() + ' ' + jam + ':' + menit + ':' + detik);
+
+            const selisihMs = now - waktuMulai;
+            const satuJamMs = 60 * 60 * 1000;
+
+            if (selisihMs >= satuJamMs) {
+                document.getElementById('endOvertime').disabled = false;
+            } else {
+                const sisaWaktu = satuJamMs - selisihMs;
+                setTimeout(() => {
+                    document.getElementById('endOvertime').disabled = false;
+                }, sisaWaktu);
+            }
+        }
+    });
+    </script>
+
 @endsection
