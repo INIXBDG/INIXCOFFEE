@@ -390,7 +390,7 @@ class AbsensiKaryawanController extends Controller
         ]);
         
 
-        // dd($request->all());
+        dd($request->all());
 
         // Ambil waktu sekarang
         $sekarang = \Carbon\Carbon::now();
