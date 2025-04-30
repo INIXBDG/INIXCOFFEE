@@ -1553,7 +1553,6 @@
                                                             </div>
                                                         @endif
                                                     </div>
-                                                    @endcan
                                                 </div>
                                             </div>
                                         </div>
