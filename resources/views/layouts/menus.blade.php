@@ -460,7 +460,7 @@
             background-color: rgba(0, 0, 0, 0);
             /* background-color: #4caf50; */
             background-position: left;
-            background-image: url('{{ asset(' css/jalan_terang.png') }}');
+            background-image: url("{{ asset(' css/jalan_terang.png') }}");
             background-repeat: repeat-x;
             position: absolute;
             transition: left 10s ease;
@@ -470,7 +470,7 @@
         #car {
             width: 110px;
             height: 110px;
-            background-image: url('{{ asset(' css/car.png') }}');
+            background-image: url("{{ asset(' css/car.png') }}");
             background-size: cover;
             position: absolute;
             top: 0;
@@ -530,8 +530,6 @@
             justify-content: center;
             align-items: center;
             padding: 40px;
-            "
-
         }
 
         canvas {
@@ -925,7 +923,6 @@
                         <div id="camera"
                             style="width: 320px; height: 320px; border: 2px solid #ddd; border-radius: 5px;"></div>
                         <br />
-                        {{-- <div class="d-flex flex-wrap w-100" id="absen" style="margin: 0px;"> --}}
                         <div class="row">
                             <div class="btn-group w-100 flex-wrap" role="group" aria-label="Pilihan Absen">
                                 <input type="radio" class="btn-check" name="keterangan" id="normal"
@@ -947,21 +944,6 @@
                                 </label>
                             </div>
                         </div>
-                        {{-- <div class="row g-3" style="height:120px">
-                                <div class="col-6 d-flex align-items-center m-0">
-                                    <input type="radio" class="form-check-input custom-radio" name="keterangan" id="normal" autocomplete="off" value="Kantor">
-                                    <label class="form-check-label ms-2" for="normal">Absen Normal</label>
-                                </div>
-                                <div class="col-6 d-flex align-items-center m-0">
-                                    <input type="radio" class="form-check-input custom-radio" name="keterangan" id="inhouse" autocomplete="off" value="Inhouse Bandung">
-                                    <label class="form-check-label ms-2" for="inhouse">Absen Inhouse Bandung Raya</label>
-                                </div>
-                                <div class="col-6 d-flex align-items-center m-0">
-                                    <input type="radio" class="form-check-input custom-radio" name="keterangan" id="spj" autocomplete="off" value="SPJ">
-                                    <label class="form-check-label ms-2" for="spj">Absen SPJ</label>
-                                </div>
-                            </div> --}}
-                        {{-- </div> --}}
 
                         <br />
                         <div class="d-flex flex-row justify-content-between w-100">
@@ -1528,6 +1510,21 @@
                                                                                 Mingguan.</p>
                                                                         </div>
                                                                     </div>
+                                                        </div>
+                                                    </div>
+                                                    @endcan
+                                                    @can('View PaymantAdvance')                                                    
+                                                        <div class="col-sm-6 mt-2">
+                                                        <div class="card" id="card-hover">
+                                                            <div class="card-body d-flex">
+                                                                <div class="col-md-2">
+                                                                    <i class="fa fa-cart-shopping" style="font-size: 30px;"></i>
+                                                                </div>
+                                                                <div class="col-md-10" style="margin-left: 10px">
+                                                                    <a href="/paymantAdvance" class="link stretched-link text-decoration-none">
+                                                                        <h5 class="card-title">Paymant Advance</h5>
+                                                                    </a>
+                                                                    <p class="card-text">Pengajuan Paymant Advance.</p>
                                                                 </div>
                                                             </div>
                                                         @endcan
@@ -1556,6 +1553,7 @@
                                                             </div>
                                                         @endif
                                                     </div>
+                                                    @endcan
                                                 </div>
                                             </div>
                                         </div>

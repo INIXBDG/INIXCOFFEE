@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\karyawan;
 use App\Models\Perusahaan;
 use App\Models\Peserta;
+use App\Models\Registrasi;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -34,7 +35,10 @@ class PesertaController extends Controller
     public function getPesertaall()
     {
         // $registrasi = Registrasi::with('rkm', 'peserta.perusahaan', 'materi')->get();
-        $peserta = Peserta::with('perusahaan')->get();
+        // $peserta = $registrasi->peserta;
+        $peserta = Peserta::with('perusahaan', 'latestRegistrasi')->get();
+
+        // return $peserta;
 
         $jabatan = Auth::user()->jabatan;
         if ($jabatan == 'Sales'|| $jabatan == 'Adm Sales' || $jabatan == 'GM'|| $jabatan == 'SPV Sales'
@@ -44,13 +48,13 @@ class PesertaController extends Controller
         || $jabatan == 'HRD' || $jabatan == 'Programmer' || $jabatan == 'Direktur Utama' || $jabatan == 'Direktur') {
             return response()->json([
                 'success' => true,
-                'message' => 'List Registrasi',
+                'message' => 'List Peserta',
                 'data' => $peserta,
             ]);
         }else{
             return response()->json([
                 'success' => true,
-                'message' => 'List Registrasi',
+                'message' => 'List Peserta',
                 'data' => '',
             ]);
         }

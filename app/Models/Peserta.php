@@ -24,4 +24,10 @@ class Peserta extends Model
         return $this->belongsTo(Perusahaan::class, 'perusahaan_key', 'id');
     }
 
+    public function latestRegistrasi()
+    {
+        return $this->hasOne(Registrasi::class, 'id_peserta', 'id')->latestOfMany('created_at');
+    }
+    
+
 }

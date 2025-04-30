@@ -482,6 +482,7 @@ class RKMController extends Controller
         ]);
 
         $post = RKM::findOrFail($id);
+        // return $post;
         if (!$post->registrasi_form && $request->status == '0') {
             return back()->with('error', 'Harap Isi Dahulu Registrasi Form nya Sebelum kelas Dimerahkan.');
         }
@@ -661,32 +662,45 @@ class RKMController extends Controller
 
         if ($request->hasFile('registrasi_form')) {
             $file = $request->file('registrasi_form');
+            $extension = strtolower($file->getClientOriginalExtension());
 
-            // Dapatkan extension file
-            $extension = $file->getClientOriginalExtension();
+            // Sanitize all dynamic parts of the filename!
+            function sanitizeFileName($str) {
+                // Remove invisible characters and replace invalid ones with underscores.
+                return preg_replace('/[^\w\d\-_.]+/u', '_', trim($str));
+            }
 
-            // Set path dan nama file berdasarkan jenis file
-            $filename = 'registrasiform_' . $post->materi->nama_materi . '_' . $post->perusahaan->nama_perusahaan . '_' . $post->tanggal_awal . '_' . $post->tanggal_akhir . '.' . $extension;
+            $nama_materi     = sanitizeFileName($post->materi->nama_materi ?? 'materi');
+            $nama_perusahaan = sanitizeFileName($post->perusahaan->nama_perusahaan ?? 'perusahaan');
+            $tanggal_awal    = sanitizeFileName($post->tanggal_awal ?? date('Y-m-d'));
+            $tanggal_akhir   = sanitizeFileName($post->tanggal_akhir ?? date('Y-m-d'));
 
-            // Tentukan direktori penyimpanan dan lakukan pengecekan jenis file
-            $directory = 'registrasiform';
-            // if (in_array(strtolower($extension), ['pdf', 'jpg', 'jpeg', 'png'])) {
-            if (in_array(strtolower($extension), ['pdf'])) {
-                $path = $file->storeAs($directory, $filename, 'public');
+            // Compose safe filename.
+            $filename =
+                "registrasiform_" .
+                "{$nama_materi}_" .
+                "{$nama_perusahaan}_" .
+                "{$tanggal_awal}_" .
+                "{$tanggal_akhir}.{$extension}";
 
-                // Update data
+            if ($extension === 'pdf') {
+                // Store the sanitized filename.
+                $path = $file->storeAs('registrasiform', $filename, 'public');
+
+                // Update DB record.
                 $post->update([
                     'registrasi_form' => $path,
                 ]);
 
                 return redirect()->route('rkm.index')->with(['success' => 'Data Berhasil Disimpan']);
             } else {
-                return redirect()->back()->withErrors(['registrasi_form' => 'Hanya file PDF yang diperbolehkan.']);
-            }
+            return redirect()->back()->withErrors(['registrasi_form' => 'Hanya file PDF yang diperbolehkan.']);
         }
-
-        return redirect()->back()->withErrors(['registrasi_form' => 'Tidak ada file yang diunggah.']);
     }
+
+    return redirect()->back()->withErrors(['registrasi_form' => 'Tidak ada file yang diunggah.']);
+    }
+
 
     public function cekregisform($id)
     {

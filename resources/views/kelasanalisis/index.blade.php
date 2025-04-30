@@ -694,6 +694,7 @@
                     }
 
                     var html = '<table class="table table-bordered">';
+
                     html += '<thead><tr>';
                     html += '<th rowspan="2" style="text-align:center;">No</th>';
                     html += '<th rowspan="2" style="text-align:center;">Kelas</th>';
@@ -713,6 +714,7 @@
                     html += '<th rowspan="2" style="text-align:center;">Total (Rp.)</th>';
                     if (jabatan === 'HRD' || jabatan === 'Koordinator Office' || jabatan === 'SPV Sales') {
                         html += '<th rowspan="2" style="text-align:center;">Aksi</th>';
+
                     }
                     html += '</tr><tr>';
                     html += '<th style="text-align:center;">Harga Modul Regular (Rp.)</th>';
@@ -773,6 +775,7 @@
                                 html += `<td>${formatWithoutDecimals(a.nett_penjualan || 0)}</td>`;
                             }
 
+
                             if (jabatan === 'HRD' || jabatan === 'Koordinator Office' || jabatan === 'SPV Sales') {
                                 html += `<td>
                     <div class="btn-group dropup">
@@ -783,12 +786,15 @@
                                 if (item.status === 'Merah') {
                                     html +=
                                         `<a class="dropdown-item" href="/analisisrkm/${item.id}/create">Input Data</a>`;
+
                                     html +=
                                         `<a class="dropdown-item" href="/kalkulator/analisis/${item.id}/kelas">Kalkulator Analisis</a>`;
                                 } else {
                                     html += `<a class="dropdown-item disabled" href="#">Input Data</a>`;
                                     html +=
+
                                         `<a class="dropdown-item" href="/kelasanalisis/${item.id}/edit">Edit Data</a>`;
+
                                     html +=
                                         `<a class="dropdown-item" href="/kalkulator/analisis/${item.id}/kelas">Kalkulator Analisis</a>`;
                                 }

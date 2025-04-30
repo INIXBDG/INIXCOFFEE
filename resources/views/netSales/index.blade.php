@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 <div class="container-fluid">
     <div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="spinnerModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -31,10 +32,6 @@
     <div class="modal fade" id="modalAnalisaMargin" tabindex="-1" aria-labelledby="modalAnalisaMarginLabel" aria-hidden="true" aria-modal="true">
         <div class="modal-dialog" style="max-width: 90% !important">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="modalAnalisaMarginLabel">Analisa Margin</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
                 <div class="modal-body">
                     <div id="analisaMargin">
                         <table class="table table-bordered text-center">
@@ -66,7 +63,7 @@
         <div class="col-md-12">
             <div class="card m-4">
                 <div class="card-body table-responsive">
-                    <h3 class="card-title text-center my-1">Net Sales <h3> 
+                    <h3 class="card-title text-center my-1 mb-5">Payment Advance <h3> 
                     <div class="row">
                         <div class="col-12">
                             <div class="card" style="width: 100%">
@@ -101,6 +98,42 @@
                         </div>
                     </div>                    
             </div>
+        </div>
+    </div>
+    <div class="modal fade" id="approveModal" tabindex="-1" aria-labelledby="approveModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="approveModalLabel">Confirm Approval</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="approveForm" method="POST">
+                        @csrf
+                        <p>Apakah Disetujui?</p>
+                        <div id="manager-row">
+                            <div class="btn-group" role="group" aria-label="Approval Options">
+                                <input type="hidden" value="" id="id_rkm" name="id_rkm">
+                                <button class="btn btn-outline-primary" type="submit">Ya</button>
+
+                                <input type="radio" class="btn-check" name="approval" id="approveNo" value="2" autocomplete="off">
+                                <label class="btn btn-outline-danger" for="approveNo" onclick="toggleAlasanManager(true)">Tidak</label>
+
+                            </div>
+
+                            <div class="mt-3" id="alasanManagerInput" style="display: none;">
+                                <label for="alasan_manager" class="form-label">Alasan Penolakan</label>
+                                <textarea class="form-control" id="alasan_manager" name="keterangan" rows="3"></textarea>
+                                <input type="hidden" value="{{ auth()->user()->jabatan }}" name="jabatan">
+                                <button class="btn btn-outline-success mt-3" type="submit">Kirim</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+                </div>
         </div>
     </div>
 </div>
@@ -160,11 +193,35 @@
     $(document).ready(function() {
         getData()
     });
+
+    $(document).on('submit', '#approveForm', function(e) {
+        e.preventDefault();
+
+        let formData = new FormData(this);
+
+        $.ajax({
+            url: "{{ route('netsales.aproved') }}",
+            method: 'POST',
+            data: formData,
+            processData: false, 
+            contentType: false, 
+            dataType: 'json',
+            success: function(response) {
+                let modal = bootstrap.Modal.getInstance(document.getElementById('approveModal'));
+                modal.hide();
+                getData(); 
+            },
+            error: function(xhr) {
+                console.log(xhr.responseText); 
+            }
+        });
+    });
+
     function analisaMargin(tahun, bulan) {
         // console.log(tahun, bulan);
         // Kirim request ke server melalui AJAX
         $.ajax({
-            url: '/netsales/' + tahun + '/' + bulan,
+            url: '/paymantAdvance/' + tahun + '/' + bulan,
             type: 'GET',
             success: function(response) {
                 var html = '';
@@ -551,7 +608,7 @@
         $('#loadingModal').modal('show');
 
         $.ajax({
-            url: "netsales/" + tahun,
+            url: "paymantAdvance/" + tahun,
             method: 'GET',
             dataType: 'json',
             beforeSend: function () {
@@ -627,16 +684,16 @@
     html += '<tr>';
     html += '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">No</th>';
     html += '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">Kelas</th>';
-    html += '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">Pax</th>';
-    html += '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">Durasi</th>';
-    html += '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">Harga Nett Jual (Rp.)</th>';
-    html += '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">Sebelum Net Sales (Rp.)</th>';
-    html += '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">Pajak (Rp.)</th>';
-    html += '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">Pa/Cashback (Rp.)</th>';
-    html += '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">Biaya Akomodasi (Rp.)</th>';
+    html += '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">Harga Penawaran (Rp.)</th>';
+    html += '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">Transportasi (Rp.)</th>';
+    html += '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">Fresh Money (Rp.)</th>';
     html += '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">Entertaint (Rp.)</th>';
+    html += '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">Souvenir (Rp.)</th>';
+    html += '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">Penginapan (Rp.)</th>';
+    html += '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">Tanggal Payment Advance</th>';
+    html += '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">Tipe Pembayaran</th>';
     html += '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">Total (Rp.)</th>';
-    if (jabatan === 'HRD' || jabatan === 'Koordinator Office') {
+    if (jabatan === 'SPV Sales' || jabatan === 'Sales' || jabatan === 'GM' || jabatan === 'Finance &amp; Accounting') {
         html += '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">Aksi</th>';
     }
     html += '</tr><tr></tr></thead><tbody>';
@@ -662,29 +719,86 @@
                 rowIndex++;
             }
 
-            html += `<td style="font-size: 14px;">${item.pax}</td>`;
-            html += `<td style="font-size: 14px;">${item.durasi}</td>`;
-            html += `<td style="font-size: 14px;">${formatRupiah(item.harga_jual)}</td>`;
-
             const sales = item.netsales || item.analisisrkm || item;
 
-            html += `<td style="font-size: 14px;">${formatWithoutDecimals(sales.sebelumNetSales || 0)}</td>`;
-            html += `<td style="font-size: 14px;">${formatWithoutDecimals(sales.pajak || 0)}</td>`;
-            html += `<td style="font-size: 14px;">${formatWithoutDecimals(sales.cashback || 0)}</td>`;
-            html += `<td style="font-size: 14px;">${formatWithoutDecimals(sales.biaya_akomodasi || 0)}</td>`;
+            html += `<td style="font-size: 14px;">${formatWithoutDecimals(sales.harga_penawaran || 0)}</td>`;
+            html += `<td style="font-size: 14px;">${formatWithoutDecimals(sales.transportasi || 0)}</td>`;
+            html += `<td style="font-size: 14px;">${formatWithoutDecimals(sales.fresh_money || 0)}</td>`;
             html += `<td style="font-size: 14px;">${formatWithoutDecimals(sales.entertaint || 0)}</td>`;
-            html += `<td style="font-size: 14px;">${formatWithoutDecimals(sales.total || 0)}</td>`;
+            html += `<td style="font-size: 14px;">${formatWithoutDecimals(sales.souvenir || 0)}</td>`;
+            html += `<td style="font-size: 14px;">${formatWithoutDecimals(sales.penginapan || 0)}</td>`;
+            html += `<td style="font-size: 14px;">${sales.tgl_pa || '0000-00-00'}</td>`;
+            html += `<td style="font-size: 14px;">${sales.tipe_pembayaran || ''}</td>`;
+            html += `<td style="font-size: 14px;">${formatWithoutDecimals(sales.total || 0)},00</td>`;
 
-            if (jabatan === 'HRD' || jabatan === 'Koordinator Office') {
+            if (jabatan === 'SPV Sales' || jabatan === 'Sales' || jabatan === 'GM' || jabatan === 'Finance &amp; Accounting') {
                 html += '<td style="font-size: 14px;">';
                 html += '<div class="btn-group dropup">';
                 html += '<button type="button" class="btn dropdown-toggle text-white" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
                 html += '<div class="dropdown-menu">';
                 if (item.status == 'Merah') {
-                    html += `<a class="dropdown-item" href="/netsales/${item.id}/create" data-toggle="tooltip" title="Input Data"><img src="{{ asset('icon/clipboard-primary.svg') }}"> Input Data</a>`;
+                    if (jabatan === "Sales") {
+                        html += `<a class="dropdown-item" href="/paymantAdvance/${item.id}/create" data-toggle="tooltip" title="Input Data"><img src="{{ asset('icon/clipboard-primary.svg') }}"> Input Data</a>`;  
+                    } else {
+                        html += `<a class="dropdown-item disabled" href="/paymantAdvance/${item.id}/create" data-toggle="tooltip" title="Input Data" disabled><img src="{{ asset('icon/clipboard-primary.svg') }}"> Input Data</a>`;  
+                    }
                 } else {
-                    html += `<a class="dropdown-item disabled" href="/netSales/${item.id}/create" data-toggle="tooltip" title="Input Data"><img src="{{ asset('icon/clipboard-primary.svg') }}"> Input Data</a>`;
-                    html += `<a class="dropdown-item" href="/kelasanalisis/${item.id}/edit" data-toggle="tooltip" title="Edit Data"><img src="{{ asset('icon/edit-warning.svg') }}"> Edit Data</a>`;
+                    html += `<a class="dropdown-item disabled" href="/paymantAdvance/${item.id}/create" data-toggle="tooltip" title="Input Data"><img src="{{ asset('icon/clipboard-primary.svg') }}"> Input Data</a>`;
+                    html += `<a class="dropdown-item" href="/paymantAdvance/detail/${item.id}" data-toggle="tooltip" title="Detail"><i class="fa-solid fa-magnifying-glass" style="font-size: 20px;"></i> Detail</a>`;
+                    
+                    if (sales.level_status === null || sales.level_status === 'Belum disetujui') {
+                        if (jabatan === "SPV Sales") {
+                            html += `
+                                <button class="dropdown-item" type="button" onclick="openApproveModal('${sales.id_NetSales}');" title="Detail">
+                                    <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
+                                </button>
+                            `;
+                        } else {
+                            html += `
+                                <button class="dropdown-item" disabled type="button" title="Sudah Ditangani oleh SPV Sales">
+                                    <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
+                                </button>
+                            `;
+                        }
+                    } else if (sales.level_status === "I") {
+                        if (jabatan === "GM") {
+                            html += `
+                                <button class="dropdown-item" type="button" onclick="openApproveModal('${sales.id_NetSales}');" title="Detail">
+                                    <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
+                                </button>
+                            `;
+                        } else {
+                            html += `
+                                <button class="dropdown-item" disabled type="button" title="Sudah Ditangani oleh GM">
+                                    <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
+                                </button>
+                            `;
+                        }
+                    } else if (sales.level_status === "II") {
+                        if (jabatan === 'Finance &amp; Accounting') {
+                            html += `
+                                <button class="dropdown-item" type="button" onclick="openApproveModal('${sales.id_NetSales}');" title="Detail">
+                                    <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
+                                </button>
+                            `;
+                        } else {
+                            html += `
+                                <button class="dropdown-item" disabled type="button" title="Sudah Ditangani oleh Finance & Accounting">
+                                    <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
+                                </button>
+                            `;
+                        }
+                    } else if (sales.level_status === "III") {
+                        if (jabatan === 'Finance &amp; Accounting' || jabatan === 'GM' || jabatan === 'SPV Sales') {
+                            html += `
+                                <button class="dropdown-item" disabled type="button" title="Sudah Ditangani oleh Finance & Accounting">
+                                    <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
+                                </button>
+                            `;
+                        }
+                    }
+                    const editUrlBase = "{{ url('/paymantAdvance/edit') }}/";
+                    html += `<a class="dropdown-item" href="${editUrlBase}${sales.id}" data-toggle="tooltip" title="Edit Data"><i class="fa-solid fa-pen-to-square"></i> Edit Data</a>`;
                 }
                 html += '</div></div></td>';
             }
@@ -730,5 +844,37 @@
             }
         }
 </script>
+<script>
+    let approvalSelected = false;
+
+    function openApproveModal(id) {
+        console.log('ID yang dikirim ke modal:', id);
+        $('#id_rkm').val(id);
+        $('#approveModal').modal('show');
+        approvalSelected = false;
+
+        $('#approveYes').prop('checked', true);
+        $('#approveNo').prop('checked', false);
+        toggleAlasanManager(false); 
+
+        setTimeout(() => {
+            if (!approvalSelected) {
+                toggleAlasanManager(true); 
+            }
+        }, 3000);
+    }
+
+
+    function toggleAlasanManager(show) {
+        approvalSelected = true;
+        if (show) {
+            $('#alasanManagerInput').show();
+        } else {
+            $('#alasanManagerInput').hide();
+            $('#alasan_manager').val('');
+        }
+    }
+</script>
+
 @endpush
 @endsection

@@ -9,6 +9,9 @@ use App\Models\karyawan;
 use App\Models\pengajuancuti;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
+
 
 class AbsensiKaryawanController extends Controller
 {
@@ -35,174 +38,172 @@ class AbsensiKaryawanController extends Controller
 
     public function storeAbsensi(Request $request)
     {
-        $shift = $request->shift;
-        $sekarang = \Carbon\Carbon::now();
-        $mytime = $sekarang->format('Y-m-d');
-        // return $request->all();
-        // Cek keterangan absen
-        if($request->keterangan == '-' || $request->keterangan == null){
-            return response()->json(['error' => 'Anda belum Memilih Jenis Absen.'], 400);
-        }
-
-        // Dapatkan jabatan dari input atau user yang sedang login
-        $jabatan = $request->input('jabatan') ?? auth()->user()->jabatan;
-
-        // Validasi jabatan yang diterima
-        if (!$jabatan) {
-            return response()->json(['error' => 'Jabatan tidak ditemukan.'], 400);
-        }
-
-        // Cek apakah sudah absen hari ini
-        $existingRecord = AbsensiKaryawan::where('id_karyawan', $request->input('id_karyawan'))
-                                        ->where('tanggal', $mytime)
-                                        ->first();
-        
-        if ($existingRecord) {
-            return response()->json(['error' => 'Anda telah Absen sebelumnya.'], 400);
-        }
-
-        // Proses penyimpanan foto
-        $imageData = $request->input('foto');
-        
-        // Validasi apakah foto yang dikirim sesuai format yang diharapkan
-        if (!$imageData || strpos($imageData, 'data:image/jpeg;base64,') === false) {
-            return response()->json(['error' => 'Foto tidak valid. Harus berupa base64 image.'], 400);
-        }
-
-        // Proses simpan gambar
-        $image = str_replace('data:image/jpeg;base64,', '', $imageData);
-        $image = str_replace(' ', '+', $image);
-        $imageName = time() . '.jpeg';
-        $filePath = 'absensi/' . $imageName;
-        
-        // Coba simpan gambar, tangani error jika gagal
-        try {
-            Storage::put('public/' . $filePath, base64_decode($image));
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Gagal menyimpan foto.'], 500);
-        }
-
-        // Mendapatkan waktu jam masuk
-        try {
-            $jamMasuk = \Carbon\Carbon::createFromFormat('H:i:s', $sekarang->toTimeString());
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Format jam masuk tidak valid. Harus dalam format H:i:s.'], 400);
-        }
-
-        $this->validate($request, [
-            'foto' => 'required',
-            'shift' => 'required',
-            'keterangan' => 'required',
+        // Validasi input
+        $validator = Validator::make($request->all(), [
+            'shift' => 'required|in:1,2',
+            'keterangan' => 'required|string',
             'id_karyawan' => 'required|integer',
-            'jam_masuk' => 'required|date_format:H:i:s',
+            'foto' => 'required|string',
+            'client_time' => 'sometimes|date'
+        ], [
+            'keterangan.required' => 'Jenis absen harus dipilih',
+            'foto.required' => 'Foto absen wajib diambil'
         ]);
 
-        $hari = \Carbon\Carbon::now()->dayOfWeek;
-        $waktuKeterlambatanFormatted = '00:00:00';
-        $keterangan = 'Masuk';
-
-        // Konfigurasi shift berdasarkan jabatan
-        switch ($jabatan) {
-            
-            case 'Office Boy':
-                if ($hari == 6 || $hari == 7) {
-                    // Shift times for Saturday and Sunday
-                    $jamAwal = \Carbon\Carbon::createFromTimeString('00:00:01');
-                    $jamBatasShift1Awal = \Carbon\Carbon::createFromTimeString('05:01:00'); // Shift 1 starts at 5:00 AM
-                    $jamBatasShift1Akhir = \Carbon\Carbon::createFromTimeString('08:00:00');
-                    $jamBatasShift2Awal = \Carbon\Carbon::createFromTimeString('11:01:00'); // Shift 2 starts at 10:00 AM
-                    $jamBatasShift2Akhir = \Carbon\Carbon::createFromTimeString('23:50:59');
-                } else {
-                    // Shift times for Monday to Friday
-                    $jamAwal = \Carbon\Carbon::createFromTimeString('00:00:01');
-                    $jamBatasShift1Awal = \Carbon\Carbon::createFromTimeString('05:01:00');
-                    $jamBatasShift1Akhir = \Carbon\Carbon::createFromTimeString('10:00:00');
-                    $jamBatasShift2Awal = \Carbon\Carbon::createFromTimeString('16:01:00');
-                    $jamBatasShift2Akhir = \Carbon\Carbon::createFromTimeString('23:50:59');
-                }
-                
-                if ($jamMasuk->between($jamAwal, $jamBatasShift1Akhir) && $shift == '1') {
-                    if ($jamMasuk->greaterThan($jamBatasShift1Awal)) {
-                        $waktuKeterlambatan = $jamMasuk->diffInMinutes($jamBatasShift1Awal);
-                        $hours = intdiv($waktuKeterlambatan, 60);
-                        $minutes = ($waktuKeterlambatan % 60) + 1 ;
-                        $waktuKeterlambatanFormatted = sprintf('%02d:%02d:00', $hours, $minutes);
-                        $keterangan = 'Telat (' . $request->keterangan . ')';
-                    } else {
-                        $keterangan = 'Masuk (' . $request->keterangan . ')';
-                    }
-                } elseif ($jamMasuk->between($jamBatasShift1Awal, $jamBatasShift2Akhir) && $shift == '2') {
-                    if ($jamMasuk->greaterThan($jamBatasShift2Awal)) {
-                        $waktuKeterlambatan = $jamMasuk->diffInMinutes($jamBatasShift2Awal);
-                        $hours = intdiv($waktuKeterlambatan, 60);
-                        $minutes = ($waktuKeterlambatan % 60) + 1 ;
-                        $waktuKeterlambatanFormatted = sprintf('%02d:%02d:00', $hours, $minutes);
-                        $keterangan = 'Telat (' . $request->keterangan . ')';
-                    } else {
-                        $keterangan = 'Masuk (' . $request->keterangan . ')';
-                    }
-                } else {
-                    return response()->json(['error' => 'Shift tidak sesuai untuk Office Boy.'], 400);
-                }
-            break;
-            
-            case 'Technical Support':
-                if ($hari >= 1 && $hari <= 5) { // Senin - Jumat
-                    $jamBatasAwal = \Carbon\Carbon::createFromTimeString('08:01:00');
-                    $jamBatasAkhir = \Carbon\Carbon::createFromTimeString('17:00:00');
-                } elseif ($hari == 6 || $hari == 7) { // Sabtu dan Minggu
-                    $jamBatasAwal = \Carbon\Carbon::createFromTimeString('09:01:00');
-                    $jamBatasAkhir = \Carbon\Carbon::createFromTimeString('16:00:00');
-                }
-                $jamAwal = \Carbon\Carbon::createFromTimeString('00:00:01');
-            
-                if ($jamMasuk->between($jamAwal, $jamBatasAkhir)) {
-                    if ($jamMasuk->greaterThan($jamBatasAwal)) {
-                        $waktuKeterlambatan = $jamMasuk->diffInMinutes($jamBatasAwal);
-                        $hours = intdiv($waktuKeterlambatan, 60);
-                        $minutes = ($waktuKeterlambatan % 60) + 1 ;
-                        $waktuKeterlambatanFormatted = sprintf('%02d:%02d:00', $hours, $minutes);
-                        $keterangan = 'Telat (' . $request->keterangan . ')';
-                    } else {
-                        $keterangan = 'Masuk (' . $request->keterangan . ')';
-                    }
-                } else {
-                    return response()->json(['error' => 'Jam masuk tidak sesuai shift.'], 400);
-                }
-                break;
-            
-            default: 
-                $jamAwal = \Carbon\Carbon::createFromTimeString('00:00:01');
-                $jamBatasAwal = \Carbon\Carbon::createFromTimeString('08:01:00');
-                $jamBatasAkhir = \Carbon\Carbon::createFromTimeString('16:00:00');
-
-                if ($jamMasuk->between($jamAwal, $jamBatasAkhir)) {
-                    if ($jamMasuk->greaterThan($jamBatasAwal)) {
-                        $waktuKeterlambatan = $jamMasuk->diffInMinutes($jamBatasAwal);
-                        $hours = intdiv($waktuKeterlambatan, 60);
-                        $minutes = ($waktuKeterlambatan % 60) + 1 ;
-                        $waktuKeterlambatanFormatted = sprintf('%02d:%02d:00', $hours, $minutes);
-                        $keterangan = 'Telat (' . $request->keterangan . ')';
-                    } else {
-                        $keterangan = 'Masuk (' . $request->keterangan . ')';
-                    }
-                } else {
-                    return response()->json(['error' => 'Jam masuk tidak sesuai shift.'], 400);
-                }
-            break;
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 400);
         }
 
-        // Simpan absensi
-        $absensi = new AbsensiKaryawan();
-        $absensi->id_karyawan = $request->input('id_karyawan');
-        $absensi->tanggal = $mytime;
-        $absensi->jam_masuk = $jamMasuk;
-        $absensi->foto = $filePath;
-        $absensi->keterangan = $keterangan;
-        $absensi->waktu_keterlambatan = $waktuKeterlambatanFormatted;
-        $absensi->save();
+        // Log waktu client-server
+        $this->logTimeDiscrepancy($request);
 
-        return response()->json(['success' => 'Terimakasih Absen anda berhasil disimpan. Selamat Bekerja!']);
+        // Persiapan data
+        $sekarang = \Carbon\Carbon::now('Asia/Jakarta');
+        $jabatan = $request->input('jabatan') ?? auth()->user()->jabatan;
+        
+        // Validasi duplikasi absen
+        if ($this->checkDuplicateAbsen($request->id_karyawan, $sekarang->toDateString())) {
+            return response()->json(['error' => 'Anda sudah melakukan absen masuk hari ini'], 400);
+        }
+
+        // Proses foto
+        $fotoPath = $this->processFoto($request->foto);
+        if (!$fotoPath) {
+            return response()->json(['error' => 'Gagal menyimpan foto absen'], 500);
+        }
+
+        // Validasi shift dan waktu
+        $validationResult = $this->validateShiftWaktu($sekarang, $request->shift, $jabatan);
+        if (!$validationResult['valid']) {
+            return response()->json(['error' => $validationResult['message']], 400);
+        }
+
+        // Simpan data
+        $absensi = AbsensiKaryawan::create([
+            'id_karyawan' => $request->id_karyawan,
+            'tanggal' => $sekarang->toDateString(),
+            'jam_masuk' => $sekarang->toTimeString(),
+            'foto' => $fotoPath,
+            'keterangan' => $validationResult['keterangan'],
+            'waktu_keterlambatan' => $validationResult['keterlambatan'],
+            'shift' => $request->shift
+        ]);
+
+        return response()->json([
+            'success' => 'Absen masuk berhasil',
+            'data' => [
+                'jam_masuk' => $sekarang->format('H:i:s'),
+                'keterangan' => $validationResult['keterangan']
+            ]
+        ]);
+    }
+
+    private function logTimeDiscrepancy(Request $request)
+    {
+        if ($request->client_time) {
+            Log::channel('absensi')->info('Time check masuk', [
+                'server' => now('Asia/Jakarta')->toDateTimeString(),
+                'client' => $request->client_time,
+                'diff_seconds' => now('Asia/Jakarta')->diffInSeconds($request->client_time)
+            ]);
+        }
+    }
+
+    private function checkDuplicateAbsen($idKaryawan, $tanggal)
+    {
+        return AbsensiKaryawan::where('id_karyawan', $idKaryawan)
+                            ->where('tanggal', $tanggal)
+                            ->exists();
+    }
+
+    private function processFoto($imageData)
+    {
+        try {
+            if (strpos($imageData, 'data:image/jpeg;base64,') === false) {
+                return false;
+            }
+
+            $image = str_replace('data:image/jpeg;base64,', '', $imageData);
+            $image = str_replace(' ', '+', $image);
+            $imageName = 'absensi_'.time().'.jpeg';
+            $filePath = 'absensi/'.$imageName;
+            
+            Storage::put('public/'.$filePath, base64_decode($image));
+            return $filePath;
+        } catch (\Exception $e) {
+            Log::error('Error proses foto: '.$e->getMessage());
+            return false;
+        }
+    }
+
+    private function validateShiftWaktu($waktu, $shift, $jabatan)
+    {
+        $config = $this->getShiftConfig($waktu->dayOfWeek, $jabatan, $shift);
+        
+        if (!$waktu->between($config['jamAwal'], $config['jamAkhir'])) {
+            return [
+                'valid' => false,
+                'message' => 'Waktu absen tidak sesuai shift. Jam kerja: '.
+                            $config['jamAwal']->format('H:i').' - '.
+                            $config['jamAkhir']->format('H:i')
+            ];
+        }
+
+        // Hitung keterlambatan
+        $keterlambatan = '00:00:00';
+        $keterangan = 'Masuk';
+        
+        if ($waktu->greaterThan($config['jamMulaiShift'])) {
+            $diffMinutes = $waktu->diffInMinutes($config['jamMulaiShift']);
+            $hours = intdiv($diffMinutes, 60);
+            $minutes = ($diffMinutes % 60);
+            $keterlambatan = sprintf('%02d:%02d:00', $hours, $minutes);
+            $keterangan = 'Telat';
+        }
+
+        return [
+            'valid' => true,
+            'keterangan' => $keterangan,
+            'keterlambatan' => $keterlambatan
+        ];
+    }
+
+    private function getShiftConfig($dayOfWeek, $jabatan, $shift)
+    {
+        $isWeekend = ($dayOfWeek == \Carbon\Carbon::SATURDAY || $dayOfWeek == \Carbon\Carbon::SUNDAY);
+
+        // Konfigurasi default
+        $config = [
+            'jamAwal' => \Carbon\Carbon::createFromTimeString('00:00:00'),
+            'jamAkhir' => \Carbon\Carbon::createFromTimeString('23:59:59'),
+            'jamMulaiShift' => \Carbon\Carbon::createFromTimeString('08:00:00')
+        ];
+
+        // Penyesuaian berdasarkan jabatan dan shift
+        switch ($jabatan) {
+            case 'Office Boy':
+                if ($isWeekend) {
+                    $config['jamMulaiShift'] = $shift == 1 
+                        ? \Carbon\Carbon::createFromTimeString('05:00:00')
+                        : \Carbon\Carbon::createFromTimeString('11:00:00');
+                } else {
+                    $config['jamMulaiShift'] = $shift == 1 
+                        ? \Carbon\Carbon::createFromTimeString('05:00:00')
+                        : \Carbon\Carbon::createFromTimeString('16:00:00');
+                }
+                break;
+
+            case 'Technical Support':
+                $config['jamMulaiShift'] = $isWeekend 
+                    ? \Carbon\Carbon::createFromTimeString('09:00:00')
+                    : \Carbon\Carbon::createFromTimeString('08:00:00');
+                $config['jamAkhir'] = $isWeekend
+                    ? \Carbon\Carbon::createFromTimeString('16:00:00')
+                    : \Carbon\Carbon::createFromTimeString('17:00:00');
+                break;
+        }
+
+        return $config;
     }
 
     public function absenManual(Request $request)
@@ -378,118 +379,101 @@ class AbsensiKaryawanController extends Controller
 
     public function update(Request $request)
     {
-        $this->validate($request, [
-            'shift' => 'required',
-            'keterangan_pulang' => 'required',
+        // Validasi input
+        $validator = Validator::make($request->all(), [
+            'shift' => 'required|in:1,2',
+            'keterangan_pulang' => 'required|string',
             'id_karyawan' => 'required|integer',
+            'client_time' => 'sometimes|date' // Untuk logging
         ], [
-            'shift.required' => json_encode(['error' => 'Shift harus diisi.']),
-            'keterangan_pulang.required' => json_encode(['error' => 'Keterangan pulang harus diisi.']),
-            // 'id_karyawan.required' => json_encode(['error' => 'ID karyawan harus diisi.']),
-            // 'id_karyawan.integer' => json_encode(['error' => 'ID karyawan harus berupa angka.']),
+            'shift.required' => 'Shift harus diisi',
+            'shift.in' => 'Shift hanya boleh 1 atau 2',
+            'keterangan_pulang.required' => 'Keterangan pulang harus diisi'
         ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 400);
+        }
+
+        // Log perbedaan waktu client-server
+        if ($request->client_time) {
+            Log::channel('absensi')->info('Time check', [
+                'server' => now('Asia/Jakarta')->toDateTimeString(),
+                'client' => $request->client_time,
+                'diff' => now('Asia/Jakarta')->diffInSeconds($request->client_time)
+            ]);
+        }
+
+        // Waktu sekarang dengan timezone
+        $sekarang = \Carbon\Carbon::now('Asia/Jakarta');
+        $tanggal = $sekarang->toDateString();
+        $jamKeluar = $sekarang;
+
+        // Konfigurasi jam kerja
+        $jadwal = $this->getJadwalKerja($sekarang->isWeekend(), $request->shift);
+
+        // Cek absensi masuk
+        $absensi = $this->getAbsensiMasuk($request->id_karyawan, $request->shift, $tanggal);
         
-
-        // dd($request->all());
-
-        // Ambil waktu sekarang
-        $sekarang = \Carbon\Carbon::now();
-        $tanggal = $sekarang->toDateString();  // Mengambil bagian tanggal
-        $jamKeluar = $sekarang; // Gunakan Carbon instance untuk jam keluar
-
-        // Batasan waktu absen pulang untuk hari biasa
-        $jamBatasAwal = \Carbon\Carbon::createFromTimeString('14:00:00');
-        $jamBatasAkhir = \Carbon\Carbon::createFromTimeString('23:59:59');
-        $jamBatasKeesokanHari = \Carbon\Carbon::createFromTimeString('00:00:00');
-        $jamBatasAkhirKeesokanHari = \Carbon\Carbon::createFromTimeString('09:00:00');
-
-        // Batasan waktu absen pulang khusus untuk Sabtu dan Minggu
-        $jamBatasAwalAkhirPekan = \Carbon\Carbon::createFromTimeString('11:00:00');
-        $jamBatasAkhirAkhirPekan = \Carbon\Carbon::createFromTimeString('23:00:00');
-        $jamBatasKeesokanHariAkhirPekan = \Carbon\Carbon::createFromTimeString('00:00:00');
-        $jamBatasAkhirKeesokanHariAkhirPekan = \Carbon\Carbon::createFromTimeString('10:00:00'); // Batas waktu keesokan hari khusus akhir pekan
-
-        $shift = $request->shift;
-
-        if($request->keterangan_pulang == ''){
-            return response()->json(['error' => 'Pilih dahulu tipa absensi nya.'], 400);
-        }
-        // Validasi shift
-        if (!in_array($shift, ['1', '2'])) {
-            return response()->json(['error' => 'Shift tidak valid.'], 400);
-        }
-
-        // Cari absensi berdasarkan shift
-        $absensi = null;
-        if ($shift == '2') {
-            // Jika shift 2, cek absensi kemarin
-            $kemarin = \Carbon\Carbon::yesterday()->format('Y-m-d');
-            $absensi = AbsensiKaryawan::where('id_karyawan', $request->input('id_karyawan'))
-                ->where('tanggal', $kemarin)
-                ->first();
-        } elseif ($shift == '1') {
-            $absensi = AbsensiKaryawan::where('id_karyawan', $request->input('id_karyawan'))
-                ->where('tanggal', $tanggal)
-                ->first();
-        }
-
         if (!$absensi) {
-            return response()->json(['error' => 'Absen masuk tidak ditemukan atau anda belum absen hari ini.'], 404);
+            return response()->json(['error' => 'Absen masuk tidak ditemukan'], 404);
         }
 
-        // Cek apakah jam_keluar sudah diisi
-        if ($absensi->jam_keluar) {
-            return response()->json(['error' => 'Anda sudah mengisi absen pulang!'], 400);
+        // Validasi waktu
+        if (!$this->validateWaktuAbsen($jamKeluar, $jadwal)) {
+            return response()->json([
+                'error' => 'Waktu absen tidak valid. Jam yang diperbolehkan: ' . 
+                         $jadwal['awal']->format('H:i') . ' - ' . 
+                         $jadwal['akhir']->format('H:i')
+            ], 400);
         }
 
-        // Logika absensi pulang
-        $isAllowedTime = false;
-        $isWeekend = $sekarang->isWeekend(); // Cek apakah hari ini adalah Sabtu atau Minggu
+        // Simpan absensi
+        $absensi->update([
+            'jam_keluar' => $jamKeluar->toTimeString(),
+            'keterangan_pulang' => 'Pulang ('.$request->keterangan_pulang.')'
+        ]);
 
-        // Logika untuk shift 1 (absen pulang pada hari yang sama)
-        if ($shift == '1') {
-            if ($isWeekend) {
-                // Jika Sabtu atau Minggu, gunakan batasan waktu khusus akhir pekan
-                $isAllowedTime = $jamKeluar->between($jamBatasAwalAkhirPekan, $jamBatasAkhirAkhirPekan);
-            } else {
-                // Hari biasa
-                $isAllowedTime = $jamKeluar->between($jamBatasAwal, $jamBatasAkhir);
-            }
+        return response()->json([
+            'success' => 'Absen pulang berhasil',
+            'data' => [
+                'jam_keluar' => $jamKeluar->format('H:i:s'),
+                'tanggal' => $tanggal
+            ]
+        ]);
+    }
+
+    private function getJadwalKerja($isWeekend, $shift)
+    {
+        if ($shift == 1) {
+            return [
+                'awal' => \Carbon\Carbon::createFromTimeString($isWeekend ? '11:00:00' : '14:00:00'),
+                'akhir' => \Carbon\Carbon::createFromTimeString($isWeekend ? '23:00:00' : '23:59:59')
+            ];
         }
 
-        // Logika untuk shift 2 (absen pulang di hari berikutnya)
-        if ($shift == '2') {
-            if ($isWeekend) {
-                // Jika Sabtu atau Minggu, gunakan batasan waktu khusus akhir pekan untuk hari berikutnya
-                $isAllowedTime = $jamKeluar->between($jamBatasKeesokanHariAkhirPekan, $jamBatasAkhirKeesokanHariAkhirPekan);
-            } else {
-                // Hari biasa
-                $isAllowedTime = $jamKeluar->between($jamBatasKeesokanHari, $jamBatasAkhirKeesokanHari);
-            }
+        return [
+            'awal' => \Carbon\Carbon::createFromTimeString($isWeekend ? '00:00:00' : '00:00:00'),
+            'akhir' => \Carbon\Carbon::createFromTimeString($isWeekend ? '10:00:00' : '09:00:00')
+        ];
+    }
+
+    private function getAbsensiMasuk($idKaryawan, $shift, $tanggal)
+    {
+        $query = AbsensiKaryawan::where('id_karyawan', $idKaryawan);
+
+        if ($shift == 2) {
+            $tanggal = \Carbon\Carbon::parse($tanggal)->subDay()->toDateString();
         }
 
-        // Cek jika absen sebelum waktu yang diizinkan untuk shift 1
-        if ($shift == '1' && !$isAllowedTime && $jamKeluar->lessThan($isWeekend ? $jamBatasAwalAkhirPekan : $jamBatasAwal)) {
-            return response()->json(['error' => 'Absen tidak sesuai. Anda tidak dapat absen sebelum jam ' . ($isWeekend ? $jamBatasAwalAkhirPekan : $jamBatasAwal)->format('H:i') . '.'], 400);
-        }
+        return $query->where('tanggal', $tanggal)
+                    ->whereNull('jam_keluar')
+                    ->first();
+    }
 
-        // Cek jika absen sebelum waktu yang diizinkan untuk shift 2
-        if ($shift == '2' && !$isAllowedTime && $jamKeluar->lessThan($isWeekend ? $jamBatasKeesokanHariAkhirPekan : $jamBatasKeesokanHari)) {
-            return response()->json(['error' => 'Absen tidak sesuai. Anda tidak dapat absen sebelum jam ' . ($isWeekend ? $jamBatasKeesokanHariAkhirPekan : $jamBatasKeesokanHari)->format('H:i') . '.'], 400);
-        }
-
-        // Jika waktu diizinkan, simpan absensi pulang
-        if ($isAllowedTime) {
-            $keterangan_pulang = 'Pulang ('.$request->keterangan_pulang.')';
-            $absensi->keterangan_pulang = $keterangan_pulang;
-            $absensi->jam_keluar = $jamKeluar->toTimeString(); // Gunakan waktu sekarang
-            // dd($absensi);
-            $absensi->save();
-            return response()->json(['success' => 'Terimakasih telah bekerja hari ini! Hati-hati di jalan.']);
-        }
-
-        // Pesan error jika belum waktunya absen pulang
-        return response()->json(['error' => 'Belum bisa absen pulang. Waktu absen pulang minimal jam ' . ($isWeekend ? $jamBatasAwalAkhirPekan : $jamBatasAwal)->format('H:i') . '.'], 400);
+    private function validateWaktuAbsen($waktu, $jadwal)
+    {
+        return $waktu->between($jadwal['awal'], $jadwal['akhir']);
     }
 
     public function jumlahAbsensi($karyawanId, $bulan, $tahun) {  

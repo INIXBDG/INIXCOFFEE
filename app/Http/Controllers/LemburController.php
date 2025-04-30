@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\karyawan;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use App\Models\lembur;
 use App\Models\User;
+use Carbon\Carbon;
 use App\Notifications\LemburNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
@@ -20,7 +23,7 @@ class LemburController extends Controller
         return view('lembur.index');
     }
 
-    public function getSuratPerintahLembur() 
+    public function getSuratPerintahLembur()
     {
         $user = auth()->user()->karyawan_id;
         $karyawan = karyawan::findOrFail($user);
@@ -46,7 +49,7 @@ class LemburController extends Controller
     }
 
 
-    public function getLemburKaryawan()  
+    public function getLemburKaryawan()
     {
         $user = auth()->user()->karyawan_id;
         $karyawan = karyawan::findOrFail($user);
@@ -109,7 +112,7 @@ class LemburController extends Controller
             'waktu_lembur'     => $request->waktu_lembur,
             'tanggal_lembur'     => $request->tanggal_lembur,
         ]);
-        
+
         $karyawan = karyawan::findOrFail($request->id_karyawan);
         $users[] = $karyawan->kode_karyawan;
         // Retrieve users based on the filtered list of kode_karyawan
@@ -264,13 +267,13 @@ class LemburController extends Controller
                 case 'Koordinator Office':
                 case 'Koordinator ITSM':
             break;
-            
+
                 default:
                     switch ($divisi) {
                         case 'Education':
                             $users[] = $Eduman->kode_karyawan; // Eduman
                             break;
-            
+
                         case 'Sales & Marketing':
                             $users[] = $SPVSales->kode_karyawan; // SPVSales
                             break;
@@ -278,7 +281,7 @@ class LemburController extends Controller
                         case 'IT Service Management':
                             $users[] = $koorso->kode_karyawan; // SPVSales
                             break;
-            
+
                         case 'Office':
                             $users[] = $GM->kode_karyawan; // GM
                             $users[] = $kooroff->kode_karyawan; // kooroff
@@ -298,11 +301,91 @@ class LemburController extends Controller
             ];
             $type = 'Mengisi Jam dan Detail Tugas Lembur';
             $path = '/lembur';
-    
+
             foreach ($users as $user) {
                 NotificationFacade::send($user, new LemburNotification($data, $path, $type));
             }
         return redirect()->route('lembur.index')->with(['success' => 'Data Berhasil Diubah!']);
+    }
+
+    public function absenMasuk(Request $request)
+    {
+        $request->validate([
+            'id_karyawan' => 'required',
+            'tanggal' => 'required|date',
+            'jam_mulai' => 'required',
+            'foto_mulai' => 'required',
+        ]);
+
+        // Proses foto base64
+        $image = str_replace('data:image/jpeg;base64,', '', $request->foto_mulai);
+        $image = str_replace(' ', '+', $image);
+        $imageName = 'mulai_' . Str::random(10) . '.jpg';
+
+        Storage::disk('public')->put('lembur/' . $imageName, base64_decode($image));
+
+        $lembur = Lembur::where('id_karyawan', $request->id_karyawan)
+        ->where('tanggal_lembur', $request->tanggal) // pastikan tanggalnya sama
+        ->first();
+
+        if (!$lembur) {
+            return response()->json(['error' => 'Data lembur tidak ditemukan'], 404);
+        }
+
+        if ($lembur->jam_mulai) {
+            return response()->json(['error' => 'Anda sudah absen masuk sebelumnya'], 400);
+        }
+
+        $lembur->update([
+            'jam_mulai' => $request->jam_mulai,
+            'foto_masuk' => 'lembur/' . $imageName,
+        ]);
+
+        return response()->json(['success' => 'Absensi mulai berhasil']);
+    }
+
+
+    public function absenPulang(Request $request)
+    {
+        $request->validate([
+            'id_karyawan' => 'required',
+            'tanggal' => 'required|date',
+            'jam_selesai' => 'required',
+            'foto_selesai' => 'required',
+        ]);
+
+        // Proses foto base64
+        $image = $request->foto_selesai;
+        $image = str_replace('data:image/jpeg;base64,', '', $image);
+        $image = str_replace(' ', '+', $image);
+        $imageName = 'selesai_' . Str::random(10) . '.jpg';
+
+        Storage::disk('public')->put('lembur/' . $imageName, base64_decode($image));
+
+        // Cari data lembur hari ini
+        $lembur = lembur::where('id_karyawan', $request->id_karyawan)
+            ->whereDate('tanggal_lembur', $request->tanggal)
+            ->first();
+
+        if (!$lembur) {
+            return response()->json(['error' => 'Data lembur tidak ditemukan'], 404);
+        }
+
+        if ($lembur->jam_mulai) {
+            $selisih = now()->diffInMinutes($lembur->jam_mulai);
+            if ($selisih < 1) {
+                return response()->json(['error' => 'Absen pulang hanya bisa dilakukan minimal 1 jam setelah absen masuk'], 400);
+            }
+        } else {
+            return response()->json(['error' => 'Anda belum absen masuk'], 400);
+        }
+
+        $lembur->update([
+            'jam_selesai' => $request->jam_selesai,
+            'foto_selesai' => 'lembur/' . $imageName,
+        ]);
+
+        return response()->json(['success' => 'Absensi selesai berhasil']);
     }
 
     public function approvalLemburKaryawan(Request $request, $id)
@@ -345,5 +428,5 @@ class LemburController extends Controller
         }
         return redirect()->route('lembur.index')->with(['success' => 'Data Berhasil Diubah!']);
     }
-    
+
 }

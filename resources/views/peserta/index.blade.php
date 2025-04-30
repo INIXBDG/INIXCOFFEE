@@ -62,6 +62,7 @@
                             <th scope="col">Alamat</th>
                             <th scope="col">Perusahaan/Instansi</th>
                             <th scope="col">Tanggal Lahir</th>
+                            <th scope="col">Created_at</th>
                             {{-- @if (auth()->user()->jabatan == 'Programmer') --}}
                             <th scope="col">Aksi</th>
                             {{-- @endif --}}
@@ -226,6 +227,10 @@
                     }
                 },
                 {
+                    "data": "latest_registrasi.created_at",
+                    "visible": false,
+                },
+                {
                     "data": null,
                     "render": function(data, type, row) {
                         var actions = "";
@@ -245,7 +250,9 @@
                         return actions;
                     }
                 }
-            ]
+            ],
+            "order": [[7, 'desc']],
+            "columnDefs": [{"targets": [7], "type": "date"}],
         });
 
         $('#pesertatable').DataTable({
