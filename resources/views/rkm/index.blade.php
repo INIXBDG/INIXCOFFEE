@@ -247,7 +247,7 @@
                                     html += '<td>' + rkm.ruang + '</td>';
                                 }
                                 html += '<td>' + rkm.total_pax + '</td>';
-                                if (jabatan == 'SPV Sales' || jabatan == 'GM' || jabatan == 'Sales' || jabatan == 'Adm Sales' || jabatan == 'Education Manager' || jabatan == 'Instruktur' || jabatan == 'Office Manager' || jabatan == 'Customer Care' || jabatan == 'Customer Service' || jabatan == 'Admin Holding' || jabatan == 'Technical Support'|| jabatan === 'Direktur Utama' || jabatan === 'Direktur' || jabatan === 'HRD' || jabatan === 'Koordinator Office' || jabatan === 'Finance &amp; Accounting' ) {
+                                if (jabatan == 'SPV Sales' || jabatan == 'GM' || jabatan == 'Sales' || jabatan == 'Adm Sales' || jabatan == 'Education Manager' || jabatan == 'Instruktur' || jabatan == 'Office Manager' || jabatan == 'Customer Care' || jabatan == 'Tim Digital' || jabatan == 'Admin Holding' || jabatan == 'Technical Support'|| jabatan === 'Direktur Utama' || jabatan === 'Direktur' || jabatan === 'HRD' || jabatan === 'Koordinator Office' || jabatan === 'Finance &amp; Accounting' ) {
                                     html += '<td>';
                                     html += '<div class="btn-group dropup">';
                                     html += '<button type="button" class="btn dropdown-toggle text-white" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
