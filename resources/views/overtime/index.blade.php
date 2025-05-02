@@ -205,6 +205,30 @@
         var month = $('#bulan').val();
         // console.log(year, month);
         fetchTable();
+        $('#formHitungLembur').on('submit', function(e) {
+        e.preventDefault(); // Mencegah form submit biasa
+
+        var form = $(this);
+        var url = form.attr('action'); // URL dari atribut action form
+        var formData = form.serialize(); // Mengambil semua data form
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: formData,
+            success: function(response) {
+                // Tindakan jika berhasil, misal:
+                alert('Data lembur berhasil disimpan!');
+                $('#hitungLemburKaryawan').modal('hide');
+                // Bisa juga panggil ulang fetchTable() untuk refresh data tabel
+                fetchTable();
+            },
+            error: function(xhr, status, error) {
+                // Tindakan jika error, misal:
+                alert('Terjadi kesalahan saat menyimpan data: ' + error);
+            }
+        });
+    });
 
     });
     function getDataLembur() {
