@@ -165,7 +165,10 @@ class RKMController extends Controller
                         $row->sales = Karyawan::whereIn('kode_karyawan', $sales_ids)->get();
                         $row->perusahaan = Perusahaan::whereIn('id', $perusahaan_ids)->get();
                     }
+                    $absensiExists = AbsensiPDF::where('id_rkm', $row->id)->exists();
+                    $row->absensi_status = $absensiExists ? 'green' : 'red';
                 }
+                
                 // return $rows;
 
                 $weekRanges[] = ['start' => $start, 'end' =>  $end, 'data' => $rows];
