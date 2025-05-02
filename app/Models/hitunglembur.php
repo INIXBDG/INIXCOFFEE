@@ -12,6 +12,7 @@ class hitunglembur extends Model
         'id_lembur',
         'nilai_lembur',
         'approval_gm',
+        'alasan',
     ];
 
     public function lembur()
