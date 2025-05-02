@@ -155,6 +155,17 @@ class apiController extends Controller
 
     public function getMateri()
     {
+        $materi = Materi::all();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'List Materi',
+            'data' => $materi
+        ]);
+    }
+    
+    public function getMateriInix()
+    {
         $materi = Materi::whereIn('tipe_materi', ['Normal', 'Webinar/Workshop'])->get();
         
         $groupMateri = $materi->groupBy(function ($item) {
@@ -183,7 +194,7 @@ class apiController extends Controller
             'data' => $groupMateri
         ]);
     }
-    public function getMateriByID($id)
+    public function getMateriInixByID($id)
     {
         $materi = Materi::findOrFail($id);
         

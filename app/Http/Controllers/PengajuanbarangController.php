@@ -33,12 +33,13 @@ class PengajuanBarangController extends Controller
                 })
                 ->latest()
                 ->first();
-            // dd($tracking->tracking);
+            // dd($tracking->pengajuanbarang->karyawan->divisi);
             if($tracking == null){
                 $tracking = 'buka';
-            }else
-            if($tracking->tracking == 'Pencairan Sudah Selesai'){
+            }elseif($tracking->tracking == 'Pencairan Sudah Selesai'){
                 $tracking = 'tutup';
+            }elseif($tracking->pengajuanbarang->karyawan->divisi == 'Sales & Marketing' && $tracking->pengajuanbarang->tipe == 'Reimbursement'){
+                $tracking = 'buka';
             }else{
                 $tracking = 'buka';
             }
