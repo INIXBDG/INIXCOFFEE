@@ -23,7 +23,7 @@ class PengajuanBarangController extends Controller
     public function index()
     {
         $jabatan = auth()->user()->jabatan;
-        if($jabatan == 'Finance & Accounting' || $jabatan == 'GM'){
+        if($jabatan == 'Finance & Accounting' || $jabatan == 'GM' || $jabatan == 'SPV Sales' || $jabatan == 'Koordinator ITSM'){
             $tracking = 'buka';
         }else{
             $karyawan = auth()->user()->karyawan->nama_lengkap;
