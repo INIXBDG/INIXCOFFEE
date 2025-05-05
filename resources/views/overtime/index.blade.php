@@ -218,14 +218,16 @@
             data: formData,
             success: function(response) {
                 // Tindakan jika berhasil, misal:
-                alert('Data lembur berhasil disimpan!');
-                $('#hitungLemburKaryawan').modal('hide');
+                console.log(response);
+                // alert('Data lembur berhasil disimpan!');
+                // $('#hitungLemburKaryawan').modal('hide');
                 // Bisa juga panggil ulang fetchTable() untuk refresh data tabel
-                fetchTable();
+                // fetchTable();
             },
             error: function(xhr, status, error) {
                 // Tindakan jika error, misal:
-                alert('Terjadi kesalahan saat menyimpan data: ' + error);
+                console.error(xhr.responseText);
+                // alert('Terjadi kesalahan saat menyimpan data: ' + error);
             }
         });
     });

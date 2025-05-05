@@ -14,6 +14,7 @@ class hitunglembur extends Model
         'approval_gm',
         'alasan',
     ];
+    protected $guarded = [];
 
     public function lembur()
     {
