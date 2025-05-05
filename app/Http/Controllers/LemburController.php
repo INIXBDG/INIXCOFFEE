@@ -317,16 +317,16 @@ class LemburController extends Controller
             'foto_mulai' => 'required',
         ]);
 
-        // Proses foto base64
-        $image = str_replace('data:image/jpeg;base64,', '', $request->foto_mulai);
+        // Proses foto base64 (memperbaiki prefix format gambar)
+        $image = preg_replace('/^data:image\/\w+;base64,/', '', $request->foto_mulai);
         $image = str_replace(' ', '+', $image);
-        $imageName = 'mulai_' . Str::random(10) . '.jpg';
+        $imageName = 'mulai_' . Str::random(10) . '.png';
 
         Storage::disk('public')->put('lembur/' . $imageName, base64_decode($image));
 
         $lembur = Lembur::where('id_karyawan', $request->id_karyawan)
-        ->where('tanggal_lembur', $request->tanggal) // pastikan tanggalnya sama
-        ->first();
+            ->where('tanggal_lembur', $request->tanggal)
+            ->first();
 
         if (!$lembur) {
             return response()->json(['error' => 'Data lembur tidak ditemukan'], 404);
@@ -344,7 +344,6 @@ class LemburController extends Controller
         return response()->json(['success' => 'Absensi mulai berhasil']);
     }
 
-
     public function absenPulang(Request $request)
     {
         $request->validate([
@@ -354,16 +353,15 @@ class LemburController extends Controller
             'foto_selesai' => 'required',
         ]);
 
-        // Proses foto base64
-        $image = $request->foto_selesai;
-        $image = str_replace('data:image/jpeg;base64,', '', $image);
+        // Proses foto base64 yang fleksibel
+        $image = preg_replace('/^data:image\/\w+;base64,/', '', $request->foto_selesai);
         $image = str_replace(' ', '+', $image);
-        $imageName = 'selesai_' . Str::random(10) . '.jpg';
+        $imageName = 'selesai_' . Str::random(10) . '.png';
 
         Storage::disk('public')->put('lembur/' . $imageName, base64_decode($image));
 
         // Cari data lembur hari ini
-        $lembur = lembur::where('id_karyawan', $request->id_karyawan)
+        $lembur = Lembur::where('id_karyawan', $request->id_karyawan)
             ->whereDate('tanggal_lembur', $request->tanggal)
             ->first();
 
@@ -373,7 +371,7 @@ class LemburController extends Controller
 
         if ($lembur->jam_mulai) {
             $selisih = now()->diffInMinutes($lembur->jam_mulai);
-            if ($selisih < 1) {
+            if ($selisih < 60) {
                 return response()->json(['error' => 'Absen pulang hanya bisa dilakukan minimal 1 jam setelah absen masuk'], 400);
             }
         } else {
@@ -387,6 +385,7 @@ class LemburController extends Controller
 
         return response()->json(['success' => 'Absensi selesai berhasil']);
     }
+
 
     public function approvalLemburKaryawan(Request $request, $id)
     {
