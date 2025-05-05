@@ -201,7 +201,35 @@
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
 <script>
     $(document).ready(function(){
+        var year = $('#tahun').val();
+        var month = $('#bulan').val();
+        // console.log(year, month);
         fetchTable();
+        $('#formHitungLembur').on('submit', function(e) {
+        e.preventDefault(); // Mencegah form submit biasa
+
+        var form = $(this);
+        var url = form.attr('action'); // URL dari atribut action form
+        var formData = form.serialize(); // Mengambil semua data form
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: formData,
+            success: function(response) {
+                // Tindakan jika berhasil, misal:
+                alert('Data lembur berhasil disimpan!');
+                $('#hitungLemburKaryawan').modal('hide');
+                // Bisa juga panggil ulang fetchTable() untuk refresh data tabel
+                fetchTable();
+            },
+            error: function(xhr, status, error) {
+                // Tindakan jika error, misal:
+                alert('Terjadi kesalahan saat menyimpan data: ' + error);
+            }
+        });
+    });
+
     });
     function getDataLembur() {
         var year = $('#tahun').val();
@@ -228,9 +256,10 @@
             console.log('ApproveHitungLembur:', ApproveHitungLembur);
             console.log('JumlahHitungLembur:', JumlahHitungLembur);
 
-            var userRole = '{{ auth()->user()->jabatan}}';
-                var tahun = $('#tahun').val()
-                var bulan = $('#bulan').val()
+                var userRole = '{{ auth()->user()->jabatan}}';
+                var tahun = $('#tahun').val();
+                var bulan = $('#bulan').val();
+                console.log(tahun, bulan);
                 $('#hitunglembur').DataTable({
                     "ajax": {
                         "url": "/getOvertimeLembur/" + bulan + "/" + tahun,
@@ -265,7 +294,7 @@
                                         actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
                                         if(JumlahHitungLembur){
                                             if(data.id_hitung_lembur == null){
-                                                actions += '<button type="button" class="dropdown-item" onclick="openhitungLemburKaryawan(' + data.id_karyawan + ', '+bulan+', '+tahun+')"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Hitung</button>';
+                                                actions += '<button type="button" class="dropdown-item" onclick="openhitungLemburKaryawan(' + data.id_karyawan + ')"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Hitung</button>';
                                             }else{
                                                 actions += '<button type="button" class="dropdown-item" onclick="openhitungLemburKaryawan(' + data.id_karyawan + ', '+bulan+', '+tahun+')"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Hitung</button>';
                                                 actions += '<button type="button" class="dropdown-item" onclick="openDetailLemburKaryawan(' + data.id_karyawan + ', '+bulan+', '+tahun+')"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Detail</button>';
@@ -276,7 +305,7 @@
                                             if(data.id_hitung_lembur == null){
                                                 actions += '<button type="button" class="dropdown-item" disabled><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
                                             }else{
-                                                actions += '<button type="button" class="dropdown-item" onclick="openApproveLemburKaryawan(' + data.id_karyawan + ', '+bulan+', '+tahun+')"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
+                                                actions += '<button type="button" class="dropdown-item" onclick="openApproveLemburKaryawan(' + data.id_karyawan + ')"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
                                             }
                                         }
                                         actions += '</div>';
@@ -289,13 +318,15 @@
                 });
         }
 
-        function openApproveLemburKaryawan(id, month, year) {
+        function openApproveLemburKaryawan(id) {
             // Show the modal
             var approveUrl = "{{ url('/overtimeApproving') }}";
             $('#formApprovalLembur').attr('action', approveUrl);
             $('#approveLemburKaryawan').modal('show');
             var totalNilaiLembur = 0;
-
+            var year = $('#tahun').val();
+            var month = $('#bulan').val();
+            console.log(id, month, year);
             // AJAX call to fetch overtime data
             $.ajax({
                 url: "getOvertimeLemburByKaryawan/" + id + "/" + month + "/" + year,
@@ -407,7 +438,9 @@
             var approveUrl = "{{ url('/overtime') }}/";
             $('#formHitungLembur').attr('action', approveUrl);
             $('#hitungLemburKaryawan').modal('show');
-
+            var year = $('#tahun').val();
+            var month = $('#bulan').val();
+            console.log(id, month, year);
             // AJAX call to fetch overtime data
             $.ajax({
                 url: "getOvertimeLemburByKaryawan/" + id + "/" + month + "/" + year,
