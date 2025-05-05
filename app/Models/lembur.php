@@ -16,6 +16,8 @@ class lembur extends Model
         'tanggal_lembur',
         'jam_mulai',
         'jam_selesai',
+        'foto_masuk',
+        'foto_selesai',
         'approval_karyawan',
         'keterangan',
         'id_hitung_lembur',

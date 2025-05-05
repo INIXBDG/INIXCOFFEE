@@ -23,7 +23,7 @@
                     <form id="formHitungLembur" method="POST">
                         @csrf
                         <div id="xontainer"></div>
-                        
+
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -45,7 +45,7 @@
                         @csrf
                         @method('PUT')
                         <div id="xontainer-approve"></div>
-                        
+
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -67,7 +67,7 @@
                         @csrf
                         @method('PUT')
                         <div id="xontainer-detail"></div>
-                        
+
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -123,7 +123,7 @@
                         </div>
                     </div>
                 </div>
-            </div>  
+            </div>
             <div class="row my-2">
                 <div class="col-md-12">
                     <div class="card">
@@ -215,7 +215,7 @@
                     alert("Tidak ada data untuk tahun dan bulan yang dipilih.");
                 }
                 setTimeout(() => {
-                    $('#loadingModal').modal('hide'); 
+                    $('#loadingModal').modal('hide');
                 }, 100);
             });
         } else {
@@ -268,7 +268,7 @@
                                                 actions += '<button type="button" class="dropdown-item" onclick="openhitungLemburKaryawan(' + data.id_karyawan + ', '+bulan+', '+tahun+')"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Hitung</button>';
                                             }else{
                                                 actions += '<button type="button" class="dropdown-item" onclick="openhitungLemburKaryawan(' + data.id_karyawan + ', '+bulan+', '+tahun+')"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Hitung</button>';
-                                                actions += '<button type="button" class="dropdown-item" onclick="openDetailLemburKaryawan(' + data.id_karyawan + ', '+bulan+', '+tahun+')"><img src="{{ asset('icon/detail.svg') }}" class=""> Detail</button>';
+                                                actions += '<button type="button" class="dropdown-item" onclick="openDetailLemburKaryawan(' + data.id_karyawan + ', '+bulan+', '+tahun+')"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Detail</button>';
                                                 actions += '<a class="dropdown-item" href="/export-lembur-pdf/'+data.id_karyawan+'/'+tahun+'/'+bulan+'"><img src="{{ asset('icon/assept-document.svg') }}" style="width:24px" class=""> Form PDF</a>';
                                             }
                                         }
@@ -371,7 +371,7 @@
                                     <td><input class='form-control' value='' name='alasan[${index}]' ${inputisCheckedYes} type='text'></td>
                                 </tr>
                             `);
-                            
+
                         });
 
                         table.append(tbody);
@@ -433,6 +433,7 @@
                                 <th rowspan='2'>Hari Biasa dan Libur</th>
                                 <th rowspan='2'>Keperluan</th>
                                 <th colspan='2'>Waktu Lembur</th>
+                                <th colspan='2'>Absen Lembur</th>
                                 <th rowspan='2'>Jumlah Jam Lembur</th>
                                 <th rowspan='2'>Nilai Lembur per Jam</th>
                                 <th rowspan='2'>Total Nilai Lembur</th>
@@ -441,6 +442,8 @@
                             <tr>
                                 <th>Jam Mulai</th>
                                 <th>Jam Selesai</th>
+                                <th>Absen Mulai</th>
+                                <th>absen Selesai</th>
                             </tr>
                         `);
                         table.append(thead);
@@ -478,6 +481,8 @@
                                     <td>${item.uraian_tugas}</td>
                                     <td>${item.jam_mulai || '-'}</td>
                                     <td>${item.jam_selesai || '-'}</td>
+                                    <td>${item.foto_masuk ? `<img src="/storage/${item.foto_masuk}" width="80" height="80" />` : '-'}</td>
+                                    <td>${item.foto_selesai ? `<img src="/storage/${item.foto_selesai}" width="80" height="80" />` : '-'}</td>
                                     <td class="jam-lembur">${jamLembur} Jam</td> <!-- Add this class -->
                                     <td>
                                         <input type='hidden' name='id_lembur[${index}]' value='${item.id}'>
@@ -589,7 +594,7 @@
                                     <td>${approve}</td>
                                 </tr>
                             `);
-                            
+
                         });
 
                         table.append(tbody);
