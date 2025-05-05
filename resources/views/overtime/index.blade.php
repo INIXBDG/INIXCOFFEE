@@ -206,33 +206,33 @@
         // console.log(year, month);
         fetchTable();
         $('#formHitungLembur').on('submit', function(e) {
-        e.preventDefault(); // Mencegah form submit biasa
+            submitReaction();
+        });
 
-        var form = $(this);
-        var url = form.attr('action'); // URL dari atribut action form
-        var formData = form.serialize(); // Mengambil semua data form
+    });
 
+    function submitReaction() {
+        // Perform the form submission logic here
+        var form = $('#formHitungLembur')[0];
+        var formData = new FormData(form);
         $.ajax({
-            url: url,
+            url: form.action,
             type: 'POST',
             data: formData,
+            contentType: false,
+            processData: false,
             success: function(response) {
-                // Tindakan jika berhasil, misal:
-                console.log(response);
-                // alert('Data lembur berhasil disimpan!');
+                // Handle success response
+                console.log('Form submitted successfully:', response);
                 // $('#hitungLemburKaryawan').modal('hide');
-                // Bisa juga panggil ulang fetchTable() untuk refresh data tabel
-                // fetchTable();
+                // $('#hitunglembur').DataTable().ajax.reload(null, false); // Reload the DataTable without resetting pagination
             },
             error: function(xhr, status, error) {
-                // Tindakan jika error, misal:
-                console.error(xhr.responseText);
-                // alert('Terjadi kesalahan saat menyimpan data: ' + error);
+                // Handle error response
+                console.error('Error submitting form:', error);
             }
         });
-    });
-
-    });
+    }
     function getDataLembur() {
         var year = $('#tahun').val();
         var month = $('#bulan').val();
