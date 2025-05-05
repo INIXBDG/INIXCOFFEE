@@ -369,7 +369,7 @@ class OvertimeController extends Controller
         $hrd = karyawan::where('jabatan','HRD')->latest()->first();
         $finance = karyawan::where('jabatan','Finance & Accounting')->first();
         $gm = karyawan::where('jabatan','GM')->latest()->first();
-
+        // return $data;
         // Buat file PDF dari tampilan yang berisi data registrasi
         // $pdf = PDF::loadView('exports.pengajuan_barang-pdf', compact('pengajuan_barang'));
         return view ('exports.lembur-pdf', compact('data', 'hrd', 'finance', 'gm'));
