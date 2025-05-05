@@ -232,26 +232,24 @@
     //         }
     //     });
     // }
-    function getDataLembur() {
-        var year = $('#tahun').val();
-        var month = $('#bulan').val();
-
-        if (year && month) {
-            $('#loadingModal').modal('show'); // Tampilkan modal sebelum memulai pemanggilan Ajax
-
-            $('#hitunglembur').DataTable().ajax.url("{{ url('/getOvertimeLembur') }}/" + month + "/" + year).load(function(json) {
-                if (!json || json.data.length === 0) {
-                    alert("Tidak ada data untuk tahun dan bulan yang dipilih.");
-                }
-                setTimeout(() => {
-                    $('#loadingModal').modal('hide');
-                }, 100);
-            });
-        } else {
-            alert("Pilih tahun dan bulan terlebih dahulu.");
+        function getDataLembur(callback) {
+            var year = $('#tahun').val();
+            var month = $('#bulan').val();
+            console.log(year, month);
+            if (year && month) {
+                $('#loadingModal').modal('show'); // Tampilkan modal sebelum memulai pemanggilan Ajax
+                fetchTable(year, month); // Panggil fungsi fetchTable dengan tahun dan bulan yang dipilih
+            } else {
+                alert("Pilih tahun dan bulan terlebih dahulu.");
+            }
         }
-    }
-        function fetchTable(){
+
+        // Memanggil getDataLembur dan menjalankan fetchTable setelahnya
+
+        function fetchTable(year, month) {
+            if ($.fn.DataTable.isDataTable('#hitunglembur')) {
+                $('#hitunglembur').DataTable().clear().destroy(); // Hancurkan DataTable yang ada
+            }
             var ApproveHitungLembur = {{ auth()->user()->can('Approve HitungLembur') ? 'true' : 'false' }};
             var JumlahHitungLembur = {{ auth()->user()->can('Jumlah HitungLembur') ? 'true' : 'false' }};
             console.log('ApproveHitungLembur:', ApproveHitungLembur);
@@ -260,7 +258,7 @@
                 var userRole = '{{ auth()->user()->jabatan}}';
                 var tahun = $('#tahun').val();
                 var bulan = $('#bulan').val();
-                console.log(tahun, bulan);
+                // console.log(tahun, bulan);
                 $('#hitunglembur').DataTable({
                     "ajax": {
                         "url": "/getOvertimeLembur/" + bulan + "/" + tahun,
