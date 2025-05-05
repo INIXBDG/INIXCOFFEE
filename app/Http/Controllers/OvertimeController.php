@@ -139,11 +139,11 @@ class OvertimeController extends Controller
             DB::commit();
 
             // Redirect with success message
-            // return redirect()->route('overtime.index')->with(['success' => 'Data Berhasil Disimpan!']);
-            return response()->json([
-                'success' => true,
-                'message' => 'Data Berhasil Disimpan!',
-            ]);
+            return redirect()->route('overtime.index')->with(['success' => 'Data Berhasil Disimpan!']);
+            // return response()->json([
+            //     'success' => true,
+            //     'message' => 'Data Berhasil Disimpan!',
+            // ]);
         } catch (\Exception $e) {
             // Rollback the transaction in case of an error
             DB::rollback();
@@ -152,11 +152,11 @@ class OvertimeController extends Controller
             Log::error('Error saving overtime data: ' . $e->getMessage());
 
             // Redirect with error message
-            // return redirect()->back()->withErrors(['error' => 'Terjadi kesalahan saat menyimpan data: ' . $e->getMessage()]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat menyimpan data: ' . $e->getMessage(),
-            ]);
+            return redirect()->back()->withErrors(['error' => 'Terjadi kesalahan saat menyimpan data: ' . $e->getMessage()]);
+            // return response()->json([
+            //     'success' => false,
+            //     'message' => 'Terjadi kesalahan saat menyimpan data: ' . $e->getMessage(),
+            // ]);
         }
     }
 
