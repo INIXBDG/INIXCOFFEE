@@ -587,6 +587,7 @@
                                 <th rowspan='2'>Hari Biasa dan Libur</th>
                                 <th rowspan='2'>Keperluan</th>
                                 <th colspan='2'>Waktu Lembur</th>
+                                <th colspan='2'>Absen Lembur</th>
                                 <th rowspan='2'>Jumlah Jam Lembur</th>
                                 <th rowspan='2'>Nilai Lembur per Jam</th>
                                 <th rowspan='2'>Total Nilai Lembur</th>
@@ -595,6 +596,8 @@
                             <tr>
                                 <th>Jam Mulai</th>
                                 <th>Jam Selesai</th>
+                                <th>Absen Mulai</th>
+                                <th>Absen Selesai</th>
                             </tr>
                         `);
                         table.append(thead);
@@ -621,6 +624,8 @@
                                     <td>${item.uraian_tugas}</td>
                                     <td>${item.jam_mulai || '-'}</td>
                                     <td>${item.jam_selesai || '-'}</td>
+                                    <td>${item.foto_masuk ? `<img src="/storage/${item.foto_masuk}" width="80" height="80" />` : '-'}</td>
+                                    <td>${item.foto_selesai ? `<img src="/storage/${item.foto_selesai}" width="80" height="80" />` : '-'}</td>
                                     <td>${jamLembur} Jam</td>
                                     <td><input type='hidden' name='id_lembur[${index}]' value='${item.id}'><input class='hitungtable form-control' readonly value='${item.hitunglembur.nilai_lembur}' name='nilai_lembur[${index}]' type='text'></td>
                                     <td class="total-nilai">${kalkulasi.toFixed(2)}</td>
