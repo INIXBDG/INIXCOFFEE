@@ -30,8 +30,8 @@ class OvertimeController extends Controller
         // Get total lembur for each karyawan
         $lembur = Lembur::with('karyawan')
                         ->select('id_karyawan', DB::raw('COUNT(id) as total_lembur'))
-                        ->whereMonth('tanggal_spl', $month)
-                        ->whereYear('tanggal_spl', $year)
+                        ->whereMonth('tanggal_lembur', $month)
+                        ->whereYear('tanggal_lembur', $year)
                         ->groupBy('id_karyawan')
                         ->get();
 
@@ -41,8 +41,8 @@ class OvertimeController extends Controller
             
             // Get the latest id_hitung_lembur for the karyawan
             $latestLembur = Lembur::where('id_karyawan', $item->id_karyawan)
-                                ->whereMonth('tanggal_spl', $month)
-                                ->whereYear('tanggal_spl', $year)
+                                ->whereMonth('tanggal_lembur', $month)
+                                ->whereYear('tanggal_lembur', $year)
                                 ->orderBy('id', 'desc') // Assuming id is auto-incrementing
                                 ->first();
 
