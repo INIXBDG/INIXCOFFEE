@@ -61,8 +61,8 @@ class OvertimeController extends Controller
     {
         $lembur = Lembur::with('karyawan', 'hitunglembur')
         ->where('id_karyawan', $id)
-        ->whereMonth('tanggal_spl', $month)
-        ->whereYear('tanggal_spl', $year)
+        ->whereMonth('tanggal_lembur', $month)
+        ->whereYear('tanggal_lembur', $year)
         ->get();
         return response()->json([
             'success' => true,

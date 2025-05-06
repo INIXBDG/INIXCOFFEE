@@ -475,7 +475,7 @@
                                 <th>Jam Mulai</th>
                                 <th>Jam Selesai</th>
                                 <th>Absen Mulai</th>
-                                <th>absen Selesai</th>
+                                <th>Absen Selesai</th>
                             </tr>
                         `);
                         table.append(thead);
@@ -523,7 +523,6 @@
                                     <td class="total-nilai">${kalkulasi.toFixed(2)}</td>
                                     <td>${approve}</td>
                                 </tr>
-
                             `);
                         });
 
@@ -532,11 +531,11 @@
                         // Add tfoot for totals
                         var tfoot = $('<tfoot>');
                         tfoot.append(`
-                            <tr>
+                             <tr>
                                 <td colspan="6" class='text-right'><strong>Total Jam Lembur</strong></td>
                                 <td>${totalJamLembur.toFixed(2)} Jam</td>
                                 <td><strong>Total Claim</strong></td>
-                                <td colspan="2" class="total-nilai-lembur">0</td>
+                                <td colspan="2">${totalNilaiLembur.toFixed(2)}</td>
                             </tr>
                         `);
                         table.append(tfoot);
