@@ -170,6 +170,7 @@
                         <thead>
                             <tr>
                                 <th scope="col">Tanggal Pengajuan</th>
+                                <th scope="col">Tanggal Pengajuan</th>
                                 <th scope="col">Nama Karyawan</th>
                                 <th scope="col">Divisi</th>
                                 <th scope="col">Jabatan</th>
@@ -289,6 +290,15 @@
                 }
             },
             "columns": [
+                {
+                    "data": "created_at",
+                    "visible": false,
+                    "render": function(data, type, row) {
+                            // moment.locale('id');
+                            var tanggalAwal = moment(data).format('YYYY-MM-DD');
+                            return tanggalAwal;
+                        }
+                },
                 {
                     "data": "created_at",
                     "render": function(data, type, row) {
