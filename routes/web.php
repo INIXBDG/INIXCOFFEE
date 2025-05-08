@@ -1,9 +1,9 @@
 <?php
 
 use App\Http\Controllers\Api\RKMController;
+use App\Http\Controllers\approvedNetSalesController;
 use App\Http\Controllers\KelasAnalisisController;
 use App\Http\Controllers\RKMController as ControllersRKMController;
-use App\Http\Controllers\aprovedNetSalesController;
 use App\Http\Controllers\netSalesController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
@@ -267,7 +267,7 @@ Route::post('/rkm/store/sertifikat', [ControllersRKMController::class, 'storeSer
 Route::post('/rkm/delete/sertifikat', [ControllersRKMController::class, 'deleteSertifikat'])->name('deleteSertifikat');
 Route::get('/paymantAdvance/detail/{id}', [netSalesController::class, 'detail'])->name('netsales.detail');
 Route::post('/paymantAdvance/detail/data/get', [netSalesController::class, 'dataDetail'])->name('netsales.data.detail.get');
-Route::post('/paymantAdvance/aproved', [aprovedNetSalesController::class, 'aproved'])->name('netsales.aproved');
+Route::post('/paymantAdvance/approved', [approvedNetSalesController::class, 'approve'])->name('netsales.approved');
 Route::get('/paymantAdvance/edit/{id}', [netSalesController::class,'edit'])->name('netSales.edit.index');
 Route::post('/paymantAdvance/data/get/', [netSalesController::class, 'dataEdit'])->name('netSales.edit.get');
 Route::post('/paymantAdvance/data/update', [netSalesController::class, 'updateNetSales'])->name('netSales.update');

@@ -9,7 +9,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use App\Http\Resources\PostResource;
 use App\Models\analisisrkmmingguan;
-use App\Models\aprovedNetSales;
+use App\Models\approvedNetSales;
 use App\Models\detailPengajuanBarang;
 use App\Models\eksam;
 use App\Models\karyawan;
@@ -117,7 +117,7 @@ class netSalesController extends Controller
                 $rkm = RKM::with([
                         'materi',
                         'analisisrkm',
-                        'perhitunganNetSales.aprovedNetSales',
+                        'perhitunganNetSales.approvedNetSales',
                         'analisisrkm.analisisrkmmingguan'
                     ])
                     ->where('status', '0')
@@ -132,8 +132,8 @@ class netSalesController extends Controller
                     $total_harga_jual = floatval($item->harga_jual) * intval($item->pax);
     
                     $netSales = $item->perhitunganNetSales;
-                    $aprovedNetSales = $netSales 
-                    ? $netSales->aprovedNetSales()->latest('created_at')->first()
+                    $approvedNetSales = $netSales 
+                    ? $netSales->approvedNetSales()->latest('created_at')->first()
                     : null;                
     
                     $totalPerhitunganNetSales = floatval(
@@ -166,8 +166,8 @@ class netSalesController extends Controller
                         'tgl_pa'          => optional($netSales)->tgl_pa,
                         'tipe_pembayaran' => optional($netSales)->tipe_pembayaran,
                         'total'           => $totalPerhitunganNetSales,
-                        'level_status'    => optional($aprovedNetSales)->level_status ?? 'Belum disetujui',
-                        'keterangan'      => optional($aprovedNetSales)->keterangan ?? '-',
+                        'level_status'    => optional($approvedNetSales)->level_status ?? 'Belum disetujui',
+                        'keterangan'      => optional($approvedNetSales)->keterangan ?? '-',
                     ];
                 });
     
@@ -232,7 +232,7 @@ class netSalesController extends Controller
         $dataSales = karyawan::where('kode_karyawan', $dataRKM->sales_key)->first();
         $dataMateri = Materi::where('id', $dataRKM->materi_key)->first();
         $dataNetSales = perhitunganNetSales::where('id_rkm', $dataRKM->id)->first();
-        $dataApproved = aprovedNetSales::where('id_NetSales', $dataNetSales->id)->get();
+        $dataApproved = approvedNetSales::where('id_NetSales', $dataNetSales->id)->get();
         $mulai = Carbon::parse($dataRKM->tanggal_awal)->timezone('Asia/Jakarta');
         $akhir = Carbon::parse($dataRKM->tanggal_akhir)->timezone('Asia/Jakarta');
     
@@ -265,9 +265,9 @@ class netSalesController extends Controller
                                  $dataNetSales->souvenir,
         ];
     
-        $arrayAproved = [];
+        $arrayapproved = [];
         foreach ($dataApproved as $item) {
-            $arrayAproved[] = [
+            $arrayapproved[] = [
                 'tanggal'    => $item->created_at->format('Y-m-d H:i'),
                 'status'     => $item->status,
                 'keterangan' => $item->keterangan,
@@ -277,7 +277,7 @@ class netSalesController extends Controller
         return response()->json([
             'dataRKM'      => $arrayRKM,
             'dataNetSales' => $arrayNetSales,
-            'dataApproved' => $arrayAproved,
+            'dataApproved' => $arrayapproved,
         ]);
     }
     

@@ -327,5 +327,20 @@
                                         </div>
                                     </div>
                                 @endif
+                                @if ( $notification->data['message']['tipe'] == 'Persetujuan Payment Advanced')
+                                    <div class="notification mb-3">
+                                        <p><strong style="text-transform: capitalize;">{{ $notification->data['user'] }}</strong> telah {{ $notification->data['message']['status'] }} {{ $notification->data['message']['tipe'] }} {{ $notification->data['message']['nama_karyawan'] }} dengan alasan {{ $notification->data['message']['alasan'] }}</p>
+                                        <p>Pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
+                                        {{-- <p><strong>Status:</strong> {{ $notification->data['status'] }}</p> --}}
+                                        <div class="d-flex">
+                                            <a href="{{ $notification->data['path'] }}" class="btn btn-primary btn-sm" style="margin-right:8px;">Lihat Selengkapnya</a>
+                                            <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
+                                                @csrf
+                                                @method('PUT')
+                                                <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                @endif
                                 <hr>
 @endforeach
