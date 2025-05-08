@@ -132,6 +132,7 @@
                                 <th scope="col">Jabatan</th>
                                 <th scope="col">Tipe</th>
                                 <th scope="col">Status</th>
+                                <th scope="col">Nama Barang</th>
                                 <th scope="col">Aksi</th>
                             </tr>
                         </thead>
@@ -153,6 +154,7 @@
                                 <th scope="col">Jabatan</th>
                                 <th scope="col">Tipe</th>
                                 <th scope="col">Status</th>
+                                <th scope="col">Nama Barang</th>
                                 <th scope="col">Aksi</th>
                             </tr>
                         </thead>
@@ -430,6 +432,15 @@
                             {"data": "tipe"},
                             {"data": "tracking.tracking"},
                             {
+                                "data": "detail",
+                                "render": function (data, type, row) {
+                                    if (data && Array.isArray(data)) {
+                                        return data.map(item => item.nama_barang).join(', ');
+                                    }
+                                    return '-';
+                                }
+                            },
+                            {
                                 "data": null,
                                 "render": function(data, type, row) {
                                     var actions = "";
@@ -466,6 +477,15 @@
                             {"data": "karyawan.jabatan", "visible": false},
                             {"data": "tipe"},
                             {"data": "tracking.tracking"},
+                            {
+                                "data": "detail",
+                                "render": function (data, type, row) {
+                                    if (data && Array.isArray(data)) {
+                                        return data.map(item => item.nama_barang).join(', ');
+                                    }
+                                    return '-';
+                                }
+                            },
                             {
                                 "data": null,
                                 "render": function(data, type, row) {

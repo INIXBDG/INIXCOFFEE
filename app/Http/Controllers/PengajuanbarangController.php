@@ -56,13 +56,13 @@ class PengajuanBarangController extends Controller
         $divisi = $karyawan->divisi;
         // dd($year);
         if($jabatan == 'Finance & Accounting'){
-            $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking')->whereMonth('created_at', $month)->whereYear('created_at', $year)->get();
+            $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')->whereMonth('created_at', $month)->whereYear('created_at', $year)->get();
         }elseif ($jabatan == 'Office Manager' || $jabatan == 'Education Manager' || $jabatan == 'SPV Sales' || $jabatan == 'Koordinator ITSM'){
-            $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking')->whereHas('karyawan', function($query) use ($divisi) {
+            $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')->whereHas('karyawan', function($query) use ($divisi) {
                 $query->where('divisi', $divisi);
             })->latest()->get();
         }elseif($jabatan == 'GM'){
-            $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking')->latest()->get();
+            $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')->latest()->get();
         }
         else{
             $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')->whereHas('karyawan', function($query) use ($user) {
@@ -452,15 +452,15 @@ class PengajuanBarangController extends Controller
             $filename = time() . '.'. $file->getClientOriginalExtension();
             $directory = 'pengajuanbarang';
             $path = $file->storeAs($directory, $filename, 'public');
-            $status = 'Selesai';
+            // $status = 'Selesai';
             
-            $e = tracking_pengajuan_barang::create([
-                'id_pengajuan_barang' => $id,
-                'tracking' => $status,
-                'tanggal' => now()
-            ]);
+            // $e = tracking_pengajuan_barang::create([
+            //     'id_pengajuan_barang' => $id,
+            //     'tracking' => $status,
+            //     'tanggal' => now()
+            // ]);
             $post->update([
-                'id_tracking' => $e->id,
+                // 'id_tracking' => $e->id,
                 'invoice' => $path,
             ]);
 
