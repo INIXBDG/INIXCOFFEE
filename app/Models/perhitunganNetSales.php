@@ -15,8 +15,13 @@ class perhitunganNetSales extends Model
     {
         return $this->belongsTo(RKM::class, 'id_rkm', 'id');
     }
-    public function aprovedNetSales()
+    public function approvedNetSales()
     {
-        return $this->hasMany(AprovedNetSales::class, 'id_netSales', 'id');
+        return $this->hasMany(approvedNetSales::class, 'id_netSales', 'id');
     }    
+    public function karyawan()
+    {
+        return $this->belongsTo(Karyawan::class, 'id_karyawan'); // sesuaikan 'id_karyawan' dengan nama kolom foreign key yang benar
+    }
+
 }

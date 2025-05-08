@@ -155,7 +155,7 @@
         let formData = new FormData(this);
 
         $.ajax({
-            url: "{{ route('netsales.aproved') }}",
+            url: "{{ route('netsales.approved') }}",
             method: 'POST',
             data: formData,
             processData: false, 

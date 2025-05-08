@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('aproved_net_sales', function (Blueprint $table) {
+        Schema::create('approved_net_sales', function (Blueprint $table) {
             $table->id();
             $table->integer('id_netSales');
             $table->boolean('status');
@@ -27,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('aproved_net_sales');
+        Schema::dropIfExists('approved_net_sales');
     }
 };
