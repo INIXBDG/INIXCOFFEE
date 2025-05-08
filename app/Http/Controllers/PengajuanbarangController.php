@@ -442,8 +442,8 @@ class PengajuanBarangController extends Controller
 
     public function updateInvoice(Request $request, $id)
     {
-        $post = PengajuanBarang::findOrFail($id);
-        // dd($request->all());
+        $post = PengajuanBarang::with('tracking')->findOrFail($id);
+        // dd($post->tracking->tracking);
         if ($request->hasFile('invoice')) {
 
             Storage::delete('public/storage/pengajuanbarang/'.$post->invoice);
@@ -452,6 +452,24 @@ class PengajuanBarangController extends Controller
             $filename = time() . '.'. $file->getClientOriginalExtension();
             $directory = 'pengajuanbarang';
             $path = $file->storeAs($directory, $filename, 'public');
+            if($post->tracking->tracking == 'Pencairan Sudah Selesai'){
+                $status = 'Selesai';
+            
+                $e = tracking_pengajuan_barang::create([
+                    'id_pengajuan_barang' => $id,
+                    'tracking' => $status,
+                    'tanggal' => now()
+                ]);
+                $post->update([
+                    'id_tracking' => $e->id,
+                    'invoice' => $path,
+                ]);
+            }else{
+                $post->update([
+                    // 'id_tracking' => $e->id,
+                    'invoice' => $path,
+                ]);
+            }
             // $status = 'Selesai';
             
             // $e = tracking_pengajuan_barang::create([
