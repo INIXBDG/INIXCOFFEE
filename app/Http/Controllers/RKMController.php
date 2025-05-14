@@ -114,7 +114,7 @@ class RKMController extends Controller
             'nama_perusahaan' => $perusahaan->nama_perusahaan,
         ];
         $file = $request->file('registrasi_form');
-        $path = '';
+        $path = null;
         if ($file) {
             $extension = $file->getClientOriginalExtension();
 
@@ -479,13 +479,46 @@ class RKMController extends Controller
             'exam' => 'nullable',
             'authorize' => 'nullable',
             'status' => 'nullable',
+            'registrasi_form' => 'nullable',
         ]);
 
         $post = RKM::findOrFail($id);
-        // return $post;
-        if (!$post->registrasi_form && $request->status == '0') {
-            return back()->with('error', 'Harap Isi Dahulu Registrasi Form nya Sebelum kelas Dimerahkan.');
+        // dd($request->all());
+        if ($request->status == '0') {
+            // Jika user mengunggah file registrasi_form
+            if ($request->hasFile('registrasi_form')) {
+                $file = $request->file('registrasi_form');
+
+                $extension = $file->getClientOriginalExtension();
+
+                // Buat nama file berdasarkan informasi materi, perusahaan, dan tanggal
+                $filename = 'registrasiform_' . 
+                            $post->materi->nama_materi . '_' . 
+                            $post->perusahaan->nama_perusahaan . '_' . 
+                            $post->tanggal_awal . '_' . 
+                            $post->tanggal_akhir . '.' . 
+                            $extension;
+
+                // Direktori penyimpanan
+                $directory = 'registrasiform';
+
+                // Cek ekstensi file
+                if (in_array(strtolower($extension), ['pdf', 'jpg', 'jpeg', 'png'])) {
+                    $path = $file->storeAs($directory, $filename, 'public');
+
+                    // Simpan path ke dalam database jika diperlukan
+                    $post->registrasi_form = $path;
+                    $post->save();
+                } else {
+                    return back()->with('error', 'Format file tidak didukung. Harap unggah file dengan format PDF, JPG, JPEG, atau PNG.');
+                }
+            } 
+            // Jika tidak ada file dan belum pernah upload sebelumnya
+            
+        } else if (!$post->registrasi_form) {
+                return back()->with('error', 'Harap isi terlebih dahulu registrasi form sebelum kelas dimerahkan.');
         }
+
         $exam = $request->exam ? '1' : '0';
         $authorize = $request->authorize ? '1' : '0';
 
@@ -567,7 +600,6 @@ class RKMController extends Controller
             'exam' => $exam,
             'authorize' => $authorize,
             'status' => $request->status,
-            'isi_pax' => $request->pax,
         ]);
         // $HRD = karyawan::where('jabatan', 'HRD')->first() ?? '-';
         $kooroff = karyawan::where('jabatan', 'Koordinator Office')->first() ?? '-';

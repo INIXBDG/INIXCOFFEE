@@ -8,7 +8,7 @@
                 <div class="card-body" id="card">
                     <a href="{{ url()->previous() }}" class="btn click-primary my-2"><img src="{{ asset('icon/arrow-left.svg') }}" class="img-responsive" width="20px"> Back</a>
                     <h5 class="card-title text-center mb-4">{{ __('Edit Rencana Kelas Mingguan') }}</h5>
-                    <form method="POST" action="{{ route('rkm.update', $post->id) }}">
+                    <form method="POST" action="{{ route('rkm.update', $post->id) }}" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
                         <div class="row mb-3">
