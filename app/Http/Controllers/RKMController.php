@@ -305,7 +305,7 @@ class RKMController extends Controller
     {
         // Get post by ID
         $post = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan'])->findOrFail($id);
-        $sales = Karyawan::whereIn('jabatan', ['Sales', 'SPV Sales'])
+        $sales = Karyawan::whereIn('jabatan', ['Sales', 'SPV Sales', 'Adm Sales', 'Tim Digital'])
             ->where('status_aktif', '1')
             ->get();
 
