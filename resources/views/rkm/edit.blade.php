@@ -222,6 +222,17 @@
                                 @enderror
                             </div>
                         </div>
+                        <div class="row mb-3" id="registform">
+                            <label for="registrasi_form" class="col-md-4 col-form-label text-md-start">{{ __('Registrasi Form (PDF)') }}</label>
+                            <div class="col-md-6">
+                                <input type="file" accept="application/pdf" class="form-control @error('registrasi_form') is-invalid @enderror" name="registrasi_form">
+                                @error('registrasi_form')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                @enderror
+                            </div>
+                        </div>
 
                         <div class="row mb-0">
                             <div class="col-md-6 offset-md-4">
@@ -263,7 +274,10 @@
         $('#harga_jual').on('keyup', function(){
                     $(this).val(formatRupiah($(this).val(), 'Rp'));
         });
-
+        $('select[name="status"]').change(function() {
+                    toggleRegistForm();
+                });
+                toggleRegistForm();
         var perusahaan_key = '{{ $post->perusahaan_key }}'
         var materi_key = '{{ $post->materi_key }}'
         // var data = '{{ $post }}'
@@ -293,7 +307,14 @@
                 cache: true
             }
         });
-
+        function toggleRegistForm() {
+            var status = $('select[name="status"]').val();
+            if (status === '0') {
+                $('#registform').show();
+            } else {
+                $('#registform').hide();
+            }
+        }
         $('#materi_key').select2({
             placeholder: "Pilih Materi",
             allowClear: true,
