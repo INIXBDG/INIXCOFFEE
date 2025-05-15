@@ -515,7 +515,7 @@ class RKMController extends Controller
             } 
             // Jika tidak ada file dan belum pernah upload sebelumnya
             
-        } else if (!$post->registrasi_form) {
+        } else if (!$post->registrasi_form && $request->status == '0') {
                 return back()->with('error', 'Harap isi terlebih dahulu registrasi form sebelum kelas dimerahkan.');
         }
 

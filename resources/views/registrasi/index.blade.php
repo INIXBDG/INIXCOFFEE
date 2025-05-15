@@ -238,7 +238,7 @@
                     "data": null,
                     "render": function(data) {
                         moment.locale('id');
-                        return data && data.tanggal_awal ? moment(data.tanggal_awal).format('DD MMMM YYYY') : '-';
+                        return data && data.created_at ? moment(data.created_at).format('YYYY-MM-DD') : '-';
                     },
                     "visible": false,
                 },
