@@ -26,6 +26,7 @@
                         <thead>
                             <tr>
                                 <th scope="col">No</th>
+                                <th scope="col">No</th>
                                 <th scope="col">Nama Materi</th>
                                 <th scope="col">Kode Materi</th>
                                 <th scope="col">Durasi Materi</th>
@@ -135,14 +136,14 @@
                             extend: 'excel',
                             text: 'Export to Excel',
                             exportOptions: {
-                                columns: [ 1, 2, 3, 4 ] // Kolom yang akan diekspor ke Excel
+                                columns: [ 1, 2, 3, 4, 5, 6, 7 ] // Kolom yang akan diekspor ke Excel
                             },
                         },
                         {
                             extend: 'pdf',
                             text: 'Export to PDF',
                             exportOptions: {
-                                columns: [ 1, 2, 3, 4 ] // Kolom yang akan diekspor ke PDF
+                                columns: [ 1, 2, 3, 4, 5, 6 ] // Kolom yang akan diekspor ke PDF
                             },
                             customize: function(doc) {
                                 doc.content[1].table.widths = ['*', '*', '*', '*']; // Menyesuaikan lebar kolom
@@ -185,6 +186,9 @@
                     "render": function (data){
                         return tableIndex++
                     }
+                },
+                {   "data": 'id',
+                    "visible": false
                 },
                 {"data": "nama_materi"},
                 {"data": "kode_materi"},
@@ -256,11 +260,11 @@
                     }
                 }
             ],
-            "order": [[6, 'asc']],
+            "order": [[7, 'asc']],
             "columnDefs": [
                 {
-                    "targets": 6, // Indeks kolom status
-                    "orderData": 6,
+                    "targets": 7, // Indeks kolom status
+                    "orderData": 7,
                     "orderDataType": "custom-status"
                 }
             ],
