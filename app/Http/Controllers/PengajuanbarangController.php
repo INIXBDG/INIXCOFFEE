@@ -23,30 +23,64 @@ class PengajuanBarangController extends Controller
     public function index()
     {
         $jabatan = auth()->user()->jabatan;
-        if($jabatan == 'Finance & Accounting' || $jabatan == 'GM' || $jabatan == 'SPV Sales' || $jabatan == 'Koordinator ITSM'){
+
+        // Daftar jabatan yang otomatis dapat 'buka'
+        $jabatanBuka = ['Finance & Accounting', 'GM', 'SPV Sales', 'Koordinator ITSM'];
+
+        if (in_array($jabatan, $jabatanBuka)) {
             $tracking = 'buka';
-        }else{
+        } else {
             $karyawan = auth()->user()->karyawan->nama_lengkap;
-            $tracking = tracking_pengajuan_barang::with(['pengajuanbarang.karyawan'])
+
+            $trackingRecord = tracking_pengajuan_barang::with(['pengajuanbarang.karyawan'])
                 ->whereHas('pengajuanbarang.karyawan', function ($query) use ($karyawan) {
                     $query->where('nama_lengkap', $karyawan);
                 })
                 ->latest()
                 ->first();
-            // dd($tracking->pengajuanbarang->karyawan->divisi);
-            if($tracking == null){
-                $tracking = 'buka';
-            }elseif($tracking->tracking == 'Pencairan Sudah Selesai'){
-                $tracking = 'tutup';
-            }elseif($tracking->pengajuanbarang->karyawan->divisi == 'Sales & Marketing' && $tracking->pengajuanbarang->tipe == 'Reimbursement'){
-                $tracking = 'buka';
-            }else{
-                $tracking = 'buka';
-            }
+
+            $tracking = $this->determineTrackingStatus($trackingRecord);
         }
-        // return $tracking;
+
         return view('pengajuanbarang.index', compact('tracking'));
     }
+
+    /**
+     * Fungsi untuk menentukan status tracking berdasarkan record tracking_pengajuan_barang
+     */
+    private function determineTrackingStatus($trackingRecord)
+    {
+        // Jika tidak ada record, buka
+        if (is_null($trackingRecord)) {
+            return 'buka';
+        }
+
+        $pengajuan = $trackingRecord->pengajuanbarang;
+
+        // Jika invoice ada dan tidak kosong, buka
+        if (!empty($pengajuan?->invoice)) {
+            return 'buka';
+        }
+
+        // Jika invoice tidak ada, tutup
+        if (empty($pengajuan?->invoice)) {
+            return 'tutup';
+        }
+
+        // Jika tracking sudah selesai pencairan, tutup
+        if ($trackingRecord->tracking === 'Pencairan Sudah Selesai') {
+            return 'tutup';
+        }
+
+        // Jika divisi Sales & Marketing dan tipe Reimbursement, buka
+        if ($pengajuan?->karyawan?->divisi === 'Sales & Marketing' && $pengajuan?->tipe === 'Reimbursement') {
+            return 'buka';
+        }
+
+        // Default buka
+        return 'buka';
+    }
+
 
     public function getPengajuanBarang($month, $year) 
     {

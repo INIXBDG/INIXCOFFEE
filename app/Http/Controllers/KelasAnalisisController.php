@@ -522,13 +522,32 @@ class KelasAnalisisController extends Controller
     }
 
 
-    public function sinkronDataKelasAnalisis()
+    public function sinkronDataKelasAnalisis($year, $monthStart, $monthEnd)
     {
         $data = kelasanalisis::with('rkm')->get();
         foreach ($data as $value) {
-            $rkm = RKM::findOrFail($value->id_rkm);
-            $pax = $rkm->pax;
-            $tanggalAwal = $rkm->tanggal_awal;
+            $rkm = $value->rkm;
+
+            // Cek apakah relasi rkm ada
+            if (!$rkm) {
+                // Jika rkm null, lewati data ini atau set nilai default
+                continue; // atau bisa set nilai default jika ingin proses lanjut
+            }
+
+            // Contoh pengambilan pax dengan aman
+            $pax = (int) $rkm->pax;
+
+            // Parsing tanggal_awal dengan Carbon
+            $tanggalAwal = Carbon::parse($rkm->tanggal_awal);
+
+            // Filter berdasarkan tahun dan bulan
+            if (
+                $tanggalAwal->year != $year ||
+                $tanggalAwal->month < $monthStart ||
+                $tanggalAwal->month > $monthEnd
+            ) {
+                continue;
+            }
             $tanggalAkhir = $rkm->tanggal_akhir;
             $durasihari = Carbon::parse($tanggalAkhir)->diffInDays($tanggalAwal);
             $durasi = $durasihari + 1;
