@@ -39,6 +39,8 @@ class PengajuanBarangController extends Controller
                 ->latest()
                 ->first();
 
+            // dd($trackingRecord);
+
             $tracking = $this->determineTrackingStatus($trackingRecord);
         }
 
