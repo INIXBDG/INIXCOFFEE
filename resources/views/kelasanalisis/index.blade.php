@@ -536,8 +536,22 @@
                 }
 
                 function sinkronData() {
+                    var tahun = document.getElementById('tahun').value;
+                    var bulanRange = document.getElementById('bulanRange').value;
+
+                    if (!tahun || !bulanRange) {
+                        alert("Mohon pilih tahun dan rentang bulan terlebih dahulu.");
+                        return;
+                    }
+
+                    var [bulanAwal, bulanAkhir] = bulanRange.split('-');
+
+                    if (isNaN(bulanAwal) || isNaN(bulanAkhir)) {
+                        alert("Rentang bulan tidak valid.");
+                        return;
+                    }
                     $.ajax({
-                        url: "sinkronDataKelasAnalisis/",
+                        url: `sinkronDataKelasAnalisis/${tahun}/${bulanAwal}/${bulanAkhir}`,
                         method: 'GET',
                         dataType: 'json',
                         beforeSend: function() {
@@ -670,7 +684,7 @@
                                 alert("Kesalahan: Kontainer tabel tidak ditemukan.");
                                 $('body').append('<div id="content"></div>');
                             }
-                            console.log("Generated HTML: ", html);
+                            // console.log("Generated HTML: ", html);
                             $('#content').html(html);
                             console.log("Content after insertion: ", $('#content').html());
                             $('#loadingModal').modal('hide');

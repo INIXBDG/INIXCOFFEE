@@ -249,29 +249,30 @@ class SouvenirController extends Controller
                 // Update foto variable
                 $foto = $filename;
             }
+            // Find the souvenir by ID
+            $souvenir = souvenir::findOrFail($id);
+
+            // Update the souvenir data
+            $souvenir->update([
+                'nama_souvenir' => $request->nama_souvenir,
+                'harga' => $harga,
+                'stok' => $stok,
+                'foto' => $foto ?? $souvenir->foto, // Keep old foto if new one is not uploaded
+                'blob_foto' => $fileContent ?? $souvenir->blob_foto, // Keep old blob if new one is not uploaded
+                'min_harga_pelatihan' => $min_harga_pelatihan,
+                'max_harga_pelatihan' => $max_harga_pelatihan,
+            ]);
+
+            // Record stock change in catatansouvenir table
+            catatansouvenir::create([
+                'id_souvenir'     => $id,
+                'catatan'         => $request->catatan,
+                'stok_perubahan'  => $request->new_stok,
+                'stok_terakhir'   => $stok,
+            ]);
         }
 
-        // Find the souvenir by ID
-        $souvenir = souvenir::findOrFail($id);
-
-        // Update the souvenir data
-        $souvenir->update([
-            'nama_souvenir' => $request->nama_souvenir,
-            'harga' => $harga,
-            'stok' => $stok,
-            'foto' => $foto ?? $souvenir->foto, // Keep old foto if new one is not uploaded
-            'blob_foto' => $fileContent ?? $souvenir->blob_foto, // Keep old blob if new one is not uploaded
-            'min_harga_pelatihan' => $min_harga_pelatihan,
-            'max_harga_pelatihan' => $max_harga_pelatihan,
-        ]);
-
-        // Record stock change in catatansouvenir table
-        catatansouvenir::create([
-            'id_souvenir'     => $id,
-            'catatan'         => $request->catatan,
-            'stok_perubahan'  => $request->new_stok,
-            'stok_terakhir'   => $stok,
-        ]);
+        
 
         return redirect()->route('souvenir.index')->with(['success' => 'Data Berhasil Diperbarui!']);
     }
