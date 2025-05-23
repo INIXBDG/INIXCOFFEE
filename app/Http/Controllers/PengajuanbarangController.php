@@ -42,6 +42,8 @@ class PengajuanBarangController extends Controller
             // dd($trackingRecord);
 
             $tracking = $this->determineTrackingStatus($trackingRecord);
+
+            dd($tracking);
         }
 
         return view('pengajuanbarang.index', compact('tracking'));
@@ -59,8 +61,13 @@ class PengajuanBarangController extends Controller
 
         $pengajuan = $trackingRecord->pengajuanbarang;
 
-        // Jika invoice ada dan tidak kosong, buka
-        if (!empty($pengajuan?->invoice)) {
+        // Jika tracking sudah selesai pencairan, tutup
+        if ($trackingRecord->tracking === 'Pencairan Sudah Selesai') {
+            return 'tutup';
+        }
+
+        // Jika divisi Sales & Marketing dan tipe Reimbursement, buka
+        if ($pengajuan?->karyawan?->divisi === 'Sales & Marketing' && $pengajuan?->tipe === 'Reimbursement') {
             return 'buka';
         }
 
@@ -69,13 +76,8 @@ class PengajuanBarangController extends Controller
             return 'tutup';
         }
 
-        // Jika tracking sudah selesai pencairan, tutup
-        if ($trackingRecord->tracking === 'Pencairan Sudah Selesai') {
-            return 'tutup';
-        }
-
-        // Jika divisi Sales & Marketing dan tipe Reimbursement, buka
-        if ($pengajuan?->karyawan?->divisi === 'Sales & Marketing' && $pengajuan?->tipe === 'Reimbursement') {
+        // Jika invoice ada dan tidak kosong, buka
+        if (!empty($pengajuan?->invoice)) {
             return 'buka';
         }
 
