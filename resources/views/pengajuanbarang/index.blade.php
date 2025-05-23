@@ -383,7 +383,15 @@
                         var detailCondition = true; // Selalu enabled
 
                         addButton(detailLabel, detailUrl, detailCondition, detailIcon);
-
+                        if(!trackingStatus.includes('Finance')){
+                            actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/pengajuanbarang') }}/' + row.id + '" method="POST">';
+                            actions += '@csrf';
+                            actions += '@method('DELETE')';
+                            actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
+                            actions += '</form>';
+                            actions += '</div>';
+                            actions += '</div>';
+                        }
                         actions += '</div>';
                         actions += '</div>';
 
