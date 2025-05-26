@@ -25,6 +25,8 @@ use App\Notifications\AssignkelasNotification;
 use App\Notifications\rkmnewNotification;
 use App\Notifications\RKMUpdateNotification;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\RKMExport;
 
 // use Carbon\CarbonImmutable;
 use Carbon\Carbon;
@@ -45,6 +47,18 @@ class RKMController extends Controller
 
         return view('rkm.index');
     }
+
+
+    public function excelDownload(Request $request)
+    {
+        $tahun = $request->input('tahun');
+        $bulan = $request->input('bulan');
+
+        $filename = 'rkm-' . $bulan . '-' . $tahun . '.xlsx';
+
+        return Excel::download(new RKMExport($tahun, $bulan), $filename);
+    }
+
     public function create(): View
     {
         // $sales = karyawan::where('jabatan', 'sales')->get();
@@ -492,12 +506,12 @@ class RKMController extends Controller
                 $extension = $file->getClientOriginalExtension();
 
                 // Buat nama file berdasarkan informasi materi, perusahaan, dan tanggal
-                $filename = 'registrasiform_' . 
-                            $post->materi->nama_materi . '_' . 
-                            $post->perusahaan->nama_perusahaan . '_' . 
-                            $post->tanggal_awal . '_' . 
-                            $post->tanggal_akhir . '.' . 
-                            $extension;
+                $filename = 'registrasiform_' .
+                    $post->materi->nama_materi . '_' .
+                    $post->perusahaan->nama_perusahaan . '_' .
+                    $post->tanggal_awal . '_' .
+                    $post->tanggal_akhir . '.' .
+                    $extension;
 
                 // Direktori penyimpanan
                 $directory = 'registrasiform';
@@ -512,11 +526,11 @@ class RKMController extends Controller
                 } else {
                     return back()->with('error', 'Format file tidak didukung. Harap unggah file dengan format PDF, JPG, JPEG, atau PNG.');
                 }
-            } 
+            }
             // Jika tidak ada file dan belum pernah upload sebelumnya
-            
+
         } else if (!$post->registrasi_form && $request->status == '0') {
-                return back()->with('error', 'Harap isi terlebih dahulu registrasi form sebelum kelas dimerahkan.');
+            return back()->with('error', 'Harap isi terlebih dahulu registrasi form sebelum kelas dimerahkan.');
         }
 
         $exam = $request->exam ? '1' : '0';
@@ -697,7 +711,8 @@ class RKMController extends Controller
             $extension = strtolower($file->getClientOriginalExtension());
 
             // Sanitize all dynamic parts of the filename!
-            function sanitizeFileName($str) {
+            function sanitizeFileName($str)
+            {
                 // Remove invisible characters and replace invalid ones with underscores.
                 return preg_replace('/[^\w\d\-_.]+/u', '_', trim($str));
             }
@@ -726,11 +741,11 @@ class RKMController extends Controller
 
                 return redirect()->route('rkm.index')->with(['success' => 'Data Berhasil Disimpan']);
             } else {
-            return redirect()->back()->withErrors(['registrasi_form' => 'Hanya file PDF yang diperbolehkan.']);
+                return redirect()->back()->withErrors(['registrasi_form' => 'Hanya file PDF yang diperbolehkan.']);
+            }
         }
-    }
 
-    return redirect()->back()->withErrors(['registrasi_form' => 'Tidak ada file yang diunggah.']);
+        return redirect()->back()->withErrors(['registrasi_form' => 'Tidak ada file yang diunggah.']);
     }
 
 

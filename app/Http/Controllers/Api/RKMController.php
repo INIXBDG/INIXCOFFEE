@@ -13,6 +13,8 @@ use App\Models\Perusahaan;
 use App\Http\Resources\PostResource;
 use App\Models\AbsensiPDF;
 use App\Models\Nilaifeedback;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\RKMExport;
 
 class RKMController extends Controller
 {
@@ -86,7 +88,6 @@ class RKMController extends Controller
                 // return $rows;
 
                 $weekRanges[] = ['start' => $start, 'end' =>  $end, 'data' => $rows];
-
             }
 
             $monthRanges[] = ['month' => $startOfMonth->translatedFormat('F-Y'), 'weeksData' => $weekRanges];
@@ -96,7 +97,6 @@ class RKMController extends Controller
 
         $json = $monthRanges;
         return new PostResource(true, 'List Detail Bulan RKM', $json);
-
     }
 
     public function RKMAPIabsensi($year, $month)
@@ -168,11 +168,10 @@ class RKMController extends Controller
                     $absensiExists = AbsensiPDF::where('id_rkm', $row->id)->exists();
                     $row->absensi_status = $absensiExists ? 'green' : 'red';
                 }
-                
+
                 // return $rows;
 
                 $weekRanges[] = ['start' => $start, 'end' =>  $end, 'data' => $rows];
-
             }
 
             $monthRanges[] = ['month' => $startOfMonth->translatedFormat('F-Y'), 'weeksData' => $weekRanges];
@@ -182,7 +181,6 @@ class RKMController extends Controller
 
         $json = $monthRanges;
         return new PostResource(true, 'List Detail Bulan RKM', $json);
-
     }
 
 

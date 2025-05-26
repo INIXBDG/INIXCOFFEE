@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <div class="container-fluid">
     <div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="spinnerModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -52,8 +53,9 @@
                                 </select>
                             </div>
 
-                            <div class="col-md-4 mx-1">
-                                <button type="submit" onclick="getDataRKM()" class="btn click-primary" style="margin-top: 37px">Cari Data</button>
+                           <div class="col-md-4 mx-1">
+                                <button type="submit" onclick="getDataRKM()" class="btn click-primary" style="margin-top: 30px; height: 37px;">Cari Data</button>
+                                <button type="submit" onclick="excelDownload()" class="btn btn-success" style="margin-top: 30px">Download excel</button>
                             </div>
                         </div>
                     </div>
@@ -123,6 +125,44 @@
     $(document).ready(function(){
         getDataRKM();
     });
+
+    function excelDownload() {
+        var tahun = document.getElementById('tahun').value;
+        var bulan = document.getElementById('bulan').value;
+
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.action = "{{ route('excel') }}";
+        form.style.display = 'none';
+
+        var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        var csrf = document.createElement('input');
+        csrf.type = 'hidden';
+        csrf.name = '_token';
+        csrf.value = token;
+        form.appendChild(csrf);
+
+        var inputTahun = document.createElement('input');
+        inputTahun.type = 'hidden';
+        inputTahun.name = 'tahun';
+        inputTahun.value = tahun;
+        form.appendChild(inputTahun);
+
+        var inputBulan = document.createElement('input');
+        inputBulan.type = 'hidden';
+        inputBulan.name = 'bulan';
+        inputBulan.value = bulan;
+        form.appendChild(inputBulan);
+
+        document.body.appendChild(form);
+        form.submit();
+
+        // Hapus form setelah submit
+        setTimeout(() => {
+            document.body.removeChild(form);
+        }, 1000);
+    }
+
     function getDataRKM() {
         var tahun = document.getElementById('tahun').value;
         var bulan = document.getElementById('bulan').value;
