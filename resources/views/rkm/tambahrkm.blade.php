@@ -185,6 +185,7 @@
                                     <option value="Workshop">Workshop</option>
                                     <option value="Webinar">Webinar</option>
                                     <option value="Narasumber">Narasumber</option>
+                                    <option value="Pinjam Instruktur">Pinjam Instruktur</option>
                                 </select>
                                 @error('event')
                                     <span class="invalid-feedback" role="alert">
