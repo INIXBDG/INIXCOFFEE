@@ -143,7 +143,7 @@ Route::post('tunjangankelompok', [App\Http\Controllers\TunjanganController::clas
 Route::get('jumlahAbsensi/{id_karyawan}/{bulan}/{tahun}', [App\Http\Controllers\AbsensiKaryawanController::class, 'jumlahAbsensi'])->name('jumlahAbsensi');
 Route::get('getListMengajar/{bulan}/{tahun}', [App\Http\Controllers\rekapInstrukturController::class, 'getListMengajar'])->name('getListMengajar');
 Route::get('sinkronData', [App\Http\Controllers\rekapInstrukturController::class, 'sinkronData'])->name('sinkronData');
-Route::get('sinkronDataKelasAnalisis', [App\Http\Controllers\KelasAnalisisController::class, 'sinkronDataKelasAnalisis'])->name('sinkronDataKelasAnalisis');
+Route::get('sinkronDataKelasAnalisis/{year}/{monthStart}/{monthEnd}', [App\Http\Controllers\KelasAnalisisController::class, 'sinkronDataKelasAnalisis'])->name('sinkronDataKelasAnalisis');
 Route::get('getListRekapInstruktur/{bulan}/{tahun}', [App\Http\Controllers\tunjanganEducationController::class, 'getListRekapInstruktur'])->name('getListRekapInstruktur');
 Route::get('getTunjanganEdu/{id}/{month}/{year}', [App\Http\Controllers\rekapInstrukturController::class, 'getTunjanganEdu'])->name('getTunjanganEdu');
 Route::get('getTunjanganEdu', [App\Http\Controllers\TunjanganController::class, 'getJenisTunjanganEdu'])->name('getTunjanganEducation');

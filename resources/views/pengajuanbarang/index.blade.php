@@ -51,6 +51,7 @@
                                     <option value="Membuat Permintaan Ke Direktur Utama">Membuat Permintaan Ke Direktur Utama</option>
                                     <option value="Pengajuan sedang dalam proses Pencairan">Pengajuan sedang dalam proses Pencairan</option>
                                     <option value="Pencairan Sudah Selesai">Pencairan Sudah Selesai</option>
+                                    <option value="Selesai">Selesai</option>
                                     {{-- <option value="Pencairan Sudah Selesai">Pencairan Sudah Selesai</option> --}}
                                 </select>
                             </div>
@@ -382,7 +383,15 @@
                         var detailCondition = true; // Selalu enabled
 
                         addButton(detailLabel, detailUrl, detailCondition, detailIcon);
-
+                        if(!trackingStatus.includes('Finance')){
+                            actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/pengajuanbarang') }}/' + row.id + '" method="POST">';
+                            actions += '@csrf';
+                            actions += '@method('DELETE')';
+                            actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
+                            actions += '</form>';
+                            actions += '</div>';
+                            actions += '</div>';
+                        }
                         actions += '</div>';
                         actions += '</div>';
 
@@ -512,7 +521,7 @@
                                     actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
 
                                     // Tambahkan tombol Approve jika peran pengguna diizinkan
-                                    if (userRole == 'Finance &amp; Accounting' && (trackingStatus.includes('Finance') || trackingStatus.includes('Permintaan') || trackingStatus.includes('proses'))) {
+                                    if (userRole == 'Finance &amp; Accounting' && (trackingStatus.includes('Finance') || trackingStatus.includes('Permintaan') || trackingStatus.includes('proses') || trackingStatus.includes('Selesai'))) {
                                             actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Approve</button>';
                                         } else {
                                             actions += '<button type="button" class="dropdown-item disabled"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Approve</button>';

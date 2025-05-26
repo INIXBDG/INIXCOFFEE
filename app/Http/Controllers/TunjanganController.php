@@ -323,7 +323,7 @@ class TunjanganController extends Controller
         $karyawanList = Karyawan::whereNotIn('jabatan', ['Komisaris', 'Direktur'])
                                 ->where('status_aktif', '1')
                                 ->get();
-        // return $karyawanList;
+        return $karyawanList;
         foreach ($karyawanList as $karyawan) {
             $karyawanId = $karyawan->id;
 
