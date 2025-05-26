@@ -73,7 +73,7 @@ class TunjanganController extends Controller
     public function getJenisTunjanganUmum()
     {
         $tunjangan = JenisTunjangan::whereIn('nama_tunjangan', ['Absensi', 'Makan', 'Transport', 'Lembur'])->get();
-        
+
         return response()->json([
             'success' => true,
             'message' => 'List Tunjangan',
@@ -96,7 +96,7 @@ class TunjanganController extends Controller
             'data' => $post,
         ]);
     }
-    
+
     public function getTunjanganSaya($id, $month, $year)
     {
         if ($month == 1) {
@@ -182,7 +182,7 @@ class TunjanganController extends Controller
         $hrd = karyawan::where('jabatan', 'Koordinator Office')->first();
         $direktur = karyawan::where('jabatan', 'Direktur Utama')->first();
         $me = karyawan::where('id', $id)->first();
-    
+
         // Menyusun data untuk PDF
         $data = [
             'absensi' => $jumlahAbsensi,
@@ -212,7 +212,7 @@ class TunjanganController extends Controller
             $bulan = $month - 1;
             $tahun = $year; // Untuk bulan lain, tetap bulan yang diminta
         }
-    
+
         $post = TunjanganKaryawan::where('bulan', $bulan)
             ->where('tahun', $tahun)
             ->with('karyawan', 'jenistunjangan') // Mengambil data karyawan terkait
@@ -321,9 +321,11 @@ class TunjanganController extends Controller
 
         // Ambil semua karyawan yang aktif dan termasuk dalam divisi yang relevan
         $karyawanList = Karyawan::whereNotIn('jabatan', ['Komisaris', 'Direktur'])
+                                ->whereNotIn('id', '1')
+                                ->where('kode_karyawan', 'not like', '%OL%')
                                 ->where('status_aktif', '1')
                                 ->get();
-        return $karyawanList;
+        // return $karyawanList;
         foreach ($karyawanList as $karyawan) {
             $karyawanId = $karyawan->id;
 
@@ -350,7 +352,7 @@ class TunjanganController extends Controller
 
             // Hitung jumlah absensi dan keterlambatan
             $jumlahAbsensi = $absensiKaryawan->count();
-            
+
             $totalSeconds = $absensiKaryawan->sum(function ($item) {
                 if (!empty($item->waktu_keterlambatan) && strpos($item->waktu_keterlambatan, ':') !== false) {
                     list($hours, $minutes, $seconds) = explode(':', $item->waktu_keterlambatan);
@@ -374,13 +376,13 @@ class TunjanganController extends Controller
                 $keterangan = "Tidak pernah terlambat";
                 $includeTunjangan[] = 'Absensi';
             }
-            
+
 
             // Ambil jenis tunjangan yang sesuai
             $jenisTunjangan = JenisTunjangan::where('divisi', 'All')
                 ->whereIn('nama_tunjangan', $includeTunjangan) // Menggunakan whereIn untuk menyertakan tunjangan
                 ->get();
-            
+
             // return $jenisTunjangan;
             $cuti = pengajuancuti::where('id_karyawan', $karyawanId)
                 ->whereYear('tanggal_awal', $tahun)
@@ -441,10 +443,10 @@ class TunjanganController extends Controller
                         $tunjanganKaryawan->total = $totalLemburan; // Pastikan nilai adalah integer (casting)
                         $tunjanganKaryawan->save();
                     // }else{
-                        
+
                     // }
-                    
-                    
+
+
                 }else if ($tunjangan->hitung == 'Perhari' && $tunjangan->tipe == 'Tunjangan') {
                     if ($karyawan->jabatan == 'Direktur Utama') {
                         $jumlahAbsensi = AbsensiKaryawan::whereMonth('tanggal', $bulan)  // Ganti dengan bulan yang ingin dihitung
@@ -460,7 +462,7 @@ class TunjanganController extends Controller
                         // Hitung untuk karyawan lain tanpa tambahan
                         $jumlahTunjangan = $tunjangan->nilai * $jumlahAbsensi;
                     }
-                
+
                     $tunjanganKaryawan = new TunjanganKaryawan();
                     $tunjanganKaryawan->id_karyawan = $karyawanId;
                     $tunjanganKaryawan->bulan = $bulan;
@@ -471,8 +473,8 @@ class TunjanganController extends Controller
                     $tunjanganKaryawan->total = (float) $jumlahTunjangan; // Pastikan nilai adalah integer (casting)
                     $tunjanganKaryawan->save();
                 }
-                
-                
+
+
 
                 // Jika jenis tunjangan dihitung sekali per bulan
                 else if ($tunjangan->hitung == 'Perbulan' && $tunjangan->tipe == 'Tunjangan') {
@@ -485,9 +487,9 @@ class TunjanganController extends Controller
                     // $tunjanganKaryawan->jumlah_absensi = '1';
                     $tunjanganKaryawan->total = (float) $tunjangan->nilai; // Pastikan nilai adalah integer (casting)
                     $tunjanganKaryawan->save();
-                    
+
                 }
-               
+
             }
         }
 
@@ -500,11 +502,11 @@ class TunjanganController extends Controller
         $year = now()->year;
 
         if ($month == 1) {
-            $bulan = 12; 
-            $tahun = $year - 1; 
+            $bulan = 12;
+            $tahun = $year - 1;
         } else {
             $bulan = $month - 1;
-            $tahun = $year; 
+            $tahun = $year;
         }
         $karyawan = Karyawan::where('status_aktif', '1')->get();
         $tunjangan = JenisTunjangan::all();
@@ -542,7 +544,7 @@ class TunjanganController extends Controller
         // Loop melalui setiap karyawan_id
         foreach ($request->karyawan_id as $karyawanId) {
             $jenisTunjangan = JenisTunjangan::findOrFail($request->id_tunjangan);
-            
+
             // Hitung nilai berdasarkan jenis tunjangan
             if ($jenisTunjangan->nama_tunjangan == 'BPJS Keluarga') {
                 $nilai = $request->nilai * $request->kelipatan; // Menghitung nilai untuk BPJS Keluarga
@@ -601,30 +603,30 @@ class TunjanganController extends Controller
                             if ($tunjanganKaryawan) {
                                 $tunjanganKaryawan->delete();
                             }
-                    
+
                 }
             }
             if($dataTunjangan){
                 foreach ($dataTunjangan as $namaTunjangan => $nilai) {
                     // Menghilangkan karakter '_' dari namaTunjangan
                     $namaTunjanganId = str_replace('_', ' ', $namaTunjangan);
-                    
+
                     $jenisTunjangan = JenisTunjangan::where('nama_tunjangan', $namaTunjanganId)->first();
-                    
+
                     if (!$jenisTunjangan) {
                         continue;
                     }
-    
+
                     // Tentukan keterangan berdasarkan nilai (positif = Tunjangan, negatif = Potongan)
                     $keterangan = $nilai < 0 ? 'Potongan' : 'Tunjangan';
-    
+
                     // Cek apakah tunjangan sudah ada
                     $tunjanganKaryawan = TunjanganKaryawan::where('id_karyawan', $karyawanId)
                         ->where('bulan', $bulan)
                         ->where('tahun', $tahun)
                         ->where('jenis_tunjangan', $jenisTunjangan->id)
                         ->first();
-    
+
                     if ($tunjanganKaryawan) {
                         // Update data jika sudah ada
                         $tunjanganKaryawan->total = (float) $nilai;
@@ -642,7 +644,7 @@ class TunjanganController extends Controller
                     }
                 }
             }
-            
+
             DB::commit();
 
             // Redirect ke halaman index dengan pesan sukses
@@ -667,7 +669,7 @@ class TunjanganController extends Controller
             $bulan = $month - 1;
             $tahun = $year; // Untuk bulan lain, tetap bulan yang diminta
         }
-    
+
         $post = TunjanganKaryawan::where('bulan', $bulan)
             ->where('tahun', $tahun)
             ->with('karyawan', 'jenistunjangan') // Mengambil data karyawan terkait
@@ -682,7 +684,7 @@ class TunjanganController extends Controller
     }
 
 
-    
+
 
 }
 
@@ -692,7 +694,7 @@ class TunjanganController extends Controller
         // $nama_tunjangan = $jenisTunjangan->nama_tunjangan;
         // // Data tunjangan yang akan ditambahkan
         // $dataTunjangan = [];
-        
+
         // // Cek jika tipe tunjangan adalah 'Perbulan' dan jenis tunjangan adalah 'Tunjangan'
         // if ($request->input('hitung') == 'Perbulan' && $jenisTunjangan->tipe == 'Tunjangan') {
         //     $tunjangan->total_tunjangan += $request->input('nilai');
@@ -703,7 +705,7 @@ class TunjanganController extends Controller
         //             'total' => $request->input('nilai'),
         //         ];
         // }
-        
+
         // if ($request->input('hitung') == 'Perhari' && $jenisTunjangan->tipe == 'Tunjangan') {
         //     $jumlahTunjangan = $request->input('nilai') * $jumlahAbsensi;
         //     $tunjangan->total_tunjangan += $jumlahTunjangan;
