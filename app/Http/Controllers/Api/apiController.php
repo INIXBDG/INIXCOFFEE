@@ -280,6 +280,7 @@ class apiController extends Controller
 
         $rows = RKM::with(['materi'])
             ->whereBetween('tanggal_awal', [$startDate, $endDate]) // Menggunakan whereBetween
+            ->groupBy('materi.nama_materi')
             ->get();
 
         return response()->json([
@@ -292,18 +293,37 @@ class apiController extends Controller
     public function jadwalRKM(Request $request)
     {
         $today = Carbon::now();
-        $startDate = $today->toDateString(); // Tanggal sekarang
-        $endDate = $today->addMonth(4)->toDateString(); // Akhir bulan
+        $startDate = $today->toDateString();
+        $endDate = $today->addMonth(4)->toDateString();
 
-        $rows = RKM::with(['materi'])
-            ->whereBetween('tanggal_awal', [$startDate, $endDate]) // Menggunakan whereBetween
+        // Ambil data RKM beserta relasi materi
+        $rows = RKM::with('materi')
+            ->whereBetween('tanggal_awal', [$startDate, $endDate])
             ->get();
+
+        // Kelompokkan berdasarkan nama materi dan tanggal_awal
+        $grouped = $rows->groupBy(function ($item) {
+            return $item->materi->nama_materi . '|' . $item->tanggal_awal;
+        });
+
+        // Format hasil akhir
+        $result = $grouped->map(function ($items, $key) {
+            [$nama_materi, $tanggal_awal] = explode('|', $key);
+            $tanggal_akhir = $items->first()->tanggal_akhir; // Ambil tanggal_akhir dari item pertama
+
+            return [
+                'nama_materi' => $nama_materi,
+                'tanggal_awal' => $tanggal_awal,
+                'tanggal_akhir' => $tanggal_akhir,
+                'jadwals' => $items, // Seluruh entri RKM dalam grup ini
+            ];
+        })->values();
 
         return response()->json([
             'success' => true,
             'message' => 'Upcoming RKM',
-            'data' => $rows,
+            'data' => $result,
         ]);
-
     }
+
 }
