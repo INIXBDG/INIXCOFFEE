@@ -1513,7 +1513,7 @@
                                                         </div>
                                                     </div>
                                                     @endcan
-                                                    @can('View PaymantAdvance')                                                    
+                                                    @can('View PaymantAdvance')
                                                         <div class="col-sm-6 mt-2">
                                                         <div class="card" id="card-hover">
                                                             <div class="card-body d-flex">
@@ -1965,6 +1965,9 @@
                         // Enable the Inhouse and SPJ radio buttons
                         $('#inhouse').prop('disabled', false);
                         $('#spj').prop('disabled', false);
+
+                        // Automatically select the SPJ radio button
+                        $('#spj').prop('checked', true);
                     } else {
                         // If some other value, enable all buttons
                         $('#normal').prop('disabled', false);
