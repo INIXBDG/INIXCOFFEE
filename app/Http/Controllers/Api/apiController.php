@@ -289,4 +289,21 @@ class apiController extends Controller
         ]);
 
     }
+    public function jadwalRKM(Request $request)
+    {
+        $today = Carbon::now();
+        $startDate = $today->toDateString(); // Tanggal sekarang
+        $endDate = $today->addMonth(4)->toDateString(); // Akhir bulan
+
+        $rows = RKM::with(['materi'])
+            ->whereBetween('tanggal_awal', [$startDate, $endDate]) // Menggunakan whereBetween
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Upcoming RKM',
+            'data' => $rows,
+        ]);
+
+    }
 }

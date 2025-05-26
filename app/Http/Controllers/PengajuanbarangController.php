@@ -43,7 +43,7 @@ class PengajuanBarangController extends Controller
 
             $tracking = $this->determineTrackingStatus($trackingRecord);
 
-            dd($tracking);
+            // dd($tracking);
         }
 
         return view('pengajuanbarang.index', compact('tracking'));
@@ -64,6 +64,8 @@ class PengajuanBarangController extends Controller
         // Jika tracking sudah selesai pencairan, tutup
         if ($trackingRecord->tracking === 'Pencairan Sudah Selesai') {
             return 'tutup';
+        }else{
+            return 'buka';
         }
 
         // Jika divisi Sales & Marketing dan tipe Reimbursement, buka
