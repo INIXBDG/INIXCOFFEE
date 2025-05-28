@@ -1,6 +1,79 @@
 @extends('layouts.app')
 
 @section('content')
+<style>
+    /* === Responsive untuk Tablet (lebar max 991px) === */
+@media screen and (max-width: 991px) {
+    .card-body.d-flex.justify-content-center {
+        flex-direction: column !important;
+        align-items: center !important;
+    }
+
+    .card-body .col-md-4 {
+        width: 100% !important;
+        margin-bottom: 15px;
+    }
+
+    .card-body .col-md-4 label,
+    .card-body .col-md-4 select,
+    .card-body .col-md-4 button {
+        width: 100%;
+    }
+
+    #tunjangan-title {
+        font-size: 18px;
+        text-align: center;
+    }
+
+    .card-title {
+        font-size: 20px;
+        text-align: center;
+    }
+}
+
+/* === Responsive untuk Handphone (lebar max 576px) === */
+@media screen and (max-width: 576px) {
+    .container-fluid {
+        padding: 10px;
+    }
+
+    .card.m-4 {
+        margin: 0 !important;
+    }
+
+    .card-body .col-md-4 {
+        padding: 0;
+        margin-bottom: 15px;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    #tunjangan-title {
+        font-size: 16px;
+    }
+
+    .card-title {
+        font-size: 18px;
+    }
+
+    .btn.click-primary {
+        font-size: 14px;
+        padding: 8px 12px;
+    }
+
+    .table thead th,
+    .table tfoot td {
+        font-size: 14px;
+    }
+
+    .table tbody td {
+        font-size: 13px;
+    }
+}
+
+</style>
 <div class="container-fluid">
     <div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="spinnerModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
