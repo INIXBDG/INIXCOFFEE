@@ -17,7 +17,7 @@ class KelasAnalisisController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware('permission:View AnalisisRKM', ['only' => ['index']]);
+        $this->middleware('permission:View AnalisisRKM', ['only' => ['index']]);    
     }
     public function index()
     {

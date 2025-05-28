@@ -178,13 +178,13 @@
                             <div class="col-sm-3"><p style="margin-bottom: 4px">Yang Mengajukan</p><strong>Account Manager</strong></div>
                             <div class="col-sm-3"><p style="margin-bottom: 4px">Menyetujui</p><strong>Manager Marketing</strong></div>
                             <div class="col-sm-3"><p style="margin-bottom: 4px">Admin Exam</p><strong>Technical Support</strong></div>
-                            <div class="col-sm-3"><p style="margin-bottom: 4px">Mengetahui</p><strong>General Manager</strong></div>
+                            <div class="col-sm-3"><p style="margin-bottom: 4px">Mengetahui</p><strong>Accounting</strong></div>
                         </div>
                         <div class="row">
                             <div class="col-sm-3">
                                 @if ($data->approvalexam->sales && $sales->ttd)
                                     <div class="row justify-content-center">
-                                        <img src="{{ asset('storage/ttd/' . $sales->ttd) }}" alt="{{ $sales->name }}" style="width: 110px">
+                                        <img src="{{ asset('storage/ttd/' . $sales->ttd) }}" alt="{{ $sales->name }}" style="width: 120px;height:auto;margin:4%">
                                     </div>
                                 @else
                                     <br><br><br>
@@ -195,7 +195,7 @@
                                 <br><br><br>
                                 @elseif ($data->approvalexam->spv_sales == '1' && $spv_sales->ttd)
                                     <div class="row justify-content-center">
-                                        <img src="{{ asset('storage/ttd/' . $spv_sales->ttd) }}" alt="{{ $spv_sales->name }}" style="width: 110px">
+                                        <img src="{{ asset('storage/ttd/' . $spv_sales->ttd) }}" alt="{{ $spv_sales->name }}" style="width: 120px;height:auto;margin:4%">
                                     </div>
                                
                                 @else
@@ -207,7 +207,7 @@
                                     <br><br><br>
                                 @elseif ($data->approvalexam->technical_support == '1' && $technical_support->ttd)
                                     <div class="row justify-content-center">
-                                        <img src="{{ asset('storage/ttd/' . $technical_support->ttd) }}" alt="{{ $technical_support->name }}" style="width: 110px">
+                                        <img src="{{ asset('storage/ttd/' . $technical_support->ttd) }}" alt="{{ $technical_support->name }}" style="width: 120px;height:auto;margin:4%">
                                     </div>
                                 
                                 @else
@@ -219,7 +219,7 @@
                                     <br><br><br>
                                 @elseif ($data->approvalexam->office_manager == '1' && $office_manager->ttd)
                                     <div class="row justify-content-center">
-                                        <img src="{{ asset('storage/ttd/' . $office_manager->ttd) }}" alt="{{ $office_manager->name }}" style="width: 110px">
+                                        <img src="{{ asset('storage/ttd/' . $office_manager->ttd) }}" alt="{{ $office_manager->name }}" style="width: 120px;height:auto;margin:4%">
                                     </div>
                                 
                                 @else
