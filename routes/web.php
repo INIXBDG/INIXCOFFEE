@@ -50,7 +50,7 @@ Route::get('/datarkm/{tahun}/{bulan}', [App\Http\Controllers\PerusahaanControlle
 // Route::post('/change-year', 'HomeController@changeYear')->name('changeYear');
 // test
 
-Route::get('paymantAdvance/{year}', [App\Http\Controllers\netSalesController::class, 'getRkmDataPerBulanPerMinggu']);
+Route::get('paymantAdvance/{year}/{month}', [App\Http\Controllers\netSalesController::class, 'getRkmDataPerBulanPerMinggu']);
 Route::resource('/comment', \App\Http\Controllers\CommentController::class);
 
 Route::resource('/perusahaan', \App\Http\Controllers\PerusahaanController::class);

@@ -311,8 +311,8 @@ class apiController extends Controller
     public function jadwalRKM(Request $request)
     {
         $today = Carbon::now();
-        $startDate = $today->toDateString();
-        $endDate = $today->addMonth(4)->toDateString();
+        $startDate = $today->copy()->startOfMonth()->toDateString();
+        $endDate = $today->copy()->addMonths(4)->endOfMonth()->toDateString();
 
         // Ambil data RKM beserta relasi materi
         $rows = RKM::with('materi')
@@ -327,20 +327,28 @@ class apiController extends Controller
         // Format hasil akhir
         $result = $grouped->map(function ($items, $key) {
             [$nama_materi, $tanggal_awal] = explode('|', $key);
-            $tanggal_akhir = $items->first()->tanggal_akhir; // Ambil tanggal_akhir dari item pertama
+            $tanggal_akhir = $items->first()->tanggal_akhir;
+
+            // Tambahkan bulan sebagai informasi tambahan untuk pengelompokan
+            $bulan = Carbon::parse($tanggal_awal)->format('Y-m');
 
             return [
                 'nama_materi' => $nama_materi,
                 'tanggal_awal' => $tanggal_awal,
                 'tanggal_akhir' => $tanggal_akhir,
-                'jadwals' => $items, // Seluruh entri RKM dalam grup ini
+                'bulan' => $bulan,
+                'jadwals' => $items,
             ];
-        })->values();
+        });
+
+        // Kelompokkan berdasarkan bulan
+        $groupedByMonth = $result->groupBy('bulan')->sortKeys();
+    
 
         return response()->json([
             'success' => true,
             'message' => 'Upcoming RKM',
-            'data' => $result,
+            'data' => $groupedByMonth,
         ]);
     }
 
