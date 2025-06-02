@@ -55,25 +55,46 @@
                         <div class="row mb-3 align-items-center">
                             <label for="jam_mulai" class="col-md-4 col-form-label text-md-start">Jam Mulai</label>
                             <div class="col-md-6">
-                                <input type="time" readonly class="form-control" name="jam_mulai" id="jam_mulai" value="{{ $data->jam_mulai }}">
+                                <input
+                                    type="time"
+                                    class="form-control"
+                                    name="jam_mulai"
+                                    id="jam_mulai"
+                                    value="{{ $data->jam_mulai }}"
+                                    {{-- Jika jabatan office boy atau driver, input tidak readonly --}}
+                                    @if(!in_array(strtolower(auth()->user()->jabatan), ['office boy', 'driver']))
+                                        readonly
+                                    @endif
+                                >
                                 @error('jam_mulai')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
                                     </span>
                                 @enderror
                             </div>
-                            <div class="col-md-2">
-                                <button type="button" class="btn btn-primary btn-sm w-100" data-bs-toggle="modal" data-bs-target="#modalAbsen">
-                                    Absen Lembur
-                                </button>
-                            </div>
+                            @if(auth()->user()->jabatan !== 'Office Boy' && auth()->user()->jabatan !== 'Driver')
+                                <div class="col-md-2">
+                                    <button type="button" class="btn btn-primary btn-sm w-100" data-bs-toggle="modal" data-bs-target="#modalAbsen">
+                                        Absen Lembur
+                                    </button>
+                                </div>
+                            @endif
                         </div>
-
 
                         <div class="row mb-3" id="jam_selesai">
                             <label for="jam_selesai" class="col-md-4 col-form-label text-md-start">{{ __('Jam Selesai') }}</label>
                             <div class="col-md-6">
-                                <input type="time" readonly class="form-control" name="jam_selesai" id="jam_selesai" value="{{ $data->jam_selesai }}">
+                                <input
+                                    type="time"
+                                    class="form-control"
+                                    name="jam_selesai"
+                                    id="jam_selesai"
+                                    value="{{ $data->jam_selesai }}"
+                                    {{-- Jika jabatan office boy atau driver, input tidak readonly --}}
+                                    @if(!in_array(strtolower(auth()->user()->jabatan), ['office boy', 'driver']))
+                                        readonly
+                                    @endif
+                                >
                                 @error('jam_selesai')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -81,6 +102,53 @@
                                 @enderror
                             </div>
                         </div>
+
+                        {{-- Input Foto Mulai dan Selesai untuk Office Boy dan Driver --}}
+                        @if(in_array(strtolower(auth()->user()->jabatan), ['office boy', 'driver']))
+                            <div class="row mb-3">
+                                <label for="foto_mulai" class="col-md-4 col-form-label text-md-start">Foto Mulai</label>
+                                <div class="col-md-6">
+                                    <input
+                                        type="file"
+                                        class="form-control @error('foto_mulai') is-invalid @enderror"
+                                        name="foto_mulai"
+                                        id="foto_mulai"
+                                        accept="image/*"
+                                        capture="camera"
+                                    >
+                                    @error('foto_mulai')
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                    @enderror
+                                    @if(!empty($data->foto_mulai))
+                                        <img src="{{ asset('storage/' . $data->foto_mulai) }}" alt="Foto Mulai" class="img-thumbnail mt-2" style="max-width: 200px;">
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <label for="foto_selesai" class="col-md-4 col-form-label text-md-start">Foto Selesai</label>
+                                <div class="col-md-6">
+                                    <input
+                                        type="file"
+                                        class="form-control @error('foto_selesai') is-invalid @enderror"
+                                        name="foto_selesai"
+                                        id="foto_selesai"
+                                        accept="image/*"
+                                        capture="camera"
+                                    >
+                                    @error('foto_selesai')
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                    @enderror
+                                    @if(!empty($data->foto_selesai))
+                                        <img src="{{ asset('storage/' . $data->foto_selesai) }}" alt="Foto Selesai" class="img-thumbnail mt-2" style="max-width: 200px;">
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
 
                         <div class="row mb-3" id="uraian_tugas">
                             <label for="uraian_tugas" class="col-md-4 col-form-label text-md-start">{{ __('Uraian Tugas') }}</label>
