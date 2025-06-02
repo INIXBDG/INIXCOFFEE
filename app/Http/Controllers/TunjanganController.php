@@ -321,10 +321,11 @@ class TunjanganController extends Controller
 
         // Ambil semua karyawan yang aktif dan termasuk dalam divisi yang relevan
         $karyawanList = Karyawan::whereNotIn('jabatan', ['Komisaris', 'Direktur'])
-                                ->whereNotIn('id', '1')
-                                ->where('kode_karyawan', 'not like', '%OL%')
-                                ->where('status_aktif', '1')
-                                ->get();
+                        ->whereNotIn('id', [1, 3])
+                        ->where('kode_karyawan', 'not like', '%OL%')
+                        ->where('status_aktif', '1')
+                        ->get();
+
         // return $karyawanList;
         foreach ($karyawanList as $karyawan) {
             $karyawanId = $karyawan->id;
