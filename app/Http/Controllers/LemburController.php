@@ -147,16 +147,16 @@ class LemburController extends Controller
     public function show(string $id)
     {
         $data = lembur::findOrFail($id);
-        $gm = karyawan::where('jabatan', 'GM')->first();
-        $hrd = karyawan::where('jabatan', 'HRD')->first();
+        $gm = karyawan::where('jabatan', 'GM')->latest()->first();
+        $hrd = karyawan::where('jabatan', 'HRD')->latest()->first();
         if($data->karyawan->divisi == 'Education'){
-            $atasan = karyawan::where('jabatan', 'Education Manager')->first();
+            $atasan = karyawan::where('jabatan', 'Education Manager')->latest()->first();
         }elseif($data->karyawan->divisi == 'Sales'){
-            $atasan = karyawan::where('jabatan', 'SPV Sales')->first();
+            $atasan = karyawan::where('jabatan', 'SPV Sales')->latest()->first();
         }else{
-            $atasan = karyawan::where('jabatan', 'GM')->first();
+            $atasan = karyawan::where('jabatan', 'GM')->latest()->first();
         }
-
+        // return $hrd;
         return view('lembur.pdf', compact('data', 'atasan', 'hrd', 'gm'));
     }
 
