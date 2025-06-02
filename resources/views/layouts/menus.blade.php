@@ -460,7 +460,7 @@
             background-color: rgba(0, 0, 0, 0);
             /* background-color: #4caf50; */
             background-position: left;
-            background-image: url("{{ asset(' css/jalan_terang.png') }}");
+            background-image: url("{{ asset('css/jalan_terang.png') }}");
             background-repeat: repeat-x;
             position: absolute;
             transition: left 10s ease;
@@ -470,7 +470,7 @@
         #car {
             width: 110px;
             height: 110px;
-            background-image: url("{{ asset(' css/car.png') }}");
+            background-image: url("{{ asset('css/car.png') }}");
             background-size: cover;
             position: absolute;
             top: 0;

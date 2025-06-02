@@ -84,11 +84,11 @@ class netSalesController extends Controller
         return redirect()->route('paymantAdvance.index')->with(['success' => 'Data Berhasil Disimpan!']);
     }
 
-    public function getRkmDataPerBulanPerMinggu($year)
+    public function getRkmDataPerBulanPerMinggu($year, $month)
     {
         Carbon::setLocale('id');
-        $startDate = CarbonImmutable::create($year, 1, 1);
-        $endDate = CarbonImmutable::create($year, 12, 1)->endOfMonth();
+        $startDate = CarbonImmutable::create($year, $month, 1);
+        $endDate = CarbonImmutable::create($year, $month, 1)->endOfMonth();
     
         $monthRanges = [];
         $date = $startDate;
@@ -149,6 +149,7 @@ class netSalesController extends Controller
                         'id'              => $item->id,
                         'nama_materi'     => $item->materi->nama_materi,
                         'pax'             => $item->pax,
+                        'sales_key'             => $item->sales_key,
                         'harga_jual'      => $item->harga_jual,
                         'total_harga_jual'=> $total_harga_jual,
                         'tanggal_awal'    => $tanggalAwal->translatedFormat('d F Y'),

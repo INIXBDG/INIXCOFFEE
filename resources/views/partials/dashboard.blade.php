@@ -29,7 +29,7 @@
             <div id="progress-bar" class="progress-bar"></div>
             <div id="car" class="car"></div>
             <div class="target-label-right">Goal
-                <img src="{{asset('css/finish-flag.png')}}" alt="finish" style="width: 20px">
+                <img src="{{ asset('css/finish-flag.png') }}" alt="finish" style="width: 20px">
             </div>
         </div>
 
