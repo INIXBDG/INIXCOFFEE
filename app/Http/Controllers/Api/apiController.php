@@ -275,8 +275,8 @@ class apiController extends Controller
     public function UpcomingRKM(Request $request)
     {
         $today = Carbon::now();
-        $startDate = $today->toDateString(); // Tanggal sekarang
-        $endDate = $today->addWeeks(4)->toDateString(); // Akhir bulan
+        $startDate = $today->copy()->startOfMonth()->toDateString();
+        $endDate = $today->copy()->addMonths(4)->endOfMonth()->toDateString();
 
        // Ambil data RKM beserta relasi materi
         $rows = RKM::with('materi')
