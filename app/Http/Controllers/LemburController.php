@@ -246,8 +246,8 @@ class LemburController extends Controller
 
         $jabatan = strtolower(auth()->user()->jabatan);
         if (in_array($jabatan, ['office boy', 'driver'])) {
-            $rules['foto_mulai'] = 'required'; // Validasi base64 string
-            $rules['foto_selesai'] = 'required';
+            $rules['foto_mulai'] = 'nullable|image';
+            $rules['foto_selesai'] = 'nullable|image';
         }
 
         $this->validate($request, $rules);
@@ -260,43 +260,31 @@ class LemburController extends Controller
         $post->jam_selesai = $request->jam_selesai;
         $post->keterangan = $request->keterangan;
 
-        // Handle upload foto base64 sesuai standar
         if (in_array($jabatan, ['office boy', 'driver'])) {
             // Proses foto_mulai (simpan sebagai foto_masuk)
-            if ($request->filled('foto_mulai')) {
-                // Proses base64: hapus prefix dan decode
-                $image = preg_replace('/^data:image\//', '', $request->foto_mulai);
-                $image = preg_replace('/^.*?,/', '', $image);
-                $image = str_replace(' ', '+', $image);
-                $imageName = 'mulai_' . Str::random(10) . '.png';
-                $path = 'lembur/' . $imageName;
+            if ($request->hasFile('foto_mulai')) {
+                $image = $request->file('foto_mulai');
+                $imageName = 'mulai_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
+                $path = $image->storeAs('lembur', $imageName, 'public');
 
                 // Hapus file lama jika ada
                 if ($post->foto_masuk && Storage::disk('public')->exists($post->foto_masuk)) {
                     Storage::disk('public')->delete($post->foto_masuk);
                 }
 
-                // Simpan file baru
-                Storage::disk('public')->put($path, base64_decode($image, true));
                 $post->foto_masuk = $path;
             }
 
             // Proses foto_selesai (simpan sebagai foto_selesai)
-            if ($request->filled('foto_selesai')) {
-                // Proses base64: hapus prefix dan decode
-                $image = preg_replace('/^data:image\//', '', $request->foto_selesai);
-                $image = preg_replace('/^.*?,/', '', $image);
-                $image = str_replace(' ', '+', $image);
-                $imageName = 'selesai_' . Str::random(10) . '.png';
-                $path = 'lembur/' . $imageName;
+            if ($request->hasFile('foto_selesai')) {
+                $image = $request->file('foto_selesai');
+                $imageName = 'selesai_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
+                $path = $image->storeAs('lembur', $imageName, 'public');
 
-                // Hapus file lama jika ada
                 if ($post->foto_selesai && Storage::disk('public')->exists($post->foto_selesai)) {
                     Storage::disk('public')->delete($post->foto_selesai);
                 }
 
-                // Simpan file baru
-                Storage::disk('public')->put($path, base64_decode($image, true));
                 $post->foto_selesai = $path;
             }
         }
