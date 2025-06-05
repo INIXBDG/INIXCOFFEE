@@ -134,6 +134,8 @@
                                 <th scope="col">Tipe</th>
                                 <th scope="col">Status</th>
                                 <th scope="col">Nama Barang</th>
+                                <th scope="col">Total Item</th>
+                                <th scope="col">Total Pengajuan</th>
                                 <th scope="col">Aksi</th>
                             </tr>
                         </thead>
@@ -148,7 +150,7 @@
                     <h3 class="card-title text-center my-1">{{ __('Data Pengajuan Barang (Selesai)') }}</h3>
                     <table class="table table-striped" id="datasudah">
                         <thead>
-                            <tr>
+                            <>
                                 <th scope="col">Tanggal Pengajuan</th>
                                 <th scope="col">Nama Karyawan</th>
                                 <th scope="col">Divisi</th>
@@ -156,6 +158,8 @@
                                 <th scope="col">Tipe</th>
                                 <th scope="col">Status</th>
                                 <th scope="col">Nama Barang</th>
+                                <th scope="col">Total Item</th>
+                                <th scope="col">Total Pengajuan</th>
                                 <th scope="col">Aksi</th>
                             </tr>
                         </thead>
@@ -169,7 +173,7 @@
             <div class="card m-4">
                 <div class="card-body table-responsive">
                     <h3 class="card-title text-center my-1">{{ __('Data Pengajuan Barang') }}</h3>
-                    <table class="table table-striped" id="barangTable">
+                    <table class="table table-striped" id="barangTable" style="overflow-x: scrooll; max-width: 150%;">
                         <thead>
                             <tr>
                                 <th scope="col">Tanggal Pengajuan</th>
@@ -180,6 +184,8 @@
                                 <th scope="col">Tipe</th>
                                 <th scope="col">Status</th>
                                 <th scope="col">Nama Barang</th>
+                                <th scope="col">Total Item</th>
+                                <th scope="col">Total Pengajuan</th>
                                 <th scope="col">Aksi</th>
                             </tr>
                         </thead>
@@ -194,6 +200,7 @@
     </div>
 </div>
 <style>
+
     .loader {
     position: relative;
     text-align: center;
@@ -274,6 +281,7 @@
             var tahun = $('#tahun').val();
 
             $('#barangTable').DataTable({
+            autoWidth: false,
             "ajax": {
                 url: "{{ route('getPengajuanBarang', ['month' => ':month', 'year' => ':year'] ) }}".replace(':month', 'All').replace(':year', tahun), // Ganti dengan URL yang sesuai
                 "type": "GET",
@@ -319,11 +327,42 @@
                     "data": "detail",
                     "render": function (data, type, row) {
                         if (data && Array.isArray(data)) {
-                            return data.map(item => item.nama_barang).join(', ');
+                            return data.map(item => item.nama_barang).join('<hr style="margin: 4px 0; border: 1px solid black">');
                         }
                         return '-';
                     }
                 },
+
+                {
+                    "data": "detail",
+                    "render": function (data, type, row) {
+                        if (data && Array.isArray(data)) {
+                            return data.map(item => {
+                                let total = item.harga * item.qty;
+                                return new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(total);
+                            }).join('<hr style="margin: 4px 0; border: 1px solid black">');
+                        }
+                        return '-';
+                    }
+                },
+
+                {
+                    "data": "detail",
+                    "render": function (data) {
+                        if (data && Array.isArray(data)) {
+                            const total = data.reduce((sum, item) => sum + (item.harga * item.qty), 0);
+                            return new Intl.NumberFormat('id-ID', {
+                                style: 'currency',
+                                currency: 'IDR'
+                            }).format(total);
+                        }
+                        return '-';
+                    }
+                },
+
                 {
                     "data": null,
                     "render": function(data, type, row) {
@@ -444,7 +483,37 @@
                                 "data": "detail",
                                 "render": function (data, type, row) {
                                     if (data && Array.isArray(data)) {
-                                        return data.map(item => item.nama_barang).join(', ');
+                                        return data.map(item => item.nama_barang).join('<hr style="margin: 4px 0; border: 1px solid black">');
+                                    }
+                                    return '-';
+                                }
+                            },
+
+                            {
+                                "data": "detail",
+                                "render": function (data, type, row) {
+                                    if (data && Array.isArray(data)) {
+                                        return data.map(item => {
+                                            let total = item.harga * item.qty;
+                                            return new Intl.NumberFormat('id-ID', {
+                                                style: 'currency',
+                                                currency: 'IDR'
+                                            }).format(total);
+                                        }).join('<hr style="margin: 4px 0; border: 1px solid black">');
+                                    }
+                                    return '-';
+                                }
+                            },
+
+                            {
+                                "data": "detail",
+                                "render": function (data) {
+                                    if (data && Array.isArray(data)) {
+                                        const total = data.reduce((sum, item) => sum + (item.harga * item.qty), 0);
+                                        return new Intl.NumberFormat('id-ID', {
+                                            style: 'currency',
+                                            currency: 'IDR'
+                                        }).format(total);
                                     }
                                     return '-';
                                 }
@@ -490,7 +559,37 @@
                                 "data": "detail",
                                 "render": function (data, type, row) {
                                     if (data && Array.isArray(data)) {
-                                        return data.map(item => item.nama_barang).join(', ');
+                                        return data.map(item => item.nama_barang).join('<hr style="margin: 4px 0; border: 1px solid black">');
+                                    }
+                                    return '-';
+                                }
+                            },
+
+                            {
+                                "data": "detail",
+                                "render": function (data, type, row) {
+                                    if (data && Array.isArray(data)) {
+                                        return data.map(item => {
+                                            let total = item.harga * item.qty;
+                                            return new Intl.NumberFormat('id-ID', {
+                                                style: 'currency',
+                                                currency: 'IDR'
+                                            }).format(total);
+                                        }).join('<hr style="margin: 4px 0; border: 1px solid black">');
+                                    }
+                                    return '-';
+                                }
+                            },
+
+                            {
+                                "data": "detail",
+                                "render": function (data) {
+                                    if (data && Array.isArray(data)) {
+                                        const total = data.reduce((sum, item) => sum + (item.harga * item.qty), 0);
+                                        return new Intl.NumberFormat('id-ID', {
+                                            style: 'currency',
+                                            currency: 'IDR'
+                                        }).format(total);
                                     }
                                     return '-';
                                 }

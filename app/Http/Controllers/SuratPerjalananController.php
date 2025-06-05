@@ -7,8 +7,12 @@ use App\Models\SuratPerjalanan;
 use App\Models\User;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
 use App\Models\karyawan;
+use App\Models\Materi;
+use App\Models\Perusahaan;
+use App\Models\RKM;
 use App\Notifications\ApprovalSPJNotification;
 use App\Notifications\PengajuanSPJNotification;
+use Carbon\Carbon;
 
 class SuratPerjalananController extends Controller
 {
@@ -20,7 +24,7 @@ class SuratPerjalananController extends Controller
         return view('suratperjalanan.index');
     }
 
-    public function getSuratPerjalanan() 
+    public function getSuratPerjalanan()
     {
         $user = auth()->user()->karyawan_id;
         $karyawan = karyawan::findOrfail($user);
@@ -28,13 +32,13 @@ class SuratPerjalananController extends Controller
         $jabatan = $karyawan->jabatan;
         $divisi = $karyawan->divisi;
         if ($jabatan == 'Office Manager' || $jabatan == 'Education Manager' || $jabatan == 'SPV Sales' || $jabatan == 'Koordinator ITSM') {
-            $SuratPerjalanan = SuratPerjalanan::with('karyawan')->whereHas('karyawan', function($query) use ($divisi) {
+            $SuratPerjalanan = SuratPerjalanan::with('karyawan')->whereHas('karyawan', function ($query) use ($divisi) {
                 $query->where('divisi', $divisi);
             })->latest()->get();
-        }elseif($jabatan == 'HRD' || $jabatan == "Koordinator Office" || $jabatan == 'GM' || $jabatan == 'Direktur Utama' || $jabatan == 'Direktur'){
+        } elseif ($jabatan == 'HRD' || $jabatan == "Koordinator Office" || $jabatan == 'GM' || $jabatan == 'Direktur Utama' || $jabatan == 'Direktur') {
             $SuratPerjalanan = SuratPerjalanan::with('karyawan')->latest()->get();
-        }else{
-            $SuratPerjalanan = SuratPerjalanan::with('karyawan')->whereHas('karyawan', function($query) use ($user) {
+        } else {
+            $SuratPerjalanan = SuratPerjalanan::with('karyawan')->whereHas('karyawan', function ($query) use ($user) {
                 $query->where('id', $user);
             })->latest()->get();
         }
@@ -51,8 +55,20 @@ class SuratPerjalananController extends Controller
     public function create()
     {
         $user = auth()->user()->karyawan_id;
-        $karyawan = karyawan::findOrFail($user);
-        return view('suratperjalanan.create', compact('karyawan'));
+        $karyawan = Karyawan::findOrFail($user);
+
+        $today = now()->startOfDay();
+        $twoWeeksFromNow = now()->addDays(14)->endOfDay();
+
+        $data_rkm = RKM::with(['materi', 'perusahaan'])
+            ->whereBetween('tanggal_awal', [$today, $twoWeeksFromNow])
+            ->orderBy('tanggal_awal', 'asc')
+            ->get()
+            ->groupBy(function ($item) {
+                return \Carbon\Carbon::parse($item->tanggal_awal)->translatedFormat('d F Y');
+            });
+
+        return view('suratperjalanan.create', compact('karyawan', 'data_rkm'));
     }
 
     /**
@@ -60,33 +76,36 @@ class SuratPerjalananController extends Controller
      */
     public function store(Request $request)
     {
-        // return $request->all();
         $request->validate([
             'id_karyawan' => 'required|string|max:255',
-            'tipe' => ['required', 'string', 'max:255', 'not_in:-,null'], // Disallow '-' and 'null'
+            'tipe' => ['required', 'string', 'max:255', 'not_in:-,null'],
             'tujuan' => 'required|string|max:255',
             'tanggal_berangkat' => 'required|date',
             'tanggal_pulang' => 'required|date|after_or_equal:tanggal_berangkat',
             'alasan' => 'required|string',
+            'jenis_dinas' => 'required'
         ], [
             'tipe.not_in' => 'Anda harus memilih jenis travel yang valid.',
             'tanggal_pulang.after_or_equal' => 'Tanggal Pulang tidak boleh kurang dari Tanggal Berangkat.',
         ]);
-              
 
-        $suratPerjalanan = SuratPerjalanan::create($request->all());
+        $data = $request->all();
+        $data['jadwal_RKM'] = $request->input('jadwal_RKM') !== '-' ? $request->input('jadwal_RKM') : null;
+
+        $suratPerjalanan = SuratPerjalanan::create($data);
 
         $karyawan = karyawan::findOrFail($request->id_karyawan);
         $divisi = $karyawan->divisi;
         $jabatan = $karyawan->jabatan;
 
-        $Offman = karyawan::where('jabatan' , 'Office Manager')->first();
+        $Offman = karyawan::where('jabatan', 'Office Manager')->first();
         $kooroff = karyawan::where('jabatan', 'Koordinator Office')->first();
         $koorso = karyawan::where('jabatan', 'Koordinator ITSM')->first();
-        $Eduman = karyawan::where('jabatan' , 'Education Manager')->first();
-        $SPVSales = karyawan::where('jabatan' , 'SPV Sales')->first();
-        $GM = karyawan::where('jabatan' , 'GM')->first();
-        $users = []; // Start with the current karyawan's kode_karyawan
+        $Eduman = karyawan::where('jabatan', 'Education Manager')->first();
+        $SPVSales = karyawan::where('jabatan', 'SPV Sales')->first();
+        $GM = karyawan::where('jabatan', 'GM')->first();
+
+        $users = [];
 
         switch ($jabatan) {
             case 'SPV Sales':
@@ -94,44 +113,36 @@ class SuratPerjalananController extends Controller
             case 'Education Manager':
             case 'Koordinator Office':
             case 'Koordinator ITSM':
-                $users[] = $GM->kode_karyawan; // GM
-        break;
-        
+                $users[] = $GM->kode_karyawan;
+                break;
+
             default:
                 switch ($divisi) {
                     case 'Education':
-                        $users[] = $Eduman->kode_karyawan; // Eduman
+                        $users[] = $Eduman->kode_karyawan;
                         break;
-        
                     case 'Sales & Marketing':
-                        $users[] = $SPVSales->kode_karyawan; // SPVSales
+                        $users[] = $SPVSales->kode_karyawan;
                         break;
-        
                     case 'Office':
-                        // $users[] = $Offman->kode_karyawan; // Offman
-                        $users[] = $kooroff->kode_karyawan; // Offman
+                        $users[] = $kooroff->kode_karyawan;
                         break;
                     case 'IT Service Management':
-                        // $users[] = $Offman->kode_karyawan; // Offman
-                        $users[] = $koorso->kode_karyawan; // Offman
+                        $users[] = $koorso->kode_karyawan;
                         break;
                 }
                 break;
         }
 
-        // Retrieve users based on the filtered list of kode_karyawan
         $users = User::whereHas('karyawan', function ($query) use ($users) {
             $query->whereIn('kode_karyawan', $users);
         })->get();
 
-        // return $users;
-        $data = $suratPerjalanan;
         $type = 'Mengajukan Surat Perjalanan';
-
         $path = '/suratperjalanan';
-        
+
         foreach ($users as $user) {
-           NotificationFacade::send($user, new PengajuanSPJNotification($data, $path, $type));
+            NotificationFacade::send($user, new PengajuanSPJNotification($suratPerjalanan, $path, $type));
         }
 
         return redirect()->route('suratperjalanan.index')->with('success', 'Surat perjalanan berhasil dibuat.');
@@ -146,22 +157,21 @@ class SuratPerjalananController extends Controller
         // return $suratperjalanan;
         $divisi = $suratperjalanan->karyawan->divisi;
         $jabatan = $suratperjalanan->karyawan->jabatan;
-        if($jabatan === 'SPV Sales' || $jabatan === 'Office Manager' || $jabatan === 'Education Manager' || $jabatan = 'Koordinator Office'){
+        if ($jabatan === 'SPV Sales' || $jabatan === 'Office Manager' || $jabatan === 'Education Manager' || $jabatan = 'Koordinator Office') {
             $manager = karyawan::where('jabatan', 'GM')->first();
-        } elseif($divisi == 'Office'){
+        } elseif ($divisi == 'Office') {
             // $manager = karyawan::where('jabatan', 'Office Manager')->first();
             $manager = karyawan::where('jabatan', 'Koordinator Office')->first();
-
-        } elseif($divisi == 'Sales & Marketing'){
+        } elseif ($divisi == 'Sales & Marketing') {
             $manager = karyawan::where('jabatan', 'SPV Sales')->first();
-        } elseif($divisi == 'Education' ){
+        } elseif ($divisi == 'Education') {
             $manager = karyawan::where('jabatan', 'Education Manager')->first();
-        }elseif($divisi == 'Direksi' ){
+        } elseif ($divisi == 'Direksi') {
             $manager = karyawan::where('id', $suratperjalanan->id_karyawan)->first();
-        }else{
+        } else {
             $manager = karyawan::where('jabatan', 'GM')->first();
         }
-        
+
         // $hrd = karyawan::where('jabatan', 'HRD')->first();
         // $office_manager = karyawan::where('jabatan', 'Office Manager')->first();
         $office_manager = karyawan::where('jabatan', 'Finance & Accounting')->first();
@@ -206,31 +216,31 @@ class SuratPerjalananController extends Controller
             'total' => 'required',
         ]);
         $suratPerjalanan = SuratPerjalanan::findOrFail($id);
-            $suratPerjalanan->update($request->all());
-            $karyawan = karyawan::findOrFail($suratPerjalanan->id_karyawan);
-            $Offman = karyawan::where('jabatan' , 'Office Manager')->first();
-            $kooroff = karyawan::where('jabatan', 'Koordinator Office')->first();
-            
-            $users = [
-                $karyawan->kode_karyawan,
-                $Offman->kode_karyawan,
-                $kooroff->kode_karyawan,
-            ];
-    
-            // Retrieve the first matching user based on the 'kode_karyawan'
-            $users = User::whereHas('karyawan', function ($query) use ($users) {
-                $query->whereIn('kode_karyawan', array_filter($users));
-            })->get();
-    
-            $data = $suratPerjalanan;
-    
-            $to = $karyawan->nama_lengkap;
-    
-            $path = '/suratperjalanan';
-            
-            foreach ($users as $user) {
-               NotificationFacade::send($user, new ApprovalSPJNotification($data, $path, $to));
-            }
+        $suratPerjalanan->update($request->all());
+        $karyawan = karyawan::findOrFail($suratPerjalanan->id_karyawan);
+        $Offman = karyawan::where('jabatan', 'Office Manager')->first();
+        $kooroff = karyawan::where('jabatan', 'Koordinator Office')->first();
+
+        $users = [
+            $karyawan->kode_karyawan,
+            $Offman->kode_karyawan,
+            $kooroff->kode_karyawan,
+        ];
+
+        // Retrieve the first matching user based on the 'kode_karyawan'
+        $users = User::whereHas('karyawan', function ($query) use ($users) {
+            $query->whereIn('kode_karyawan', array_filter($users));
+        })->get();
+
+        $data = $suratPerjalanan;
+
+        $to = $karyawan->nama_lengkap;
+
+        $path = '/suratperjalanan';
+
+        foreach ($users as $user) {
+            NotificationFacade::send($user, new ApprovalSPJNotification($data, $path, $to));
+        }
         return redirect()->route('suratperjalanan.index')->with('success', 'Surat perjalanan berhasil diperbarui.');
     }
 
@@ -245,12 +255,12 @@ class SuratPerjalananController extends Controller
         return redirect()->route('suratperjalanan.index')->with('success', 'Surat perjalanan berhasil dihapus.');
     }
 
-    public function approval(Request $request ,$id)
+    public function approval(Request $request, $id)
     {
         $suratPerjalanan = SuratPerjalanan::findOrFail($id);
         $suratPerjalanan->update($request->all());
         $karyawan = karyawan::findOrFail($suratPerjalanan->id_karyawan);
-        $HRD = karyawan::where('jabatan' , 'HRD')->first();
+        $HRD = karyawan::where('jabatan', 'HRD')->first();
         // $Offman = karyawan::where('jabatan' , 'Office Manager')->first();
         $kooroff = karyawan::where('jabatan', 'Koordinator Office')->first();
 
@@ -271,9 +281,9 @@ class SuratPerjalananController extends Controller
         $to = $karyawan->nama_lengkap;
 
         $path = '/suratperjalanan';
-        
+
         foreach ($users as $user) {
-           NotificationFacade::send($user, new ApprovalSPJNotification($data, $path, $to));
+            NotificationFacade::send($user, new ApprovalSPJNotification($data, $path, $to));
         }
 
         return redirect()->route('suratperjalanan.index')->with('success', 'Surat perjalanan berhasil disetujui.');
