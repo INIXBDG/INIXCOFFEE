@@ -36,6 +36,8 @@ class SuratPerjalanan extends Model
         'approval_manager',
         'approval_hrd',
         'approval_direksi',
+        'jenis_dinas',
+        'jadwal_RKM'
     ];
 
     /**
