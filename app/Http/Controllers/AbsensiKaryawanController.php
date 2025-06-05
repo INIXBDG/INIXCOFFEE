@@ -19,14 +19,15 @@ class AbsensiKaryawanController extends Controller
     {
         $this->middleware('auth');
     }
-    public function cekip(){
+    public function cekip()
+    {
         // dd(request()->ip());
         $ip = request()->ip();
-        $ipaddr = explode(".",$ip);
+        $ipaddr = explode(".", $ip);
         // dd($ipaddr);
-        if($ipaddr[0] == '192' && $ipaddr[1] == '168'){
+        if ($ipaddr[0] == '192' && $ipaddr[1] == '168') {
             return response()->json(['success' => 'Absen Normal']);
-        }else{
+        } else {
             return response()->json(['success' => 'Absen Luar']);
         }
     }
@@ -60,7 +61,7 @@ class AbsensiKaryawanController extends Controller
         // Persiapan data
         $sekarang = \Carbon\Carbon::now('Asia/Jakarta');
         $jabatan = $request->input('jabatan') ?? auth()->user()->jabatan;
-        
+
         // Validasi duplikasi absen
         if ($this->checkDuplicateAbsen($request->id_karyawan, $sekarang->toDateString())) {
             return response()->json(['error' => 'Anda sudah melakukan absen masuk hari ini'], 400);
@@ -112,8 +113,8 @@ class AbsensiKaryawanController extends Controller
     private function checkDuplicateAbsen($idKaryawan, $tanggal)
     {
         return AbsensiKaryawan::where('id_karyawan', $idKaryawan)
-                            ->where('tanggal', $tanggal)
-                            ->exists();
+            ->where('tanggal', $tanggal)
+            ->exists();
     }
 
     private function processFoto($imageData)
@@ -125,13 +126,13 @@ class AbsensiKaryawanController extends Controller
 
             $image = str_replace('data:image/jpeg;base64,', '', $imageData);
             $image = str_replace(' ', '+', $image);
-            $imageName = 'absensi_'.time().'.jpeg';
-            $filePath = 'absensi/'.$imageName;
-            
-            Storage::put('public/'.$filePath, base64_decode($image));
+            $imageName = 'absensi_' . time() . '.jpeg';
+            $filePath = 'absensi/' . $imageName;
+
+            Storage::put('public/' . $filePath, base64_decode($image));
             return $filePath;
         } catch (\Exception $e) {
-            Log::error('Error proses foto: '.$e->getMessage());
+            Log::error('Error proses foto: ' . $e->getMessage());
             return false;
         }
     }
@@ -139,20 +140,20 @@ class AbsensiKaryawanController extends Controller
     private function validateShiftWaktu($waktu, $shift, $jabatan)
     {
         $config = $this->getShiftConfig($waktu->dayOfWeek, $jabatan, $shift);
-        
+
         if (!$waktu->between($config['jamAwal'], $config['jamAkhir'])) {
             return [
                 'valid' => false,
-                'message' => 'Waktu absen tidak sesuai shift. Jam kerja: '.
-                            $config['jamAwal']->format('H:i').' - '.
-                            $config['jamAkhir']->format('H:i')
+                'message' => 'Waktu absen tidak sesuai shift. Jam kerja: ' .
+                    $config['jamAwal']->format('H:i') . ' - ' .
+                    $config['jamAkhir']->format('H:i')
             ];
         }
 
         // Hitung keterlambatan
         $keterlambatan = '00:00:00';
         $keterangan = 'Masuk';
-        
+
         if ($waktu->greaterThan($config['jamMulaiShift'])) {
             $diffMinutes = $waktu->diffInMinutes($config['jamMulaiShift']);
             $hours = intdiv($diffMinutes, 60);
@@ -183,18 +184,18 @@ class AbsensiKaryawanController extends Controller
         switch ($jabatan) {
             case 'Office Boy':
                 if ($isWeekend) {
-                    $config['jamMulaiShift'] = $shift == 1 
+                    $config['jamMulaiShift'] = $shift == 1
                         ? \Carbon\Carbon::createFromTimeString('05:00:00')
                         : \Carbon\Carbon::createFromTimeString('11:00:00');
                 } else {
-                    $config['jamMulaiShift'] = $shift == 1 
+                    $config['jamMulaiShift'] = $shift == 1
                         ? \Carbon\Carbon::createFromTimeString('05:00:00')
                         : \Carbon\Carbon::createFromTimeString('16:00:00');
                 }
                 break;
 
             case 'Technical Support':
-                $config['jamMulaiShift'] = $isWeekend 
+                $config['jamMulaiShift'] = $isWeekend
                     ? \Carbon\Carbon::createFromTimeString('09:00:00')
                     : \Carbon\Carbon::createFromTimeString('08:00:00');
                 $config['jamAkhir'] = $isWeekend
@@ -210,7 +211,7 @@ class AbsensiKaryawanController extends Controller
     {
         // return $request->all();
         // Cek keterangan absen
-        if($request->keterangan == '-' || $request->keterangan == null){
+        if ($request->keterangan == '-' || $request->keterangan == null) {
             return response()->json(['error' => 'Anda belum Memilih Jenis Absen.'], 400);
         }
 
@@ -221,23 +222,23 @@ class AbsensiKaryawanController extends Controller
         if (!$jabatan) {
             return response()->json(['error' => 'Jabatan tidak ditemukan.'], 400);
         }
-        
+
         // Gunakan tanggal saat ini
         $sekarang = \Carbon\Carbon::now();
         $mytime = $sekarang->format('Y-m-d');
 
         // Cek apakah sudah absen hari ini
         $existingRecord = AbsensiKaryawan::where('id_karyawan', $request->input('id_karyawan'))
-                                        ->where('tanggal', $request->input('tanggal'))
-                                        ->first();
-        
+            ->where('tanggal', $request->input('tanggal'))
+            ->first();
+
         if ($existingRecord) {
             return response()->json(['error' => 'Anda telah Absen sebelumnya.'], 400);
         }
 
         // Proses penyimpanan foto
         $imageData = $request->input('foto');
-        
+
         // Validasi apakah foto yang dikirim sesuai format yang diharapkan
         if (!$imageData || strpos($imageData, 'data:image/jpeg;base64,') === false) {
             return response()->json(['error' => 'Foto tidak valid. Harus berupa base64 image.'], 400);
@@ -248,7 +249,7 @@ class AbsensiKaryawanController extends Controller
         $image = str_replace(' ', '+', $image);
         $imageName = time() . '.jpeg';
         $filePath = 'absensi/' . $imageName;
-        
+
         // Coba simpan gambar, tangani error jika gagal
         try {
             Storage::put('public/' . $filePath, base64_decode($image));
@@ -287,92 +288,92 @@ class AbsensiKaryawanController extends Controller
         $id_karyawan = auth()->user()->karyawan_id;
         $month = now()->month; // Mendapatkan bulan saat ini
         $absen = AbsensiKaryawan::where('id_karyawan', $id_karyawan)
-                    ->whereMonth('tanggal', $month)
-                    ->orderBy('tanggal', 'asc') // Urutkan berdasarkan tanggal secara ascending (terkecil ke terbesar)
-                    ->get();
+            ->whereMonth('tanggal', $month)
+            ->orderBy('tanggal', 'asc') // Urutkan berdasarkan tanggal secara ascending (terkecil ke terbesar)
+            ->get();
         // Ambil leaderboard karyawan berdasarkan waktu keterlambatan
         $leaderboard = AbsensiKaryawan::select(
-                    'id_karyawan',
-                    DB::raw('SUM(TIME_TO_SEC(waktu_keterlambatan)) as total_keterlambatan'),
-                    DB::raw('MAX(TIME_TO_SEC(waktu_keterlambatan)) as highest_keterlambatan'), // Fetch max lateness
-                    DB::raw('MIN(foto) as foto')
-                )
-                ->with('karyawan') // Load karyawan relationship to get employee details like name if needed
-                ->whereMonth('tanggal', $month)
-                ->whereHas('karyawan', function($query) {
-                    $query->whereNotIn('jabatan', ['Office boy', 'Driver']);
-                })
-                ->groupBy('id_karyawan') // Group by id_karyawan only, to aggregate multiple records per employee
-                ->orderBy('total_keterlambatan', 'desc')
-                ->limit(10) // Limit results to top 10 employees
-                ->get();
+            'id_karyawan',
+            DB::raw('SUM(TIME_TO_SEC(waktu_keterlambatan)) as total_keterlambatan'),
+            DB::raw('MAX(TIME_TO_SEC(waktu_keterlambatan)) as highest_keterlambatan'), // Fetch max lateness
+            DB::raw('MIN(foto) as foto')
+        )
+            ->with('karyawan') // Load karyawan relationship to get employee details like name if needed
+            ->whereMonth('tanggal', $month)
+            ->whereHas('karyawan', function ($query) {
+                $query->whereNotIn('jabatan', ['Office boy', 'Driver']);
+            })
+            ->groupBy('id_karyawan') // Group by id_karyawan only, to aggregate multiple records per employee
+            ->orderBy('total_keterlambatan', 'desc')
+            ->limit(10) // Limit results to top 10 employees
+            ->get();
 
-                $leaderboard->each(function ($item) {
-                    // Ambil record yang memiliki highest_keterlambatan untuk karyawan ini
-                    $recordWithHighestLateness = AbsensiKaryawan::where('id_karyawan', $item->id_karyawan)
-                        ->where(DB::raw('TIME_TO_SEC(waktu_keterlambatan)'), $item->highest_keterlambatan)
-                        ->orderBy('tanggal', 'asc') // Jika ada beberapa record dengan highest keterlambatan, ambil yang paling awal
-                        ->first();
-                
-                    // Set foto dari record tersebut ke dalam item leaderboard
-                    $item->foto = $recordWithHighestLateness->foto ?? null;
-                });
+        $leaderboard->each(function ($item) {
+            // Ambil record yang memiliki highest_keterlambatan untuk karyawan ini
+            $recordWithHighestLateness = AbsensiKaryawan::where('id_karyawan', $item->id_karyawan)
+                ->where(DB::raw('TIME_TO_SEC(waktu_keterlambatan)'), $item->highest_keterlambatan)
+                ->orderBy('tanggal', 'asc') // Jika ada beberapa record dengan highest keterlambatan, ambil yang paling awal
+                ->first();
+
+            // Set foto dari record tersebut ke dalam item leaderboard
+            $item->foto = $recordWithHighestLateness->foto ?? null;
+        });
 
         // Convert total and highest lateness times to HH:MM:SS format and filter out employees with zero lateness
         $leaderboard = $leaderboard->filter(function ($item) {
-        // Convert total_keterlambatan to HH:MM:SS
-        $hoursketerlambatan = floor($item->total_keterlambatan / 3600);
-        $minutesketerlambatan = floor(($item->total_keterlambatan % 3600) / 60);
-        $secondsketerlambatan = $item->total_keterlambatan % 60;
-        $item->total_keterlambatan = sprintf('%02d:%02d:%02d', $hoursketerlambatan, $minutesketerlambatan, $secondsketerlambatan);
+            // Convert total_keterlambatan to HH:MM:SS
+            $hoursketerlambatan = floor($item->total_keterlambatan / 3600);
+            $minutesketerlambatan = floor(($item->total_keterlambatan % 3600) / 60);
+            $secondsketerlambatan = $item->total_keterlambatan % 60;
+            $item->total_keterlambatan = sprintf('%02d:%02d:%02d', $hoursketerlambatan, $minutesketerlambatan, $secondsketerlambatan);
 
-        // Convert highest_keterlambatan to HH:MM:SS
-        $hourstinggi = floor($item->highest_keterlambatan / 3600);
-        $minutestinggi = floor(($item->highest_keterlambatan % 3600) / 60);
-        $secondstinggi = $item->highest_keterlambatan % 60;
-        $item->highest_keterlambatan = sprintf('%02d:%02d:%02d', $hourstinggi, $minutestinggi, $secondstinggi);
+            // Convert highest_keterlambatan to HH:MM:SS
+            $hourstinggi = floor($item->highest_keterlambatan / 3600);
+            $minutestinggi = floor(($item->highest_keterlambatan % 3600) / 60);
+            $secondstinggi = $item->highest_keterlambatan % 60;
+            $item->highest_keterlambatan = sprintf('%02d:%02d:%02d', $hourstinggi, $minutestinggi, $secondstinggi);
 
-        // Only include if either total_keterlambatan or highest_keterlambatan is not 00:00:00
-        return $item->total_keterlambatan !== '00:00:00' || $item->highest_keterlambatan !== '00:00:00';
+            // Only include if either total_keterlambatan or highest_keterlambatan is not 00:00:00
+            return $item->total_keterlambatan !== '00:00:00' || $item->highest_keterlambatan !== '00:00:00';
         })->values(); // Reset keys on the filtered collection
 
-    
+
         $topKaryawan = $leaderboard->take(3);
         $remainingLeaderboard = $leaderboard->slice(3)->values();
 
 
-        $totalketerlambatan = AbsensiKaryawan::select('id_karyawan', DB::raw('SUM(TIME_TO_SEC(waktu_keterlambatan)) as total_keterlambatan'))        
-                ->whereMonth('tanggal', $month)
-                ->where('id_karyawan', auth()->user()->karyawan_id)
-                ->groupBy('id_karyawan')
-                ->orderBy('total_keterlambatan', 'desc')
-                ->with('karyawan')
-                ->first();
-                if ($totalketerlambatan) {
-                    $totalSeconds = $totalketerlambatan->total_keterlambatan;
-                
-                    // Menghitung jam, menit, dan detik
-                    $hours = floor($totalSeconds / 3600);
-                    $minutes = floor(($totalSeconds % 3600) / 60);
-                    $seconds = $totalSeconds % 60;
-                
-                    // Format ke dalam string manusiawi
-                    $formattedTime = '';
-                    if ($hours > 0) {
-                        $formattedTime .= $hours . ' jam ';
-                    }
-                    if ($minutes > 0) {
-                        $formattedTime .= $minutes . ' menit ';
-                    }
-                    if ($seconds > 0) {
-                        $formattedTime .= $seconds . ' detik';
-                    }
-                    
-                    // Set formatted time ke dalam objek
-                    $totalketerlambatan->total_keterlambatan = $formattedTime;
-                }
-            // return $totalketerlambatan;
-            // return $leaderboard;
+        $totalketerlambatan = AbsensiKaryawan::select('id_karyawan', DB::raw('SUM(TIME_TO_SEC(waktu_keterlambatan)) as total_keterlambatan'))
+            ->whereMonth('tanggal', $month)
+            ->where('id_karyawan', auth()->user()->karyawan_id)
+            ->groupBy('id_karyawan')
+            ->orderBy('total_keterlambatan', 'desc')
+            ->with('karyawan')
+            ->first();
+        if ($totalketerlambatan) {
+            $totalSeconds = $totalketerlambatan->total_keterlambatan;
+
+            // Menghitung jam, menit, dan detik
+            $hours = floor($totalSeconds / 3600);
+            $minutes = floor(($totalSeconds % 3600) / 60);
+            $seconds = $totalSeconds % 60;
+
+            // Format ke dalam string manusiawi
+            $formattedTime = '';
+            if ($hours > 0) {
+                $formattedTime .= $hours . ' jam ';
+            }
+            if ($minutes > 0) {
+                $formattedTime .= $minutes . ' menit ';
+            }
+            if ($seconds > 0) {
+                $formattedTime .= $seconds . ' detik';
+            }
+
+            // Set formatted time ke dalam objek
+            $totalketerlambatan->total_keterlambatan = $formattedTime;
+        }
+        // return $totalketerlambatan;
+        // return $leaderboard;
 
         return view('absensi.absensi', compact('absen', 'leaderboard', 'totalketerlambatan', 'topKaryawan', 'remainingLeaderboard'));
     }
@@ -384,11 +385,13 @@ class AbsensiKaryawanController extends Controller
             'shift' => 'required|in:1,2',
             'keterangan_pulang' => 'required|string',
             'id_karyawan' => 'required|integer',
+            'jabatan' => 'required|string', // Tambahkan validasi untuk jabatan
             'client_time' => 'sometimes|date' // Untuk logging
         ], [
             'shift.required' => 'Shift harus diisi',
             'shift.in' => 'Shift hanya boleh 1 atau 2',
-            'keterangan_pulang.required' => 'Keterangan pulang harus diisi'
+            'keterangan_pulang.required' => 'Keterangan pulang harus diisi',
+            'jabatan.required' => 'Jabatan harus diisi'
         ]);
 
         if ($validator->fails()) {
@@ -412,26 +415,53 @@ class AbsensiKaryawanController extends Controller
         // Konfigurasi jam kerja
         $jadwal = $this->getJadwalKerja($sekarang->isWeekend(), $request->shift);
 
-        // Cek absensi masuk
+        // Cek absensi masuk untuk hari ini
         $absensi = $this->getAbsensiMasuk($request->id_karyawan, $request->shift, $tanggal);
-        
-        if (!$absensi) {
+
+        // Jika absen masuk tidak ditemukan dan jabatan adalah Office Boy
+        if (!$absensi && $request->jabatan === 'Office Boy') {
+            // Cek absensi hari sebelumnya
+            $tanggalSebelumnya = $sekarang->copy()->subDay()->toDateString();
+            $absensiSebelumnya = $this->getAbsensiMasuk($request->id_karyawan, $request->shift, $tanggalSebelumnya);
+
+            // Jika absensi hari sebelumnya ada dan jam_masuk kosong
+            if ($absensiSebelumnya && is_null($absensiSebelumnya->jam_masuk)) {
+                // Update absensi hari sebelumnya dengan jam masuk (misalnya dianggap masuk sore hari sebelumnya)
+                $absensiSebelumnya->update([
+                    'jam_masuk' => $sekarang->copy()->subDay()->setTime(16, 0, 0)->toTimeString(), // Contoh: masuk jam 16:00
+                    'keterangan_masuk' => 'Masuk (Shift Malam)'
+                ]);
+
+                // Buat absensi baru untuk hari ini hanya dengan jam_keluar
+                $absensi = AbsensiKaryawan::create([
+                    'id_karyawan' => $request->id_karyawan,
+                    'tanggal' => $tanggal,
+                    'shift' => $request->shift,
+                    'jam_keluar' => $jamKeluar->toTimeString(),
+                    'keterangan_pulang' => 'Pulang (' . $request->keterangan_pulang . ')'
+                ]);
+            } else {
+                // Jika tidak ada absensi sebelumnya atau jam_masuk tidak kosong
+                return response()->json(['error' => 'Absen masuk tidak ditemukan'], 404);
+            }
+        } elseif (!$absensi) {
+            // Jika bukan Office Boy dan absen masuk tidak ditemukan
             return response()->json(['error' => 'Absen masuk tidak ditemukan'], 404);
         }
 
         // Validasi waktu
         if (!$this->validateWaktuAbsen($jamKeluar, $jadwal)) {
             return response()->json([
-                'error' => 'Waktu absen tidak valid. Jam yang diperbolehkan: ' . 
-                         $jadwal['awal']->format('H:i') . ' - ' . 
-                         $jadwal['akhir']->format('H:i')
+                'error' => 'Waktu absen tidak valid. Jam yang diperbolehkan: ' .
+                    $jadwal['awal']->format('H:i') . ' - ' .
+                    $jadwal['akhir']->format('H:i')
             ], 400);
         }
 
         // Simpan absensi
         $absensi->update([
             'jam_keluar' => $jamKeluar->toTimeString(),
-            'keterangan_pulang' => 'Pulang ('.$request->keterangan_pulang.')'
+            'keterangan_pulang' => 'Pulang (' . $request->keterangan_pulang . ')'
         ]);
 
         return response()->json([
@@ -467,8 +497,8 @@ class AbsensiKaryawanController extends Controller
         }
 
         return $query->where('tanggal', $tanggal)
-                    ->whereNull('jam_keluar')
-                    ->first();
+            ->whereNull('jam_keluar')
+            ->first();
     }
 
     private function validateWaktuAbsen($waktu, $jadwal)
@@ -476,18 +506,19 @@ class AbsensiKaryawanController extends Controller
         return $waktu->between($jadwal['awal'], $jadwal['akhir']);
     }
 
-    public function jumlahAbsensi($karyawanId, $bulan, $tahun) {  
+    public function jumlahAbsensi($karyawanId, $bulan, $tahun)
+    {
         // Mengambil data absensi karyawan berdasarkan bulan dan tahun  
-        $absensiKaryawan = AbsensiKaryawan::whereMonth('tanggal', $bulan)  
-            ->whereYear('tanggal', $tahun)  
-            ->where('id_karyawan', $karyawanId)  
-            ->get();  
-        $cutis = pengajuancuti::where('id_karyawan', $karyawanId)  
-            ->whereYear('tanggal_awal', $tahun)  
-            ->whereMonth('tanggal_awal', $bulan)  
-            ->get();  
-  
-       // Inisialisasi jumlahAbsensi
+        $absensiKaryawan = AbsensiKaryawan::whereMonth('tanggal', $bulan)
+            ->whereYear('tanggal', $tahun)
+            ->where('id_karyawan', $karyawanId)
+            ->get();
+        $cutis = pengajuancuti::where('id_karyawan', $karyawanId)
+            ->whereYear('tanggal_awal', $tahun)
+            ->whereMonth('tanggal_awal', $bulan)
+            ->get();
+
+        // Inisialisasi jumlahAbsensi
         if ($karyawanId == '2') {
             // Menggunakan distinct count untuk employee ID '2'
             $jumlahAbsensi = AbsensiKaryawan::whereMonth('tanggal', $bulan)
@@ -496,70 +527,66 @@ class AbsensiKaryawanController extends Controller
                 ->distinct('tanggal')
                 ->count();
 
-                // dd($jumlahAbsensi);
+            // dd($jumlahAbsensi);
         } else {
             $jumlahAbsensi = $absensiKaryawan->count();
         }
 
-        $karyawan = karyawan::findOrFail($karyawanId);  
-          
+        $karyawan = karyawan::findOrFail($karyawanId);
+
         // Inisialisasi total durasi cuti dan izin    
-        $totalCuti = 0;    
-        $totalizin = 0;    
-        
-        if ($cutis->isNotEmpty()) {          
-            foreach ($cutis as $cuti) {          
-                if ($cuti->tipe == 'Izin') {          
+        $totalCuti = 0;
+        $totalizin = 0;
+
+        if ($cutis->isNotEmpty()) {
+            foreach ($cutis as $cuti) {
+                if ($cuti->tipe == 'Izin') {
                     $totalizin += $cuti->durasi; // Menjumlahkan durasi izin      
-                } else {    
+                } else {
                     $totalCuti += $cuti->durasi; // Menjumlahkan durasi cuti          
-                }      
-            }        
-          
+                }
+            }
+
             // Tambahkan totalCuti ke jumlahAbsensi terlebih dahulu  
-            $jumlahAbsensi += $totalCuti; 
+            $jumlahAbsensi += $totalCuti;
             // dd($jumlahAbsensi);
 
             // Kemudian kurangi totalizin dari jumlahAbsensi jika totalizin >= 1  
-            if ($totalizin >= 1) {        
+            if ($totalizin >= 1) {
                 $jumlahAbsensi -= $totalizin; // Kurangi totalizin dari jumlahAbsensi        
-            }          
-        }   
-        
-         
+            }
+        }
+
+
         // Hitung total keterlambatan dalam detik jika ada data absensi  
-        $totalSeconds = $absensiKaryawan->sum(function ($item) {  
-            if (!empty($item->waktu_keterlambatan) && strpos($item->waktu_keterlambatan, ':') !== false) {  
-                list($hours, $minutes, $seconds) = explode(':', $item->waktu_keterlambatan);  
-                return $hours * 3600 + $minutes * 60 + $seconds;  
-            }  
-            return 0;  
-        });  
-      
+        $totalSeconds = $absensiKaryawan->sum(function ($item) {
+            if (!empty($item->waktu_keterlambatan) && strpos($item->waktu_keterlambatan, ':') !== false) {
+                list($hours, $minutes, $seconds) = explode(':', $item->waktu_keterlambatan);
+                return $hours * 3600 + $minutes * 60 + $seconds;
+            }
+            return 0;
+        });
+
         // Kondisi jika total keterlambatan lebih dari 0  
-        if ($totalSeconds > 0) {  
-            if ($totalSeconds > 900) {  
-                $keterangan = "Terlambat > 15 menit";  
-            } else {  
-                $keterangan = "Terlambat " . floor($totalSeconds / 60) . " menit";  
-            }  
-        } else {  
-            $keterangan = "Tidak pernah terlambat";  
-        }  
-      
-        return response()->json([  
-            'success' => true,  
-            'message' => 'Jumlah Absen ' . $bulan . '-' . $tahun,  
-            'data' => [  
+        if ($totalSeconds > 0) {
+            if ($totalSeconds > 900) {
+                $keterangan = "Terlambat > 15 menit";
+            } else {
+                $keterangan = "Terlambat " . floor($totalSeconds / 60) . " menit";
+            }
+        } else {
+            $keterangan = "Tidak pernah terlambat";
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Jumlah Absen ' . $bulan . '-' . $tahun,
+            'data' => [
                 'jumlah_absensi' => $jumlahAbsensi ?? 0, // Menangani kondisi null  
-                'keterangan' => $keterangan,  
+                'keterangan' => $keterangan,
                 'cutikaryawan' => $cutis ?? [], // Jika tidak ada data cuti, kirimkan array kosong  
                 'karyawan' => $karyawan ?? [], // Jika tidak ada data cuti, kirimkan array kosong  
-            ],  
-        ]);  
-    }  
-    
-    
-    
-
+            ],
+        ]);
+    }
 }
