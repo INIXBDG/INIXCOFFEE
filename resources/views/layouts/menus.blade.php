@@ -2073,7 +2073,7 @@
                         success: function(response) {
                             alert(response.success);
                             $('#modalAbsen').modal('hide');
-                            location.reload();
+                            window.location.href = "{{route('absensi.karyawan')}}";
                         },
                         error: function(xhr, status, error) {
                             alert(xhr.responseJSON.error);
@@ -2094,18 +2094,24 @@
             var jabatan = "{{ auth()->user()->jabatan }}";
             var shift = null;
 
-            if (jabatan == 'Office Boy') {
+            if (jabatan === 'Office Boy') {
                 if (jam_pulang >= '10:00:00' && jam_pulang < '23:00:00') {
                     shift = 1;
                 } else if (jam_pulang >= '01:00:00' && jam_pulang <= '12:00:00') {
                     shift = 2;
                 } else {
-                    shift = 'Tidak Sesuai Shift';
+                    alert('Waktu absen tidak sesuai dengan shift Office Boy. Silakan hubungi admin.');
+                    return; // Stop execution if shift is invalid
                 }
             } else {
                 shift = 1;
             }
+
             var keterangan_pulang = $('input[name="keterangan"]:checked').val();
+            if (!keterangan_pulang) {
+                alert('Silakan pilih keterangan pulang.');
+                return; // Stop execution if keterangan is not selected
+            }
 
             // Kirim data absen pulang ke server
             $.ajax({
@@ -2118,16 +2124,29 @@
                     jam_keluar: jam_pulang,
                     shift: shift,
                     keterangan_pulang: keterangan_pulang,
+                    jabatan: jabatan, // Tambahkan jabatan ke request
+                    client_time: now.toISOString() // Kirim waktu client untuk logging
                 },
                 success: function(response) {
-                    alert(response.success);
-                    $('#modalPemberitahuan').modal('hide');
-                    location.reload();
+                    if (response.success) {
+                        alert(response.success);
+                        $('#modalPemberitahuan').modal('hide');
+                        window.location.href = "{{ route('absensi.karyawan') }}";
+                    } else {
+                        alert('Respons tidak valid dari server. Silakan coba lagi.');
+                        console.log('Unexpected response:', response);
+                    }
                 },
-                error: function(response) {
-                    alert(response.responseJSON.error);
-                    console.log(response.responseJSON.error);
-                    location.reload();
+                error: function(xhr) {
+                    let errorMsg = 'Terjadi kesalahan. Silakan coba lagi.';
+                    if (xhr.responseJSON && xhr.responseJSON.errors) {
+                        errorMsg = Object.values(xhr.responseJSON.errors).flat().join('\n');
+                    } else if (xhr.responseJSON && xhr.responseJSON.error) {
+                        errorMsg = xhr.responseJSON.error;
+                    }
+                    alert(errorMsg);
+                    console.log('Error response:', xhr.responseJSON);
+                    window.location.href = "{{ route('absensi.karyawan') }}"; // Redirect even on error
                 }
             });
         });
