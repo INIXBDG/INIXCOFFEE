@@ -209,7 +209,7 @@
                         var allowedRoles = ['Office Manager', 'Koordinator Office', 'Education Manager', 'SPV Sales', 'GM', 'Koordinator ITSM'];
                         var userRole = '{{ auth()->user()->jabatan}}';
                         var requesterRole = data.karyawan.jabatan; // Assuming this is passed in the row data
-
+                        console.log(userRole);
                         // Base URL for file viewing
                         var fileBaseUrl = '{{ url('storage/') }}/';
                         var suratSakitUrl = fileBaseUrl + (data.surat_sakit || '');
@@ -259,12 +259,10 @@
                             actions += '@method('DELETE')';
 
                             // Hapus hanya jika data berasal dari Education Manager, Office Manager, atau SPV Sales dan userRole adalah GM
-                            if (userRole === 'GM' && ['Education Manager', 'Office Manager', 'Koordinator Office', 'SPV Sales'].includes(requesterRole)) {
-                                actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
-                            } else if (allowedDeleteRoles.includes(userRole) && data.approval_manager === '1') {
-                                actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
+                            if (userRole === 'HRD') {
+                                    actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
                             } else {
-                                actions += '<button type="submit" class="dropdown-item disabled"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
+                                    actions += '<button type="submit" class="dropdown-item disabled"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
                             }
 
                             actions += '</form>';
@@ -274,6 +272,8 @@
                             actions += '<div class="dropdown">';
                             actions += '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
                             actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
+                            actions += '<a class="dropdown-item" href="{{route('pengajuancuti.show', ':id')}}"><img src="{{ asset('icon/assept-document.svg') }}" style="width:24px" class="">  Form PDF</a>';
+                            actions = actions.replace(':id', data.id);
                             
                             // View Surat Sakit
                             if (data.surat_sakit) {
@@ -283,15 +283,10 @@
                             actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/pengajuancuti') }}/' + row.id + '" method="POST">';
                             actions += '@csrf';
                             actions += '@method('DELETE')';
-                            if (data.approval_manager === '1') {
-                                    actions += '<a class="dropdown-item" href="{{route('pengajuancuti.show', ':id')}}"><img src="{{ asset('icon/assept-document.svg') }}" style="width:24px" class="">  Form PDF</a>';
-                                    actions = actions.replace(':id', data.id);
-                                    actions += '<button type="submit" class="dropdown-item disabled"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
-                            } else if( data.approval_manager === '2' ){
-                                    actions += '<button type="submit" class="dropdown-item disabled"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
-                            } else {
+                            if (userRole === 'HRD') {
                                     actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
-
+                            } else {
+                                    actions += '<button type="submit" class="dropdown-item disabled"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
                             }
                             actions += '</form>';
                             actions += '</div>';

@@ -320,9 +320,16 @@ class PengajuancutiController extends Controller
      * @param  mixed $post
      * @return void
      */
-    public function destroy($id): RedirectResponse
+    public function destroy($id)
     {
-        $post = pengajuancuti::findOrFail($id);
+        $post = pengajuancuti::with('karyawan')->findOrFail($id);
+
+        $cuti = $post->karyawan->cuti;
+        $tambah_cuti = $post->durasi;
+        if ($post->tipe === 'Cuti' && $post->approval_manager === '1') {
+            $post->karyawan->update(['cuti' => $cuti + $tambah_cuti]);
+        }
+        // return $post;
 
         $post->delete();
 
