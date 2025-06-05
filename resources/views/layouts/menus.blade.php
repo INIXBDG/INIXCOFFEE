@@ -2157,7 +2157,7 @@
         });
 
         function handleNotificationDismissal() {
-            // Prevent default action of the button
+            // Prevent default action of the buttonz
             // event.preventDefault();
 
             // Hide the closest card-body to the clicked button
