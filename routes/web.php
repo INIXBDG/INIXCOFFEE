@@ -255,6 +255,7 @@ Route::put('pengajuanbarang/updateinvoice/{id}', [App\Http\Controllers\Pengajuan
 Route::put('pengajuanbarang/updatebarang/{id}', [App\Http\Controllers\PengajuanBarangController::class, 'updateBarang'])->name('pengajuanbarang.updateBarang');
 Route::get('pengajuanbarang/pdf/{id}', [App\Http\Controllers\PengajuanBarangController::class, 'exportPDF'])->name('pengajuanbarang.pdf');
 Route::get('paymantAdvance/{id}/create', [App\Http\Controllers\netSalesController::class, 'create']);
+Route::get('tunjanganEduExportExcel/{month}/{year}', [App\Http\Controllers\tunjanganEducationController::class, 'tunjanganEduExportExcel'])->name('tunjanganEduExportExcel');
 
 Route::get('kalkulator/analisis/{id}/kelas', [KelasAnalisisController::class, 'kalkulatorview'])->name('kalkulatorview'); // Return view kalkulator kelas analisis
 
