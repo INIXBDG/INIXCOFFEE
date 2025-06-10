@@ -119,6 +119,12 @@ Route::get('getFeedbacksByMonth/{year}/{month}', [App\Http\Controllers\feedbackC
 Route::get('getPengajuanCuti', [App\Http\Controllers\PengajuancutiController::class, 'getPengajuanCuti'])->name('getPengajuanCuti');
 Route::get('getPesertaById/{id}', [App\Http\Controllers\PesertaController::class, 'getPesertaById'])->name('getPesertaById');
 Route::get('getSuratPerjalanan', [App\Http\Controllers\SuratPerjalananController::class, 'getSuratPerjalanan'])->name('getSuratPerjalanan');
+Route::get('index/SuratPerjalanan/to/print', [App\Http\Controllers\SuratPerjalananController::class, 'createPrint'])->name('createPrint');
+Route::get('get/SuratPerjalanan/to/print', [App\Http\Controllers\SuratPerjalananController::class, 'getToPrint'])->name('getToPrint');
+Route::post('download/SuratPerjalanan/to/excel', [App\Http\Controllers\SuratPerjalananController::class, 'getToExcelMonth'])->name('getToExcelMonth');
+Route::post('download/SuratPerjalanan/to/excel-year', [App\Http\Controllers\SuratPerjalananController::class, 'getToExcelYear'])->name('getToExcelYear');
+Route::post('download/SuratPerjalanan/to/pdf', [App\Http\Controllers\SuratPerjalananController::class, 'getToPdfMonth'])->name('getToPdfMonth');
+Route::post('download/SuratPerjalanan/to/pdf-year', [App\Http\Controllers\SuratPerjalananController::class, 'getToPdfYear'])->name('getToPdfYear');
 Route::get('getPengajuanBarang/{month}/{year}', [App\Http\Controllers\PengajuanBarangController::class, 'getPengajuanBarang'])->name('getPengajuanBarang');
 Route::get('getAbsen', [App\Http\Controllers\RekapitulasiAbsenController::class, 'getAbsen'])->name('getAbsen');
 Route::get('getTarget', [App\Http\Controllers\TargetController::class, 'getTarget'])->name('getTarget');
