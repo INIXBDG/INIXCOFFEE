@@ -486,6 +486,9 @@
         $('#cekdatas').click(function() {
             tableInstruktur()
         });
+         $('#tahun, #bulan').on('change', function() {
+                updateExportLink();
+            });
     });
     function removeRupiahFormat(angka) {
         return angka.replace(/[Rp.\s]/g, '').replace(/,/g, '.');
