@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\rekapMengajarInstruktur;
-use App\Models\tunjanganEducation;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
-
 use App\Http\Controllers\rekapInstrukturController;
 use App\Models\RKM;
+use App\Exports\tunjanganEduExportExcel;
+use Maatwebsite\Excel\Facades\Excel;
 
 class tunjanganEducationController extends Controller
 {
@@ -75,8 +75,6 @@ class tunjanganEducationController extends Controller
             'data' => $data,
         ]);
     }
-
-
 
     public function update($id, Request $request)
     {
@@ -157,4 +155,39 @@ class tunjanganEducationController extends Controller
         return redirect()->route('tunjanganEducation.index')->with(['success' => 'Data Berhasil dihitung!']);
 
     }
+
+    public function tunjanganEduExportExcel($month, $year)
+    {
+        $posts = rekapMengajarInstruktur::where('bulan', $month)
+            ->where('tahun', $year)
+            ->with('instruktur', 'rkm')
+            ->get();
+
+        // Mengubah data menjadi array sesuai kebutuhan export
+        $exportData = $posts->map(function ($item) {
+            return [
+                'nama_karyawan' => $item->instruktur->nama_lengkap ?? '',
+                'materi' => $item->rkm->materi->nama_materi ?? '',
+                'perusahaan' => $item->rkm->perusahaan->nama_perusahaan ?? '',
+                'feedback' => $item->rkm->feedback ?? '',
+                'pax' => $item->pax ?? '',
+                'level' => $item->level ?? '',
+                'durasi' => $item->durasi ?? '',
+                'tanggal_awal' => $item->tanggal_awal ?? '',
+                'tanggal_akhir' => $item->tanggal_akhir ?? '',
+                'bulan' => $item->bulan ?? '',
+                'tahun' => $item->tahun ?? '',
+                'poin_durasi' => $item->poin_durasi ?? '',
+                'poin_pax' => $item->poin_pax ?? '',
+                'tunjangan_feedback' => $item->tunjangan_feedback ?? '',
+                'tunjangan_total' => $item->total_tunjangan ?? '',
+                'status' => $item->status ?? '',
+                'keterangan' => $item->keterangan ?? '',
+            ];
+        })->toArray();
+
+        $fileName = "tunjangan_edu_{$month}_{$year}.xlsx";
+        return Excel::download(new tunjanganEduExportExcel($exportData), $fileName);
+    }
+
 }
