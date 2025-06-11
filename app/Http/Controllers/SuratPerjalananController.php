@@ -13,6 +13,9 @@ use App\Models\RKM;
 use App\Notifications\ApprovalSPJNotification;
 use App\Notifications\PengajuanSPJNotification;
 use Carbon\Carbon;
+use App\Exports\SuratPerjalananExport;
+use Maatwebsite\Excel\Facades\Excel;
+use PDF;
 
 class SuratPerjalananController extends Controller
 {
@@ -25,6 +28,36 @@ class SuratPerjalananController extends Controller
     }
 
     public function getSuratPerjalanan()
+    {
+        $user = auth()->user()->karyawan_id;
+        $karyawan = karyawan::findOrfail($user);
+        // return $karyawan;
+        $jabatan = $karyawan->jabatan;
+        $divisi = $karyawan->divisi;
+        if ($jabatan == 'Office Manager' || $jabatan == 'Education Manager' || $jabatan == 'SPV Sales' || $jabatan == 'Koordinator ITSM') {
+            $SuratPerjalanan = SuratPerjalanan::with('karyawan', 'RKM')->whereHas('karyawan', function ($query) use ($divisi) {
+                $query->where('divisi', $divisi);
+            })->latest()->get();
+        } elseif ($jabatan == 'HRD' || $jabatan == "Koordinator Office" || $jabatan == 'GM' || $jabatan == 'Direktur Utama' || $jabatan == 'Direktur') {
+            $SuratPerjalanan = SuratPerjalanan::with('karyawan', 'RKM')->latest()->get();
+        } else {
+            $SuratPerjalanan = SuratPerjalanan::with('karyawan', 'RKM')->whereHas('karyawan', function ($query) use ($user) {
+                $query->where('id', $user);
+            })->latest()->get();
+        }
+        return response()->json([
+            'success' => true,
+            'message' => 'List SuratPerjalanan',
+            'data' => $SuratPerjalanan,
+        ]);
+    }
+
+    public function createPrint()
+    {
+        return view('suratperjalanan.print');
+    }
+
+    public function getToPrint()
     {
         $user = auth()->user()->karyawan_id;
         $karyawan = karyawan::findOrfail($user);
@@ -48,7 +81,104 @@ class SuratPerjalananController extends Controller
             'data' => $SuratPerjalanan,
         ]);
     }
+    public function getToExcelMonth(Request $request)
+    {
+        $month = $request->input('bulan');
 
+        if (!is_numeric($month) || $month < 1 || $month > 12) {
+            return redirect()->back()->with('error', 'Bulan tidak valid.');
+        }
+
+        $userId = auth()->user()->karyawan_id;
+        $karyawan = Karyawan::findOrFail($userId);
+        $divisi = $karyawan->divisi;
+
+        $data = SuratPerjalanan::with('karyawan', 'RKM')
+            ->whereMonth('tanggal_berangkat', $month)
+            ->get();
+
+        if ($data->isEmpty()) {
+            return redirect()->back()->with('error', 'Tidak ada data untuk bulan yang dipilih.');
+        }
+
+        $monthName = Carbon::create()->month($month)->locale('id')->isoFormat('MMMM');
+        $fileName = 'SuratPerjalanan_' . $monthName . '_' . now()->format('Y') . '.xlsx';
+
+        return Excel::download(new SuratPerjalananExport($data), $fileName);
+    }
+
+    public function getToExcelYear(Request $request)
+    {
+        $year = $request->input('tahun');
+
+        if (!is_numeric($year) || $year < 2024) {
+            return redirect()->back()->with('error', 'Tahun tidak Tesedia.');
+        }
+
+        $userId = auth()->user()->karyawan_id;
+        $karyawan = Karyawan::findOrFail($userId);
+        $divisi = $karyawan->divisi;
+
+        $data = SuratPerjalanan::with('karyawan', 'RKM')
+            ->whereYear('tanggal_berangkat', $year)
+            ->get();
+        
+        if ($data->isEmpty()) {
+            return redirect()->back()->with('error', 'Tidak ada data untuk tahun yang dipilih.');
+        }
+
+        $fileName = 'data_SPJ_Tahunan' . '_' . now()->format('Y') . '.xlsx';
+
+        return Excel::download(new SuratPerjalananExport($data), $fileName);
+    }
+
+    public function getToPdfMonth(Request $request)
+    {
+        $month = $request->input('bulan');
+        $user = auth()->user()->karyawan_id;
+        $karyawan = Karyawan::findOrFail($user);
+        $divisi = $karyawan->divisi;
+
+        if (!is_numeric($month) || $month < 1 || $month > 12) {
+            return redirect()->back()->with('error', 'Bulan tidak valid.');
+        }
+
+        $data = SuratPerjalanan::with(['karyawan', 'RKM'])
+            ->whereMonth('tanggal_berangkat', $month)
+            ->get();
+
+        if ($data->isEmpty()) {
+            return redirect()->back()->with('error', 'Tidak ada data untuk bulan yang dipilih.');
+        }
+
+        $pdf = PDF::loadView('exports.surat_perjalanan_pdf', ['data' => $data]);
+
+        return $pdf->download('SuratPerjalanan_' . now()->format('F_Y') . '.pdf');
+    }
+
+    public function getToPdfYear(Request $request)
+    {
+        $Year = $request->input('tahun');
+        $user = auth()->user()->karyawan_id;
+        $karyawan = Karyawan::findOrFail($user);
+        $divisi = $karyawan->divisi;
+
+        if (!is_numeric($Year) || $Year < 2024 || $Year > now('Y')) {
+            return redirect()->back()->with('error', 'Tahun tidak tersedia.');
+        }
+
+        $data = SuratPerjalanan::with(['karyawan', 'RKM'])
+            ->whereYear('tanggal_berangkat', $Year)
+            ->get();
+
+        if ($data->isEmpty()) {
+            return redirect()->back()->with('error', 'Tidak ada data untuk tahun yang dipilih.');
+        }
+
+        $pdf = PDF::loadView('exports.surat_perjalanan_pdf_tahunan', ['data' => $data]);
+
+        return $pdf->download('SuratPerjalanan_Tahunan' . now()->format('Y') . '.pdf');
+    }
     /**
      * Menampilkan form untuk membuat surat perjalanan baru.
      */
@@ -153,7 +283,7 @@ class SuratPerjalananController extends Controller
      */
     public function show($id)
     {
-        $suratperjalanan = SuratPerjalanan::with('karyawan')->findOrFail($id);
+        $suratperjalanan = SuratPerjalanan::with('karyawan', 'RKM')->findOrFail($id);
         // return $suratperjalanan;
         $divisi = $suratperjalanan->karyawan->divisi;
         $jabatan = $suratperjalanan->karyawan->jabatan;
