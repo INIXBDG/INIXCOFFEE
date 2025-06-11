@@ -356,6 +356,7 @@
                         </div>
                         <div class="col-md-3 mx-1">
                             <button type="button" id="cekdatas" class="btn click-primary" style="margin-top: 37px">Cari Data</button>
+                            <a href="{{ route('nilaifeedbackexport', [$tahun_sekarang, $bulan_sekarang]) }}" id="export-link" target="_blank" class="btn click-primary" style="margin-top: 37px">Export to Excel</a>
                         </div>
                     </div>
                         <div class="card">
@@ -755,6 +756,25 @@
                 this.api().columns(2).search(idInstruktur).draw();
             }
         });
+    }
+    function updateExportLink() {
+        var tahun = $('#tahun').val();
+        var bulan = $('#bulan').val();
+        var exportLink = $('#export-link');
+
+        // Get current year and month
+        var currentYear = new Date().getFullYear();
+        var currentMonth = new Date().getMonth() + 1; // getMonth() returns month index (0-11), so we add 1
+
+        // If year or month is not selected, use current year and month
+        if (!tahun) {
+            tahun = currentYear;
+        }
+        if (!bulan) {
+            bulan = currentMonth;
+        }
+
+        exportLink.attr('href', '/tunjanganEduExportExcel/' + bulan + '/' + tahun);
     }
 
 </script>

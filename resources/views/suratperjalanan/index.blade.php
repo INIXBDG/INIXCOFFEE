@@ -58,7 +58,9 @@
         <div class="col-md-12">
             <div class="d-flex justify-content-end">
                 {{-- @if ( auth()->user()->jabatan == 'HRD' || auth()->user()->jabatan == 'Office ') --}}
-                    <a href="{{ route('createPrint') }}" class="btn btn-success mx-4" data-toggle="tooltip" data-placement="top" title="Cetak Data"><img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> Cetak</a>
+                @can('Rekap SPJ')
+                    <a href="{{ route('createPrint') }}" class="btn btn-success mx-4" data-toggle="tooltip" data-placement="top" title="Cetak Data"><img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> Cetak</a>                    
+                @endcan    
                     <a href="suratperjalanan/create" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Ajukan Cuti"><img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> Ajukan Surat Perjalanan</a>
                 {{-- @endif --}}
             </div>  
@@ -147,6 +149,9 @@
         var userRole = '{{ auth()->user()->jabatan}}';
         var user = '{{ auth()->user()->karyawan_id }}';
         //console.log(user);
+         $('#tahun, #bulan').on('change', function() {
+                updateExportLink();
+        });
         $('#jabatantable').DataTable({
             "ajax": {
                 "url": "{{ route('getSuratPerjalanan') }}", // URL API untuk mengambil data
