@@ -2089,23 +2089,11 @@
             const now = new Date();
             const tanggal = now.toISOString().split('T')[0];
             const jam_pulang = now.toTimeString().split(' ')[0];
-
+            console.log('Tanggal:', tanggal);
+            console.log('Jam Pulang:', jam_pulang);
             var karyawan = "{{ auth()->user()->karyawan_id }}";
             var jabatan = "{{ auth()->user()->jabatan }}";
-            var shift = null;
-
-            if (jabatan === 'Office Boy') {
-                if (jam_pulang >= '10:00:00' && jam_pulang < '23:00:00') {
-                    shift = 1;
-                } else if (jam_pulang >= '01:00:00' && jam_pulang <= '12:00:00') {
-                    shift = 2;
-                } else {
-                    alert('Waktu absen tidak sesuai dengan shift Office Boy. Silakan hubungi admin.');
-                    return; // Stop execution if shift is invalid
-                }
-            } else {
-                shift = 1;
-            }
+            // var shift = null;
 
             var keterangan_pulang = $('input[name="keterangan"]:checked').val();
             if (!keterangan_pulang) {
@@ -2122,7 +2110,7 @@
                     id_karyawan: karyawan,
                     tanggal: tanggal,
                     jam_keluar: jam_pulang,
-                    shift: shift,
+                    // shift: shift,
                     keterangan_pulang: keterangan_pulang,
                     jabatan: jabatan, // Tambahkan jabatan ke request
                     client_time: now.toISOString() // Kirim waktu client untuk logging
