@@ -1651,9 +1651,9 @@
                                                 <div class="card-body">
                                                     <h5 class="text-center card-title">Management</h5>
                                                     <div class="row">
-                                                        @if (auth()->user()->jabatan == 'Direktur' ||
+                                                        {{-- @if (auth()->user()->jabatan == 'Direktur' ||
                                                                 auth()->user()->jabatan == 'Direktur Utama' ||
-                                                                auth()->user()->jabatan == 'GM')
+                                                                auth()->user()->jabatan == 'GM') --}}
                                                             <div class="col-sm-6 mt-2">
                                                                 <div class="card" id="card-hover">
                                                                     <div class="card-body d-flex">
@@ -1671,7 +1671,7 @@
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                        @endif
+                                                        {{-- @endif --}}
                                                     </div>
                                                 </div>
                                             </div>

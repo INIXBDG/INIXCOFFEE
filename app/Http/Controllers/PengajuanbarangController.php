@@ -101,7 +101,7 @@ class PengajuanBarangController extends Controller
             $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')->whereHas('karyawan', function($query) use ($divisi) {
                 $query->where('divisi', $divisi);
             })->latest()->get();
-        }elseif($jabatan == 'GM'){
+        }elseif($jabatan == 'GM' || $jabatan == 'Koordinator Office'){
             $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')->latest()->get();
         }
         else{
