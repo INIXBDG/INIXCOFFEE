@@ -356,7 +356,10 @@
                         </div>
                         <div class="col-md-3 mx-1">
                             <button type="button" id="cekdatas" class="btn click-primary" style="margin-top: 37px">Cari Data</button>
-                            <a href="{{ route('nilaifeedbackexport', [$tahun_sekarang, $bulan_sekarang]) }}" id="export-link" target="_blank" class="btn click-primary" style="margin-top: 37px">Export to Excel</a>
+                            @can('Rekap TunjanganEducation')
+                                {{-- <a href="{{ route('tunjanganEduExportExcel', []) }}"></a> --}}
+                                <a href="{{ route('tunjanganEduExportExcel', [$tahun_sekarang, $bulan_sekarang]) }}" id="export-link" target="_blank" class="btn click-primary" style="margin-top: 37px">Export to Excel</a>
+                            @endcan
                         </div>
                     </div>
                         <div class="card">
