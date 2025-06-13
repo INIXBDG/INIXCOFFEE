@@ -1,4 +1,19 @@
 @foreach(auth()->user()->unreadNotifications as $notification)
+                                @if ( $notification->data['message']['tipe'] == 'Izin 3 Jam')
+                                    <div class="notification mb-3">
+                                        <p><strong style="text-transform: capitalize;">{{ $notification->data['message']['status'] }} {{ $notification->data['message']['nama_lengkap'] }}</strong> untuk izin {{ $notification->data['message']['durasi'] }} jam, Mulai Jam {{ \Carbon\Carbon::parse($notification->data['message']['jam_mulai'])->format('H:i') }} s/d  Jam {{ \Carbon\Carbon::parse($notification->data['message']['jam_selesai'])->format('H:i') }}</p>
+                                        <p>Pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
+                                        {{-- <p><strong>Status:</strong> {{ $notification->data['status'] }}</p> --}}
+                                        <div class="d-flex">
+                                            <a href="{{ $notification->data['path'] }}" class="btn btn-primary btn-sm" style="margin-right:8px;">Lihat Selengkapnya</a>
+                                            <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
+                                                @csrf
+                                                @method('PUT')
+                                                <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                @endif
                                 @if ( $notification->data['message']['tipe'] == 'komentar')
                                     <div class="notification mb-3">
                                         <p><strong style="text-transform: capitalize;">{{ $notification->data['user'] }}</strong> telah menambahkan {{ $notification->data['message']['tipe'] }} "{{ $notification->data['message']['content'] }}" di {{ $notification->data['message']['materi_key'] }}</p>

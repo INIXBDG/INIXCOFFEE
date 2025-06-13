@@ -20,6 +20,7 @@
     <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
     <meta name="msapplication-TileColor" content="#2b5797">
     <meta name="theme-color" content="#333333">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <!-- Fonts -->
     <link rel="dns-prefetch" href="//fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
@@ -1251,6 +1252,23 @@
                                                                     <h5 class="card-title">Tunjangan</h5>
                                                                 </a>
                                                                 <p class="card-text">Tunjangan Karyawan.</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-6 mt-2">
+                                                    <div class="card" id="card-hover">
+                                                        <div class="card-body d-flex">
+                                                            <div class="col-md-2">
+                                                                <img src="{{ asset('icon/paperclip.svg') }}"
+                                                                    class="img-responsive" width="30px">
+                                                            </div>
+                                                            <div class="col-md-10" style="margin-left: 10px">
+                                                                <a href="/pengajuanizin"
+                                                                    class="link stretched-link text-decoration-none">
+                                                                    <h5 class="card-title">Pangajuan Izin</h5>
+                                                                </a>
+                                                                <p class="card-text">Pengajuan Izin 3 Jam.</p>
                                                             </div>
                                                         </div>
                                                     </div>

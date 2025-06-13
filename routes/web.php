@@ -68,6 +68,7 @@ Route::resource('/creditcard', \App\Http\Controllers\creditcardController::class
 Route::resource('/registexam', \App\Http\Controllers\registexamController::class);
 Route::resource('/souvenir', \App\Http\Controllers\SouvenirController::class);
 Route::resource('/pengajuancuti', \App\Http\Controllers\PengajuancutiController::class);
+Route::resource('/pengajuanizin', \App\Http\Controllers\izinTigaJamController::class);
 Route::resource('/pengajuanbarang', \App\Http\Controllers\PengajuanBarangController::class);
 Route::resource('/suratperjalanan', \App\Http\Controllers\SuratPerjalananController::class);
 Route::resource('/rekapitulasiabsen', \App\Http\Controllers\RekapitulasiAbsenController::class);
@@ -117,6 +118,7 @@ Route::get('getSouvenir', [App\Http\Controllers\SouvenirController::class, 'getS
 Route::get('getSouvenirPeserta', [App\Http\Controllers\SouvenirController::class, 'getSouvenirPeserta'])->name('getSouvenirPeserta');
 Route::get('getFeedbacksByMonth/{year}/{month}', [App\Http\Controllers\feedbackController::class, 'getFeedbacksByMonth'])->name('getFeedbacksByMonth');
 Route::get('getPengajuanCuti', [App\Http\Controllers\PengajuancutiController::class, 'getPengajuanCuti'])->name('getPengajuanCuti');
+Route::get('getPengajuanIzin', [App\Http\Controllers\izinTigaJamController::class, 'getPengajuanIzin'])->name('getPengajuanIzin');
 Route::get('getPengajuanCuti/{month}/{year}', [App\Http\Controllers\PengajuancutiController::class, 'getPengajuanCutiBulanTahun'])->name('getPengajuanCutiBulanTahun');
 Route::get('getPesertaById/{id}', [App\Http\Controllers\PesertaController::class, 'getPesertaById'])->name('getPesertaById');
 Route::get('getSuratPerjalanan', [App\Http\Controllers\SuratPerjalananController::class, 'getSuratPerjalanan'])->name('getSuratPerjalanan');

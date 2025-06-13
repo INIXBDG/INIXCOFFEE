@@ -21,11 +21,11 @@ class PengajuancutiController extends Controller
     {
         $this->middleware('auth');
     }
-    public function index(): View
+    public function index()
     {
         return view('pengajuancuti.index');
     }
-
+ 
     public function getPengajuanCuti() 
     {
         $user = auth()->user()->karyawan_id;
