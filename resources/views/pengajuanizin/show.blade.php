@@ -196,6 +196,19 @@
     tr.selected .checkmark:after {
         display: block;
     }
+    @media print {
+    @page {
+        margin: 0;
+    }
+    body {
+        margin: 0;
+    }
+
+    html, body {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    }
 
 </style>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
