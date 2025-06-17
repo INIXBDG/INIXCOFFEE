@@ -2,24 +2,24 @@
 
 @section('content')
 <div class="container-fluid">
-               <!-- Modal Spinner -->
-<div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="spinnerModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="cube">
-            <div class="cube_item cube_x"></div>
-            <div class="cube_item cube_y"></div>
-            <div class="cube_item cube_x"></div>
-            <div class="cube_item cube_z"></div>
+    <!-- Modal Spinner -->
+    <div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="spinnerModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="cube">
+                <div class="cube_item cube_x"></div>
+                <div class="cube_item cube_y"></div>
+                <div class="cube_item cube_x"></div>
+                <div class="cube_item cube_z"></div>
+            </div>
         </div>
     </div>
-</div>
     <div class="row">
         <div class="col-md-6">
             <div class="row my-2">
                 <div class="col-md-12">
                     <div class="card">
                         <div class="card-body">
-                            <h2>Total Keterlambatan Bulan ini : 
+                            <h2>Total Keterlambatan Bulan ini :
                                 {{ $totalketerlambatan->total_keterlambatan ?? '0 menit' }}
                             </h2>
                         </div>
@@ -55,6 +55,18 @@
                     </div>
                 </div>
             </div>
+            <div class="row my-2">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6>Ajukan Klaim Absen Anda:</h6>
+                            <a href="{{ route('absensi.noRecord') }}" class="btn btn-info color-white">Absen Tidak Terekap</a>
+                            <a href="{{ route('absensi.noRecord') }}" class="btn btn-warning">Perubahan Skema Kerja</a>
+                            <a href="{{ route('absensi.noRecord') }}" class="btn btn-danger">Pembatalan Cuti</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="col-md-6">
             <div class="card my-2">
@@ -72,7 +84,7 @@
                                         <img src="{{ isset($topKaryawan[1]->foto) ? asset('storage/'.$topKaryawan[1]->foto) : asset('css/default-profile.jpg') }}" alt="Foto Karyawan" class="profile-photo">
                                     </div>
                                 </div>
-                                
+
                                 <!-- First position in the center -->
                                 <div class="col-4 col-sm-4 col-md-4 col-lg-4 text-center">
                                     <div class="circle-satu first-position">
@@ -80,7 +92,7 @@
                                         <img src="{{ isset($topKaryawan[0]->foto) ? asset('storage/'.$topKaryawan[0]->foto) : asset('css/default-profile.jpg') }}" alt="Foto Karyawan" class="profile-photo-satu">
                                     </div>
                                 </div>
-                                
+
                                 <!-- Third position on the right -->
                                 <div class="col-4 col-sm-4 col-md-4 col-lg-4 text-center">
                                     <div class="circle third-position">
@@ -91,18 +103,18 @@
                                 </div>
                             </div>
                         </div>
-                                                           
+
                     </div>
-                
+
                     <p>Karyawan yang terlambat bulan ini:</p>
                     <h5>
                         <table>
                             <tbody>
                                 @foreach ($topKaryawan as $item)
-                                    <tr>
-                                        <td>{{$loop->iteration}}.</td>
-                                        <td>{{ $item->karyawan->nama_lengkap }} dengan waktu keterlambatan {{$item->total_keterlambatan}}</td>
-                                    </tr>
+                                <tr>
+                                    <td>{{$loop->iteration}}.</td>
+                                    <td>{{ $item->karyawan->nama_lengkap }} dengan waktu keterlambatan {{$item->total_keterlambatan}}</td>
+                                </tr>
                                 @endforeach
                             </tbody>
                         </table>
@@ -117,20 +129,20 @@
                         <tbody>
                             {{-- {{$remainingLeaderboard}} --}}
                             @if($remainingLeaderboard->isNotEmpty())
-                                @foreach ($remainingLeaderboard as $item)
-                                    <tr>
-                                        <td>{{ $item->karyawan->nama_lengkap }}</td>
-                                        <td>{{ $item->total_keterlambatan }}</td>
-                                    </tr>
-                                @endforeach
+                            @foreach ($remainingLeaderboard as $item)
+                            <tr>
+                                <td>{{ $item->karyawan->nama_lengkap }}</td>
+                                <td>{{ $item->total_keterlambatan }}</td>
+                            </tr>
+                            @endforeach
                             @else
-                                <tr>
-                                    <td colspan="2" class="text-center">Tidak ada data karyawan yang terlambat</td>
-                                </tr>
+                            <tr>
+                                <td colspan="2" class="text-center">Tidak ada data karyawan yang terlambat</td>
+                            </tr>
                             @endif
                         </tbody>
                     </table>
-                </div>           
+                </div>
             </div>
         </div>
     </div>
@@ -152,32 +164,34 @@
     }
 
     @keyframes spin {
-    to {
-        -webkit-transform: rotate(360deg);
-    }
+        to {
+            -webkit-transform: rotate(360deg);
+        }
     }
 
     @-webkit-keyframes spin {
-    to {
-        -webkit-transform: rotate(360deg);
+        to {
+            -webkit-transform: rotate(360deg);
+        }
     }
-    }
+
     .modal-content {
-    border-radius: 0px;
-    box-shadow: 0 0 20px 8px rgba(0, 0, 0, 0.7);
+        border-radius: 0px;
+        box-shadow: 0 0 20px 8px rgba(0, 0, 0, 0.7);
     }
 
     .modal-backdrop.show {
-    opacity: 0.75;
+        opacity: 0.75;
     }
 
     .loader-txt {
         p {
             font-size: 13px;
             color: #666;
+
             small {
-            font-size: 11.5px;
-            color: #999;
+                font-size: 11.5px;
+                color: #999;
             }
         }
     }
@@ -192,15 +206,18 @@
         height: 500px;
         background-size: cover;
         background-position: center;
-        background-image: url('/css/podiumkorea.png'); 
-        background-color: #f0f0f0; /* Optional background for visual aid */
+        background-image: url('/css/podiumkorea.png');
+        background-color: #f0f0f0;
+        /* Optional background for visual aid */
         margin: 0 auto;
         position: relative;
-        overflow-x: auto; /* Allow horizontal scrolling when screen is too small */
+        overflow-x: auto;
+        /* Allow horizontal scrolling when screen is too small */
     }
 
     /* Circle styles */
-    .circle, .circle-satu {
+    .circle,
+    .circle-satu {
         background-color: #6b52cc;
         border-radius: 50%;
         position: relative;
@@ -282,7 +299,8 @@
         }
 
         /* Resize circles for mobile */
-        .circle, .circle-satu {
+        .circle,
+        .circle-satu {
             width: 100px;
             height: 100px;
         }
@@ -323,16 +341,14 @@
             font-size: 0.7rem;
         }
     }
-
-
 </style>
 @push('js')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
 <script>
-    $(document).ready(function(){
-    //    $('#loadingModal').modal('show')
+    $(document).ready(function() {
+        //    $('#loadingModal').modal('show')
     });
 </script>
 @endpush
