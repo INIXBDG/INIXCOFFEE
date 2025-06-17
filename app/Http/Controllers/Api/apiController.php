@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Inventaris;
 use App\Models\jabatan;
 use Illuminate\Http\Request;
 use App\Models\Nilaifeedback;
@@ -349,6 +350,18 @@ class apiController extends Controller
             'success' => true,
             'message' => 'Upcoming RKM',
             'data' => $groupedByMonth,
+        ]);
+    }
+
+    
+    public function getInventaris(Request $request)
+    {
+        $data = Inventaris::all();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'List Inventaris Inixindo',
+            'data' => $data
         ]);
     }
 
