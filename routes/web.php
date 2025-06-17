@@ -2,9 +2,11 @@
 
 use App\Http\Controllers\Api\RKMController;
 use App\Http\Controllers\approvedNetSalesController;
+use App\Http\Controllers\InventarisController;
 use App\Http\Controllers\KelasAnalisisController;
 use App\Http\Controllers\RKMController as ControllersRKMController;
 use App\Http\Controllers\netSalesController;
+use App\Models\Inventaris;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
@@ -286,3 +288,16 @@ Route::post('/paymantAdvance/approved', [approvedNetSalesController::class, 'app
 Route::get('/paymantAdvance/edit/{id}', [netSalesController::class,'edit'])->name('netSales.edit.index');
 Route::post('/paymantAdvance/data/get/', [netSalesController::class, 'dataEdit'])->name('netSales.edit.get');
 Route::post('/paymantAdvance/data/update', [netSalesController::class, 'updateNetSales'])->name('netSales.update');
+
+// Inventaris Route
+Route::get('/inventaris/index', [InventarisController::class, 'index'])->name('IndexInventaris');
+Route::post('/inventaris/input/barang', [InventarisController::class, 'inputinventaris'])->name('InputInventaris');
+Route::get('/inventaris/show/data/{id}', [InventarisController::class, 'editview'])->name('EditView');
+Route::put('/inventaris/update/{id}', [InventarisController::class, 'user'])->name('UpdatePengguna');
+Route::post('/inventaris/add/service/{id}', [InventarisController::class, 'addservice'])->name('AddService');
+Route::post('/inventaris/add/check/{id}', [InventarisController::class, 'addcheck'])->name('AddCheck');
+Route::delete('/inventaris/delete/data/{id}', [InventarisController::class, 'deletedata'])->name('DeleteDataInventaris');
+
+Route::post('/inventaris/import', [InventarisController::class, 'import'])->name('ImportDataInventaris');
+
+
