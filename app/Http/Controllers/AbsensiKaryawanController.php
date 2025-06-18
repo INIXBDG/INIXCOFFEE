@@ -512,4 +512,17 @@ class AbsensiKaryawanController extends Controller
             ],
         ]);
     }
+
+    public function noRecord()
+    {
+        $user = auth()->user()->karyawan_id;
+        $karyawan = karyawan::findOrFail($user);
+        $karyawanall = karyawan::where('divisi', '!=', 'Direksi')->where('divisi', $karyawan->divisi)->get();
+        return view('absensi.klaim', compact('karyawan', 'karyawanall'));
+    }
+
+    public function getNoRecord()
+    {
+        $user = auth()->user()->karyawan_id;
+    }
 }
