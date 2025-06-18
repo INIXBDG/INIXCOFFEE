@@ -284,15 +284,16 @@
                             actions += '<img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Ditolak</button>';
                         }
 
-                        // Tombol Hapus hanya jika approval === 4
-                        if (approval === 4 || approval === 0 || approval === 2) {
-                            actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url(' / pengajuanizin ') }}/' + row.id + '" method="POST">';
-                            actions += '@csrf';
-                            actions += '@method("DELETE")';
-                            actions += '<button type="submit" class="dropdown-item">';
-                            actions += '<img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
-                            actions += '</form>';
-                        }
+
+                    // Tombol Hapus hanya jika approval === 4
+                    if ( userRole === 'HRD' && approval === 4 || userRole === 'HRD' && approval === 0 || userRole === 'HRD' && approval === 2) {
+                        actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/pengajuanizin') }}/' + row.id + '" method="POST">';
+                        actions += '@csrf';
+                        actions += '@method("DELETE")';
+                        actions += '<button type="submit" class="dropdown-item">';
+                        actions += '<img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
+                        actions += '</form>';
+                    }
 
                         actions += '</div></div>';
                         return actions;

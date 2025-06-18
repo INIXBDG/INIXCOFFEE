@@ -407,131 +407,54 @@ class AbsensiKaryawanController extends Controller
 
     public function update(Request $request)
     {
-        // Validasi input
-        $validator = Validator::make($request->all(), [
-            'shift' => 'required|in:1,2',
-            'keterangan_pulang' => 'required|string',
+        $this->validate($request, [
+            'keterangan_pulang' => 'required',
             'id_karyawan' => 'required|integer',
-            'jabatan' => 'required|string', // Tambahkan validasi untuk jabatan
-            'client_time' => 'sometimes|date' // Untuk logging
-        ], [
-            'shift.required' => 'Shift harus diisi',
-            'shift.in' => 'Shift hanya boleh 1 atau 2',
-            'keterangan_pulang.required' => 'Keterangan pulang harus diisi',
-            'jabatan.required' => 'Jabatan harus diisi'
         ]);
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 400);
+        // Ambil waktu sekarang
+        $sekarang = \Carbon\Carbon::now();
+        $jamKeluar = $sekarang->copy(); // Gunakan Carbon instance untuk jam keluar
+        $jamKeluarTime = $jamKeluar->format('H:i:s');
+        // return $jamKeluar;
+        // Tentukan tanggal absensi: jika sebelum jam 08:00:00, gunakan tanggal kemarin
+        $tanggal = ($jamKeluar->lt(\Carbon\Carbon::createFromTimeString('10:00:00')))
+            ? $sekarang->copy()->subDay()->toDateString()
+            : $sekarang->toDateString();
+        // return $tanggal;
+        // Ambil absensi berdasarkan tanggal yang dihitung
+        $absensi = AbsensiKaryawan::where('id_karyawan', $request->input('id_karyawan'))
+            ->where('tanggal', $tanggal)
+            ->first();
+
+
+        if (!$absensi) {
+            return response()->json(['error' => 'Absen masuk tidak ditemukan untuk tanggal: ' . $tanggal], 404);
         }
 
-        // Log perbedaan waktu client-server
-        if ($request->client_time) {
-            Log::channel('absensi')->info('Time check', [
-                'server' => now('Asia/Jakarta')->toDateTimeString(),
-                'client' => $request->client_time,
-                'diff' => now('Asia/Jakarta')->diffInSeconds($request->client_time)
-            ]);
+        // Cek apakah sudah absen pulang
+        if ($absensi->jam_keluar) {
+            return response()->json(['error' => 'Anda sudah mengisi absen pulang!'], 400);
         }
 
-        // Waktu sekarang dengan timezone
-        $sekarang = Carbon::now('Asia/Jakarta');
-        $tanggal = $sekarang->toDateString();
-        $jamKeluar = $sekarang;
+        // Simpan absen pulang
+        $keterangan_pulang = 'Pulang (' . $request->keterangan_pulang . ')';
+        $absensi->keterangan_pulang = $keterangan_pulang;
+        $absensi->jam_keluar = $jamKeluarTime;
+        $absensi->save();
 
-        // Konfigurasi jam kerja
-        $jadwal = $this->getJadwalKerja($sekarang->isWeekend(), $request->shift);
-
-        // Cek absensi masuk untuk hari ini
-        $absensi = $this->getAbsensiMasuk($request->id_karyawan, $request->shift, $tanggal);
-
-        // Jika absen masuk tidak ditemukan dan jabatan adalah Office Boy
-        if (!$absensi && $request->jabatan === 'Office Boy') {
-            // Cek absensi hari sebelumnya
-            $tanggalSebelumnya = $sekarang->copy()->subDay()->toDateString();
-            $absensiSebelumnya = $this->getAbsensiMasuk($request->id_karyawan, $request->shift, $tanggalSebelumnya);
-
-            // Jika absensi hari sebelumnya ada dan jam_masuk kosong
-            if ($absensiSebelumnya && is_null($absensiSebelumnya->jam_masuk)) {
-                // Update absensi hari sebelumnya dengan jam masuk (misalnya dianggap masuk sore hari sebelumnya)
-                $absensiSebelumnya->update([
-                    'jam_masuk' => $sekarang->copy()->subDay()->setTime(16, 0, 0)->toTimeString(), // Contoh: masuk jam 16:00
-                    'keterangan_masuk' => 'Masuk (Shift Malam)'
-                ]);
-
-                // Buat absensi baru untuk hari ini hanya dengan jam_keluar
-                $absensi = AbsensiKaryawan::create([
-                    'id_karyawan' => $request->id_karyawan,
-                    'tanggal' => $tanggal,
-                    'shift' => $request->shift,
-                    'jam_keluar' => $jamKeluar->toTimeString(),
-                    'keterangan_pulang' => 'Pulang (' . $request->keterangan_pulang . ')'
-                ]);
-            } else {
-                // Jika tidak ada absensi sebelumnya atau jam_masuk tidak kosong
-                return response()->json(['error' => 'Absen masuk tidak ditemukan'], 404);
-            }
-        } elseif (!$absensi) {
-            // Jika bukan Office Boy dan absen masuk tidak ditemukan
-            return response()->json(['error' => 'Absen masuk tidak ditemukan'], 404);
-        }
-
-        // Validasi waktu
-        if (!$this->validateWaktuAbsen($jamKeluar, $jadwal)) {
-            return response()->json([
-                'error' => 'Waktu absen tidak valid. Jam yang diperbolehkan: ' .
-                    $jadwal['awal']->format('H:i') . ' - ' .
-                    $jadwal['akhir']->format('H:i')
-            ], 400);
-        }
-
-        // Simpan absensi
-        $absensi->update([
-            'jam_keluar' => $jamKeluar->toTimeString(),
-            'keterangan_pulang' => 'Pulang (' . $request->keterangan_pulang . ')'
-        ]);
-
-        return response()->json([
-            'success' => 'Absen pulang berhasil',
-            'data' => [
-                'jam_keluar' => $jamKeluar->format('H:i:s'),
-                'tanggal' => $tanggal
-            ]
-        ]);
+        return response()->json(['success' => 'Terimakasih telah bekerja hari ini! Hati-hati di jalan.']);
     }
 
-    private function getJadwalKerja($isWeekend, $shift)
+
+    private function getAbsensiMasuk($idKaryawan, $tanggal)
     {
-        if ($shift == 1) {
-            return [
-                'awal' => Carbon::createFromTimeString($isWeekend ? '11:00:00' : '14:00:00'),
-                'akhir' => Carbon::createFromTimeString($isWeekend ? '23:00:00' : '23:59:59')
-            ];
-        }
-
-        return [
-            'awal' => Carbon::createFromTimeString($isWeekend ? '00:00:00' : '00:00:00'),
-            'akhir' => Carbon::createFromTimeString($isWeekend ? '10:00:00' : '09:00:00')
-        ];
-    }
-
-    private function getAbsensiMasuk($idKaryawan, $shift, $tanggal)
-    {
-        $query = AbsensiKaryawan::where('id_karyawan', $idKaryawan);
-
-        if ($shift == 2) {
-            $tanggal = Carbon::parse($tanggal)->subDay()->toDateString();
-        }
-
-        return $query->where('tanggal', $tanggal)
+        return AbsensiKaryawan::where('id_karyawan', $idKaryawan)
+            ->where('tanggal', $tanggal)
             ->whereNull('jam_keluar')
             ->first();
     }
 
-    private function validateWaktuAbsen($waktu, $jadwal)
-    {
-        return $waktu->between($jadwal['awal'], $jadwal['akhir']);
-    }
 
     public function jumlahAbsensi($karyawanId, $bulan, $tahun)
     {
