@@ -115,6 +115,9 @@ class izinTigaJamController extends Controller
                         break;
                     case 'Office':
                         if ($kooroff) $kodePenerima[] = $kooroff->kode_karyawan;
+                        // if ($koorSO)  $kodePenerima[] = $koorSO->kode_karyawan;
+                        break;
+                    case 'IT Service Management':
                         if ($koorSO)  $kodePenerima[] = $koorSO->kode_karyawan;
                         break;
                 }
@@ -226,8 +229,8 @@ class izinTigaJamController extends Controller
 
         // Ambil karyawan yang mengajukan dan HRD
         $karyawan = karyawan::findOrFail($post->id_karyawan);
-        $HRD = karyawan::where('jabatan', 'HRD')->first();
-
+        $HRD = karyawan::where('jabatan', 'HRD')->latest()->first();
+        // return $HRD;
         // Daftar kode karyawan yang akan menerima notifikasi
         $users_kode = [
             $karyawan->kode_karyawan,

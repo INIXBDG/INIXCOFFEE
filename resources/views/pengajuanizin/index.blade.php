@@ -283,7 +283,7 @@ $(document).ready(function() {
                     }
 
                     // Tombol Hapus hanya jika approval === 4
-                    if (approval === 4 || approval === 0 || approval === 2) {
+                    if ( userRole === 'HRD' && approval === 4 || userRole === 'HRD' && approval === 0 || userRole === 'HRD' && approval === 2) {
                         actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/pengajuanizin') }}/' + row.id + '" method="POST">';
                         actions += '@csrf';
                         actions += '@method("DELETE")';
