@@ -3,34 +3,26 @@
 namespace App\Exports;
 
 
-use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use Maatwebsite\Excel\Concerns\WithHeadings;
+use App\Models\absensi_noRecord;
+use App\Models\izinTigaJam;
+use App\Models\pembatalanCuti;
+use Illuminate\Contracts\View\View;
+use Maatwebsite\Excel\Concerns\FromView;
 
-class pengajuanIzinExport implements FromCollection, ShouldAutoSize, WithHeadings
+class pengajuanIzinExport implements FromView
 {
-    protected $post;
 
-    public function __construct(array $post)
+    public function __construct()
     {
-        $this->post = $post;
-    }
-    public function collection()
-    {
-        return collect($this->post);
+        //
     }
 
-    public function headings(): array
+    public function view(): View
     {
-        return [
-            'tipe',
-            'Nama Karyawan',
-            'Jam Mulai',
-            'Jam Selesai',
-            'Durasi',
-            'Alasan',
-            'Alasan Approval',
-            'Approval',
-        ];
+        $rows = izinTigaJam::with('karyawan')->get();
+
+        return view('exports.pengajuanizinjam', [
+            'rows' => $rows,
+        ]);
     }
 }
