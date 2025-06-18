@@ -3,12 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Exports\pengajuanIzinExport;
+use App\Models\AbsensiKaryawan;
 use App\Models\izinTigaJam;
 use App\Models\karyawan;
 use App\Models\User;
 use App\Notifications\IzinExchangeNotification;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 
 class izinTigaJamController extends Controller
@@ -71,15 +74,23 @@ class izinTigaJamController extends Controller
 
         $karyawan = karyawan::findOrFail($request->id_karyawan);
 
-        // Simpan data izin
-        izinTigaJam::create([
-            'id_karyawan'   => $request->id_karyawan,
-            'jam_mulai'     => $request->jam_mulai,
-            'jam_selesai'   => $request->jam_selesai,
-            'durasi'        => $request->durasi,
-            'alasan'        => $request->alasan,
-            'approval'      => '0',
-        ]);
+        $absensiKaryawan = AbsensiKaryawan::where('id_karyawan', $karyawan->id)
+            ->whereDate('tanggal', now()->toDateString())
+            ->first();
+
+        if (!$absensiKaryawan) {
+            return redirect()->route('pengajuanizin.index')->with(['error' => 'Anda diharapkan absen terlebih dahulu!']);
+        } else {
+            izinTigaJam::create([
+                'id_karyawan'   => $request->id_karyawan,
+                'jam_mulai'     => $request->jam_mulai,
+                'jam_selesai'   => $request->jam_selesai,
+                'durasi'        => $request->durasi,
+                'alasan'        => $request->alasan,
+                'approval'      => '0',
+            ]);
+        }
+
 
         // Ambil divisi dan jabatan karyawan
         $divisi = $karyawan->divisi;
@@ -93,7 +104,6 @@ class izinTigaJamController extends Controller
         $SPVSales  = karyawan::where('jabatan', 'SPV Sales')->first();
         $GM        = karyawan::where('jabatan', 'GM')->first();
 
-        // Tentukan siapa yang menerima notifikasi
         $kodePenerima = [];
 
         switch ($jabatan) {
@@ -219,6 +229,7 @@ class izinTigaJamController extends Controller
             $post->update([
                 'approval' => $request->approval,
                 'alasan_approval' => $request->alasan_approval,
+                'date_approval' => now(),
             ]);
         } else {
             return redirect()->route('pengajuanizin.index')->with(['error' => 'Anda tidak berhak melakukan approval pada tahap ini.']);
@@ -275,5 +286,26 @@ class izinTigaJamController extends Controller
         $post->delete();
 
         return redirect()->route('pengajuanizin.index')->with(['success' => 'Data Berhasil Dihapus!']);
+    }
+
+    public function pengajuanJamExcel(Request $request)
+    {
+        $filename = 'pengajuan-izin3jam-' . now()->format('Y_m_d_H_i') . '.xlsx';
+
+        return Excel::download(new pengajuanIzinExport(), $filename);
+    }
+
+    public function pengajuanJamPDF(Request $request)
+    {
+        $jenisPK = $request->input('jenis_PK');
+
+        $rows = izinTigaJam::with('karyawan')->get();
+
+        $pdf = Pdf::loadView('exports.pengajuanizinjamPDF', [
+            'rows'    => $rows,
+        ])->setPaper('A4', 'portrait');
+
+        $filename = 'rekap-pengajuanIzin3jam' . '-' . now()->format('Y_m_d_H_i') . '.pdf';
+        return $pdf->download($filename);
     }
 }
