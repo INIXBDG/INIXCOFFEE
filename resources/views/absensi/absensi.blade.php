@@ -328,11 +328,10 @@
                     </div>
                 </div>
             </div>
-            <div class="row my-2">
+            {{-- <div class="row my-2">
                 <div class="col-md-12">
                     <div class="card">
                         <div class="card-body">
-
                             <div class="col-md-12">
                                 <div class="card-body table-responsive">
                                     <h6>Ajukan Klaim Absen Anda:</h6>
@@ -530,7 +529,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> --}}
         </div>
         <div class="col-md-6">
             <div class="card my-2">
