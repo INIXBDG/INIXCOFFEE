@@ -314,13 +314,16 @@
                                 </thead>
                                 <tbody>
                                     @foreach ($absen as $item)
-                                    <tr>
-                                        <td>{{\Carbon\Carbon::parse($item->tanggal)->translatedFormat('l, d F Y')}}</td>
-                                        <td>{{$item->jam_masuk}}</td>
-                                        <td>{{$item->jam_keluar}}</td>
-                                        <td>{{$item->keterangan}}</td>
-                                        <td>{{$item->waktu_keterlambatan}}</td>
-                                    </tr>
+                                        @php
+                                            $isToday = \Carbon\Carbon::parse($item->tanggal)->isToday();
+                                        @endphp
+                                        <tr class="{{ $isToday ? 'tabel-custom' : '' }}">
+                                            <td>{{ \Carbon\Carbon::parse($item->tanggal)->translatedFormat('l, d F Y') }}</td>
+                                            <td>{{ $item->jam_masuk }}</td>
+                                            <td>{{ $item->jam_keluar }}</td>
+                                            <td>{{ $item->keterangan }}</td>
+                                            <td>{{ $item->waktu_keterlambatan }}</td>
+                                        </tr>
                                     @endforeach
                                 </tbody>
                             </table>
@@ -632,6 +635,11 @@
         height: 40px;
     }
 
+    .tabel-custom{
+        /* border-collapse: collapse; */
+        background-color: #1d1d1d;
+        color: #f0f0f0;
+    }
     .corner::before,
     .corner::after {
         content: '';
