@@ -9,7 +9,7 @@ class perhitunganNetSales extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['id_rkm', 'transportasi', 'penginapan', 'fresh_money', 'entertaint', 'souvenir', 'harga_penawaran', 'tgl_pa', 'tipe_pembayaran', 'pajak'];
+    protected $fillable = ['id_rkm', 'transportasi', 'penginapan', 'fresh_money', 'entertaint', 'souvenir', 'harga_penawaran', 'tgl_pa', 'tipe_pembayaran', 'pajak', 'id_tracking'];
 
     public function rkm()
     {
@@ -24,4 +24,8 @@ class perhitunganNetSales extends Model
         return $this->belongsTo(Karyawan::class, 'id_karyawan'); // sesuaikan 'id_karyawan' dengan nama kolom foreign key yang benar
     }
 
+    public function trackingNetSales() 
+    {
+        return $this->belongsTo(trackingNetSales::class, 'id_tracking', 'id');
+    }
 }

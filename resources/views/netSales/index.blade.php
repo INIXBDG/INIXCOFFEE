@@ -84,11 +84,10 @@
                         <div id="manager-row">
                             <div class="btn-group" role="group" aria-label="Approval Options">
                                 <input type="hidden" value="" id="id_net_sales" name="id_net_sales">
-                                <button class="btn btn-outline-primary" type="submit">Ya</button>
+                                <button class="btn btn-outline-primary" type="submit" id="btnApproveYes">Ya</button>
 
                                 <input type="radio" class="btn-check" name="approval" id="approveNo" value="2" autocomplete="off">
                                 <label class="btn btn-outline-danger" for="approveNo" onclick="toggleAlasanManager(true)">Tidak</label>
-
                             </div>
 
                             <div class="mt-3" id="alasanManagerInput" style="display: none;">
@@ -97,6 +96,27 @@
                                 <input type="hidden" value="{{ auth()->user()->jabatan }}" name="jabatan">
                                 <button class="btn btn-outline-success mt-3" type="submit">Kirim</button>
                             </div>
+
+                            @php
+                                $jabatan = auth()->user()->jabatan;
+                            @endphp
+                            @if ($jabatan == 'Finance & Accounting')
+                                <div class="row my-2">
+                                    <select name="status_tracking" id="status_tracking" class="form-select">
+                                        <option disabled selected>Pilih Status Tracking</option>
+                                        <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager">Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager</option>
+                                        <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi">Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi</option>
+                                        <option value="Finance Menunggu Approve Direksi">Finance Menunggu Approve Direksi</option>
+                                        <option value="Membuat Permintaan Ke Direktur Utama">Membuat Permintaan Ke Direktur Utama</option>
+                                        <option value="Pengajuan sedang dalam proses Pencairan">Pengajuan sedang dalam proses Pencairan</option>
+                                        <option value="Pencairan Sudah Selesai">Pencairan Sudah Selesai</option>
+                                        <option value="Selesai">Selesai</option>
+                                    </select>
+                                    <div class="invalid-feedback">
+                                        Silakan pilih status tracking terlebih dahulu.
+                                    </div>
+                                </div>
+                            @endif
                         </div>
                     </form>
                 </div>
@@ -184,8 +204,31 @@
         getData()
     });
 
+    let approveType = '';
+
+    $('#btnApproveYes').on('click', function () {
+        approveType = 'ya';
+    });
+
+    $('#approveNo').on('click', function () {
+        approveType = 'tidak';
+    });
+
     $(document).on('submit', '#approveForm', function(e) {
         e.preventDefault();
+
+        if (approveType === 'ya') {
+            let jabatan = "{{ auth()->user()->jabatan }}";
+            let selectedTracking = $('#status_tracking').val();
+
+            if (jabatan === 'Finance & Accounting' && (!selectedTracking || selectedTracking === "null")) {
+                alert('Silakan pilih status tracking terlebih dahulu.');
+                $('#status_tracking').addClass('is-invalid');
+                return;
+            } else {
+                $('#status_tracking').removeClass('is-invalid');
+            }
+        }
 
         let formData = new FormData(this);
 
@@ -199,15 +242,13 @@
             success: function(response) {
                 let modal = bootstrap.Modal.getInstance(document.getElementById('approveModal'));
                 modal.hide();
-                getData(); 
+                getData();
             },
             error: function(xhr) {
-                console.log(xhr.responseText); 
+                console.log(xhr.responseText);
             }
         });
-    });
-
-    
+    });    
 
     function getData() {
         var tahun = document.getElementById('tahun').value;
@@ -379,12 +420,12 @@
                     html += '<div class="dropdown-menu">';
                     if (item.status == 'Merah') {
                         if (jabatan === "Sales") {
-                            html += `<a class="dropdown-item" href="/paymantAdvance/${item.id}/create" data-toggle="tooltip" title="Input Data"><img src="{{ asset('icon/clipboard-primary.svg') }}"> Input Data</a>`;  
+                            html += `<a class="dropdown-item" href="/paymantAdvance/${item.id}/create/form-view" data-toggle="tooltip" title="Input Data"><img src="{{ asset('icon/clipboard-primary.svg') }}"> Input Data</a>`;  
                         } else {
-                            html += `<a class="dropdown-item disabled" href="/paymantAdvance/${item.id}/create" data-toggle="tooltip" title="Input Data" disabled><img src="{{ asset('icon/clipboard-primary.svg') }}"> Input Data</a>`;  
+                            html += `<a class="dropdown-item disabled" href="/paymantAdvance/${item.id}/create/form-view" data-toggle="tooltip" title="Input Data" disabled><img src="{{ asset('icon/clipboard-primary.svg') }}"> Input Data</a>`;  
                         }
                     } else {
-                        html += `<a class="dropdown-item" href="/paymantAdvance/detail/${item.id}" data-toggle="tooltip" title="Detail"><img src="{{ asset('icon/clipboard-primary.svg') }}"> Detail</a>`;
+                        html += `<a class="dropdown-item" href="/paymantAdvance/detail/${item.id}/view" data-toggle="tooltip" title="Detail"><img src="{{ asset('icon/clipboard-primary.svg') }}"> Detail</a>`;
                         
                         if (sales.level_status === null || sales.level_status === 'Belum disetujui') {
                             if (jabatan === "SPV Sales") {
