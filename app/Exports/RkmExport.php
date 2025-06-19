@@ -89,8 +89,6 @@ class RkmExport implements FromView, ShouldAutoSize, WithStyles
         ];
     }
 
-
-
     public function view(): View
     {
         $month = (int) $this->bulan;

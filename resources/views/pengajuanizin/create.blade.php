@@ -86,7 +86,7 @@
                         </div>
 
                         <div class="row mb-3" id="durasi-row">
-                            <label for="durasi" class="col-md-4 col-form-label text-md-start">{{ __('Durasi Hari') }}</label>
+                            <label for="durasi" class="col-md-4 col-form-label text-md-start">{{ __('Durasi Jam') }}</label>
                             <div class="col-md-6">
                                 <input type="hidden" id="durasi" name="durasi" value="3">
                                 <input readonly id="durasi_display" type="text" placeholder="Durasi" value="3" class="form-control @error('durasi') is-invalid @enderror" autocomplete="durasi" autofocus>
