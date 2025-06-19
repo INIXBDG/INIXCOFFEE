@@ -297,7 +297,7 @@ Route::get('pengajuanbarang/uploadinvoice/{id}', [App\Http\Controllers\Pengajuan
 Route::put('pengajuanbarang/updateinvoice/{id}', [App\Http\Controllers\PengajuanBarangController::class, 'updateInvoice'])->name('updateInvoice');
 Route::put('pengajuanbarang/updatebarang/{id}', [App\Http\Controllers\PengajuanBarangController::class, 'updateBarang'])->name('pengajuanbarang.updateBarang');
 Route::get('pengajuanbarang/pdf/{id}', [App\Http\Controllers\PengajuanBarangController::class, 'exportPDF'])->name('pengajuanbarang.pdf');
-Route::get('paymantAdvance/{id}/create', [App\Http\Controllers\netSalesController::class, 'create']);
+Route::get('paymantAdvance/{id}/create/form-view', [App\Http\Controllers\netSalesController::class, 'create']);
 Route::get('tunjanganEduExportExcel/{month}/{year}', [App\Http\Controllers\tunjanganEducationController::class, 'tunjanganEduExportExcel'])->name('tunjanganEduExportExcel');
 Route::get('pengajuancutirekap', [App\Http\Controllers\PengajuancutiController::class, 'rekap'])->name('pengajuancuti.rekap');
 Route::get('pengajuancutiexport/{month}/{year}', [App\Http\Controllers\PengajuancutiController::class, 'exportexcel'])->name('pengajuancutiexport');
@@ -312,7 +312,7 @@ Route::post('/rkm/delete/absensi', [ControllersRKMController::class, 'deleteAbse
 Route::get('/rkm/uploadSertifikat/{id}', [ControllersRKMController::class, 'uploadSertifikat'])->name('uploadSertifikat');
 Route::post('/rkm/store/sertifikat', [ControllersRKMController::class, 'storeSertifikat'])->name('storeSertifikat');
 Route::post('/rkm/delete/sertifikat', [ControllersRKMController::class, 'deleteSertifikat'])->name('deleteSertifikat');
-Route::get('/paymantAdvance/detail/{id}', [netSalesController::class, 'detail'])->name('netsales.detail');
+Route::get('/paymantAdvance/detail/{id}/view', [netSalesController::class, 'detail'])->name('netsales.detail');
 Route::post('/paymantAdvance/detail/data/get', [netSalesController::class, 'dataDetail'])->name('netsales.data.detail.get');
 Route::post('/paymantAdvance/approved', [approvedNetSalesController::class, 'approve'])->name('netsales.approved');
 Route::get('/paymantAdvance/edit/{id}', [netSalesController::class,'edit'])->name('netSales.edit.index');
