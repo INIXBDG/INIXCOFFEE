@@ -88,7 +88,7 @@ class PengajuanBarangController extends Controller
     }
 
 
-    public function getPengajuanBarang($month, $year) 
+    public function getPengajuanBarang($month, $year)
     {
         $user = auth()->user()->karyawan_id;
         $karyawan = karyawan::findOrfail($user);
@@ -129,44 +129,44 @@ class PengajuanBarangController extends Controller
     /**
      * Menyimpan Pengajuan Barang baru ke dalam database.
      */
-    public function store(Request $request)  
-    {  
+    public function store(Request $request)
+    {
         // return $request->all();
-        
-        $request->validate([  
-            'id_karyawan' => 'required|string|max:255',  
-            'tipe' => 'required|string|max:255',  
-            'barang.nama_barang.*' => 'nullable|string|max:255',  
-            'barang.qty.*' => 'nullable|string',  
-            'barang.harga_barang.*' => 'nullable|string',  
-            'barang.keterangan.*' => 'nullable|string',  
-        ]);  
-    
-       $PengajuanBarang = PengajuanBarang::create([  
-            'tipe' => $request->tipe,  
-            'id_karyawan' => $request->id_karyawan,   
-        ]); 
-    
-        $barangData = [];  
-        $namaBarang = $request->input('barang.nama_barang');  
-        $qty = $request->input('barang.qty');  
-        $hargaBarang = $request->input('barang.harga_barang');  
-        $keterangan = $request->input('barang.keterangan');  
-    
-        for ($i = 0; $i < count($namaBarang); $i++) {  
-            $barangData[] = [  
-                'id_pengajuan_barang' => $PengajuanBarang->id,  
-                'nama_barang' => $namaBarang[$i],  
-                'qty' => $qty[$i],  
-                'harga' => $hargaBarang[$i],  
-                'keterangan' => $keterangan[$i],  
-                'created_at' => now(),  
-                'updated_at' => now(),  
-            ];  
-            
-        }  
-    
-        detailPengajuanBarang::insert($barangData);  
+
+        $request->validate([
+            'id_karyawan' => 'required|string|max:255',
+            'tipe' => 'required|string|max:255',
+            'barang.nama_barang.*' => 'nullable|string|max:255',
+            'barang.qty.*' => 'nullable|string',
+            'barang.harga_barang.*' => 'nullable|string',
+            'barang.keterangan.*' => 'nullable|string',
+        ]);
+
+       $PengajuanBarang = PengajuanBarang::create([
+            'tipe' => $request->tipe,
+            'id_karyawan' => $request->id_karyawan,
+        ]);
+
+        $barangData = [];
+        $namaBarang = $request->input('barang.nama_barang');
+        $qty = $request->input('barang.qty');
+        $hargaBarang = $request->input('barang.harga_barang');
+        $keterangan = $request->input('barang.keterangan');
+
+        for ($i = 0; $i < count($namaBarang); $i++) {
+            $barangData[] = [
+                'id_pengajuan_barang' => $PengajuanBarang->id,
+                'nama_barang' => $namaBarang[$i],
+                'qty' => $qty[$i],
+                'harga' => $hargaBarang[$i],
+                'keterangan' => $keterangan[$i],
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+
+        }
+
+        detailPengajuanBarang::insert($barangData);
         $karyawan = karyawan::findOrFail($request->id_karyawan);
         if($karyawan->divisi == 'Education'){
             $tracking = 'Diajukan dan Sedang Ditinjau oleh Education Manager';
@@ -186,7 +186,7 @@ class PengajuanBarangController extends Controller
             'id_pengajuan_barang' => $PengajuanBarang->id,
             'tracking' => $tracking,
             'tanggal' => now(),
-            'created_at' => now(),  
+            'created_at' => now(),
             'updated_at' => now(),
         ]);
 
@@ -198,7 +198,7 @@ class PengajuanBarangController extends Controller
         $karyawan = karyawan::findOrFail($request->id_karyawan);
         $divisi = $karyawan->divisi;
         $jabatan = $karyawan->jabatan;
-    
+
         $Offman = karyawan::where('jabatan', 'Office Manager')->first();
         $kooroff = karyawan::where('jabatan', 'Koordinator Office')->first();
         $koorSO = karyawan::where('jabatan', 'Koordinator ITSM')->first();
@@ -214,17 +214,17 @@ class PengajuanBarangController extends Controller
             case 'Koordinator ITSM':
                 $users[] = $GM->kode_karyawan; // GM
         break;
-        
+
             default:
                 switch ($divisi) {
                     case 'Education':
                         $users[] = $Eduman->kode_karyawan; // Eduman
                         break;
-        
+
                     case 'Sales & Marketing':
                         $users[] = $SPVSales->kode_karyawan; // SPVSales
                         break;
-        
+
                     case 'Office':
                         $users[] = $GM->kode_karyawan; // GM
                         break;
@@ -251,8 +251,8 @@ class PengajuanBarangController extends Controller
             NotificationFacade::send($user, new PengajuanbarangNotification($data, $path, $type));
         }
 
-        return redirect()->route('pengajuanbarang.index')->with('success', 'Pengajuan Barang berhasil dibuat.');  
-    }  
+        return redirect()->route('pengajuanbarang.index')->with('success', 'Pengajuan Barang berhasil dibuat.');
+    }
 
 
     /**
@@ -284,13 +284,13 @@ class PengajuanBarangController extends Controller
     {
         $data = PengajuanBarang::with('karyawan')->findOrFail($id);
         $detail = detailPengajuanBarang::where('id_pengajuan_barang', $id)->get();
-        $tracking = tracking_pengajuan_barang::where('id_pengajuan_barang', $id)->latest()->first();  
+        $tracking = tracking_pengajuan_barang::where('id_pengajuan_barang', $id)->latest()->first();
         $totalHarga = 0;
         $jabatan = auth()->user()->jabatan;
 
         if($request->approval == '1' && $jabatan == 'Finance & Accounting'){
             $status = $request->status;
-            // dd($status);
+
             $e = tracking_pengajuan_barang::create([
                 'id_pengajuan_barang' => $id,
                 'tracking' => $status,
@@ -302,55 +302,83 @@ class PengajuanBarangController extends Controller
             $users = [
                 $data->karyawan->kode_karyawan,
             ];
-            if($status = "Pencairan Sudah Selesai") {
-                $to = $data->karyawan->nama_lengkap;
-                $path = '/pengajuanbarang';
-                $type = 'Segera Upload Bukti Pembelian/Invoice';
-                $data = [
-                    'tanggal' => now(),
-                    'status' => $status
-                ];
-                
-            }else if($status = "Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager"){
+
+            // Perbaikan logika status "Pencairan Sudah Selesai"
+            if($status === "Pencairan Sudah Selesai"){
+                if($data->invoice != null){
+                    // Jika invoice sudah ada, ubah status tracking menjadi "selesai"
+                    $status = 'selesai';
+                    // Buat tracking baru dengan status selesai
+                    $e2 = tracking_pengajuan_barang::create([
+                        'id_pengajuan_barang' => $id,
+                        'tracking' => $status,
+                        'tanggal' => now()
+                    ]);
+                    $data->update([
+                        'id_tracking' => $e2->id
+                    ]);
+                    $to = $data->karyawan->nama_lengkap;
+                    $path = '/pengajuanbarang';
+                    $type = 'Pengajuan selesai diproses';
+                    $notifData = [
+                        'tanggal' => now(),
+                        'status' => $status
+                    ];
+                } else {
+                    // Jika invoice belum ada, kirim notifikasi agar upload invoice
+                    $to = $data->karyawan->nama_lengkap;
+                    $path = '/pengajuanbarang';
+                    $type = 'Segera Upload Bukti Pembelian/Invoice';
+                    $notifData = [
+                        'tanggal' => now(),
+                        'status' => $status
+                    ];
+                }
+            } else if($status === "Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager"){
                 $to = $data->karyawan->nama_lengkap;
                 $path = '/pengajuanbarang';
                 $type = 'Menyetujui Pengajuan Barang';
-                $data = [
+                $notifData = [
                     'tanggal' => now(),
                     'status' => $status
                 ];
                 $gm = karyawan::where('jabatan', 'GM')->first();
-                $users[] = $gm->kode_karyawan;
-
-            } else if($status = "Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi"){
+                if($gm){
+                    $users[] = $gm->kode_karyawan;
+                }
+            } else if($status === "Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi"){
                 $to = $data->karyawan->nama_lengkap;
                 $path = '/pengajuanbarang';
                 $type = 'Menyetujui Pengajuan Barang';
-                $data = [
+                $notifData = [
                     'tanggal' => now(),
                     'status' => $status
                 ];
                 $direksi = karyawan::where('jabatan', 'Direktur')->first();
-                $users[] = $direksi->kode_karyawan;
-            } 
-            else {
+                if($direksi){
+                    $users[] = $direksi->kode_karyawan;
+                }
+            } else {
                 $to = $data->karyawan->nama_lengkap;
                 $path = '/pengajuanbarang';
                 $type = 'Menyetujui Pengajuan Barang';
-                $data = [
+                $notifData = [
                     'tanggal' => now(),
                     'status' => $status
                 ];
-                
             }
-            $user = User::whereHas('karyawan', function ($query) use ($users) {
+
+            $userObjs = User::whereHas('karyawan', function ($query) use ($users) {
                 $query->whereIn('kode_karyawan', array_filter($users));
             })->get();
-            foreach ($user as $users) {
-                NotificationFacade::send($users, new ApprovalbarangNotification($data, $path, $to, $type));
+
+            foreach ($userObjs as $user) {
+                NotificationFacade::send($user, new ApprovalbarangNotification($notifData, $path, $to, $type));
             }
+
             return redirect()->route('pengajuanbarang.index')->with(['success' => 'Data berhasil diperbarui!']);
-        }elseif($request->approval == '2'){
+
+        } elseif($request->approval == '2') {
             $status = 'Pengajuan ditolak dikarenakan ' . $request->alasan;
             $e = tracking_pengajuan_barang::create([
                 'id_pengajuan_barang' => $id,
@@ -363,53 +391,54 @@ class PengajuanBarangController extends Controller
             $users = [
                 $data->karyawan->kode_karyawan,
             ];
-            $user = User::whereHas('karyawan', function ($query) use ($users) {
+            $userObjs = User::whereHas('karyawan', function ($query) use ($users) {
                 $query->whereIn('kode_karyawan', array_filter($users));
             })->get();
-            
+
             $to = $data->karyawan->nama_lengkap;
             $path = '/pengajuanbarang';
             $type = 'Menolak Pengajuan Barang';
-            $data = [
+            $notifData = [
                 'tanggal' => now(),
                 'status' => $status
             ];
-            foreach ($user as $users) {
-                NotificationFacade::send($users, new ApprovalbarangNotification($data, $path, $to, $type));
+
+            foreach ($userObjs as $user) {
+                NotificationFacade::send($user, new ApprovalbarangNotification($notifData, $path, $to, $type));
             }
+
             return redirect()->route('pengajuanbarang.index')->with(['success' => 'Data berhasil diperbarui!']);
-
         }
 
+        // Logika status approval dari role lainnya (Office Manager, GM, dll)
         foreach ($detail as $item){
-            $qtyValue = (int)$item->qty; // Konversi ke integer  
+            $qtyValue = (int)$item->qty; // Konversi ke integer
             $harga = explode('.', $item->harga);
-            $hargaValue = (float) $harga[0]; // Hapus titik dan konversi ke float  
-            $totalHarga += $qtyValue * $hargaValue;  
+            $hargaValue = (float) $harga[0];
+            $totalHarga += $qtyValue * $hargaValue;
         }
-        // dd($tracking);
-        // dd($request->all());
+
         if($data->karyawan->divisi == 'Education'){
             $users = karyawan::where('jabatan', 'Finance & Accounting')->first();
             $status = 'Telah disetujui oleh Education Manager dan sedang diproses oleh Finance';
-        }elseif($data->karyawan->divisi == 'Office'){
+        } elseif($data->karyawan->divisi == 'Office'){
             $users = karyawan::where('jabatan', 'Finance & Accounting')->first();
             $status = 'Telah disetujui oleh General Manager dan sedang diproses oleh Finance';
-        }elseif($data->karyawan->divisi == 'IT Service Management'){
+        } elseif($data->karyawan->divisi == 'IT Service Management'){
             $users = karyawan::where('jabatan', 'Finance & Accounting')->first();
             $status = 'Telah disetujui oleh Koordinator IT Service Management dan sedang diproses oleh Finance';
-        }elseif($data->karyawan->divisi == 'Sales & Marketing'){
+        } elseif($data->karyawan->divisi == 'Sales & Marketing'){
             $status = 'Telah disetujui oleh SPV Sales dan sedang diproses oleh Finance';
             $users = karyawan::where('jabatan', 'Finance & Accounting')->first();
             if($totalHarga >= 1000000 && $tracking->tracking == 'Telah disetujui oleh SPV Sales dan sedang ditinjau oleh General Manager'){
                 $status = 'Telah disetujui oleh General Manager dan sedang diproses oleh Finance';
                 $users = karyawan::where('jabatan', 'Finance & Accounting')->first();
-            }elseif($totalHarga >= 1000000){
+            } elseif($totalHarga >= 1000000){
                 $status = 'Telah disetujui oleh SPV Sales dan sedang ditinjau oleh General Manager';
                 $users = karyawan::where('jabatan', 'GM')->first();
             }
         }
-        // Update the record based on the user's role
+
         if (in_array($jabatan, ['Office Manager', 'Koordinator Office', 'Education Manager', 'SPV Sales', 'GM', 'Koordinator ITSM'])){
             $e = tracking_pengajuan_barang::create([
                 'id_pengajuan_barang' => $id,
@@ -422,27 +451,30 @@ class PengajuanBarangController extends Controller
         } else {
             return redirect()->route('pengajuanbarang.index')->with(['error' => 'Tidak Bisa mengubah Approval!']);
         }
-        $users = [
+
+        $usersCodes = [
             $data->karyawan->kode_karyawan,
             $users->kode_karyawan
         ];
-        $user = User::whereHas('karyawan', function ($query) use ($users) {
-            $query->whereIn('kode_karyawan', array_filter($users));
+        $userObjs = User::whereHas('karyawan', function ($query) use ($usersCodes) {
+            $query->whereIn('kode_karyawan', array_filter($usersCodes));
         })->get();
-        
+
         $to = $data->karyawan->nama_lengkap;
         $path = '/pengajuanbarang';
         $type = 'Menyetujui Pengajuan Barang';
-        $data = [
+        $notifData = [
             'tanggal' => now(),
             'status' => $status
         ];
-        foreach ($user as $users) {
-            NotificationFacade::send($users, new ApprovalbarangNotification($data, $path, $to, $type));
+
+        foreach ($userObjs as $user) {
+            NotificationFacade::send($user, new ApprovalbarangNotification($notifData, $path, $to, $type));
         }
 
         return redirect()->route('pengajuanbarang.index')->with('success', 'Pengajuan Barang berhasil diperbarui.');
     }
+
 
     /**
      * Menghapus Pengajuan Barang dari database.
@@ -451,10 +483,10 @@ class PengajuanBarangController extends Controller
     {
         // Temukan data pengajuan barang
         $data = PengajuanBarang::with('karyawan')->findOrFail($id);
-        
+
         // Ambil detail dan tracking yang terkait
         $detail = detailPengajuanBarang::where('id_pengajuan_barang', $id)->get();
-        $tracking = tracking_pengajuan_barang::where('id_pengajuan_barang', $id)->get();  
+        $tracking = tracking_pengajuan_barang::where('id_pengajuan_barang', $id)->get();
 
         // Hapus detail dan tracking satu per satu
         foreach ($detail as $item) {
@@ -494,7 +526,7 @@ class PengajuanBarangController extends Controller
             $path = $file->storeAs($directory, $filename, 'public');
             if($post->tracking->tracking == 'Pencairan Sudah Selesai'){
                 $status = 'Selesai';
-            
+
                 $e = tracking_pengajuan_barang::create([
                     'id_pengajuan_barang' => $id,
                     'tracking' => $status,
@@ -511,7 +543,7 @@ class PengajuanBarangController extends Controller
                 ]);
             }
             // $status = 'Selesai';
-            
+
             // $e = tracking_pengajuan_barang::create([
             //     'id_pengajuan_barang' => $id,
             //     'tracking' => $status,
@@ -533,7 +565,7 @@ class PengajuanBarangController extends Controller
         // return $request->all();
         // Mengambil data pengajuan barang
         $data = PengajuanBarang::with('karyawan')->findOrFail($id);
-        $tracking = tracking_pengajuan_barang::where('id_pengajuan_barang', $id)->latest()->first();  
+        $tracking = tracking_pengajuan_barang::where('id_pengajuan_barang', $id)->latest()->first();
         $totalHarga = 0;
         $jabatan = auth()->user()->jabatan;
 
@@ -565,7 +597,7 @@ class PengajuanBarangController extends Controller
                         'keterangan' => $request->keterangan[$index],
                     ]);
                 }
-    
+
                 // Hitung total harga
                 $totalHarga += $request->qty[$index] * $request->harga[$index];
             }

@@ -19,9 +19,9 @@ return new class extends Migration
             $table->enum('waktu_lembur', ['Kerja', 'Libur'])->nullable();
             $table->date('tanggal_lembur')->nullable();
             $table->string('jam_mulai')->nullable();
-            $table->string('foto_masuk')->nullable();
+            // $table->string('foto_masuk')->nullable();
             $table->string('jam_selesai')->nullable();
-            $table->string('foto_selesai')->nullable();
+            // $table->string('foto_selesai')->nullable();
             $table->string('approval_karyawan')->nullable();
             $table->text('keterangan')->nullable();
             $table->timestamps();
