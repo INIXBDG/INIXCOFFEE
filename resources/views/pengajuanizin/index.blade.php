@@ -248,23 +248,30 @@
                         var actions = "";
                         var userRole = '{{ auth()->user()->jabatan }}';
                         var requesterRole = data.karyawan.jabatan;
-                        var allowedRoles = ['Office Manager', 'Koordinator Office', 'Education Manager', 'SPV Sales', 'GM', 'Koordinator ITSM', 'HRD'];
+                        var requesterDivisi = data.karyawan.divisi; // pastikan properti ini ada di data
                         var approval = data.approval;
 
                         actions += '<div class="dropdown">';
                         actions += '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
                         actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
 
+                        // Form PDF hanya jika approval === 2
                         if (approval === 2) {
                             actions += '<a class="dropdown-item" href="/pengajuanizin/' + row.id + '">';
                             actions += '<img src="{{ asset('icon/assept-document.svg') }}" style="width:24px" class=""> Form PDF</a>';
                         }
 
-                        // Tombol Approve sesuai aturan
+                        // Tombol Approve
                         let approveDisabled = true;
                         let approveColor = '';
 
                         if (approval === 0 && userRole.includes('Koordinator')) {
+                            approveDisabled = false;
+                        } else if (approval === 0 && userRole === 'Education Manager' && requesterDivisi === 'Education') {
+                            approveDisabled = false;
+                        } else if (approval === 0 && userRole === 'SPV Sales' && requesterDivisi === 'Sales & Marketing') {
+                            approveDisabled = false;
+                        } else if (approval === 0 && userRole === 'Koordinator ITSM' && requesterDivisi === 'IT Service Management') {
                             approveDisabled = false;
                         } else if (approval === 1 && userRole === 'HRD') {
                             approveDisabled = false;
@@ -284,22 +291,21 @@
                             actions += '<img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Ditolak</button>';
                         }
 
-
-                    // Tombol Hapus hanya jika approval === 4
-                    if ( userRole === 'HRD' && approval === 4 || userRole === 'HRD' && approval === 0 || userRole === 'HRD' && approval === 2) {
-                        actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/pengajuanizin') }}/' + row.id + '" method="POST">';
-                        actions += '@csrf';
-                        actions += '@method("DELETE")';
-                        actions += '<button type="submit" class="dropdown-item">';
-                        actions += '<img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
-                        actions += '</form>';
-                    }
+                        // Tombol Hapus untuk HRD di approval 0, 2, atau 4
+                        if ((userRole === 'HRD' && approval === 4) || (userRole === 'HRD' && approval === 0) || (userRole === 'HRD' && approval === 2)) {
+                            actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/pengajuanizin') }}/' + row.id + '" method="POST">';
+                            actions += '@csrf';
+                            actions += '@method("DELETE")';
+                            actions += '<button type="submit" class="dropdown-item">';
+                            actions += '<img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
+                            actions += '</form>';
+                        }
 
                         actions += '</div></div>';
                         return actions;
                     }
                 }
-            ],
+           ],
             "order": [
                 [0, 'desc']
             ]
