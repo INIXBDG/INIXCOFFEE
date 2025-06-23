@@ -208,7 +208,6 @@ class izinTigaJamController extends Controller
             ]);
         }
 
-        // Cek apakah user saat ini diizinkan approve berdasarkan urutan alur
         $allowedApproval = false;
 
         if (
