@@ -251,111 +251,107 @@
     });    
 
     function getData() {
-        var tahun = document.getElementById('tahun').value;
-        var bulanRange = document.getElementById('bulanRange').value;
-        console.log('Tahun:', tahun);
-        console.log('Rentang Bulan:', bulanRange);
-        if (!tahun || !bulanRange) {
-            alert("Mohon pilih tahun dan rentang bulan terlebih dahulu.");
-            return;
-        }
+    var tahun = document.getElementById('tahun').value;
+    var bulanRange = document.getElementById('bulanRange').value;
+    console.log('Tahun:', tahun);
+    console.log('Rentang Bulan:', bulanRange);
+    if (!tahun || !bulanRange) {
+        alert("Mohon pilih tahun dan rentang bulan terlebih dahulu.");
+        return;
+    }
 
-        // Show loading modal
-        $('#loadingModal').modal('show');
+    // Show loading modal
+    $('#loadingModal').modal('show');
 
-        $.ajax({
-            url: "paymantAdvance/" + tahun +"/"+ bulanRange,
-            method: 'GET',
-            dataType: 'json',
-            beforeSend: function () {
-                $('#loadingModal').modal('show');
-                $('#loadingModal').on('show.bs.modal', function () {
-                    $('#loadingModal').removeAttr('inert');
+    $.ajax({
+        url: "paymantAdvance/" + tahun + "/" + bulanRange,
+        method: 'GET',
+        dataType: 'json',
+        beforeSend: function () {
+            $('#loadingModal').modal('show');
+            $('#loadingModal').on('show.bs.modal', function () {
+                $('#loadingModal').removeAttr('inert');
+            });
+        },
+        complete: function () {
+            setTimeout(() => {
+                $('#loadingModal').modal('hide');
+                $('#loadingModal').on('hidden.bs.modal', function () {
+                    $('#loadingModal').attr('inert', true);
                 });
-            },
-            complete: function () {
-                setTimeout(() => {
-                    $('#loadingModal').modal('hide');
-                    $('#loadingModal').on('hidden.bs.modal', function () {
-                        $('#loadingModal').attr('inert', true);
-                    });
-                }, 1000);
-            },
-            success: function(response) {
-                var html = '';
-                var jabatan = "{{ auth()->user()->jabatan}}";
+            }, 1000);
+        },
+        success: function(response) {
+            var html = '';
+            var jabatan = "{{ auth()->user()->jabatan}}";
 
-                response.data.forEach(function(monthData) {
-                    var jabatan = '{{auth()->user()->jabatan}}';
-                    var monthName = monthData.month;
-                    html += '<h4>' + monthName + '</h4>';
-                    if(jabatan == 'HRD'){
-                        html += `<button type="button" class="btn click-primary p-2" onclick="analisaMargin('${tahun}', '${monthName}')">Analisa Margin</button>`;
+            response.data.forEach(function(monthData) {
+                var monthName = monthData.month;
+                html += '<h4>' + monthName + '</h4>';
+                monthData.weeksData.forEach(function(weekData) {
+                    html += '<div class="card my-1">';
+                    html += '<div class="card-body table-responsive">';
+                    html += `<h3 class="card-title my-1">Rencana Kelas Mingguan ${monthName} (Minggu ke - ${weekData.minggu}) ${weekData.tanggal_awal_minggu} - ${weekData.tanggal_akhir_minggu}</h3>`;
+
+                    if (weekData.data === null) {
+                        html += '<p class="text-center">Tidak Ada Kelas Mingguan</p>';
+                    } else {
+                        // Gunakan tableId yang unik dan konsisten
+                        var tableId = `table_${weekData.tahun}_${weekData.bulan}_${weekData.minggu}`;
+                        html += renderTable(weekData.data, jabatan, tableId);
                     }
-                    monthData.weeksData.forEach(function(weekData) {
-                        html += '<div class="card my-1">';
-                        html += '<div class="card-body table-responsive">';
-                        html += `<h3 class="card-title my-1" >Rencana Kelas Mingguan ${monthName} (Minggu ke - ${weekData.minggu}) ${weekData.tanggal_awal_minggu} - ${weekData.tanggal_akhir_minggu}</h3>`;
 
-                    
-                        if (weekData.data === null) {
-                            html += '<p class="text-center">Tidak Ada Kelas Mingguan</p>';
-                        } else {
-                            // Render table with a unique ID for DataTable initialization
-                            var tableId = `table_${weekData.tahun}_${weekData.bulan}`;
-                            html += renderTable(weekData.data, jabatan, tableId);
+                    html += '</div>';
+                    html += '</div>';
+                });
+            });
+
+            // Masukkan HTML ke container
+            $('#content').html(html);
+
+            var idSales = "{{ auth()->user()->karyawan->kode_karyawan }}";
+            var jabatan = "{{ auth()->user()->jabatan }}";
+            console.log('Jabatan:', jabatan);
+            if(jabatan == 'SPV Sales' || jabatan == 'HRD' || jabatan == 'GM' || jabatan == 'Finance & Accounting' || jabatan == 'Koordinator Office') {
+                idSales = '';
+            }
+            console.log('ID Sales:', idSales);
+
+            // Inisialisasi DataTables tiap tabel yang sudah dirender
+            response.data.forEach(function(monthData) {
+                monthData.weeksData.forEach(function(weekData) {
+                    if (weekData.data !== null) {
+                        var tableId = `table_${weekData.tahun}_${weekData.bulan}_${weekData.minggu}`;
+                        // Cek dan destroy DataTable lama jika ada
+                        if ($.fn.DataTable.isDataTable('#' + tableId)) {
+                            $('#' + tableId).DataTable().destroy();
                         }
 
-                        html += '</div>';
-                        html += '</div>';
-                    });
-                });
-
-                // Display the generated HTML
-                $('#content').html(html);
-                var idSales = "{{ auth()->user()->karyawan->kode_karyawan }}";
-                var jabatan = "{{ auth()->user()->jabatan}}";
-                console.log('Jabatan:', jabatan);
-                if(jabatan == 'SPV Sales' || jabatan == 'HRD' || jabatan == 'GM' || jabatan == 'Finance & Accounting') {
-                    var idSales = '';
-                }
-                console.log('ID Sales:', idSales);
-
-                // Initialize DataTables for each table rendered
-                response.data.forEach(function(monthData) {
-                    monthData.weeksData.forEach(function(weekData) {
-                        if (weekData.data !== null) {
-                            var tableId = `table_${weekData.tahun}_${weekData.bulan}_${weekData.minggu}`;
-                            // Destroy existing DataTable instance if exists
-                           if ($.fn.DataTable.isDataTable('#' + tableId)) {
-                                    $('#' + tableId).DataTable().destroy();
-                                }
-
-                            // Initialize DataTable
-                                $('#' + tableId).DataTable({
-                                    paging: true,
-                                    searching: true,
-                                    ordering: true,
-                                    info: true,
-                                    lengthChange: true,
-                                    pageLength: 10,
-                                    // Optional: language or other DataTable options here
-                                    initComplete: function() {
-                                        this.api().columns(2).search(idSales).draw();
-                                    }
-                                });
+                        // Inisialisasi DataTable baru
+                        $('#' + tableId).DataTable({
+                            paging: true,
+                            searching: true,
+                            ordering: true,
+                            info: true,
+                            lengthChange: true,
+                            pageLength: 10,
+                            initComplete: function() {
+                                this.api().columns(2).search(idSales).draw();
                             }
+                            // Anda bisa menambahkan pengaturan lain sesuai kebutuhan
                         });
-                    });
+                    }
+                });
+            });
 
-                    $('#loadingModal').modal('hide');
-                },
-                error: function() {
-                    $('#loadingModal').modal('hide');
-                    alert("Error fetching data. Please try again.");
-                }
-        });
-    }
+            $('#loadingModal').modal('hide');
+        },
+        error: function() {
+            $('#loadingModal').modal('hide');
+            alert("Error fetching data. Please try again.");
+        }
+    });
+}
 
     function renderTable(data, jabatan, tableId) {
         var html = `<table id="${tableId}" class="table table-bordered table-striped" style="width:100%">`;
@@ -373,7 +369,7 @@
         html += '<th style="font-size:14px">Tanggal Payment Advance</th>';
         html += '<th style="font-size:14px">Tipe Pembayaran</th>';
         html += '<th style="font-size:14px">Total (Rp.)</th>';
-        if (jabatan === 'SPV Sales' || jabatan === 'Sales' || jabatan === 'GM' || jabatan === 'Finance & Accounting') {
+        if (jabatan === 'SPV Sales' || jabatan === 'Sales' || jabatan === 'GM' || jabatan === 'Finance & Accounting' || jabatan == 'Koordinator Office') {
             html += '<th style="font-size:14px">Aksi</th>';
         }
         html += '</tr>';
@@ -413,7 +409,7 @@
                 html += `<td style="font-size:14px">${sales.tipe_pembayaran || ''}</td>`;
                 html += `<td style="font-size:14px">${formatWithoutDecimals(sales.total || 0)},00</td>`;
 
-                if (jabatan === 'SPV Sales' || jabatan === 'Sales' || jabatan === 'GM' || jabatan === 'Finance &amp; Accounting') {
+                if (jabatan === 'SPV Sales' || jabatan === 'Sales' || jabatan === 'GM' || jabatan === 'Finance &amp; Accounting' || jabatan == 'Koordinator Office') {
                     html += '<td style="font-size: 14px;">';
                     html += '<div class="btn-group dropup">';
                     html += '<button type="button" class="btn dropdown-toggle text-white" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
@@ -442,7 +438,7 @@
                                 `;
                             }
                         } else if (sales.level_status === "I") {
-                            if (jabatan === "GM") {
+                            if (jabatan === "GM"  || jabatan === 'Koordinator Office') {
                                 html += `
                                     <button class="dropdown-item" type="button" onclick="openApproveModal('${sales.id_NetSales}');" title="Detail">
                                         <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
@@ -489,6 +485,8 @@
 
         html += '</tbody></table>';
         return html;
+
+
     }
 
     function formatWithoutDecimals(number) {

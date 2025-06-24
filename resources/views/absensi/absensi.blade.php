@@ -837,20 +837,20 @@
 
     /* Custom positioning for each podium place */
     .second-position {
-        position: absolute;
+        position: fixed;
         bottom: 26%;
         left: 9%;
     }
 
     .first-position {
-        position: absolute;
+        position: fixed;
         bottom: 36%;
         left: 51%;
         transform: translateX(-50%);
     }
 
     .third-position {
-        position: absolute;
+        position: fixed;
         bottom: 19%;
         right: 10%;
     }
@@ -864,7 +864,24 @@
         border-radius: 10px;
         font-size: 0.8rem;
     }
+    @media (max-width: 576px) {
+        /* Adjust positioning for mobile */
+        .second-position {
+            bottom: 45%;
+            left: 18%;
+        }
 
+        .first-position {
+            bottom: 50%;
+            left: 51%;
+            transform: translateX(-50%);
+        }
+
+        .third-position {
+            bottom: 41%;
+            right: 17%;
+        }
+    }
     /* Responsive adjustments for mobile screens */
     @media (max-width: 576px) {
         .profile-container {
@@ -892,19 +909,19 @@
 
         /* Adjust positioning for mobile */
         .second-position {
-            bottom: 25%;
-            left: 7%;
+            bottom: 45%;
+            left: 18%;
         }
 
         .first-position {
-            bottom: 36%;
+            bottom: 50%;
             left: 51%;
             transform: translateX(-50%);
         }
 
         .third-position {
-            bottom: 20%;
-            right: 6%;
+            bottom: 41%;
+            right: 17%;
         }
 
         /* Adjust position badge size for mobile */
