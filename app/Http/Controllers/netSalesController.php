@@ -305,9 +305,10 @@ class netSalesController extends Controller
         $arrayapproved = [];
         foreach ($dataApproved as $item) {
             $arrayapproved[] = [
-                'tanggal'    => $item->created_at->format('Y-m-d H:i'),
-                'status'     => $item->status,
-                'keterangan' => $item->keterangan,
+                'tanggal'      => $item->created_at->format('Y-m-d H:i'),
+                'status'       => $item->status,
+                'level_status' => $item->level_status,
+                'keterangan'   => $item->keterangan,
             ];
         }
 

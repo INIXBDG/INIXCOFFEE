@@ -138,17 +138,32 @@ class ApprovedNetSalesController extends Controller
                 Notification::send($salesUser, new NetSalesNotification($dummyCommentSales, $url, $path));
             } elseif ($latestApproval->level_status === 'II') {
                 $newApproval->level_status = 'III';
-                $newApproval->keterangan = 'Telah disetujui oleh Finance & Accounting';
+                $newApproval->keterangan = $statusTracking;
                 $newApproval->save();
 
                 $dummyCommentSales = (object) [
                     'status' => 'disetujui',
                     'tipe' => 'Persetujuan Payment Advanced',
                     'nama_karyawan' => $salesUser->karyawan->nama_lengkap,
-                    'alasan' => 'Finance & Accounting telah menyetujui pengajuan Anda.',
+                    'alasan' => $statusTracking,
                 ];
                 Notification::send($salesUser, new NetSalesNotification($dummyCommentSales, $url, $path));
+            } elseif ($latestApproval->level_status === 'III') {
+                $newApproval->level_status = 'III';
+                $newApproval->keterangan = $statusTracking;
+                $newApproval->save();
+
+                $dummyCommentSales = (object) [
+                    'status' => 'disetujui',
+                    'tipe' => 'Persetujuan Payment Advanced',
+                    'nama_karyawan' => $salesUser->karyawan->nama_lengkap,
+                    'alasan' => $statusTracking,
+                ];
+                Notification::send($salesUser, new NetSalesNotification($dummyCommentSales, $url, $path));
+
+                return response()->json(['success' => true, 'message' => 'Data persetujuan tambahan berhasil ditambahkan dan notifikasi dikirim.']);
             }
+
 
             return response()->json(['success' => true, 'message' => 'Pengajuan berhasil disetujui dan notifikasi dikirim.']);
         } catch (\Exception $e) {
