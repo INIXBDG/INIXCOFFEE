@@ -879,18 +879,24 @@
                                                         </div>
                                                     @endif
                                                 </td>
-                                                <td style="width:20%">
-                                                    @if (auth()->user()->jabatan == 'HRD' ||
+                                                <td style="width: 20%">
+                                                    <div class="d-flex gap-2 align-items-center">
+                                                        @if (auth()->user()->jabatan == 'HRD' ||
                                                             auth()->user()->jabatan == 'Office Manager' ||
                                                             auth()->user()->jabatan === 'Koordinator Office')
-                                                        <a href="{{ route('notif.edit', $notif->id) }}"
-                                                            class="btn btn-warning" id="dismiss-notification"><img
-                                                                src="{{ asset('icon/edit.svg') }}" class=""
-                                                                width="20px"></a>
-                                                    @endif
-                                                    <a href="#" class="btn btn-danger"
-                                                        id="dismiss-notification"
-                                                        style="padding-left: 7px;padding-right: 7px;">x</a>
+                                                            <a href="{{ route('notif.edit', $notif->id) }}" class="btn btn-warning" id="dismiss-notification">
+                                                                <img src="{{ asset('icon/edit.svg') }}" width="20px">
+                                                            </a>
+                                                        @endif
+
+                                                        <form action="{{ route('notif.destroy', $notif->id) }}" method="POST" style="display:inline;">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="btn btn-danger" id="dismiss-notification" style="padding: 0 7px;">
+                                                                <img src="{{ asset('icon/trash.svg') }}" width="20px" alt="delete">
+                                                            </button>
+                                                        </form>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         </table>
