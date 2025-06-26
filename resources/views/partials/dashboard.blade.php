@@ -285,7 +285,7 @@
                     </div>
                     <div class="tab-pane fade show" style="height:auto;" id="pills-bulan" role="tabpanel" aria-labelledby="pills-bulan-tab" tabindex="0">
                         <div class="row justify-content-center">
-                            <div class="col-12" style="height:auto; width:70vw; display: flex; flex-direction: column; justify-content: center; align-items: center; position:relative; ">
+                            <div class="col-12" id="containerCanvasPenjualanPerSalesPerTahun">
                                 <canvas id="PenjualanPerSalesPerTahunChart"></canvas>
                             </div>
                         </div>
@@ -310,21 +310,21 @@
                 <div class="tab-content" id="pills-tabContent">
                     <div class="tab-pane fade show" style="height:auto;" id="pills-analisiskelas" role="tabpanel" aria-labelledby="pills-analisiskelas-tab" tabindex="0">
                         <div class="row justify-content-center">
-                            <div class="col-12" style="height:auto; width:70vw; display: flex; flex-direction: column; justify-content: center; align-items: center; position:relative; ">
+                            <div class="col-12" id="containerCanvasKelasAnalisisChart">
                                 <canvas id="KelasAnalisisChart"></canvas>
                             </div>
                         </div>
                     </div>
                     <div class="tab-pane fade show" style="height:auto;" id="pills-absen" role="tabpanel" aria-labelledby="pills-absen-tab" tabindex="0">
                         <div class="row justify-content-center">
-                            <div class="col-12" style="height:auto; width:70vw; display: flex; flex-direction: column; justify-content: center; align-items: center; position:relative; ">
+                            <div class="col-12" id="containerCanvasAbsenChart">
                                 <canvas id="AbsenChart"></canvas>
                             </div>
                         </div>  
                     </div>
                     <div class="tab-pane fade show" style="height:auto;" id="pills-absenperbulan" role="tabpanel" aria-labelledby="pills-absenperbulan-tab" tabindex="0">
                         <div class="row justify-content-center">
-                            <div class="col-12" style="height:auto; width:70vw; display: flex; flex-direction: column; justify-content: center; align-items: center; position:relative; ">
+                            <div class="col-12" id="ContainerCanvasAbsenPerBulan">
                                 <label for="monthSelect_absenperbulan" class="form-label">Pilih Bulan:</label>
                                     <select class="form-select" id="monthSelect_absenperbulan" onchange="updateChartAbsenPerbulan(this.value)">
                                             <option value="All">Semua</option>
@@ -347,7 +347,7 @@
                     </div>
                     <div class="tab-pane fade show" style="height:auto;" id="pills-souvenir" role="tabpanel" aria-labelledby="pills-souvenir-tab" tabindex="0">
                         <div class="row justify-content-center">
-                            <div class="col-12" style="height:auto; width:70vw; display: flex; flex-direction: column; justify-content: center; align-items: center; position:relative; ">
+                            <div class="col-12" id="SouvenirChartContainerCanvas">
                                 <canvas id="SouvenirChart"></canvas>
                             </div>
                         </div>
@@ -375,7 +375,7 @@
                 <div class="tab-content" id="pills-tabContent">
                         <div class="tab-pane fade show" style="height:auto;" id="pills-nilaifeedbackperbulan" role="tabpanel" aria-labelledby="pills-nilaifeedbackperbulan-tab" tabindex="0">
                             <div class="row justify-content-center">
-                                <div class="col-12" style="height:auto; width:70vw; display: flex; flex-direction: column; justify-content: center; align-items: center; position:relative; ">
+                                <div class="col-12" id="containerCanvasNilaiFeedback">
                                     <label for="bulan" class="form-label">Pilih Bulan:</label>
                                     <select class="form-select" id="bulan" onchange="updateChartNilaiFeedback(this.value)">
                                         <option value="1">Januari</option>
@@ -398,7 +398,7 @@
                         </div>
                         <div class="tab-pane fade show" style="height:auto;" id="pills-totalmengajar" role="tabpanel" aria-labelledby="pills-totalmengajar-tab" tabindex="0">
                             <div class="row justify-content-center">
-                                <div class="col-12" style="height:auto; width:70vw; display: flex; flex-direction: column; justify-content: center; align-items: center; position:relative; ">
+                                <div class="col-12" id="containerCanvasTotalMengajarChart">
                                     <label for="monthSelect" class="form-label">Pilih Bulan:</label>
                                     <select class="form-select" id="monthSelect_totalmengajar" onchange="updateChartTotalMengajar(this.value)">
                                             <option value="1">Januari</option>
@@ -421,7 +421,7 @@
                         </div>
                         <div class="tab-pane fade show" style="height:auto;" id="pills-totalMateri" role="tabpanel" aria-labelledby="pills-totalMateri-tab" tabindex="0">
                             <div class="row justify-content-center">
-                                <div class="col-12" style="height:auto; width:70vw; display: flex; flex-direction: column; justify-content: center; align-items: center; position:relative; ">
+                                <div class="col-12" id="containerCanvasTotalMateri">
                                     <label for="monthSelect" class="form-label">Pilih Bulan:</label>
                                     <select class="form-select" id="monthSelect_totalMateri" onchange="updateChartTotalMateri(this.value)">
                                             <option value="All">Semua</option>
@@ -446,7 +446,7 @@
                         </div>
                         <div class="tab-pane fade show" style="height:auto;" id="pills-totalMateri" role="tabpanel" aria-labelledby="pills-totalMateri-tab" tabindex="0">
                             <div class="row justify-content-center">
-                                <div class="col-12" style="height:auto; width:70vw; display: flex; flex-direction: column; justify-content: center; align-items: center; position:relative; ">
+                                <div class="col-12" id="containerCanvasTotalMateri">
                                     <label for="monthSelect" class="form-label">Pilih Bulan:</label>
                                     <select class="form-select" id="monthSelect_totalMateri" onchange="updateChartTotalMateri(this.value)">
                                             <option value="All">Semua</option>
@@ -471,7 +471,7 @@
                         </div>
                         <div class="tab-pane fade show" style="height:auto;" id="pills-totalMengajarPerMateri" role="tabpanel" aria-labelledby="pills-totalMengajarPerMateri-tab" tabindex="0">
                             <div class="row justify-content-center">
-                                <div class="col-12" style="height:auto; width:70vw; display: flex; flex-direction: column; justify-content: center; align-items: center; position:relative; ">
+                                <div class="col-12" id="containerCanvasTotalMengajarPerMateri">
                                     <label for="monthSelect" class="form-label">Pilih Bulan:</label>
                                     <select class="form-select" id="monthSelect_totalMengajarPerMateri" onchange="updateChartTotalMengajarPerMateri(this.value)">
                                             <option value="All">Semua</option>
@@ -494,7 +494,7 @@
                             </div>
     
                         </div>
-                </div>
+                    </div>
                     {{-- <div class="tab-pane fade show" style="height:auto;" id="pills-souvenir" role="tabpanel" aria-labelledby="pills-souvenir-tab" tabindex="0">
                         <div class="col-12" style="height:auto; width:100%; display: flex; flex-direction: column; justify-content: center; align-items: center; ">
                             <canvas id="SouvenirChart"></canvas>
@@ -506,6 +506,196 @@
     </div>
 </div>
 <style>
+    @media only screen and (min-width:501px) {
+        #containerCanvasPenjualanPerSalesPerTahun {
+            width: 75vw;
+            height: auto;
+        }
+
+        #SouvenirChartContainerCanvas {
+            height:auto; 
+            width:70vw;
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            position:relative;
+        }
+
+        #ContainerCanvasAbsenPerBulan {
+            height:auto; 
+            width:70vw; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            position:relative;
+        }
+
+        #containerCanvasAbsenChart{
+            height:auto; 
+            width:70vw; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            position:relative;
+        }
+        #containerCanvasKelasAnalisisChart {
+            height:auto; 
+            width:70vw; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            position:relative; 
+        }
+        #containerCanvasNilaiFeedback {
+            height:auto; 
+            width:70vw; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            position:relative;
+        }
+
+        #containerCanvasTotalMengajarChart {
+            height:auto; 
+            width:70vw; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            position:relative;
+        }
+
+        #containerCanvasTotalMateri {
+            height:auto; 
+            width:70vw; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            position:relative;
+        }
+
+        #containerCanvasTotalMengajarPerMateri {
+            height:auto; 
+            width:70vw; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            position:relative;
+        }
+
+        #containerCanvasTotalMateri {
+            height:auto; 
+            width:70vw; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            position:relative;
+        }
+    }
+    @media only screen and (max-width:500px) {
+        #containerCanvasPenjualanPerSalesPerTahun {
+            width: 100%;
+            height: auto;
+        }
+        #PenjualanPerSalesPerTahunChart {
+            height: 200vw;
+        }
+        #SouvenirChartContainerCanvas {
+            height:auto; 
+            width: 100%;
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            position:relative;
+            font-size: 20px;
+        }
+        #ContainerCanvasAbsenPerBulan {
+            height:auto; 
+            width:100%; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            position:relative;
+        }
+
+        #containerCanvasAbsenChart{
+            height:auto; 
+            width:100%; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            position:relative;
+        }
+        #containerCanvasKelasAnalisisChart {
+            height:auto; 
+            width:100%; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            position:relative; 
+        }
+        #containerCanvasNilaiFeedback {
+            height:auto; 
+            width:100%; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            position:relative;
+        }
+
+        #containerCanvasTotalMengajarChart {
+            height:auto; 
+            width:100%; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            position:relative;
+        }
+
+        #containerCanvasTotalMateri {
+            height:auto; 
+            width:100%; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            position:relative;
+        }
+
+        #containerCanvasTotalMengajarPerMateri {
+            height:auto; 
+            width:100%; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            position:relative;
+        }
+
+        #containerCanvasTotalMateri {
+            height:auto; 
+            width:100%; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            position:relative;
+        }
+    }
     .nav-tabs {
         display: flex;
         flex-wrap: nowrap; /* Mencegah tab terbungkus ke bawah */
@@ -798,8 +988,6 @@
     .card_foto:hover .imgbox {
         bottom: 20px;
     }
-
-
 
     /* Responsive adjustments for mobile screens */
     @media (max-width: 576px) {
