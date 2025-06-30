@@ -276,14 +276,18 @@
                     "data": null,
                     "render": function (data, type, row) {
                         if (data.jam_mulai && data.jam_selesai) {
-                            // Menghitung total jam lembur
                             var start = moment(data.jam_mulai, "HH:mm");
                             var end = moment(data.jam_selesai, "HH:mm");
+                            // Jika waktu selesai lebih kecil dari waktu mulai, tambah 1 hari
+                            if (end.isBefore(start)) {
+                                end.add(1, 'day');
+                            }
                             var duration = moment.duration(end.diff(start));
-                            return duration.asHours().toFixed(2) + ' Jam'; // Mengembalikan total jam dalam format desimal
+                            return duration.asHours().toFixed(2) + ' Jam'; 
                         }
-                        return '0.00'; // Jika tidak ada jam mulai atau selesai
+                        return '0.00'; 
                     },
+
                 },
                 {"data": "uraian_tugas"},
                 {
