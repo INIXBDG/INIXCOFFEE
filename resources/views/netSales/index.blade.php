@@ -82,21 +82,6 @@
                         @csrf
                         <p>Apakah Disetujui?</p>
                         <div id="manager-row">
-                            <div class="btn-group" role="group" aria-label="Approval Options">
-                                <input type="hidden" value="" id="id_net_sales" name="id_net_sales">
-                                <button class="btn btn-outline-primary" type="submit" id="btnApproveYes">Ya</button>
-
-                                <input type="radio" class="btn-check" name="approval" id="approveNo" value="2" autocomplete="off">
-                                <label class="btn btn-outline-danger" for="approveNo" onclick="toggleAlasanManager(true)">Tidak</label>
-                            </div>
-
-                            <div class="mt-3" id="alasanManagerInput" style="display: none;">
-                                <label for="alasan_manager" class="form-label">Alasan Penolakan</label>
-                                <textarea class="form-control" id="alasan_manager" name="keterangan" rows="3"></textarea>
-                                <input type="hidden" value="{{ auth()->user()->jabatan }}" name="jabatan">
-                                <button class="btn btn-outline-success mt-3" type="submit">Kirim</button>
-                            </div>
-
                             @php
                                 $jabatan = auth()->user()->jabatan;
                             @endphp
@@ -117,6 +102,19 @@
                                     </div>
                                 </div>
                             @endif
+                            <div class="btn-group" role="group" aria-label="Approval Options">
+                                <input type="hidden" value="" id="id_net_sales" name="id_net_sales">
+                                <button class="btn btn-outline-primary" type="submit" id="btnApproveYes">Ya</button>
+
+                                <input type="radio" class="btn-check" name="approval" id="approveNo" value="2" autocomplete="off">
+                                <label class="btn btn-outline-danger" for="approveNo" onclick="toggleAlasanManager(true)">Tidak</label>
+                            </div>
+                            <div class="mt-3" id="alasanManagerInput" style="display: none;">
+                                <label for="alasan_manager" class="form-label">Alasan Penolakan</label>
+                                <textarea class="form-control" id="alasan_manager" name="keterangan" rows="3"></textarea>
+                                <input type="hidden" value="{{ auth()->user()->jabatan }}" name="jabatan">
+                                <button class="btn btn-outline-success mt-3" type="submit">Kirim</button>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -426,7 +424,7 @@
                         if (sales.level_status === null || sales.level_status === 'Belum disetujui') {
                             if (jabatan === "SPV Sales") {
                                 html += `
-                                    <button class="dropdown-item" type="button" onclick="openApproveModal('${sales.id_NetSales}');" title="Detail">
+                                    <button class="dropdown-item" type="button" onclick="openApproveModal('${sales.id_NetSales}');" title="approved">
                                         <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
                                     </button>
                                 `;
@@ -440,7 +438,7 @@
                         } else if (sales.level_status === "I") {
                             if (jabatan === "GM"  || jabatan === 'Koordinator Office') {
                                 html += `
-                                    <button class="dropdown-item" type="button" onclick="openApproveModal('${sales.id_NetSales}');" title="Detail">
+                                    <button class="dropdown-item" type="button" onclick="openApproveModal('${sales.id_NetSales}');" title="approved">
                                         <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
                                     </button>
                                 `;
@@ -457,21 +455,29 @@
                                     <button class="dropdown-item" type="button" onclick="openApproveModal('${sales.id_NetSales}');" title="Detail">
                                         <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
                                     </button>
-                                `;
+                                `;  
                             } else {
                                 html += `
-                                    <button class="dropdown-item" disabled type="button" title="Sudah Ditangani oleh Finance & Accounting">
+                                    <button class="dropdown-item" type="button" disabled title="approved">
                                         <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
                                     </button>
                                 `;
                             }
                         } else if (sales.level_status === "III") {
                             if (jabatan === 'Finance &amp; Accounting' || jabatan === 'GM' || jabatan === 'SPV Sales') {
-                                html += `
-                                    <button class="dropdown-item" disabled type="button" title="Sudah Ditangani oleh Finance & Accounting">
-                                        <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
-                                    </button>
-                                `;
+                                if (sales.keterangan === "Selesai") {
+                                    html += `
+                                        <button class="dropdown-item" type="button" disabled title="sudah ditangani oleh Finance & Accounting">
+                                            <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
+                                        </button>
+                                    `;
+                                } else {
+                                    html += `
+                                        <button class="dropdown-item" type="button" onclick="openApproveModal('${sales.id_NetSales}');" title="Detail">
+                                            <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
+                                        </button>
+                                    `;  
+                                }
                             }
                         }
                         const editUrlBase = "{{ url('/paymantAdvance/edit') }}/";

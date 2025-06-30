@@ -21,7 +21,7 @@ function getYearlySales(year) {
         url: `/getYearlySales/${year}`, // URL with year parameter
         type: 'GET',
         dataType: 'json',
-        success: function(response) {
+        success: function (response) {
             let totalSales = response.totalSales || 0;
             let target = response.target || 0;
             let targetLabels = response.targetLabels.length ? response.targetLabels : Array(9).fill("0");
@@ -33,7 +33,7 @@ function getYearlySales(year) {
             updateRulerLabels(totalSales, target, targetLabels);
             updateCarPosition(totalSales, target);
         },
-        error: function(xhr, status, error) {
+        error: function (xhr, status, error) {
             console.error('Error:', error);
         }
     });
@@ -47,7 +47,7 @@ function updateRulerLabels(totalSales, target, targetLabels) {
     $('.horizontal-ruler-labels').empty();
 
     // Dynamically create labels based on targetLabels or totalSales
-    $.each(targetLabels, function(index, label) {
+    $.each(targetLabels, function (index, label) {
         let labelValue = (index / (targetLabels.length - 1)) * maxRange;
         let labelPosition = (labelValue / maxRange) * 100;
 
@@ -98,14 +98,12 @@ function updateCarPosition(totalSales, target) {
     }, 10000); // Waktu tunggu sama dengan durasi progress bar
 }
 
-
-
 function fetchPenjualanPerSalesPerTahun(year) {
     $.ajax({
         url: `/getPerSalesPerTahun/${year}`, // URL endpoint
         type: 'GET',
         dataType: 'json',
-        success: function(response) {
+        success: function (response) {
             if (response.success && response.data?.length) {
                 const data = response.data;
 
@@ -120,7 +118,7 @@ function fetchPenjualanPerSalesPerTahun(year) {
                 $('#PenjualanPerSalesPerTahunChart').replaceWith('<p>Data tidak tersedia</p>');
             }
         },
-        error: function(xhr, status, error) {
+        error: function (xhr, status, error) {
             console.error('Error fetching data:', error);
             $('#PenjualanPerSalesPerTahunChart').replaceWith('<p>Data tidak tersedia</p>');
         }
@@ -133,19 +131,25 @@ function renderPenjualanPerSalesPerTahunChart(labels, data, judul) {
     chartLabels = labels;
     chartData = data;
     chartJudul = judul;
-    
+
     // Cek apakah chart sudah ada dan merupakan instance yang valid, lalu hancurkan jika ada
     if (window.PenjualanPerSalesPerTahunChart instanceof Chart) {
         window.PenjualanPerSalesPerTahunChart.destroy();
+    }
+
+    const canvas = document.getElementById('PenjualanPerSalesPerTahunChart');
+
+    if (window.innerWidth <= 500) {
+        canvas.height = 300; 
     }
 
     // Tentukan orientasi berdasarkan lebar layar
     const isMobile = window.innerWidth <= 768;
     const chartOrientation = isMobile ? 'x' : 'y'; // 'x' untuk vertikal, 'y' untuk horizontal
     const xTicksOptions = {
-        stepSize: 100000000, 
+        stepSize: 100000000,
         maxTicksLimit: 15,
-        callback: function(value) {
+        callback: function (value) {
             if (value >= 1000000000) {
                 return (value / 1000000000).toFixed(1) + ' M'; // Untuk miliaran
             } else if (value >= 1000000) {
@@ -156,9 +160,9 @@ function renderPenjualanPerSalesPerTahunChart(labels, data, judul) {
     };
 
     const yTicksOptions = {
-        stepSize: 100000000, 
-        maxTicksLimit: 5,
-        callback: function(value) {
+        stepSize: 100000000,
+        maxTicksLimit: 15,
+        callback: function (value) {
             if (value >= 1000000000) {
                 return (value / 1000000000).toFixed(1) + ' M'; // Untuk miliaran
             } else if (value >= 1000000) {
@@ -199,7 +203,7 @@ function renderPenjualanPerSalesPerTahunChart(labels, data, judul) {
         },
         options: {
             layout: {
-                padding: 20
+                padding: 0
             },
             responsive: true,
             indexAxis: chartOrientation, // Ubah orientasi berdasarkan ukuran layar
@@ -223,14 +227,26 @@ function renderPenjualanPerSalesPerTahunChart(labels, data, judul) {
         }
     });
 }
+
+function setChartContainerStyle() {
+    const container = document.querySelector('#containerCanvasPenjualanPerSalesPerTahun');
+    const isMobile = window.innerWidth <= 500;
+
+    container.style.display = 'flex';
+    container.style.flexDirection = 'column';
+    container.style.justifyContent = 'center';
+    container.style.alignItems = 'center';
+    container.style.position = 'relative';
+}
+
 function debounce(func, wait) {
     let timeout;
-    return function(...args) {
+    return function (...args) {
         clearTimeout(timeout);
         timeout = setTimeout(() => func.apply(this, args), wait);
     };
 }
-window.addEventListener('resize', debounce(function() {
+window.addEventListener('resize', debounce(function () {
     renderPenjualanPerSalesPerTahunChart(chartLabels, chartData, chartJudul);
 }, 200));
 
@@ -239,7 +255,7 @@ function fetchPenjualanPerSalesPerQuartal(year) {
         url: `/getPerSalesPerQuartal/${year}`, // Pastikan URL endpoint sudah benar
         type: 'GET',
         dataType: 'json',
-        success: function(response) {
+        success: function (response) {
             if (response.success && response.data?.length) {
                 initializeDropdown(response.data); // Mengisi dropdown
                 updateChart(); // Memperbarui chart berdasarkan pilihan awal
@@ -249,7 +265,7 @@ function fetchPenjualanPerSalesPerQuartal(year) {
                 $('#PenjualanPerSalesPerQuartalChart').replaceWith('<p>Data tidak tersedia</p>');
             }
         },
-        error: function(xhr, status, error) {
+        error: function (xhr, status, error) {
             console.error('Error fetching data:', error);
             $('#salesKeySelect').html('<option disabled>Data tidak tersedia</option>');
             $('#PenjualanPerSalesPerQuartalChart').replaceWith('<p>Data tidak tersedia</p>');
@@ -262,7 +278,7 @@ function initializeDropdown(data) {
     $salesKeySelect.empty(); // Kosongkan dropdown sebelum mengisi ulang
 
     // Tambahkan opsi ke dropdown untuk setiap sales_key unik
-    $.each(salesKeys, function(index, key) {
+    $.each(salesKeys, function (index, key) {
         $salesKeySelect.append(`<option value="${key}">${key}</option>`);
     });
 
@@ -270,7 +286,7 @@ function initializeDropdown(data) {
     window.salesData = data;
 
     // Event listener untuk memperbarui chart saat pilihan berubah
-    $salesKeySelect.change(function() {
+    $salesKeySelect.change(function () {
         updateChart(); // Panggil updateChart ketika pilihan diubah
     });
 }
@@ -366,7 +382,7 @@ function fetchKelasAnalisis(year) {
         url: `/getAnalisisMarginByYear/${year}`, // URL endpoint
         type: 'GET',
         dataType: 'json',
-        success: function(response) {
+        success: function (response) {
             if (response.success && response.data) {
                 const data = response.data;
                 const judul = response.message;
@@ -385,7 +401,7 @@ function fetchKelasAnalisis(year) {
                 $('#KelasAnalisisChart').replaceWith('<p>Data tidak tersedia</p>');
             }
         },
-        error: function(xhr, status, error) {
+        error: function (xhr, status, error) {
             console.error('Error fetching data:', error);
             $('#KelasAnalisisChart').replaceWith('<p>Data tidak tersedia</p>');
         }
@@ -395,6 +411,12 @@ function renderKelasAnalisisChart(labels, data, judul) {
     const ctx = document.getElementById('KelasAnalisisChart').getContext('2d');
     if (window.KelasAnalisisChart instanceof Chart) {
         window.KelasAnalisisChart.destroy();
+    }
+
+    const canvas = document.getElementById('KelasAnalisisChart');
+
+    if (window.innerWidth <= 500) {
+        canvas.height = 400; 
     }
     // const ctxMonthly = document.getElementById('monthlyProfitChart').getContext('2d');
     window.KelasAnalisisChart = new Chart(ctx, {
@@ -429,9 +451,9 @@ function renderKelasAnalisisChart(labels, data, judul) {
             indexAxis: 'y',
             responsive: true,
             plugins: {
-              legend: {
-                position: 'top',
-              },
+                legend: {
+                    position: 'top',
+                },
             },
             scales: {
                 y: {
@@ -456,7 +478,7 @@ function fetchAbsen(year) {
         url: `/getAbsensiYearly/${year}`, // URL endpoint
         type: 'GET',
         dataType: 'json',
-        success: function(response) {
+        success: function (response) {
             if (response.success && response.data) {
                 const data = response.data;
 
@@ -467,7 +489,7 @@ function fetchAbsen(year) {
                 //     console.log(item.karyawan);  // Log the entire 'karyawan' object to check if 'kode_karyawan' exists
                 //     console.log(item.karyawan ? item.karyawan.kode_karyawan : "No kode_karyawan");  // Log 'kode_karyawan' if it exists, or 'No kode_karyawan' if it doesn't
                 // });
-                
+
                 // Data untuk Bar Chart (Total Profit Bulanan)
                 const labels = data.map(item => item.karyawan.kode_karyawan);
                 const total_keterlambatan = data.map(item => item.total_keterlambatan);
@@ -480,7 +502,7 @@ function fetchAbsen(year) {
                 $('#AbsenChart').replaceWith('<p>Data tidak tersedia</p>');
             }
         },
-        error: function(xhr, status, error) {
+        error: function (xhr, status, error) {
             console.error('Error fetching data:', error);
             $('#AbsenChart').replaceWith('<p>Data tidak tersedia</p>');
         }
@@ -492,6 +514,12 @@ function renderAbsenChart(labels, data, judul) {
     if (window.AbsenChart instanceof Chart) {
         window.AbsenChart.destroy();
     }
+    const canvas = document.getElementById('AbsenChart');
+
+    if (window.innerWidth <= 500) {
+        canvas.height = 400; 
+    }
+
     window.AbsenChart = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -520,13 +548,16 @@ function renderAbsenChart(labels, data, judul) {
                 borderWidth: 1
             }]
         },
+        layout: {
+            padding: 0
+        },
         options: {
             indexAxis: 'x',
             responsive: true,
             plugins: {
-              legend: {
-                position: 'top',
-              },
+                legend: {
+                    position: 'top',
+                },
             },
             scales: {
                 y: {
@@ -551,7 +582,7 @@ function fetchSouvenir(year) {
         url: `/getSouvenirYearly/${year}`, // URL endpoint
         type: 'GET',
         dataType: 'json',
-        success: function(response) {
+        success: function (response) {
             if (response.success && response.data) {
                 const data = response.data;
 
@@ -571,7 +602,7 @@ function fetchSouvenir(year) {
                 $('#SouvenirChart').replaceWith('<p>Data tidak tersedia</p>');
             }
         },
-        error: function(xhr, status, error) {
+        error: function (xhr, status, error) {
             console.error('Error fetching data:', error);
             $('#SouvenirChart').replaceWith('<p>Data tidak tersedia</p>');
         }
@@ -581,6 +612,12 @@ function renderSouvenirChart(labels, data, judul) {
     const ctx = document.getElementById('SouvenirChart').getContext('2d');
     if (window.SouvenirChart instanceof Chart) {
         window.SouvenirChart.destroy();
+    }
+
+    const canvas = document.getElementById('SouvenirChart');
+
+    if (window.innerWidth <= 500) {
+        canvas.height = 400; 
     }
     window.SouvenirChart = new Chart(ctx, {
         type: 'bar',
@@ -614,9 +651,9 @@ function renderSouvenirChart(labels, data, judul) {
             indexAxis: 'x',
             responsive: true,
             plugins: {
-              legend: {
-                position: 'top',
-              },
+                legend: {
+                    position: 'top',
+                },
             },
             scales: {
                 y: {
@@ -641,26 +678,26 @@ function fetchAbsenPerbulan(year, month) {
         url: `/getAbsenPerbulan/${year}/${month}`, // Fetch the specific year and month
         type: 'GET',
         dataType: 'json',
-        success: function(response) {
+        success: function (response) {
             const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-            if(month == 'All') {
+            if (month == 'All') {
                 // Extract the data for the chart
                 const labels = response.data.map(item => item.karyawan.kode_karyawan);
                 const data = response.data.map(item => item.total_keterlambatan);
                 renderAbsenPerbulanChart(labels, data, `Total Absen Terlambat Per Tahun`);
-            } 
-            else if(response.success == false) {
+            }
+            else if (response.success == false) {
                 console.warn("Data Total Absen Terlambat tidak tersedia");
                 alert(`Data bulan ${monthNames[month - 1]} tidak tersedia`);
-                
+
             }
-            else{
+            else {
                 const labels = response.data.map(item => item.karyawan.kode_karyawan);
                 const data = response.data.map(item => item.total_keterlambatan);
                 renderAbsenPerbulanChart(labels, data, `Total Absen Terlambat Bulan ${monthNames[month - 1]}`);
             }
         },
-        error: function(xhr, status, error) {
+        error: function (xhr, status, error) {
             console.error('Error fetching data:', error);
             $('#AbsenPerbulanChart').replaceWith('<p>Data tidak tersedia</p>');
         }
@@ -672,16 +709,20 @@ function updateChartAbsenPerbulan(bulan) {
 }
 function renderAbsenPerbulanChart(labels, data, title) {
     const canvas = document.getElementById('AbsenPerBulanChart');
-    
+
     if (!canvas) {
         console.error('Canvas element not found!');
         return; // Exit if canvas is not found
     }
 
     const ctx = canvas.getContext('2d');
-    
+
     if (window.AbsenPerbulanChart instanceof Chart) {
         window.AbsenPerbulanChart.destroy();  // Destroy the existing chart if it exists
+    }
+
+    if (window.innerWidth <= 500) {
+        canvas.height = 400; 
     }
     console.log(data, labels);
     window.AbsenPerbulanChart = new Chart(ctx, {
@@ -711,6 +752,9 @@ function renderAbsenPerbulanChart(labels, data, title) {
                 ],
                 borderWidth: 1
             }]
+        },
+        layout: {
+            padding: 0
         },
         options: {
             indexAxis: 'x',
@@ -742,7 +786,7 @@ function fetchTabInix(year) {
         url: `/getTabInix/${year}`, // URL endpoint
         type: 'GET',
         dataType: 'json',
-        success: function(response) {
+        success: function (response) {
             if (response.success && response.data) {
                 const data = response.data;
                 console.log(data);
@@ -764,7 +808,7 @@ function fetchTabInix(year) {
                 };
 
                 // Menetapkan src pada setiap elemen .dynamic-image berdasarkan id
-                $('.dynamic-image').each(function() {
+                $('.dynamic-image').each(function () {
                     const imageId = $(this).attr('id'); // Mendapatkan id dari setiap elemen gambar
 
                     // Cek apakah id ada di objek imageUrls, lalu set src-nya
@@ -778,22 +822,22 @@ function fetchTabInix(year) {
                 if (data.keterlambatan.length >= 3) {
                     // Mengisi src untuk foto peringkat kedua
                     $('.second-position #present-photo').attr('src', '/storage/' + data.keterlambatan[1].foto);
-        
+
                     // Mengisi src untuk foto peringkat pertama
                     $('.first-position #present-photo-satu').attr('src', '/storage/' + data.keterlambatan[0].foto);
-        
+
                     // Mengisi src untuk foto peringkat ketiga
                     $('.third-position #present-photo').attr('src', '/storage/' + data.keterlambatan[2].foto);
                 } else {
                     console.warn('Data keterlambatan kurang dari 3');
                 }
-                
+
             } else {
                 console.warn("Data pada tahun ini tidak tersedia");
                 alert("Data pada tahun ini tidak tersedia");
             }
         },
-        error: function(xhr, status, error) {
+        error: function (xhr, status, error) {
             console.error('Error fetching data:', error);
         }
     });
@@ -804,15 +848,15 @@ function fetchNilaiFeedback(year, month) {
         url: `/getTotalFeedbackPerbulan/${year}/${month}`, // Fetch the specific year and month
         type: 'GET',
         dataType: 'json',
-        success: function(response) {
+        success: function (response) {
             const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-            if(response.success) {
-                if(response.data.length > 0) {
+            if (response.success) {
+                if (response.data.length > 0) {
                     // Extract the data for the chart
                     const labels = response.data.map(item => item.instruktur_key);
                     const data = response.data.map(item => item.nilairatarata);
                     renderNilaiFeedbackChart(labels, data, `Nilai Feedback Bulan ${monthNames[month - 1]}`);
-                }else{
+                } else {
                     console.warn("Data Nilai Feedback tidak tersedia");
                     alert(`Data bulan ${monthNames[month - 1]} tidak tersedia`);
                 }
@@ -821,7 +865,7 @@ function fetchNilaiFeedback(year, month) {
                 alert(`Data bulan ${monthNames[month - 1]} tidak tersedia`);
             }
         },
-        error: function(xhr, status, error) {
+        error: function (xhr, status, error) {
             console.error('Error fetching data:', error);
             $('#NilaiFeedbackChart').replaceWith('<p>Data tidak tersedia</p>');
         }
@@ -837,6 +881,12 @@ function renderNilaiFeedbackChart(labels, data, title) {
     if (window.NilaiFeedbackChart instanceof Chart) {
         window.NilaiFeedbackChart.destroy();
     }
+    const canvas = document.getElementById('NilaiFeedbackChart');
+
+    if (window.innerWidth <= 500) {
+        canvas.height = 400; 
+    }
+
     window.NilaiFeedbackChart = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -869,9 +919,9 @@ function renderNilaiFeedbackChart(labels, data, title) {
             indexAxis: 'x',
             responsive: true,
             plugins: {
-              legend: {
-                position: 'top',
-              },
+                legend: {
+                    position: 'top',
+                },
             },
             scales: {
                 y: {
@@ -896,9 +946,9 @@ function fetchTotalMengajar(year, month) {
         url: `/getTotalMengajarPerbulan/${year}/${month}`, // Fetch the specific year and month
         type: 'GET',
         dataType: 'json',
-        success: function(response) {
+        success: function (response) {
             const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-            if(response.success == true) {
+            if (response.success == true) {
                 // Extract the data for the chart
                 const labels = response.data.map(item => item.instruktur_key);
                 const data = response.data.map(item => item.total_mengajar);
@@ -909,7 +959,7 @@ function fetchTotalMengajar(year, month) {
                 // $('#totalMengajarChart').replaceWith(`<p>Data bulan ${monthNames[month - 1]} tidak tersedia</p>`);
             }
         },
-        error: function(xhr, status, error) {
+        error: function (xhr, status, error) {
             console.error('Error fetching data:', error);
             $('#totalMengajarChart').replaceWith('<p>Data tidak tersedia</p>');
         }
@@ -925,6 +975,12 @@ function renderTotalMengajarChart(labels, data, title) {
     if (window.totalMengajarChart instanceof Chart) {
         window.totalMengajarChart.destroy();
     }
+    const canvas = document.getElementById('totalMengajarPerMateriChart');
+
+    if (window.innerWidth <= 500) {
+        canvas.height = 400; 
+    }
+
     window.totalMengajarChart = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -957,9 +1013,9 @@ function renderTotalMengajarChart(labels, data, title) {
             indexAxis: 'x',
             responsive: true,
             plugins: {
-              legend: {
-                position: 'top',
-              },
+                legend: {
+                    position: 'top',
+                },
             },
             scales: {
                 y: {
@@ -984,26 +1040,26 @@ function fetchTotalMateri(year, month) {
         url: `/getTotalMateriPerbulan/${year}/${month}`, // Fetch the specific year and month
         type: 'GET',
         dataType: 'json',
-        success: function(response) {
+        success: function (response) {
             const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-            if(month == 'All') {
+            if (month == 'All') {
                 // Extract the data for the chart
                 const labels = response.data.map(item => item.kategori_materi);
                 const data = response.data.map(item => item.total_materi);
                 renderTotalMateriChart(labels, data, `Total Mengajar Per Tahun`);
-            } 
-            else if(response.success == false) {
+            }
+            else if (response.success == false) {
                 console.warn("Data Total Mengajar tidak tersedia");
                 alert(`Data bulan ${monthNames[month - 1]} tidak tersedia`);
-                
+
             }
-             else{
+            else {
                 const labels = response.data.map(item => item.kategori_materi);
                 const data = response.data.map(item => item.total_materi);
                 renderTotalMateriChart(labels, data, `Total Mengajar Bulan ${monthNames[month - 1]}`);
             }
         },
-        error: function(xhr, status, error) {
+        error: function (xhr, status, error) {
             console.error('Error fetching data:', error);
             $('#totalMateriChart').replaceWith('<p>Data tidak tersedia</p>');
         }
@@ -1018,6 +1074,12 @@ function renderTotalMateriChart(labels, data, title) {
     if (window.totalMateriChart instanceof Chart) {
         window.totalMateriChart.destroy();
     }
+    const canvas = document.getElementById('totalMateriChart');
+
+    if (window.innerWidth <= 500) {
+        canvas.height = 400; 
+    }
+
     window.totalMateriChart = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -1053,9 +1115,9 @@ function renderTotalMateriChart(labels, data, title) {
                 top: 20,
             },
             plugins: {
-              legend: {
-                position: 'top',
-              },
+                legend: {
+                    position: 'top',
+                },
             },
             scales: {
                 y: {
@@ -1066,7 +1128,7 @@ function renderTotalMateriChart(labels, data, title) {
                     },
                     ticks: {
                         min: 0,  // Sumbu Y tetap mulai dari 0
-                        padding: 10  // Memberikan jarak antara bar dengan sumbu Y
+                        padding: 0  // Memberikan jarak antara bar dengan sumbu Y
                     }
                 },
                 x: {
@@ -1084,42 +1146,42 @@ function fetchTotalMengajarPerMateri(year, month) {
         url: `/getTotalMengajarPerJenisMateriPerTahun/${year}/${month}`, // Endpoint untuk tahun dan bulan tertentu
         type: 'GET',
         dataType: 'json',
-        success: function(response) {
+        success: function (response) {
             const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-            
+
             if (month == 'All') {
                 const categories = Object.keys(response.data); // Kategori materi (e.g., "Security", "Management")
-            const instrukturKeys = []; // Daftar instruktur
-            const datasets = []; // Dataset untuk setiap instruktur
-            
-            // Loop untuk mengumpulkan semua instruktur yang ada
-            categories.forEach(category => {
-                response.data[category].forEach(item => {
-                    if (item.instruktur_key && !instrukturKeys.includes(item.instruktur_key)) {
-                        instrukturKeys.push(item.instruktur_key); // Tambahkan instruktur yang belum ada
-                    }
-                });
-            });
+                const instrukturKeys = []; // Daftar instruktur
+                const datasets = []; // Dataset untuk setiap instruktur
 
-            // Siapkan dataset untuk setiap instruktur
-            instrukturKeys.forEach(instruktur => {
-                const data = categories.map(category => {
-                    // Cari data instruktur berdasarkan kategori
-                    const instrukturData = response.data[category].find(item => item.instruktur_key === instruktur);
-                    return instrukturData ? instrukturData.total_mengajar : 0; // Jika instruktur tidak ada, beri 0
+                // Loop untuk mengumpulkan semua instruktur yang ada
+                categories.forEach(category => {
+                    response.data[category].forEach(item => {
+                        if (item.instruktur_key && !instrukturKeys.includes(item.instruktur_key)) {
+                            instrukturKeys.push(item.instruktur_key); // Tambahkan instruktur yang belum ada
+                        }
+                    });
                 });
 
-                datasets.push({
-                    label: instruktur, // Nama instruktur
-                    data: data, // Total mengajar per kategori materi
-                    backgroundColor: generateRandomColor(), // Warna acak untuk instruktur
+                // Siapkan dataset untuk setiap instruktur
+                instrukturKeys.forEach(instruktur => {
+                    const data = categories.map(category => {
+                        // Cari data instruktur berdasarkan kategori
+                        const instrukturData = response.data[category].find(item => item.instruktur_key === instruktur);
+                        return instrukturData ? instrukturData.total_mengajar : 0; // Jika instruktur tidak ada, beri 0
+                    });
+
+                    datasets.push({
+                        label: instruktur, // Nama instruktur
+                        data: data, // Total mengajar per kategori materi
+                        backgroundColor: generateRandomColor(), // Warna acak untuk instruktur
+                    });
                 });
-            });
 
-            // Render Chart.js dengan data yang telah dipersiapkan
-            renderTotalMengajarPerMateriChart(categories, datasets, 'Total Mengajar Per Tahun');
+                // Render Chart.js dengan data yang telah dipersiapkan
+                renderTotalMengajarPerMateriChart(categories, datasets, 'Total Mengajar Per Tahun');
 
-            } 
+            }
             else if (response.success == false) {
                 console.warn("Data Total Mengajar tidak tersedia");
                 alert(`Data bulan ${monthNames[month - 1]} tidak tersedia`);
@@ -1130,7 +1192,7 @@ function fetchTotalMengajarPerMateri(year, month) {
                 renderTotalMengajarPerMateriChart(labels, data, `Total Mengajar Per ${monthNames[month - 1]}`);
             }
         },
-        error: function(xhr, status, error) {
+        error: function (xhr, status, error) {
             console.error("Terjadi kesalahan saat mengambil data:", error);
             alert("Terjadi kesalahan saat mengambil data.");
         }
@@ -1141,13 +1203,19 @@ function updateChartTotalMengajarPerMateri(bulan) {
     fetchTotalMengajarPerMateri(year, bulan); // Fetch and render data for the selected year and month
 }
 function renderTotalMengajarPerMateriChart(labels, data, title) {
-    if(title == 'Total Mengajar Per Tahun'){
+    if (title == 'Total Mengajar Per Tahun') {
         const ctx = document.getElementById('totalMengajarPerMateriChart').getContext('2d');
-    
+
         if (window.totalMengajarPerMateriChart instanceof Chart) {
             window.totalMengajarPerMateriChart.destroy();  // Hapus chart yang lama
         }
-    
+
+        const canvas = document.getElementById('totalMengajarPerMateriChart');
+
+        if (window.innerWidth <= 500) {
+            canvas.height = 400; 
+        }
+
         window.totalMengajarPerMateriChart = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -1178,7 +1246,7 @@ function renderTotalMengajarPerMateriChart(labels, data, title) {
                     },
                     tooltip: {
                         callbacks: {
-                            label: function(tooltipItem) {
+                            label: function (tooltipItem) {
                                 return `${tooltipItem.dataset.label}: ${tooltipItem.raw}`; // Format label tooltip
                             }
                         }
@@ -1186,14 +1254,14 @@ function renderTotalMengajarPerMateriChart(labels, data, title) {
                 }
             }
         });
-    }else{
+    } else {
         const ctx = document.getElementById('totalMengajarPerMateriChart').getContext('2d');
-    
+
         // Destroy chart lama jika ada
         if (window.totalMengajarPerMateriChart instanceof Chart) {
             window.totalMengajarPerMateriChart.destroy();
         }
-        
+
         // Membuat chart baru
         window.totalMengajarPerMateriChart = new Chart(ctx, {
             type: 'bar',
@@ -1236,7 +1304,7 @@ function renderTotalMengajarPerMateriChart(labels, data, title) {
                     },
                     tooltip: {
                         callbacks: {
-                            label: function(tooltipItem) {
+                            label: function (tooltipItem) {
                                 return tooltipItem.raw + ' kali'; // Menambahkan teks tambahan pada tooltip
                             }
                         }

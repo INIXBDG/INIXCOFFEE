@@ -317,7 +317,6 @@ class RKMController extends Controller
     }
     public function edit(string $id)
     {
-        // Get post by ID
         $post = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan'])->findOrFail($id);
         $sales = Karyawan::whereIn('jabatan', ['Sales', 'SPV Sales', 'Adm Sales', 'Tim Digital'])
             ->where('status_aktif', '1')
@@ -328,7 +327,6 @@ class RKMController extends Controller
             ->get();
         $materi = Materi::get();
         $perusahaan = Perusahaan::get();
-        // return $post;
         return view('rkm.edit', compact('post', 'sales', 'materi', 'perusahaan', 'instruktur'));
     }
     /**
@@ -497,15 +495,12 @@ class RKMController extends Controller
         ]);
 
         $post = RKM::findOrFail($id);
-        // dd($request->all());
         if ($request->status == '0') {
-            // Jika user mengunggah file registrasi_form
             if ($request->hasFile('registrasi_form')) {
                 $file = $request->file('registrasi_form');
 
                 $extension = $file->getClientOriginalExtension();
 
-                // Buat nama file berdasarkan informasi materi, perusahaan, dan tanggal
                 $filename = 'registrasiform_' .
                     $post->materi->nama_materi . '_' .
                     $post->perusahaan->nama_perusahaan . '_' .
@@ -516,11 +511,9 @@ class RKMController extends Controller
                 // Direktori penyimpanan
                 $directory = 'registrasiform';
 
-                // Cek ekstensi file
                 if (in_array(strtolower($extension), ['pdf', 'jpg', 'jpeg', 'png'])) {
                     $path = $file->storeAs($directory, $filename, 'public');
 
-                    // Simpan path ke dalam database jika diperlukan
                     $post->registrasi_form = $path;
                     $post->save();
                 } else {
@@ -555,7 +548,6 @@ class RKMController extends Controller
                 // Increment the day count for the current month
                 $monthDays[$month]++;
 
-                // Move to the next day
                 $startDate->addDay();
             }
 
@@ -604,6 +596,7 @@ class RKMController extends Controller
             'materi_key' => $request->materi_key,
             'harga_jual' => $request->harga_jual,
             'pax' => $request->pax,
+            'isi_pax' => $request->pax,
             'tanggal_awal' => $request->tanggal_awal,
             'tanggal_akhir' => $request->tanggal_akhir,
             'metode_kelas' => $request->metode_kelas,

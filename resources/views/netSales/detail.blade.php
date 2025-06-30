@@ -41,6 +41,7 @@
                                             <tr>
                                                 <th>No</th>
                                                 <th>Tanggal</th>
+                                                <th>Approver</th>
                                                 <th>Status</th>
                                                 <th>Keterangan</th>
                                             </tr>
@@ -413,7 +414,19 @@
                 } else {
                     let no = 1;
                     response.dataApproved.forEach(function(data) {
-                        let status = data.status === 1 ? "Disetujui" : (data.status === 0 ? "Ditolak" : "Belum diketahui");
+                        let status;
+
+                        if (data.status === 1) {
+                            if (data.level_status === 'III' && data.keterangan !== 'Selesai') {
+                                status = "Diproses";
+                            } else {
+                                status = "Disetujui";
+                            }
+                        } else if (data.status === 0) {
+                            status = "Ditolak";
+                        } else {
+                            status = "Belum diketahui";
+                        }
 
                         let tanggalObj = new Date(data.tanggal);
 
@@ -432,10 +445,20 @@
 
                         let tanggalLengkap = `${namaHari}, ${tanggal} ${namaBulan} ${tahun} ${jam}:${menit}`;
 
+                        let approver = '-';
+                        if (data.level_status === 'I') {
+                            approver = 'SPV Sales';
+                        } else if (data.level_status === 'II') {
+                            approver = 'GM';
+                        } else if (data.level_status === 'III') {
+                            approver = 'Finance & Accounting';
+                        }
+
                         tbody_approved.append(`
                             <tr>
                                 <td>${no++}</td>
                                 <td>${tanggalLengkap}</td>
+                                <td>${approver}</td>
                                 <td>${status}</td>
                                 <td>${data.keterangan}</td>
                             </tr>
