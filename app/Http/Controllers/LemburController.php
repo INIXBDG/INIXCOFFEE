@@ -243,13 +243,9 @@ class LemburController extends Controller
             'jam_mulai' => 'required',
             'jam_selesai' => 'required',
             'keterangan' => 'required',
+            'foto_mulai' => 'required',
+            'foto_selesai' => 'required'
         ];
-
-        $jabatan = strtolower(auth()->user()->jabatan);
-        if (in_array($jabatan, ['office boy', 'driver'])) {
-            $rules['foto_mulai'] = 'nullable|image';
-            $rules['foto_selesai'] = 'nullable|image';
-        }
 
         $this->validate($request, $rules);
 
@@ -261,34 +257,32 @@ class LemburController extends Controller
         $post->jam_selesai = $request->jam_selesai;
         $post->keterangan = $request->keterangan;
 
-        if (in_array($jabatan, ['office boy', 'driver'])) {
-            // Proses foto_mulai (simpan sebagai foto_masuk)
-            if ($request->hasFile('foto_mulai')) {
-                $image = $request->file('foto_mulai');
-                $imageName = 'mulai_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
-                $path = $image->storeAs('lembur', $imageName, 'public');
+        if ($request->hasFile('foto_mulai')) {
+            $image = $request->file('foto_mulai');
+            $imageName = 'mulai_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
+            $path = $image->storeAs('lembur', $imageName, 'public');
 
-                // Hapus file lama jika ada
-                if ($post->foto_masuk && Storage::disk('public')->exists($post->foto_masuk)) {
-                    Storage::disk('public')->delete($post->foto_masuk);
-                }
-
-                $post->foto_masuk = $path;
+            // Hapus file lama jika ada
+            if ($post->foto_masuk && Storage::disk('public')->exists($post->foto_masuk)) {
+                Storage::disk('public')->delete($post->foto_masuk);
             }
 
-            // Proses foto_selesai (simpan sebagai foto_selesai)
-            if ($request->hasFile('foto_selesai')) {
-                $image = $request->file('foto_selesai');
-                $imageName = 'selesai_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
-                $path = $image->storeAs('lembur', $imageName, 'public');
-
-                if ($post->foto_selesai && Storage::disk('public')->exists($post->foto_selesai)) {
-                    Storage::disk('public')->delete($post->foto_selesai);
-                }
-
-                $post->foto_selesai = $path;
-            }
+            $post->foto_masuk = $path;
         }
+
+        // Proses foto_selesai (simpan sebagai foto_selesai)
+        if ($request->hasFile('foto_selesai')) {
+            $image = $request->file('foto_selesai');
+            $imageName = 'selesai_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
+            $path = $image->storeAs('lembur', $imageName, 'public');
+
+            if ($post->foto_selesai && Storage::disk('public')->exists($post->foto_selesai)) {
+                Storage::disk('public')->delete($post->foto_selesai);
+            }
+
+            $post->foto_selesai = $path;
+        }
+
 
         $post->save();
 
