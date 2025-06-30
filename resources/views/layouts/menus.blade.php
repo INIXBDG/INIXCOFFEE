@@ -1548,9 +1548,9 @@
                                                                         <div class="col-md-10" style="margin-left: 10px">
                                                                             <a href="/paymantAdvance"
                                                                                 class="link stretched-link text-decoration-none">
-                                                                                <h5 class="card-title">Paymant Advance</h5>
+                                                                                <h5 class="card-title">Payment Advance</h5>
                                                                             </a>
-                                                                            <p class="card-text">Pengajuan Paymant Advance.</p>
+                                                                            <p class="card-text">Pengajuan Payment Advance.</p>
                                                                         </div>
                                                                     </div>
                                                                 @endcan

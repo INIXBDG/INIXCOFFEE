@@ -236,6 +236,7 @@ class LemburController extends Controller
      */
     public function updateKaryawan(Request $request, $id)
     {
+        // return $request->all();
         // Validasi dasar
         $rules = [
             'tanggal_spl' => 'required',
@@ -414,14 +415,14 @@ class LemburController extends Controller
             return response()->json(['error' => 'Data lembur tidak ditemukan'], 404);
         }
 
-        if ($lembur->jam_mulai) {
-            $selisih = now()->diffInMinutes($lembur->jam_mulai);
-            if ($selisih < 60) {
-                return response()->json(['error' => 'Absen pulang hanya bisa dilakukan minimal 1 jam setelah absen masuk'], 400);
-            }
-        } else {
-            return response()->json(['error' => 'Anda belum absen masuk'], 400);
-        }
+        // if ($lembur->jam_mulai) {
+        //     $selisih = now()->diffInMinutes($lembur->jam_mulai);
+        //     if ($selisih < 60) {
+        //         return response()->json(['error' => 'Absen pulang hanya bisa dilakukan minimal 1 jam setelah absen masuk'], 400);
+        //     }
+        // } else {
+        //     return response()->json(['error' => 'Anda belum absen masuk'], 400);
+        // }
 
         $lembur->update([
             'jam_selesai' => $request->jam_selesai,

@@ -668,6 +668,10 @@
             if (jamMulai && jamSelesai) {
                 var start = moment(jamMulai, "HH:mm");
                 var end = moment(jamSelesai, "HH:mm");
+                // Jika waktu selesai lebih kecil dari waktu mulai, tambah 1 hari
+                if (end.isBefore(start)) {
+                    end.add(1, 'day');
+                }
                 var duration = moment.duration(end.diff(start));
                 return duration.asHours().toFixed(2); // Return total hours in decimal format
             }
