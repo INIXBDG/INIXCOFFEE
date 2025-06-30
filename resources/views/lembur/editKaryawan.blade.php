@@ -71,8 +71,9 @@
                                     name="jam_mulai"
                                     id="jam_mulai"
                                     value="{{ $data->jam_mulai }}"
+
                                     {{-- Jika jabatan office boy atau driver, input tidak readonly --}}
-                                    @if(!in_array($jabatan, ['office boy', 'driver','education manager',  'gm',  'spv sales',  'office manager',  'koordinator office',  'hrd',  'koordinator itsm' ])) readonly @endif
+                                    {{-- @if(!in_array($jabatan, ['office boy', 'driver','education manager',  'gm',  'spv sales',  'office manager',  'koordinator office',  'hrd',  'koordinator itsm' ])) readonly @endif --}}
                                 >
                                 @error('jam_mulai')
                                     <span class="invalid-feedback" role="alert">
@@ -80,13 +81,13 @@
                                     </span>
                                 @enderror
                             </div>
-                            @if(!in_array(strtolower(auth()->user()->jabatan), ['office boy', 'driver', 'education manager',  'gm',  'spv sales',  'office manager',  'koordinator office',  'hrd',  'koordinator itsm']))
+                            {{-- @if(!in_array(strtolower(auth()->user()->jabatan), ['office boy', 'driver', 'education manager',  'gm',  'spv sales',  'office manager',  'koordinator office',  'hrd',  'koordinator itsm']))
                                 <div class="col-md-2">
                                     <button type="button" class="btn btn-primary btn-sm w-100" data-bs-toggle="modal" data-bs-target="#modalAbsen">
                                         Absen Lembur
                                     </button>
                                 </div>
-                            @endif
+                            @endif --}}
                         </div>
 
                         <div class="row mb-3" id="jam_selesai">
@@ -99,9 +100,9 @@
                                     id="jam_selesai"
                                     value="{{ $data->jam_selesai }}"
                                     {{-- Jika jabatan office boy atau driver, input tidak readonly --}}
-                                    @if(!in_array(strtolower(auth()->user()->jabatan), ['office boy', 'driver', 'education manager',  'gm',  'spv sales',  'office manager',  'koordinator office',  'hrd',  'koordinator itsm']))
+                                    {{-- @if(!in_array(strtolower(auth()->user()->jabatan), ['office boy', 'driver', 'education manager',  'gm',  'spv sales',  'office manager',  'koordinator office',  'hrd',  'koordinator itsm']))
                                         readonly
-                                    @endif
+                                    @endif --}}
                                 >
                                 @error('jam_selesai')
                                     <span class="invalid-feedback" role="alert">
@@ -112,7 +113,7 @@
                         </div>
 
                         {{-- Input Foto Mulai dan Selesai untuk Office Boy dan Driver --}}
-                        @if(in_array(strtolower(auth()->user()->jabatan), ['office boy', 'driver' , 'education manager',  'gm',  'spv sales',  'office manager',  'koordinator office',  'hrd',  'koordinator itsm']))
+                        {{-- @if(in_array(strtolower(auth()->user()->jabatan), ['office boy', 'driver' , 'education manager',  'gm',  'spv sales',  'office manager',  'koordinator office',  'hrd',  'koordinator itsm'])) --}}
                             <div class="row mb-3">
                                 <label for="foto_mulai" class="col-md-4 col-form-label text-md-start">Foto Mulai</label>
                                 <div class="col-md-6">
@@ -156,7 +157,7 @@
                                     @endif
                                 </div>
                             </div>
-                        @endif
+                        {{-- @endif --}}
 
                         <div class="row mb-3" id="uraian_tugas">
                             <label for="uraian_tugas" class="col-md-4 col-form-label text-md-start">{{ __('Uraian Tugas') }}</label>
@@ -242,7 +243,7 @@
                     </form>
                 </div>
             </div>
-            <div class="modal fade" id="modalAbsen" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            {{-- <div class="modal fade" id="modalAbsen" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
                 <div class="modal-dialog">
                   <div class="modal-content">
                     <div class="modal-header">
@@ -273,7 +274,7 @@
                     </div>
                   </div>
                 </div>
-            </div>
+            </div> --}}
         </div>
     </div>
 </div>
@@ -281,7 +282,7 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/webcamjs/1.0.26/webcam.min.js"></script>
-<script src="{{ asset('js/webcam.js') }}"></script>
+{{-- <script src="{{ asset('js/webcam.js') }}"></script>
 <script>
     let stream;
 
@@ -404,6 +405,6 @@
             }
         }
     });
-    </script>
+    </script> --}}
 
 @endsection
