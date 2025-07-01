@@ -838,21 +838,21 @@
     /* Custom positioning for each podium place */
     .second-position {
         position: fixed;
-        bottom: 26%;
-        left: 9%;
+        bottom: 38%;
+        left: 10%;
     }
 
     .first-position {
         position: fixed;
-        bottom: 36%;
+        bottom: 45%;
         left: 51%;
         transform: translateX(-50%);
     }
 
     .third-position {
         position: fixed;
-        bottom: 19%;
-        right: 10%;
+        bottom: 34%;
+        right: 9.5%;
     }
 
     /* Position badge */
@@ -909,19 +909,19 @@
 
         /* Adjust positioning for mobile */
         .second-position {
-            bottom: 45%;
-            left: 18%;
+            bottom: 50%;
+            left: -2%;
         }
 
         .first-position {
-            bottom: 50%;
+            bottom: 55%;
             left: 51%;
             transform: translateX(-50%);
         }
 
         .third-position {
-            bottom: 41%;
-            right: 17%;
+            bottom: 47%;
+            right: -2%;
         }
 
         /* Adjust position badge size for mobile */
