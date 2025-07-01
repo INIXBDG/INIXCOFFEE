@@ -123,7 +123,7 @@
                                         name="foto_mulai"
                                         id="foto_mulai"
                                         accept="image/*"
-                                        capture="camera"
+                                        {{-- capture="camera" --}}
                                     >
                                     @error('foto_mulai')
                                         <span class="invalid-feedback" role="alert">
@@ -145,7 +145,7 @@
                                         name="foto_selesai"
                                         id="foto_selesai"
                                         accept="image/*"
-                                        capture="camera"
+                                        {{-- capture="camera" --}}
                                     >
                                     @error('foto_selesai')
                                         <span class="invalid-feedback" role="alert">
