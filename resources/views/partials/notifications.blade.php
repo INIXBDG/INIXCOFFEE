@@ -16,6 +16,7 @@
                                 @endif
                                 @if ( $notification->data['message']['tipe'] == 'no_record')
                                     <div class="notification mb-3">
+                                        <pre>{{ var_dump($notification->data['message']['status']) }}</pre>
                                         <p><strong style="text-transform: capitalize;">{{ $notification->data['message']['status'] }}</strong> Atas Pengajuan Klaim Absen Tidak Terekam Oleh <strong>{{ $notification->data['message']['nama_lengkap'] }}</strong> Untuk Tanggal {{ \Carbon\Carbon::parse($notification->data['message']['tanggal'])->format('d-M-Y') }} Dengan Alasan {{ $notification->data['message']['kronologi'] }}</p>
                                         <p>Pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
                                         {{-- <p><strong>Status:</strong> {{ $notification->data['status'] }}</p> --}}
@@ -88,7 +89,7 @@
                                             </form>
                                         </div>
                                     </div>
-                                @endif  
+                                @endif
                                 @if ( $notification->data['message']['tipe'] == 'RKM Update')
                                     <div class="notification mb-3">
                                         <p><strong style="text-transform: capitalize;">{{ $notification->data['user'] }}</strong> telah mengubah {{ $notification->data['message']['tipe'] }} dengan judul "{{ $notification->data['message']['nama_materi'] }}" dengan peserta dari {{ $notification->data['message']['nama_perusahaan'] }}</p>
@@ -103,7 +104,7 @@
                                             </form>
                                         </div>
                                     </div>
-                                @endif                   
+                                @endif
                                 @if ($notification->data['message']['tipe'] == 'Assign Kelas')
                                     <div class="notification mb-3">
                                         <p><strong style="text-transform: capitalize;">{{ $notification->data['user'] }}</strong> telah menambahkan anda sebagai {{ $notification->data['message']['role'] }} di kelas "{{ $notification->data['message']['nama_materi'] }}" dengan peserta dari {{ $notification->data['message']['nama_perusahaan'] }}</p>
@@ -402,5 +403,50 @@
                                         </div>
                                     </div>
                                 @endif
+                                @if ($notification->data['message']['tipe'] == 'Pembayaran_from_web')
+                                    <div class="notification mb-3">
+                                        <p>
+                                            Pembayaran berhasil dilakukan oleh <strong>{{ $notification->data['message']['nama'] }}</strong>
+                                            @if(!empty($notification->data['message']['instansi']))
+                                                dari instansi <strong>{{ $notification->data['message']['instansi'] }}</strong>
+                                            @endif
+                                            dengan email <strong>{{ $notification->data['message']['email'] }}</strong>.
+                                        </p>
+                                        <p>
+                                            Total pembayaran sebesar <strong>Rp{{ number_format($notification->data['message']['total_harga'], 0, ',', '.') }}</strong>.
+                                        </p>
+                                        <p>Pada tanggal {{ $notification->created_at->format('d M Y H:i:s') }}</p>
+
+                                        <strong style="text-transform: capitalize;">
+                                                Status: {{ is_array($notification->data['message']['status']) ? json_encode($notification->data['message']['status']) : $notification->data['message']['status'] }}
+                                        </strong>
+                                            <br>
+
+                                        @if(!empty($notification->data['message']['cartItems']) && is_array($notification->data['message']['cartItems']) && count($notification->data['message']['cartItems']) > 0)
+                                            <p>Items dalam keranjang:</p>
+                                            <ul>
+                                                @foreach ($notification->data['message']['cartItems'] as $item)
+                                                    <li>{{ $item['name'] ?? 'Item' }} - Jumlah: {{ $item['quantity'] ?? '-' }}</li>
+                                                @endforeach
+                                            </ul>
+                                        @else
+                                            <p><em>Tidak ada item dalam keranjang.</em></p>
+                                        @endif
+
+                                        <div class="d-flex mt-3">
+                                            <a href="https://inixindobdg.co.id/admin" class="btn btn-primary btn-sm" style="margin-right:8px;">
+                                                Lihat Selengkapnya
+                                            </a>
+                                            <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
+                                                @csrf
+                                                @method('PUT')
+                                                <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">
+                                                    Tandai sebagai Dibaca
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                @endif
+
                                 <hr>
 @endforeach
