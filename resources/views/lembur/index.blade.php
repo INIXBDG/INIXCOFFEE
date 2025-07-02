@@ -260,12 +260,7 @@
                 {"data": "id"},
                 {"data": "karyawan.nama_lengkap"},
                 {"data": "karyawan.jabatan"},
-                {
-                    "data": null,
-                    "render": function (data, type, row) {
-                        return data.jam_mulai ? data.jam_mulai : '-';
-                    },
-                },
+
                 {
                     "data": null,
                     "render": function (data, type, row) {

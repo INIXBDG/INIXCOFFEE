@@ -482,17 +482,28 @@
 
                         // Populate table rows with data
                         data.data.forEach(function (item, index) {
-                            // Use optional chaining to safely access properties
-                            var nilaiLembur = item.hitunglembur?.nilai_lembur ?? 0; // Default to 0 if null
-                            var approvalGm = item.hitunglembur?.approval_gm ?? '0'; // Default to '0' if null
-                            var isCheckedYes = approvalGm === '1' ? 'readonly' : ''; // Set readonly if approved
+                        var nilaiLembur = item.hitunglembur?.nilai_lembur ?? 0;
+                        var approvalGm = item.hitunglembur?.approval_gm ?? '0';
+                        var isCheckedYes = approvalGm === '1' ? 'readonly' : ''; 
 
-                            console.log(nilaiLembur);
-                            var jamLembur = calculateTotalHours(item.jam_mulai, item.jam_selesai);
-                            totalJamLembur += parseFloat(jamLembur); // Accumulate total hours
-                            var kalkulasi = nilaiLembur * jamLembur;
-                            totalNilaiLembur += kalkulasi; // Accumulate total
-                            console.log(totalNilaiLembur);
+                        var start = moment(item.jam_mulai, 'HH.mm');
+                        var end = moment(item.jam_selesai, 'HH.mm');
+
+                        var diffInMinutes = end.diff(start, 'minutes');
+                        var hours = Math.floor(diffInMinutes / 60);
+                        var minutes = diffInMinutes % 60;
+
+                        var jamLemburFormatted = hours + '.' + (minutes < 10 ? '0' + minutes : minutes);
+                        var jamLemburDisplay = hours + ' Jam ' + minutes + ' Menit';
+
+                        console.log("Jam Lembur:", jamLemburDisplay);
+
+                        var jamLemburNumber = Number(jamLemburFormatted); 
+                        var kalkulasi = nilaiLembur * jamLemburNumber;
+
+                        totalJamLembur += jamLemburNumber;
+                        totalNilaiLembur += kalkulasi;
+
 
                             // Determine approval status
                             var approve;
@@ -515,7 +526,7 @@
                                     <td>${item.jam_selesai || '-'}</td>
                                     <td>${item.foto_masuk ? `<img src="/storage/${item.foto_masuk}" width="80" height="80" />` : '-'}</td>
                                     <td>${item.foto_selesai ? `<img src="/storage/${item.foto_selesai}" width="80" height="80" />` : '-'}</td>
-                                    <td class="jam-lembur">${jamLembur} Jam</td> <!-- Add this class -->
+                                    <td class="jam-lembur">${jamLemburDisplay}</td> <!-- Add this class -->
                                     <td>
                                         <input type='hidden' name='id_lembur[${index}]' value='${item.id}'>
                                         <input class='hitungtable form-control' id='hitung_${index}' ${isCheckedYes} value='${nilaiLembur}' name='nilai_lembur[${index}]' type='text' oninput="calculateTotalNilai(this)">
@@ -532,7 +543,7 @@
                         var tfoot = $('<tfoot>');
                         tfoot.append(`
                              <tr>
-                                <td colspan="6" class='text-right'><strong>Total Jam Lembur</strong></td>
+                                <td colspan="8" class='text-right'><strong>Total Jam Lembur</strong></td>
                                 <td>${totalJamLembur.toFixed(2)} Jam</td>
                                 <td><strong>Total Claim</strong></td>
                                 <td colspan="2">${totalNilaiLembur.toFixed(2)}</td>
