@@ -102,6 +102,7 @@
                                                                                 <input type="hidden" class="form-control" name="karyawan_id" id="karyawan_id">
                                                                                 <input type="hidden" class="form-control" name="jumlah_absen" id="jumlah_absen">
                                                                                 <input type="hidden" class="form-control" name="keterlambatan" id="keterlambatan">
+                                                                                <input type="hidden" class="form-control" name="absen_pulang" id="absen_pulang">
                                                                                 <input type="hidden" class="form-control" name="bulan_tunjangan" id="bulan_tunjangan">
                                                                                 <input type="hidden" class="form-control" name="tahun_tunjangan" id="tahun_tunjangan">
                                                                             </div>
@@ -335,7 +336,7 @@
         $('#detailTunjangan').text('Detail Tunjangan Karyawan Bulan ' + idBulan + ' ' + tahun); // Menampilkan bulan dan tahun
         $('#bulan_tunjangan').val(bulans);
         $('#tahun_tunjangan').val(tahun);
-
+        var absenPulang = '';
         $.ajax({
             type: "GET",
             url: "{{ route('jumlahAbsensi', ['id_karyawan' => ':karyawan_id', 'bulan' => ':bulan', 'tahun' => ':tahun']) }}".replace(':karyawan_id', karyawanId).replace(':bulan', bulans).replace(':tahun', tahun),
@@ -343,7 +344,8 @@
             success: function(response) {
                 var data = response.data;
                 var divisi = data.karyawan.divisi;
-                console.log(divisi); 
+                var absenPulang = data.jumlah_tidak_absen_pulang;
+                console.log(absenPulang); 
 
                 getTunjangan(divisi, karyawanId);
                 if(response.success == false){
@@ -359,11 +361,13 @@
                     $('#nama_karyawan').val(data.karyawan.nama_lengkap);
                     $('#karyawan_id').val(data.karyawan.id);
                     $('#keterlambatan').val(data.keterangan);
+                    $('#absenPulang').val(absenPulang);
 
                     var listItem = '<div class="col-md-12">' + 
                     '<h6>Keterangan</h6>' +
                     '<ul>' + 
                         '<li>Jumlah absen Pada Bulan Ini (Sudah Termasuk Pengurangan Cuti lebih dari 3 hari): ' + data.jumlah_absensi + '</li>' + 
+                        '<li>Jumlah Tidak Absen Pulang: ' + data.jumlah_tidak_absen_pulang + '</li>' + 
                         '<li>Keterlambatan Pada Bulan Ini: ' + data.keterangan + '</li>' + 
                         '<li>Cuti Pada Bulan Ini:</li>' +
                         '<ul>'; // Membuka <ul> untuk list cuti
@@ -390,7 +394,6 @@
                         $('#generateTunjangan').css('opacity', '1.5'); 
                         $('#generateTunjangan').css('pointer-events', 'auto');
 
-
                 }
             },
             error: function(xhr, status, error) {
@@ -398,15 +401,15 @@
                 $('#generateTunjangan').attr('disabled', true); // Disable button on error
             }
         });
-        cekdata(karyawanId, bulans, tahun);
+        cekdata(karyawanId, bulans, tahun, absenPulang);
         $('#dataPreview').empty(); // Menambahkan ke elemen yang sama
         updateTotal();
 
     }
-    function cekdata(karyawanId, bulan, tahun) {
+    function cekdata(karyawanId, bulan, tahun, absenPulang) {
         var url = "{{ route('getTunjanganSayaGenerate', ['id' => ':karyawan_id', 'month' => ':bulan', 'year' => ':tahun']) }}";
         url = url.replace(':karyawan_id', karyawanId).replace(':bulan', bulan).replace(':tahun', tahun);
-        console.log(bulan, tahun);
+        console.log(bulan, tahun, absenPulang);
         
         $.ajax({
             type: "GET",
@@ -681,23 +684,26 @@
                     var tunjanganName = item.nama_tunjangan;
                     var tunjanganValue = parseFloat(item.nilai); // Mengubah nilai menjadi float
                     var keterlambatan = $('#keterlambatan').val();
+                    var absenPulang = $('#absenPulang').val();
                     var id_karyawan = $('#karyawan_id').val();
                     if (tunjanganName == "Lembur") {
-                    cekLembur(id_karyawan).then(function(lembur) {
-                        console.log(lembur);
-                        item.nilai = lembur; // Memperbarui nilai lembur
-                        
-                        // Panggil fungsi update UI setelah mendapatkan nilai lembur
-                        updateTunjanganRow(tunjanganName, lembur);
-                    }).catch(function(error) {
-                        console.error("Gagal mendapatkan data lembur:", error);
-                    });
+                        cekLembur(id_karyawan).then(function(lembur) {
+                            console.log(lembur);
+                            item.nilai = lembur; // Memperbarui nilai lembur
+                            
+                            // Panggil fungsi update UI setelah mendapatkan nilai lembur
+                            updateTunjanganRow(tunjanganName, lembur);
+                        }).catch(function(error) {
+                            console.error("Gagal mendapatkan data lembur:", error);
+                        });
 
-                    return; // Hindari proses lebih lanjut sebelum nilai lembur diperbarui
-                }
+                        return; // Hindari proses lebih lanjut sebelum nilai lembur diperbarui
+                    }
 
                     // Cek kondisi untuk mengecualikan 'Absensi' jika keterlambatan > 15 menit
                     if (keterlambatan === 'Keterlambatan > 15 Menit' && tunjanganName === 'Absensi') {
+                        return; // Lewati iterasi ini
+                    }else if(absenPulang !== null && tunjanganName === "Absensi"){
                         return; // Lewati iterasi ini
                     }
 
