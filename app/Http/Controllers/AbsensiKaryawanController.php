@@ -461,12 +461,19 @@ class AbsensiKaryawanController extends Controller
         // Mengambil data absensi karyawan berdasarkan bulan dan tahun  
         $absensiKaryawan = AbsensiKaryawan::whereMonth('tanggal', $bulan)
             ->whereYear('tanggal', $tahun)
+            ->Where('jam_keluar', '!=', '')
+            ->where('id_karyawan', $karyawanId)
+            ->get();
+        $absen_pulang = AbsensiKaryawan::whereMonth('tanggal', $bulan)
+            ->whereYear('tanggal', $tahun)
+            ->Where('jam_keluar', '=', null)
             ->where('id_karyawan', $karyawanId)
             ->get();
         $cutis = pengajuancuti::where('id_karyawan', $karyawanId)
             ->whereYear('tanggal_awal', $tahun)
             ->whereMonth('tanggal_awal', $bulan)
             ->get();
+            // dd($absensiKaryawan);
 
         // Inisialisasi jumlahAbsensi
         if ($karyawanId == '2') {
@@ -477,9 +484,9 @@ class AbsensiKaryawanController extends Controller
                 ->distinct('tanggal')
                 ->count();
 
-            // dd($jumlahAbsensi);
         } else {
             $jumlahAbsensi = $absensiKaryawan->count();
+            $jumlahAbsensiPulang = $absen_pulang->count();
         }
 
         $karyawan = karyawan::findOrFail($karyawanId);
@@ -534,6 +541,7 @@ class AbsensiKaryawanController extends Controller
             'data' => [
                 'jumlah_absensi' => $jumlahAbsensi ?? 0, // Menangani kondisi null  
                 'keterangan' => $keterangan,
+                'jumlah_tidak_absen_pulang' => $jumlahAbsensiPulang ?? 0,
                 'cutikaryawan' => $cutis ?? [], // Jika tidak ada data cuti, kirimkan array kosong  
                 'karyawan' => $karyawan ?? [], // Jika tidak ada data cuti, kirimkan array kosong  
             ],
