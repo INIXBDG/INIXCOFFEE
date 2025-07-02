@@ -48,12 +48,13 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    public function karyawan() {
+    public function karyawan()
+    {
         return $this->belongsTo(karyawan::class, 'karyawan_id', 'id');
     }
 
     public function isAdmin()
-{
-    return $this->jabatan === 'HRD';
-}
+    {
+        return $this->jabatan === 'HRD';
+    }
 }
