@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\RKMController;
 use App\Http\Controllers\approvedNetSalesController;
+use App\Http\Controllers\databasekpiContoller;
 use App\Http\Controllers\izinTigaJamController;
 use App\Http\Controllers\KelasAnalisisController;
 use App\Http\Controllers\RKMController as ControllersRKMController;
@@ -79,6 +80,7 @@ Route::resource('/suratperjalanan', \App\Http\Controllers\SuratPerjalananControl
 Route::resource('/rekapitulasiabsen', \App\Http\Controllers\RekapitulasiAbsenController::class);
 Route::resource('/kelasanalisis', \App\Http\Controllers\KelasAnalisisController::class);
 Route::resource('/paymantAdvance', \App\Http\Controllers\netSalesController::class)->except(['show']);
+Route::resource('/databasekpi', \App\Http\Controllers\DatabaseKPIController::class);
 Route::resource('/target', \App\Http\Controllers\targetController::class);
 Route::resource('/outstanding', \App\Http\Controllers\OutstandingController::class);
 Route::resource('/tunjangan', \App\Http\Controllers\TunjanganController::class);
@@ -106,10 +108,10 @@ Route::get('/userRolePermissions', [App\Http\Controllers\UserController::class, 
 Route::get('/userRolePermissions/{id}/edit', [App\Http\Controllers\UserController::class, 'editUser'])->name('editUser');
 Route::put('/userRolePermissions/{id}/update', [App\Http\Controllers\UserController::class, 'updateUser'])->name('updateUser');
 
-
 Route::get('inixcoffeeloglarapelixb95', [LogViewerController::class, 'index'])
     ->middleware('logviewer.access');
 
+Route::get('GetDatabasekpi', [App\Http\Controllers\DatabaseKPIController::class, 'getData'])->name('GetDatabaseKPI');
 Route::get('getPerusahaanById', [App\Http\Controllers\PerusahaanController::class, 'getPerusahaanById'])->name('getPerusahaanById');
 Route::get('getRegistrasiall', [App\Http\Controllers\RegistrasiController::class, 'getRegistrasiall'])->name('getRegistrasiall');
 Route::get('getPesertaall', [App\Http\Controllers\PesertaController::class, 'getPesertaall'])->name('getPesertaall');

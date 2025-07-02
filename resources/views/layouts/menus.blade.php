@@ -1536,8 +1536,37 @@
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                        @endcan
-                                                        @can('View PaymantAdvance')
+                                                    @endcan
+                                                    @can('View DatabaseKPI')                                                    
+                                                        <div class="col-sm-6 mt-2">
+                                                        <div class="card" id="card-hover">
+                                                            <div class="card-body d-flex">
+                                                                <div class="col-md-2">
+                                                                    <i class="fa fa-ranking-star" style="font-size: 30px;"></i>
+                                                                </div>
+                                                                <div class="col-md-10" style="margin-left: 10px">
+                                                                    <a href="/databasekpi" class="link stretched-link text-decoration-none">
+                                                                        <h5 class="card-title">Database KPI</h5>
+                                                                    </a>
+                                                                    <p class="card-text">Database KPI Karyawan.</p>
+                                                                </div>
+                                                            </div>
+                                                    @endcan
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endcan
+                                @can('Fitur Menu Finance')
+                                    <div class="row">
+                                        {{-- RKM --}}
+                                        <div class="col-md-12 mt-1">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <h5 class="text-center card-title">Finance</h5>
+                                                    <div class="row">
+                                                        @can('View CC')
                                                             <div class="col-sm-6 mt-2">
                                                                 <div class="card" id="card-hover">
                                                                     <div class="card-body d-flex">

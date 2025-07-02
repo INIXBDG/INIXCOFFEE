@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,15 +16,18 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <style>
         .table-outer-border {
-            border: 1px solid black; /* Border di luar tabel */
+            border: 1px solid black;
+            /* Border di luar tabel */
         }
 
         .table-outer-border tbody tr,
         .table-outer-border tbody td {
-            border: none; /* Menghapus border dalam tabel */
+            border: none;
+            /* Menghapus border dalam tabel */
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="row">
@@ -32,7 +36,7 @@
                     <div class="col-xs-12">
                         <img src="{{ asset('css/logo.png') }}" class="img-responsive" width="100px">
                         <h5 class="m-0">INIXINDO BANDUNG<br></h5>
-                            <span class="small">Jl. Cipaganti no.95 Bandung</span>
+                        <span class="small">Jl. Cipaganti no.95 Bandung</span>
                     </div>
                 </div>
             </div>
@@ -96,101 +100,121 @@
                         </thead>
                         <tbody>
                             @php
-                                $totaljam = 0;
-                                $totalkeseluruhanjam = 0;
-                                $totalkeseluruhanclaim = 0;
+                            $totaljam = 0;
+                            $totalkeseluruhanjam = 0;
+                            $totalkeseluruhanclaim = 0;
                             @endphp
+
                             @foreach ($data as $item)
                             @php
-                                $start = \Carbon\Carbon::createFromFormat('H:i', $item->jam_mulai);
-                                $end = \Carbon\Carbon::createFromFormat('H:i', $item->jam_selesai);
-                                $jumlahjam = $end->diffInHours($start);
-                                $totaljam = $jumlahjam . ' Jam';
-                                $totalkeseluruhanjam += $jumlahjam;
-                                $totalLembur = (float) $item->hitunglembur->nilai_lembur * $jumlahjam;
-                                $totalkeseluruhanclaim += $totalLembur;
+                            $start = \Carbon\Carbon::parse(str_replace('.', ':', $item->jam_mulai));
+                            $end = \Carbon\Carbon::parse(str_replace('.', ':', $item->jam_selesai));
 
+                            $diffInMinutes = $end->diffInMinutes($start);
+                            $hours = floor($diffInMinutes / 60);
+                            $minutes = $diffInMinutes % 60;
+
+                            $totaljam = $hours . ' Jam ' . $minutes . ' Menit';
+
+                            $totalJamNumerik = $hours + $minutes;
+
+                            $nilaiLembur = (float) $item->hitunglembur->nilai_lembur;
+                            $totalLembur = $nilaiLembur * number_format($totalJamNumerik, 2) ;
+
+                            $totalkeseluruhanjam += number_format($totalJamNumerik, 2) ;
+                            $totalkeseluruhanclaim += $totalLembur;
                             @endphp
-                                <tr>
-                                    <td>{{$loop->iteration}}</td>
-                                    <td>{{$item->tanggal_lembur}}</td>
-                                    <td>Hari {{$item->waktu_lembur}}</td>
-                                    <td>{{$item->uraian_tugas}}</td>
-                                    <td>{{$item->jam_mulai}}</td>
-                                    <td>{{$item->jam_selesai}}</td>
-                                    <td>{{$totaljam}}</td>
-                                    <td>{{formatRupiah($item->hitunglembur->nilai_lembur)}}</td>
-                                    <td>{{formatRupiah($totalLembur)}}</td>
-                                </tr>
+
+                            <tr>
+                                <td>{{ $loop->iteration }}</td>
+                                <td>{{ $item->tanggal_lembur }}</td>
+                                <td>Hari {{ $item->waktu_lembur }}</td>
+                                <td>{{ $item->uraian_tugas }}</td>
+                                <td>{{ $item->jam_mulai }}</td>
+                                <td>{{ $item->jam_selesai }}</td>
+                                <td>{{ $totaljam }}</td>
+                                <td>{{ $item->hitunglembur->nilai_lembur }}</td>
+                                <td>Rp. {{ number_format($totalLembur, 2, '.', '') }}</td>
+                            </tr>
                             @endforeach
                         </tbody>
+
                         <tfoot>
                             <tr>
                                 <th colspan="6">Total Jam Lembur</th>
-                                <th>{{$totalkeseluruhanjam}} Jam</th>
+                                <th>{{ $totaljam }}</th>
                                 <th>Total Claim</th>
-                                <th>{{formatRupiah($totalkeseluruhanclaim)}}</th>
+                                <th>Rp. {{ number_format($totalkeseluruhanclaim, 2, '.', '') }}</th>
                             </tr>
                         </tfoot>
+
                     </table>
                 </div>
             </div>
 
             <div class="row text-center">
-                    <div class="col-12">
-                        <div class="row">
-                            <div class="col-sm-3"><p style="margin-bottom: 4px">Membuat :</p></div>
-                            <div class="col-sm-3"><p style="margin-bottom: 4px">Dibukukan :</p></div>
-                            <div class="col-sm-3"><p style="margin-bottom: 4px">Mengajukan :</p></div>
-                            <div class="col-sm-3"><p style="margin-bottom: 4px">Menyetujui :</p></div>
+                <div class="col-12">
+                    <div class="row">
+                        <div class="col-sm-3">
+                            <p style="margin-bottom: 4px">Membuat :</p>
                         </div>
-                        <div class="row">
-                            <div class="col-sm-3">
-                                @if ($hrd->ttd)
-                                    <div class="row justify-content-center">
-                                        <img src="{{ asset('storage/ttd/' . $hrd->ttd) }}" alt="{{ $hrd->name }}" style="width: 110px">
-                                    </div>
-                                @else
-                                    <br><br><br>
-                                @endif
-                            </div>
-                            <div class="col-sm-3">
-                                @if ($finance->ttd)
-                                    <div class="row justify-content-center">
-                                        <img src="{{ asset('storage/ttd/' . $finance->ttd) }}" alt="{{ $finance->name }}" style="width: 110px">
-                                    </div>
-                                @else
-                                    <br><br><br>
-                                @endif
-                            </div>
-                            <div class="col-sm-3">
-                                @if ($data[0]->karyawan->ttd)
-                                    <div class="row justify-content-center">
-                                        <img src="{{ asset('storage/ttd/' . $data[0]->karyawan->ttd) }}" alt="{{ $data[0]->karyawan->name }}" style="width: 110px">
-                                    </div>
-                                @else
-                                    <br><br><br>
-                                @endif
-                            </div>
-                            <div class="col-sm-3">
-                                @if ($gm->ttd)
-                                    <div class="row justify-content-center">
-                                        <img src="{{ asset('storage/ttd/' . $gm->ttd) }}" alt="{{ $gm->name }}" style="width: 110px">
-                                    </div>
-                                @else
-                                    <br><br><br>
-                                @endif
-                            </div>
+                        <div class="col-sm-3">
+                            <p style="margin-bottom: 4px">Dibukukan :</p>
                         </div>
-                        <div class="row">
-                            <div class="col-sm-3">{{ $hrd->nama_lengkap }}</div>
-                            <div class="col-sm-3">{{ $finance->nama_lengkap }}</div>
-                            <div class="col-sm-3">{{ $data[0]->karyawan->nama_lengkap }}</div>
-                            <div class="col-sm-3">{{ $gm->nama_lengkap }}</div>
+                        <div class="col-sm-3">
+                            <p style="margin-bottom: 4px">Mengajukan :</p>
+                        </div>
+                        <div class="col-sm-3">
+                            <p style="margin-bottom: 4px">Menyetujui :</p>
                         </div>
                     </div>
-
+                    <div class="row">
+                        <div class="col-sm-3">
+                            @if ($hrd->ttd)
+                            <div class="row justify-content-center">
+                                <img src="{{ asset('storage/ttd/' . $hrd->ttd) }}" alt="{{ $hrd->name }}" style="width: 110px">
+                            </div>
+                            @else
+                            <br><br><br>
+                            @endif
+                        </div>
+                        <div class="col-sm-3">
+                            @if ($finance->ttd)
+                            <div class="row justify-content-center">
+                                <img src="{{ asset('storage/ttd/' . $finance->ttd) }}" alt="{{ $finance->name }}" style="width: 110px">
+                            </div>
+                            @else
+                            <br><br><br>
+                            @endif
+                        </div>
+                        <div class="col-sm-3">
+                            @if ($data[0]->karyawan->ttd)
+                            <div class="row justify-content-center">
+                                <img src="{{ asset('storage/ttd/' . $data[0]->karyawan->ttd) }}" alt="{{ $data[0]->karyawan->name }}" style="width: 110px">
+                            </div>
+                            @else
+                            <br><br><br>
+                            @endif
+                        </div>
+                        <div class="col-sm-3">
+                            @if ($gm->ttd)
+                            <div class="row justify-content-center">
+                                <img src="{{ asset('storage/ttd/' . $gm->ttd) }}" alt="{{ $gm->name }}" style="width: 110px">
+                            </div>
+                            @else
+                            <br><br><br>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-3">{{ $hrd->nama_lengkap }}</div>
+                        <div class="col-sm-3">{{ $finance->nama_lengkap }}</div>
+                        <div class="col-sm-3">{{ $data[0]->karyawan->nama_lengkap }}</div>
+                        <div class="col-sm-3">{{ $gm->nama_lengkap }}</div>
+                    </div>
                 </div>
+
+            </div>
         </div>
     </div>
 
@@ -207,4 +231,5 @@
         });
     </script>
 </body>
+
 </html>
