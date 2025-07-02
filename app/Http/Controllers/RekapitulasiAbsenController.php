@@ -378,8 +378,6 @@ class RekapitulasiAbsenController extends Controller
                         $jam = floor($totalSeconds / 3600);
                         $menit = floor(($totalSeconds % 3600) / 60);
                         $keterangan = "Terlambat " . $jam . " jam " . $menit . " menit";
-                    } elseif ($totalSeconds > 900) {
-                        $keterangan = "Terlambat > 15 menit";
                     } else {
                         $keterangan = "Terlambat " . floor($totalSeconds / 60) . " menit";
                     }

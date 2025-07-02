@@ -601,10 +601,10 @@
         // Lakukan perhitungan
         var biaya_dollar = harga_modul_regular_dollar * pax;
         var biaya_modul_regular_dollar = biaya_dollar * kurs;
-        // console.log(harga_modul_regular_dollar, Math.round(biaya_dollar), Math.round(biaya_modul_regular_dollar));
+        console.log(harga_modul_regular_dollar, Math.round(biaya_dollar), Math.round(biaya_modul_regular_dollar));
 
         // Menampilkan hasil dengan format Rupiah
-        $('#biaya_modul_regular_dollar').val(formatRupiah(Math.round(biaya_modul_regular_dollar)));
+        $('#biaya_modul_regular_dollar').val((biaya_modul_regular_dollar));
     }
     function updateKonsumsi() {
         var paxs = parseInt($('#pax').val(), 10); // Mengonversi string ke integer

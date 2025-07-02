@@ -147,16 +147,16 @@ class LemburController extends Controller
     public function show(string $id)
     {
         $data = lembur::findOrFail($id);
-        $gm = karyawan::where('jabatan', 'GM')->first();
-        $hrd = karyawan::where('jabatan', 'HRD')->first();
+        $gm = karyawan::where('jabatan', 'GM')->latest()->first();
+        $hrd = karyawan::where('jabatan', 'HRD')->latest()->first();
         if($data->karyawan->divisi == 'Education'){
-            $atasan = karyawan::where('jabatan', 'Education Manager')->first();
+            $atasan = karyawan::where('jabatan', 'Education Manager')->latest()->first();
         }elseif($data->karyawan->divisi == 'Sales'){
-            $atasan = karyawan::where('jabatan', 'SPV Sales')->first();
+            $atasan = karyawan::where('jabatan', 'SPV Sales')->latest()->first();
         }else{
-            $atasan = karyawan::where('jabatan', 'GM')->first();
+            $atasan = karyawan::where('jabatan', 'GM')->latest()->first();
         }
-
+        // return $hrd;
         return view('lembur.pdf', compact('data', 'atasan', 'hrd', 'gm'));
     }
 
@@ -237,74 +237,114 @@ class LemburController extends Controller
     public function updateKaryawan(Request $request, $id)
     {
         // return $request->all();
-        $this->validate($request, [
-            'tanggal_spl'     => 'required',
-            'jam_mulai'     => 'required',
-            'jam_selesai'     => 'required',
-            'keterangan'     => 'required',
-        ]);
-        $post = lembur::with('karyawan')->findOrFail($id);
-        $post->update([
-            'tanggal_spl'     => $request->tanggal_spl,
-            'jam_mulai'     => $request->jam_mulai,
-            'jam_selesai'     => $request->jam_selesai,
-            'keterangan'     => $request->keterangan,
-        ]);
-        $karyawan = karyawan::findOrFail($post->id_karyawan);
+        // Validasi dasar
+        $rules = [
+            'tanggal_spl' => 'required',
+            'jam_mulai' => 'required',
+            'jam_selesai' => 'required',
+            'keterangan' => 'required',
+            'foto_mulai' => 'required',
+            'foto_selesai' => 'required'
+        ];
+
+        $this->validate($request, $rules);
+
+        $post = Lembur::with('karyawan')->findOrFail($id);
+
+        // Update data dasar
+        $post->tanggal_spl = $request->tanggal_spl;
+        $post->jam_mulai = $request->jam_mulai;
+        $post->jam_selesai = $request->jam_selesai;
+        $post->keterangan = $request->keterangan;
+
+        if ($request->hasFile('foto_mulai')) {
+            $image = $request->file('foto_mulai');
+            $imageName = 'mulai_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
+            $path = $image->storeAs('lembur', $imageName, 'public');
+
+            // Hapus file lama jika ada
+            if ($post->foto_masuk && Storage::disk('public')->exists($post->foto_masuk)) {
+                Storage::disk('public')->delete($post->foto_masuk);
+            }
+
+            $post->foto_masuk = $path;
+        }
+
+        // Proses foto_selesai (simpan sebagai foto_selesai)
+        if ($request->hasFile('foto_selesai')) {
+            $image = $request->file('foto_selesai');
+            $imageName = 'selesai_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
+            $path = $image->storeAs('lembur', $imageName, 'public');
+
+            if ($post->foto_selesai && Storage::disk('public')->exists($post->foto_selesai)) {
+                Storage::disk('public')->delete($post->foto_selesai);
+            }
+
+            $post->foto_selesai = $path;
+        }
+
+
+        $post->save();
+
+        // Proses notifikasi (tidak diubah)
+        $karyawan = Karyawan::findOrFail($post->id_karyawan);
         $divisi = $karyawan->divisi;
         $jabatan = $karyawan->jabatan;
-            $Offman = karyawan::where('jabatan', 'Office Manager')->first();
-            $kooroff = karyawan::where('jabatan', 'Koordinator Office')->first();
-            $koorso = karyawan::where('jabatan', 'Koordinator ITSM')->first();
-            $Eduman = karyawan::where('jabatan', 'Education Manager')->first();
-            $SPVSales = karyawan::where('jabatan', 'SPV Sales')->first();
-            $GM = karyawan::where('jabatan', 'GM')->first();
-            $users = []; // Start with the current karyawan's kode_karyawan
-            switch ($jabatan) {
-                case 'SPV Sales':
-                case 'Office Manager':
-                case 'Education Manager':
-                case 'Koordinator Office':
-                case 'Koordinator ITSM':
-            break;
+        $Offman = Karyawan::where('jabatan', 'Office Manager')->first();
+        $kooroff = Karyawan::where('jabatan', 'Koordinator Office')->first();
+        $koorso = Karyawan::where('jabatan', 'Koordinator ITSM')->first();
+        $Eduman = Karyawan::where('jabatan', 'Education Manager')->first();
+        $SPVSales = Karyawan::where('jabatan', 'SPV Sales')->first();
+        $GM = Karyawan::where('jabatan', 'GM')->first();
+        $users = [];
 
-                default:
-                    switch ($divisi) {
-                        case 'Education':
-                            $users[] = $Eduman->kode_karyawan; // Eduman
-                            break;
+        switch ($jabatan) {
+            case 'SPV Sales':
+            case 'Office Manager':
+            case 'Education Manager':
+            case 'Koordinator Office':
+            case 'Koordinator ITSM':
+                break;
 
-                        case 'Sales & Marketing':
-                            $users[] = $SPVSales->kode_karyawan; // SPVSales
-                            break;
+            default:
+                switch ($divisi) {
+                    case 'Education':
+                        $users[] = $Eduman->kode_karyawan;
+                        break;
 
-                        case 'IT Service Management':
-                            $users[] = $koorso->kode_karyawan; // SPVSales
-                            break;
+                    case 'Sales & Marketing':
+                        $users[] = $SPVSales->kode_karyawan;
+                        break;
 
-                        case 'Office':
-                            $users[] = $GM->kode_karyawan; // GM
-                            $users[] = $kooroff->kode_karyawan; // kooroff
-                            break;
-                    }
-                    break;
-            }
-             // Retrieve users based on the filtered list of kode_karyawan
-             $users = User::whereHas('karyawan', function ($query) use ($users) {
-                $query->whereIn('kode_karyawan', $users);
-            })->get();
-            $data = [
-                'id_karyawan' => $post->id_karyawan,
-                'tanggal_lembur' => $post->tanggal_lembur,
-                'waktu_lembur' => $post->waktu_lembur,
-                'uraian_tugas' => $post->uraian_tugas,
-            ];
-            $type = 'Mengisi Jam dan Detail Tugas Lembur';
-            $path = '/lembur';
+                    case 'IT Service Management':
+                        $users[] = $koorso->kode_karyawan;
+                        break;
 
-            foreach ($users as $user) {
-                NotificationFacade::send($user, new LemburNotification($data, $path, $type));
-            }
+                    case 'Office':
+                        $users[] = $GM->kode_karyawan;
+                        $users[] = $kooroff->kode_karyawan;
+                        break;
+                }
+                break;
+        }
+
+        $users = User::whereHas('karyawan', function ($query) use ($users) {
+            $query->whereIn('kode_karyawan', $users);
+        })->get();
+
+        $data = [
+            'id_karyawan' => $post->id_karyawan,
+            'tanggal_lembur' => $post->tanggal_lembur,
+            'waktu_lembur' => $post->waktu_lembur,
+            'uraian_tugas' => $post->uraian_tugas,
+        ];
+        $type = 'Mengisi Jam dan Detail Tugas Lembur';
+        $path = '/lembur';
+
+        foreach ($users as $user) {
+            NotificationFacade::send($user, new LemburNotification($data, $path, $type));
+        }
+
         return redirect()->route('lembur.index')->with(['success' => 'Data Berhasil Diubah!']);
     }
 
@@ -369,14 +409,14 @@ class LemburController extends Controller
             return response()->json(['error' => 'Data lembur tidak ditemukan'], 404);
         }
 
-        if ($lembur->jam_mulai) {
-            $selisih = now()->diffInMinutes($lembur->jam_mulai);
-            if ($selisih < 60) {
-                return response()->json(['error' => 'Absen pulang hanya bisa dilakukan minimal 1 jam setelah absen masuk'], 400);
-            }
-        } else {
-            return response()->json(['error' => 'Anda belum absen masuk'], 400);
-        }
+        // if ($lembur->jam_mulai) {
+        //     $selisih = now()->diffInMinutes($lembur->jam_mulai);
+        //     if ($selisih < 60) {
+        //         return response()->json(['error' => 'Absen pulang hanya bisa dilakukan minimal 1 jam setelah absen masuk'], 400);
+        //     }
+        // } else {
+        //     return response()->json(['error' => 'Anda belum absen masuk'], 400);
+        // }
 
         $lembur->update([
             'jam_selesai' => $request->jam_selesai,

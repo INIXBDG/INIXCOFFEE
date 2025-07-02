@@ -36,17 +36,30 @@
                             <div class="card">
                                 <div class="card-body">
                                     <h5 class="card-title">Status Approval</h5>
-                                    <table class="table table-striped">
+                                    <table class="table table-striped mb-3">
                                         <thead>
                                             <tr>
                                                 <th>No</th>
                                                 <th>Tanggal</th>
+                                                <th>Approver</th>
                                                 <th>Status</th>
                                                 <th>Keterangan</th>
                                             </tr>
                                         </thead>
                                         <tbody id="tbody_approved">
                                         </tbody>
+                                    </table>
+
+                                    <h5 class="card-title mt-3">Tracking</h5>
+                                    <table class="table table-striped text-center">
+                                        <thead>
+                                            <tr>
+                                                <th>No</th>
+                                                <th>Status</th>
+                                                <th>Tanggal</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbody_tracking"></tbody>
                                     </table>
                                 </div>
                             </div>
@@ -235,6 +248,7 @@
                 let content_utama = $('#content_data_utama');
                 let tbody_content = $('#tbody_content');
                 let tbody_approved = $('#tbody_approved');
+                let tbody_tracking = $('#tbody_tracking');
 
                 content_utama.empty();
                 if (response.dataRKM.length === 0) {
@@ -396,10 +410,23 @@
                             <td>berhasil</td>
                         </tr>
                     `);
+                    tbody_approved.empty();
                 } else {
                     let no = 1;
                     response.dataApproved.forEach(function(data) {
-                        let status = data.status === 1 ? "Disetujui" : (data.status === 0 ? "Ditolak" : "Belum diketahui");
+                        let status;
+
+                        if (data.status === 1) {
+                            if (data.level_status === 'III' && data.keterangan !== 'Selesai') {
+                                status = "Diproses";
+                            } else {
+                                status = "Disetujui";
+                            }
+                        } else if (data.status === 0) {
+                            status = "Ditolak";
+                        } else {
+                            status = "Belum diketahui";
+                        }
 
                         let tanggalObj = new Date(data.tanggal);
 
@@ -418,10 +445,20 @@
 
                         let tanggalLengkap = `${namaHari}, ${tanggal} ${namaBulan} ${tahun} ${jam}:${menit}`;
 
+                        let approver = '-';
+                        if (data.level_status === 'I') {
+                            approver = 'SPV Sales';
+                        } else if (data.level_status === 'II') {
+                            approver = 'GM';
+                        } else if (data.level_status === 'III') {
+                            approver = 'Finance & Accounting';
+                        }
+
                         tbody_approved.append(`
                             <tr>
                                 <td>${no++}</td>
                                 <td>${tanggalLengkap}</td>
+                                <td>${approver}</td>
                                 <td>${status}</td>
                                 <td>${data.keterangan}</td>
                             </tr>
@@ -429,6 +466,24 @@
                     });
                 }
 
+                tbody_tracking.empty();
+
+                if (!response.dataTracking) {
+                    tbody_tracking.append(`
+                        <tr>
+                            <td class="text-center">Tidak ada data tracking</td>
+                        </tr>
+                    `);
+                } else {
+                    let no = 1;
+                    tbody_tracking.append(`
+                        <tr>
+                            <td>${no++}</td>
+                            <td>${response.dataTracking.status}</td>
+                            <td>${response.dataTracking.tanggal}</td>
+                        </tr>
+                    `);
+                }
             },
             error: function(xhr, status, error) {
                 console.error('AJAX Error:', error);

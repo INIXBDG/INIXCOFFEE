@@ -7,6 +7,7 @@ use App\Models\PerhitunganNetSales;
 use App\Models\ApprovedNetSales;
 use App\Models\Karyawan;
 use App\Models\RKM;
+use App\Models\trackingNetSales;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
 use App\Notifications\NetSalesNotification;
@@ -19,13 +20,28 @@ class ApprovedNetSalesController extends Controller
         try {
             $id = $request->input('id_net_sales');
             $netSales = PerhitunganNetSales::with('karyawan')->find($id);
+
             if (!$netSales) {
                 return response()->json(['error' => 'Data tidak ditemukan.'], 404);
             }
 
-            $rkm = RKM::findOrFail($netSales->id_rkm);
+            $FA = auth()->user()->jabatan;
 
-            // Ambil user sales berdasarkan kode_karyawan di Karyawan
+            if ($FA === 'Finance & Accounting') {
+                $statusTracking = $request->input('status_tracking');
+
+                if (!empty($statusTracking)) {
+                    $tracking = trackingNetSales::where('id_netSales', $netSales->id)->first();
+                    if ($tracking) {
+                        $tracking->tracking = $statusTracking;
+                        $tracking->save();
+                    }
+                } else {
+                    return back()->with(['success' => false, 'error' => 'Pilih status tracking terlebih dahulu.']);
+                }
+            }
+
+            $rkm = RKM::findOrFail($netSales->id_rkm);
             $salesUser = User::whereHas('karyawan', function ($q) use ($rkm) {
                 $q->where('kode_karyawan', $rkm->sales_key);
             })->first();
@@ -36,11 +52,9 @@ class ApprovedNetSalesController extends Controller
 
             $url = route('paymantAdvance.index');
             $path = request()->path();
-
-            // Cek apakah ada keterangan (penolakan)
             $keteranganInput = $request->input('keterangan');
+
             if (!empty($keteranganInput)) {
-                // Simpan record penolakan
                 ApprovedNetSales::create([
                     'id_netSales' => $netSales->id,
                     'tanggal' => now()->format('Y-m-d'),
@@ -49,7 +63,6 @@ class ApprovedNetSalesController extends Controller
                     'level_status' => null,
                 ]);
 
-                // Kirim notifikasi penolakan ke sales
                 $dummyComment = (object) [
                     'status' => 'ditolak',
                     'tipe' => 'Pengajuan Payment Advanced',
@@ -61,7 +74,7 @@ class ApprovedNetSalesController extends Controller
                 return response()->json(['success' => true, 'message' => 'Pengajuan ditolak dan notifikasi dikirim.']);
             }
 
-            // Ambil approval terakhir
+            // Approval logic (I → II → III) tetap dilanjutkan seperti sebelumnya...
             $latestApproval = ApprovedNetSales::where('id_netSales', $netSales->id)
                 ->orderByDesc('created_at')
                 ->first();
@@ -71,14 +84,11 @@ class ApprovedNetSalesController extends Controller
             $newApproval->tanggal = now()->format('Y-m-d');
             $newApproval->status = 1;
 
-            // Tentukan level approval dan kirim notifikasi sesuai level
             if (!$latestApproval) {
-                // Level I - SPV Sales approve
                 $newApproval->level_status = 'I';
                 $newApproval->keterangan = 'Telah disetujui oleh SPV Sales';
                 $newApproval->save();
 
-                // Kirim notifikasi ke GM dan sales
                 $gmUser = User::whereHas('karyawan', function ($q) {
                     $q->where('jabatan', 'GM');
                 })->first();
@@ -100,14 +110,11 @@ class ApprovedNetSalesController extends Controller
                     'alasan' => 'SPV Sales telah menyetujui pengajuan Anda.',
                 ];
                 Notification::send($salesUser, new NetSalesNotification($dummyCommentSales, $url, $path));
-
             } elseif ($latestApproval->level_status === 'I') {
-                // Level II - GM approve
                 $newApproval->level_status = 'II';
                 $newApproval->keterangan = 'Telah disetujui oleh General Manager';
                 $newApproval->save();
 
-                // Kirim notifikasi ke Finance dan sales
                 $financeUser = User::whereHas('karyawan', function ($q) {
                     $q->where('jabatan', 'Finance & Accounting');
                 })->first();
@@ -129,29 +136,39 @@ class ApprovedNetSalesController extends Controller
                     'alasan' => 'General Manager telah menyetujui pengajuan Anda.',
                 ];
                 Notification::send($salesUser, new NetSalesNotification($dummyCommentSales, $url, $path));
-
             } elseif ($latestApproval->level_status === 'II') {
-                // Level III - Finance approve
                 $newApproval->level_status = 'III';
-                $newApproval->keterangan = 'Telah disetujui oleh Finance & Accounting';
+                $newApproval->keterangan = $statusTracking;
                 $newApproval->save();
 
-                // Kirim notifikasi ke sales bahwa pengajuan sudah final disetujui
                 $dummyCommentSales = (object) [
                     'status' => 'disetujui',
                     'tipe' => 'Persetujuan Payment Advanced',
                     'nama_karyawan' => $salesUser->karyawan->nama_lengkap,
-                    'alasan' => 'Finance & Accounting telah menyetujui pengajuan Anda.',
+                    'alasan' => $statusTracking,
                 ];
                 Notification::send($salesUser, new NetSalesNotification($dummyCommentSales, $url, $path));
+            } elseif ($latestApproval->level_status === 'III') {
+                $newApproval->level_status = 'III';
+                $newApproval->keterangan = $statusTracking;
+                $newApproval->save();
+
+                $dummyCommentSales = (object) [
+                    'status' => 'disetujui',
+                    'tipe' => 'Persetujuan Payment Advanced',
+                    'nama_karyawan' => $salesUser->karyawan->nama_lengkap,
+                    'alasan' => $statusTracking,
+                ];
+                Notification::send($salesUser, new NetSalesNotification($dummyCommentSales, $url, $path));
+
+                return response()->json(['success' => true, 'message' => 'Data persetujuan tambahan berhasil ditambahkan dan notifikasi dikirim.']);
             }
 
-            return response()->json(['success' => true, 'message' => 'Pengajuan berhasil disetujui dan notifikasi dikirim.']);
 
+            return response()->json(['success' => true, 'message' => 'Pengajuan berhasil disetujui dan notifikasi dikirim.']);
         } catch (\Exception $e) {
             Log::error('Error approve Payment Advanced: ' . $e->getMessage());
             return response()->json(['error' => 'Terjadi kesalahan sistem. ' . $e->getMessage()], 500);
         }
     }
-
 }

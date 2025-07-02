@@ -28,11 +28,11 @@
                                 <div class="btn-group" role="group" aria-label="Approval Options">
                                     <input type="radio" class="btn-check" name="approval" id="approveYes" value="1" autocomplete="off" checked>
                                     <label class="btn btn-outline-primary" for="approveYes" onclick="toggleAlasanManager(false)">Ya</label>
-            
+
                                     <input type="radio" class="btn-check" name="approval" id="approveNo" value="2" autocomplete="off">
                                     <label class="btn btn-outline-danger" for="approveNo" onclick="toggleAlasanManager(true)">Tidak</label>
                                 </div>
-            
+
                                 <div class="mt-3" id="alasanManagerInput" style="display: none;">
                                     <label for="alasan_manager" class="form-label">Alasan Penolakan</label>
                                     <textarea class="form-control" id="alasan_manager" name="alasan" rows="3"></textarea>
@@ -78,7 +78,7 @@
                     <img src="{{ asset('icon/plus.svg') }}" width="30px"> Ajukan Barang
                 </a>
             @endif
-            
+
             </div>
             @php
                 $jabatan = auth()->user()->jabatan;
@@ -114,7 +114,7 @@
                             }
                             @endphp
                         </select>
-                    </div>                                            
+                    </div>
 
                     <div class="col-md-4 mx-1">
                         <button type="submit" onclick="tableFinance()" class="btn click-primary" style="margin-top: 37px">Cari Data</button>
@@ -134,12 +134,17 @@
                                 <th scope="col">Tipe</th>
                                 <th scope="col">Status</th>
                                 <th scope="col">Nama Barang</th>
+                                <th scope="col">Total Item</th>
+                                <th scope="col">Total Pengajuan</th>
                                 <th scope="col">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
 
                         </tbody>
+                        <tfoot>
+
+                        </tfoot>
                     </table>
                 </div>
             </div>
@@ -148,7 +153,6 @@
                     <h3 class="card-title text-center my-1">{{ __('Data Pengajuan Barang (Selesai)') }}</h3>
                     <table class="table table-striped" id="datasudah">
                         <thead>
-                            <tr>
                                 <th scope="col">Tanggal Pengajuan</th>
                                 <th scope="col">Nama Karyawan</th>
                                 <th scope="col">Divisi</th>
@@ -156,12 +160,17 @@
                                 <th scope="col">Tipe</th>
                                 <th scope="col">Status</th>
                                 <th scope="col">Nama Barang</th>
+                                <th scope="col">Total Item</th>
+                                <th scope="col">Total Pengajuan</th>
                                 <th scope="col">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
 
                         </tbody>
+                        <tfoot>
+
+                        </tfoot>
                     </table>
                 </div>
             </div>
@@ -169,7 +178,7 @@
             <div class="card m-4">
                 <div class="card-body table-responsive">
                     <h3 class="card-title text-center my-1">{{ __('Data Pengajuan Barang') }}</h3>
-                    <table class="table table-striped" id="barangTable">
+                    <table class="table table-striped" id="barangTable" style="overflow-x: scrooll; max-width: 150%;">
                         <thead>
                             <tr>
                                 <th scope="col">Tanggal Pengajuan</th>
@@ -180,6 +189,8 @@
                                 <th scope="col">Tipe</th>
                                 <th scope="col">Status</th>
                                 <th scope="col">Nama Barang</th>
+                                <th scope="col">Total Item</th>
+                                <th scope="col">Total Pengajuan</th>
                                 <th scope="col">Aksi</th>
                             </tr>
                         </thead>
@@ -189,11 +200,12 @@
                     </table>
                 </div>
             </div>
-            @endif  
+            @endif
         </div>
     </div>
 </div>
 <style>
+
     .loader {
     position: relative;
     text-align: center;
@@ -255,7 +267,7 @@
                 sisa = number_string.length % 3,
                 rupiah = number_string.substr(0, sisa),
                 ribuan = number_string.substr(sisa).match(/\d{3}/g);
-                
+
             if (ribuan) {
                 let separator = sisa ? '.' : '';
                 rupiah += separator + ribuan.join('.');
@@ -263,7 +275,7 @@
 
             return rupiah;
         }
-        
+
         if(userRole == 'Finance &amp; Accounting'){
             tableFinance();
         }else{
@@ -274,6 +286,7 @@
             var tahun = $('#tahun').val();
 
             $('#barangTable').DataTable({
+            autoWidth: false,
             "ajax": {
                 url: "{{ route('getPengajuanBarang', ['month' => ':month', 'year' => ':year'] ) }}".replace(':month', 'All').replace(':year', tahun), // Ganti dengan URL yang sesuai
                 "type": "GET",
@@ -319,11 +332,42 @@
                     "data": "detail",
                     "render": function (data, type, row) {
                         if (data && Array.isArray(data)) {
-                            return data.map(item => item.nama_barang).join(', ');
+                            return data.map(item => item.nama_barang).join('<hr style="margin: 4px 0; border: 1px solid black">');
                         }
                         return '-';
                     }
                 },
+
+                {
+                    "data": "detail",
+                    "render": function (data, type, row) {
+                        if (data && Array.isArray(data)) {
+                            return data.map(item => {
+                                let total = item.harga * item.qty;
+                                return new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(total);
+                            }).join('<hr style="margin: 4px 0; border: 1px solid black">');
+                        }
+                        return '-';
+                    }
+                },
+
+                {
+                    "data": "detail",
+                    "render": function (data) {
+                        if (data && Array.isArray(data)) {
+                            const total = data.reduce((sum, item) => sum + (item.harga * item.qty), 0);
+                            return new Intl.NumberFormat('id-ID', {
+                                style: 'currency',
+                                currency: 'IDR'
+                            }).format(total);
+                        }
+                        return '-';
+                    }
+                },
+
                 {
                     "data": null,
                     "render": function(data, type, row) {
@@ -423,6 +467,28 @@
                     var dataSelesai = data.data.filter(item => item.tracking.tracking === 'Selesai' || item.tracking.tracking.includes("tolak"));
                     var dataBelum = data.data.filter(item => item.tracking.tracking !== 'Selesai' && !item.tracking.tracking.includes("tolak"));
 
+                    // Calculate totals for dataSelesai
+                    let totalItemsSelesai = dataSelesai.length;
+                    let totalHargaSelesai = 0;
+                    dataSelesai.forEach(item => {
+                        if (item.detail && Array.isArray(item.detail)) {
+                            item.detail.forEach(detail => {
+                                totalHargaSelesai += detail.qty * detail.harga;
+                            });
+                        }
+                    });
+
+                    // Calculate totals for dataBelum
+                    let totalItemsBelum = dataBelum.length;
+                    let totalHargaBelum = 0;
+                    dataBelum.forEach(item => {
+                        if (item.detail && Array.isArray(item.detail)) {
+                            item.detail.forEach(detail => {
+                                totalHargaBelum += detail.qty * detail.harga;
+                            });
+                        }
+                    });
+
                     // Inisialisasi DataTable untuk data yang sudah selesai
                     $('#datasudah').DataTable({
                         data: dataSelesai,
@@ -444,7 +510,37 @@
                                 "data": "detail",
                                 "render": function (data, type, row) {
                                     if (data && Array.isArray(data)) {
-                                        return data.map(item => item.nama_barang).join(', ');
+                                        return data.map(item => item.nama_barang).join('<hr style="margin: 4px 0; border: 1px solid black">');
+                                    }
+                                    return '-';
+                                }
+                            },
+
+                            {
+                                "data": "detail",
+                                "render": function (data, type, row) {
+                                    if (data && Array.isArray(data)) {
+                                        return data.map(item => {
+                                            let total = item.harga * item.qty;
+                                            return new Intl.NumberFormat('id-ID', {
+                                                style: 'currency',
+                                                currency: 'IDR'
+                                            }).format(total);
+                                        }).join('<hr style="margin: 4px 0; border: 1px solid black">');
+                                    }
+                                    return '-';
+                                }
+                            },
+
+                            {
+                                "data": "detail",
+                                "render": function (data) {
+                                    if (data && Array.isArray(data)) {
+                                        const total = data.reduce((sum, item) => sum + (item.harga * item.qty), 0);
+                                        return new Intl.NumberFormat('id-ID', {
+                                            style: 'currency',
+                                            currency: 'IDR'
+                                        }).format(total);
                                     }
                                     return '-';
                                 }
@@ -466,7 +562,28 @@
                         ],
                         "order": [[0, 'desc']], // Ubah urutan menjadi descending untuk kolom ke-6
                         "columnDefs" : [{"targets":[0], "type":"date"}],
+                        "drawCallback": function(settings) {
+                            var api = this.api();
 
+                            // Assuming totalItemsSelesai and totalHargaSelesai are calculated
+                            var formattedHarga = new Intl.NumberFormat('id-ID', {
+                                style: 'currency',
+                                currency: 'IDR'
+                            }).format(totalHargaSelesai);
+
+                            var footerHtml = `
+                                <tr>
+                                    <th colspan="6" style="text-align: left;">
+                                        Total Pengajuan: ${totalItemsSelesai}
+                                    </th>
+                                    <th colspan="4" style="text-align: left;">
+                                        Total Harga Pengajuan: ${formattedHarga}
+                                    </th>
+                                </tr>
+                            `;
+
+                            $('#datasudah tfoot').html(footerHtml);
+                        }
                     });
 
                     // Inisialisasi DataTable untuk data yang belum selesai
@@ -490,7 +607,37 @@
                                 "data": "detail",
                                 "render": function (data, type, row) {
                                     if (data && Array.isArray(data)) {
-                                        return data.map(item => item.nama_barang).join(', ');
+                                        return data.map(item => item.nama_barang).join('<hr style="margin: 4px 0; border: 1px solid black">');
+                                    }
+                                    return '-';
+                                }
+                            },
+
+                            {
+                                "data": "detail",
+                                "render": function (data, type, row) {
+                                    if (data && Array.isArray(data)) {
+                                        return data.map(item => {
+                                            let total = item.harga * item.qty;
+                                            return new Intl.NumberFormat('id-ID', {
+                                                style: 'currency',
+                                                currency: 'IDR'
+                                            }).format(total);
+                                        }).join('<hr style="margin: 4px 0; border: 1px solid black">');
+                                    }
+                                    return '-';
+                                }
+                            },
+
+                            {
+                                "data": "detail",
+                                "render": function (data) {
+                                    if (data && Array.isArray(data)) {
+                                        const total = data.reduce((sum, item) => sum + (item.harga * item.qty), 0);
+                                        return new Intl.NumberFormat('id-ID', {
+                                            style: 'currency',
+                                            currency: 'IDR'
+                                        }).format(total);
                                     }
                                     return '-';
                                 }
@@ -558,6 +705,28 @@
                         ],
                         "order": [[0, 'desc']], // Ubah urutan menjadi descending untuk kolom ke-6
                         "columnDefs" : [{"targets":[0], "type":"date"}],
+                        "drawCallback": function(settings) {
+                            var api = this.api();
+
+
+                            var formattedHargaBelum = new Intl.NumberFormat('id-ID', {
+                                style: 'currency',
+                                currency: 'IDR'
+                            }).format(totalHargaBelum);
+
+                            var footerHtml = `
+                                <tr>
+                                    <th colspan="6" style="text-align: left;">
+                                        Total Pengajuan: ${totalItemsBelum}
+                                    </th>
+                                    <th colspan="4" style="text-align: left;">
+                                        Total Harga Pengajuan: ${formattedHargaBelum}
+                                    </th>
+                                </tr>
+                            `;
+
+                            $('#databelum tfoot').html(footerHtml);
+                        }
                     });
                 },
                 error: function(xhr) {
@@ -580,7 +749,7 @@
                 document.getElementById('alasan_manager').value = ''; // Clear the input if hidden
             }
         }
-        
+
 </script>
 @endpush
 @endsection

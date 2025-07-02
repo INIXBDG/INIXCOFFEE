@@ -1,6 +1,11 @@
 @extends('layouts.app')
 
 @section('content')
+@php
+    $jabatan = strtolower(optional(auth()->user())->jabatan ?? '');
+    $editableJabatans = ['Education Manager', 'GM', 'SPV Sales', 'Office Manager', 'Koordinator Office', 'HRD', 'Koordinator ITSM'];
+    $isEditable = in_array(auth()->user()->jabatan, $editableJabatans);
+@endphp
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-8">
@@ -8,7 +13,7 @@
                 <div class="card-body" id="card">
                 <a href="/lembur" class="btn click-primary my-2"><img src="{{ asset('icon/arrow-left.svg') }}" class="img-responsive" width="20px"> Back</a>
                 <h5 class="card-title text-center mb-4">{{ __('Perintah Lembur') }}</h5>
-                    <form method="POST" action="{{ route('lembur.updateKaryawan', $data->id) }}">
+                    <form method="POST" action="{{ route('lembur.updateKaryawan', $data->id) }}" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
                         <div class="row mb-3">
@@ -43,7 +48,12 @@
                         <div class="row mb-3" id="tanggal_spl">
                             <label for="tanggal_spl" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Perintah Lembur') }}</label>
                             <div class="col-md-6">
-                                <input type="date" readonly class="form-control" name="tanggal_spl" id="tanggal_spl" value="{{ $data->tanggal_spl }}">
+                                <input type="date"
+                                    class="form-control"
+                                    name="tanggal_spl"
+                                    id="tanggal_spl"
+                                    value="{{ $data->tanggal_spl }}"
+                                    @unless($isEditable) readonly @endunless>
                                 @error('tanggal_spl')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -55,25 +65,45 @@
                         <div class="row mb-3 align-items-center">
                             <label for="jam_mulai" class="col-md-4 col-form-label text-md-start">Jam Mulai</label>
                             <div class="col-md-6">
-                                <input type="time" readonly class="form-control" name="jam_mulai" id="jam_mulai" value="{{ $data->jam_mulai }}">
+                                <input
+                                    type="time"
+                                    class="form-control"
+                                    name="jam_mulai"
+                                    id="jam_mulai"
+                                    value="{{ $data->jam_mulai }}"
+
+                                    {{-- Jika jabatan office boy atau driver, input tidak readonly --}}
+                                    {{-- @if(!in_array($jabatan, ['office boy', 'driver','education manager',  'gm',  'spv sales',  'office manager',  'koordinator office',  'hrd',  'koordinator itsm' ])) readonly @endif --}}
+                                >
                                 @error('jam_mulai')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
                                     </span>
                                 @enderror
                             </div>
-                            <div class="col-md-2">
-                                <button type="button" class="btn btn-primary btn-sm w-100" data-bs-toggle="modal" data-bs-target="#modalAbsen">
-                                    Absen Lembur
-                                </button>
-                            </div>
+                            {{-- @if(!in_array(strtolower(auth()->user()->jabatan), ['office boy', 'driver', 'education manager',  'gm',  'spv sales',  'office manager',  'koordinator office',  'hrd',  'koordinator itsm']))
+                                <div class="col-md-2">
+                                    <button type="button" class="btn btn-primary btn-sm w-100" data-bs-toggle="modal" data-bs-target="#modalAbsen">
+                                        Absen Lembur
+                                    </button>
+                                </div>
+                            @endif --}}
                         </div>
-
 
                         <div class="row mb-3" id="jam_selesai">
                             <label for="jam_selesai" class="col-md-4 col-form-label text-md-start">{{ __('Jam Selesai') }}</label>
                             <div class="col-md-6">
-                                <input type="time" readonly class="form-control" name="jam_selesai" id="jam_selesai" value="{{ $data->jam_selesai }}">
+                                <input
+                                    type="time"
+                                    class="form-control"
+                                    name="jam_selesai"
+                                    id="jam_selesai"
+                                    value="{{ $data->jam_selesai }}"
+                                    {{-- Jika jabatan office boy atau driver, input tidak readonly --}}
+                                    {{-- @if(!in_array(strtolower(auth()->user()->jabatan), ['office boy', 'driver', 'education manager',  'gm',  'spv sales',  'office manager',  'koordinator office',  'hrd',  'koordinator itsm']))
+                                        readonly
+                                    @endif --}}
+                                >
                                 @error('jam_selesai')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -82,10 +112,62 @@
                             </div>
                         </div>
 
+                        {{-- Input Foto Mulai dan Selesai untuk Office Boy dan Driver --}}
+                        {{-- @if(in_array(strtolower(auth()->user()->jabatan), ['office boy', 'driver' , 'education manager',  'gm',  'spv sales',  'office manager',  'koordinator office',  'hrd',  'koordinator itsm'])) --}}
+                            <div class="row mb-3">
+                                <label for="foto_mulai" class="col-md-4 col-form-label text-md-start">Foto Mulai</label>
+                                <div class="col-md-6">
+                                    <input
+                                        type="file"
+                                        class="form-control @error('foto_mulai') is-invalid @enderror"
+                                        name="foto_mulai"
+                                        id="foto_mulai"
+                                        accept="image/*"
+                                        {{-- capture="camera" --}}
+                                    >
+                                    @error('foto_mulai')
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                    @enderror
+                                    @if(!empty($data->foto_masuk))
+                                        <img src="{{ asset('storage/' . $data->foto_masuk) }}" alt="Foto Masuk" class="img-thumbnail mt-1" style="width: 150px; height: 100px; object-fit: cover;">
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <label for="foto_selesai" class="col-md-4 col-form-label text-md-start">Foto Selesai</label>
+                                <div class="col-md-6">
+                                    <input
+                                        type="file"
+                                        class="form-control @error('foto_selesai') is-invalid @enderror"
+                                        name="foto_selesai"
+                                        id="foto_selesai"
+                                        accept="image/*"
+                                        {{-- capture="camera" --}}
+                                    >
+                                    @error('foto_selesai')
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                    @enderror
+                                    @if(!empty($data->foto_selesai))
+                                        <img src="{{ asset('storage/' . $data->foto_selesai) }}" alt="Foto Selesai" class="img-thumbnail mt-1" style="width: 150px; height: 100px; object-fit: cover;">
+                                    @endif
+                                </div>
+                            </div>
+                        {{-- @endif --}}
+
                         <div class="row mb-3" id="uraian_tugas">
                             <label for="uraian_tugas" class="col-md-4 col-form-label text-md-start">{{ __('Uraian Tugas') }}</label>
                             <div class="col-md-6">
-                                <textarea name="uraian_tugas" disabled class="form-control" id="uraian_tugas" cols="51" rows="5">{{$data->uraian_tugas}}</textarea>
+                                <textarea name="uraian_tugas"
+                                        class="form-control"
+                                        id="uraian_tugas"
+                                        cols="51"
+                                        rows="5"
+                                        @unless($isEditable) disabled @endunless>{{ $data->uraian_tugas }}</textarea>
                                 @error('uraian_tugas')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -97,7 +179,7 @@
                         <div class="row mb-3">
                             <label for="waktu_lembur" class="col-md-4 col-form-label text-md-start">{{ __('Waktu Lembur') }}</label>
                             <div class="col-md-6">
-                                <select name="waktu_lembur" disabled id="waktu_lembur" class="form-select">
+                                <select name="waktu_lembur" id="waktu_lembur" class="form-select" @unless($isEditable) disabled @endunless>
                                     <option value="-">Pilih Waktu Lembur</option>
                                     <option value="Kerja" @if($data->waktu_lembur == 'Kerja') selected @endif>Hari Kerja</option>
                                     <option value="Libur" @if($data->waktu_lembur == 'Libur') selected @endif>Hari Libur</option>
@@ -113,7 +195,12 @@
                         <div class="row mb-3" id="tanggal_lembur">
                             <label for="tanggal_lembur" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Lembur') }}</label>
                             <div class="col-md-6">
-                                <input type="date" readonly class="form-control" name="tanggal_lembur" id="tanggal_lembur" value="{{$data->tanggal_lembur}}">
+                                <input type="date"
+                                    class="form-control"
+                                    name="tanggal_lembur"
+                                    id="tanggal_lembur"
+                                    value="{{ $data->tanggal_lembur }}"
+                                    @unless($isEditable) readonly @endunless>
                                 @error('tanggal_lembur')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -156,7 +243,7 @@
                     </form>
                 </div>
             </div>
-            <div class="modal fade" id="modalAbsen" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            {{-- <div class="modal fade" id="modalAbsen" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
                 <div class="modal-dialog">
                   <div class="modal-content">
                     <div class="modal-header">
@@ -187,7 +274,7 @@
                     </div>
                   </div>
                 </div>
-            </div>
+            </div> --}}
         </div>
     </div>
 </div>
@@ -195,7 +282,7 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/webcamjs/1.0.26/webcam.min.js"></script>
-<script src="{{ asset('js/webcam.js') }}"></script>
+{{-- <script src="{{ asset('js/webcam.js') }}"></script>
 <script>
     let stream;
 
@@ -318,6 +405,6 @@
             }
         }
     });
-    </script>
+    </script> --}}
 
 @endsection

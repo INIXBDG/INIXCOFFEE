@@ -117,7 +117,7 @@
                             <div class="col-sm-4">
                                 @if ($data->karyawan->ttd)
                                     <div class="row justify-content-center">
-                                        <img src="{{ asset('storage/ttd/' . $data->karyawan->ttd) }}" alt="{{ $data->karyawan->nama_lengkap }}" style="width: 110px">
+                                        <img src="{{ asset('storage/ttd/' . $data->karyawan->ttd) }}" alt="{{ $data->karyawan->nama_lengkap }}" style="width: 155px;height:auto">
                                     </div>
                                 @else
                                     <br><br><br>
@@ -126,7 +126,7 @@
                             <div class="col-sm-4">
                                 @if ($finance->ttd)
                                     <div class="row justify-content-center">
-                                        <img src="{{ asset('storage/ttd/' . $finance->ttd) }}" alt="{{ $finance->nama_lengkap }}" style="width: 110px">
+                                        <img src="{{ asset('storage/ttd/' . $finance->ttd) }}" alt="{{ $finance->nama_lengkap }}" style="width: 155px;height:auto">
                                     </div>
                                 @else
                                     <br><br><br>
@@ -135,7 +135,7 @@
                             <div class="col-sm-4">
                                 @if ($gm->ttd)
                                     <div class="row justify-content-center">
-                                        <img src="{{ asset('storage/ttd/' . $gm->ttd) }}" alt="{{ $gm->nama_lengkap }}" style="width: 110px">
+                                        <img src="{{ asset('storage/ttd/' . $gm->ttd) }}" alt="{{ $gm->nama_lengkap }}" style="width: 155px;height:auto">
                                     </div>
                                 @else
                                     <br><br><br>

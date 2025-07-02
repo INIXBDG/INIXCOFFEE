@@ -35,7 +35,22 @@
                                             }
                                             @endphp
                                         </select>
-        
+                                    </div>
+                                    <div class="col-md-4 mx-1">
+                                        <label for="bulanRange" class="form-label">Bulan</label>
+                                        <select id="bulanRange" class="form-select">
+                                            <option disabled>Pilih Rentang Bulan</option>
+                                            @php
+                                                $bulan_sekarang = now()->month;
+                                                $nama_bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                                                for ($bulan = 1; $bulan <= 12; $bulan++) {
+                                                    $bulan_awal = $nama_bulan[$bulan - 1];
+                                                    $bulan_akhir = $nama_bulan[$bulan % 12];
+                                                    $selected = $bulan == $bulan_sekarang ? 'selected' : '';
+                                                    echo "<option value=\"$bulan\" $selected>$bulan_awal</option>";
+                                                }
+                                            @endphp
+                                        </select>
                                     </div>
         
                                     <div class="col-md-4 mx-1">
@@ -67,15 +82,33 @@
                         @csrf
                         <p>Apakah Disetujui?</p>
                         <div id="manager-row">
+                            @php
+                                $jabatan = auth()->user()->jabatan;
+                            @endphp
+                            @if ($jabatan == 'Finance & Accounting')
+                                <div class="row my-2">
+                                    <select name="status_tracking" id="status_tracking" class="form-select">
+                                        <option disabled selected>Pilih Status Tracking</option>
+                                        <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager">Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager</option>
+                                        <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi">Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi</option>
+                                        <option value="Finance Menunggu Approve Direksi">Finance Menunggu Approve Direksi</option>
+                                        <option value="Membuat Permintaan Ke Direktur Utama">Membuat Permintaan Ke Direktur Utama</option>
+                                        <option value="Pengajuan sedang dalam proses Pencairan">Pengajuan sedang dalam proses Pencairan</option>
+                                        <option value="Pencairan Sudah Selesai">Pencairan Sudah Selesai</option>
+                                        <option value="Selesai">Selesai</option>
+                                    </select>
+                                    <div class="invalid-feedback">
+                                        Silakan pilih status tracking terlebih dahulu.
+                                    </div>
+                                </div>
+                            @endif
                             <div class="btn-group" role="group" aria-label="Approval Options">
                                 <input type="hidden" value="" id="id_net_sales" name="id_net_sales">
-                                <button class="btn btn-outline-primary" type="submit">Ya</button>
+                                <button class="btn btn-outline-primary" type="submit" id="btnApproveYes">Ya</button>
 
                                 <input type="radio" class="btn-check" name="approval" id="approveNo" value="2" autocomplete="off">
                                 <label class="btn btn-outline-danger" for="approveNo" onclick="toggleAlasanManager(true)">Tidak</label>
-
                             </div>
-
                             <div class="mt-3" id="alasanManagerInput" style="display: none;">
                                 <label for="alasan_manager" class="form-label">Alasan Penolakan</label>
                                 <textarea class="form-control" id="alasan_manager" name="keterangan" rows="3"></textarea>
@@ -138,6 +171,26 @@
         }
     }
     }
+    table.dataTable {
+        font-size: 12px !important; /* Atur sesuai kebutuhan */
+    }
+    /* Mengatur font size tabel DataTable */
+    table.dataTable {
+        font-size: 12px !important;
+    }
+
+    /* Mengatur font size header dan body tabel */
+    table.dataTable thead th, 
+    table.dataTable tbody td {
+        font-size: 12px !important;
+    }
+
+    /* Jika ingin mengatur ukuran font pada seluruh container */
+    #content {
+        font-size: 14px;
+    }
+
+
 </style>
 @push('js')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -149,8 +202,31 @@
         getData()
     });
 
+    let approveType = '';
+
+    $('#btnApproveYes').on('click', function () {
+        approveType = 'ya';
+    });
+
+    $('#approveNo').on('click', function () {
+        approveType = 'tidak';
+    });
+
     $(document).on('submit', '#approveForm', function(e) {
         e.preventDefault();
+
+        if (approveType === 'ya') {
+            let jabatan = "{{ auth()->user()->jabatan }}";
+            let selectedTracking = $('#status_tracking').val();
+
+            if (jabatan === 'Finance & Accounting' && (!selectedTracking || selectedTracking === "null")) {
+                alert('Silakan pilih status tracking terlebih dahulu.');
+                $('#status_tracking').addClass('is-invalid');
+                return;
+            } else {
+                $('#status_tracking').removeClass('is-invalid');
+            }
+        }
 
         let formData = new FormData(this);
 
@@ -164,237 +240,264 @@
             success: function(response) {
                 let modal = bootstrap.Modal.getInstance(document.getElementById('approveModal'));
                 modal.hide();
-                getData(); 
+                getData();
             },
             error: function(xhr) {
-                console.log(xhr.responseText); 
+                console.log(xhr.responseText);
             }
         });
-    });
-
-    
+    });    
 
     function getData() {
-        var tahun = document.getElementById('tahun').value;
-
-        // Show loading modal
-        $('#loadingModal').modal('show');
-
-        $.ajax({
-            url: "paymantAdvance/" + tahun,
-            method: 'GET',
-            dataType: 'json',
-            beforeSend: function () {
-                $('#loadingModal').modal('show');
-                $('#loadingModal').on('show.bs.modal', function () {
-                    $('#loadingModal').removeAttr('inert');
-                });
-            },
-            complete: function () {
-                setTimeout(() => {
-                    $('#loadingModal').modal('hide');
-                    $('#loadingModal').on('hidden.bs.modal', function () {
-                        $('#loadingModal').attr('inert', true);
-                    });
-                }, 1000);
-            },
-            success: function(response) {
-                var html = '';
-                var jabatan = "{{ auth()->user()->jabatan}}";
-
-                // Loop through each month
-                response.data.forEach(function(monthData) {
-                    var jabatan = '{{auth()->user()->jabatan}}';
-                    var monthName = monthData.month;
-                    html += '<h4>' + monthName + '</h4>';
-                    if(jabatan == 'HRD'){
-                        html += `<button type="button" class="btn click-primary p-2" onclick="analisaMargin('${tahun}', '${monthName}')">Analisa Margin</button>`;
-                    }
-                    // Loop through weeks in the month
-                    monthData.weeksData.forEach(function(weekData) {
-                        html += '<div class="card my-1">';
-                        html += '<div class="card-body table-responsive">';
-                        html += `<h3 class="card-title my-1">Rencana Kelas Mingguan ${monthName} (Minggu ke - ${weekData.minggu}) ${weekData.tanggal_awal_minggu} - ${weekData.tanggal_akhir_minggu}</h3>`;
-                            // console.log(weekData.bulan);
-                        // Check if the rkmfull status for this specific week is "ok"
-                        if (weekData.rkmfull === "ok") {
-                            if(jabatan == 'HRD'){
-                            var formId = 'analisisForm_' + weekData.tahun + '_' + weekData.bulan + '_' + weekData.minggu;
-                            html += `<form id="${formId}">`;
-                            html += `<button type="button" class="btn click-primary p-2" data-bs-toggle="modal" data-bs-target="#modalAnalisis" onclick="analisisData('${formId}', '${weekData.tahun}', '${weekData.bulan}', '${weekData.minggu}')">Analisis</button>`;
-                            html += `<input type="hidden" name="tahunRKM" value="${weekData.tahun}">`;
-                            html += `<input type="hidden" name="bulanRKM" value="${weekData.bulan}">`;
-                            html += `<input type="hidden" name="mingguRKM" value="${weekData.minggu}">`;
-                            html += '</form>';
-                            }
-                        }
-
-                        if (weekData.data === null) {
-                            html += '<p class="text-center">Tidak Ada Kelas Mingguan</p>';
-                        } else {
-                            // Process and render table
-                            html += renderTable(weekData.data, jabatan);
-                        }
-
-                        html += '</div>';
-                        html += '</div>';
-                    });
-                });
-
-                // Display the generated HTML
-                $('#content').html(html);
-                $('#loadingModal').modal('hide');
-            },
-            error: function() {
-                $('#loadingModal').modal('hide');
-                alert("Error fetching data. Please try again.");
-            }
-        });
+    var tahun = document.getElementById('tahun').value;
+    var bulanRange = document.getElementById('bulanRange').value;
+    console.log('Tahun:', tahun);
+    console.log('Rentang Bulan:', bulanRange);
+    if (!tahun || !bulanRange) {
+        alert("Mohon pilih tahun dan rentang bulan terlebih dahulu.");
+        return;
     }
-    function renderTable(data, jabatan) {
-    var html = '<table class="table table-bordered">';
-    html += '<thead>';
-    html += '<tr>';
-    html += '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">No</th>';
-    html += '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">Kelas</th>';
-    html += '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">Harga Penawaran (Rp.)</th>';
-    html += '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">Transportasi (Rp.)</th>';
-    html += '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">Fresh Money (Rp.)</th>';
-    html += '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">Entertaint (Rp.)</th>';
-    html += '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">Souvenir (Rp.)</th>';
-    html += '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">Penginapan (Rp.)</th>';
-    html += '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">Tanggal Payment Advance</th>';
-    html += '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">Tipe Pembayaran</th>';
-    html += '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">Total (Rp.)</th>';
-    if (jabatan === 'SPV Sales' || jabatan === 'Sales' || jabatan === 'GM' || jabatan === 'Finance &amp; Accounting') {
-        html += '<th scope="col" style="font-size: 14px;text-align: center;" rowspan="2">Aksi</th>';
-    }
-    html += '</tr><tr></tr></thead><tbody>';
 
-    var rowIndex = 1;
-    var groupedData = {};
-    data.forEach(function (item) {
-        if (!groupedData[item.nama_materi]) {
-            groupedData[item.nama_materi] = [];
-        }
-        groupedData[item.nama_materi].push(item);
-    });
+    // Show loading modal
+    $('#loadingModal').modal('show');
 
-    Object.keys(groupedData).forEach(function (materi) {
-        var group = groupedData[materi];
-        group.forEach(function (item, index) {
-            var rowColor = (item.status === 'Merah') ? 'rgba(255, 0, 0, 0.5); color: #fff' : 'rgba(0, 99, 71, 0.5); color: #fff';
-            html += `<tr style="background-color: ${rowColor}">`;
+    $.ajax({
+        url: "paymantAdvance/" + tahun + "/" + bulanRange,
+        method: 'GET',
+        dataType: 'json',
+        beforeSend: function () {
+            $('#loadingModal').modal('show');
+            $('#loadingModal').on('show.bs.modal', function () {
+                $('#loadingModal').removeAttr('inert');
+            });
+        },
+        complete: function () {
+            setTimeout(() => {
+                $('#loadingModal').modal('hide');
+                $('#loadingModal').on('hidden.bs.modal', function () {
+                    $('#loadingModal').attr('inert', true);
+                });
+            }, 1000);
+        },
+        success: function(response) {
+            var html = '';
+            var jabatan = "{{ auth()->user()->jabatan}}";
 
-            if (index === 0) {
-                html += `<td style="font-size: 14px;" rowspan="${group.length}">${rowIndex}</td>`;
-                html += `<td style="font-size: 14px;" rowspan="${group.length}">${materi}</td>`;
-                rowIndex++;
-            }
+            response.data.forEach(function(monthData) {
+                var monthName = monthData.month;
+                html += '<h4>' + monthName + '</h4>';
+                monthData.weeksData.forEach(function(weekData) {
+                    html += '<div class="card my-1">';
+                    html += '<div class="card-body table-responsive">';
+                    html += `<h3 class="card-title my-1">Rencana Kelas Mingguan ${monthName} (Minggu ke - ${weekData.minggu}) ${weekData.tanggal_awal_minggu} - ${weekData.tanggal_akhir_minggu}</h3>`;
 
-            const sales = item.netsales || item.analisisrkm || item;
-
-            html += `<td style="font-size: 14px;">${formatWithoutDecimals(sales.harga_penawaran || 0)}</td>`;
-            html += `<td style="font-size: 14px;">${formatWithoutDecimals(sales.transportasi || 0)}</td>`;
-            html += `<td style="font-size: 14px;">${formatWithoutDecimals(sales.fresh_money || 0)}</td>`;
-            html += `<td style="font-size: 14px;">${formatWithoutDecimals(sales.entertaint || 0)}</td>`;
-            html += `<td style="font-size: 14px;">${formatWithoutDecimals(sales.souvenir || 0)}</td>`;
-            html += `<td style="font-size: 14px;">${formatWithoutDecimals(sales.penginapan || 0)}</td>`;
-            html += `<td style="font-size: 14px;">${sales.tgl_pa || '0000-00-00'}</td>`;
-            html += `<td style="font-size: 14px;">${sales.tipe_pembayaran || ''}</td>`;
-            html += `<td style="font-size: 14px;">${formatWithoutDecimals(sales.total || 0)},00</td>`;
-
-            if (jabatan === 'SPV Sales' || jabatan === 'Sales' || jabatan === 'GM' || jabatan === 'Finance &amp; Accounting') {
-                html += '<td style="font-size: 14px;">';
-                html += '<div class="btn-group dropup">';
-                html += '<button type="button" class="btn dropdown-toggle text-white" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
-                html += '<div class="dropdown-menu">';
-                if (item.status == 'Merah') {
-                    if (jabatan === "Sales") {
-                        html += `<a class="dropdown-item" href="/paymantAdvance/${item.id}/create" data-toggle="tooltip" title="Input Data"><img src="{{ asset('icon/clipboard-primary.svg') }}"> Input Data</a>`;  
+                    if (weekData.data === null) {
+                        html += '<p class="text-center">Tidak Ada Kelas Mingguan</p>';
                     } else {
-                        html += `<a class="dropdown-item disabled" href="/paymantAdvance/${item.id}/create" data-toggle="tooltip" title="Input Data" disabled><img src="{{ asset('icon/clipboard-primary.svg') }}"> Input Data</a>`;  
+                        // Gunakan tableId yang unik dan konsisten
+                        var tableId = `table_${weekData.tahun}_${weekData.bulan}_${weekData.minggu}`;
+                        html += renderTable(weekData.data, jabatan, tableId);
                     }
-                } else {
-                    html += `<a class="dropdown-item" href="/paymantAdvance/detail/${item.id}" data-toggle="tooltip" title="Detail"><img src="{{ asset('icon/clipboard-primary.svg') }}"> Detail</a>`;
-                    
-                    if (sales.level_status === null || sales.level_status === 'Belum disetujui') {
-                        if (jabatan === "SPV Sales") {
-                            html += `
-                                <button class="dropdown-item" type="button" onclick="openApproveModal('${sales.id_NetSales}');" title="Detail">
-                                    <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
-                                </button>
-                            `;
-                        } else {
-                            html += `
-                                <button class="dropdown-item" disabled type="button" title="Sudah Ditangani oleh SPV Sales">
-                                    <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
-                                </button>
-                            `;
-                        }
-                    } else if (sales.level_status === "I") {
-                        if (jabatan === "GM") {
-                            html += `
-                                <button class="dropdown-item" type="button" onclick="openApproveModal('${sales.id_NetSales}');" title="Detail">
-                                    <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
-                                </button>
-                            `;
-                        } else {
-                            html += `
-                                <button class="dropdown-item" disabled type="button" title="Sudah Ditangani oleh GM">
-                                    <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
-                                </button>
-                            `;
-                        }
-                    } else if (sales.level_status === "II") {
-                        if (jabatan === 'Finance &amp; Accounting') {
-                            html += `
-                                <button class="dropdown-item" type="button" onclick="openApproveModal('${sales.id_NetSales}');" title="Detail">
-                                    <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
-                                </button>
-                            `;
-                        } else {
-                            html += `
-                                <button class="dropdown-item" disabled type="button" title="Sudah Ditangani oleh Finance & Accounting">
-                                    <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
-                                </button>
-                            `;
-                        }
-                    } else if (sales.level_status === "III") {
-                        if (jabatan === 'Finance &amp; Accounting' || jabatan === 'GM' || jabatan === 'SPV Sales') {
-                            html += `
-                                <button class="dropdown-item" disabled type="button" title="Sudah Ditangani oleh Finance & Accounting">
-                                    <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
-                                </button>
-                            `;
-                        }
-                    }
-                    const editUrlBase = "{{ url('/paymantAdvance/edit') }}/";
-                    html += `<a class="dropdown-item" href="${editUrlBase}${sales.id}" data-toggle="tooltip" title="Edit Data"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Edit Data</a>`;
-                }
-                html += '</div></div></td>';
+
+                    html += '</div>';
+                    html += '</div>';
+                });
+            });
+
+            // Masukkan HTML ke container
+            $('#content').html(html);
+
+            var idSales = "{{ auth()->user()->karyawan->kode_karyawan }}";
+            var jabatan = "{{ auth()->user()->jabatan }}";
+            console.log('Jabatan:', jabatan);
+            if(jabatan == 'SPV Sales' || jabatan == 'HRD' || jabatan == 'GM' || jabatan == 'Finance & Accounting' || jabatan == 'Koordinator Office') {
+                idSales = '';
             }
+            console.log('ID Sales:', idSales);
 
-            html += '</tr>';
-        });
+            // Inisialisasi DataTables tiap tabel yang sudah dirender
+            response.data.forEach(function(monthData) {
+                monthData.weeksData.forEach(function(weekData) {
+                    if (weekData.data !== null) {
+                        var tableId = `table_${weekData.tahun}_${weekData.bulan}_${weekData.minggu}`;
+                        // Cek dan destroy DataTable lama jika ada
+                        if ($.fn.DataTable.isDataTable('#' + tableId)) {
+                            $('#' + tableId).DataTable().destroy();
+                        }
 
-        var totalNettPenjualan = group.reduce((acc, item) => {
-            const sales = item.netsales || item.analisisrkm || item;
-            return acc + (parseFloat(sales.total) || 0);
-        }, 0);
+                        // Inisialisasi DataTable baru
+                        $('#' + tableId).DataTable({
+                            paging: true,
+                            searching: true,
+                            ordering: true,
+                            info: true,
+                            lengthChange: true,
+                            pageLength: 10,
+                            initComplete: function() {
+                                this.api().columns(2).search(idSales).draw();
+                            }
+                            // Anda bisa menambahkan pengaturan lain sesuai kebutuhan
+                        });
+                    }
+                });
+            });
 
+            $('#loadingModal').modal('hide');
+        },
+        error: function() {
+            $('#loadingModal').modal('hide');
+            alert("Error fetching data. Please try again.");
+        }
+    });
+}
+
+    function renderTable(data, jabatan, tableId) {
+        var html = `<table id="${tableId}" class="table table-bordered table-striped" style="width:100%">`;
+        html += '<thead>';
         html += '<tr>';
-        html += '<td colspan="10" style="font-size: 14px; text-align: right; font-weight: bold;">Subtotal:</td>';
-        html += `<td style="font-size: 14px; font-weight: bold;">${formatWithoutDecimals(totalNettPenjualan)}</td>`;
-        if (jabatan === 'HRD' || jabatan === 'Koordinator Office') {
-            html += '<td></td>';
+        html += '<th style="font-size:14px">No</th>';
+        html += '<th style="font-size:14px">Kelas</th>';
+        html += '<th style="font-size:14px">Sales</th>';
+        html += '<th style="font-size:14px">Harga Penawaran (Rp.)</th>';
+        html += '<th style="font-size:14px">Transportasi (Rp.)</th>';
+        html += '<th style="font-size:14px">Fresh Money (Rp.)</th>';
+        html += '<th style="font-size:14px">Entertaint (Rp.)</th>';
+        html += '<th style="font-size:14px">Souvenir (Rp.)</th>';
+        html += '<th style="font-size:14px">Penginapan (Rp.)</th>';
+        html += '<th style="font-size:14px">Tanggal Payment Advance</th>';
+        html += '<th style="font-size:14px">Tipe Pembayaran</th>';
+        html += '<th style="font-size:14px">Total (Rp.)</th>';
+        if (jabatan === 'SPV Sales' || jabatan === 'Sales' || jabatan === 'GM' || jabatan === 'Finance & Accounting' || jabatan == 'Koordinator Office') {
+            html += '<th style="font-size:14px">Aksi</th>';
         }
         html += '</tr>';
-    });
+        html += '</thead>';
+        html += '<tbody>';
 
-    html += '</tbody></table>';
-    return html;
-}
+        var rowIndex = 1;
+        var groupedData = {};
+        data.forEach(function (item) {
+            if (!groupedData[item.nama_materi]) {
+                groupedData[item.nama_materi] = [];
+            }
+            groupedData[item.nama_materi].push(item);
+        });
+
+        Object.keys(groupedData).forEach(function (materi) {
+            var group = groupedData[materi];
+            group.forEach(function (item, index) {
+                var rowColor = (item.status === 'Merah') ? 'rgba(255, 0, 0, 0.5); color: #fff' : 'rgba(0, 99, 71, 0.5); color: #fff';
+                html += `<tr style="background-color: ${rowColor}">`;
+                if (index === 0) {
+                    html += `<td style="font-size:14px" rowspan="${group.length}">${rowIndex}</td>`;
+                    html += `<td style="font-size:14px" rowspan="${group.length}">${materi}</td>`;
+                    html += `<td style="font-size:14px" rowspan="${group.length}">${item.sales_key}</td>`;
+                    rowIndex++;
+                }
+
+                const sales = item.netsales || item.analisisrkm || item;
+
+                html += `<td style="font-size:14px">${formatWithoutDecimals(sales.harga_penawaran || 0)}</td>`;
+                html += `<td style="font-size:14px">${formatWithoutDecimals(sales.transportasi || 0)}</td>`;
+                html += `<td style="font-size:14px">${formatWithoutDecimals(sales.fresh_money || 0)}</td>`;
+                html += `<td style="font-size:14px">${formatWithoutDecimals(sales.entertaint || 0)}</td>`;
+                html += `<td style="font-size:14px">${formatWithoutDecimals(sales.souvenir || 0)}</td>`;
+                html += `<td style="font-size:14px">${formatWithoutDecimals(sales.penginapan || 0)}</td>`;
+                html += `<td style="font-size:14px">${sales.tgl_pa || '0000-00-00'}</td>`;
+                html += `<td style="font-size:14px">${sales.tipe_pembayaran || ''}</td>`;
+                html += `<td style="font-size:14px">${formatWithoutDecimals(sales.total || 0)},00</td>`;
+
+                if (jabatan === 'SPV Sales' || jabatan === 'Sales' || jabatan === 'GM' || jabatan === 'Finance &amp; Accounting' || jabatan == 'Koordinator Office') {
+                    html += '<td style="font-size: 14px;">';
+                    html += '<div class="btn-group dropup">';
+                    html += '<button type="button" class="btn dropdown-toggle text-white" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
+                    html += '<div class="dropdown-menu">';
+                    if (item.status == 'Merah') {
+                        if (jabatan === "Sales") {
+                            html += `<a class="dropdown-item" href="/paymantAdvance/${item.id}/create/form-view" data-toggle="tooltip" title="Input Data"><img src="{{ asset('icon/clipboard-primary.svg') }}"> Input Data</a>`;  
+                        } else {
+                            html += `<a class="dropdown-item disabled" href="/paymantAdvance/${item.id}/create/form-view" data-toggle="tooltip" title="Input Data" disabled><img src="{{ asset('icon/clipboard-primary.svg') }}"> Input Data</a>`;  
+                        }
+                    } else {
+                        html += `<a class="dropdown-item" href="/paymantAdvance/detail/${item.id}/view" data-toggle="tooltip" title="Detail"><img src="{{ asset('icon/clipboard-primary.svg') }}"> Detail</a>`;
+                        
+                        if (sales.level_status === null || sales.level_status === 'Belum disetujui') {
+                            if (jabatan === "SPV Sales") {
+                                html += `
+                                    <button class="dropdown-item" type="button" onclick="openApproveModal('${sales.id_NetSales}');" title="approved">
+                                        <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
+                                    </button>
+                                `;
+                            } else {
+                                html += `
+                                    <button class="dropdown-item" disabled type="button" title="Sudah Ditangani oleh SPV Sales">
+                                        <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
+                                    </button>
+                                `;
+                            }
+                        } else if (sales.level_status === "I") {
+                            if (jabatan === "GM"  || jabatan === 'Koordinator Office') {
+                                html += `
+                                    <button class="dropdown-item" type="button" onclick="openApproveModal('${sales.id_NetSales}');" title="approved">
+                                        <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
+                                    </button>
+                                `;
+                            } else {
+                                html += `
+                                    <button class="dropdown-item" disabled type="button" title="Sudah Ditangani oleh GM">
+                                        <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
+                                    </button>
+                                `;
+                            }
+                        } else if (sales.level_status === "II") {
+                            if (jabatan === 'Finance &amp; Accounting') {
+                                html += `
+                                    <button class="dropdown-item" type="button" onclick="openApproveModal('${sales.id_NetSales}');" title="Detail">
+                                        <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
+                                    </button>
+                                `;  
+                            } else {
+                                html += `
+                                    <button class="dropdown-item" type="button" disabled title="approved">
+                                        <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
+                                    </button>
+                                `;
+                            }
+                        } else if (sales.level_status === "III") {
+                            if (jabatan === 'Finance &amp; Accounting' || jabatan === 'GM' || jabatan === 'SPV Sales') {
+                                if (sales.keterangan === "Selesai") {
+                                    html += `
+                                        <button class="dropdown-item" type="button" disabled title="sudah ditangani oleh Finance & Accounting">
+                                            <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
+                                        </button>
+                                    `;
+                                } else {
+                                    html += `
+                                        <button class="dropdown-item" type="button" onclick="openApproveModal('${sales.id_NetSales}');" title="Detail">
+                                            <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
+                                        </button>
+                                    `;  
+                                }
+                            }
+                        }
+                        const editUrlBase = "{{ url('/paymantAdvance/edit') }}/";
+                        html += `<a class="dropdown-item" href="${editUrlBase}${sales.id}" data-toggle="tooltip" title="Edit Data"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Edit Data</a>`;
+                    }
+                    html += '</div></div></td>';
+                }
+                html += '</tr>';
+            });
+        });
+
+        html += '</tbody></table>';
+        return html;
+
+
+    }
+
+    function formatWithoutDecimals(number) {
+        return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
 
 
     

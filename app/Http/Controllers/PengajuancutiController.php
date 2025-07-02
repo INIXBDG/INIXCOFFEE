@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\pengajuanCutiExport;
 use App\Models\pengajuancuti;
 use App\Models\karyawan;
 use App\Models\User;
@@ -12,7 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
-
+use Maatwebsite\Excel\Facades\Excel;
 
 class PengajuancutiController extends Controller
 {
@@ -20,11 +21,11 @@ class PengajuancutiController extends Controller
     {
         $this->middleware('auth');
     }
-    public function index(): View
+    public function index()
     {
         return view('pengajuancuti.index');
     }
-
+ 
     public function getPengajuanCuti() 
     {
         $user = auth()->user()->karyawan_id;
@@ -46,6 +47,17 @@ class PengajuancutiController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'List pengajuancuti',
+            'data' => $pengajuancuti,
+        ]);
+    }
+
+    public function getPengajuanCutiBulanTahun($month, $year) 
+    {
+        $pengajuancuti = pengajuancuti::with('karyawan')->whereMonth('tanggal_awal', $month)->whereYear('tanggal_awal', $year)->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'List pengajuancuti bulan '.$month.'-'.$year,
             'data' => $pengajuancuti,
         ]);
     }
@@ -320,12 +332,57 @@ class PengajuancutiController extends Controller
      * @param  mixed $post
      * @return void
      */
-    public function destroy($id): RedirectResponse
+    public function destroy($id)
     {
-        $post = pengajuancuti::findOrFail($id);
+        $post = pengajuancuti::with('karyawan')->findOrFail($id);
+
+        $cuti = $post->karyawan->cuti;
+        $tambah_cuti = $post->durasi;
+        if ($post->tipe === 'Cuti' && $post->approval_manager === '1') {
+            $post->karyawan->update(['cuti' => $cuti + $tambah_cuti]);
+        }
+        // return $post;
 
         $post->delete();
 
         return redirect()->route('pengajuancuti.index')->with(['success' => 'Data Berhasil Dihapus!']);
+    }
+
+    public function rekap()
+    {
+
+        return view('pengajuancuti.show');
+    }
+
+     public function exportexcel($month, $year)
+    {
+         $posts = pengajuancuti::with('karyawan')->whereMonth('tanggal_awal', $month)->whereYear('tanggal_awal', $year)->get();
+        // dd($posts);
+
+        // Mengubah data menjadi array sesuai kebutuhan export
+        $exportData = $posts->map(function ($item) {
+            if($item->approval_manager == '0'){
+                $approval_manager = 'Belum Disetujui';
+            } elseif($item->approval_manager == '1'){
+                $approval_manager = 'Disetujui';
+            }else{
+                $approval_manager = 'Ditolak';
+            }
+            return [
+                'nama_karyawan' => $item->karyawan->nama_lengkap ?? '',
+                'tipe' => $item->tipe ?? '',
+                'tanggal_awal' => $item->tanggal_awal ?? '',
+                'tanggal_akhir' => $item->tanggal_akhir ?? '',
+                'durasi' => $item->durasi ?? '',
+                'kontak' => $item->kontak ?? '',
+                'alasan' => $item->alasan ?? '',
+                'alasan_manager' => $item->alasan_manager ?? '',
+                'surat_sakit' => $item->surat_sakit ?? '',
+                'approval_manager' => $approval_manager ?? ''
+            ];
+        })->toArray();
+
+        $fileName = "pengajuancuti_{$month}_{$year}.xlsx";
+        return Excel::download(new pengajuanCutiExport($exportData), $fileName);
     }
 }

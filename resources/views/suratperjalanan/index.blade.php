@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 <div class="container-fluid">
     <div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="spinnerModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -57,6 +58,9 @@
         <div class="col-md-12">
             <div class="d-flex justify-content-end">
                 {{-- @if ( auth()->user()->jabatan == 'HRD' || auth()->user()->jabatan == 'Office ') --}}
+                @can('Rekap SPJ')
+                    <a href="{{ route('createPrint') }}" class="btn btn-success mx-4" data-toggle="tooltip" data-placement="top" title="Cetak Data"><img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> Cetak</a>                    
+                @endcan    
                     <a href="suratperjalanan/create" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Ajukan Cuti"><img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> Ajukan Surat Perjalanan</a>
                 {{-- @endif --}}
             </div>  
@@ -145,6 +149,9 @@
         var userRole = '{{ auth()->user()->jabatan}}';
         var user = '{{ auth()->user()->karyawan_id }}';
         //console.log(user);
+         $('#tahun, #bulan').on('change', function() {
+                updateExportLink();
+        });
         $('#jabatantable').DataTable({
             "ajax": {
                 "url": "{{ route('getSuratPerjalanan') }}", // URL API untuk mengambil data

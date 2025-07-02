@@ -36,6 +36,8 @@ class SuratPerjalanan extends Model
         'approval_manager',
         'approval_hrd',
         'approval_direksi',
+        'jenis_dinas',
+        'jadwal_RKM'
     ];
 
     /**
@@ -58,5 +60,10 @@ class SuratPerjalanan extends Model
     public function karyawan()
     {
         return $this->belongsTo(karyawan::class, 'id_karyawan', 'id');
+    }
+
+    public function RKM()
+    {
+        return $this->belongsTo(RKM::class, 'jadwal_RKM', 'id');
     }
 }

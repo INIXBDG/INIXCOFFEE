@@ -44,6 +44,7 @@
                                     <option value="Izin">Izin</option>
                                     <option value="Berduka">Berduka</option>
                                     <option value="Menikah">Menikah</option>
+                                    <option value="Hamil & Melahirkan">Hamil & Melahirkan</option>
                                 </select>
                                 @error('tipe')
                                     <span class="invalid-feedback" role="alert">
@@ -273,6 +274,38 @@
                         $('#tanggal_akhir').val(currentDate.toISOString().split('T')[0]); // Set end date based on calculated days
                     });
                     break;
+                    case 'Hamil & Melahirkan':
+                        $('#cuti-row, #surat_sakit-row').hide();
+                        $('#durasi').prop('readonly', true).val(90);  // Durasi cuti 90 hari
+                        $('#tanggal_awal').prop('readonly', false);
+                        $('#tanggal_akhir').prop('readonly', true);
+
+                        $('#tanggal_awal').off('change').on('change', function () {
+                            var startDateStr = $(this).val();
+                            if (!startDateStr) {
+                                alert('Tanggal awal harus diisi!');
+                                $('#tanggal_akhir').val('');
+                                return;
+                            }
+
+                            var startDate = new Date(startDateStr);
+                            var today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            if (startDate < today) {
+                                alert('Tanggal awal tidak boleh kurang dari hari ini!');
+                                $('#tanggal_akhir').val('');
+                                return;
+                            }
+
+                            // Hitung tanggal akhir dengan 90 hari kalender (termasuk Sabtu & Minggu)
+                            var endDate = new Date(startDate);
+                            endDate.setDate(endDate.getDate() + 89); // 89 karena tanggal mulai dihitung sebagai hari pertama
+
+                            $('#durasi').val(90);
+                            $('#tanggal_akhir').val(endDate.toISOString().split('T')[0]);
+                        });
+                        break;
+
 
                 default:
                     $('#cuti-row, #surat_sakit-row').hide();

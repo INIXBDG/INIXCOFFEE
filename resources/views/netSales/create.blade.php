@@ -19,7 +19,7 @@
                 <div class="card">
                     <div class="card-body" id="card">
                         <a href="{{ url()->previous() }}" class="btn click-primary my-2"><img src="{{ asset('icon/arrow-left.svg') }}" class="img-responsive" width="20px"> Back</a>
-                        <h5 class="card-title text-center mb-4">{{ __('Analisis RKM') }}</h5>
+                        <h5 class="card-title text-center mb-4">{{ __('Analisis Paymant Advance') }}</h5>
                         <div class="row">
                             <div class="col-lg-6 col-md-12 col-sm-12 col-xs-12">
                                 <div class="row mb-3">
@@ -262,32 +262,19 @@
                                 </div>
 
                                 <div class="row mb-3">
-                                    <label for="nett_penjualan" class="col-md-4 col-form-label text-md-start">{{ __('Total') }}</label>
+                                    <label class="col-md-4 col-form-label text-md-start">{{ __('Total Pengajuan') }}</label>
                                     <div class="col-md-6">
-                                        <div class="input-group">
-                                            <span class="input-group-text" id="currency-symbol">Rp.</span>
-                                            <input readonly type="text" step="0.01" class="form-control @error('nett_penjualan') is-invalid @enderror" name="nett_penjualan" value="" id="nett_penjualan" required>
-                                            <button class="btn btn-success" type="button" id="total">Total</button>
-                                        </div>
-                                        @error('nett_penjualan')
-                                        <span class="invalid-feedback" role="alert">
-                                            <strong>{{ $message }}</strong>
-                                        </span>
-                                        @enderror
-                                    </div>
-                                </div>
-                                <div class="row mb-3">
-                                    <label for="komentar" class="col-md-4 col-form-label text-md-start">{{ __('Keterangan') }}</label>
-                                    <div class="col-md-6">
-                                        <input id="komentar" type="text" placeholder="Keterangan" class="form-control @error('komentar') is-invalid @enderror" name="komentar" autocomplete="komentar" autofocus>
-                                        @error('komentar')
-                                        <span class="invalid-feedback" role="alert">
-                                            <strong>{{ $message }}</strong>
-                                        </span>
-                                        @enderror
+                                        <input id="total_pengajuan" type="text" class="form-control" readonly>
+                                        <small id="alert_total" class="form-text"></small>
                                     </div>
                                 </div>
 
+                                <div class="row mb-3">
+                                    <label class="col-md-4 col-form-label text-md-start">{{ __('Selisih') }}</label>
+                                    <div class="col-md-6">
+                                        <input id="selisih_pengajuan" type="text" class="form-control" readonly>
+                                    </div>
+                                </div>  
                                 <div class="row mb-0">
                                     <div class="col-md-6 offset-md-10">
                                         <button type="submit" class="btn click-primary" id="btnsubmit">
@@ -371,6 +358,65 @@
                 const input = document.getElementById(id);
                 input.value = input.value.replace(/[^0-9]/g, '');
             });
+        });
+    });
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const hargaPenawaranInput = document.getElementById('harga_penawaran');
+        const biayaInputs = ['transportasi', 'penginapan', 'fresh_money', 'entertaint', 'souvenir'];
+        const totalInput = document.getElementById('total_pengajuan');
+        const selisihInput = document.getElementById('selisih_pengajuan');
+        const alertTotal = document.getElementById('alert_total');
+        const btnSubmit = document.getElementById('btnsubmit');
+
+        function parseRupiah(value) {
+            return parseInt(value.replace(/[^0-9]/g, '')) || 0;
+        }
+
+        function formatRupiah(angka) {
+            return 'Rp. ' + angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+
+        function updateTotal() {
+            const hargaPenawaran = parseRupiah(hargaPenawaranInput.value);
+            let total = 0;
+
+            biayaInputs.forEach(id => {
+                const val = document.getElementById(id).value;
+                total += parseRupiah(val);
+            });
+
+            const selisih = hargaPenawaran - total;
+            totalInput.value = formatRupiah(total);
+            selisihInput.value = (selisih < 0 ? '-' : '') + formatRupiah(Math.abs(selisih));
+
+            totalInput.classList.remove('is-invalid', 'is-valid', 'bg-warning');
+            selisihInput.classList.remove('text-danger', 'text-success', 'text-warning');
+            alertTotal.classList.remove('text-danger', 'text-warning', 'text-success');
+            alertTotal.textContent = '';
+            btnSubmit.disabled = false;
+
+            if (total > hargaPenawaran) {
+                totalInput.classList.add('is-invalid');
+                selisihInput.classList.add('text-danger');
+                alertTotal.classList.add('text-danger');
+                alertTotal.textContent = 'Total melebihi harga penawaran! Tidak bisa disubmit.';
+                btnSubmit.disabled = true;
+            } else if (selisih <= 100000) {
+                selisihInput.classList.add('text-warning');
+                alertTotal.classList.add('text-warning');
+                alertTotal.textContent = 'Apakah Anda yakin sudah mengecek kembali?';
+            } else {
+                totalInput.classList.add('is-valid');
+                selisihInput.classList.add('text-success');
+                alertTotal.classList.add('text-success');
+                alertTotal.textContent = 'Total pengajuan masih dalam batas harga penawaran.';
+            }
+        }
+
+        [...biayaInputs.map(id => document.getElementById(id)), hargaPenawaranInput].forEach(input => {
+            input.addEventListener('input', updateTotal);
         });
     });
 </script>
