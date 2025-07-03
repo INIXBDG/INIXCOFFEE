@@ -330,6 +330,7 @@ Route::put('/inventaris/update/{id}', [InventarisController::class, 'user'])->na
 Route::post('/inventaris/add/service/{id}', [InventarisController::class, 'addservice'])->name('AddService');
 Route::post('/inventaris/add/check/{id}', [InventarisController::class, 'addcheck'])->name('AddCheck');
 Route::delete('/inventaris/delete/data/{id}', [InventarisController::class, 'deletedata'])->name('DeleteDataInventaris');
+Route::post('/inventaris/create/kode', [InventarisController::class, 'createKode'])->name('CreateKodeIinvetaris');
 
 Route::post('/inventaris/import', [InventarisController::class, 'import'])->name('ImportDataInventaris');
 
