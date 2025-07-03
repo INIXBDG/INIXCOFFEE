@@ -18,38 +18,56 @@ class InventarisImport implements ToModel, WithValidation, SkipsOnFailure, WithH
     private $skippedRows = [];
     private $importedCount = 0;
 
-    /**
-     * Transform Excel date to PHP date format.
-     *
-     * @param mixed $date
-     * @return string|null
-     */
     private function transformDate($date)
     {
         if (is_numeric($date)) {
+            // Jika numeric, kemungkinan besar format Excel date (serial)
             try {
                 return \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($date)->format('Y-m-d');
             } catch (\Exception $e) {
-                Log::warning('Date transformation failed: ' . $e->getMessage(), ['date' => $date]);
-                return '-';
-            }
-        } elseif (is_string($date) && !empty($date) && $date !== '#N/A') {
-            try {
-                return \Carbon\Carbon::parse($date)->format('Y-m-d');
-            } catch (\Exception $e) {
-                Log::warning('String date parsing failed: ' . $e->getMessage(), ['date' => $date]);
+                Log::warning('Numeric date transformation failed', ['date' => $date, 'message' => $e->getMessage()]);
                 return '-';
             }
         }
+
+        if (is_string($date) && !empty(trim($date)) && $date !== '#N/A') {
+            $formats = [
+                'Y-m-d',
+                'd-m-Y',
+                'd/m/Y',
+                'm/d/Y',
+                'j F Y',
+                'j M Y',
+                'd M Y',
+                'd F Y',
+                'Y/m/d',
+                'Y.n.j',
+                'd.m.Y',
+                'Ymd',
+            ];
+
+            foreach ($formats as $format) {
+                try {
+                    $carbonDate = \Carbon\Carbon::createFromFormat($format, $date);
+                    return $carbonDate->format('Y-m-d');
+                } catch (\Exception $e) {
+                    continue;
+                }
+            }
+
+            // Jika gagal dengan semua format yang dicoba, coba parse langsung
+            try {
+                return \Carbon\Carbon::parse($date)->format('Y-m-d');
+            } catch (\Exception $e) {
+                Log::warning('Fallback parsing failed for date', ['date' => $date, 'message' => $e->getMessage()]);
+                return '-';
+            }
+        }
+
         return '-';
     }
 
-    /**
-     * Map Kategori to type (E or NE).
-     *
-     * @param string|null $kategori
-     * @return string
-     */
+
     private function mapKategoriToType($kategori)
     {
         if (empty($kategori) || $kategori === '#N/A' || $kategori === '-') {
@@ -58,29 +76,23 @@ class InventarisImport implements ToModel, WithValidation, SkipsOnFailure, WithH
         return preg_match('/elektronik/i', $kategori) ? 'E' : 'NE';
     }
 
-    /**
-     * Clean and normalize input value.
-     *
-     * @param mixed $value
-     * @return mixed
-     */
-    private function cleanValue($value)
+    private function cleanValue($key, $value)
     {
         if (is_string($value)) {
             $value = trim($value);
-            // Remove commas, periods, and currency symbols for price fields
-            $value = preg_replace('/[\,\.Rp\s]+/', '', $value);
-            return $value === '#N/A' || $value === '#REF!' || empty($value) ? '-' : $value;
+
+            // Hanya bersihkan format untuk kolom harga
+            if (in_array($key, ['harga_satuan_rp', 'total_harga_rp'])) {
+                $value = preg_replace('/[\,\.Rp\s]+/', '', $value); // Hapus format angka
+            }
+
+            return $value === '#N/A' || $value === '#REF!' || $value === '' ? '-' : $value;
         }
+
         return is_null($value) || $value === '' ? '-' : $value;
     }
 
-    /**
-     * Normalize kondisi_barang value.
-     *
-     * @param string|null $kondisi
-     * @return string
-     */
+
     private function normalizeKondisi($kondisi)
     {
         if (empty($kondisi) || $kondisi === '#N/A' || $kondisi === '-') {
@@ -90,81 +102,79 @@ class InventarisImport implements ToModel, WithValidation, SkipsOnFailure, WithH
         return $kondisi === 'bagus' ? 'baik' : $kondisi;
     }
 
-    /**
-     * @param array $row
-     * @return \Illuminate\Database\Eloquent\Model|null
-     */
     public function model(array $row)
     {
-        // Log headers for the first row to verify mapping
         if ($this->importedCount === 0 && empty($this->skippedRows)) {
             Log::info('Excel headers: ' . json_encode(array_keys($row)));
         }
 
-        // Clean all row values
-        $row = array_map([$this, 'cleanValue'], $row);
+        // Clean values
+        foreach ($row as $key => $value) {
+            $row[$key] = $this->cleanValue($key, $value);
+        }
 
-        // Normalize header keys to handle spaces and special characters
-        $row = array_combine(
-            array_map(function ($key) {
-                return str_replace([' ', '(', ')'], ['_', '', ''], strtolower($key));
-            }, array_keys($row)),
-            array_values($row)
-        );
+        // Normalize keys (replace spasi dan simbol)
+        $normalizedKeys = array_map(function ($key) {
+            return str_replace([' ', '(', ')'], ['_', '', ''], strtolower(trim($key)));
+        }, array_keys($row));
 
-        // Log cleaned row for debugging
+        $row = array_combine($normalizedKeys, array_values($row));
+
+        Log::debug('Normalized row keys: ' . json_encode(array_keys($row)));
         Log::debug('Processing row: ' . json_encode($row));
 
-        // Skip if required fields are missing or invalid
-        if ($row['nama_barang'] === '-' || $row['kategori'] === '-') {
-            $this->skippedRows[] = ['row' => $row, 'reason' => 'Missing or invalid Nama Barang or Kategori'];
-            Log::info('Skipped row due to missing nama_barang or kategori', ['row' => $row]);
+        // Validasi key yang penting
+        $namaBarang = $row['nama_barang'] ?? '-';
+        $kategori = $row['kategori'] ?? '-';
+
+        if ($namaBarang === '-' || $kategori === '-') {
+            $this->skippedRows[] = ['row' => $row, 'reason' => 'Missing nama_barang or kategori'];
+            Log::info('Skipped row: missing nama_barang or kategori', ['row' => $row]);
             return null;
         }
 
-        // Check for duplicate idbarang
-        if ($row['nomor_inventaris'] !== '-' && Inventaris::where('idbarang', $row['nomor_inventaris'])->exists()) {
-            $this->skippedRows[] = ['row' => $row, 'reason' => 'Duplicate idbarang: ' . $row['nomor_inventaris']];
-            Log::info('Skipped row due to duplicate idbarang', ['idbarang' => $row['nomor_inventaris']]);
+        $idbarang = $row['nomor_inventaris'] ?? '-';
+        if ($idbarang !== '-' && Inventaris::where('idbarang', $idbarang)->exists()) {
+            $this->skippedRows[] = ['row' => $row, 'reason' => 'Duplicate idbarang: ' . $idbarang];
+            Log::info('Skipped row: duplicate idbarang', ['row' => $row]);
             return null;
         }
 
-        // Map Excel data to model
+        // Pastikan field sesuai key
+        $jumlah = $row['jumlah'] !== '-' ? (int)$row['jumlah'] : 1;
+        $hargaSatuan = $row['harga_satuan_rp'] !== '-' ? (float)$row['harga_satuan_rp'] : 0;
+        $totalHarga = $row['total_harga_rp'] !== '-' ? (float)$row['total_harga_rp'] : ($jumlah * $hargaSatuan);
+
         $data = [
-            'idbarang' => $row['nomor_inventaris'] === '-' ? null : $row['nomor_inventaris'],
-            'name' => $row['nama_barang'],
-            'kodebarang' => $row['kode_barang'],
-            'merk_kode_seri_hardware' => $row['merkkode_serikode_hardware'],
-            'qty' => (int) ($row['jumlah'] === '-' ? 1 : $row['jumlah']),
-            'satuan' => $row['satuan'],
-            'type' => $this->mapKategoriToType($row['kategori']),
-            'harga_beli' => (float) ($row['harga_satuan_rp'] === '-' ? 0 : $row['harga_satuan_rp']),
-            'total_harga' => (float) ($row['total_harga_rp'] === '-' ? (($row['jumlah'] === '-' ? 1 : $row['jumlah']) * ($row['harga_satuan_rp'] === '-' ? 0 : $row['harga_satuan_rp'])) : $row['total_harga_rp']),
-            'waktu_pembelian' => $this->transformDate($row['tanggal_pembelian']),
-            'pengguna' => $row['user'],
-            'ruangan' => $row['lokasi_barang'],
-            'kondisi' => $this->normalizeKondisi($row['kondisi_barang']),
-            'deskripsi' => $row['keterangan'],
+            'idbarang' => $idbarang === '-' ? null : $idbarang,
+            'name' => $namaBarang,
+            'kodebarang' => $row['kode_barang'] ?? '-',
+            'merk_kode_seri_hardware' => $row['merkkode_serikode_hardware'] ?? '-',
+            'qty' => $jumlah,
+            'satuan' => $row['satuan'] ?? 'unit',
+            'type' => $this->mapKategoriToType($kategori),
+            'harga_beli' => $hargaSatuan,
+            'total_harga' => $totalHarga,
+            'waktu_pembelian' => $this->transformDate($row['tanggal_pembelian'] ?? null),
+            'pengguna' => $row['user'] ?? '-',
+            'ruangan' => $row['lokasi_barang'] ?? '-',
+            'kondisi' => $this->normalizeKondisi($row['kondisi_barang'] ?? null),
+            'deskripsi' => $row['keterangan'] ?? '-',
         ];
 
         try {
             $model = new Inventaris($data);
-            $model->save(); // Explicitly save to ensure persistence
+            $model->save();
             $this->importedCount++;
-            Log::info('Imported row successfully', ['idbarang' => $data['idbarang']]);
+            Log::info('Row imported successfully', ['idbarang' => $data['idbarang']]);
             return $model;
         } catch (\Exception $e) {
-            $this->skippedRows[] = ['row' => $row, 'reason' => 'Database error: ' . $e->getMessage()];
-            Log::error('Database error during import: ' . $e->getMessage(), ['row' => $row]);
+            $this->skippedRows[] = ['row' => $row, 'reason' => 'DB Error: ' . $e->getMessage()];
+            Log::error('DB Error during import: ' . $e->getMessage(), ['row' => $row]);
             return null;
         }
     }
 
-    /**
-     * Validation rules for each row.
-     *
-     * @return array
-     */
     public function rules(): array
     {
         return [
@@ -180,26 +190,16 @@ class InventarisImport implements ToModel, WithValidation, SkipsOnFailure, WithH
             'tanggal_pembelian' => 'nullable',
             'user' => 'nullable|string|max:255',
             'lokasi_barang' => 'nullable|string|max:255',
-            'kondisi_barang' => ['nullable', 'string', Rule::in(['baik', 'rusak/bermasalah', 'sedang diperbaiki', 'bagus', '-'])],
+            'kondisi_barang' => ['nullable', 'string', Rule::in(['baik', 'rusak', 'kurang layak'])],
             'keterangan' => 'nullable|string',
         ];
     }
 
-    /**
-     * Get skipped rows with reasons.
-     *
-     * @return array
-     */
     public function getSkippedRows()
     {
         return $this->skippedRows;
     }
 
-    /**
-     * Get number of imported rows.
-     *
-     * @return int
-     */
     public function getImportedCount()
     {
         return $this->importedCount;

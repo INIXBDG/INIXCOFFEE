@@ -25,7 +25,7 @@ return new class extends Migration
             $table->date('waktu_pembelian'); // Tanggal beli
             $table->text('pengguna')->nullable(); // Karyawan yang menggunakan
             $table->text('ruangan')->nullable(); // Ruangan lokasi barang
-            $table->enum('kondisi', ['baik', 'rusak/bermasalah', 'sedang diperbaiki'])->default('baik'); // Kondisi barang
+            $table->enum('kondisi', ['baik', 'rusak', 'kurang layak'])->default('baik'); // Kondisi barang
             $table->text('deskripsi')->nullable(); // Deskripsi tambahan
             $table->timestamps();
         });
