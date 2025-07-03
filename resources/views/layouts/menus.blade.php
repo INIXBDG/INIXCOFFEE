@@ -906,9 +906,27 @@
                             @endforeach
                         @endif
 
+                        @if (!$absenHariIni)
+                            Anda belum absensi hari ini, harap segera melakukan absensi.
+                        @else
+                            Anda sudah absensi hari ini pada tanggal {{\Carbon\Carbon::parse($absenHariIni->tanggal)->translatedFormat('d F Y')}} di jam {{$absenHariIni->jam_masuk}}
+                        @endif
+                        @if (!empty($absenHariIni->jam_keluar)&\Carbon\Carbon::now()->between(
+                            \Carbon\Carbon::createFromTimeString('17:00:00'),
+                            \Carbon\Carbon::createFromTimeString('23:59:59')
+                        ))
+                            Terimakasih telah melakukan absensi pulang, hati hati dijalan!
+                        @elseif (\Carbon\Carbon::now()->between(
+                            \Carbon\Carbon::createFromTimeString('17:00:00'),
+                            \Carbon\Carbon::createFromTimeString('23:59:59')
+                        ))
+                            Harap melakukan absensi pulang ya!
+                        @endif
+
+
 
                         @if (auth()->user()->jabatan == 'Programmer')
-                            Diupdate pada tanggal 26 Maret 2025
+                            Diupdate pada tanggal 2 Juli 2025
                         @endif
                     </div>
                     <div class="modal-footer">
@@ -2204,7 +2222,7 @@
                             foto: data_uri,
                         },
                         success: function(response) {
-                            alert(response.success);
+                            // alert(response.success);
                             $('#modalAbsen').modal('hide');
                             window.location.href = "{{ route('absensi.karyawan') }}";
                         },

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AbsensiKaryawan;
 use App\Models\User;
 use Illuminate\Http\Request;
 use App\Models\RKM;
@@ -59,7 +60,7 @@ class HomeController extends Controller
            // Mengambil tanggal awal dan akhir minggu ini
             $startDate = Carbon::now()->startOfWeek();
             $endDate = Carbon::now()->endOfWeek();
-
+            $sekarang = Carbon::now()->toDateString();
             // Mengambil notifikasi yang berada di antara tanggal awal dan akhir minggu ini
             $notifikasi = Notif::with('users')
                 ->where(function($query) use ($startDate, $endDate) {
@@ -67,8 +68,12 @@ class HomeController extends Controller
                         ->orWhereBetween('tanggal_akhir', [$startDate, $endDate]);
                 })
             ->get();
-           
-            return view('layouts.menus', compact('notifikasi'));
+            $id_karyawan = auth()->user()->karyawan->id;
+            $absenHariIni = AbsensiKaryawan::where('id_karyawan', $id_karyawan)
+                            ->where('tanggal', $sekarang)
+                            ->first();
+            // return $absenHariIni;
+            return view('layouts.menus', compact('notifikasi', 'absenHariIni'));
 
     }
     private function getTotalSales($year)
