@@ -350,9 +350,15 @@ class TunjanganController extends Controller
                 ->whereYear('tanggal', $tahun)
                 ->where('id_karyawan', $karyawanId)
                 ->get();
-
+            $absen_pulang = AbsensiKaryawan::whereMonth('tanggal', $bulan)
+                ->whereYear('tanggal', $tahun)
+                ->Where('jam_keluar', '=', null)
+                ->where('id_karyawan', $karyawanId)
+                ->get();
             // Hitung jumlah absensi dan keterlambatan
-            $jumlahAbsensi = $absensiKaryawan->count();
+            $jumlahAbsen = $absensiKaryawan->count();
+            $jumlahAbsensiPulang = $absen_pulang->count();
+            $jumlahAbsensi = $jumlahAbsen - $jumlahAbsensiPulang;
 
             $totalSeconds = $absensiKaryawan->sum(function ($item) {
                 if (!empty($item->waktu_keterlambatan) && strpos($item->waktu_keterlambatan, ':') !== false) {
