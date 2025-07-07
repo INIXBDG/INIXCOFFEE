@@ -324,7 +324,9 @@
                             actions += '<a class="dropdown-item" href="{{ url('/lembur') }}/' + row.id + '/editKaryawan" data-toggle="tooltip" data-placement="top" title="Edit Souvenir"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Detail Aktivitas</a>';
                         }
                         if (canCreateLembur && data.approval_karyawan == null) {
-                            actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
+                            actions += '<button type="button" class="dropdown-item approve-btn" data-id="' + row.id + '"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
+
+                            // actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
                         }
                         if (canDeleteLembur) {
                             actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/lembur') }}/' + row.id + '" method="POST">';
@@ -339,6 +341,10 @@
                     }
                 }
             ]
+        });
+        $('#lemburkaryawan').on('click', '.approve-btn', function() {
+            var id = $(this).data('id');
+            openApproveModal(id, 'Manager');
         });
 
         function openApproveModal(id, jabatan) {
