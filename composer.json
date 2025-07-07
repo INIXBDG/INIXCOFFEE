@@ -17,7 +17,8 @@
         "maatwebsite/excel": "^3.1",
         "rap2hpoutre/laravel-log-viewer": "^2.4",
         "spatie/laravel-image-optimizer": "^1.8",
-        "spatie/laravel-permission": "^6.13"
+        "spatie/laravel-permission": "^6.13",
+        "vinkla/hashids": "^11.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.9.1",

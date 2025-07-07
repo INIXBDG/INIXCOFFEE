@@ -17,7 +17,7 @@
                     <h3 class="card-title text-center">{{ __('Profil Saya') }}</h3>
                     <div class="row">
                         {{-- foto --}}
-                        <form action="{{ route('karyawan.update', $users->id) }}" method="post">
+                        <form action="{{ route('karyawan.update', $users->hashid) }}" method="post">
                             @csrf
                             @method('PUT')
                         <div class="row">
@@ -115,7 +115,7 @@
                                         <option value="IT Service Management" @if ($users->divisi == "IT Service Management") selected @endif>IT Service Management</option>
                                     </select>
                                 @endif
-                                
+
                                 @error('divisi')
                             <span class="invalid-feedback" role="alert">
                                 <strong>{{ $message }}</strong>
