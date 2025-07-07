@@ -28,16 +28,15 @@
                             <div class="btn-group" role="group" aria-label="Approval Options">
                                 <input type="radio" class="btn-check" name="approval" id="approveYes" value="1" autocomplete="off" checked>
                                 <label class="btn btn-outline-primary" for="approveYes" onclick="toggleAlasanManager(false)">Ya</label>
-        
                                 <input type="radio" class="btn-check" name="approval" id="approveNo" value="2" autocomplete="off">
                                 <label class="btn btn-outline-danger" for="approveNo" onclick="toggleAlasanManager(true)">Tidak</label>
                             </div>
                         </div>
+                    </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary">Simpan</button>
-                    </form>
                 </div>
             </div>
         </div>
@@ -67,7 +66,6 @@
                                 </tr>
                             </thead>
                             <tbody>
-
                             </tbody>
                         </table>
                     </div>
@@ -96,7 +94,6 @@
                             </tr>
                         </thead>
                         <tbody>
-
                         </tbody>
                     </table>
                 </div>
@@ -106,49 +103,49 @@
 </div>
 <style>
     .loader {
-    position: relative;
-    text-align: center;
-    margin: 15px auto 35px auto;
-    z-index: 9999;
-    display: block;
-    width: 80px;
-    height: 80px;
-    border: 10px solid rgba(0, 0, 0, .3);
-    border-radius: 50%;
-    border-top-color: #000;
-    animation: spin 1s ease-in-out infinite;
-    -webkit-animation: spin 1s ease-in-out infinite;
+        position: relative;
+        text-align: center;
+        margin: 15px auto 35px auto;
+        z-index: 9999;
+        display: block;
+        width: 80px;
+        height: 80px;
+        border: 10px solid rgba(0, 0, 0, .3);
+        border-radius: 50%;
+        border-top-color: #000;
+        animation: spin 1s ease-in-out infinite;
+        -webkit-animation: spin 1s ease-in-out infinite;
     }
 
     @keyframes spin {
-    to {
-        -webkit-transform: rotate(360deg);
-    }
+        to {
+            -webkit-transform: rotate(360deg);
+        }
     }
 
     @-webkit-keyframes spin {
-    to {
-        -webkit-transform: rotate(360deg);
-    }
+        to {
+            -webkit-transform: rotate(360deg);
+        }
     }
     .modal-content {
-    border-radius: 0px;
-    box-shadow: 0 0 20px 8px rgba(0, 0, 0, 0.7);
+        border-radius: 0px;
+        box-shadow: 0 0 20px 8px rgba(0, 0, 0, 0.7);
     }
 
     .modal-backdrop.show {
-    opacity: 0.75;
+        opacity: 0.75;
     }
 
     .loader-txt {
-    p {
-        font-size: 13px;
-        color: #666;
-        small {
-        font-size: 11.5px;
-        color: #999;
+        p {
+            font-size: 13px;
+            color: #666;
+            small {
+                font-size: 11.5px;
+                color: #999;
+            }
         }
-    }
     }
 </style>
 @push('js')
@@ -166,7 +163,7 @@
         
         $('#perintahlemburkaryawan').DataTable({
             "ajax": {
-                "url": "{{ route('getSuratPerintahLembur') }}", // URL API untuk mengambil data
+                "url": "{{ route('getSuratPerintahLembur') }}",
                 "type": "GET",
                 "beforeSend": function () {
                     $('#loadingModal').modal('show');
@@ -190,7 +187,7 @@
                 {
                     "data": null,
                     "render": function (data, type, row) {
-                        var created_at = moment(data.tanggal_spl).format('dddd, DD MMMM YYYY'); // Format Tanggal dalam Bahasa Indonesia
+                        var created_at = moment(data.tanggal_spl).format('dddd, DD MMMM YYYY');
                         return created_at;
                     },
                 },
@@ -199,7 +196,7 @@
                 {
                     "data": null,
                     "render": function (data, type, row) {
-                        var created_at = moment(data.tanggal_lembur).format('dddd, DD MMMM YYYY'); // Format Tanggal dalam Bahasa Indonesia
+                        var created_at = moment(data.tanggal_lembur).format('dddd, DD MMMM YYYY');
                         return created_at;
                     },
                 },
@@ -234,12 +231,11 @@
                     }
                 }
             ]
-
         });
 
         $('#lemburkaryawan').DataTable({
             "ajax": {
-                "url": "{{ route('getLemburKaryawan') }}", // URL API untuk mengambil data
+                "url": "{{ route('getLemburKaryawan') }}",
                 "type": "GET",
                 "beforeSend": function () {
                     $('#loadingModal').modal('show');
@@ -260,7 +256,12 @@
                 {"data": "id"},
                 {"data": "karyawan.nama_lengkap"},
                 {"data": "karyawan.jabatan"},
-
+                {
+                    "data": null,
+                    "render": function (data, type, row) {
+                        return data.jam_mulai ? data.jam_mulai : '-';
+                    },
+                },
                 {
                     "data": null,
                     "render": function (data, type, row) {
@@ -273,33 +274,27 @@
                         if (data.jam_mulai && data.jam_selesai) {
                             var start = moment(data.jam_mulai, "HH:mm");
                             var end = moment(data.jam_selesai, "HH:mm");
-                            // Jika waktu selesai lebih kecil dari waktu mulai, tambah 1 hari
                             if (end.isBefore(start)) {
                                 end.add(1, 'day');
                             }
                             var duration = moment.duration(end.diff(start));
-                            return duration.asHours().toFixed(2) + ' Jam'; 
+                            return duration.asHours().toFixed(2) + ' Jam';
                         }
-                        return '0.00'; 
+                        return '0.00';
                     },
-
                 },
                 {"data": "uraian_tugas"},
                 {
                     "data": null,
                     "render": function (data, type, row) {
-                        var created_at = moment(data.tanggal_lembur).format('dddd, DD MMMM YYYY'); // Format Tanggal dalam Bahasa Indonesia
+                        var created_at = moment(data.tanggal_lembur).format('dddd, DD MMMM YYYY');
                         return created_at;
                     },
                 },
                 {
                     "data": null,
                     "render": function (data, type, row) {
-                        if (data.keterangan == null) {
-                            return '-';
-                        } else{
-                            return data.keterangan;
-                        }
+                        return data.keterangan ? data.keterangan : '-';
                     },
                 },
                 {
@@ -311,7 +306,7 @@
                             return '<span class="badge bg-success"> Disetujui </span>';
                         } else if (data.approval_karyawan == 'Ditolak') {
                             return '<span class="badge bg-danger"> Ditolak </span>';
-                        } else{
+                        } else {
                             return '<span class="badge bg-primary"> Belum Disetujui </span>';
                         }
                     },
@@ -320,44 +315,38 @@
                     "data": null,
                     "render": function(data, type, row) {
                         var actions = "";
-                        // if (canUpdateLembur) {
-                            actions += '<div class="dropdown">';
-                            actions += '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
-                            actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
-                            actions += '<a class="dropdown-item" href="{{route('lembur.show', ':id')}}"><img src="{{ asset('icon/assept-document.svg') }}" style="width:24px" class=""> Form PDF</a>';
-                            actions = actions.replace(':id', data.id);
-                            if(data.approval_karyawan == null){
-                                actions += '<a class="dropdown-item" href="{{ url('/lembur') }}/' + row.id + '/editKaryawan" data-toggle="tooltip" data-placement="top" title="Edit Souvenir"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Detail Aktivitas</a>';
-                            }
-                            if (canCreateLembur && data.approval_karyawan == null) {
-                                actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
-                            }
-                            if (canDeleteLembur) {
-                                actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/lembur') }}/' + row.id + '" method="POST">';
-                                actions += '@csrf';
-                                actions += '@method('DELETE')';
-                                actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
-                                actions += '</form>';
-                            }
-                            actions += '</div>';
-                            actions += '</div>';
-                        // } else {
-                            // actions += '<div class="dropdown">';
-                            // actions += '<button class="btn dropdown-toggle disabled" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
-                            // actions += '</div>';
-                        // }
+                        actions += '<div class="dropdown">';
+                        actions += '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
+                        actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
+                        actions += '<a class="dropdown-item" href="{{route('lembur.show', ':id')}}"><img src="{{ asset('icon/assept-document.svg') }}" style="width:24px" class=""> Form PDF</a>';
+                        actions = actions.replace(':id', data.id);
+                        if (data.approval_karyawan == null) {
+                            actions += '<a class="dropdown-item" href="{{ url('/lembur') }}/' + row.id + '/editKaryawan" data-toggle="tooltip" data-placement="top" title="Edit Souvenir"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Detail Aktivitas</a>';
+                        }
+                        if (canCreateLembur && data.approval_karyawan == null) {
+                            actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
+                        }
+                        if (canDeleteLembur) {
+                            actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/lembur') }}/' + row.id + '" method="POST">';
+                            actions += '@csrf';
+                            actions += '@method('DELETE')';
+                            actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
+                            actions += '</form>';
+                        }
+                        actions += '</div>';
+                        actions += '</div>';
                         return actions;
                     }
                 }
             ]
-
         });
+
+        function openApproveModal(id, jabatan) {
+            var approveUrl = "{{ url('/lembur/approval/') }}/" + id;
+            $('#approveForm').attr('action', approveUrl);
+            $('#approveModal').modal('show');
+        }
     });
-    function openApproveModal(id, jabatan) {
-        var approveUrl = "{{ url('/lembur/approval/') }}/" + id;
-        $('#approveForm').attr('action', approveUrl);
-        $('#approveModal').modal('show');
-    }
 </script>
 @endpush
 @endsection
