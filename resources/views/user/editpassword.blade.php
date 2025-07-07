@@ -12,7 +12,7 @@
                         <p class="text-left my-2">Note: jika anda lupa password sebelumnya, maka hubungi HRD!</p>
                     </div>
                     <div class="row">
-                        <form action="{{ route('user.updatePassword', $users->id) }}" method="post">
+                        <form action="{{ route('user.updatePassword', $users->hashid) }}" method="post">
                             @csrf
                             @method('PUT')
                             <div class="row">

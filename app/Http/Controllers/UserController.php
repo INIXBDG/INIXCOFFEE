@@ -12,6 +12,8 @@ use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
+use Vinkla\Hashids\Facades\Hashids;
+
 
 class UserController extends Controller
 {
@@ -20,7 +22,7 @@ class UserController extends Controller
         $this->middleware('auth');
         // $this->middleware('permission:Akses Development', ['only' => ['showUserDropdown', 'changeUser', 'indexUser','updateUser','editUser']]);
     }
-    
+
     public function index()
     {
         $users = User::with('karyawan')->paginate(5);
@@ -97,71 +99,90 @@ class UserController extends Controller
         }
     }
 
-
     public function show($id)
     {
-        $users = User::with('karyawan')->findOrFail($id);
-        $json = response()->json($users);
-        // dd($json);
-        // return $json;
+        $decoded = Hashids::decode($id);
+        if (empty($decoded)) abort(404);
+
+        $userId = $decoded[0];
+        $users = User::findOrFail($userId);
+
+        // Batasi akses: hanya user itu sendiri atau admin
+        if (auth()->id() !== $users->id && auth()->user()->role !== 'Admin') {
+            abort(403, 'Kamu tidak diizinkan mengakses data ini.');
+        }
+
         return view('user.show', compact('users'));
     }
 
     public function editPassword($id)
     {
-        $users = User::findOrFail($id);
-        $karyawan = karyawan::findOrFail($id);
+        $decoded = Hashids::decode($id);
+        if (empty($decoded)) abort(404);
+
+        $realId = $decoded[0];
+        $users = User::findOrFail($realId);
+
+        // Batasi akses ke user sendiri atau admin
+        if (auth()->id() !== $users->id && auth()->user()->role !== 'Admin') {
+            abort(403);
+        }
+
+        $karyawan = Karyawan::findOrFail($realId);
 
         return view('user.editpassword', compact('users', 'karyawan'));
     }
 
     public function updatePassword(Request $request, $id)
     {
-        $users = User::findOrFail($id);
+        $decoded = Hashids::decode($id);
+        if (empty($decoded)) abort(404);
+
+        $realId = $decoded[0];
+        $users = User::findOrFail($realId);
+
+        // Batasi akses ke user sendiri atau admin
+        if (auth()->id() !== $users->id && auth()->user()->role !== 'Admin') {
+            abort(403);
+        }
+
         $data = $request->validate([
             'expassword' => ['required', 'min:8'],
             'password' => 'min:8|required_with:password_confirmation|same:password_confirmation',
             'password_confirmation' => 'min:8'
         ]);
 
-        if(password_verify($data['expassword'], $users->password)) {
-            $data[ 'password']= Hash::make($data['password']);
-            unset ($data['expassword']);
+        if (password_verify($data['expassword'], $users->password) || $data['expassword'] == 'inixindobdg') {
+            $data['password'] = Hash::make($data['password']);
+            unset($data['expassword']);
             $users->update($data);
-        }else if( $data['expassword'] == 'inixindobdg'){
-            // dd('inixindobdg');
-            $data[ 'password']= Hash::make($data['password']);
-            unset ($data['expassword']);
-            $users->update($data);
-        }
-        else{
+
+            return redirect('/profile/' . $users->hashid)->with('success', 'Password Berhasil Diubah');
+        } else {
             return back()->with('error', 'Password Lama Anda Salah');
         }
-
-        // dd($users->update($data));
-        return redirect('/profile/'. $id)->with('success', 'Password Berhasil Diubah');
     }
 
     public function destroy($id)
     {
         $users = User::findOrFail($id);
-        
+
         // Cek apakah karyawan ada
         if ($users->karyawan_id) {
             $karyawan = Karyawan::find($users->karyawan_id);
-            
+
             // Jika karyawan ditemukan, hapus
             if ($karyawan) {
                 $karyawan->delete();
             }
         }
-        
+
         // Hapus user
         $users->delete();
-        
+
         return redirect('/user')->with('success', 'User Berhasil Dihapus');
     }
-    
+
 
     public function datas()
     {
@@ -191,10 +212,10 @@ class UserController extends Controller
     {
         $users = auth()->user();
         $jabatan = $users->jabatan;
-        
+
             $users= User::get();
             return view('user.changeuser', compact('users'));
-        
+
     }
 
     public function indexUser()

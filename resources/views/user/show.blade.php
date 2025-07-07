@@ -9,11 +9,11 @@
             
             @if (auth()->user()->jabatan == "HRD" || auth()->user()->jabatan == "Koordinator Office" || auth()->user()->username == $users->username)
                 <div class="d-flex justify-content-end">
-                    <a href="/karyawan/{{ $users->id }}/edit" class="btn btn-md click-primary mx-1">
+                    <a href="/karyawan/{{ $users->hashid }}/edit" class="btn btn-md click-primary mx-1">
                         <img src="{{ asset('icon/edit.svg') }}" class="mr-1" width="25px">
                         Edit Profile
                     </a>
-                    <a href="/user/{{ $users->id }}/password" class="btn btn-md click-warning mx-1">
+                    <a href="/user/{{ $users->hashid }}/password" class="btn btn-md click-warning mx-1">
                         <img src="{{ asset('icon/lock.svg') }}" class="mr-1" width="25px">
                         Ganti Password
                     </a>

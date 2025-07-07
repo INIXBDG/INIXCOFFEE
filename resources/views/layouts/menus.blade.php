@@ -1085,12 +1085,10 @@
                                                                     class="img-responsive" width="30px">
                                                             </div>
                                                             <div class="col-md-10" style="margin-left: 10px">
-                                                                <a href="/profile/{{ auth()->user()->id }}"
-                                                                    class="link stretched-link text-decoration-none">
+                                                                <a href="{{ route('user.show', auth()->user()->hashid) }}" class="link stretched-link text-decoration-none">
                                                                     <h5 class="card-title">Profil Saya</h5>
                                                                 </a>
-                                                                <p class="card-text">Profil saya sebagai karyawan
-                                                                    INIXINDO Bandung.</p>
+                                                                <p class="card-text">Profil saya sebagai karyawan INIXINDO Bandung.</p>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1555,7 +1553,7 @@
                                                                 </div>
                                                             </div>
                                                     @endcan
-                                                    @can('View DatabaseKPI')                                                    
+                                                    @can('View DatabaseKPI')
                                                         <div class="col-sm-6 mt-2">
                                                         <div class="card" id="card-hover">
                                                             <div class="card-body d-flex">

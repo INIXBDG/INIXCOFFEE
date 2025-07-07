@@ -8,6 +8,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
+use Vinkla\Hashids\Facades\Hashids;
+
 
 class User extends Authenticatable
 {
@@ -57,4 +59,10 @@ class User extends Authenticatable
     {
         return $this->jabatan === 'HRD';
     }
+
+    public function getHashidAttribute()
+    {
+        return Hashids::encode($this->id);
+    }
+
 }
