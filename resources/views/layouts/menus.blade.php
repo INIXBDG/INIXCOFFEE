@@ -770,26 +770,26 @@
 </head>
 
 <body>
-    @if (session('success'))
-        <div class="alert alert-success alert-dismissible fade show m-0 alert-custom" role="alert">
-            {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-    @if (session('error'))
-        <div class="alert alert-danger alert-dismissible fade show m-0 alert-custom" role="alert">
-            {{ session('error') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-    @if ($errors->any())
-        <div class="alert alert-danger alert-dismissible fade show m-0 alert-custom" role="alert">
-            @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
+        @if (session('success'))
+            <div class="alert alert-success alert-dismissible fade show m-0 alert-custom" role="alert">
+                {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+        @if (session('error'))
+            <div class="alert alert-danger alert-dismissible fade show m-0 alert-custom" role="alert">
+                {{ session('error') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+        @if ($errors->any())
+            <div class="alert alert-danger alert-dismissible fade show m-0 alert-custom" role="alert">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
     <div id="app">
         <div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel"
             aria-hidden="true">
@@ -1410,9 +1410,9 @@
                         </div>
                         <div class="col-md-12 col-sm-12 col-xs-12 col-lg-6 col-xl-6">
                             <div class="row">
-                                    <div class="row">
-                                        <div class="col-md-12 mt-1">
-                                        @can('Fitur Menu RKM')
+                                <div class="row">
+                                    <div class="col-md-12 mt-1">
+                                    @can('Fitur Menu RKM')
                                             <div class="card">
                                                 <div class="card-body">
                                                     <h5 class="text-center card-title">Rencana Kelas Mingguan</h5>
@@ -1552,29 +1552,14 @@
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                    @endcan
-                                                    @can('View DatabaseKPI')
-                                                        <div class="col-sm-6 mt-2">
-                                                        <div class="card" id="card-hover">
-                                                            <div class="card-body d-flex">
-                                                                <div class="col-md-2">
-                                                                    <i class="fa fa-ranking-star" style="font-size: 30px;"></i>
-                                                                </div>
-                                                                <div class="col-md-10" style="margin-left: 10px">
-                                                                    <a href="/databasekpi" class="link stretched-link text-decoration-none">
-                                                                        <h5 class="card-title">Database KPI</h5>
-                                                                    </a>
-                                                                    <p class="card-text">Database KPI Karyawan.</p>
-                                                                </div>
-                                                            </div>
-                                                    @endcan
+                                                        @endcan
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
+                                    @endcan
                                     </div>
-                                @endcan
-                                        @can('Fitur Menu Finance')
+                                </div>
+                                    @can('Fitur Menu Finance')
                                             <div class="row">
                                                 {{-- RKM --}}
                                                 <div class="col-md-12 mt-1">
@@ -1709,10 +1694,9 @@
                                                         </div>
                                                     </div>
                                                 </div>
-
                                             </div>
-                                        @endcan
-                                        @can('Fitur Menu Manajemen')
+                                    @endcan
+                                    @can('Fitur Menu Manajemen')
                                             <div class="row">
                                                 <div class="col-md-12 mt-1">
                                                     <div class="card">
@@ -1750,8 +1734,8 @@
                                                 </div>
                                                 {{-- end RKM --}}
                                             </div>
-                                        @endcan
-                                        @can('Fitur Menu Education')
+                                    @endcan
+                                    @can('Fitur Menu Education')
                                             <div class="row">
                                                 <div class="col-md-12 mt-1">
                                                     <div class="card">
@@ -1811,8 +1795,8 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                        @endcan
-                                        @can('Fitur Menu Office')
+                                    @endcan
+                                    @can('Fitur Menu Office')
                                             <div class="row">
                                                 <div class="col-md-12 mt-1">
                                                     <div class="card">
@@ -1820,26 +1804,26 @@
                                                             <h5 class="text-center card-title">Office</h5>
                                                             <div class="row">
                                                                 @can('View Inventaris')
-                                                                <div class="col-sm-6 mt-2">
-                                                                    <div class="card" id="card-hover">
-                                                                        <div class="card-body d-flex">
-                                                                            <div class="col-md-2">
-                                                                                <img src="{{ asset('icon/file-text.svg') }}"
-                                                                                    class="img-responsive" width="30px">
-                                                                            </div>
-                                                                            <div class="col-md-10"
-                                                                                style="margin-left: 10px">
-                                                                                <a href="{{ route('IndexInventaris') }}"
-                                                                                    class="link stretched-link text-decoration-none">
-                                                                                    <h5 class="card-title">Inventaris</h5>
-                                                                                </a>
-                                                                                <p class="card-text">Data Inventaris
-                                                                                    Inixindo.
-                                                                                </p>
+                                                                    <div class="col-sm-6 mt-2">
+                                                                        <div class="card" id="card-hover">
+                                                                            <div class="card-body d-flex">
+                                                                                <div class="col-md-2">
+                                                                                    <img src="{{ asset('icon/file-text.svg') }}"
+                                                                                        class="img-responsive" width="30px">
+                                                                                </div>
+                                                                                <div class="col-md-10"
+                                                                                    style="margin-left: 10px">
+                                                                                    <a href="{{ route('IndexInventaris') }}"
+                                                                                        class="link stretched-link text-decoration-none">
+                                                                                        <h5 class="card-title">Inventaris</h5>
+                                                                                    </a>
+                                                                                    <p class="card-text">Data Inventaris
+                                                                                        Inixindo.
+                                                                                    </p>
+                                                                                </div>
                                                                             </div>
                                                                         </div>
                                                                     </div>
-                                                                </div>
                                                                 @endcan
                                                                 @can('View Klaim')
                                                                     <div class="col-sm-6 mt-2">
@@ -1860,42 +1844,110 @@
                                                                         </div>
                                                                     </div>
                                                                 @endcan
+                                                                @can('View DatabaseKPI')
+                                                                    <div class="col-sm-6 mt-2">
+                                                                        <div class="card" id="card-hover">
+                                                                            <div class="card-body d-flex">
+                                                                                <div class="col-md-2">
+                                                                                    <i class="fa fa-ranking-star" style="font-size: 30px;"></i>
+                                                                                </div>
+                                                                                <div class="col-md-10" style="margin-left: 10px">
+                                                                                    <a href="/databasekpi" class="link stretched-link text-decoration-none">
+                                                                                        <h5 class="card-title">Database KPI</h5>
+                                                                                    </a>
+                                                                                    <p class="card-text">Database KPI Karyawan.</p>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                @endcan
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        @endcan
-                                        </div>
-                                    </div>
+                                    @endcan
                             </div>
                         </div>
-                        @can('Akses Development')
-                            <div class="tab-pane fade" id="pills-admin" role="tabpanel"
-                                aria-labelledby="pills-admin-tab">
-                                <div class="row">
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="pills-admin" role="tabpanel" aria-labelledby="pills-admin-tab">
+                    <div class="row">
                                     <div class="col-md-12 mt-1">
                                         <div class="card">
                                             <div class="card-body">
                                                 <h5 class="text-center card-title">Fitur Menu Development</h5>
                                                 <div class="row">
-                                                    <div class="col-sm-6 mt-2">
-                                                        <div class="card" id="card-hover">
-                                                            <div class="card-body d-flex">
-                                                                <div class="col-md-2">
-                                                                    <img src="{{ asset('icon/bell.svg') }}"
-                                                                        class="img-responsive" width="30px">
-                                                                </div>
-                                                                <div class="col-md-10" style="margin-left: 10px">
-                                                                    <a href="/inixcoffeeloglarapelixb95"
-                                                                        class="link stretched-link text-decoration-none">
-                                                                        <h5 class="card-title">logs</h5>
-                                                                    </a>
-                                                                    <p class="card-text">logs prod.</p>
+                                                    @can('Akses Development')
+                                                        <div class="col-sm-6 mt-2">
+                                                            <div class="card" id="card-hover">
+                                                                <div class="card-body d-flex">
+                                                                    <div class="col-md-2">
+                                                                        <img src="{{ asset('icon/bell.svg') }}"
+                                                                            class="img-responsive" width="30px">
+                                                                    </div>
+                                                                    <div class="col-md-10" style="margin-left: 10px">
+                                                                        <a href="/inixcoffeeloglarapelixb95"
+                                                                            class="link stretched-link text-decoration-none">
+                                                                            <h5 class="card-title">logs</h5>
+                                                                        </a>
+                                                                        <p class="card-text">logs prod.</p>
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    </div>
+                                                        <div class="col-sm-6 mt-2">
+                                                                <div class="card" id="card-hover">
+                                                                    <div class="card-body d-flex">
+                                                                        <div class="col-md-2">
+                                                                            <img src="{{ asset('icon/target.svg') }}"
+                                                                                class="img-responsive" width="30px">
+                                                                        </div>
+                                                                        <div class="col-md-10" style="margin-left: 10px">
+                                                                            <a href="/permissions"
+                                                                                class="link stretched-link text-decoration-none">
+                                                                                <h5 class="card-title">Setting Permission</h5>
+                                                                            </a>
+                                                                            <p class="card-text">Permissions.</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                        </div>
+                                                        <div class="col-sm-6 mt-2">
+                                                                <div class="card" id="card-hover">
+                                                                    <div class="card-body d-flex">
+                                                                        <div class="col-md-2">
+                                                                            <img src="{{ asset('icon/target.svg') }}"
+                                                                                class="img-responsive" width="30px">
+                                                                        </div>
+                                                                        <div class="col-md-10" style="margin-left: 10px">
+                                                                            <a href="/roles"
+                                                                                class="link stretched-link text-decoration-none">
+                                                                                <h5 class="card-title">Setting Role</h5>
+                                                                            </a>
+                                                                            <p class="card-text">Roles.</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                        </div>
+                                                        <div class="col-sm-6 mt-2">
+                                                                <div class="card" id="card-hover">
+                                                                    <div class="card-body d-flex">
+                                                                        <div class="col-md-2">
+                                                                            <img src="{{ asset('icon/target.svg') }}"
+                                                                                class="img-responsive" width="30px">
+                                                                        </div>
+                                                                        <div class="col-md-10" style="margin-left: 10px">
+                                                                            <a href="/userRolePermissions"
+                                                                                class="link stretched-link text-decoration-none">
+                                                                                <h5 class="card-title">Setting User</h5>
+                                                                            </a>
+                                                                            <p class="card-text">Users.</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                        </div>
+                                                    @endcan
                                                     @can('Super Duper Admin')
                                                         <div class="col-sm-6 mt-2">
                                                             <div class="card" id="card-hover">
@@ -1914,74 +1966,17 @@
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                        <div class="col-sm-6 mt-2">
-                                                            <div class="card" id="card-hover">
-                                                                <div class="card-body d-flex">
-                                                                    <div class="col-md-2">
-                                                                        <img src="{{ asset('icon/target.svg') }}"
-                                                                            class="img-responsive" width="30px">
-                                                                    </div>
-                                                                    <div class="col-md-10" style="margin-left: 10px">
-                                                                        <a href="/permissions"
-                                                                            class="link stretched-link text-decoration-none">
-                                                                            <h5 class="card-title">Setting Permission</h5>
-                                                                        </a>
-                                                                        <p class="card-text">Permissions.</p>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <div class="col-sm-6 mt-2">
-                                                            <div class="card" id="card-hover">
-                                                                <div class="card-body d-flex">
-                                                                    <div class="col-md-2">
-                                                                        <img src="{{ asset('icon/target.svg') }}"
-                                                                            class="img-responsive" width="30px">
-                                                                    </div>
-                                                                    <div class="col-md-10" style="margin-left: 10px">
-                                                                        <a href="/roles"
-                                                                            class="link stretched-link text-decoration-none">
-                                                                            <h5 class="card-title">Setting Role</h5>
-                                                                        </a>
-                                                                        <p class="card-text">Roles.</p>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <div class="col-sm-6 mt-2">
-                                                            <div class="card" id="card-hover">
-                                                                <div class="card-body d-flex">
-                                                                    <div class="col-md-2">
-                                                                        <img src="{{ asset('icon/target.svg') }}"
-                                                                            class="img-responsive" width="30px">
-                                                                    </div>
-                                                                    <div class="col-md-10" style="margin-left: 10px">
-                                                                        <a href="/userRolePermissions"
-                                                                            class="link stretched-link text-decoration-none">
-                                                                            <h5 class="card-title">Setting User</h5>
-                                                                        </a>
-                                                                        <p class="card-text">Users.</p>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
                                                     @endcan
-
                                                 </div>
-
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-                        @endcan
-                        <!-- Dashboard Content -->
-                        <div class="tab-pane fade" id="pills-dashboard" role="tabpanel"
-                            aria-labelledby="pills-dashboard-tab">
-                            @include('partials.dashboard')
-                        </div>
-
                     </div>
+                </div>
+                <div class="tab-pane fade" id="pills-dashboard" role="tabpanel" aria-labelledby="pills-dashboard-tab">
+                    @include('partials.dashboard')
+                </div>
+            </div>
         </main>
     </div>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

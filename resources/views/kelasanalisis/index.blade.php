@@ -78,25 +78,23 @@
                     @endphp
                 </select>
             </div>
-
             <div class="col-md-4 mx-1">
-                <label for="bulanRange" class="form-label">Rentang Bulan</label>
-                <select id="bulanRange" class="form-select">
-                    <option disabled>Pilih Rentang Bulan</option>
-                    <option value="1-2" selected>Januari - Februari</option>
-                    <option value="2-3">Februari - Maret</option>
-                    <option value="3-4">Maret - April</option>
-                    <option value="4-5">April - Mei</option>
-                    <option value="5-6">Mei - Juni</option>
-                    <option value="6-7">Juni - Juli</option>
-                    <option value="7-8">Juli - Agustus</option>
-                    <option value="8-9">Agustus - September</option>
-                    <option value="9-10">September - Oktober</option>
-                    <option value="10-11">Oktober - November</option>
-                    <option value="11-12">November - Desember</option>
+                <label for="bulanRange" class="form-label">Bulan</label>
+                <select id="bulanRange" class="form-select" aria-label="bulanRange">
+                    <option disabled>Pilih Bulan</option>
+                    @php
+                        $bulan_sekarang = now()->month;
+                        $nama_bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                        for ($bulan = 1; $bulan <= 12; $bulan++) {
+                            $bulan_awal = $nama_bulan[$bulan - 1];
+                            $bulan_akhir = $nama_bulan[$bulan % 12];
+                            $value_bulan = $bulan . '-' . (($bulan % 12) + 1);
+                            $selected = $bulan == $bulan_sekarang ? 'selected' : '';
+                            echo "<option value=\"$value_bulan\" $selected>$bulan_awal - $bulan_akhir</option>";
+                        }
+                    @endphp
                 </select>
             </div>
-
             <div class="col-md-4 mx-1">
                 <button type="submit" onclick="getData()" class="btn click-primary" style="margin-top: 37px">Cari
                     Data</button>
@@ -224,13 +222,14 @@
                     console.log(`Year: ${tahun}, Month: ${bulan}, Week: ${minggu}`);
 
                     $.ajax({
-                        url: '/analisisrkm/' + tahun + '/' + bulan + '/' + minggu,
+                        url: '/getAnalisisRKM/' + tahun + '/' + bulan + '/' + minggu,
                         type: 'GET',
                         success: function(response) {
                             var html = '';
                             var totalNettPenjualan = 0;
                             var dataRKM = response.data.data;
-                            console.log(dataRKM[0].analisisrkmmingguan.data);
+                            console.log(response);
+                            // console.log(dataRKM[0].analisisrkmmingguan.data);
                             if (!dataRKM[0].analisisrkmmingguan.data || dataRKM[0].analisisrkmmingguan.data.length ===
                                 0 || dataRKM[0].analisisrkmmingguan.data == null) {
                                 html += '<form id="kirimData" method="POST" action="/analisisrkm/' + tahun + '/' +
@@ -583,7 +582,7 @@
                 function getData() {
                     var tahun = document.getElementById('tahun').value;
                     var bulanRange = document.getElementById('bulanRange').value;
-
+                    console.log(bulanRange);
                     if (!tahun || !bulanRange) {
                         alert("Mohon pilih tahun dan rentang bulan terlebih dahulu.");
                         return;
@@ -686,7 +685,7 @@
                             }
                             // console.log("Generated HTML: ", html);
                             $('#content').html(html);
-                            console.log("Content after insertion: ", $('#content').html());
+                            // console.log("Content after insertion: ", $('#content').html());
                             $('#loadingModal').modal('hide');
                         },
                         error: function(xhr) {
@@ -832,7 +831,7 @@
                     });
 
                     html += '</tbody></table>';
-                    console.log("Rendered table HTML: ", html);
+                    // console.log("Rendered table HTML: ", html);
                     return html;
                 }
 
