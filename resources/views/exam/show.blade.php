@@ -11,7 +11,7 @@
                         {{-- {{ $rkm }} --}}
                         <a href="/exam" class="btn click-primary m-2"><img src="{{ asset('icon/arrow-left.svg') }}" class="img-responsive" width="20px"> Back</a>
                         @if ($approvalexam->technical_support == '1')
-                        <form action="{{ route('exam.invoice', $rkm->id) }}" method="POST">
+                        <form action="{{ route('exam.invoice', $rkm->id) }}" method="POST" target="_blank">
                             @csrf
                             <button type="submit" class="btn click-primary m-2">
                                 <img src="{{ asset('icon/printer.svg') }}" class="img-responsive" width="20px"> Print Invoice

@@ -279,7 +279,7 @@ Route::put('/rkm/{id}/registformupdate', [App\Http\Controllers\RKMController::cl
 Route::post('/rkm/download/excel', [App\Http\Controllers\RKMController::class, 'excelDownload'])->name('excel');
 Route::get('analisisrkm/{year}/{monthStart}/{monthEnd}', [App\Http\Controllers\KelasAnalisisController::class, 'getRkmDataPerBulanPerMinggu']);
 Route::get('analisisrkm/{id}/create', [App\Http\Controllers\KelasAnalisisController::class, 'create']);
-Route::get('analisisrkm/{year}/{month}/{week}', [App\Http\Controllers\KelasAnalisisController::class, 'getRkmDataByMonthAndWeek']);
+Route::get('getAnalisisRKM/{year}/{month}/{week}', [App\Http\Controllers\KelasAnalisisController::class, 'getRkmDataByMonthAndWeek']);
 Route::post('analisisrkm/{year}/{month}/{week}/post', [App\Http\Controllers\KelasAnalisisController::class, 'postAnalisisMingguan']);
 Route::put('analisisrkm/{year}/{month}/{week}/update', [App\Http\Controllers\KelasAnalisisController::class, 'updateAnalisisMingguan']);
 Route::get('analisisrkm/{year}/{month}', [App\Http\Controllers\KelasAnalisisController::class, 'getAnalisisMargin']);
