@@ -177,7 +177,7 @@
                                 actions += '<div class="dropdown">';
                                 actions += '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
                                 actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
-                                actions += '<a class="dropdown-item" href="{{ url('/profile') }}/' + row.id + '" data-toggle="tooltip" data-placement="top" title="Detail User"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Detail</a>';
+                                actions += '<a class="dropdown-item" href="{{ url('/profile') }}/' + row.hashids + '" data-toggle="tooltip" data-placement="top" title="Detail User"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Detail</a>';
                                 actions += '@can('Delete DataKaryawan')';
                                 actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/user') }}/' + row.id + '" method="POST">';
                                 actions += '@csrf';

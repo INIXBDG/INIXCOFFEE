@@ -14,6 +14,7 @@ use Vinkla\Hashids\Facades\Hashids;
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable, HasRoles;
+    protected $appends = ['hashids'];
 
     /**
      * The attributes that are mass assignable.
@@ -60,7 +61,7 @@ class User extends Authenticatable
         return $this->jabatan === 'HRD';
     }
 
-    public function getHashidAttribute()
+    public function getHashidsAttribute()
     {
         return Hashids::encode($this->id);
     }

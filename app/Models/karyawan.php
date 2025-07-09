@@ -12,6 +12,7 @@ class karyawan extends Model
 {
     use HasFactory;
     use Notifiable;
+    protected $appends = ['hashids'];
 
     protected $fillable = [
         'foto',
@@ -85,7 +86,7 @@ class karyawan extends Model
         return $this->hasMany(lembur::class);
     }
 
-    public function getHashidAttribute()
+    public function getHashidsAttribute()
     {
         return Hashids::encode($this->id);
     }

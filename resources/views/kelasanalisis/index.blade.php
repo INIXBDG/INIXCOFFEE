@@ -177,7 +177,27 @@
             <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
             <script>
                 $(document).ready(function() {
-                    getData();
+                    const savedYear = localStorage.getItem('selectedYear');
+                    if (savedYear) {
+                        $('#tahun').val(savedYear);
+                    }
+
+                    // Cek dan set value bulanRange
+                    const savedMonth = localStorage.getItem('selectedMonth');
+                    if (savedMonth) {
+                        $('#bulanRange').val(savedMonth);
+                    }
+
+                    // Simpan pilihan saat dropdown berubah
+                    $('#tahun').on('change', function() {
+                        localStorage.setItem('selectedYear', this.value);
+                        getData();
+                    });
+
+                    $('#bulanRange').on('change', function() {
+                        localStorage.setItem('selectedMonth', this.value);
+                        getData();
+                    });
                 });
 
                 function analisaMargin(tahun, bulan) {

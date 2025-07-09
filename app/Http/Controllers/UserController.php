@@ -108,7 +108,7 @@ class UserController extends Controller
         $users = User::findOrFail($userId);
 
         // Batasi akses: hanya user itu sendiri atau admin
-        if (auth()->id() !== $users->id && auth()->user()->role !== 'Admin') {
+        if (auth()->id() !== $users->id && auth()->user()->jabatan !== 'HRD') {
             abort(403, 'Kamu tidak diizinkan mengakses data ini.');
         }
 
