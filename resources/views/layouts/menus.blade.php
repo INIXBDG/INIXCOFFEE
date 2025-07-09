@@ -1067,6 +1067,7 @@
             </div>
         </nav>
         <main class="container-fluid" style="height: 92vh" id="bgsvg">
+            {{-- {{auth()->user()->hashids}}  --}}
             <div class="tab-content" id="pills-tabContent">
                 <div class="tab-pane fade" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab">
                     <div class="row justify-content-between">
@@ -1085,7 +1086,7 @@
                                                                     class="img-responsive" width="30px">
                                                             </div>
                                                             <div class="col-md-10" style="margin-left: 10px">
-                                                                <a href="{{ route('user.show', auth()->user()->hashid) }}" class="link stretched-link text-decoration-none">
+                                                                <a href="{{ route('user.show', auth()->user()->hashids) }}" class="link stretched-link text-decoration-none">
                                                                     <h5 class="card-title">Profil Saya</h5>
                                                                 </a>
                                                                 <p class="card-text">Profil saya sebagai karyawan INIXINDO Bandung.</p>
