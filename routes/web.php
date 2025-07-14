@@ -8,6 +8,7 @@ use App\Http\Controllers\KelasAnalisisController;
 use App\Http\Controllers\RKMController as ControllersRKMController;
 use App\Http\Controllers\netSalesController;
 use App\Http\Controllers\pengajuanKlaimController;
+use App\Http\Controllers\DashboardItsmController;
 use App\Models\izinTigaJam;
 use App\Http\Controllers\InventarisController;
 use App\Models\Inventaris;
@@ -334,4 +335,10 @@ Route::post('/inventaris/create/kode', [InventarisController::class, 'createKode
 
 Route::post('/inventaris/import', [InventarisController::class, 'import'])->name('ImportDataInventaris');
 
-
+Route::get('/ticketing-data', [DashboardItsmController::class, 'getJumlahPermintaan']);
+Route::get('/jumlah-pic', [DashboardItsmController::class, 'getJumlahPIC']);
+Route::get('/rerata-durasi-data', [DashboardItsmController::class, 'getRerataDurasi']);
+Route::get('/rerata-ketepatan-response-data', [DashboardItsmController::class, 'getRerataKetepatanResponse']);
+Route::get('/jumlah-permintaan-per-bulan', [DashboardItsmController::class, 'getJumlahPermintaanPerBulan']);
+Route::get('/permintaan-sering-diajukan', [DashboardItsmController::class, 'getPermintaanSeringDiajukan']);
+Route::get('/list-bulan', [DashboardItsmController::class, 'getListBulan']);
