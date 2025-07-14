@@ -20,6 +20,7 @@
                                     <option value="Fasilitas Laboratium">Fasilitas Laboratium</option>
                                     <option value="Instruktur">Instruktur</option>
                                     <option value="Umum">Umum</option>
+                                    <option value="Sales">Sales</option>
                                 </select>
                                 @error('kategori_feedback')
                                     <span class="invalid-feedback" role="alert">
