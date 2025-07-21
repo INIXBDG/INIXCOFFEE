@@ -1,0 +1,69 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Peluang;
+use Illuminate\Http\Request;
+
+class PeluangController extends Controller
+{
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'id_contact' => 'required|integer',
+            'judul' => 'required|string|max:255',
+            'deskripsi' => 'nullable|string',
+            'jumlah' => 'nullable|numeric|min:0',
+            'tahap' => 'nullable|in:Prospek,Kualifikasi,Proposal,Negosiasi,Ditutup Menang,Ditutup Kalah',
+            'probabilitas' => 'nullable|integer|min:0|max:100',
+            'tanggal_tutup_diharapkan' => 'nullable|date',
+        ]);
+        
+        // hanya untuk test function di postman, setelah selesai tolong diubah -> auth()->user()->id_sales
+        $validated['id_sales'] = $request->input('id_sales', auth()->user()->id_sales ?? null);
+
+        $peluang = Peluang::create($validated);
+
+        return back()->with([
+            'message' => 'Peluang berhasil dibuat.',
+            'data' => $peluang,
+        ]);
+    }
+
+    public function delete($id)
+    {
+        $peluang = Peluang::where('id', $id)->first();
+        $peluang->delete();
+
+        return back()->with([
+            'message' => 'Peluang berhasil dihapus.',
+        ]);
+    }
+
+    public function updateTahap($id, Request $request)
+    {
+        $peluang = Peluang::where('id', $id)->first();
+
+        $peluang->tahap = $request->tahap;
+
+        if ($request->tahap == 'Prospek') {
+            $peluang->probabilitas = 20;
+        } elseif ($request->tahap == 'Kualifikasi') {
+            $peluang->probabilitas = 40;
+        } elseif ($request->tahap == 'Proposal') {
+            $peluang->probabilitas = 60;
+        } elseif ($request->tahap == 'Negosiasi') {
+            $peluang->probabilitas = 80;
+        } elseif ($request->tahap == 'Ditutup Menang') {
+            $peluang->probabilitas = 100;
+        } elseif ($request->tahap == 'Ditutup Kalah') {
+            $peluang->probabilitas = 0;
+        }
+
+        $peluang->update();
+
+        return back()->with([
+            'message' => 'Tahap berhasil di perbarui.',
+        ]);
+    }
+}

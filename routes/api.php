@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Controllers\AktivitasController;
+use App\Http\Controllers\CatatanSalesController;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\PeluangController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -45,3 +49,22 @@ Route::get('getInventaris', [App\Http\Controllers\Api\apiController::class, 'get
 
 
 
+// Contact Test
+Route::post('/contact/store', [ContactController::class, 'store'])->name('store.contact');
+Route::delete('/contact/delete/{id}', [ContactController::class, 'delete'])->name('delete.contact');
+Route::put('/contact/update/{id}', [ContactController::class, 'update'])->name('update.contact');
+
+// Peluang Test
+Route::post('/peluang/store', [PeluangController::class, 'store'])->name('store.peluang');
+Route::delete('/peluang/delete/{id}', [PeluangController::class, 'delete'])->name('delete.peluang');
+Route::put('/peluang/update/{id}', [PeluangController::class, 'updateTahap'])->name('update.tahap');
+
+// Aktivitas Test
+Route::post('/aktivitas/store', [AktivitasController::class, 'store'])->name('store.aktivitas');
+Route::delete('/aktivitas/delete/{id}', [AktivitasController::class, 'delete'])->name('delete.aktivitas');
+Route::put('/aktivitas/update/{id}', [AktivitasController::class, 'update'])->name('update.aktivitas');
+
+// Catatan Sales Test
+Route::post('/catatan/sales/store', [CatatanSalesController::class, 'store'])->name('store.catatan.sales');
+Route::delete('/catatan/sales/delete/{id}', [CatatanSalesController::class, 'delete'])->name('delete.catatan.sales');
+Route::put('/catatan/sales/update/{id}', [CatatanSalesController::class, 'update'])->name('update.catatan.sales');
