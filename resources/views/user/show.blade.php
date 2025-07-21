@@ -9,7 +9,7 @@
             
             @if (auth()->user()->jabatan == "HRD" || auth()->user()->jabatan == "Koordinator Office" || auth()->user()->username == $users->username)
                 <div class="d-flex justify-content-end">
-                    <a href="/karyawan/{{ $users->hashid }}/edit" class="btn btn-md click-primary mx-1">
+                    <a href="/karyawan/{{ $users->hashids }}/edit" class="btn btn-md click-primary mx-1">
                         <img src="{{ asset('icon/edit.svg') }}" class="mr-1" width="25px">
                         Edit Profile
                     </a>

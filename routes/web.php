@@ -345,3 +345,8 @@ Route::get('/jumlah-permintaan-per-bulan', [DashboardItsmController::class, 'get
 Route::get('/permintaan-sering-diajukan', [DashboardItsmController::class, 'getPermintaanSeringDiajukan']);
 Route::get('/list-bulan', [DashboardItsmController::class, 'getListBulan']);
 
+
+Route::get('/dashboard-crm', function () {
+    return view('dashboard');
+})->name('dashboard');
+
