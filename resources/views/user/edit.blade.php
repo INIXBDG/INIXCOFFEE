@@ -17,7 +17,7 @@
                     <h3 class="card-title text-center">{{ __('Profil Saya') }}</h3>
                     <div class="row">
                         {{-- foto --}}
-                        <form action="{{ route('karyawan.update', $users->hashid) }}" method="post">
+                        <form action="{{ route('karyawan.update', $users->hashids) }}" method="post">
                             @csrf
                             @method('PUT')
                         <div class="row">
