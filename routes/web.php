@@ -10,6 +10,7 @@ use App\Http\Controllers\netSalesController;
 use App\Http\Controllers\pengajuanKlaimController;
 use App\Models\izinTigaJam;
 use App\Http\Controllers\InventarisController;
+use App\Http\Controllers\TicketController;
 use App\Models\Inventaris;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
@@ -334,4 +335,10 @@ Route::post('/inventaris/create/kode', [InventarisController::class, 'createKode
 
 Route::post('/inventaris/import', [InventarisController::class, 'import'])->name('ImportDataInventaris');
 
+
+Route::get('/tickets', [TicketController::class, 'index'])->name('tickets.index');
+Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
+Route::post('/tickets/{ticket}/accept', [TicketController::class, 'accept'])->name('tickets.accept');
+Route::post('/tickets/{ticket}/finish', [TicketController::class, 'finish'])->name('tickets.finish');
+Route::post('/tickets/{ticket}/block', [TicketController::class, 'block'])->name('tickets.block');
 
