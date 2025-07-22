@@ -90,7 +90,8 @@ class KaryawanController extends Controller
             return redirect('/user')->with('success', 'Data Berhasil Diubah');
         }
 
-        return redirect('/profile/' . $user->hashid)->with('success', 'Data Berhasil Diubah');
+        return redirect()->route('user.show', ['hashid' => $user->hashids])
+            ->with('success', 'Data Berhasil Diubah'); //fixing redirect and command
     }
 
     public function updateFoto(Request $request, $id): RedirectResponse
@@ -111,25 +112,24 @@ class KaryawanController extends Controller
             $image->storeAs('public/posts', $image->hashName());
 
             //delete old image
-            Storage::delete('public/posts/'.$post->image);
+            Storage::delete('public/posts/' . $post->image);
 
             //update post with new image
             $post->update([
                 'foto'     => $image->hashName(),
             ]);
-
         } elseif ($request->hasFile('ttd')) {
             $image = $request->file('ttd');
             $image->storeAs('public/ttd', $image->hashName());
 
             //delete old image
-            Storage::delete('public/ttd/'.$post->image);
+            Storage::delete('public/ttd/' . $post->image);
 
             //update post with new image
             $post->update([
                 'ttd'     => $image->hashName(),
             ]);
-        }else{
+        } else {
             return redirect()->route('user.show', $id)->with(['error' => 'Foto Tidak Disimpan!']);
         }
 
