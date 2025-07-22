@@ -3,11 +3,33 @@
 namespace App\Http\Controllers;
 
 use App\Models\Contact;
+use App\Models\Perusahaan;
+use App\Models\User;
 use Illuminate\Auth\Events\Validated;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ContactController extends Controller
 {
+
+    public function index()
+    {
+        $user = Auth::user();
+        $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM'];
+
+        if ($user->jabatan === 'Sales') {
+            $idSales = $user->id_sales;
+            $data = Contact::where('id_sales', $idSales)->get();
+        } elseif (in_array($user->jabatan, $allowedJabatan)) {
+            $data = Contact::all();
+        } else {
+            abort(403, 'Anda tidak memiliki akses ke halaman ini.');
+        }
+
+        $perusahaan = Perusahaan::all();
+        return view('crm.contact.index', compact('data', 'perusahaan'));
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -16,7 +38,7 @@ class ContactController extends Controller
             'email'         => 'required|email|max:255',
             'no_tlp'        => 'nullable|string|max:20',
         ]);
-        
+
         // hanya untuk test function di postman, setelah selesai tolong diubah -> auth()->user()->id_sales
         $validated['id_sales'] = $request->input('id_sales', auth()->user()->id_sales ?? null);
 

@@ -25,7 +25,7 @@ class Peluang extends Model
         return $this->belongsTo(Contact::class, 'id_contact', 'id');
     }
 
-    public function aktivitass()
+    public function aktivitas()
     {
         return $this->hasMany(Aktivitas::class, 'id_peluang', 'id');
     }
