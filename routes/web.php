@@ -1,11 +1,12 @@
 <?php
 
-use App\Http\Controllers\AktivitasController;
 use App\Http\Controllers\Api\RKMController;
 use App\Http\Controllers\approvedNetSalesController;
-use App\Http\Controllers\CatatanSalesController;
-use App\Http\Controllers\ContactController;
-use App\Http\Controllers\CRMController;
+use App\Http\Controllers\Crm\CatatanSalesController;
+use App\Http\Controllers\Crm\ContactController;
+use App\Http\Controllers\Crm\CRMController;
+use App\Http\Controllers\Crm\AktivitasController;
+use App\Http\Controllers\Crm\PeluangController;
 use App\Http\Controllers\databasekpiContoller;
 use App\Http\Controllers\izinTigaJamController;
 use App\Http\Controllers\KelasAnalisisController;
@@ -15,7 +16,7 @@ use App\Http\Controllers\pengajuanKlaimController;
 use App\Http\Controllers\DashboardItsmController;
 use App\Models\izinTigaJam;
 use App\Http\Controllers\InventarisController;
-use App\Http\Controllers\PeluangController;
+
 use App\Models\Contact;
 use App\Models\Inventaris;
 use Illuminate\Support\Facades\Route;
@@ -349,28 +350,32 @@ Route::get('/jumlah-permintaan-per-bulan', [DashboardItsmController::class, 'get
 Route::get('/permintaan-sering-diajukan', [DashboardItsmController::class, 'getPermintaanSeringDiajukan']);
 Route::get('/list-bulan', [DashboardItsmController::class, 'getListBulan']);
 
-Route::get('/crm', [CRMController::class, 'index'])->name('CRM.index');
+Route::prefix('crm')->group(function () {
 
-// Contact CRM
-Route::get('/contact/index', [ContactController::class, 'index'])->name('index.contact');
-Route::post('/contact/store', [ContactController::class, 'store'])->name('store.contact');
-Route::delete('/contact/delete/{id}', [ContactController::class, 'delete'])->name('delete.contact');
-Route::put('/contact/update/{id}', [ContactController::class, 'update'])->name('update.contact');
+    Route::get('/', [CRMController::class, 'index'])->name('CRM.index');
 
-// Peluang CRM
-Route::get('/peluang/index', [PeluangController::class, 'index'])->name('index.peluang');
-Route::get('/peluang/detail/{id}', [PeluangController::class, 'detail'])->name('detail.peluang');
-Route::post('/peluang/store', [PeluangController::class, 'store'])->name('store.peluang');
-Route::delete('/peluang/delete/{id}', [PeluangController::class, 'delete'])->name('delete.peluang');
-Route::put('/peluang/edit/{id}', [PeluangController::class, 'edit'])->name('edit.peluang');
-Route::put('/peluang/update/{id}', [PeluangController::class, 'updateTahap'])->name('update.tahap');
+    // Contact CRM
+    Route::get('/contact/index', [ContactController::class, 'index'])->name('index.contact');
+    Route::post('/contact/store', [ContactController::class, 'store'])->name('store.contact');
+    Route::delete('/contact/delete/{id}', [ContactController::class, 'delete'])->name('delete.contact');
+    Route::put('/contact/update/{id}', [ContactController::class, 'update'])->name('update.contact');
 
-// Aktivitas CRM
-Route::post('/aktivitas/store', [AktivitasController::class, 'store'])->name('store.aktivitas');
-Route::delete('/aktivitas/delete/{id}', [AktivitasController::class, 'delete'])->name('delete.aktivitas');
-Route::put('/aktivitas/update/{id}', [AktivitasController::class, 'update'])->name('update.aktivitas');
+    // Peluang CRM
+    Route::get('/peluang/index', [PeluangController::class, 'index'])->name('index.peluang');
+    Route::get('/peluang/detail/{id}', [PeluangController::class, 'detail'])->name('detail.peluang');
+    Route::post('/peluang/store', [PeluangController::class, 'store'])->name('store.peluang');
+    Route::delete('/peluang/delete/{id}', [PeluangController::class, 'delete'])->name('delete.peluang');
+    Route::put('/peluang/edit/{id}', [PeluangController::class, 'edit'])->name('edit.peluang');
+    Route::put('/peluang/update/{id}', [PeluangController::class, 'updateTahap'])->name('update.tahap');
 
-// Catatan Sales CRM
-Route::post('/catatan/sales/store', [CatatanSalesController::class, 'store'])->name('store.catatan.sales');
-Route::delete('/catatan/sales/delete/{id}', [CatatanSalesController::class, 'delete'])->name('delete.catatan.sales');
-Route::put('/catatan/sales/update/{id}', [CatatanSalesController::class, 'update'])->name('update.catatan.sales');
+    // Aktivitas CRM
+    Route::post('/aktivitas/store', [AktivitasController::class, 'store'])->name('store.aktivitas');
+    Route::delete('/aktivitas/delete/{id}', [AktivitasController::class, 'delete'])->name('delete.aktivitas');
+    Route::put('/aktivitas/update/{id}', [AktivitasController::class, 'update'])->name('update.aktivitas');
+
+    // Catatan Sales CRM
+    Route::post('/catatan/sales/store', [CatatanSalesController::class, 'store'])->name('store.catatan.sales');
+    Route::delete('/catatan/sales/delete/{id}', [CatatanSalesController::class, 'delete'])->name('delete.catatan.sales');
+    Route::put('/catatan/sales/update/{id}', [CatatanSalesController::class, 'update'])->name('update.catatan.sales');
+});
+

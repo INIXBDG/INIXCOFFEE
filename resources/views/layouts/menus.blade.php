@@ -1704,16 +1704,6 @@
                                                         <div class="card-body">
                                                             <h5 class="text-center card-title">Customer Relationship Management</h5>
                                                             <div class="row">
-                                                                @if (
-                                                                        auth()->user()->jabatan == 'Direktur' ||
-                                                                        auth()->user()->jabatan == 'Direktur Utama' ||
-                                                                        auth()->user()->jabatan == 'GM' ||
-                                                                        auth()->user()->jabatan == 'SPV Sales' ||
-                                                                        auth()->user()->jabatan == 'ADM Sales' ||
-                                                                        auth()->user()->jabatan == 'Sales' ||
-                                                                        auth()->user()->jabatan == 'Finance & Accounting' ||
-                                                                        auth()->user()->jabatan == 'HRD'
-                                                                    )
                                                                     <div class="col-sm-6 mt-2">
                                                                         <div class="card" id="card-hover">
                                                                             <div class="card-body d-flex">
@@ -1724,7 +1714,7 @@
                                                                                 </div>
                                                                                 <div class="col-md-10"
                                                                                     style="margin-left: 10px">
-                                                                                    <a href="/dashboard-crm"
+                                                                                    <a href="{{ route('CRM.index') }}"
                                                                                         class="link stretched-link text-decoration-none">
                                                                                         <h5 class="card-title">Fitur CRM
                                                                                         </h5>
@@ -1735,7 +1725,6 @@
                                                                             </div>
                                                                         </div>
                                                                     </div>
-                                                                @endif
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1749,9 +1738,6 @@
                                                         <div class="card-body">
                                                             <h5 class="text-center card-title">Management</h5>
                                                             <div class="row">
-                                                                @if (auth()->user()->jabatan == 'Direktur' ||
-                                                                        auth()->user()->jabatan == 'Direktur Utama' ||
-                                                                        auth()->user()->jabatan == 'GM')
                                                                     <div class="col-sm-6 mt-2">
                                                                         <div class="card" id="card-hover">
                                                                             <div class="card-body d-flex">
@@ -1773,7 +1759,6 @@
                                                                             </div>
                                                                         </div>
                                                                     </div>
-                                                                @endif
                                                             </div>
                                                         </div>
                                                     </div>

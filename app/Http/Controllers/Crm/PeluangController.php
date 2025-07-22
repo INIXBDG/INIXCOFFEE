@@ -1,6 +1,7 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Crm;
+use App\Http\Controllers\Controller;
 
 use App\Models\Aktivitas;
 use App\Models\Contact;
