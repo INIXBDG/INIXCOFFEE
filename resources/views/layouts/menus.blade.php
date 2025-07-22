@@ -1697,6 +1697,51 @@
                                                 </div>
                                             </div>
                                     @endcan
+                                    @can('Fitur CRM')
+                                            <div class="row">
+                                                <div class="col-md-12 mt-1">
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <h5 class="text-center card-title">Customer Relationship Management</h5>
+                                                            <div class="row">
+                                                                @if (
+                                                                        auth()->user()->jabatan == 'Direktur' ||
+                                                                        auth()->user()->jabatan == 'Direktur Utama' ||
+                                                                        auth()->user()->jabatan == 'GM' ||
+                                                                        auth()->user()->jabatan == 'SPV Sales' ||
+                                                                        auth()->user()->jabatan == 'ADM Sales' ||
+                                                                        auth()->user()->jabatan == 'Sales' ||
+                                                                        auth()->user()->jabatan == 'Finance & Accounting' ||
+                                                                        auth()->user()->jabatan == 'HRD'
+                                                                    )
+                                                                    <div class="col-sm-6 mt-2">
+                                                                        <div class="card" id="card-hover">
+                                                                            <div class="card-body d-flex">
+                                                                                <div class="col-md-2">
+                                                                                    <img src="{{ asset('icon/credit-card.svg') }}"
+                                                                                        class="img-responsive"
+                                                                                        width="30px">
+                                                                                </div>
+                                                                                <div class="col-md-10"
+                                                                                    style="margin-left: 10px">
+                                                                                    <a href="/dashboard-crm"
+                                                                                        class="link stretched-link text-decoration-none">
+                                                                                        <h5 class="card-title">Fitur CRM
+                                                                                        </h5>
+                                                                                    </a>
+                                                                                    <p class="card-text">Masuk Fitur CRM
+                                                                                    </p>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                    @endcan
                                     @can('Fitur Menu Manajemen')
                                             <div class="row">
                                                 <div class="col-md-12 mt-1">
