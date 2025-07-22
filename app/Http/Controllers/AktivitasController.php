@@ -10,7 +10,6 @@ class AktivitasController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'id_sales' => 'required|string',
             'id_contact' => 'required|integer',
             'id_peluang' => 'required|integer',
             'aktivitas' => 'required|in:Panggilan,Email,Meeting,Catatan,Task',

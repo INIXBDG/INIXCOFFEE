@@ -2,11 +2,42 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Aktivitas;
+use App\Models\Contact;
 use App\Models\Peluang;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class PeluangController extends Controller
 {
+
+    public function index()
+    {
+        $user = Auth::user();
+        $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM'];
+
+        if ($user->jabatan === 'Sales') {
+            $idSales = $user->id_sales;
+            $data = Peluang::where('id_sales', $idSales)->get();
+            $contact = Contact::where('id_sales', $idSales)->get();
+        } elseif (in_array($user->jabatan, $allowedJabatan)) {
+            $data = Peluang::all();
+            $contact = Contact::all();
+        } else {
+            abort(403, 'Anda tidak memiliki akses ke halaman ini.');
+        }
+
+        return view('crm.peluang.index', compact('data', 'contact'));
+    }
+
+    public function detail($id)
+    {
+        $aktivitas = Aktivitas::where('id_peluang', $id)->get();
+        $peluang = Peluang::where('id', $id)->first();
+        return view('crm.peluang.detail', compact('peluang', 'aktivitas'));
+    }
+
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -18,7 +49,7 @@ class PeluangController extends Controller
             'probabilitas' => 'nullable|integer|min:0|max:100',
             'tanggal_tutup_diharapkan' => 'nullable|date',
         ]);
-        
+
         // hanya untuk test function di postman, setelah selesai tolong diubah -> auth()->user()->id_sales
         $validated['id_sales'] = $request->input('id_sales', auth()->user()->id_sales ?? null);
 
@@ -37,6 +68,19 @@ class PeluangController extends Controller
 
         return back()->with([
             'message' => 'Peluang berhasil dihapus.',
+        ]);
+    }
+
+    public function edit($id, Request $request)
+    {
+        $peluang = Peluang::where('id', $id)->first();
+
+        $peluang->judul = $request->judul;
+        $peluang->deskripsi = $request->deskripsi;
+
+        $peluang->update();
+        return back()->with([
+            'message' => 'Pelaung berhasil di perbarui.',
         ]);
     }
 

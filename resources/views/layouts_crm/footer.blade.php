@@ -8,7 +8,7 @@
             document.write(new Date().getFullYear());
         </script>
         , made with ❤️ by
-        itsm inixindo
+        itsm inixindo | Dibawah pengawasan Bos Ardhan
         </div>
     </div>
     </div>
