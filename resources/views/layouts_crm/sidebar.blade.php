@@ -61,36 +61,26 @@
 
     <ul class="menu-inner py-1">
         <!-- Dashboards -->
-        <li class="menu-item active open">
-            <a href="javascript:void(0);" class="menu-link">
+        <li class="menu-item {{ request()->routeIs('CRM.index') ? 'active open' : '' }}">
+            <a href="{{ route('CRM.index') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-home-smile"></i>
                 <div class="text-truncate" data-i18n="Dashboards">Dashboards</div>
-                {{-- <span class="badge rounded-pill bg-danger ms-auto">5</span> --}}
             </a>
-            <ul class="menu-sub">
-            </ul>
         </li>
 
         <!-- Contact -->
-        <li class="menu-item">
+        <li class="menu-item {{ request()->routeIs('index.contact') ? 'active open' : '' }}">
             <a href="{{ route('index.contact') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-layout"></i>
+                <i class="menu-icon tf-icons bx bx-phone"></i>
                 <div class="text-truncate" data-i18n="contact">Contact</div>
             </a>
         </li>
 
-        <!-- Peluang -->
-        <li class="menu-item">
-            <a href="{{ route('index.peluang') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-layout"></i>
-                <div class="text-truncate" data-i18n="peluang">Peluang</div>
-            </a>
-        </li>
 
         <!-- Peluang -->
-        <li class="menu-item">
+        <li class="menu-item {{ request()->routeIs('index.peluang') ? 'active open' : '' }}">
             <a href="{{ route('index.peluang') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-layout"></i>
+                <i class='menu-icon tf-icons bx bx-star'></i>
                 <div class="text-truncate" data-i18n="peluang">Peluang</div>
             </a>
         </li>

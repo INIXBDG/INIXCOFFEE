@@ -103,7 +103,7 @@ class KaryawanController extends Controller
             'ttd'     => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
         ]);
         $post = karyawan::findOrFail($id);
-
+ 
         if ($request->hasFile('foto')) {
 
             //upload new image

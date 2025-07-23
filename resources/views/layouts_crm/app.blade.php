@@ -66,20 +66,20 @@
                     <!-- Content Wrapper -->
                         <div class="content-wrapper">
                             <!-- Contents -->
-                                @yield('crm_contents')  
+                                @yield('crm_contents')
                             <!-- / Contents -->
                             <!-- Footer -->
                                 @include('layouts_crm.footer')
-                            <!-- / Footer -->    
+                            <!-- / Footer -->
                           <div class="content-backdrop fade"></div>
                         </div>
-                    <!-- / Content Wrapper -->    
+                    <!-- / Content Wrapper -->
                 </div>
-            <!-- / Layout container -->    
+            <!-- / Layout container -->
         </div>
       <!-- Overlay -->
         <div class="layout-overlay layout-menu-toggle"></div>
-      <!-- / Overlay -->  
+      <!-- / Overlay -->
     </div>
     <!-- / Layout wrapper -->
 
@@ -99,7 +99,7 @@
     <!-- Main JS -->
 
     <script src="{{ asset('assets/js/main.js') }}"></script>
-
+    <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
     <!-- Page JS -->
     <script src="{{ asset('assets/js/dashboards-analytics.js') }}"></script>
 
