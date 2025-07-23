@@ -44,7 +44,7 @@ class TicketController extends Controller
         $username = User::where('id', $id)->first();
         $ts = $username->username;
 
-        Http::post('http://localhost:3000/notify', [
+        Http::post('http://192.168.95.130:8001/notify', [
             'phone'     => $ticket->no_user,
             'status'    => 'Di Proses',
             'ticket_id' => $ticket->id,
