@@ -8,8 +8,8 @@ use Illuminate\Http\Request;
 class CRMController extends Controller
 {
     public function index(){
-        // $profit = Peluang::whereNotNull('close_win')->sum();
         return view('crm.dashboard');
+
     }
 
     public function getProfile()
