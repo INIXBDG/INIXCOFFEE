@@ -101,8 +101,10 @@ class PeluangController extends Controller
             $peluang->probabilitas = 80;
         } elseif ($request->tahap == 'Ditutup Menang') {
             $peluang->probabilitas = 100;
+            $peluang->close_win = $request->close_win;
         } elseif ($request->tahap == 'Ditutup Kalah') {
             $peluang->probabilitas = 0;
+            $peluang->close_lost = $request->close_lost;
         }
 
         $peluang->update();
