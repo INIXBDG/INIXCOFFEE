@@ -64,8 +64,12 @@
         <li class="menu-item {{ request()->routeIs('CRM.index') ? 'active open' : '' }}">
             <a href="{{ route('CRM.index') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-home-smile"></i>
-                <div class="text-truncate" data-i18n="Dashboards">Dashboards</div>
+                <div class="text-truncate" data-i18n="Dashboards">General Dashboards</div>
             </a>
+        </li>
+
+        <li class="menu-header small text-uppercase">
+              <span class="menu-header-text">Untuk &amp; Anda</span>
         </li>
 
         <!-- Contact -->
@@ -81,6 +85,13 @@
             <a href="{{ route('index.peluang') }}" class="menu-link">
                 <i class='menu-icon tf-icons bx bx-star'></i>
                 <div class="text-truncate" data-i18n="peluang">Peluang</div>
+            </a>
+        </li>
+
+        <li class="menu-item {{ request()->routeIs('CRM.myDasboard') ? 'active open' : '' }}">
+            <a href="{{ route('CRM.myDasboard') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-home"></i>
+                <div class="text-truncate" data-i18n="Dashboards">My Dashboard</div>
             </a>
         </li>
 </aside>

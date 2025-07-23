@@ -7,6 +7,7 @@ use App\Http\Controllers\Crm\ContactController;
 use App\Http\Controllers\Crm\CRMController;
 use App\Http\Controllers\Crm\AktivitasController;
 use App\Http\Controllers\Crm\PeluangController;
+use App\Http\Controllers\Crm\salesPribadiController;
 use App\Http\Controllers\databasekpiContoller;
 use App\Http\Controllers\izinTigaJamController;
 use App\Http\Controllers\KelasAnalisisController;
@@ -354,7 +355,7 @@ Route::get('/list-bulan', [DashboardItsmController::class, 'getListBulan']);
 Route::prefix('crm')->group(function () {
 
     Route::get('/', [CRMController::class, 'index'])->name('CRM.index');
-
+    Route::get('/my-dashboard', [salesPribadiController::class, 'index'])->name('CRM.myDasboard');
     Route::get('/profile', [CRMController::class, 'getProfile'])->middleware('auth')->name('crm.profile');
 
 
