@@ -72,7 +72,7 @@ class karyawan extends Model
     protected function image(): Attribute
     {
         return Attribute::make(
-            get: fn ($foto) => url('/storage/posts/' . $foto),
+            get: fn($foto) => url('/storage/posts/' . $foto),
         );
     }
 
@@ -90,5 +90,4 @@ class karyawan extends Model
     {
         return Hashids::encode($this->id);
     }
-
 }

@@ -10,13 +10,14 @@ use App\Models\User;
 use App\Models\Notification;
 use App\Notifications\CommentNotification;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
+
 class CommentController extends Controller
 {
     public function store(Request $request)
     {
         $validatedData = $request->validate([
             'karyawan_key' => 'required|exists:karyawans,id',
-            'content' => 'required',
+            'content' => 'required|string|min:1|max:250',
             'materi_key' => 'required',
             'rkm_key' => 'required|exists:r_k_m_s,id',
         ]);
@@ -33,7 +34,7 @@ class CommentController extends Controller
         $GM = karyawan::where('jabatan', 'GM')->first();
         $CS = karyawan::where('jabatan', 'Customer Care')->first();
         $AH = karyawan::where('jabatan', 'Admin Holding')->first();
-        // return $AH;
+        // return $AH;  
         // Mengambil pengguna yang terlibat
         $users = array_map(function ($user) {
             return $user === '-' ? null : $user;
@@ -70,7 +71,7 @@ class CommentController extends Controller
     public function markAsRead($notificationId)
     {
         // dd($notificationId);
-       // Temukan notifikasi berdasarkan ID
+        // Temukan notifikasi berdasarkan ID
         $notification = \App\Models\Notification::findOrFail($notificationId);
 
         // Cek apakah notifikasi ada
@@ -85,7 +86,7 @@ class CommentController extends Controller
     {
         // Ambil semua notifikasi yang belum dibaca, kecuali yang bertipe OutstandingNotification dan BayarExamNotification
         $notifications = auth()->user()->unreadNotifications->filter(function ($notification) {
-            return $notification->type !== "App\\Notifications\\OutstandingNotification" 
+            return $notification->type !== "App\\Notifications\\OutstandingNotification"
                 && $notification->type !== "App\\Notifications\\BayarExamNotification";
         });
 
@@ -121,6 +122,4 @@ class CommentController extends Controller
 
         return redirect()->back()->with('success', 'Komentar berhasil dihapus');
     }
-
-
 }
