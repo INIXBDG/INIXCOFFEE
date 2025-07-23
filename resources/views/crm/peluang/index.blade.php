@@ -40,7 +40,8 @@
                                         <td>{{ $peluang['tanggal_tutup_diharapkan'] }}</td>
                                         <td>
                                             <div class="d-flex gap-2">
-                                                <a href="{{route('detail.peluang', ['id' => $peluang->id])}}" type="button" class="btn btn-sm btn-warning">
+                                                <a href="{{ route('detail.peluang', ['id' => $peluang->id]) }}"
+                                                    type="button" class="btn btn-sm btn-warning">
                                                     Detail
                                                 </a>
                                                 <button type="button" class="btn btn-sm btn-danger"
@@ -77,14 +78,20 @@
                                         <option value="" disabled selected>Pilih Contact</option>
                                         @foreach ($contact as $c)
                                             <option value="{{ $c->id }}">{{ $c->nama_lengkap }}
-                                                ({{ $c->email }})</option>
+                                                ({{ $c->email }})
+                                            </option>
                                         @endforeach
                                     </select>
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label" for="judul">Judul</label>
-                                    <input type="text" class="form-control" id="judul" name="judul" required />
+                                    <select class="form-control" id="judul" name="judul" required>
+                                        <option value="" disabled selected>Pilih Judul</option>
+                                        @foreach ($materi as $item)
+                                            <option value="{{ $item->nama_materi }}">{{ $item->nama_materi }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
 
                                 <div class="mb-3">

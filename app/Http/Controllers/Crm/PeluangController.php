@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 
 use App\Models\Aktivitas;
 use App\Models\Contact;
+use App\Models\Materi;
 use App\Models\Peluang;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,6 +17,7 @@ class PeluangController extends Controller
     {
         $user = Auth::user();
         $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM'];
+        $materi = Materi::all();
 
         if ($user->jabatan === 'Sales') {
             $idSales = $user->id_sales;
@@ -28,7 +30,7 @@ class PeluangController extends Controller
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 
-        return view('crm.peluang.index', compact('data', 'contact'));
+        return view('crm.peluang.index', compact('data', 'contact', 'materi'));
     }
 
     public function detail($id)
