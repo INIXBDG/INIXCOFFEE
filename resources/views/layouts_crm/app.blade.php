@@ -100,10 +100,49 @@
 
     <script src="{{ asset('assets/js/main.js') }}"></script>
     <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Page JS -->
     <script src="{{ asset('assets/js/dashboards-analytics.js') }}"></script>
 
     <!-- Place this tag before closing body tag for github widget button. -->
     <script async defer src="https://buttons.github.io/buttons.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // URL endpoint to get profile data, pastikan route 'crm.profile' sudah didefinisikan di web.php
+            var profileUrl = "{{ route('crm.profile') }}";
+
+            $.ajax({
+                url: profileUrl,
+                method: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                        var defaultAvatar = "{{ asset('assets/img/avatars/1.png') }}";
+                        var photo = data.foto || defaultAvatar;
+                        var fullName = data.nama_lengkap || data.username || 'John Doe';
+                        var role = data.jabatan || 'User';
+
+                        // Update avatar image on navbar and dropdown
+                        $('#userAvatar').attr('src', photo);
+                        $('#userAvatarDropdown').attr('src', photo);
+
+                        // Update user name and role text in dropdown
+                        $('#userFullName').text(fullName);
+                        $('#userRole').text(role);
+                    },
+                    error: function(err) {
+                        console.error('Gagal mengambil profil user:', err);
+                        $('#userFullName').text('Failed to load user');
+                        $('#userRole').text('');
+                    }
+                });
+
+            // Logout button handler
+            $('#logoutButton').on('click', function(e) {
+                e.preventDefault();
+                $('#logout-form').submit();
+            });
+        });
+    </script>
   </body>
 </html>

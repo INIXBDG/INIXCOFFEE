@@ -90,50 +90,49 @@ class KaryawanController extends Controller
             return redirect('/user')->with('success', 'Data Berhasil Diubah');
         }
 
-        return redirect('/profile/' . $user->hashid)->with('success', 'Data Berhasil Diubah');
+        return redirect()->route('user.show', ['hashid' => $user->hashids])
+            ->with('success', 'Data Berhasil Diubah'); //fixing redirect and command
     }
 
     public function updateFoto(Request $request, $id): RedirectResponse
     {
-        //validate form
-        // dd($request->all());
-
         $this->validate($request, [
-            'foto'     => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
-            'ttd'     => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+            'foto' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+            'ttd'  => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
         ]);
-        $post = karyawan::findOrFail($id);
- 
+
+        $post = Karyawan::findOrFail($id);
+
+        // Proses foto
         if ($request->hasFile('foto')) {
+            $foto = $request->file('foto');
+            $foto->storeAs('public/posts', $foto->hashName());
 
-            //upload new image
-            $image = $request->file('foto');
-            $image->storeAs('public/posts', $image->hashName());
+            // Hapus foto lama jika ada
+            if ($post->foto) {
+                Storage::delete('public/posts/' . $post->foto);
+            }
 
-            //delete old image
-            Storage::delete('public/posts/'.$post->image);
-
-            //update post with new image
-            $post->update([
-                'foto'     => $image->hashName(),
-            ]);
-
-        } elseif ($request->hasFile('ttd')) {
-            $image = $request->file('ttd');
-            $image->storeAs('public/ttd', $image->hashName());
-
-            //delete old image
-            Storage::delete('public/ttd/'.$post->image);
-
-            //update post with new image
-            $post->update([
-                'ttd'     => $image->hashName(),
-            ]);
-        }else{
-            return redirect()->route('user.show', $id)->with(['error' => 'Foto Tidak Disimpan!']);
+            $post->foto = $foto->hashName();
         }
 
-        //redirect to index
-        return redirect()->route('user.show', $id)->with(['success' => 'Foto Berhasil Disimpan!']);
+        // Proses ttd
+        if ($request->hasFile('ttd')) {
+            $ttd = $request->file('ttd');
+            $ttd->storeAs('public/ttd', $ttd->hashName());
+
+            // Hapus ttd lama jika ada
+            if ($post->ttd) {
+                Storage::delete('public/ttd/' . $post->ttd);
+            }
+
+            $post->ttd = $ttd->hashName();
+        }
+
+        $post->save();
+        //Encode hashing untuk update foto
+        return redirect()->route('user.show', Hashids::encode($post->id))->with([
+            'success' => 'Foto dan/atau TTD berhasil diperbarui!'
+        ]);
     }
 }
