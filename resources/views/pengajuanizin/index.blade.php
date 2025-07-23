@@ -28,7 +28,7 @@
                         <div id="manager-row">
                             <div class="btn-group" role="group" aria-label="Approval Options">
                                 <input type="radio" class="btn-check" name="approval" id="approveYes"
-                                    @if (auth()->user()->jabatan === 'HRD')
+                                @if (auth()->user()->jabatan === 'HRD')
                                 value="2"
                                 @else
                                 value="1"
@@ -248,7 +248,7 @@
                         var actions = "";
                         var userRole = '{{ auth()->user()->jabatan }}';
                         var requesterRole = data.karyawan.jabatan;
-                        var requesterDivisi = data.karyawan.divisi; // pastikan properti ini ada di data
+                        var requesterDivisi = data.karyawan.divisi;
                         var approval = data.approval;
 
                         actions += '<div class="dropdown">';

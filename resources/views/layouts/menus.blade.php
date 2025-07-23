@@ -1545,7 +1545,7 @@
                                                                     <i class="fa fa-ranking-star" style="font-size: 30px;"></i>
                                                                 </div>
                                                                 <div class="col-md-10" style="margin-left: 10px">
-                                                                    <a href="/databasekpi" class="link stretched-link text-decoration-none">
+                                                                    <a href="{{ route('ketegoriKPI.get') }}" class="link stretched-link text-decoration-none">
                                                                         <h5 class="card-title">Database KPI</h5>
                                                                     </a>
                                                                     <p class="card-text">Database KPI Karyawan.</p>
@@ -1558,7 +1558,7 @@
                                         </div>
                                     </div>
                                 @endcan
-                                @can('Fitur Menu Finance')
+                                <!-- @can('Fitur Menu Finance')
                                     <div class="row">
                                         {{-- RKM --}}
                                         <div class="col-md-12 mt-1">
@@ -1588,7 +1588,7 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                        @endcan
+                                        @endcan -->
                                         @can('Fitur Menu Finance')
                                             <div class="row">
                                                 {{-- RKM --}}
