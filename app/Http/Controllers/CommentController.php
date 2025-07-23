@@ -34,7 +34,7 @@ class CommentController extends Controller
         $GM = karyawan::where('jabatan', 'GM')->first();
         $CS = karyawan::where('jabatan', 'Customer Care')->first();
         $AH = karyawan::where('jabatan', 'Admin Holding')->first();
-        // return $AH;
+        // return $AH;  
         // Mengambil pengguna yang terlibat
         $users = array_map(function ($user) {
             return $user === '-' ? null : $user;
