@@ -12,12 +12,17 @@
                         <p class="text-left my-2">Note: jika anda lupa password sebelumnya, maka hubungi HRD!</p>
                     </div>
                     <div class="row">
-                        <form action="{{ route('user.updatePassword', $users->hashids) }}" method="post">
+                        <form action="{{ route('user.updatePassword', ['hashid' => $users->hashids]) }}" method="POST"> <!-- fixing method and route -->
                             @csrf
                             @method('PUT')
+
                             <div class="row">
-                                <div class="col-md-4 col-sm-4 col-xs-4"><p>Nama Lengkap</p></div>
-                                <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
+                                <div class="col-md-4 col-sm-4 col-xs-4">
+                                    <p>Nama Lengkap</p>
+                                </div>
+                                <div class="col-md-1 col-sm-1 col-xs-1">
+                                    <p>:</p>
+                                </div>
                                 <div class="col-md-7 col-sm-7 col-xs-7"><input id="nama_lengkap" type="text" class="form-control @error('nama_lengkap') is-invalid @enderror" name="nama_lengkap" value="{{ old('nama_lengkap', $karyawan->nama_lengkap ) }}" required autocomplete="nama_lengkap" disabled>
                                     @error('nama_lengkap')
                                     <span class="invalid-feedback" role="alert">
@@ -27,8 +32,12 @@
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="col-md-4 col-sm-4 col-xs-4"><p>Username</p></div>
-                                <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
+                                <div class="col-md-4 col-sm-4 col-xs-4">
+                                    <p>Username</p>
+                                </div>
+                                <div class="col-md-1 col-sm-1 col-xs-1">
+                                    <p>:</p>
+                                </div>
                                 <div class="col-md-7 col-sm-7 col-xs-7">
                                     <input id="username" type="username" class="form-control @error('username') is-invalid @enderror" name="username" value="{{ old('username', $users->username ) }}" required autocomplete="username" disabled>
                                     @error('username')
@@ -39,8 +48,12 @@
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="col-md-4 col-sm-4 col-xs-4"><p>Password Sebelumnya</p></div>
-                                <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
+                                <div class="col-md-4 col-sm-4 col-xs-4">
+                                    <p>Password Sebelumnya</p>
+                                </div>
+                                <div class="col-md-1 col-sm-1 col-xs-1">
+                                    <p>:</p>
+                                </div>
                                 <div class="col-md-7 col-sm-7 col-xs-7"><input id="expassword" type="password" class="form-control @error('expassword') is-invalid @enderror" name="expassword" required autocomplete="ex-password">
                                     @error('expassword')
                                     <span class="invalid-feedback" role="alert">
@@ -50,8 +63,12 @@
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="col-md-4 col-sm-4 col-xs-4"><p>Password</p></div>
-                                <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
+                                <div class="col-md-4 col-sm-4 col-xs-4">
+                                    <p>Password</p>
+                                </div>
+                                <div class="col-md-1 col-sm-1 col-xs-1">
+                                    <p>:</p>
+                                </div>
                                 <div class="col-md-7 col-sm-7 col-xs-7"><input id="password" type="password" class="form-control @error('password') is-invalid @enderror" name="password" required autocomplete="new-password">
                                     @error('password')
                                     <span class="invalid-feedback" role="alert">
@@ -61,8 +78,12 @@
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="col-md-4 col-sm-4 col-xs-4"><p>Konfirmasi Password</p></div>
-                                <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
+                                <div class="col-md-4 col-sm-4 col-xs-4">
+                                    <p>Konfirmasi Password</p>
+                                </div>
+                                <div class="col-md-1 col-sm-1 col-xs-1">
+                                    <p>:</p>
+                                </div>
                                 <div class="col-md-7 col-sm-7 col-xs-7"><input id="password_confirmation" type="password" class="form-control" name="password_confirmation" required autocomplete="new-password">
                                     @error('password_confirmation')
                                     <span class="invalid-feedback" role="alert">
@@ -103,6 +124,5 @@
             text-align: left;
         }
     }
-
 </style>
 @endsection
