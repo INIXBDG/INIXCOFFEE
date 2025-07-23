@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers\Crm;
 use App\Http\Controllers\Controller;
-
+use App\Models\Peluang;
 use Illuminate\Http\Request;
 
 class CRMController extends Controller
 {
     public function index(){
+        // $profit = Peluang::whereNotNull('close_win')->sum();
         return view('crm.dashboard');
     }
 
