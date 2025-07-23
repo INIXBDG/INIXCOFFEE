@@ -76,7 +76,6 @@
             </a>
         </li>
 
-
         <!-- Peluang -->
         <li class="menu-item {{ request()->routeIs('index.peluang') ? 'active open' : '' }}">
             <a href="{{ route('index.peluang') }}" class="menu-link">
