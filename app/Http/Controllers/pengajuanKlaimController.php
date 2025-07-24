@@ -552,6 +552,8 @@ class pengajuanKlaimController extends Controller
             'approval'       => 'required|integer|in:1,2',
             'id_absen'       => 'required|integer',
             'id_karyawan'    => 'required|integer',
+            'waktu_masuk'    => $request->approval == 1 ? 'required|date_format:H:i' : '',
+            'waktu_pulang'   => $request->approval == 1 ? 'required|date_format:H:i' : '',
         ]);
 
         $jenis_PK = absensi_noRecord::where('id_karyawan', $request->id_karyawan)
@@ -567,11 +569,30 @@ class pengajuanKlaimController extends Controller
             $jenis_PK->alasan_approval = $request->alasan_approval;
         }
         $jenis_PK->approval_date = now();
-        $jenis_PK->save();
 
         $absen = AbsensiKaryawan::where('id', $jenis_PK->id_absen)->first();
-        $absen->waktu_keterlambatan = "00:00:00";
+        // hanya jika disetujui
+      if ($request->approval == 1) {
+
+    if ($absen) {
+        $waktuDiizinkan = \Carbon\Carbon::createFromFormat('H:i', $request->waktu_masuk);
+        $waktuAbsen = \Carbon\Carbon::createFromFormat('H:i', $absen->jam_masuk);
+
+        // Jika absen masih dalam toleransi <= 59 menit dari waktu diizinkan
+        if ($waktuAbsen->lte($waktuDiizinkan->copy()->addMinutes(59))) {
+            $absen->waktu_keterlambatan = "00:00:00";
+        }
+
         $absen->save();
+    }
+
+    // Simpan waktu masuk & pulang yang diizinkan ke absensi_noRecord
+    $jenis_PK->waktu_masuk = $request->waktu_masuk;
+    $jenis_PK->waktu_pulang = $request->waktu_pulang;
+}
+
+
+        $jenis_PK->save();
 
         $karyawan = karyawan::find($request->id_karyawan);
         $hrd = karyawan::where('jabatan', 'HRD')->first();

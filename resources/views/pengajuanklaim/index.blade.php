@@ -1,4 +1,6 @@
 @extends('layouts.app')
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
 
 @section('content')
 @foreach ($cancelLeave as $data)
@@ -40,26 +42,39 @@
 <div class="modal fade" id="modalApproveSchemeWork{{ $data->id }}" tabindex="-1" aria-labelledby="modalLabel{{ $data->id }}" aria-hidden="true" data-bs-backdrop="false" data-bs-keyboard="false" style="background-color: transparent !important;">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
-            <form id="formApproval{{ $data->id }}" action="{{ route('pengajuanklaim.aproveSchemeWork') }}" method="POST">
+            <form id="formApproval{{ $data->id }}" action="{{ route('pengajuanklaim.approveSchemeWork') }}" method="POST">
+
                 @csrf
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalLabel{{ $data->id }}">Approve</h5>
                 </div>
                 <div class="modal-body text-start">
                     @if($data->bukti_gambar)
-                    <input type="hidden" name="id_absen" id="id_absen" value="{{ $data->id_absen }}">
-                    <input type="hidden" name="id_karyawan" id="id_karyawan" value="{{ $data->id_karyawan }}">
+                    <input type="hidden" name="id_absen" value="{{ $data->id_absen }}">
+                    <input type="hidden" name="id_karyawan" value="{{ $data->id_karyawan }}">
                     <input type="hidden" name="approval" id="approvalInput{{ $data->id }}">
 
                     <div class="btn-group mb-3" role="group">
-                        <input type="button" class="btn btn-primary" value="Ya" onclick="submitApproval('{{ $data->id }}', 1)">
+                        <input type="button" class="btn btn-primary" value="Ya" onclick="showTimeInputs('{{ $data->id }}')">
                         <input type="button" class="btn btn-danger" value="Tidak" onclick="showTextarea('{{ $data->id }}')">
                     </div>
 
+                    {{-- Input Waktu Masuk & Pulang --}}
+                    <div class="form-group d-none" id="timeInputs{{ $data->id }}">
+                        <label for="waktu_masuk">Waktu Masuk</label>
+                        <input type="time" class="form-control mb-2" id="waktu_masuk_{{ $data->id }}">
+
+                        <label for="waktu_pulang">Waktu Pulang</label>
+                        <input type="time" class="form-control mb-2" id="waktu_pulang_{{ $data->id }}">
+
+                        <button type="button" class="btn btn-success mt-2" onclick="submitApproval('{{ $data->id }}', 1)">Kirim</button>
+                    </div>
+
+                    {{-- Input Alasan Penolakan --}}
                     <div class="form-group d-none" id="textareaDiv{{ $data->id }}">
                         <label for="alasan_approval{{ $data->id }}">Keterangan</label>
                         <textarea class="form-control" name="alasan_approval" id="alasan_approval{{ $data->id }}" placeholder="Keterangan"></textarea>
-                        <button type="button" class="btn btn-success mt-2 text-end" onclick="submitApproval('{{ $data->id }}', 2)">Kirim</button>
+                        <button type="button" class="btn btn-success mt-2" onclick="submitApproval('{{ $data->id }}', 2)">Kirim</button>
                     </div>
                     @endif
                 </div>
@@ -67,41 +82,7 @@
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
                 </div>
             </form>
-        </div>
-    </div>
-</div>
-@endforeach
-@foreach ($noRecord as $data)
-<div class="modal fade" id="modalApproveNoRecord{{ $data->id }}" tabindex="-1" aria-labelledby="modalLabel{{ $data->id }}" aria-hidden="true" data-bs-backdrop="false" data-bs-keyboard="false" style="background-color: transparent !important;">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <form id="formApproval{{ $data->id }}" action="{{ route('pengajuanklaim.aproveNoRecord') }}" method="POST">
-                @csrf
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalLabel{{ $data->id }}">Approve</h5>
-                </div>
-                <div class="modal-body text-start">
-                    @if($data->bukti_gambar)
-                    <input type="hidden" name="id_absen" id="id_absen" value="{{ $data->id_absen }}">
-                    <input type="hidden" name="id_karyawan" id="id_karyawan" value="{{ $data->id_karyawan }}">
-                    <input type="hidden" name="approval" id="approvalInput{{ $data->id }}">
 
-                    <div class="btn-group mb-3" role="group">
-                        <input type="button" class="btn btn-primary" value="Ya" onclick="submitApproval('{{ $data->id }}', 1)">
-                        <input type="button" class="btn btn-danger" value="Tidak" onclick="showTextarea('{{ $data->id }}')">
-                    </div>
-
-                    <div class="form-group d-none" id="textareaDiv{{ $data->id }}">
-                        <label for="alasan_approval{{ $data->id }}">Keterangan</label>
-                        <textarea class="form-control" name="alasan_approval" id="alasan_approval{{ $data->id }}" placeholder="Keterangan"></textarea>
-                        <button type="button" class="btn btn-success mt-2 text-end" onclick="submitApproval('{{ $data->id }}', 2)">Kirim</button>
-                    </div>
-                    @endif
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-                </div>
-            </form>
         </div>
     </div>
 </div>
@@ -349,12 +330,31 @@
                                     <td>{{ \Carbon\Carbon::parse($data->created_at)->translatedFormat('d-M-Y H:i') }}</td>
                                     <td>
                                         @switch($data->approval)
-                                        @case(0) <span class="badge bg-warning text-dark">Menunggu</span> @break
-                                        @case(1) <span class="badge bg-success">Disetujui</span> @break
-                                        @case(2) <span class="badge bg-danger">Ditolak</span> @break
-                                        @default <span class="badge bg-secondary">Menunggu</span>
+                                        @case(0)
+                                        <span class="badge rounded-pill bg-warning text-dark">
+                                            <i class="bi bi-hourglass-split me-1"></i> Menunggu
+                                        </span>
+                                        @break
+
+                                        @case(1)
+                                        <span class="badge rounded-pill bg-success">
+                                            <i class="bi bi-check-circle me-1"></i> Disetujui
+                                        </span>
+                                        @break
+
+                                        @case(2)
+                                        <span class="badge rounded-pill bg-danger">
+                                            <i class="bi bi-x-circle me-1"></i> Ditolak
+                                        </span>
+                                        @break
+
+                                        @default
+                                        <span class="badge rounded-pill bg-secondary">
+                                            <i class="bi bi-question-circle me-1"></i> Tidak Diketahui
+                                        </span>
                                         @endswitch
                                     </td>
+
                                     <td>{{ $data->alasan_approval ?? '-' }}</td>
                                     <td style="font-size: 14px;">
                                         <div class="btn-group dropup">
@@ -432,12 +432,31 @@
                                     <td>{{ \Carbon\Carbon::parse($data->created_at)->translatedFormat('d-M-Y H:i') }}</td>
                                     <td>
                                         @switch($data->approval)
-                                        @case(0) <span class="badge bg-warning text-dark">Menunggu</span> @break
-                                        @case(1) <span class="badge bg-success">Disetujui</span> @break
-                                        @case(2) <span class="badge bg-danger">Ditolak</span> @break
-                                        @default <span class="badge bg-secondary">Menunggu</span>
+                                        @case(0)
+                                        <span class="badge rounded-pill bg-warning text-dark">
+                                            <i class="bi bi-hourglass-split me-1"></i> Menunggu
+                                        </span>
+                                        @break
+
+                                        @case(1)
+                                        <span class="badge rounded-pill bg-success">
+                                            <i class="bi bi-check-circle me-1"></i> Disetujui
+                                        </span>
+                                        @break
+
+                                        @case(2)
+                                        <span class="badge rounded-pill bg-danger">
+                                            <i class="bi bi-x-circle me-1"></i> Ditolak
+                                        </span>
+                                        @break
+
+                                        @default
+                                        <span class="badge rounded-pill bg-secondary">
+                                            <i class="bi bi-question-circle me-1"></i> Tidak Diketahui
+                                        </span>
                                         @endswitch
                                     </td>
+
                                     <td>{{ $data->alasan_approval ?? '-' }}</td>
                                     <td style="font-size: 14px;">
                                         <div class="btn-group dropup">
@@ -453,14 +472,14 @@
                                                         <span><img src="{{ asset('icon/trash-danger.svg') }}" alt="eye.png" width="20px" height="20px"></span> Hapus Data
                                                     </button>
                                                 </form>
-                                                @if(auth()->user()->jabatan === 'HRD')
+                                                {{--@if(auth()->user()->jabatan === 'HRD') --}}
                                                 @if($data->approval === 1)
                                                 @elseif($data->approval === 0)
                                                 <button class="dropdown-item" data-toggle="modal" data-toggle="tooltip" title="Approve Pengajuan" data-target="#modalApproveSchemeWork{{ $data->id }}">
                                                     <span><img src="{{ asset('icon/clipboard-primary.svg') }}" alt="eye.png" width="20px" height="20px"></span> Approve
                                                 </button>
                                                 @endif
-                                                @endif
+                                                {{-- @endif --}}
                                             </div>
                                         </div>
                                     </td>
@@ -517,12 +536,31 @@
                                     <td>{{ $data->kronologi }}</td>
                                     <td>
                                         @switch($data->approval)
-                                        @case(0) <span class="badge bg-warning text-dark">Menunggu</span> @break
-                                        @case(1) <span class="badge bg-success">Disetujui</span> @break
-                                        @case(2) <span class="badge bg-danger">Ditolak</span> @break
-                                        @default <span class="badge bg-secondary">Menunggu</span>
+                                        @case(0)
+                                        <span class="badge rounded-pill bg-warning text-dark">
+                                            <i class="bi bi-hourglass-split me-1"></i> Menunggu Atasan
+                                        </span>
+                                        @break
+
+                                        @case(1)
+                                        <span class="badge rounded-pill bg-success">
+                                            <i class="bi bi-check-circle me-1"></i> Disetujui
+                                        </span>
+                                        @break
+
+                                        @case(2)
+                                        <span class="badge rounded-pill bg-danger">
+                                            <i class="bi bi-x-circle me-1"></i> Ditolak
+                                        </span>
+                                        @break
+
+                                        @default
+                                        <span class="badge rounded-pill bg-secondary">
+                                            <i class="bi bi-question-circle me-1"></i> Tidak Diketahui
+                                        </span>
                                         @endswitch
                                     </td>
+
                                     <td>{{ $data->alasan_approval ?? '-' }}</td>
                                     <td style="font-size: 14px;">
                                         <div class="btn-group dropup">
@@ -636,32 +674,58 @@
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
 <script>
-    function submitApproval(id, status) {
-        const approvalInput = document.getElementById('approvalInput' + id);
-        approvalInput.value = status;
-
-        if (status === 2) {
-            const alasan = document.getElementById('alasan_approval' + id).value;
-            if (!alasan.trim()) {
-                alert('Silakan isi keterangan terlebih dahulu.');
-                return;
-            }
-        }
-
-        const form = document.getElementById('formApproval' + id);
-        if (form) {
-            form.submit();
-        } else {
-            alert('Formulir tidak ditemukan.');
-        }
+    function showTimeInputs(id) {
+        document.getElementById('timeInputs' + id).classList.remove('d-none');
+        document.getElementById('textareaDiv' + id).classList.add('d-none');
     }
 
     function showTextarea(id) {
-        const div = document.getElementById('textareaDiv' + id);
-        if (div) {
-            div.classList.remove('d-none');
-        }
+        document.getElementById('textareaDiv' + id).classList.remove('d-none');
+        document.getElementById('timeInputs' + id).classList.add('d-none');
     }
+
+
+    function submitApproval(id, value) {
+        document.getElementById('approvalInput' + id).value = value;
+
+        // Tangani logic waktu_masuk & waktu_pulang
+        let masuk = document.getElementById('waktu_masuk_' + id);
+        let pulang = document.getElementById('waktu_pulang_' + id);
+
+        if (value === 1) {
+            // kalau tombol Ya, input waktu dikirim
+            masuk.setAttribute('name', 'waktu_masuk');
+            masuk.setAttribute('required', true);
+            pulang.setAttribute('name', 'waktu_pulang');
+            pulang.setAttribute('required', true);
+        } else {
+            // kalau Tidak, hapus agar tidak tervalidasi
+            masuk.removeAttribute('name');
+            masuk.removeAttribute('required');
+            pulang.removeAttribute('name');
+            pulang.removeAttribute('required');
+        }
+
+        document.getElementById('formApproval' + id).submit();
+    }
+
+
+
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll('input[type=radio][value="4"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                let id = this.id.split('_')[1];
+                document.getElementById(`alasan_penolakan_${id}`).style.display = 'block';
+            });
+        });
+
+        document.querySelectorAll('input[type=radio][value="1"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                let id = this.id.split('_')[1];
+                document.getElementById(`alasan_penolakan_${id}`).style.display = 'none';
+            });
+        });
+    });
 </script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {

@@ -214,11 +214,12 @@
                     }
                 },
                 {
-                    "data": "tanggal",
+                    "data": "created_at",
                     "render": function(data, type, row) {
-                        return moment(row.tanggal).isValid() ? moment(row.tanggal).format('DD MMMM YYYY') : '-';
+                        return moment(data).format('DD MMMM YYYY');
                     }
                 },
+
                 {
                     "data": "approval",
                     "render": function(data, type, row) {
@@ -245,67 +246,65 @@
                 {
                     "data": null,
                     "render": function(data, type, row) {
-                        var actions = "";
-                        var userRole = '{{ auth()->user()->jabatan }}';
-                        var requesterRole = data.karyawan.jabatan;
-                        var requesterDivisi = data.karyawan.divisi; // pastikan properti ini ada di data
-                        var approval = data.approval;
+                        let approval = row.approval;
+                        let userRole = '{{ auth()->user()->jabatan }}';
+                        let requesterDivisi = row.karyawan.divisi;
+                        let requesterRole = row.karyawan.jabatan;
+                        let actions = "";
+
+                        let iconBase = "{{ asset('icon') }}";
 
                         actions += '<div class="dropdown">';
                         actions += '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
                         actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
 
-                        // Form PDF hanya jika approval === 2
+                        // Tombol PDF jika disetujui
                         if (approval === 2) {
-                            actions += '<a class="dropdown-item" href="/pengajuanizin/' + row.id + '">';
-                            actions += '<img src="{{ asset('icon/assept-document.svg') }}" style="width:24px" class=""> Form PDF</a>';
+                            actions += `<a class="dropdown-item" href="/pengajuanizin/${row.id}">`;
+                            actions += `<img src="${iconBase}/assept-document.svg" style="width:24px" class=""> Form PDF</a>`;
                         }
 
                         // Tombol Approve
                         let approveDisabled = true;
                         let approveColor = '';
 
-                        if (approval === 0 && userRole.includes('Koordinator')) {
-                            approveDisabled = false;
-                        } else if (approval === 0 && userRole === 'Education Manager' && requesterDivisi === 'Education') {
-                            approveDisabled = false;
-                        } else if (approval === 0 && userRole === 'SPV Sales' && requesterDivisi === 'Sales & Marketing') {
-                            approveDisabled = false;
-                        } else if (approval === 0 && userRole === 'Koordinator ITSM' && requesterDivisi === 'IT Service Management') {
-                            approveDisabled = false;
-                        } else if (approval === 1 && userRole === 'HRD') {
-                            approveDisabled = false;
-                        } else if (approval === 4) {
+                        if (approval === 0 && userRole.includes('Koordinator')) approveDisabled = false;
+                        else if (approval === 0 && userRole === 'Education Manager' && requesterDivisi === 'Education') approveDisabled = false;
+                        else if (approval === 0 && userRole === 'SPV Sales' && requesterDivisi === 'Sales & Marketing') approveDisabled = false;
+                        else if (approval === 0 && userRole === 'Koordinator ITSM' && requesterDivisi === 'IT Service Management') approveDisabled = false;
+                        else if (approval === 1 && userRole === 'HRD') approveDisabled = false;
+                        else if (approval === 4) {
                             approveDisabled = true;
                             approveColor = ' style="color: red;"';
                         }
 
                         if (approval <= 2) {
-                            actions += '<button type="button" class="dropdown-item' + (approveDisabled ? ' disabled' : '') + '" ' +
-                                (approveDisabled ? '' : 'onclick="openApproveModal(' + row.id + ', \'' + userRole + '\')"') + approveColor + '>';
-                            actions += '<img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
+                            actions += `<button type="button" class="dropdown-item${approveDisabled ? ' disabled' : ''}" ` +
+                                (approveDisabled ? '' : `onclick="openApproveModal(${row.id}, '${userRole}')"`) + approveColor + `>`;
+                            actions += `<img src="${iconBase}/clipboard-primary.svg" class=""> Approve</button>`;
                         }
 
                         if (approval === 4) {
                             actions += '<button type="button" class="dropdown-item disabled text-danger">';
-                            actions += '<img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Ditolak</button>';
+                            actions += `<img src="${iconBase}/clipboard-primary.svg" class=""> Ditolak</button>`;
                         }
 
-                        // Tombol Hapus untuk HRD di approval 0, 2, atau 4
-                        if ((userRole === 'HRD' && approval === 4) || (userRole === 'HRD' && approval === 0) || (userRole === 'HRD' && approval === 2)) {
-                            actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/pengajuanizin') }}/' + row.id + '" method="POST">';
-                            actions += '@csrf';
-                            actions += '@method("DELETE")';
-                            actions += '<button type="submit" class="dropdown-item">';
-                            actions += '<img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
-                            actions += '</form>';
+                        // Tombol Hapus untuk HRD jika approval = 0, 2, atau 4
+                        if (userRole === 'HRD' && [0, 2, 4].includes(approval)) {
+                            actions += `<form onsubmit="return confirm('Apakah Anda Yakin ?');" action="/pengajuanizin/${row.id}" method="POST">`;
+                            actions += `<input type="hidden" name="_token" value="{{ csrf_token() }}">`;
+                            actions += `<input type="hidden" name="_method" value="DELETE">`;
+                            actions += `<button type="submit" class="dropdown-item">`;
+                            actions += `<img src="${iconBase}/trash-danger.svg" class=""> Hapus</button>`;
+                            actions += `</form>`;
                         }
 
                         actions += '</div></div>';
                         return actions;
                     }
                 }
-           ],
+
+            ],
             "order": [
                 [0, 'desc']
             ]
@@ -317,6 +316,8 @@
         var approvalNo = document.getElementById('approveNo');
         var alasanTextarea = document.getElementById('alasan_approval');
         var jabatan = @json(auth()->user()->jabatan);
+
+
 
         if (approvalNo.checked) {
             if (!alasanTextarea.value.trim()) {

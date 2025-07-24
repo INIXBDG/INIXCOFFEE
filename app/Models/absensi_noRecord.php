@@ -9,7 +9,7 @@ class absensi_noRecord extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['id_karyawan', 'kendala', 'id_absen', 'bukti_gambar', 'kronologi', 'approval', 'alasan_approval', 'jenis_PK'];
+    protected $fillable = ['id_karyawan', 'kendala', 'id_absen', 'bukti_gambar', 'kronologi', 'approval', 'alasan_approval', 'jenis_PK', 'waktu_masuk', 'waktu_pulang'];
 
     public function karyawan()
     {
