@@ -62,7 +62,16 @@ class LemburController extends Controller
             $lembur = lembur::with('karyawan')->whereHas('karyawan', function($query) use ($divisi) {
                 $query->where('divisi', $divisi);
             })->latest()->get();
-        } else{
+        }else if($jabatan == 'GM'){
+            $lembur = lembur::with('karyawan')->whereHas('karyawan', function($query) use ($divisi) {
+                $query->where('jabatan', ['HRD', 'Finance & Accounting']);
+            })->latest()->get();
+        }else if($jabatan == 'HRD'){
+            $lembur = lembur::with('karyawan')->whereHas('karyawan', function($query) use ($divisi) {
+                $query->where('jabatan', ['Office Boy', 'Driver']);
+            })->latest()->get();
+        }
+         else{
             $lembur = lembur::with('karyawan')->whereHas('karyawan', function($query) use ($user) {
                 $query->where('id', $user);
             })->latest()->get();
