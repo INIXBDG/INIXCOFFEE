@@ -584,7 +584,7 @@ class AbsensiKaryawanController extends Controller
         $this->validate($request, [
             'id_karyawan'   => 'required|integer',
             'kendala'       => 'required|string|in:Human Error,System Error',
-            'tanggal_absen' => 'required|integer',
+            'tanggal_absen' => 'required|date',
             'bukti_gambar'  => 'required|image',
             'kronologi'     => 'required|string',
         ]);
@@ -621,7 +621,7 @@ class AbsensiKaryawanController extends Controller
             'id_karyawan'   => $request->id_karyawan,
             'jenis_PK'      => 'No Record',
             'kendala'       => $request->kendala,
-            'id_absen'      => $request->tanggal_absen,
+            'id_absen'      => '0',
             'bukti_gambar'  => $fotoPath,
             'kronologi'     => $request->kronologi,
             'approval'      => '0',

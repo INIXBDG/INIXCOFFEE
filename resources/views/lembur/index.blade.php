@@ -230,7 +230,9 @@
                         }
                     }
                 }
-            ]
+            ],
+            "order": [[6, 'desc']],
+            "columnDefs": [{"targets": [6], "type": "date"}],
         });
 
         $('#lemburkaryawan').DataTable({
@@ -340,7 +342,9 @@
                         return actions;
                     }
                 }
-            ]
+            ],
+            "order": [[7, 'desc']],
+            "columnDefs": [{"targets": [7], "type": "date"}],
         });
         $('#lemburkaryawan').on('click', '.approve-btn', function() {
             var id = $(this).data('id');
