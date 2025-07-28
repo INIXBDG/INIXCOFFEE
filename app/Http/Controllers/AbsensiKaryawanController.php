@@ -313,12 +313,11 @@ class AbsensiKaryawanController extends Controller
             ->get();
 
         $karyawan = karyawan::where('id', $id_karyawan)->first();
-
-        $noRecord = absensi_noRecord::where('id_karyawan', $id_karyawan)
+        $noRecord = absensi_noRecord::where('id_karyawan', auth()->user()->karyawan_id)
             ->where('jenis_PK', 'No Record')
-            ->whereHas('absensiKaryawan')
-            ->with('absensiKaryawan')
+            // ->where('approval', 1)
             ->get();
+
 
         $schemeWork = absensi_noRecord::where('id_karyawan', $id_karyawan)
             ->where('jenis_PK', 'Scheme Work')
@@ -485,7 +484,7 @@ class AbsensiKaryawanController extends Controller
             ->whereYear('tanggal_awal', $tahun)
             ->whereMonth('tanggal_awal', $bulan)
             ->get();
-            // dd($absensiKaryawan);
+        // dd($absensiKaryawan);
 
         // Inisialisasi jumlahAbsensi
         if ($karyawanId == '2') {
@@ -495,7 +494,6 @@ class AbsensiKaryawanController extends Controller
                 ->whereRaw('DAYOFWEEK(tanggal) NOT IN (1, 7)') // Mengecualikan Minggu (1) dan Sabtu (7)
                 ->distinct('tanggal')
                 ->count();
-
         } else {
             $jumlahAbsensi = $absensiKaryawan->count();
             $jumlahAbsensiPulang = $absen_pulang->count();

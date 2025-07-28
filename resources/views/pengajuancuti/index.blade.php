@@ -1,4 +1,6 @@
 @extends('layouts.app')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
 
 @section('content')
 <div class="container-fluid">
@@ -183,18 +185,28 @@
                         return moment(data.tanggal_awal).format('DD MMMM YYYY')+ ' s/d ' + moment(data.tanggal_akhir).format('DD MMMM YYYY');
                     }
                 },
-                {
-                    "data": null,
-                    "render": function(data) {
-                        if (data.approval_manager == '0') {
-                            return '<span class="badge bg-warning" style="color:black;"> Menunggu Persetujuan Manager Divisi </span>';
-                        } else if (data.approval_manager == '1') {
-                            return '<span class="badge bg-success"> Disetujui </span>';
-                        } else if (data.approval_manager == '2') {
-                            return '<span class="badge bg-danger"> Ditolak </span>';
-                        }
-                    },
-                },
+{
+    "data": null,
+    "render": function(data) {
+        if (data.approval_manager == '0') {
+            return `
+                <span class="badge rounded-pill bg-warning text-dark">
+                    <i class="bi bi-hourglass-split me-1"></i> Menunggu Persetujuan Manager Divisi
+                </span>`;
+        } else if (data.approval_manager == '1') {
+            return `
+                <span class="badge rounded-pill bg-success">
+                    <i class="bi bi-check-circle me-1"></i> Disetujui
+                </span>`;
+        } else if (data.approval_manager == '2') {
+            return `
+                <span class="badge rounded-pill bg-danger">
+                    <i class="bi bi-x-circle me-1"></i> Ditolak
+                </span>`;
+        }
+    }
+},
+
                 {   "data": null,
                     "render": function(data) {
                         if (data.alasan_manager == null) {

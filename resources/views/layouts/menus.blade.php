@@ -1885,7 +1885,7 @@
                                                             <div class="card-body d-flex">
                                                                 <div class="col-md-2">
                                                                     <img src="{{ asset('icon/paperclip.svg') }}"
-                                                                        class="img-responsive" width="30px">
+                                                                        class="img-responsive" width="30px">    
                                                                 </div>
                                                                 <div class="col-md-10" style="margin-left: 10px">
                                                                     <a href="/pengajuan-klaim"

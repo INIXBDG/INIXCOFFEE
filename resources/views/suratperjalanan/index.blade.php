@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
 @section('content')
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 <div class="container-fluid">
@@ -192,33 +194,56 @@
                         return moment(data.tanggal_berangkat).format('DD MMMM YYYY')+ ' s/d ' + moment(data.tanggal_pulang).format('DD MMMM YYYY');
                     }
                 },
-                {
-                    "data": null,
-                    "render": function(data) {
-                        if (data.approval_manager == '0' && data.approval_hrd == '0') {
-                            return '<span class="badge bg-warning" style="color:black;"> Menunggu Persetujuan Manager Divisi </span>';
-                        } 
-                        
-                        if (data.approval_manager == '1' && data.approval_hrd == '0') {
-                            return '<span class="badge bg-warning"> Menunggu Rate dan Persetujuan HRD </span>';
-                        } 
-                        
-                        if (data.approval_manager == '1' && data.approval_hrd == '1') {
-                            if (data.tipe == "Internasional" && data.approval_direksi == '0') {
-                                return '<span class="badge bg-warning"> Menunggu Persetujuan Direksi </span>';
-                            }else if(data.tipe == "Internasional" && data.approval_direksi == '2') {
-                                return '<span class="badge bg-danger"> Ditolak </span>';
-                            }else{
-                                return '<span class="badge bg-success"> Disetujui </span>';
-                            }
-                        }
-                        if (data.approval_manager == '2') {
-                            return '<span class="badge bg-danger"> Ditolak </span>';
-                        }
-                        
-                        return '<span class="badge bg-secondary"> Status Tidak Diketahui </span>';
-                    },
-                },
+{
+    "data": null,
+    "render": function(data) {
+        if (data.approval_manager == '0' && data.approval_hrd == '0') {
+            return `
+                <span class="badge rounded-pill bg-warning text-dark">
+                    <i class="bi bi-hourglass-split me-1"></i> Menunggu Persetujuan Manager Divisi
+                </span>`;
+        } 
+        
+        if (data.approval_manager == '1' && data.approval_hrd == '0') {
+            return `
+                <span class="badge rounded-pill bg-warning text-dark">
+                    <i class="bi bi-hourglass-split me-1"></i> Menunggu Rate & Persetujuan HRD
+                </span>`;
+        } 
+        
+        if (data.approval_manager == '1' && data.approval_hrd == '1') {
+            if (data.tipe == "Internasional" && data.approval_direksi == '0') {
+                return `
+                    <span class="badge rounded-pill bg-warning text-dark">
+                        <i class="bi bi-hourglass-split me-1"></i> Menunggu Persetujuan Direksi
+                    </span>`;
+            } else if (data.tipe == "Internasional" && data.approval_direksi == '2') {
+                return `
+                    <span class="badge rounded-pill bg-danger">
+                        <i class="bi bi-x-circle me-1"></i> Ditolak
+                    </span>`;
+            } else {
+                return `
+                    <span class="badge rounded-pill bg-success">
+                        <i class="bi bi-check-circle me-1"></i> Disetujui
+                    </span>`;
+            }
+        }
+
+        if (data.approval_manager == '2') {
+            return `
+                <span class="badge rounded-pill bg-danger">
+                    <i class="bi bi-x-circle me-1"></i> Ditolak
+                </span>`;
+        }
+
+        return `
+            <span class="badge rounded-pill bg-secondary">
+                <i class="bi bi-question-circle me-1"></i> Status Tidak Diketahui
+            </span>`;
+    }
+}
+,
                 {
                     "data": null,
                     "render": function(data, type, row) {
