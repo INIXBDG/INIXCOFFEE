@@ -5,17 +5,17 @@
         <div class="container-xxl flex-grow-1 container-p-y">
             <!-- Header -->
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h4 class="fw-bold">Manajemen Peluang</h4>
+                <h4 class="fw-bold">Manajemen Lead</h4>
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#opportunityModal"
                     onclick="resetForm()">
-                    Tambah Peluang
+                    Tambah Lead
                 </button>
             </div>
 
             <!-- Tabel Peluang -->
             <div class="card">
                 <div class="card-header">
-                    <h5 class="card-title">Daftar Peluang</h5>
+                    <h5 class="card-title">Daftar Lead</h5>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -64,7 +64,7 @@
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="opportunityModalLabel">Tambah Peluang</h5>
+                            <h5 class="modal-title" id="opportunityModalLabel">Tambah Lead</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
@@ -109,19 +109,10 @@
                                     <label class="form-label" for="tahap">Tahap</label>
                                     <select class="form-select" id="tahap" name="tahap">
                                         <option value="">-- Pilih Tahap --</option>
-                                        <option value="Prospek">Prospek</option>
-                                        <option value="Kualifikasi">Kualifikasi</option>
-                                        <option value="Proposal">Proposal</option>
-                                        <option value="Negosiasi">Negosiasi</option>
-                                        <option value="Ditutup Menang">Ditutup Menang</option>
-                                        <option value="Ditutup Kalah">Ditutup Kalah</option>
+                                        <option value="biru">Biru</option>
+                                        <option value="merah">Merah</option>
+                                        <option value="hitam">Hitam</option>
                                     </select>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label" for="probabilitas">Probabilitas (%)</label>
-                                    <input type="number" min="0" max="100" class="form-control"
-                                        id="probabilitas" name="probabilitas" />
                                 </div>
 
                                 <div class="mb-3">

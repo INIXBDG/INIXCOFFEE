@@ -16,7 +16,7 @@ return new class extends Migration
             $table->text('id_sales');
             $table->integer('id_contact');
             $table->integer('id_peluang');
-            $table->enum('aktivitas', ['Panggilan', 'Email', 'Meeting', 'Catatan', 'Task']);
+            $table->enum('aktivitas', ['Panggilan', 'Email', 'Meeting']);
             $table->text('subject');
             $table->text('deskripsi');
             $table->date('waktu_aktivitas');

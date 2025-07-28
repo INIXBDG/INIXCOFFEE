@@ -353,7 +353,6 @@ Route::get('/permintaan-sering-diajukan', [DashboardItsmController::class, 'getP
 Route::get('/list-bulan', [DashboardItsmController::class, 'getListBulan']);
 
 Route::prefix('crm')->group(function () {
-
     Route::get('/', [CRMController::class, 'index'])->name('CRM.index');
     Route::get('/my-dashboard', [salesPribadiController::class, 'index'])->name('CRM.myDasboard');
     Route::get('/profile', [CRMController::class, 'getProfile'])->middleware('auth')->name('crm.profile');

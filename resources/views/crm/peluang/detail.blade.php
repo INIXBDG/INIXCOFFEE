@@ -5,20 +5,20 @@
         <div class="container-xxl flex-grow-1 container-p-y">
 
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h4 class="fw-bold mb-0">Detail Peluang</h4>
+                <h4 class="fw-bold mb-0">Detail Lead</h4>
                 <div class="d-flex gap-2">
                     <a href="{{ route('index.peluang') }}" class="btn btn-secondary">Kembali</a>
                     <button type="button" class="btn btn-warning" data-bs-toggle="modal"
-                        data-bs-target="#editPeluangModal">Edit Peluang</button>
+                        data-bs-target="#editPeluangModal">Edit Lead</button>
                     <button type="button" class="btn btn-success" data-bs-toggle="modal"
-                        data-bs-target="#updateProbabilitasModal">Update Peluang</button>
+                        data-bs-target="#updateProbabilitasModal">Update Lead</button>
                 </div>
             </div>
 
             <!-- Detail Card -->
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">Informasi Peluang</h5>
+                    <h5 class="card-title mb-0">Informasi Lead</h5>
                     <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#tambahAktivitasModal">
                         Tambah Aktivitas
                     </button>
@@ -47,9 +47,6 @@
 
                         <dt class="col-sm-4">Tahap</dt>
                         <dd class="col-sm-8">{{ $peluang->tahap ?? '-' }}</dd>
-
-                        <dt class="col-sm-4">Probabilitas</dt>
-                        <dd class="col-sm-8">{{ $peluang->probabilitas ?? 0 }}%</dd>
 
                         <dt class="col-sm-4">Tanggal Tutup Diharapkan</dt>
                         <dd class="col-sm-8">

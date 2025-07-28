@@ -26,6 +26,8 @@
                                     <th>Nama Lengkap</th>
                                     <th>Email</th>
                                     <th>No Telepon</th>
+                                    <th>Tim</th>
+                                    <th>Posisi</th>
                                     <th>Perusahaan</th>
                                     <th>Sales</th>
                                     <th>Aksi</th>
@@ -38,6 +40,8 @@
                                         <td>{{ $contact->nama_lengkap }}</td>
                                         <td>{{ $contact->email }}</td>
                                         <td>{{ $contact->no_tlp }}</td>
+                                        <td>{{ $contact->tim }}</td>
+                                        <td>{{ $contact->posisi }}</td>
                                         <td>{{ $contact->perusahaan->nama_perusahaan }}</td>
                                         <td>{{ $contact->id_sales }}</td>
                                         <td>
@@ -95,6 +99,16 @@
                                     <input type="text" class="form-control" id="edit_no_tlp" name="no_tlp" required>
                                 </div>
 
+                                <div class="mb-3">
+                                    <label class="form-label" for="edit_tim">Tim</label>
+                                    <input type="text" class="form-control" id="edit_tim" name="tim" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label" for="edit_posisi">Posisi</label>
+                                    <input type="text" class="form-control" id="edit_posisi" name="posisi" required>
+                                </div>
+
                                 <button type="submit" class="btn btn-primary">Update</button>
                             </form>
                         </div>
@@ -134,6 +148,16 @@
                                 </div>
 
                                 <div class="mb-3">
+                                    <label class="form-label" for="tim">Tim</label>
+                                    <input type="text" class="form-control" id="no_tlp" name="tim" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label" for="posisi">Posisi</label>
+                                    <input type="text" class="form-control" id="no_tlp" name="posisi" required>
+                                </div>
+
+                                <div class="mb-3">
                                     <label class="form-label" for="id_perusahaan">Perusahaan</label>
                                     <select class="form-select" id="id_perusahaan" name="id_perusahaan" required>
                                         <option value="" disabled selected>Pilih Perusahaan</option>
@@ -156,6 +180,8 @@
             document.getElementById('edit_nama_lengkap').value = contact.nama_lengkap;
             document.getElementById('edit_email').value = contact.email;
             document.getElementById('edit_no_tlp').value = contact.no_tlp;
+            document.getElementById('edit_tim').value = contact.tim;
+            document.getElementById('edit_posisi').value = contact.posisi;
 
             // Set action form update
             document.getElementById('editContactForm').action = '/contact/update/' + contact.id;

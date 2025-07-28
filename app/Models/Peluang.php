@@ -16,7 +16,6 @@ class Peluang extends Model
         'deskripsi',
         'jumlah',
         'tahap',
-        'probabilitas',
         'tanggal_tutup_diharapkan',
     ];
 
