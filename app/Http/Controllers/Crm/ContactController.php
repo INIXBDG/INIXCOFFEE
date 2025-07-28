@@ -38,6 +38,8 @@ class ContactController extends Controller
             'nama_lengkap'  => 'required|string|max:255',
             'email'         => 'required|email|max:255',
             'no_tlp'        => 'nullable|string|max:20',
+            'tim'        => 'required|string|max:255',
+            'posisi'        => 'required|string|max:255',
         ]);
 
         // hanya untuk test function di postman, setelah selesai tolong diubah -> auth()->user()->id_sales

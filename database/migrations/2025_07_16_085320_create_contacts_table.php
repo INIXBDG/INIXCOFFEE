@@ -18,6 +18,8 @@ return new class extends Migration
             $table->string('nama_lengkap');
             $table->text('email');
             $table->text('no_tlp');
+            $table->text('tim');
+            $table->text('posisi');
             $table->timestamps();
         });
     }

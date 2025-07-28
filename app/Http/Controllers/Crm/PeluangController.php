@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Crm;
+
 use App\Http\Controllers\Controller;
 
 use App\Models\Aktivitas;
@@ -48,8 +49,7 @@ class PeluangController extends Controller
             'judul' => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
             'jumlah' => 'nullable|numeric|min:0',
-            'tahap' => 'nullable|in:Prospek,Kualifikasi,Proposal,Negosiasi,Ditutup Menang,Ditutup Kalah',
-            'probabilitas' => 'nullable|integer|min:0|max:100',
+            'tahap' => 'nullable|in:hitam,biru,merah',
             'tanggal_tutup_diharapkan' => 'nullable|date',
         ]);
 
