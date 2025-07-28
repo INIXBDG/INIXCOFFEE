@@ -1,4 +1,5 @@
 @extends('layouts.app')
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 
 @section('content')
 @foreach ($cancelLeave as $data)
@@ -378,14 +379,32 @@
 
                                             <td>{{ $data->kendala }}</td>
                                             <td>{{ $data->kronologi }}</td>
-                                            <td>
-                                                @switch($data->approval)
-                                                @case(0) <span class="badge bg-warning text-dark">Menunggu</span> @break
-                                                @case(1) <span class="badge bg-success">Disetujui</span> @break
-                                                @case(2) <span class="badge bg-danger">Ditolak</span> @break
-                                                @default <span class="badge bg-secondary">Menunggu</span>
-                                                @endswitch
-                                            </td>
+                                    <td>
+                                        @switch($data->approval)
+                                        @case(0)
+                                        <span class="badge rounded-pill bg-warning text-dark">
+                                            <i class="bi bi-hourglass-split me-1"></i> Menunggu Atasan
+                                        </span>
+                                        @break
+
+                                        @case(1)
+                                        <span class="badge rounded-pill bg-success">
+                                            <i class="bi bi-check-circle me-1"></i> Disetujui
+                                        </span>
+                                        @break
+
+                                        @case(2)
+                                        <span class="badge rounded-pill bg-danger">
+                                            <i class="bi bi-x-circle me-1"></i> Ditolak
+                                        </span>
+                                        @break
+
+                                        @default
+                                        <span class="badge rounded-pill bg-secondary">
+                                            <i class="bi bi-question-circle me-1"></i> Tidak Diketahui
+                                        </span>
+                                        @endswitch
+                                    </td>
                                             <td style="font-size: 14px;">
                                                 <div class="btn-group dropup">
                                                     <button type="button" class="btn dropdown-toggle btn-secondary" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>
@@ -434,14 +453,32 @@
                                         <tr>
                                             <td>{{ \Carbon\Carbon::parse($data->absensiKaryawan->tanggal)->translatedFormat('l, d F Y') }}</td>
                                             <td>{{ $data->kronologi }}</td>
-                                            <td>
-                                                @switch($data->approval)
-                                                @case(0) <span class="badge bg-warning text-dark">Menunggu</span> @break
-                                                @case(1) <span class="badge bg-success">Disetujui</span> @break
-                                                @case(2) <span class="badge bg-danger">Ditolak</span> @break
-                                                @default <span class="badge bg-secondary">Menunggu</span>
-                                                @endswitch
-                                            </td>
+                                    <td>
+                                        @switch($data->approval)
+                                        @case(0)
+                                        <span class="badge rounded-pill bg-warning text-dark">
+                                            <i class="bi bi-hourglass-split me-1"></i> Menunggu Atasan
+                                        </span>
+                                        @break
+
+                                        @case(1)
+                                        <span class="badge rounded-pill bg-success">
+                                            <i class="bi bi-check-circle me-1"></i> Disetujui
+                                        </span>
+                                        @break
+
+                                        @case(2)
+                                        <span class="badge rounded-pill bg-danger">
+                                            <i class="bi bi-x-circle me-1"></i> Ditolak
+                                        </span>
+                                        @break
+
+                                        @default
+                                        <span class="badge rounded-pill bg-secondary">
+                                            <i class="bi bi-question-circle me-1"></i> Tidak Diketahui
+                                        </span>
+                                        @endswitch
+                                    </td>
                                             <td style="font-size: 14px;">
                                                 <div class="btn-group dropup">
                                                     <button type="button" class="btn dropdown-toggle btn-secondary" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>
@@ -489,14 +526,32 @@
                                         <tr>
                                             <td>{{ $data->tanggal_awal }}</td>
                                             <td>{{ $data->alasan }}</td>
-                                            <td>
-                                                @switch($data->approval)
-                                                @case(0) <span class="badge bg-warning text-dark">Menunggu</span> @break
-                                                @case(1) <span class="badge bg-success">Disetujui</span> @break
-                                                @case(2) <span class="badge bg-danger">Ditolak</span> @break
-                                                @default <span class="badge bg-secondary">Menunggu</span>
-                                                @endswitch
-                                            </td>
+                                    <td>
+                                        @switch($data->approval)
+                                        @case(0)
+                                        <span class="badge rounded-pill bg-warning text-dark">
+                                            <i class="bi bi-hourglass-split me-1"></i> Menunggu Atasan
+                                        </span>
+                                        @break
+
+                                        @case(1)
+                                        <span class="badge rounded-pill bg-success">
+                                            <i class="bi bi-check-circle me-1"></i> Disetujui
+                                        </span>
+                                        @break
+
+                                        @case(2)
+                                        <span class="badge rounded-pill bg-danger">
+                                            <i class="bi bi-x-circle me-1"></i> Ditolak
+                                        </span>
+                                        @break
+
+                                        @default
+                                        <span class="badge rounded-pill bg-secondary">
+                                            <i class="bi bi-question-circle me-1"></i> Tidak Diketahui
+                                        </span>
+                                        @endswitch
+                                    </td>
                                             <td style="font-size: 14px;">
                                                 <div class="btn-group dropup">
                                                     <button type="button" class="btn dropdown-toggle btn-secondary" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>
