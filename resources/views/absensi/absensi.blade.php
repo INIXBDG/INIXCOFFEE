@@ -338,7 +338,7 @@
                             <div class="col-md-12">
                                 <div class="card-body table-responsive">
                                     <h6>Ajukan Klaim Absen Anda:</h6>
-                                    <a href="{{ route('absensi.noRecord') }}" class="btn btn-info color-white">Absen Tidak Terekap</a>
+                                    <a href="{{ route('pengajuanklaim.createNoRecord') }}" class="btn btn-info color-white">Absen Tidak Terekap</a>
                                     <a href="{{ route('absensi.schemeWork') }}" class="btn btn-warning">Perubahan Jam Kerja</a>
                                     <a href="{{ route('absensi.cancelLeave') }}" class="btn btn-danger">Pembatalan Cuti</a>
                                 </div>
@@ -372,7 +372,10 @@
                                     <tbody>
                                         @foreach ($noRecord as $data)
                                         <tr>
-                                            <td>{{ \Carbon\Carbon::parse($data->absensiKaryawan->tanggal)->translatedFormat('l, d F Y') }}</td>
+                                            <td>
+    {{ \Carbon\Carbon::parse($data->absensiKaryawan->tanggal ?? $data->tanggal)->translatedFormat('l, d F Y') }}
+</td>
+
                                             <td>{{ $data->kendala }}</td>
                                             <td>{{ $data->kronologi }}</td>
                                             <td>

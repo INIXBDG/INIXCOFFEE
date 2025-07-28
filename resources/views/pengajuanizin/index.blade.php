@@ -1,4 +1,5 @@
 @extends('layouts.app')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
 @section('content')
 <div class="container-fluid">
@@ -59,9 +60,9 @@
         <div class="col-md-12">
             <div class="d-flex justify-content-end">
                 @if (auth()->user()->jabatan === 'HRD')
-                <a href="{{ route('pengajuanIzin.excelDownload') }}" class="btn btn-success me-3" data-toggle="tooltip" data-placement="top" title="Rekap Excel"><img src="{{ asset('icon/file-excel.svg') }}" class="" width="30px"> Download Excel</a>
-                <a href="{{ route('pengajuanIzin.PDFDownload') }}" class="btn btn-danger" data-toggle="tooltip" data-placement="top" title="Rekap PDF">
-                    <img src="{{ asset('icon/pdf-file.svg') }}" class="" width="30px"> Download PDF
+                <a href="{{ route('pengajuanIzin.excelDownload') }}" class="btn btn-outline-success me-3" data-toggle="tooltip" data-placement="top" title="Rekap Excel"><img src="{{ asset('icon/file-excel.svg') }}" class="" width="30px"> Download Excel</a>
+                <a href="{{ route('pengajuanIzin.PDFDownload') }}" class="btn btn-outline-danger" data-toggle="tooltip" data-placement="top" title="Rekap PDF">
+                    <img src="{{ asset('icon/document-pdf.svg') }}" class="" width="30px"> Download PDF
                 </a>
                 @endif
                 <a href="pengajuanizin/create" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Ajukan Izin"><img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> Ajukan Izin</a>
@@ -220,23 +221,39 @@
                     }
                 },
 
-                {
-                    "data": "approval",
-                    "render": function(data, type, row) {
-                        switch (parseInt(row.approval)) {
-                            case 0:
-                                return '<span class="badge bg-warning text-dark">Menunggu Koordinator</span>';
-                            case 1:
-                                return '<span class="badge bg-warning text-dark">Menunggu HRD</span>';
-                            case 2:
-                                return '<span class="badge bg-success">Disetujui</span>';
-                            case 4:
-                                return '<span class="badge bg-danger">Ditolak</span>';
-                            default:
-                                return '<span class="badge bg-secondary text-dark">Status Tidak Diketahui</span>';
-                        }
-                    }
-                },
+{
+    "data": "approval",
+    "render": function(data, type, row) {
+        switch (parseInt(row.approval)) {
+            case 0:
+                return `
+                    <span class="badge rounded-pill bg-warning text-dark">
+                        <i class="bi bi-hourglass-split me-1"></i> Menunggu Koordinator
+                    </span>`;
+            case 1:
+                return `
+                    <span class="badge rounded-pill bg-warning text-dark">
+                        <i class="bi bi-hourglass-top me-1"></i> Menunggu HRD
+                    </span>`;
+            case 2:
+                return `
+                    <span class="badge rounded-pill bg-success">
+                        <i class="bi bi-check-circle me-1"></i> Disetujui
+                    </span>`;
+            case 4:
+                return `
+                    <span class="badge rounded-pill bg-danger">
+                        <i class="bi bi-x-circle me-1"></i> Ditolak
+                    </span>`;
+            default:
+                return `
+                    <span class="badge rounded-pill bg-secondary text-dark">
+                        <i class="bi bi-question-circle me-1"></i> Tidak Diketahui
+                    </span>`;
+        }
+    }
+},
+
                 {
                     "data": "alasan_approval",
                     "render": function(data) {

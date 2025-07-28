@@ -245,7 +245,7 @@ Route::get('/pengajuan-klaim/create/cancel-leave', [pengajuanKlaimController::cl
 Route::post('/pengajuan-klaim/add/no-record', [pengajuanKlaimController::class, 'createNoRecord'])->name('pengajuanklaim.addNoRecord');
 Route::post('/pengajuan-klaim/add/scheme-work', [pengajuanKlaimController::class, 'createCancelLeave'])->name('pengajuanklaim.addCancelLeave');
 Route::post('/pengajuan-klaim/add/cancel-leave', [pengajuanKlaimController::class, 'createSchemeWork'])->name('pengajuanklaim.addSchemeWork');
-Route::post('/pengajuan-klaim/aprove/no-record', [pengajuanKlaimController::class, 'approveNoRecord'])->name('pengajuanklaim.aproveNoRecord');
+Route::post('/pengajuan-klaim/aprove/no-record', [pengajuanKlaimController::class, 'approveNoRecord'])->name('pengajuanklaim.approveNoRecord');
 // Approve Scheme Work
 Route::post('/pengajuan-klaim/approve/scheme-work', [pengajuanKlaimController::class, 'approveSchemeWork'])->name('pengajuanklaim.approveSchemeWork');
 
