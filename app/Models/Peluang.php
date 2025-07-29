@@ -17,6 +17,8 @@ class Peluang extends Model
         'jumlah',
         'tahap',
         'tanggal_tutup_diharapkan',
+        'close_win',
+        'close_lost'
     ];
 
     public function contact()
