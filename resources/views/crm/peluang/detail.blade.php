@@ -7,11 +7,12 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="fw-bold mb-0">Detail Lead</h4>
                 <div class="d-flex gap-2">
-                    <a href="{{ route('index.peluang') }}" class="btn btn-secondary">Kembali</a>
                     <button type="button" class="btn btn-warning" data-bs-toggle="modal"
                         data-bs-target="#editPeluangModal">Edit Lead</button>
                     <button type="button" class="btn btn-success" data-bs-toggle="modal"
-                        data-bs-target="#updateProbabilitasModal">Update Lead</button>
+                        data-bs-target="#updateProbabilitasModal" @disabled($peluang->tahap === 'merah' || $peluang->tahap === 'hitam')>
+                        Update Lead
+                    </button>
                 </div>
             </div>
 
@@ -35,15 +36,14 @@
                         <dd class="col-sm-8">Rp {{ number_format($peluang->jumlah, 2, ',', '.') }}</dd>
 
                         @if (!empty($peluang->close_win))
-                            <dt class="col-sm-4">Catatan Kemenangan</dt>
+                            <dt class="col-sm-4">Harga Akhir (Menang)</dt>
                             <dd class="col-sm-8">Rp {{ number_format($peluang->close_win, 2, ',', '.') }}</dd>
                         @endif
 
                         @if (!empty($peluang->close_lost))
-                            <dt class="col-sm-4">Alasan Kalah</dt>
+                            <dt class="col-sm-4">Total Kehilangan (Kalah)</dt>
                             <dd class="col-sm-8">Rp {{ number_format($peluang->close_lost, 2, ',', '.') }}</dd>
                         @endif
-
 
                         <dt class="col-sm-4">Tahap</dt>
                         <dd class="col-sm-8">{{ $peluang->tahap ?? '-' }}</dd>
@@ -60,7 +60,6 @@
                         </dd>
                     </dl>
                 </div>
-
             </div>
 
             <!-- Card Daftar Aktivitas -->
@@ -169,7 +168,7 @@
                     @csrf
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="editPeluangModalLabel">Edit Peluang</h5>
+                            <h5 class="modal-title" id="editPeluangModalLabel">Edit Lead</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"
                                 aria-label="Close"></button>
                         </div>
@@ -201,7 +200,7 @@
                     @csrf
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="updateProbabilitasModalLabel">Update Tahap Peluang</h5>
+                            <h5 class="modal-title" id="updateProbabilitasModalLabel">Update Tahap Lead</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"
                                 aria-label="Close"></button>
                         </div>
@@ -210,7 +209,7 @@
                                 <label for="tahap" class="form-label">Tahap</label>
                                 <select class="form-select" name="tahap" id="tahap" required>
                                     <option value="">-- Pilih Tahap --</option>
-                                    @foreach (['Prospek', 'Kualifikasi', 'Proposal', 'Negosiasi', 'Ditutup Menang', 'Ditutup Kalah'] as $tahap)
+                                    @foreach (['Biru', 'Merah', 'Hitam'] as $tahap)
                                         <option value="{{ $tahap }}"
                                             {{ $peluang->tahap == $tahap ? 'selected' : '' }}>
                                             {{ $tahap }}
@@ -286,10 +285,10 @@
                 closeLostInput.querySelector('input').removeAttribute('required');
 
                 // Tampilkan input sesuai tahap
-                if (selected === 'Ditutup Menang') {
+                if (selected === 'Merah') {
                     closeWinInput.classList.remove('d-none');
                     closeWinInput.querySelector('input').setAttribute('required', 'required');
-                } else if (selected === 'Ditutup Kalah') {
+                } else if (selected === 'Hitam') {
                     closeLostInput.classList.remove('d-none');
                     closeLostInput.querySelector('input').setAttribute('required', 'required');
                 }
@@ -315,11 +314,10 @@
                         closeLostValue
                     }); // Debugging
 
-                    if (selectedTahap === 'Ditutup Menang' && (!closeWinValue || closeWinValue <= 0)) {
+                    if (selectedTahap === 'Merah' && (!closeWinValue || closeWinValue <= 0)) {
                         event.preventDefault();
                         alert('Harap masukkan harga akhir yang valid untuk peluang yang menang.');
-                    } else if (selectedTahap === 'Ditutup Kalah' && (!closeLostValue || closeLostValue <
-                            0)) {
+                    } else if (selectedTahap === 'Hitam' && (!closeLostValue || closeLostValue < 0)) {
                         event.preventDefault();
                         alert('Harap masukkan total kehilangan yang valid untuk peluang yang kalah.');
                     }
