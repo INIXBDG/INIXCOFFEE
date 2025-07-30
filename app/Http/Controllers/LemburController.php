@@ -49,30 +49,38 @@ class LemburController extends Controller
     }
 
 
-    public function getLemburKaryawan()
-    {
-        $user = auth()->user()->karyawan_id;
-        $karyawan = karyawan::findOrFail($user);
-        $jabatan = $karyawan->jabatan;
-        $divisi = $karyawan->divisi;
+public function getLemburKaryawan()
+{
+    $user = auth()->user()->karyawan_id;
+    $karyawan = karyawan::findOrFail($user);
+    $jabatan = $karyawan->jabatan;
+    $divisi = $karyawan->divisi;
 
-        $lembur = collect();
-
-        if ($jabatan == 'Office Manager' || $jabatan == 'Koordinator Office' || $jabatan == 'Education Manager' || $jabatan == 'SPV Sales' || $jabatan == 'Koordinator ITSM') {
-            $lembur = lembur::with('karyawan')->whereHas('karyawan', function($query) use ($divisi) {
-                $query->where('divisi', $divisi);
-            })->latest()->get();
-        } else{
-            $lembur = lembur::with('karyawan')->whereHas('karyawan', function($query) use ($user) {
-                $query->where('id', $user);
-            })->latest()->get();
-        }
-        return response()->json([
-            'success' => true,
-            'message' => 'List Lembur Karyawan',
-            'data' => $lembur,
-        ]);
+    if ($jabatan == 'GM') {
+        // GM hanya melihat semua lembur dari divisi Office (tanpa peduli jabatannya)
+        $lembur = Lembur::with('karyawan')
+            ->whereHas('karyawan', function ($query) {
+                $query->where('divisi', 'Office');
+            })
+            ->latest()
+            ->get();
+    } elseif (in_array($jabatan, ['Office Manager', 'Koordinator Office', 'Education Manager', 'SPV Sales', 'Koordinator ITSM'])) {
+        $lembur = Lembur::with('karyawan')->whereHas('karyawan', function($query) use ($divisi) {
+            $query->where('divisi', $divisi);
+        })->latest()->get();
+    } else {
+        $lembur = Lembur::with('karyawan')->whereHas('karyawan', function($query) use ($user) {
+            $query->where('id', $user);
+        })->latest()->get();
     }
+
+    return response()->json([
+        'success' => true,
+        'message' => 'List Lembur Karyawan',
+        'data' => $lembur,
+    ]);
+}
+ 
 
      /**
      * create
