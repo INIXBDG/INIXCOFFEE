@@ -14,7 +14,7 @@
                     <a href="{{ url()->previous() }}" class="btn click-primary my-2"><img src="{{ asset('icon/arrow-left.svg') }}" class="img-responsive" width="20px"> Back</a>
                     <h5 class="card-title text-center mb-1">{{ __('Pengajuan Klaim') }}</h5>
                     <p class="card-title text-center mb-5">{{ __('Ajukan Pembatalan Cuti Anda Yang sudah Disetujui') }}</p>
-                    <form method="POST" action="{{ route('pengajuanklaim.aproveCancelLeave') }}" enctype="multipart/form-data">
+                    <form method="POST" action="{{ route('pengajuanklaim.approveCancelLeave') }}" enctype="multipart/form-data">
                         @csrf
                         <div class="row mb-3">
                             <label for="nama_karyawan" class="col-md-4 col-form-label text-md-start">{{ __('Nama Karyawan') }}</label>

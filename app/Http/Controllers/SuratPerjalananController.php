@@ -27,30 +27,38 @@ class SuratPerjalananController extends Controller
         return view('suratperjalanan.index');
     }
 
-    public function getSuratPerjalanan()
-    {
-        $user = auth()->user()->karyawan_id;
-        $karyawan = karyawan::findOrfail($user);
-        // return $karyawan;
-        $jabatan = $karyawan->jabatan;
-        $divisi = $karyawan->divisi;
-        if ($jabatan == 'Office Manager' || $jabatan == 'Education Manager' || $jabatan == 'SPV Sales' || $jabatan == 'Koordinator ITSM') {
-            $SuratPerjalanan = SuratPerjalanan::with('karyawan', 'RKM')->whereHas('karyawan', function ($query) use ($divisi) {
+public function getSuratPerjalanan()
+{
+    $user = auth()->user()->karyawan_id;
+    $karyawan = karyawan::findOrFail($user);
+    $jabatan = $karyawan->jabatan;
+    $divisi = $karyawan->divisi;
+
+    if (in_array($jabatan, ['Office Manager', 'Education Manager', 'SPV Sales', 'Koordinator ITSM'])) {
+
+        $SuratPerjalanan = SuratPerjalanan::with('karyawan', 'RKM')
+            ->whereHas('karyawan', function ($query) use ($divisi) {
                 $query->where('divisi', $divisi);
             })->latest()->get();
-        } elseif ($jabatan == 'HRD' || $jabatan == "Koordinator Office" || $jabatan == 'GM' || $jabatan == 'Direktur Utama' || $jabatan == 'Direktur') {
-            $SuratPerjalanan = SuratPerjalanan::with('karyawan', 'RKM')->latest()->get();
-        } else {
-            $SuratPerjalanan = SuratPerjalanan::with('karyawan', 'RKM')->whereHas('karyawan', function ($query) use ($user) {
+    } elseif (in_array($jabatan, ['HRD', 'Koordinator Office', 'Direktur Utama', 'Direktur', 'GM'])) {
+ 
+        $SuratPerjalanan = SuratPerjalanan::with('karyawan', 'RKM')->latest()->get();
+    } else {
+
+        $SuratPerjalanan = SuratPerjalanan::with('karyawan', 'RKM')
+            ->whereHas('karyawan', function ($query) use ($user) {
                 $query->where('id', $user);
             })->latest()->get();
-        }
-        return response()->json([
-            'success' => true,
-            'message' => 'List SuratPerjalanan',
-            'data' => $SuratPerjalanan,
-        ]);
     }
+
+    return response()->json([
+        'success' => true,
+        'message' => 'List SuratPerjalanan',
+        'data' => $SuratPerjalanan,
+    ]);
+}
+
+
 
     public function createPrint()
     {
@@ -122,7 +130,7 @@ class SuratPerjalananController extends Controller
         $data = SuratPerjalanan::with('karyawan', 'RKM')
             ->whereYear('tanggal_berangkat', $year)
             ->get();
-        
+
         if ($data->isEmpty()) {
             return redirect()->back()->with('error', 'Tidak ada data untuk tahun yang dipilih.');
         }

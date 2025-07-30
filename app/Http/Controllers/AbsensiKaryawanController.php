@@ -150,6 +150,14 @@ class AbsensiKaryawanController extends Controller
         $config = $this->getShiftConfig($waktu->dayOfWeek, $jabatan, $shift);
         $isWeekend = ($waktu->dayOfWeek == Carbon::SATURDAY || $waktu->dayOfWeek == Carbon::SUNDAY);
 
+
+        $id_karyawan = auth()->user()->karyawan_id;
+
+        $izinHariIni = izinTigaJam::where('id_karyawan', $id_karyawan)
+            ->whereDate('tanggal_pengajuan', $waktu->toDateString())
+            ->where('approval', 2)
+            ->first();
+
         if (!$waktu->between($config['jamAwal'], $config['jamAkhir'])) {
             return [
                 'valid' => false,
@@ -172,13 +180,18 @@ class AbsensiKaryawanController extends Controller
         // Hitung keterlambatan untuk jabatan lain dan hari selain weekend
         $keterlambatan = '00:00:00';
         $keterangan = 'Masuk';
-
-        if ($waktu->greaterThan($config['jamMulaiShift'])) {
+        if ($izinHariIni) {
+            $keterangan = 'Izin 3 Jam';
+            $keterlambatan = '00:00:00';
+        } elseif ($waktu->greaterThan($config['jamMulaiShift'])) {
             $diffMinutes = $waktu->diffInMinutes($config['jamMulaiShift']);
             $hours = intdiv($diffMinutes, 60);
             $minutes = ($diffMinutes % 60);
             $keterlambatan = sprintf('%02d:%02d:00', $hours, $minutes);
             $keterangan = 'Telat';
+        } else {
+            $keterangan = 'Masuk'; //fallback
+            $keterlambatan = '00:00:00';
         }
 
         return [
@@ -313,12 +326,11 @@ class AbsensiKaryawanController extends Controller
             ->get();
 
         $karyawan = karyawan::where('id', $id_karyawan)->first();
-
-        $noRecord = absensi_noRecord::where('id_karyawan', $id_karyawan)
+        $noRecord = absensi_noRecord::where('id_karyawan', auth()->user()->karyawan_id)
             ->where('jenis_PK', 'No Record')
-            ->whereHas('absensiKaryawan')
-            ->with('absensiKaryawan')
+            // ->where('approval', 1)
             ->get();
+
 
         $schemeWork = absensi_noRecord::where('id_karyawan', $id_karyawan)
             ->where('jenis_PK', 'Scheme Work')
@@ -485,7 +497,7 @@ class AbsensiKaryawanController extends Controller
             ->whereYear('tanggal_awal', $tahun)
             ->whereMonth('tanggal_awal', $bulan)
             ->get();
-            // dd($absensiKaryawan);
+        // dd($absensiKaryawan);
 
         // Inisialisasi jumlahAbsensi
         if ($karyawanId == '2') {
@@ -495,7 +507,6 @@ class AbsensiKaryawanController extends Controller
                 ->whereRaw('DAYOFWEEK(tanggal) NOT IN (1, 7)') // Mengecualikan Minggu (1) dan Sabtu (7)
                 ->distinct('tanggal')
                 ->count();
-
         } else {
             $jumlahAbsensi = $absensiKaryawan->count();
             $jumlahAbsensiPulang = $absen_pulang->count();
@@ -584,7 +595,7 @@ class AbsensiKaryawanController extends Controller
         $this->validate($request, [
             'id_karyawan'   => 'required|integer',
             'kendala'       => 'required|string|in:Human Error,System Error',
-            'tanggal_absen' => 'required|integer',
+            'tanggal_absen' => 'required|date',
             'bukti_gambar'  => 'required|image',
             'kronologi'     => 'required|string',
         ]);
@@ -621,7 +632,7 @@ class AbsensiKaryawanController extends Controller
             'id_karyawan'   => $request->id_karyawan,
             'jenis_PK'      => 'No Record',
             'kendala'       => $request->kendala,
-            'id_absen'      => $request->tanggal_absen,
+            'id_absen'      => '0',
             'bukti_gambar'  => $fotoPath,
             'kronologi'     => $request->kronologi,
             'approval'      => '0',
