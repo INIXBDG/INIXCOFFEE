@@ -9,6 +9,7 @@ use App\Models\Contact;
 use App\Models\Materi;
 use App\Models\Peluang;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -40,7 +41,8 @@ class PeluangController extends Controller
     {
         $aktivitas = Aktivitas::where('id_peluang', $id)->get();
         $peluang = Peluang::where('id', $id)->first();
-        return view('crm.peluang.detail', compact('peluang', 'aktivitas'));
+        $materi = Materi::all();
+        return view('crm.peluang.detail', compact('peluang', 'aktivitas', 'materi'));
     }
 
 
@@ -48,11 +50,13 @@ class PeluangController extends Controller
     {
         $validated = $request->validate([
             'id_contact' => 'required|integer',
-            'judul' => 'required|string|max:255',
-            'deskripsi' => 'nullable|string',
-            'jumlah' => 'nullable|numeric|min:0',
-            'tahap' => 'nullable|in:hitam,biru,merah',
-            'tanggal_tutup_diharapkan' => 'nullable|date',
+            'materi' => 'required|string|max:255',
+            'catatan' => 'nullable|string|max:255',
+            'harga' => 'required',
+            'netsales' => 'required',
+            'periode_mulai' => 'required|date',
+            'periode_selesai' => 'required|date',
+            'pax' => 'required|numeric|min:1',
         ]);
 
         // hanya untuk test function di postman, setelah selesai tolong diubah -> auth()->user()->id_sales
@@ -76,31 +80,42 @@ class PeluangController extends Controller
         ]);
     }
 
-    public function edit($id, Request $request)
+    public function update(Request $request, $id)
     {
-        $peluang = Peluang::where('id', $id)->first();
+        $validated = $request->validate([
+            'materi' => 'required|string|max:255',
+            'catatan' => 'nullable|string|max:255',
+            'harga' => 'required|numeric|min:0',
+            'netsales' => 'required|numeric|min:0',
+            'periode_mulai' => 'required|date',
+            'periode_selesai' => 'required|date|after_or_equal:periode_mulai',
+            'pax' => 'required|numeric|min:1',
+        ]);
 
-        $peluang->judul = $request->judul;
-        $peluang->deskripsi = $request->deskripsi;
+        $peluang = Peluang::findOrFail($id);
+        $peluang->update($validated);
 
-        $peluang->update();
         return back()->with([
-            'message' => 'Pelaung berhasil di perbarui.',
+            'message' => 'Lead berhasil diperbarui.',
         ]);
     }
+
 
     public function updateTahap($id, Request $request)
     {
         $peluang = Peluang::where('id', $id)->first();
 
-        $peluang->tahap = $request->tahap;
-
-        if ($request->has('close_win')) {
-            $peluang->close_win = $request->close_win;
+        if ($request->tahap === 'biru') {
+            $peluang->tahap = $request->tahap;
+            $time = Carbon::now();
+            $peluang->biru = $time;
         }
 
-        if ($request->has('close_lost')) {
-            $peluang->close_lost = $request->close_lost;
+        if ($request->tahap === 'merah') {
+            $peluang->tahap = $request->tahap;
+            $peluang->final = $request->final;
+            $time = Carbon::now();
+            $peluang->merah = $time;
         }
 
         $peluang->update();
@@ -114,29 +129,30 @@ class PeluangController extends Controller
     {
         $tahunDipilih = $request->query('tahun', now()->year);
 
-        $dataRingkasan = Peluang::where('tahap', 'merah')
-            ->whereYear('tanggal_tutup_diharapkan', $tahunDipilih)
+        $dataRingkasan = Peluang::whereNotNull('merah')
+            ->whereYear('merah', $tahunDipilih)
             ->select(
                 'id_sales',
                 DB::raw('CASE
-                WHEN MONTH(tanggal_tutup_diharapkan) BETWEEN 1 AND 3 THEN "Q1"
-                WHEN MONTH(tanggal_tutup_diharapkan) BETWEEN 4 AND 6 THEN "Q2"
-                WHEN MONTH(tanggal_tutup_diharapkan) BETWEEN 7 AND 9 THEN "Q3"
-                WHEN MONTH(tanggal_tutup_diharapkan) BETWEEN 10 AND 12 THEN "Q4"
-            END as kuartal'),
-                DB::raw('SUM(close_win) as total_jumlah')
+                WHEN MONTH(merah) BETWEEN 1 AND 3 THEN "TR1"
+                WHEN MONTH(merah) BETWEEN 4 AND 6 THEN "TR2"
+                WHEN MONTH(merah) BETWEEN 7 AND 9 THEN "TR3"
+                WHEN MONTH(merah) BETWEEN 10 AND 12 THEN "TR4"
+            END as triwulan'),
+                DB::raw('SUM(final) as total_jumlah')
             )
-            ->groupBy('id_sales', 'kuartal')
+            ->groupBy('id_sales', 'triwulan')
             ->get()
             ->groupBy('id_sales')
             ->map(function ($grup) {
-                return $grup->pluck('total_jumlah', 'kuartal')->toArray();
+                return $grup->pluck('total_jumlah', 'triwulan')->toArray();
             })->toArray();
 
         $pengguna = User::select('id_sales', 'username')->get()->keyBy('id_sales')->toArray();
 
         return view('crm.closedwin.index', compact('dataRingkasan', 'pengguna', 'tahunDipilih'));
     }
+
 
     public function detailRingkasan($id)
     {

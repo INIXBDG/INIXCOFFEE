@@ -10,55 +10,100 @@
                     <button type="button" class="btn btn-warning" data-bs-toggle="modal"
                         data-bs-target="#editPeluangModal">Edit Lead</button>
                     <button type="button" class="btn btn-success" data-bs-toggle="modal"
-                        data-bs-target="#updateProbabilitasModal" @disabled($peluang->tahap === 'merah' || $peluang->tahap === 'hitam')>
+                        data-bs-target="#updateProbabilitasModal" @disabled($peluang->tahap === 'merah')>
                         Update Lead
                     </button>
                 </div>
             </div>
 
-            <!-- Detail Card -->
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">Informasi Lead</h5>
-                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#tambahAktivitasModal">
-                        Tambah Aktivitas
-                    </button>
+            <div class="row">
+                <!-- Card Utama -->
+                <div class="col-md-8">
+                    <div class="card mb-3">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">Informasi Lead</h5>
+                            <button class="btn btn-primary btn-sm" data-bs-toggle="modal"
+                                data-bs-target="#tambahAktivitasModal">
+                                Tambah Aktivitas
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <dl class="row">
+                                <dt class="col-sm-4">Materi</dt>
+                                <dd class="col-sm-8">{{ $peluang->materi ?? '-' }}</dd>
+
+                                <dt class="col-sm-4">Catatan</dt>
+                                <dd class="col-sm-8">{{ $peluang->catatan ?? '-' }}</dd>
+
+                                <dt class="col-sm-4">Harga</dt>
+                                <dd class="col-sm-8">Rp {{ number_format($peluang->harga, 2, ',', '.') }}</dd>
+
+                                <dt class="col-sm-4">Net Sales</dt>
+                                <dd class="col-sm-8">Rp {{ number_format($peluang->netsales, 2, ',', '.') }}</dd>
+
+                                <dt class="col-sm-4">Jumlah Peserta (Pax)</dt>
+                                <dd class="col-sm-8">{{ $peluang->pax }}</dd>
+
+                                <dt class="col-sm-4">Periode Mulai</dt>
+                                <dd class="col-sm-8">
+                                    {{ \Carbon\Carbon::parse($peluang->periode_mulai)->translatedFormat('d F Y') }}</dd>
+
+                                <dt class="col-sm-4">Periode Selesai</dt>
+                                <dd class="col-sm-8">
+                                    {{ \Carbon\Carbon::parse($peluang->periode_selesai)->translatedFormat('d F Y') }}</dd>
+
+                                <dt class="col-sm-4">Contact</dt>
+                                <dd class="col-sm-8">
+                                    {{ $peluang->contact->nama_lengkap ?? '-' }} ({{ $peluang->contact->email ?? '-' }})
+                                </dd>
+
+                                <dt class="col-sm-4">Sales</dt>
+                                <dd class="col-sm-8">{{ $peluang->id_sales }}</dd>
+                            </dl>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <dl class="row">
-                        <dt class="col-sm-4">Judul</dt>
-                        <dd class="col-sm-8">{{ $peluang->judul }}</dd>
 
-                        <dt class="col-sm-4">Deskripsi</dt>
-                        <dd class="col-sm-8">{{ $peluang->deskripsi ?? '-' }}</dd>
+                <!-- Card Samping -->
+                <div class="col-md-4">
+                    <div class="card mb-3">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">Status Tahapan</h6>
+                            @php
+                                $badgeColor = match ($peluang->tahap) {
+                                    'hitam' => 'secondary',
+                                    'biru' => 'primary',
+                                    'merah' => 'danger',
+                                    default => 'dark',
+                                };
+                            @endphp
+                            <span class="badge bg-{{ $badgeColor }}">{{ strtoupper($peluang->tahap) }}</span>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled mb-0">
+                                @if ($peluang->biru)
+                                    <li>
+                                        <strong class="text-primary">Update Biru:</strong><br>
+                                        {{ \Carbon\Carbon::parse($peluang->biru)->translatedFormat('d F Y') }}
+                                    </li>
+                                @endif
 
-                        <dt class="col-sm-4">Jumlah</dt>
-                        <dd class="col-sm-8">Rp {{ number_format($peluang->jumlah, 2, ',', '.') }}</dd>
+                                @if ($peluang->merah)
+                                    <li class="mt-2">
+                                        <strong class="text-danger">Update Merah:</strong><br>
+                                        {{ \Carbon\Carbon::parse($peluang->merah)->translatedFormat('d F Y') }}
+                                    </li>
+                                @endif
 
-                        @if (!empty($peluang->close_win))
-                            <dt class="col-sm-4">Harga Akhir (Menang)</dt>
-                            <dd class="col-sm-8">Rp {{ number_format($peluang->close_win, 2, ',', '.') }}</dd>
-                        @endif
-
-                        @if (!empty($peluang->close_lost))
-                            <dt class="col-sm-4">Total Kehilangan (Kalah)</dt>
-                            <dd class="col-sm-8">Rp {{ number_format($peluang->close_lost, 2, ',', '.') }}</dd>
-                        @endif
-
-                        <dt class="col-sm-4">Tahap</dt>
-                        <dd class="col-sm-8">{{ $peluang->tahap ?? '-' }}</dd>
-
-                        <dt class="col-sm-4">Tanggal Tutup Diharapkan</dt>
-                        <dd class="col-sm-8">
-                            {{ \Carbon\Carbon::parse($peluang->tanggal_tutup_diharapkan)->translatedFormat('d F Y') }}
-                        </dd>
-
-                        <dt class="col-sm-4">Contact</dt>
-                        <dd class="col-sm-8">
-                            {{ $peluang->contact->nama_lengkap ?? '-' }}
-                            ({{ $peluang->contact->email ?? '-' }})
-                        </dd>
-                    </dl>
+                                @if ($peluang->final)
+                                    <li class="mt-2">
+                                        <strong class="text-success">Final Harga:</strong><br>
+                                        Rp {{ number_format($peluang->final, 2, ',', '.') }}
+                                    </li>
+                                @endif
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -128,7 +173,7 @@
                                 <label for="aktivitas" class="form-label">Jenis Aktivitas</label>
                                 <select class="form-select" name="aktivitas" id="aktivitas" required>
                                     <option value="">-- Pilih Aktivitas --</option>
-                                    @foreach (['Panggilan', 'Email', 'Meeting', 'Catatan', 'Task'] as $item)
+                                    @foreach (['Panggilan', 'Email', 'Meeting'] as $item)
                                         <option value="{{ $item }}">{{ $item }}</option>
                                     @endforeach
                                 </select>
@@ -146,7 +191,7 @@
 
                             <div class="mb-3">
                                 <label for="waktu_aktivitas" class="form-label">Waktu Aktivitas</label>
-                                <input type="datetime-local" name="waktu_aktivitas" id="waktu_aktivitas"
+                                <input type="date" name="waktu_aktivitas" id="waktu_aktivitas"
                                     class="form-control" required>
                             </div>
                         </div>
@@ -172,17 +217,57 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal"
                                 aria-label="Close"></button>
                         </div>
+
                         <div class="modal-body">
                             <div class="mb-3">
-                                <label for="edit_judul" class="form-label">Judul</label>
-                                <input type="text" class="form-control" id="edit_judul" name="judul"
-                                    value="{{ $peluang->judul }}" required>
+                                <label for="materi" class="form-label">Materi</label>
+                                <select class="form-select" id="materi" name="materi" required>
+                                    <option value="">-- Pilih Materi --</option>
+                                    @foreach ($materi as $item)
+                                        <option value="{{ $item->nama_materi }}"
+                                            {{ $item->nama_materi === $peluang->materi ? 'selected' : '' }}>
+                                            {{ $item->nama_materi }}
+                                        </option>
+                                    @endforeach
+                                </select>
                             </div>
+
                             <div class="mb-3">
-                                <label for="edit_deskripsi" class="form-label">Deskripsi</label>
-                                <textarea class="form-control" id="edit_deskripsi" name="deskripsi" rows="3">{{ $peluang->deskripsi }}</textarea>
+                                <label for="catatan" class="form-label">Catatan</label>
+                                <textarea class="form-control" id="catatan" name="catatan" rows="2">{{ $peluang->catatan }}</textarea>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="harga" class="form-label">Harga</label>
+                                <input type="number" class="form-control" id="harga" name="harga" step="0.01"
+                                    value="{{ intval($peluang->harga) }}" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="netsales" class="form-label">Net Sales</label>
+                                <input type="number" class="form-control" id="netsales" name="netsales"
+                                    step="0.01" value="{{ intval($peluang->netsales) }}" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="pax" class="form-label">Jumlah Peserta (Pax)</label>
+                                <input type="number" class="form-control" id="pax" name="pax" min="1"
+                                    value="{{ $peluang->pax }}" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="periode_mulai" class="form-label">Periode Mulai</label>
+                                <input type="date" class="form-control" id="periode_mulai" name="periode_mulai"
+                                    value="{{ $peluang->periode_mulai }}" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="periode_selesai" class="form-label">Periode Selesai</label>
+                                <input type="date" class="form-control" id="periode_selesai" name="periode_selesai"
+                                    value="{{ $peluang->periode_selesai }}" required>
                             </div>
                         </div>
+
                         <div class="modal-footer">
                             <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
                         </div>
@@ -191,149 +276,85 @@
             </div>
         </div>
 
+
         <!-- Modal Update Tahap -->
-        <div class="modal fade" id="updateProbabilitasModal" tabindex="-1"
-            aria-labelledby="updateProbabilitasModalLabel" aria-hidden="true">
+        <div class="modal fade" id="updateProbabilitasModal" tabindex="-1" aria-labelledby="updateProbabilitasLabel"
+            aria-hidden="true">
             <div class="modal-dialog">
-                <form id="updateTahapForm" action="{{ route('update.tahap', $peluang->id) }}" method="POST">
-                    @method('PUT')
+                <form method="POST" action="{{ route('update.tahap', $peluang->id) }}">
                     @csrf
+                    @method('PUT')
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="updateProbabilitasModalLabel">Update Tahap Lead</h5>
+                            <h5 class="modal-title">Update Tahap Peluang</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                aria-label="Close"></button>
+                                aria-label="Tutup"></button>
                         </div>
                         <div class="modal-body">
-                            <div class="mb-3">
-                                <label for="tahap" class="form-label">Tahap</label>
-                                <select class="form-select" name="tahap" id="tahap" required>
-                                    <option value="">-- Pilih Tahap --</option>
-                                    @foreach (['Biru', 'Merah', 'Hitam'] as $tahap)
-                                        <option value="{{ $tahap }}"
-                                            {{ $peluang->tahap == $tahap ? 'selected' : '' }}>
-                                            {{ $tahap }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('tahap')
-                                    <div class="text-danger mt-1">{{ $message }}</div>
-                                @enderror
-                            </div>
+                            @php
+                                $tahapSaatIni = $peluang->tahap;
+                                $opsiTahap = [];
 
+                                if ($tahapSaatIni === 'hitam') {
+                                    $opsiTahap = ['biru'];
+                                } elseif ($tahapSaatIni === 'biru') {
+                                    $opsiTahap = ['merah'];
+                                }
+                            @endphp
+
+                            @if (empty($opsiTahap))
+                                <p class="text-muted">Tahap sudah berada di posisi akhir.</p>
+                            @else
+                                <div class="mb-3">
+                                    <label for="tahap" class="form-label">Pilih Tahap Baru</label>
+                                    <select class="form-select" name="tahap" id="tahap" required>
+                                        <option value="">-- PILIH TAHAP --</option>
+                                        @foreach ($opsiTahap as $tahap)
+                                            <option value="{{ $tahap }}">{{ strtoupper($tahap) }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            @endif
+
+                            <!-- Input Harga Final hanya muncul jika tahap = Merah -->
                             <div class="mb-3 d-none" id="input-close-win">
-                                <label for="close_win" class="form-label">Harga Akhir (Menang)</label>
+                                <label for="close_win" class="form-label">Harga Final (Menang)</label>
                                 <div class="input-group">
                                     <span class="input-group-text">Rp</span>
                                     <input type="number" step="0.01" min="0" class="form-control"
-                                        name="close_win" id="close_win"
-                                        placeholder="Masukkan harga akhir yang disepakati">
+                                        name="final" id="close_win" placeholder="Masukkan harga final">
                                 </div>
-                                @error('close_win')
-                                    <div class="text-danger mt-1">{{ $message }}</div>
-                                @enderror
                             </div>
 
-                            <div class="mb-3 d-none" id="input-close-lost">
-                                <label for="close_lost" class="form-label">Total Kehilangan (Kalah)</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">Rp</span>
-                                    <input type="number" step="0.01" min="0" class="form-control"
-                                        name="close_lost" id="close_lost"
-                                        placeholder="Masukkan total kehilangan dari peluang">
-                                </div>
-                                @error('close_lost')
-                                    <div class="text-danger mt-1">{{ $message }}</div>
-                                @enderror
-                            </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                            <button type="submit" class="btn btn-success">Update Tahap</button>
+                            <button type="submit" class="btn btn-success">Simpan</button>
                         </div>
                     </div>
                 </form>
             </div>
         </div>
-    </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Debugging: Pastikan script dimuat
-            console.log('Script untuk modal update tahap dimuat.');
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const tahapSelect = document.getElementById('tahap');
+                const closeWinInput = document.getElementById('input-close-win');
+                const closeWinField = document.getElementById('close_win');
 
-            // Ambil elemen
-            const tahapSelect = document.getElementById('tahap');
-            const closeWinInput = document.getElementById('input-close-win');
-            const closeLostInput = document.getElementById('input-close-lost');
-            const form = document.getElementById('updateTahapForm');
-
-            // Debugging: Periksa apakah elemen ditemukan
-            console.log('tahapSelect:', tahapSelect);
-            console.log('closeWinInput:', closeWinInput);
-            console.log('closeLostInput:', closeLostInput);
-
-            // Fungsi untuk mengatur visibilitas input
-            function toggleCloseInputs() {
-                const selected = tahapSelect.value;
-                console.log('Tahap dipilih:', selected); // Debugging
-
-                // Sembunyikan kedua input
-                closeWinInput.classList.add('d-none');
-                closeLostInput.classList.add('d-none');
-                closeWinInput.querySelector('input').removeAttribute('required');
-                closeLostInput.querySelector('input').removeAttribute('required');
-
-                // Tampilkan input sesuai tahap
-                if (selected === 'Merah') {
-                    closeWinInput.classList.remove('d-none');
-                    closeWinInput.querySelector('input').setAttribute('required', 'required');
-                } else if (selected === 'Hitam') {
-                    closeLostInput.classList.remove('d-none');
-                    closeLostInput.querySelector('input').setAttribute('required', 'required');
-                }
-            }
-
-            // Bind event listener untuk perubahan tahap
-            if (tahapSelect) {
-                tahapSelect.addEventListener('change', toggleCloseInputs);
-            } else {
-                console.error('Elemen tahapSelect tidak ditemukan!');
-            }
-
-            // Validasi form sebelum submit
-            if (form) {
-                form.addEventListener('submit', function(event) {
-                    const selectedTahap = tahapSelect.value;
-                    const closeWinValue = document.getElementById('close_win').value;
-                    const closeLostValue = document.getElementById('close_lost').value;
-
-                    console.log('Validasi form:', {
-                        selectedTahap,
-                        closeWinValue,
-                        closeLostValue
-                    }); // Debugging
-
-                    if (selectedTahap === 'Merah' && (!closeWinValue || closeWinValue <= 0)) {
-                        event.preventDefault();
-                        alert('Harap masukkan harga akhir yang valid untuk peluang yang menang.');
-                    } else if (selectedTahap === 'Hitam' && (!closeLostValue || closeLostValue < 0)) {
-                        event.preventDefault();
-                        alert('Harap masukkan total kehilangan yang valid untuk peluang yang kalah.');
+                function toggleFinalInput() {
+                    if (tahapSelect.value.toLowerCase() === 'merah') {
+                        closeWinInput.classList.remove('d-none');
+                        closeWinField.setAttribute('required', 'required');
+                    } else {
+                        closeWinInput.classList.add('d-none');
+                        closeWinField.removeAttribute('required');
                     }
-                });
-            } else {
-                console.error('Elemen form tidak ditemukan!');
-            }
+                }
 
-            // Inisialisasi saat modal dibuka
-            toggleCloseInputs();
-
-            // Event listener untuk modal ditampilkan
-            document.getElementById('updateProbabilitasModal').addEventListener('shown.bs.modal', function() {
-                console.log('Modal update tahap ditampilkan.');
-                toggleCloseInputs();
+                if (tahapSelect) {
+                    tahapSelect.addEventListener('change', toggleFinalInput);
+                    toggleFinalInput(); // Trigger saat pertama kali modal muncul
+                }
             });
-        });
-    </script>
-@endsection
+        </script>
+    @endsection

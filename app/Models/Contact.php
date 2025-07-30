@@ -13,9 +13,8 @@ class Contact extends Model
         'id_sales',
         'nama_lengkap',
         'email',
-        'no_tlp',
-        'tim', 
-        'posisi'
+        'cp',
+        'divisi',
     ];
 
     public function peluangs()
