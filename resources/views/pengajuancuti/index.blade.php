@@ -240,21 +240,25 @@
                             }
 
                             if (userRole == 'GM') {
-                                // GM can only approve if the requester is Office Manager, Education Manager, or SPV Sales
-                                if (['Office Manager', 'Education Manager', 'SPV Sales', 'Koordinator Office', 'Koordinator ITSM'].includes(requesterRole)) {
-                                    if (data.approval_manager === '1') {
-                                        actions += '<a class="dropdown-item" href="{{route('pengajuancuti.show', ':id')}}"><img src="{{ asset('icon/assept-document.svg') }}" style="width:24px" class=""> Form PDF</a>';
-                                        actions = actions.replace(':id', data.id);
-                                        actions += '<button type="button" class="dropdown-item disabled"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
-                                    } else if (data.approval_manager === '2') {
-                                        actions += '<button type="button" class="dropdown-item disabled"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
-                                    } else {
-                                        actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
-                                    }
-                                } else {
-                                    actions += '<button type="button" class="dropdown-item disabled"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
+                            const allowedIds = [4, 14, 29]; // ID spesial yang boleh dia approve
+                            const isOffice = data.karyawan.divisi === 'Office';
+                             const isSpesialId = allowedIds.includes(data.karyawan.id);
+
+                                if (isOffice || isSpesialId) {
+                                     if (data.approval_manager === '1') {
+                                            actions += '<a class="dropdown-item" href="{{route('pengajuancuti.show', ':id')}}"><img src="{{ asset('icon/assept-document.svg') }}" style="width:24px" class=""> Form PDF</a>';
+                                            actions = actions.replace(':id', data.id);
+                                            actions += '<button type="button" class="dropdown-item disabled"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
+                                             } else if (data.approval_manager === '2') {
+                                              actions += '<button type="button" class="dropdown-item disabled"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
+                                             } else {
+                                                 actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
+                                              }
+                                             } else {
+                                                 actions += '<button type="button" class="dropdown-item disabled"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
                                 }
-                            } else if (userRole !== requesterRole) {
+                                            }
+                                    else if (userRole !== requesterRole) {
                                 // Other roles can approve subordinate's requests, but not their own
                                 if (data.approval_manager === '1') {
                                     actions += '<a class="dropdown-item" href="{{route('pengajuancuti.show', ':id')}}"><img src="{{ asset('icon/assept-document.svg') }}" style="width:24px" class=""> Form PDF</a>';
