@@ -405,9 +405,9 @@
         align-items: center;
         gap: 8px;
         /* Jarak antara ikon dan teks */
-        background-color: #e9ecef;
+        background-color: #393E46;
         /* Warna latar belakang tombol yang netral */
-        color: #495057;
+        color: #FFFCFB;
         /* Warna teks tombol */
         border: 1px solid #ced4da;
         padding: 8px 15px;
