@@ -80,7 +80,8 @@
                                 <th scope="col">Jam</th>
                                 <th scope="col">Alasan</th>
                                 <th scope="col">Durasi</th>
-                                <th scope="col">Tanggal</th>
+                                <th scope="col">Dibuat</th>
+                                <th scope="col">Tanggal Izin</th>
                                 <th scope="col">Status</th>
                                 <th scope="col">Alasan Approval</th>
                                 <th scope="col">Aksi</th>
@@ -220,6 +221,11 @@
                         return moment(data).format('DD MMMM YYYY');
                     }
                 },
+{
+    "data": "tanggal_pengajuan_terformat"
+},
+
+
 
 {
     "data": "approval",
