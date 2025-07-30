@@ -26,8 +26,7 @@
                                     <th>Nama Lengkap</th>
                                     <th>Email</th>
                                     <th>No Telepon</th>
-                                    <th>Tim</th>
-                                    <th>Posisi</th>
+                                    <th>Divisi</th>
                                     <th>Perusahaan</th>
                                     <th>Sales</th>
                                     <th>Aksi</th>
@@ -39,9 +38,8 @@
                                         <td>{{ $loop->iteration }}</td>
                                         <td>{{ $contact->nama_lengkap }}</td>
                                         <td>{{ $contact->email }}</td>
-                                        <td>{{ $contact->no_tlp }}</td>
-                                        <td>{{ $contact->tim }}</td>
-                                        <td>{{ $contact->posisi }}</td>
+                                        <td>{{ $contact->cp }}</td>
+                                        <td>{{ $contact->divisi }}</td>
                                         <td>{{ $contact->perusahaan->nama_perusahaan }}</td>
                                         <td>{{ $contact->id_sales }}</td>
                                         <td>
@@ -68,7 +66,7 @@
                 </div>
             </div>
 
-            <!-- Modal untuk Edit Contact -->
+            <!-- Modal Edit Contact -->
             <div class="modal fade" id="editContactModal" tabindex="-1" aria-labelledby="editContactModalLabel"
                 aria-hidden="true">
                 <div class="modal-dialog">
@@ -95,18 +93,13 @@
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label" for="edit_no_tlp">No Telepon</label>
-                                    <input type="text" class="form-control" id="edit_no_tlp" name="no_tlp" required>
+                                    <label class="form-label" for="edit_cp">No Telepon</label>
+                                    <input type="text" class="form-control" id="edit_cp" name="cp" required>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label" for="edit_tim">Tim</label>
-                                    <input type="text" class="form-control" id="edit_tim" name="tim" required>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label" for="edit_posisi">Posisi</label>
-                                    <input type="text" class="form-control" id="edit_posisi" name="posisi" required>
+                                    <label class="form-label" for="edit_divisi">Divisi</label>
+                                    <input type="text" class="form-control" id="edit_divisi" name="divisi" required>
                                 </div>
 
                                 <button type="submit" class="btn btn-primary">Update</button>
@@ -116,8 +109,7 @@
                 </div>
             </div>
 
-
-            <!-- Modal untuk Create Contact -->
+            <!-- Modal Create Contact -->
             <div class="modal fade" id="opportunityModal" tabindex="-1" aria-labelledby="opportunityModalLabel"
                 aria-hidden="true">
                 <div class="modal-dialog">
@@ -127,7 +119,7 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            <form id="contactForm" action="{{route('store.contact')}}" method="POST">
+                            <form id="contactForm" action="{{ route('store.contact') }}" method="POST">
                                 @csrf
                                 <input type="hidden" name="id" id="contact_id">
 
@@ -143,18 +135,13 @@
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label" for="no_tlp">No Telepon</label>
-                                    <input type="text" class="form-control" id="no_tlp" name="no_tlp" required>
+                                    <label class="form-label" for="cp">No Telepon</label>
+                                    <input type="text" class="form-control" id="cp" name="cp" required>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label" for="tim">Tim</label>
-                                    <input type="text" class="form-control" id="no_tlp" name="tim" required>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label" for="posisi">Posisi</label>
-                                    <input type="text" class="form-control" id="no_tlp" name="posisi" required>
+                                    <label class="form-label" for="divisi">Divisi</label>
+                                    <input type="text" class="form-control" id="divisi" name="divisi" required>
                                 </div>
 
                                 <div class="mb-3">
@@ -166,7 +153,6 @@
                                         @endforeach
                                     </select>
                                 </div>
-
                                 <button type="submit" class="btn btn-primary">Simpan</button>
                             </form>
                         </div>
@@ -175,16 +161,16 @@
             </div>
         </div>
     </div>
+
     <script>
         function editContact(contact) {
             document.getElementById('edit_nama_lengkap').value = contact.nama_lengkap;
             document.getElementById('edit_email').value = contact.email;
-            document.getElementById('edit_no_tlp').value = contact.no_tlp;
-            document.getElementById('edit_tim').value = contact.tim;
-            document.getElementById('edit_posisi').value = contact.posisi;
+            document.getElementById('edit_cp').value = contact.cp;
+            document.getElementById('edit_divisi').value = contact.divisi;
 
             // Set action form update
-            document.getElementById('editContactForm').action = '/contact/update/' + contact.id;
+            document.getElementById('editContactForm').action = '/crm/contact/update/' + contact.id;
         }
     </script>
 @endsection

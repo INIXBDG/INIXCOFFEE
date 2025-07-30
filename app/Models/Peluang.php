@@ -11,14 +11,17 @@ class Peluang extends Model
     protected $fillable = [
         'id_contact',
         'id_sales',
-        'id_contact',
-        'judul',
-        'deskripsi',
-        'jumlah',
+        'materi',
+        'catatan',
+        'harga',
+        'netsales',
+        'periode_mulai',
+        'periode_selesai',
+        'pax',
+        'final',
+        'biru',
+        'merah',
         'tahap',
-        'tanggal_tutup_diharapkan',
-        'close_win',
-        'close_lost'
     ];
 
     public function contact()

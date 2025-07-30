@@ -16,18 +16,19 @@ class ContactController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM'];
+        $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'SPV Sales'];
 
         if ($user->jabatan === 'Sales') {
             $idSales = $user->id_sales;
             $data = Contact::where('id_sales', $idSales)->get();
+            $perusahaan = Perusahaan::where('sales_key', $user->id_sales)->get();
         } elseif (in_array($user->jabatan, $allowedJabatan)) {
             $data = Contact::all();
+            $perusahaan = Perusahaan::all();
         } else {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 
-        $perusahaan = Perusahaan::all();
         return view('crm.contact.index', compact('data', 'perusahaan'));
     }
 
@@ -37,9 +38,8 @@ class ContactController extends Controller
             'id_perusahaan' => 'required|integer',
             'nama_lengkap'  => 'required|string|max:255',
             'email'         => 'required|email|max:255',
-            'no_tlp'        => 'nullable|string|max:20',
-            'tim'        => 'required|string|max:255',
-            'posisi'        => 'required|string|max:255',
+            'cp'        => 'nullable|string|max:20',
+            'divisi'        => 'required|string|max:255',
         ]);
 
         // hanya untuk test function di postman, setelah selesai tolong diubah -> auth()->user()->id_sales
@@ -69,7 +69,8 @@ class ContactController extends Controller
 
         $contact->nama_lengkap = $request->nama_lengkap;
         $contact->email = $request->email;
-        $contact->no_tlp = $request->no_tlp;
+        $contact->cp = $request->cp;
+        $contact->divisi = $request->divisi;
 
         $contact->update();
 

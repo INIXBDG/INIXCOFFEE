@@ -22,27 +22,33 @@
                                 <thead class="table-dark">
                                     <tr>
                                         <th>Sales</th>
-                                        <th>Q1 (Jan-Mar)</th>
-                                        <th>Q2 (Apr-Jun)</th>
-                                        <th>Q3 (Jul-Sep)</th>
-                                        <th>Q4 (Okt-Des)</th>
+                                        <th>TR1 (Jan-Mar)</th>
+                                        <th>TR2 (Apr-Jun)</th>
+                                        <th>TR3 (Jul-Sep)</th>
+                                        <th>TR4 (Okt-Des)</th>
                                         <th>Total</th>
                                         <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach ($dataRingkasan as $idSales => $kuartal)
+                                    @foreach ($dataRingkasan as $idSales => $triwulan)
                                         <tr>
-                                            <td>{{ $pengguna[$idSales]['id_sales'] }}</td>
-                                            <td>Rp {{ number_format($kuartal['Q1'] ?? 0, 2, ',', '.') }}</td>
-                                            <td>Rp {{ number_format($kuartal['Q2'] ?? 0, 2, ',', '.') }}</td>
-                                            <td>Rp {{ number_format($kuartal['Q3'] ?? 0, 2, ',', '.') }}</td>
-                                            <td>Rp {{ number_format($kuartal['Q4'] ?? 0, 2, ',', '.') }}</td>
-                                            <td>Rp
-                                                {{ number_format(($kuartal['Q1'] ?? 0) + ($kuartal['Q2'] ?? 0) + ($kuartal['Q3'] ?? 0) + ($kuartal['Q4'] ?? 0), 2, ',', '.') }}
+                                            <td>{{ $pengguna[$idSales]['id_sales'] ?? 'Tidak Diketahui' }}</td>
+                                            <td>{{ number_format($triwulan['TR1'] ?? 0, 2, ',', '.') }}</td>
+                                            <td>{{ number_format($triwulan['TR2'] ?? 0, 2, ',', '.') }}</td>
+                                            <td>{{ number_format($triwulan['TR3'] ?? 0, 2, ',', '.') }}</td>
+                                            <td>{{ number_format($triwulan['TR4'] ?? 0, 2, ',', '.') }}</td>
+                                            <td>
+                                                {{ number_format(
+                                                    ($triwulan['TR1'] ?? 0) + ($triwulan['TR2'] ?? 0) + ($triwulan['TR3'] ?? 0) + ($triwulan['TR4'] ?? 0),
+                                                    2,
+                                                    ',',
+                                                    '.',
+                                                ) }}
                                             </td>
                                             <td>
-                                                <a href="{{route('detail.ringkasanPeluang', $pengguna[$idSales]['id_sales'])}}">Detail</a>
+                                                <a class="btn btn-sm btn-info"
+                                                    href="{{ route('detail.ringkasanPeluang', $pengguna[$idSales]['id_sales']) }}">Detail</a>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -67,50 +73,50 @@
         </div>
     </div>
 
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <script>
-            const dataRingkasan = @json($dataRingkasan);
-            const pengguna = @json($pengguna);
-            const labelKuartal = ['Q1 (Jan-Mar)', 'Q2 (Apr-Jun)', 'Q3 (Jul-Sep)', 'Q4 (Okt-Des)'];
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const dataRingkasan = @json($dataRingkasan);
+        const pengguna = @json($pengguna);
+        const labelTriwulan = ['TR1 (Jan-Mar)', 'TR2 (Apr-Jun)', 'TR3 (Jul-Sep)', 'TR4 (Okt-Des)'];
 
-            const datasets = Object.keys(dataRingkasan).map(idSales => ({
-                label: `${pengguna[idSales]?.username ?? 'Tidak Diketahui'}`,
-                data: [
-                    dataRingkasan[idSales].Q1 || 0,
-                    dataRingkasan[idSales].Q2 || 0,
-                    dataRingkasan[idSales].Q3 || 0,
-                    dataRingkasan[idSales].Q4 || 0
-                ],
-                backgroundColor: `rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 0.5)`,
-                borderColor: `rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 1)`,
-                borderWidth: 1
-            }));
+        const datasets = Object.keys(dataRingkasan).map(idSales => ({
+            label: `${pengguna[idSales]?.username ?? 'Tidak Diketahui'}`,
+            data: [
+                dataRingkasan[idSales].TR1 || 0,
+                dataRingkasan[idSales].TR2 || 0,
+                dataRingkasan[idSales].TR3 || 0,
+                dataRingkasan[idSales].TR4 || 0
+            ],
+            backgroundColor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 0.5)`,
+            borderColor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 1)`,
+            borderWidth: 1
+        }));
 
-            const ctx = document.getElementById('grafikPeluang').getContext('2d');
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labelKuartal,
-                    datasets: datasets
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Total Close Win (Rp)'
-                            }
-                        }
-                    },
-                    plugins: {
+        const ctx = document.getElementById('grafikPeluang').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labelTriwulan,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
                         title: {
                             display: true,
-                            text: 'Total Close Win per Sales per Triwulan'
+                            text: 'Total Close Win (Rp)'
                         }
                     }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Total Close Win per Sales per Triwulan'
+                    }
                 }
-            });
-        </script>
+            }
+        });
+    </script>
 @endsection

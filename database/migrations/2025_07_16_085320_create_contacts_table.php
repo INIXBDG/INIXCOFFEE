@@ -17,9 +17,8 @@ return new class extends Migration
             $table->text('id_sales');
             $table->string('nama_lengkap');
             $table->text('email');
-            $table->text('no_tlp');
-            $table->text('tim');
-            $table->text('posisi');
+            $table->text('cp');
+            $table->text('divisi');
             $table->timestamps();
         });
     }

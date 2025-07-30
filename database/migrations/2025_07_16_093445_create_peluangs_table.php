@@ -15,11 +15,17 @@ return new class extends Migration
             $table->id();
             $table->integer('id_contact');
             $table->text('id_sales');
-            $table->text('judul');
-            $table->text('deskripsi');
-            $table->decimal('jumlah', 15 ,2); // Ekspetasi pendapatan dari peluang penjualan
-            $table->enum('tahap', ['hitam', 'biru', 'merah']);
-            $table->date('tanggal_tutup_diharapkan'); // Ekspetasi waktu selesai
+            $table->text('materi');
+            $table->text('catatan')->nullable();
+            $table->decimal('harga', 15,2);
+            $table->decimal('netsales', 15,2);
+            $table->date('periode_mulai');
+            $table->date('periode_selesai');
+            $table->integer('pax');
+            $table->decimal('final', 15,2)->nullable();
+            $table->date('biru')->nullable();
+            $table->date('merah')->nullable();
+            $table->enum('tahap', ['lead', 'hitam', 'biru', 'merah'])->default('hitam');
             $table->timestamps();
         });
     }
