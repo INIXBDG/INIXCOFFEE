@@ -9,10 +9,25 @@ class Tickets extends Model
 {
     use HasFactory;
     protected $fillable = [
-        'no_user',
-        'deskripsi',
+        'nama_karyawan',
+        'divisi',
+        'kategori',
+        'keperluan',
+        'detail_kendala',
+        'tanggal_response',
+        'jam_response',
+        'pic',
+        'penanganan',
         'status',
-        'id_ts',
-        'alasan',
+        'keterangan',
+        'tanggal_selesai',
+        'jam_selesai',
+        'tingkat_kesulitan',
+        'timestamp',
     ];
+
+    public function karyawan()
+    {
+        return $this->belongsTo(karyawan::class, 'nama_karyawan', 'nama_lengkap');
+    }
 }

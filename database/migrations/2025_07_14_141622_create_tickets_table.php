@@ -13,11 +13,21 @@ return new class extends Migration
     {
         Schema::create('tickets', function (Blueprint $table) {
             $table->id();
-            $table->string('no_user');
-            $table->text('deskripsi');
+            $table->datetime('timestamp');
+            $table->string('nama_karyawan');
+            $table->string('divisi');
+            $table->string('kategori');
+            $table->string('keperluan');
+            $table->text('detail_kendala');
+            $table->date('tanggal_response')->nullable();
+            $table->time('jam_response')->nullable();
+            $table->string('pic')->nullable();
+            $table->text('penanganan')->nullable();
             $table->enum('status', ['Menunggu', 'Di Proses', 'Selesai', 'Terkendala'])->default('Menunggu');
-            $table->unsignedBigInteger('id_ts')->nullable();
-            $table->text('alasan')->nullable();
+            $table->text('keterangan')->nullable();
+            $table->date('tanggal_selesai')->nullable();
+            $table->time('jam_selesai')->nullable();
+            $table->string('tingkat_kesulitan')->nullable();
             $table->timestamps();
         });
     }
