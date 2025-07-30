@@ -2304,7 +2304,7 @@
                 },
                 success: function(response) {
                     if (response.success) {
-                        alert(response.success);
+                        // alert(response.success);
                         $('#modalPemberitahuan').modal('hide');
                         window.location.href = "{{ route('absensi.karyawan') }}";
                     } else {
