@@ -74,7 +74,7 @@
                                 <select class="form-select" id="id_contact" name="id_contact" required>
                                     <option value="" disabled selected>Pilih Contact</option>
                                     @foreach ($contact as $c)
-                                        <option value="{{ $c->id }}">{{ $c->nama_lengkap }} ({{ $c->email }})</option>
+                                        <option value="{{ $c->id }}">{{ $c->nama_perusahaan }} ({{ $c->cp ?? '-'}})</option>
                                     @endforeach
                                 </select>
                             </div>

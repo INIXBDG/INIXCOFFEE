@@ -20,7 +20,7 @@ class ContactController extends Controller
 
         if ($user->jabatan === 'Sales') {
             $idSales = $user->id_sales;
-            $data = Contact::where('id_sales', $idSales)->get();
+            $data = Perusahaan::where('sales_key', $idSales)->get();
             $perusahaan = Perusahaan::where('sales_key', $user->id_sales)->get();
         } elseif (in_array($user->jabatan, $allowedJabatan)) {
             $data = Contact::all();

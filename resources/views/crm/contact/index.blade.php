@@ -23,11 +23,11 @@
                             <thead class="table-dark">
                                 <tr>
                                     <th>No</th>
-                                    <th>Nama Lengkap</th>
-                                    <th>Email</th>
-                                    <th>No Telepon</th>
-                                    <th>Divisi</th>
                                     <th>Perusahaan</th>
+                                    <th>Lokasi</th>
+                                    <th>PIC</th>
+                                    <th>No Telepon</th>
+                                    <th>Status</th>
                                     <th>Sales</th>
                                     <th>Aksi</th>
                                 </tr>
@@ -36,12 +36,12 @@
                                 @foreach ($data as $contact)
                                     <tr>
                                         <td>{{ $loop->iteration }}</td>
-                                        <td>{{ $contact->nama_lengkap }}</td>
-                                        <td>{{ $contact->email }}</td>
-                                        <td>{{ $contact->cp }}</td>
-                                        <td>{{ $contact->divisi }}</td>
-                                        <td>{{ $contact->perusahaan->nama_perusahaan }}</td>
-                                        <td>{{ $contact->id_sales }}</td>
+                                        <td>{{ $contact->nama_perusahaan }}</td>
+                                        <td>{{ $contact->lokasi ?? '-'}}</td>
+                                        <td>{{ $contact->cp ?? '-'}}</td>
+                                        <td>{{ $contact->no_telp ?? '-'}}</td>
+                                        <td>{{ $contact->status ?? '-'}}</td>
+                                        <td>{{ $contact->sales_key }}</td>
                                         <td>
                                             <div class="d-flex gap-2">
                                                 <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal"

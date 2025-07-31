@@ -8,6 +8,7 @@ use App\Models\Aktivitas;
 use App\Models\Contact;
 use App\Models\Materi;
 use App\Models\Peluang;
+use App\Models\Perusahaan;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -26,10 +27,10 @@ class PeluangController extends Controller
         if ($user->jabatan === 'Sales') {
             $idSales = $user->id_sales;
             $data = Peluang::where('id_sales', $idSales)->get();
-            $contact = Contact::where('id_sales', $idSales)->get();
+            $contact = Perusahaan::where('sales_key', $idSales)->get();
         } elseif (in_array($user->jabatan, $allowedJabatan)) {
             $data = Peluang::all();
-            $contact = Contact::all();
+            $contact = Perusahaan::all();
         } else {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
