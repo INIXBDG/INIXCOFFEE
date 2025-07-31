@@ -195,8 +195,7 @@
                         month: 'long',
                         year: 'numeric'
                     }) : '-';
-                document.getElementById('modal-contact').textContent = peluang.contact ? (peluang.contact
-                    .nama_lengkap || '-') + ' (' + (peluang.contact.email || '-') + ')' : '-';
+                document.getElementById('modal-contact').textContent = peluang.perusahaan.nama_perusahaan;
                 document.getElementById('modal-sales').textContent = peluang.id_sales || '-';
 
                 // Isi Status Tahapan

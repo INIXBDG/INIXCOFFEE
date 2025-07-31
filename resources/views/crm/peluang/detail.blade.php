@@ -54,7 +54,7 @@
 
                                 <dt class="col-sm-4">Contact</dt>
                                 <dd class="col-sm-8">
-                                    {{ $peluang->cp ?? '-' }} ({{ $peluang->nama_perusahaan ?? '-' }})
+                                    {{ $peluang->perusahaan->nama_perusahaan ?? '-' }}
                                 </dd>
 
                                 <dt class="col-sm-4">Sales</dt>

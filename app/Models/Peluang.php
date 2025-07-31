@@ -24,9 +24,9 @@ class Peluang extends Model
         'tahap',
     ];
 
-    public function contact()
+    public function perusahaan()
     {
-        return $this->belongsTo(Contact::class, 'id_contact', 'id');
+        return $this->belongsTo(Perusahaan::class, 'id_contact', 'id');
     }
 
     public function aktivitas()

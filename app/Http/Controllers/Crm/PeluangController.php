@@ -178,6 +178,7 @@ class PeluangController extends Controller
         $data = Peluang::where('id_sales', $id)
             ->where('tahap', 'merah')
             ->with('aktivitas')
+            ->with('perusahaan')
             ->get();
         return view('crm.closedwin.detail', compact('data'));
     }
@@ -216,6 +217,7 @@ class PeluangController extends Controller
         $data = Peluang::where('id_sales', $id)
             ->where('tahap', 'lost')
             ->with('aktivitas')
+            ->with('perusahaan')
             ->get();
         return view('crm.closedlost.detail', compact('data'));
     }
