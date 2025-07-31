@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('peluangs', function (Blueprint $table) {
             $table->id();
             $table->integer('id_contact');
-            $table->text('id_sales');
+            $table->string('id_sales');
             $table->text('materi');
             $table->text('catatan')->nullable();
             $table->decimal('harga', 15,2);
@@ -23,9 +23,11 @@ return new class extends Migration
             $table->date('periode_selesai');
             $table->integer('pax');
             $table->decimal('final', 15,2)->nullable();
+            $table->text('desc_lost')->nullable();
             $table->date('biru')->nullable();
             $table->date('merah')->nullable();
-            $table->enum('tahap', ['lead', 'hitam', 'biru', 'merah'])->default('hitam');
+            $table->date('lost')->nullable();
+            $table->enum('tahap', ['lead', 'hitam', 'biru', 'merah','lost'])->default('hitam');
             $table->timestamps();
         });
     }

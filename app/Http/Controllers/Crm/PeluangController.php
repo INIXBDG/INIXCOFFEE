@@ -48,18 +48,24 @@ class PeluangController extends Controller
 
     public function store(Request $request)
     {
+        // Bersihkan input harga dan netsales sebelum validasi
+        $request->merge([
+            'harga' => preg_replace('/[^0-9]/', '', $request->harga),
+            'netsales' => preg_replace('/[^0-9]/', '', $request->netsales),
+        ]);
+
         $validated = $request->validate([
             'id_contact' => 'required|integer',
             'materi' => 'required|string|max:255',
             'catatan' => 'nullable|string|max:255',
-            'harga' => 'required',
-            'netsales' => 'required',
+            'harga' => 'required|numeric',
+            'netsales' => 'required|numeric',
             'periode_mulai' => 'required|date',
             'periode_selesai' => 'required|date',
             'pax' => 'required|numeric|min:1',
         ]);
 
-        // hanya untuk test function di postman, setelah selesai tolong diubah -> auth()->user()->id_sales
+        // Id sales tetap diisi sesuai input atau user login
         $validated['id_sales'] = $request->input('id_sales', auth()->user()->id_sales ?? null);
 
         $peluang = Peluang::create($validated);
@@ -100,7 +106,6 @@ class PeluangController extends Controller
         ]);
     }
 
-
     public function updateTahap($id, Request $request)
     {
         $peluang = Peluang::where('id', $id)->first();
@@ -109,6 +114,16 @@ class PeluangController extends Controller
             $peluang->tahap = $request->tahap;
             $time = Carbon::now();
             $peluang->biru = $time;
+
+            // Kosongkan kolom lost yang sebelumnya mungkin ada
+            $peluang->desc_lost = null;
+        }
+
+        if ($request->tahap === 'lost') {
+            $peluang->tahap = $request->tahap;
+            $time = Carbon::now();
+            $peluang->lost = $time;
+            $peluang->desc_lost = $request->desc_lost; // Simpan deskripsi lost
         }
 
         if ($request->tahap === 'merah') {
@@ -116,6 +131,9 @@ class PeluangController extends Controller
             $peluang->final = $request->final;
             $time = Carbon::now();
             $peluang->merah = $time;
+
+            // Kosongkan kolom lost yang sebelumnya mungkin ada
+            $peluang->desc_lost = null;
         }
 
         $peluang->update();
@@ -162,4 +180,43 @@ class PeluangController extends Controller
             ->get();
         return view('crm.closedwin.detail', compact('data'));
     }
+
+    public function ringkasanPeluanglost(Request $request)
+    {
+        $tahunDipilih = $request->query('tahun', now()->year);
+
+        $dataRingkasan = Peluang::whereNotNull('lost')
+            ->whereYear('lost', $tahunDipilih)
+            ->select(
+                'id_sales',
+                DB::raw('CASE
+                    WHEN MONTH(lost) BETWEEN 1 AND 3 THEN "TR1"
+                    WHEN MONTH(lost) BETWEEN 4 AND 6 THEN "TR2"
+                    WHEN MONTH(lost) BETWEEN 7 AND 9 THEN "TR3"
+                    WHEN MONTH(lost) BETWEEN 10 AND 12 THEN "TR4"
+                END as triwulan'),
+                DB::raw('SUM(harga * pax) as total_jumlah')
+            )
+            ->groupBy('id_sales', 'triwulan')
+            ->get()
+            ->groupBy('id_sales')
+            ->map(function ($grup) {
+                return $grup->pluck('total_jumlah', 'triwulan')->toArray();
+            })
+            ->toArray();
+
+        $pengguna = User::select('id_sales', 'username')->get()->keyBy('id_sales')->toArray();
+
+        return view('crm.closedlost.index', compact('dataRingkasan', 'pengguna', 'tahunDipilih'));
+    }
+
+    public function detailRingkasanlost($id)
+    {
+        $data = Peluang::where('id_sales', $id)
+            ->where('tahap', 'lost')
+            ->with('aktivitas')
+            ->get();
+        return view('crm.closedlost.detail', compact('data'));
+    }
+
 }
