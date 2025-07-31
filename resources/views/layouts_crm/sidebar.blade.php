@@ -68,6 +68,21 @@
             </a>
         </li>
 
+        <!-- Closed Win -->
+        <li class="menu-item {{ request()->routeIs('index.ringkasanPeluang') ? 'active open' : '' }}">
+            <a href="{{ route('index.ringkasanPeluang') }}" class="menu-link">
+                <i class='menu-icon tf-icons bx bxs-dollar-circle'></i>
+                <div class="text-truncate" data-i18n="ringkasanPeluang">Closed Win</div>
+            </a>
+        </li>
+
+        <li class="menu-item {{ request()->routeIs('index.ringkasanPeluangLost') ? 'active open' : '' }}">
+            <a href="{{ route('index.ringkasanlost') }}" class="menu-link">
+                <i class='menu-icon tf-icons bx bx-line-chart-down'></i>
+                <div class="text-truncate" data-i18n="ringkasanPeluang">Closed Lost</div>
+            </a>
+        </li>
+
         <li class="menu-header small text-uppercase">
             <span class="menu-header-text">Untuk &amp; Anda</span>
         </li>
@@ -84,15 +99,7 @@
         <li class="menu-item {{ request()->routeIs('index.peluang') ? 'active open' : '' }}">
             <a href="{{ route('index.peluang') }}" class="menu-link">
                 <i class='menu-icon tf-icons bx bx-star'></i>
-                <div class="text-truncate" data-i18n="peluang">Peluang</div>
-            </a>
-        </li>
-
-        <!-- Closed Win -->
-        <li class="menu-item {{ request()->routeIs('index.ringkasanPeluang') ? 'active open' : '' }}">
-            <a href="{{ route('index.ringkasanPeluang') }}" class="menu-link">
-                <i class='menu-icon tf-icons bx bxs-dollar-circle'></i>
-                <div class="text-truncate" data-i18n="ringkasanPeluang">Closed Win</div>
+                <div class="text-truncate" data-i18n="peluang">Prospect</div>
             </a>
         </li>
 

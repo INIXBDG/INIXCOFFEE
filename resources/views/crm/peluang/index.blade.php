@@ -128,4 +128,41 @@
         </div>
     </div>
 </div>
+
+<script>
+function formatRupiah(angka) {
+    let numberString = angka.replace(/[^,\d]/g, '').toString();
+    let split = numberString.split(',');
+    let sisa = split[0].length % 3;
+    let rupiah = split[0].substr(0, sisa);
+    let ribuan = split[0].substr(sisa).match(/\d{3}/gi);
+
+    if (ribuan) {
+        let separator = sisa ? '.' : '';
+        rupiah += separator + ribuan.join('.');
+    }
+
+    rupiah = split[1] !== undefined ? rupiah + ',' + split[1] : rupiah;
+    return rupiah ? 'Rp ' + rupiah : '';
+}
+
+function unformatRupiah(rupiah) {
+    return rupiah.replace(/[^0-9]/g, '');
+}
+
+const hargaInput = document.getElementById('harga');
+const netsalesInput = document.getElementById('netsales');
+
+[hargaInput, netsalesInput].forEach(input => {
+    input.addEventListener('input', function() {
+        this.value = formatRupiah(this.value);
+    });
+});
+
+document.getElementById('form-data').addEventListener('submit', function(e) {
+    hargaInput.value = unformatRupiah(hargaInput.value);
+    netsalesInput.value = unformatRupiah(netsalesInput.value);
+});
+</script>
+
 @endsection
