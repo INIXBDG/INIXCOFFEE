@@ -23,6 +23,9 @@ class PeluangController extends Controller
         $user = Auth::user();
         $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM'];
         $materi = Materi::all();
+        $aktivitas = Aktivitas::where('id_sales', $user->id_sales)
+            ->whereNull('id_peluang')
+            ->get();
 
         if ($user->jabatan === 'Sales') {
             $idSales = $user->id_sales;
@@ -35,7 +38,7 @@ class PeluangController extends Controller
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 
-        return view('crm.peluang.index', compact('data', 'contact', 'materi'));
+        return view('crm.peluang.index', compact('data', 'contact', 'materi', 'aktivitas'));
     }
 
     public function detail($id)
@@ -46,45 +49,75 @@ class PeluangController extends Controller
         return view('crm.peluang.detail', compact('peluang', 'aktivitas', 'materi'));
     }
 
+    public function AmbilAktivitas($id)
+    {
+        $aktivitas = Aktivitas::where('id_contact', $id)
+            ->whereNull('id_peluang')
+            ->with('perusahaan')
+            ->get();
+
+        $result = $aktivitas->map(function ($a) {
+            return [
+                'id' => $a->id,
+                'kontak' => $a->perusahaan->nama_perusahaan ?? '-',
+                'aktivitas' => ucfirst($a->aktivitas),
+                'subject' => $a->subject,
+                'deskripsi' => $a->deskripsi,
+                'waktu' => \Carbon\Carbon::parse($a->waktu_aktivitas)->format('d/m/Y'),
+            ];
+        });
+
+        return response()->json($result);
+    }
+
 
     public function store(Request $request)
     {
-        // Bersihkan input harga dan netsales sebelum validasi
         $request->merge([
             'harga' => preg_replace('/[^0-9]/', '', $request->harga),
             'netsales' => preg_replace('/[^0-9]/', '', $request->netsales),
         ]);
 
         $validated = $request->validate([
-            'id_contact' => 'required|integer',
+            'id_contact' => 'required|integer|exists:perusahaans,id',
             'materi' => 'required|string|max:255',
             'catatan' => 'nullable|string|max:255',
             'harga' => 'required|numeric',
             'netsales' => 'required|numeric',
             'periode_mulai' => 'required|date',
-            'periode_selesai' => 'required|date',
+            'periode_selesai' => 'required|date|after_or_equal:periode_mulai',
             'pax' => 'required|numeric|min:1',
+            'id_aktivitas' => 'nullable|array',
+            'id_aktivitas.*' => 'integer|exists:aktivitas,id',
         ]);
 
-        // Id sales tetap diisi sesuai input atau user login
         $validated['id_sales'] = $request->input('id_sales', auth()->user()->id_sales ?? null);
 
         $peluang = Peluang::create($validated);
 
+        if ($request->filled('id_aktivitas')) {
+            Aktivitas::whereIn('id', $request->id_aktivitas)
+                ->update(['id_peluang' => $peluang->id]);
+        }
+
         return back()->with([
-            'message' => 'Peluang berhasil dibuat.',
+            'message' => 'Peluang berhasil dibuat dan aktivitas berhasil dikaitkan.',
             'data' => $peluang,
         ]);
     }
 
+
     public function delete($id)
     {
-        $peluang = Peluang::where('id', $id)->first();
+        $peluang = Peluang::findOrFail($id);
         $peluang->delete();
 
-        return back()->with([
-            'message' => 'Peluang berhasil dihapus.',
-        ]);
+        $aktivitas = Aktivitas::where('id_peluang', $id)->get();
+        foreach ($aktivitas as $item) {
+            $item->delete();
+        }
+
+        return response()->json(['message' => 'Peluang berhasil dihapus.']);
     }
 
     public function update(Request $request, $id)
@@ -221,5 +254,4 @@ class PeluangController extends Controller
             ->get();
         return view('crm.closedlost.detail', compact('data'));
     }
-
 }

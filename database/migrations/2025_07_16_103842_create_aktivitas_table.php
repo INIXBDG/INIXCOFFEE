@@ -15,10 +15,10 @@ return new class extends Migration
             $table->id();
             $table->text('id_sales');
             $table->integer('id_contact');
-            $table->integer('id_peluang');
-            $table->enum('aktivitas', ['Panggilan', 'Email', 'Meeting']);
+            $table->integer('id_peluang')->nullable();
+            $table->enum('aktivitas', ['Call', 'Email', 'Visit']);
             $table->text('subject');
-            $table->text('deskripsi');
+            $table->text('deskripsi')->nullable();
             $table->date('waktu_aktivitas');
             $table->timestamps();
         });
