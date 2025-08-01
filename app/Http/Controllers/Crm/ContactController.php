@@ -65,17 +65,48 @@ class ContactController extends Controller
 
     public function update($id, Request $request)
     {
-        $contact = Contact::where('id', $id)->first();
+        // Validasi input request
+        $validated = $request->validate([
+            'nama_perusahaan' => 'required|string|max:255',
+            'kategori_perusahaan' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'lokasi' => 'nullable|string|max:255',
+            'status' => 'required|string|max:50',
+            'npwp' => 'nullable|string|max:50',
+            'alamat' => 'nullable|string|max:500',
+            'no_telp' => 'nullable|string|max:20',
+            'cp' => 'nullable|string|max:100',
+            'foto_npwp' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+        ]);
+        $contact = Perusahaan::findOrFail($id);
 
-        $contact->nama_lengkap = $request->nama_lengkap;
-        $contact->email = $request->email;
-        $contact->cp = $request->cp;
-        $contact->divisi = $request->divisi;
+        // Update atribut dari data yang sudah tervalidasi
+        $contact->nama_perusahaan = $validated['nama_perusahaan'];
+        $contact->kategori_perusahaan = $validated['kategori_perusahaan'];
+        $contact->email = $validated['email'];
+        $contact->lokasi = $validated['lokasi'] ?? $contact->lokasi;
+        $contact->status = $validated['status'];
+        $contact->npwp = $validated['npwp'] ?? $contact->npwp;
+        $contact->alamat = $validated['alamat'] ?? $contact->alamat;
+        $contact->no_telp = $validated['no_telp'] ?? $contact->no_telp;
+        $contact->cp = $validated['cp'] ?? $contact->cp;
 
-        $contact->update();
+        // Upload file jika ada unggahan baru
+        if ($request->hasFile('foto_npwp')) {
+            $file = $request->file('foto_npwp');
+            $extension = $file->getClientOriginalExtension();
+            $filename = $validated['nama_perusahaan'] . '_npwp.' . $extension;
+            $file->storeAs('public/npwp', $filename);
+
+            // Simpan path file ke kolom foto_npwp (pastikan ada kolom ini)
+            $contact->foto_npwp = 'npwp/' . $filename;
+        }
+
+        $contact->update;
 
         return back()->with([
-            'message' => 'Kontak berhasil di perbarui.',
+            'message' => 'Kontak berhasil diperbarui.',
         ]);
     }
+
 }
