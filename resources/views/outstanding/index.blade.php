@@ -16,8 +16,8 @@
         <div class="col-md-12">
             <div class="d-flex justify-content-end">
                 @can('Create Outstanding')
-                <a href="{{ route('outstanding.create') }}" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Tambah User"><img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> List Outstanding</a>
-                <a href="{{ route('outstanding.singkronDataOutstanding') }}" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Tambah User"><img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> Singkron Data Minggu Ini</a>
+                    <a href="{{ route('outstanding.create') }}" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Tambah User"><img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> List Outstanding</a>
+                    <a href="{{ route('outstanding.singkronDataOutstanding') }}" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Tambah User"><img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> Singkron Data Minggu Ini</a>
                 @endcan
             </div>
             <div class="card m-4">
@@ -284,10 +284,13 @@
                     "data": null,
                     "render": function(data, type, row) {
                         var actions = "";
-                        actions += '@if (auth()->user()->can('Delete Outstanding'))'
+                        actions += '@if (auth()->user()->can('Edit Outstanding') || auth()->user()->can('Delete Outstanding'))'
                         actions += '<div class="dropdown">';
-                        actions += '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
+                        actions += '<button class="btn dropdown-toggle text-white" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
                         actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
+                        actions += '@can('Edit Outstanding')';
+                        actions += '<a class="dropdown-item" href="{{ url('/outstanding') }}/' + row.id + '/edit"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Edit</a>';
+                        actions += '@endcan';
                         actions += '@can('Delete Outstanding')';
                         actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/outstanding') }}/' + row.id + '" method="POST">';
                         actions += '@csrf';
@@ -299,7 +302,7 @@
                         actions += '</div>';
                         actions += '@else';
                         actions += '<div class="dropdown">';
-                        actions += '<button class="btn dropdown-toggle disabled" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
+                        actions += '<button class="btn dropdown-toggle disabled text-white" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
                         actions += '</div>';
                         actions += '@endif';
                         return actions;
@@ -486,7 +489,7 @@
                         var actions = "";
                         actions += '@if (auth()->user()->can('Edit Outstanding') || auth()->user()->can('Delete Outstanding'))'
                         actions += '<div class="dropdown">';
-                        actions += '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
+                        actions += '<button class="btn dropdown-toggle text-white" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
                         actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
                         actions += '@can('Edit Outstanding')';
                         actions += '<a class="dropdown-item" href="{{ url('/outstanding') }}/' + row.id + '/edit"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Edit</a>';
@@ -502,7 +505,7 @@
                         actions += '</div>';
                         actions += '@else';
                         actions += '<div class="dropdown">';
-                        actions += '<button class="btn dropdown-toggle disabled" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
+                        actions += '<button class="btn dropdown-toggle disabled text-white" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
                         actions += '</div>';
                         actions += '@endif';
                         return actions;
