@@ -2264,6 +2264,7 @@
                         },
                         error: function(xhr, status, error) {
                             alert(xhr.responseJSON.error);
+                            console.log(xhr.responseJSON);
                             location.reload();
                         }
                     });
