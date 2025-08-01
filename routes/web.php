@@ -357,7 +357,6 @@ Route::prefix('crm')->group(function () {
     Route::get('/my-dashboard', [salesPribadiController::class, 'index'])->name('CRM.myDasboard');
     Route::get('/profile', [CRMController::class, 'getProfile'])->middleware('auth')->name('crm.profile');
 
-
     // Contact CRM
     Route::get('/contact/index', [ContactController::class, 'index'])->name('index.contact');
     Route::post('/contact/store', [ContactController::class, 'store'])->name('store.contact');
@@ -371,8 +370,12 @@ Route::prefix('crm')->group(function () {
     Route::delete('/peluang/delete/{id}', [PeluangController::class, 'delete'])->name('delete.peluang');
     Route::put('/peluang/edit/{id}', [PeluangController::class, 'update'])->name('edit.peluang');
     Route::put('/peluang/update/{id}', [PeluangController::class, 'updateTahap'])->name('update.tahap');
+    Route::get('/ambil/aktivitas/{id}', [PeluangController::class, 'AmbilAktivitas']);
+
 
     // Aktivitas CRM
+    Route::get('/aktivitas', [AktivitasController::class, 'index'])->name('index.aktivitas');
+    Route::post('/aktivitas/store/new', [AktivitasController::class, 'storeNew'])->name('store.aktivitas.new');
     Route::post('/aktivitas/store', [AktivitasController::class, 'store'])->name('store.aktivitas');
     Route::delete('/aktivitas/delete/{id}', [AktivitasController::class, 'delete'])->name('delete.aktivitas');
     Route::put('/aktivitas/update/{id}', [AktivitasController::class, 'update'])->name('update.aktivitas');
@@ -388,4 +391,3 @@ Route::prefix('crm')->group(function () {
     Route::get('/closed/lost', [PeluangController::class, 'ringkasanPeluanglost'])->name('index.ringkasanlost');
     Route::get('/detail/closed/lost/{id}', [PeluangController::class, 'detailRingkasanlost'])->name('detail.Ringkasanlost');
 });
-
