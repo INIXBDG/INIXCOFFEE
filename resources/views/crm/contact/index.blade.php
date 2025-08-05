@@ -56,7 +56,7 @@
                                                     @method('DELETE')
                                                     <button type="submit" class="btn btn-sm btn-danger">Hapus</button>
                                                 </form>
-                                                <a href="{{ route('detail.contact', $contact->id) }}">Detail</a>
+                                                <a href="{{ route('detail.contact', $contact->id) }}" class="btn btn-sm btn-info">Detail</a>
                                             </div>
                                         </td>
                                     </tr>
