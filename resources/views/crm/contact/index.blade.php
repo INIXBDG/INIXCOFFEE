@@ -5,7 +5,7 @@
         <div class="container-xxl flex-grow-1 container-p-y">
             <!-- Header -->
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h4 class="fw-bold">Manajemen Contact</h4>
+                <h4 class="fw-bold">Database Client</h4>
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#opportunityModal"
                     onclick="resetForm()">
                     Tambah Contact
@@ -14,9 +14,9 @@
 
             <!-- Tabel Contact -->
             <div class="card">
-                <div class="card-header">
+                {{-- <div class="card-header">
                     <h5 class="card-title">Daftar Contact</h5>
-                </div>
+                </div> --}}
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-bordered table-hover">
@@ -67,8 +67,7 @@
             </div>
 
             <!-- Modal Edit Contact -->
-            <div class="modal fade" id="editContactModal" tabindex="-1" aria-labelledby="editContactModalLabel"
-                aria-hidden="true">
+            <div class="modal fade" id="editContactModal" tabindex="-1" aria-labelledby="editContactModalLabel" aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
@@ -76,52 +75,109 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            <form id="editContactForm" method="POST" enctype="multipart/form-data"
-                                action="">
+                            <form id="editContactForm" method="POST" enctype="multipart/form-data" action="">
                                 @csrf
                                 @method('PUT')
                                 <input type="hidden" name="id" id="edit_contact_id">
 
                                 <div class="mb-3">
                                     <label class="form-label" for="edit_nama_perusahaan">Nama Perusahaan</label>
-                                    <input type="text" class="form-control" id="edit_nama_perusahaan"
-                                        name="nama_perusahaan" required maxlength="255">
+                                    <input type="text" class="form-control" id="edit_nama_perusahaan" name="nama_perusahaan" required maxlength="255">
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label" for="edit_kategori_perusahaan">Kategori Perusahaan</label>
-                                    <input type="text" class="form-control" id="edit_kategori_perusahaan"
-                                        name="kategori_perusahaan" required maxlength="255">
+                                    <select class="form-select @error('kategori_perusahaan') is-invalid @enderror"
+                                            name="kategori_perusahaan" id="edit_kategori_perusahaan" autocomplete="kategori_perusahaan" required>
+                                        <option value="" selected>Pilih Kategori Perusahaan</option>
+                                        <option value="Pemerintahan Daerah">Pemerintahan Daerah</option>
+                                        <option value="Kementerian">Kementerian</option>
+                                        <option value="Lembaga Pemerintahan">Lembaga Pemerintahan</option>
+                                        <option value="BUMN">BUMN</option>
+                                        <option value="BUMD">BUMD</option>
+                                        <option value="Swasta">Swasta</option>
+                                        <option value="Akademik">Akademik</option>
+                                        <option value="Bank Daerah">Bank Daerah</option>
+                                        <option value="Bank Umum">Bank Umum</option>
+                                        <option value="Bank BUMN">Bank BUMN</option>
+                                        <option value="Rumah Sakit">Rumah Sakit</option>
+                                        <option value="Personal">Personal</option>
+                                    </select>
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label" for="edit_cp">PIC</label>
-                                    <input type="text" class="form-control" id="edit_cp" name="cp"
-                                        maxlength="100">
+                                    <input type="text" class="form-control" id="edit_cp" name="cp" maxlength="100">
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label" for="edit_email">Email</label>
-                                    <input type="email" class="form-control" id="edit_email" name="email" required
-                                        maxlength="255">
+                                    <input type="email" class="form-control" id="edit_email" name="email" required maxlength="255">
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label" for="edit_lokasi">Lokasi</label>
-                                    <input type="text" class="form-control" id="edit_lokasi" name="lokasi"
-                                        maxlength="255">
+                                    <select class="form-select" id="edit_lokasi" name="lokasi" required>
+                                        <option value="">Pilih Lokasi</option>
+                                        <option value="Aceh">Aceh</option>
+                                        <option value="Sumatera Utara">Sumatera Utara</option>
+                                        <option value="Sumatera Barat">Sumatera Barat</option>
+                                        <option value="Riau">Riau</option>
+                                        <option value="Kepulauan Riau">Kepulauan Riau</option>
+                                        <option value="Jambi">Jambi</option>
+                                        <option value="Bengkulu">Bengkulu</option>
+                                        <option value="Sumatera Selatan">Sumatera Selatan</option>
+                                        <option value="Bangka Belitung">Bangka Belitung</option>
+                                        <option value="Lampung">Lampung</option>
+                                        <option value="DKI Jakarta">DKI Jakarta</option>
+                                        <option value="Banten">Banten</option>
+                                        <option value="Jawa Barat">Jawa Barat</option>
+                                        <option value="Jawa Tengah">Jawa Tengah</option>
+                                        <option value="DI Yogyakarta">DI Yogyakarta</option>
+                                        <option value="Jawa Timur">Jawa Timur</option>
+                                        <option value="Bali">Bali</option>
+                                        <option value="Nusa Tenggara Barat">Nusa Tenggara Barat</option>
+                                        <option value="Nusa Tenggara Timur">Nusa Tenggara Timur</option>
+                                        <option value="Kalimantan Barat">Kalimantan Barat</option>
+                                        <option value="Kalimantan Tengah">Kalimantan Tengah</option>
+                                        <option value="Kalimantan Selatan">Kalimantan Selatan</option>
+                                        <option value="Kalimantan Timur">Kalimantan Timur</option>
+                                        <option value="Kalimantan Utara">Kalimantan Utara</option>
+                                        <option value="Sulawesi Utara">Sulawesi Utara</option>
+                                        <option value="Gorontalo">Gorontalo</option>
+                                        <option value="Sulawesi Tengah">Sulawesi Tengah</option>
+                                        <option value="Sulawesi Barat">Sulawesi Barat</option>
+                                        <option value="Sulawesi Selatan">Sulawesi Selatan</option>
+                                        <option value="Sulawesi Tenggara">Sulawesi Tenggara</option>
+                                        <option value="Maluku">Maluku</option>
+                                        <option value="Maluku Utara">Maluku Utara</option>
+                                        <option value="Papua">Papua</option>
+                                        <option value="Papua Barat">Papua Barat</option>
+                                        <option value="Papua Selatan">Papua Selatan</option>
+                                        <option value="Papua Tengah">Papua Tengah</option>
+                                        <option value="Papua Pegunungan">Papua Pegunungan</option>
+                                        <option value="Papua Barat Daya">Papua Barat Daya</option>
+                                    </select>
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label" for="edit_status">Status</label>
-                                    <input type="text" class="form-control" id="edit_status" name="status" required
-                                        maxlength="50">
+                                    <select class="form-select @error('status') is-invalid @enderror" id="edit_status" name="status" autocomplete="status" required>
+                                        <option value="" selected>Pilih Status</option>
+                                        <option value="Q1">Q1</option>
+                                        <option value="Q2">Q2</option>
+                                        <option value="Q3">Q3</option>
+                                        <option value="Q4">Q4</option>
+                                        <option value="Database Baru">Database Baru</option>
+                                    </select>
+                                    @error('status')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label" for="edit_npwp">NPWP</label>
-                                    <input type="text" class="form-control" id="edit_npwp" name="npwp"
-                                        maxlength="50">
+                                    <input type="text" class="form-control" id="edit_npwp" name="npwp" maxlength="50">
                                 </div>
 
                                 <div class="mb-3">
@@ -131,15 +187,12 @@
 
                                 <div class="mb-3">
                                     <label class="form-label" for="edit_no_telp">No Telepon</label>
-                                    <input type="text" class="form-control" id="edit_no_telp" name="no_telp"
-                                        maxlength="20">
+                                    <input type="text" class="form-control" id="edit_no_telp" name="no_telp" maxlength="20">
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label" for="edit_foto_npwp">Foto NPWP (jpg, jpeg, png, pdf max
-                                        2MB)</label>
-                                    <input type="file" accept=".jpg,.jpeg,.png,.pdf" class="form-control"
-                                        id="edit_foto_npwp" name="foto_npwp">
+                                    <label class="form-label" for="edit_foto_npwp">Foto NPWP (jpg, jpeg, png, pdf max 2MB)</label>
+                                    <input type="file" accept=".jpg,.jpeg,.png,.pdf" class="form-control" id="edit_foto_npwp" name="foto_npwp">
                                 </div>
 
                                 <button type="submit" class="btn btn-primary">Update</button>
@@ -155,45 +208,133 @@
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="opportunityModalLabel">Tambah Contact</h5>
+                            <h5 class="modal-title" id="opportunityModalLabel">Tambah Perusahaan</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"
                                 aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            <form id="contactForm" action="{{ route('store.contact') }}" method="POST">
+                            <form id="perusahaanForm" action="{{ route('store.contact') }}" method="POST" enctype="multipart/form-data">
                                 @csrf
-                                <input type="hidden" name="id" id="contact_id">
 
                                 <div class="mb-3">
-                                    <label class="form-label" for="nama_lengkap">Nama Lengkap</label>
-                                    <input type="text" class="form-control" id="nama_lengkap" name="nama_lengkap"
-                                        required>
+                                    <label class="form-label" for="nama_perusahaan">Nama Perusahaan</label>
+                                    <input type="text" class="form-control" id="nama_perusahaan" name="nama_perusahaan" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label" for="kategori_perusahaan">Kategori Perusahaan</label>
+                                    <select class="form-select @error('kategori_perusahaan') is-invalid @enderror" name="kategori_perusahaan" id="kategori_perusahaan" autocomplete="kategori_perusahaan">
+                                        <option value="" selected>Pilih Kategori Perusahaan</option>
+                                        <option value="Pemerintahan Daerah">Pemerintahan Daerah</option>
+                                        <option value="Kementerian">Kementerian</option>
+                                        <option value="Lembaga Pemerintahan">Lembaga Pemerintahan</option>
+                                        <option value="BUMN">BUMN</option>
+                                        <option value="BUMD">BUMD</option>
+                                        <option value="Swasta">Swasta</option>
+                                        <option value="Akademik">Akademik</option>
+                                        <option value="Bank Daerah">Bank Daerah</option>
+                                        <option value="Bank Umum">Bank Umum</option>
+                                        <option value="Bank BUMN">Bank BUMN</option>
+                                        <option value="Rumah Sakit">Rumah Sakit</option>
+                                        <option value="Personal">Personal</option>
+                                    </select>
+                                    @error('kategori_perusahaan')
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                    @enderror
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label" for="lokasi">Lokasi</label>
+                                    <select class="form-select" id="lokasi" name="lokasi">
+                                        <option value="">Pilih Lokasi</option>
+                                        <option value="Aceh">Aceh</option>
+                                        <option value="Sumatera Utara">Sumatera Utara</option>
+                                        <option value="Sumatera Barat">Sumatera Barat</option>
+                                        <option value="Riau">Riau</option>
+                                        <option value="Kepulauan Riau">Kepulauan Riau</option>
+                                        <option value="Jambi">Jambi</option>
+                                        <option value="Bengkulu">Bengkulu</option>
+                                        <option value="Sumatera Selatan">Sumatera Selatan</option>
+                                        <option value="Bangka Belitung">Bangka Belitung</option>
+                                        <option value="Lampung">Lampung</option>
+                                        <option value="DKI Jakarta">DKI Jakarta</option>
+                                        <option value="Banten">Banten</option>
+                                        <option value="Jawa Barat">Jawa Barat</option>
+                                        <option value="Jawa Tengah">Jawa Tengah</option>
+                                        <option value="DI Yogyakarta">DI Yogyakarta</option>
+                                        <option value="Jawa Timur">Jawa Timur</option>
+                                        <option value="Bali">Bali</option>
+                                        <option value="Nusa Tenggara Barat">Nusa Tenggara Barat</option>
+                                        <option value="Nusa Tenggara Timur">Nusa Tenggara Timur</option>
+                                        <option value="Kalimantan Barat">Kalimantan Barat</option>
+                                        <option value="Kalimantan Tengah">Kalimantan Tengah</option>
+                                        <option value="Kalimantan Selatan">Kalimantan Selatan</option>
+                                        <option value="Kalimantan Timur">Kalimantan Timur</option>
+                                        <option value="Kalimantan Utara">Kalimantan Utara</option>
+                                        <option value="Sulawesi Utara">Sulawesi Utara</option>
+                                        <option value="Gorontalo">Gorontalo</option>
+                                        <option value="Sulawesi Tengah">Sulawesi Tengah</option>
+                                        <option value="Sulawesi Barat">Sulawesi Barat</option>
+                                        <option value="Sulawesi Selatan">Sulawesi Selatan</option>
+                                        <option value="Sulawesi Tenggara">Sulawesi Tenggara</option>
+                                        <option value="Maluku">Maluku</option>
+                                        <option value="Maluku Utara">Maluku Utara</option>
+                                        <option value="Papua">Papua</option>
+                                        <option value="Papua Barat">Papua Barat</option>
+                                        <option value="Papua Selatan">Papua Selatan</option>
+                                        <option value="Papua Tengah">Papua Tengah</option>
+                                        <option value="Papua Pegunungan">Papua Pegunungan</option>
+                                        <option value="Papua Barat Daya">Papua Barat Daya</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                <label class="form-label" for="status">Status</label>
+                                <select class="form-select @error('status') is-invalid @enderror" id="status" name="status" autocomplete="status">
+                                    <option value="" selected>Pilih Status</option>
+                                    <option value="Q1">Q1</option>
+                                    <option value="Q2">Q2</option>
+                                    <option value="Q3">Q3</option>
+                                    <option value="Q4">Q4</option>
+                                    <option value="Database Baru">Database Baru</option>
+                                </select>
+                                @error('status')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label" for="npwp">NPWP</label>
+                                    <input type="text" class="form-control" id="npwp" name="npwp">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label" for="alamat">Alamat</label>
+                                    <textarea class="form-control" id="alamat" name="alamat" rows="2"></textarea>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label" for="cp">Contact Person (CP)</label>
+                                    <input type="text" class="form-control" id="cp" name="cp">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label" for="no_telp">No Telepon</label>
+                                    <input type="text" class="form-control" id="no_telp" name="no_telp">
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label" for="email">Email</label>
-                                    <input type="email" class="form-control" id="email" name="email" required>
+                                    <input type="email" class="form-control" id="email" name="email">
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label" for="cp">No Telepon</label>
-                                    <input type="text" class="form-control" id="cp" name="cp" required>
+                                    <label class="form-label" for="foto_npwp">Foto NPWP</label>
+                                    <input class="form-control" type="file" id="foto_npwp" name="foto_npwp" accept=".jpeg,.jpg,.png,.pdf">
                                 </div>
 
-                                <div class="mb-3">
-                                    <label class="form-label" for="divisi">Divisi</label>
-                                    <input type="text" class="form-control" id="divisi" name="divisi" required>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label" for="id_perusahaan">Perusahaan</label>
-                                    <select class="form-select" id="id_perusahaan" name="id_perusahaan" required>
-                                        <option value="" disabled selected>Pilih Perusahaan</option>
-                                        @foreach ($perusahaan as $p)
-                                            <option value="{{ $p->id }}">{{ $p->nama_perusahaan }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
                                 <button type="submit" class="btn btn-primary">Simpan</button>
                             </form>
                         </div>
@@ -205,22 +346,35 @@
 
     <script>
         function editContact(contact) {
-            // Mengisi input form dengan data yang diterima dari parameter 'contact'
             document.getElementById('edit_nama_perusahaan').value = contact.nama_perusahaan || '';
             document.getElementById('edit_email').value = contact.email || '';
             document.getElementById('edit_cp').value = contact.cp || '';
-            document.getElementById('edit_kategori_perusahaan').value = contact.kategori_perusahaan || '';
-            document.getElementById('edit_lokasi').value = contact.lokasi || '';
-            document.getElementById('edit_status').value = contact.status || '';
+            const kategoriSelect = document.getElementById('edit_kategori_perusahaan');
+            if (contact.kategori_perusahaan) {
+                kategoriSelect.value = contact.kategori_perusahaan;
+            } else {
+                kategoriSelect.value = '';
+            }
+            const lokasiSelect = document.getElementById('edit_lokasi');
+            if (contact.lokasi) {
+                lokasiSelect.value = contact.lokasi;
+            } else {
+                lokasiSelect.value = '';
+            }
+            const statusSelect = document.getElementById('edit_status');
+            if (contact.status) {
+                statusSelect.value = contact.status;
+            } else {
+                statusSelect.value = '';
+            }
             document.getElementById('edit_npwp').value = contact.npwp || '';
             document.getElementById('edit_alamat').value = contact.alamat || '';
             document.getElementById('edit_no_telp').value = contact.no_telp || '';
 
-            // Menyimpan ID perusahaan agar bisa dikirim dalam form
             document.getElementById('edit_contact_id').value = contact.id;
 
-            // Set action URL form update agar sesuai dengan id yang akan diupdate
+            // Set action URL dinamis ke rute update perusahaan sesuai id
             document.getElementById('editContactForm').action = '/crm/contact/update/' + contact.id;
-        }
+    }
     </script>
 @endsection

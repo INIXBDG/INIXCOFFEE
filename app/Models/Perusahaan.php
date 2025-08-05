@@ -18,6 +18,7 @@ class Perusahaan extends Model
         'alamat',
         'cp',
         'no_telp',
+        'email',
         'foto_npwp',
     ];
 
