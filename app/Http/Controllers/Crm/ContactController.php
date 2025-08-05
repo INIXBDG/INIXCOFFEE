@@ -7,6 +7,7 @@ use App\Models\Aktivitas;
 use App\Models\Contact;
 use App\Models\Peluang;
 use App\Models\Perusahaan;
+use App\Models\RKM;
 use App\Models\User;
 use Illuminate\Auth\Events\Validated;
 use Illuminate\Http\Request;
@@ -25,13 +26,27 @@ class ContactController extends Controller
             $data = Perusahaan::where('sales_key', $idSales)->get();
             $perusahaan = Perusahaan::where('sales_key', $user->id_sales)->get();
         } elseif (in_array($user->jabatan, $allowedJabatan)) {
-            $data = Contact::all();
+            $data = Perusahaan::all();
             $perusahaan = Perusahaan::all();
         } else {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 
-        return view('crm.contact.index', compact('data', 'perusahaan'));
+        $kelasTerakhir = [];
+        $aktivitasTerakhir = [];
+
+        foreach ($data as $item) {
+            $kelasTerakhir[$item->id] = RKM::where('perusahaan_key', $item->id)
+                ->latest()
+                ->with('materi')
+                ->first();
+
+            $aktivitasTerakhir[$item->id] = Aktivitas::where('id_contact', $item->id)
+                ->latest()
+                ->first();
+        }
+
+        return view('crm.contact.index', compact('data', 'perusahaan', 'kelasTerakhir', 'aktivitasTerakhir'));
     }
 
     public function detail($id)
@@ -91,7 +106,7 @@ class ContactController extends Controller
             'message' => 'Kontak berhasil dihapus.',
         ]);
     }
-    
+
     public function update($id, Request $request)
     {
         // Validasi input request

@@ -29,6 +29,8 @@
                                     <th>No Telepon</th>
                                     <th>Status</th>
                                     <th>Sales</th>
+                                    <th>Kelas Terakhir</th>
+                                    <th>Aktivitas Terakhir</th>
                                     <th>Aksi</th>
                                 </tr>
                             </thead>
@@ -43,6 +45,18 @@
                                         <td>{{ $contact->status ?? '-' }}</td>
                                         <td>{{ $contact->sales_key }}</td>
                                         <td>
+                                            @if (isset($kelasTerakhir[$contact->id]))
+                                                {{ $kelasTerakhir[$contact->id]->materi->nama_materi ?? '-' }} |
+                                                ({{ $kelasTerakhir[$contact->id]->created_at->translatedFormat('d F Y') }})
+                                            @else
+                                                Belum ada kelas
+                                            @endif
+                                        </td>
+                                        <td>
+                                            {{ isset($aktivitasTerakhir[$contact->id]) ? $aktivitasTerakhir[$contact->id]->created_at->format('d-m-Y') : 'Belum ada aktivitas' }}
+                                        </td>
+
+                                        <td>
                                             <div class="d-flex gap-2">
                                                 <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal"
                                                     data-bs-target="#editContactModal"
@@ -56,7 +70,8 @@
                                                     @method('DELETE')
                                                     <button type="submit" class="btn btn-sm btn-danger">Hapus</button>
                                                 </form>
-                                                <a href="{{ route('detail.contact', $contact->id) }}" class="btn btn-sm btn-info">Detail</a>
+                                                <a href="{{ route('detail.contact', $contact->id) }}"
+                                                    class="btn btn-sm btn-info">Detail</a>
                                             </div>
                                         </td>
                                     </tr>
@@ -68,7 +83,8 @@
             </div>
 
             <!-- Modal Edit Contact -->
-            <div class="modal fade" id="editContactModal" tabindex="-1" aria-labelledby="editContactModalLabel" aria-hidden="true">
+            <div class="modal fade" id="editContactModal" tabindex="-1" aria-labelledby="editContactModalLabel"
+                aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
@@ -83,13 +99,15 @@
 
                                 <div class="mb-3">
                                     <label class="form-label" for="edit_nama_perusahaan">Nama Perusahaan</label>
-                                    <input type="text" class="form-control" id="edit_nama_perusahaan" name="nama_perusahaan" required maxlength="255">
+                                    <input type="text" class="form-control" id="edit_nama_perusahaan"
+                                        name="nama_perusahaan" required maxlength="255">
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label" for="edit_kategori_perusahaan">Kategori Perusahaan</label>
                                     <select class="form-select @error('kategori_perusahaan') is-invalid @enderror"
-                                            name="kategori_perusahaan" id="edit_kategori_perusahaan" autocomplete="kategori_perusahaan" required>
+                                        name="kategori_perusahaan" id="edit_kategori_perusahaan"
+                                        autocomplete="kategori_perusahaan" required>
                                         <option value="" selected>Pilih Kategori Perusahaan</option>
                                         <option value="Pemerintahan Daerah">Pemerintahan Daerah</option>
                                         <option value="Kementerian">Kementerian</option>
@@ -108,12 +126,14 @@
 
                                 <div class="mb-3">
                                     <label class="form-label" for="edit_cp">PIC</label>
-                                    <input type="text" class="form-control" id="edit_cp" name="cp" maxlength="100">
+                                    <input type="text" class="form-control" id="edit_cp" name="cp"
+                                        maxlength="100">
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label" for="edit_email">Email</label>
-                                    <input type="email" class="form-control" id="edit_email" name="email" required maxlength="255">
+                                    <input type="email" class="form-control" id="edit_email" name="email" required
+                                        maxlength="255">
                                 </div>
 
                                 <div class="mb-3">
@@ -163,7 +183,8 @@
 
                                 <div class="mb-3">
                                     <label class="form-label" for="edit_status">Status</label>
-                                    <select class="form-select @error('status') is-invalid @enderror" id="edit_status" name="status" autocomplete="status" required>
+                                    <select class="form-select @error('status') is-invalid @enderror" id="edit_status"
+                                        name="status" autocomplete="status" required>
                                         <option value="" selected>Pilih Status</option>
                                         <option value="Q1">Q1</option>
                                         <option value="Q2">Q2</option>
@@ -178,7 +199,8 @@
 
                                 <div class="mb-3">
                                     <label class="form-label" for="edit_npwp">NPWP</label>
-                                    <input type="text" class="form-control" id="edit_npwp" name="npwp" maxlength="50">
+                                    <input type="text" class="form-control" id="edit_npwp" name="npwp"
+                                        maxlength="50">
                                 </div>
 
                                 <div class="mb-3">
@@ -188,12 +210,15 @@
 
                                 <div class="mb-3">
                                     <label class="form-label" for="edit_no_telp">No Telepon</label>
-                                    <input type="text" class="form-control" id="edit_no_telp" name="no_telp" maxlength="20">
+                                    <input type="text" class="form-control" id="edit_no_telp" name="no_telp"
+                                        maxlength="20">
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label" for="edit_foto_npwp">Foto NPWP (jpg, jpeg, png, pdf max 2MB)</label>
-                                    <input type="file" accept=".jpg,.jpeg,.png,.pdf" class="form-control" id="edit_foto_npwp" name="foto_npwp">
+                                    <label class="form-label" for="edit_foto_npwp">Foto NPWP (jpg, jpeg, png, pdf max
+                                        2MB)</label>
+                                    <input type="file" accept=".jpg,.jpeg,.png,.pdf" class="form-control"
+                                        id="edit_foto_npwp" name="foto_npwp">
                                 </div>
 
                                 <button type="submit" class="btn btn-primary">Update</button>
@@ -214,17 +239,21 @@
                                 aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            <form id="perusahaanForm" action="{{ route('store.contact') }}" method="POST" enctype="multipart/form-data">
+                            <form id="perusahaanForm" action="{{ route('store.contact') }}" method="POST"
+                                enctype="multipart/form-data">
                                 @csrf
 
                                 <div class="mb-3">
                                     <label class="form-label" for="nama_perusahaan">Nama Perusahaan</label>
-                                    <input type="text" class="form-control" id="nama_perusahaan" name="nama_perusahaan" required>
+                                    <input type="text" class="form-control" id="nama_perusahaan"
+                                        name="nama_perusahaan" required>
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label" for="kategori_perusahaan">Kategori Perusahaan</label>
-                                    <select class="form-select @error('kategori_perusahaan') is-invalid @enderror" name="kategori_perusahaan" id="kategori_perusahaan" autocomplete="kategori_perusahaan">
+                                    <select class="form-select @error('kategori_perusahaan') is-invalid @enderror"
+                                        name="kategori_perusahaan" id="kategori_perusahaan"
+                                        autocomplete="kategori_perusahaan">
                                         <option value="" selected>Pilih Kategori Perusahaan</option>
                                         <option value="Pemerintahan Daerah">Pemerintahan Daerah</option>
                                         <option value="Kementerian">Kementerian</option>
@@ -292,18 +321,19 @@
                                 </div>
 
                                 <div class="mb-3">
-                                <label class="form-label" for="status">Status</label>
-                                <select class="form-select @error('status') is-invalid @enderror" id="status" name="status" autocomplete="status">
-                                    <option value="" selected>Pilih Status</option>
-                                    <option value="Q1">Q1</option>
-                                    <option value="Q2">Q2</option>
-                                    <option value="Q3">Q3</option>
-                                    <option value="Q4">Q4</option>
-                                    <option value="Database Baru">Database Baru</option>
-                                </select>
-                                @error('status')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                    <label class="form-label" for="status">Status</label>
+                                    <select class="form-select @error('status') is-invalid @enderror" id="status"
+                                        name="status" autocomplete="status">
+                                        <option value="" selected>Pilih Status</option>
+                                        <option value="Q1">Q1</option>
+                                        <option value="Q2">Q2</option>
+                                        <option value="Q3">Q3</option>
+                                        <option value="Q4">Q4</option>
+                                        <option value="Database Baru">Database Baru</option>
+                                    </select>
+                                    @error('status')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
                                 </div>
 
                                 <div class="mb-3">
@@ -333,7 +363,8 @@
 
                                 <div class="mb-3">
                                     <label class="form-label" for="foto_npwp">Foto NPWP</label>
-                                    <input class="form-control" type="file" id="foto_npwp" name="foto_npwp" accept=".jpeg,.jpg,.png,.pdf">
+                                    <input class="form-control" type="file" id="foto_npwp" name="foto_npwp"
+                                        accept=".jpeg,.jpg,.png,.pdf">
                                 </div>
 
                                 <button type="submit" class="btn btn-primary">Simpan</button>
@@ -376,6 +407,6 @@
 
             // Set action URL dinamis ke rute update perusahaan sesuai id
             document.getElementById('editContactForm').action = '/crm/contact/update/' + contact.id;
-    }
+        }
     </script>
 @endsection
