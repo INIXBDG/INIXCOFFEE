@@ -34,22 +34,41 @@ class ContactController extends Controller
 
     public function store(Request $request)
     {
+        // Validasi input sesuai field perusahaan
         $validated = $request->validate([
-            'id_perusahaan' => 'required|integer',
-            'nama_lengkap'  => 'required|string|max:255',
-            'email'         => 'required|email|max:255',
-            'cp'        => 'nullable|string|max:20',
-            'divisi'        => 'required|string|max:255',
+            'nama_perusahaan'      => 'required|string|max:255',
+            'kategori_perusahaan'  => 'nullable|string|max:255',
+            'lokasi'               => 'nullable|string|max:255',
+            // 'sales_key'            => 'nullable|string|max:255',
+            'status'               => 'nullable|string|max:255',
+            'npwp'                 => 'nullable|string|max:255',
+            'alamat'               => 'nullable|string|max:1000',
+            'cp'                   => 'nullable|string|max:20',
+            'no_telp'              => 'nullable|string|max:20',
+            'email'                => 'nullable|email|max:255',
+            'foto_npwp'            => 'nullable|file|mimes:jpeg,jpg,png,pdf|max:5120',
         ]);
 
-        // hanya untuk test function di postman, setelah selesai tolong diubah -> auth()->user()->id_sales
-        $validated['id_sales'] = $request->input('id_sales', auth()->user()->id_sales ?? null);
+        // Handle upload foto_npwp, jika ada
+        if ($request->hasFile('foto_npwp')) {
+            $file = $request->file('foto_npwp');
+            $extension = $file->getClientOriginalExtension();
+            $filename = $validated['nama_perusahaan'] . '_npwp.' . $extension;
+            $file->storeAs('public/npwp', $filename);
+            $validated['foto_npwp'] = $filename;
+        }
 
-        $contact = Contact::create($validated);
+        // Menambahkan id_sales dari input manual atau default dari user login
+        $id_sales = $request->input('id_sales', auth()->user()->id_sales ?? null);
+
+        $validated['sales_key'] = $id_sales;
+
+        // Simpan data perusahaan
+        $perusahaan = Perusahaan::create($validated + ['sales_key' => $id_sales]);
 
         return back()->with([
-            'message' => 'Kontak berhasil disimpan.',
-            'data' => $contact,
+            'message' => 'Data perusahaan berhasil disimpan.',
+            'data' => $perusahaan,
         ]);
     }
 
@@ -62,7 +81,7 @@ class ContactController extends Controller
             'message' => 'Kontak berhasil dihapus.',
         ]);
     }
-
+    
     public function update($id, Request $request)
     {
         // Validasi input request
@@ -78,6 +97,7 @@ class ContactController extends Controller
             'cp' => 'nullable|string|max:100',
             'foto_npwp' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ]);
+
         $contact = Perusahaan::findOrFail($id);
 
         // Update atribut dari data yang sudah tervalidasi
@@ -98,11 +118,12 @@ class ContactController extends Controller
             $filename = $validated['nama_perusahaan'] . '_npwp.' . $extension;
             $file->storeAs('public/npwp', $filename);
 
-            // Simpan path file ke kolom foto_npwp (pastikan ada kolom ini)
+            // Simpan path file ke kolom foto_npwp
             $contact->foto_npwp = 'npwp/' . $filename;
         }
 
-        $contact->update;
+        // Simpan perubahan ke database
+        $contact->save();
 
         return back()->with([
             'message' => 'Kontak berhasil diperbarui.',
