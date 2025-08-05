@@ -56,6 +56,7 @@
                                                     @method('DELETE')
                                                     <button type="submit" class="btn btn-sm btn-danger">Hapus</button>
                                                 </form>
+                                                <a href="{{ route('detail.contact', $contact->id) }}">Detail</a>
                                             </div>
                                         </td>
                                     </tr>
@@ -76,8 +77,7 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            <form id="editContactForm" method="POST" enctype="multipart/form-data"
-                                action="">
+                            <form id="editContactForm" method="POST" enctype="multipart/form-data" action="">
                                 @csrf
                                 @method('PUT')
                                 <input type="hidden" name="id" id="edit_contact_id">
