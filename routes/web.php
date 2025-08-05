@@ -359,6 +359,7 @@ Route::prefix('crm')->group(function () {
 
     // Contact CRM
     Route::get('/contact/index', [ContactController::class, 'index'])->name('index.contact');
+    Route::get('/contact/{id}/detail', [ContactController::class, 'detail'])->name('detail.contact');
     Route::post('/contact/store', [ContactController::class, 'store'])->name('store.contact');
     Route::delete('/contact/delete/{id}', [ContactController::class, 'delete'])->name('delete.contact');
     Route::put('/contact/update/{id}', [ContactController::class, 'update'])->name('update.contact');

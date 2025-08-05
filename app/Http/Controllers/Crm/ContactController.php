@@ -1,9 +1,11 @@
 <?php
 
 namespace App\Http\Controllers\Crm;
-use App\Http\Controllers\Controller;
 
+use App\Http\Controllers\Controller;
+use App\Models\Aktivitas;
 use App\Models\Contact;
+use App\Models\Peluang;
 use App\Models\Perusahaan;
 use App\Models\User;
 use Illuminate\Auth\Events\Validated;
@@ -30,6 +32,14 @@ class ContactController extends Controller
         }
 
         return view('crm.contact.index', compact('data', 'perusahaan'));
+    }
+
+    public function detail($id)
+    {
+        $data = Perusahaan::where('id', $id)->firstOrFail();
+        $peluang = Peluang::where('id_contact', $data->id)->get();
+        $aktivitas = Aktivitas::where('id_contact', $data->id)->get();
+        return view('crm.contact.detail', compact('data', 'peluang', 'aktivitas'));
     }
 
     public function store(Request $request)
@@ -129,5 +139,4 @@ class ContactController extends Controller
             'message' => 'Kontak berhasil diperbarui.',
         ]);
     }
-
 }
