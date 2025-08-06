@@ -363,6 +363,7 @@ Route::prefix('crm')->group(function () {
     Route::post('/contact/store', [ContactController::class, 'store'])->name('store.contact');
     Route::delete('/contact/delete/{id}', [ContactController::class, 'delete'])->name('delete.contact');
     Route::put('/contact/update/{id}', [ContactController::class, 'update'])->name('update.contact');
+    Route::get('/contact/data', [ContactController::class, 'getPerusahaan'])->name('contact.data');
 
     // Peluang CRM
     Route::get('/peluang/index', [PeluangController::class, 'index'])->name('index.peluang');
