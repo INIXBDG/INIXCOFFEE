@@ -8,12 +8,14 @@ use App\Http\Controllers\KelasAnalisisController;
 use App\Http\Controllers\RKMController as ControllersRKMController;
 use App\Http\Controllers\netSalesController;
 use App\Http\Controllers\pengajuanKlaimController;
+use App\Http\Controllers\DashboardItsmController;
 use App\Models\izinTigaJam;
 use App\Http\Controllers\InventarisController;
 use App\Models\Inventaris;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
+
 
 
 /*
@@ -38,11 +40,12 @@ Auth::routes(['register' => false, 'password.request' => false, 'password.email'
 Route::middleware('auth')->group(function () {
     Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
     Route::get('/user', [App\Http\Controllers\UserController::class, 'index'])->name('user.index');
-    Route::get('/karyawan/{id}/edit', [App\Http\Controllers\KaryawanController::class, 'edit'])->name('karyawan.edit');
-    Route::put('/karyawan/{id}', [App\Http\Controllers\KaryawanController::class, 'updateData'])->name('karyawan.update');
-    Route::get('/profile/{id}', [App\Http\Controllers\UserController::class, 'show'])->name('user.show');
-    Route::get('/user/{id}/password', [App\Http\Controllers\UserController::class, 'editPassword'])->name('user.editPassword');
-    Route::put('/user/{id}/password', [App\Http\Controllers\UserController::class, 'updatePassword'])->name('user.updatePassword');
+
+    Route::get('/karyawan/{hashid}/edit', [App\Http\Controllers\KaryawanController::class, 'edit'])->name('karyawan.edit'); //fixing route
+    Route::put('/karyawan/{hashid}', [App\Http\Controllers\KaryawanController::class, 'updateData'])->name('karyawan.update'); //fixing route
+    Route::get('/profile/{hashid}', [App\Http\Controllers\UserController::class, 'show'])->name('user.show'); //fixing route
+    Route::get('/user/{hashid}/password', [App\Http\Controllers\UserController::class, 'editPassword'])->name('user.editPassword'); //fixing route
+    Route::put('/user/{hashid}/password', [App\Http\Controllers\UserController::class, 'updatePassword'])->name('user.updatePassword'); //fixing route
     Route::delete('/user/{id}', [App\Http\Controllers\UserController::class, 'destroy'])->name('user.destroy');
     // Route::post('/user/{id}', [App\Http\Controllers\UserController::class, 'destroy'])->name('user.destroy');
     Route::get('/gantifoto/{id}', [App\Http\Controllers\KaryawanController::class, 'gantiFoto'])->name('karyawan.gantiFoto');
@@ -258,9 +261,13 @@ Route::get('/pengajuan-klaim/create/cancel-leave', [pengajuanKlaimController::cl
 Route::post('/pengajuan-klaim/add/no-record', [pengajuanKlaimController::class, 'createNoRecord'])->name('pengajuanklaim.addNoRecord');
 Route::post('/pengajuan-klaim/add/scheme-work', [pengajuanKlaimController::class, 'createCancelLeave'])->name('pengajuanklaim.addCancelLeave');
 Route::post('/pengajuan-klaim/add/cancel-leave', [pengajuanKlaimController::class, 'createSchemeWork'])->name('pengajuanklaim.addSchemeWork');
-Route::post('/pengajuan-klaim/aprove/no-record', [pengajuanKlaimController::class, 'approveNoRecord'])->name('pengajuanklaim.aproveNoRecord');
-Route::post('/pengajuan-klaim/aprove/scheme-work', [pengajuanKlaimController::class, 'approveCancelLeave'])->name('pengajuanklaim.aproveCancelLeave');
-Route::post('/pengajuan-klaim/aprove/cancel-leave', [pengajuanKlaimController::class, 'approveSchemeWork'])->name('pengajuanklaim.aproveSchemeWork');
+Route::post('/pengajuan-klaim/aprove/no-record', [pengajuanKlaimController::class, 'approveNoRecord'])->name('pengajuanklaim.approveNoRecord');
+// Approve Scheme Work
+Route::post('/pengajuan-klaim/approve/scheme-work', [pengajuanKlaimController::class, 'approveSchemeWork'])->name('pengajuanklaim.approveSchemeWork');
+
+// Approve Cancel Leave
+Route::post('/pengajuan-klaim/approve/cancel-leave', [pengajuanKlaimController::class, 'approveCancelLeave'])->name('pengajuanklaim.approveCancelLeave');
+
 Route::post('/pengajuan-klaim/delete/no-record', [pengajuanKlaimController::class, 'deleteNoRecord'])->name('pengajuanklaim.deleteNoRecord');
 Route::post('/pengajuan-klaim/delete/scheme-work', [pengajuanKlaimController::class, 'deleteCancelLeave'])->name('pengajuanklaim.deleteCancelLeave');
 Route::post('/pengajuan-klaim/delete/cancel-leave', [pengajuanKlaimController::class, 'deleteSchemeWork'])->name('pengajuanklaim.deleteSchemeWork');
@@ -295,7 +302,7 @@ Route::put('/rkm/{id}/registformupdate', [App\Http\Controllers\RKMController::cl
 Route::post('/rkm/download/excel', [App\Http\Controllers\RKMController::class, 'excelDownload'])->name('excel');
 Route::get('analisisrkm/{year}/{monthStart}/{monthEnd}', [App\Http\Controllers\KelasAnalisisController::class, 'getRkmDataPerBulanPerMinggu']);
 Route::get('analisisrkm/{id}/create', [App\Http\Controllers\KelasAnalisisController::class, 'create']);
-Route::get('analisisrkm/{year}/{month}/{week}', [App\Http\Controllers\KelasAnalisisController::class, 'getRkmDataByMonthAndWeek']);
+Route::get('getAnalisisRKM/{year}/{month}/{week}', [App\Http\Controllers\KelasAnalisisController::class, 'getRkmDataByMonthAndWeek']);
 Route::post('analisisrkm/{year}/{month}/{week}/post', [App\Http\Controllers\KelasAnalisisController::class, 'postAnalisisMingguan']);
 Route::put('analisisrkm/{year}/{month}/{week}/update', [App\Http\Controllers\KelasAnalisisController::class, 'updateAnalisisMingguan']);
 Route::get('analisisrkm/{year}/{month}', [App\Http\Controllers\KelasAnalisisController::class, 'getAnalisisMargin']);
@@ -346,8 +353,16 @@ Route::put('/inventaris/update/{id}', [InventarisController::class, 'user'])->na
 Route::post('/inventaris/add/service/{id}', [InventarisController::class, 'addservice'])->name('AddService');
 Route::post('/inventaris/add/check/{id}', [InventarisController::class, 'addcheck'])->name('AddCheck');
 Route::delete('/inventaris/delete/data/{id}', [InventarisController::class, 'deletedata'])->name('DeleteDataInventaris');
+Route::post('/inventaris/create/kode', [InventarisController::class, 'createKode'])->name('CreateKodeIinvetaris');
 
 Route::post('/inventaris/import', [InventarisController::class, 'import'])->name('ImportDataInventaris');
 
 Route::get('/penilaian360/index/{id_karyawan}', [App\Http\Controllers\DatabaseKPIController::class, 'index360'])->name('penilaian360');
 Route::get('/penilaian360/get/{id_karyawan}', [App\Http\Controllers\DatabaseKPIController::class, 'get360'])->name('get360');
+Route::get('/ticketing-data', [DashboardItsmController::class, 'getJumlahPermintaan']);
+Route::get('/jumlah-pic', [DashboardItsmController::class, 'getJumlahPIC']);
+Route::get('/rerata-durasi-data', [DashboardItsmController::class, 'getRerataDurasi']);
+Route::get('/rerata-ketepatan-response-data', [DashboardItsmController::class, 'getRerataKetepatanResponse']);
+Route::get('/jumlah-permintaan-per-bulan', [DashboardItsmController::class, 'getJumlahPermintaanPerBulan']);
+Route::get('/permintaan-sering-diajukan', [DashboardItsmController::class, 'getPermintaanSeringDiajukan']);
+Route::get('/list-bulan', [DashboardItsmController::class, 'getListBulan']);

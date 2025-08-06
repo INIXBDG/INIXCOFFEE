@@ -1,4 +1,5 @@
 @extends('layouts.app')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
 @section('content')
 <div class="container-fluid">
@@ -59,9 +60,9 @@
         <div class="col-md-12">
             <div class="d-flex justify-content-end">
                 @if (auth()->user()->jabatan === 'HRD')
-                <a href="{{ route('pengajuanIzin.excelDownload') }}" class="btn btn-success me-3" data-toggle="tooltip" data-placement="top" title="Rekap Excel"><img src="{{ asset('icon/file-excel.svg') }}" class="" width="30px"> Download Excel</a>
-                <a href="{{ route('pengajuanIzin.PDFDownload') }}" class="btn btn-danger" data-toggle="tooltip" data-placement="top" title="Rekap PDF">
-                    <img src="{{ asset('icon/pdf-file.svg') }}" class="" width="30px"> Download PDF
+                <a href="{{ route('pengajuanIzin.excelDownload') }}" class="btn btn-outline-success me-3" data-toggle="tooltip" data-placement="top" title="Rekap Excel"><img src="{{ asset('icon/file-excel.svg') }}" class="" width="30px"> Download Excel</a>
+                <a href="{{ route('pengajuanIzin.PDFDownload') }}" class="btn btn-outline-danger" data-toggle="tooltip" data-placement="top" title="Rekap PDF">
+                    <img src="{{ asset('icon/document-pdf.svg') }}" class="" width="30px"> Download PDF
                 </a>
                 @endif
                 <a href="pengajuanizin/create" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Ajukan Izin"><img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> Ajukan Izin</a>
@@ -79,7 +80,8 @@
                                 <th scope="col">Jam</th>
                                 <th scope="col">Alasan</th>
                                 <th scope="col">Durasi</th>
-                                <th scope="col">Tanggal</th>
+                                <th scope="col">Dibuat</th>
+                                <th scope="col">Tanggal Izin</th>
                                 <th scope="col">Status</th>
                                 <th scope="col">Alasan Approval</th>
                                 <th scope="col">Aksi</th>
@@ -214,28 +216,50 @@
                     }
                 },
                 {
-                    "data": "tanggal",
+                    "data": "created_at",
                     "render": function(data, type, row) {
-                        return moment(row.tanggal).isValid() ? moment(row.tanggal).format('DD MMMM YYYY') : '-';
+                        return moment(data).format('DD MMMM YYYY');
                     }
                 },
-                {
-                    "data": "approval",
-                    "render": function(data, type, row) {
-                        switch (parseInt(row.approval)) {
-                            case 0:
-                                return '<span class="badge bg-warning text-dark">Menunggu Koordinator</span>';
-                            case 1:
-                                return '<span class="badge bg-warning text-dark">Menunggu HRD</span>';
-                            case 2:
-                                return '<span class="badge bg-success">Disetujui</span>';
-                            case 4:
-                                return '<span class="badge bg-danger">Ditolak</span>';
-                            default:
-                                return '<span class="badge bg-secondary text-dark">Status Tidak Diketahui</span>';
-                        }
-                    }
-                },
+{
+    "data": "tanggal_pengajuan_terformat"
+},
+
+
+
+{
+    "data": "approval",
+    "render": function(data, type, row) {
+        switch (parseInt(row.approval)) {
+            case 0:
+                return `
+                    <span class="badge rounded-pill bg-warning text-dark">
+                        <i class="bi bi-hourglass-split me-1"></i> Menunggu Koordinator
+                    </span>`;
+            case 1:
+                return `
+                    <span class="badge rounded-pill bg-warning text-dark">
+                        <i class="bi bi-hourglass-top me-1"></i> Menunggu HRD
+                    </span>`;
+            case 2:
+                return `
+                    <span class="badge rounded-pill bg-success">
+                        <i class="bi bi-check-circle me-1"></i> Disetujui
+                    </span>`;
+            case 4:
+                return `
+                    <span class="badge rounded-pill bg-danger">
+                        <i class="bi bi-x-circle me-1"></i> Ditolak
+                    </span>`;
+            default:
+                return `
+                    <span class="badge rounded-pill bg-secondary text-dark">
+                        <i class="bi bi-question-circle me-1"></i> Tidak Diketahui
+                    </span>`;
+        }
+    }
+},
+
                 {
                     "data": "alasan_approval",
                     "render": function(data) {
@@ -245,67 +269,66 @@
                 {
                     "data": null,
                     "render": function(data, type, row) {
-                        var actions = "";
-                        var userRole = '{{ auth()->user()->jabatan }}';
-                        var requesterRole = data.karyawan.jabatan;
-                        var requesterDivisi = data.karyawan.divisi;
-                        var approval = data.approval;
+
+                        let approval = row.approval;
+                        let userRole = '{{ auth()->user()->jabatan }}';
+                        let requesterDivisi = row.karyawan.divisi;
+                        let requesterRole = row.karyawan.jabatan;
+                        let actions = "";
+
+                        let iconBase = "{{ asset('icon') }}";
 
                         actions += '<div class="dropdown">';
                         actions += '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
                         actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
 
-                        // Form PDF hanya jika approval === 2
+                        // Tombol PDF jika disetujui
                         if (approval === 2) {
-                            actions += '<a class="dropdown-item" href="/pengajuanizin/' + row.id + '">';
-                            actions += '<img src="{{ asset('icon/assept-document.svg') }}" style="width:24px" class=""> Form PDF</a>';
+                            actions += `<a class="dropdown-item" href="/pengajuanizin/${row.id}">`;
+                            actions += `<img src="${iconBase}/assept-document.svg" style="width:24px" class=""> Form PDF</a>`;
                         }
 
                         // Tombol Approve
                         let approveDisabled = true;
                         let approveColor = '';
 
-                        if (approval === 0 && userRole.includes('Koordinator')) {
-                            approveDisabled = false;
-                        } else if (approval === 0 && userRole === 'Education Manager' && requesterDivisi === 'Education') {
-                            approveDisabled = false;
-                        } else if (approval === 0 && userRole === 'SPV Sales' && requesterDivisi === 'Sales & Marketing') {
-                            approveDisabled = false;
-                        } else if (approval === 0 && userRole === 'Koordinator ITSM' && requesterDivisi === 'IT Service Management') {
-                            approveDisabled = false;
-                        } else if (approval === 1 && userRole === 'HRD') {
-                            approveDisabled = false;
-                        } else if (approval === 4) {
+                        if (approval === 0 && userRole.includes('Koordinator')) approveDisabled = false;
+                        else if (approval === 0 && userRole === 'Education Manager' && requesterDivisi === 'Education') approveDisabled = false;
+                        else if (approval === 0 && userRole === 'SPV Sales' && requesterDivisi === 'Sales & Marketing') approveDisabled = false;
+                        else if (approval === 0 && userRole === 'Koordinator ITSM' && requesterDivisi === 'IT Service Management') approveDisabled = false;
+                        else if (approval === 1 && userRole === 'HRD') approveDisabled = false;
+                        else if (approval === 4) {
                             approveDisabled = true;
                             approveColor = ' style="color: red;"';
                         }
 
                         if (approval <= 2) {
-                            actions += '<button type="button" class="dropdown-item' + (approveDisabled ? ' disabled' : '') + '" ' +
-                                (approveDisabled ? '' : 'onclick="openApproveModal(' + row.id + ', \'' + userRole + '\')"') + approveColor + '>';
-                            actions += '<img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
+                            actions += `<button type="button" class="dropdown-item${approveDisabled ? ' disabled' : ''}" ` +
+                                (approveDisabled ? '' : `onclick="openApproveModal(${row.id}, '${userRole}')"`) + approveColor + `>`;
+                            actions += `<img src="${iconBase}/clipboard-primary.svg" class=""> Approve</button>`;
                         }
 
                         if (approval === 4) {
                             actions += '<button type="button" class="dropdown-item disabled text-danger">';
-                            actions += '<img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Ditolak</button>';
+                            actions += `<img src="${iconBase}/clipboard-primary.svg" class=""> Ditolak</button>`;
                         }
 
-                        // Tombol Hapus untuk HRD di approval 0, 2, atau 4
-                        if ((userRole === 'HRD' && approval === 4) || (userRole === 'HRD' && approval === 0) || (userRole === 'HRD' && approval === 2)) {
-                            actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/pengajuanizin') }}/' + row.id + '" method="POST">';
-                            actions += '@csrf';
-                            actions += '@method("DELETE")';
-                            actions += '<button type="submit" class="dropdown-item">';
-                            actions += '<img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
-                            actions += '</form>';
+                        // Tombol Hapus untuk HRD jika approval = 0, 2, atau 4
+                        if (userRole === 'HRD' && [0, 2, 4].includes(approval)) {
+                            actions += `<form onsubmit="return confirm('Apakah Anda Yakin ?');" action="/pengajuanizin/${row.id}" method="POST">`;
+                            actions += `<input type="hidden" name="_token" value="{{ csrf_token() }}">`;
+                            actions += `<input type="hidden" name="_method" value="DELETE">`;
+                            actions += `<button type="submit" class="dropdown-item">`;
+                            actions += `<img src="${iconBase}/trash-danger.svg" class=""> Hapus</button>`;
+                            actions += `</form>`;
                         }
 
                         actions += '</div></div>';
                         return actions;
                     }
                 }
-           ],
+
+            ],
             "order": [
                 [0, 'desc']
             ]
@@ -317,6 +340,8 @@
         var approvalNo = document.getElementById('approveNo');
         var alasanTextarea = document.getElementById('alasan_approval');
         var jabatan = @json(auth()->user()->jabatan);
+
+
 
         if (approvalNo.checked) {
             if (!alasanTextarea.value.trim()) {

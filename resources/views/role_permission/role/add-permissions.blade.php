@@ -14,39 +14,41 @@
                         {{-- <label for="permissions">Permissions</label> --}}
                         <div class="row mb-3">
                             @foreach ($groupedPermissions as $key => $permissions)
-                            <div class="col-md-4">
-                                <div class="cardLive">
-                                    <div class="toolsie">
-                                      <div class="circles">
-                                        <span class="red box"></span>
-                                      </div>
-                                      <div class="circles">
-                                        <span class="yellow box"></span>
-                                      </div>
-                                      <div class="circles">
-                                        <span class="green box"></span>
-                                      </div>
-                                    </div>
-                                    <div class="card__content">
-                                        <h4 style="text-transform:uppercase">{{ $key }}</h4>
-                                        @foreach ($permissions as $item)
-                                            <label for="permission_{{ $item->id }}" class="cl-checkbox">
-                                                <input 
-                                                    type="checkbox" 
-                                                    name="permissions[]" 
-                                                    id="permission_{{ $item->id }}" 
-                                                    value="{{ $item->name }}" 
-                                                    {{ in_array($item->id, $rolePermissions) ? 'checked' : '' }}
-                                                /> 
-                                                <span>{{ $item->name }}</span>
-                                            </label>
-                                            <br>
-                                        @endforeach
+                                @if (!(auth()->user()->jabatan == 'Programmer' && $key == 'Duper'))
+                                <div class="col-md-4">
+                                    <div class="cardLive">
+                                        <div class="toolsie">
+                                            <div class="circles">
+                                                <span class="red box"></span>
+                                            </div>
+                                            <div class="circles">
+                                                <span class="yellow box"></span>
+                                            </div>
+                                            <div class="circles">
+                                                <span class="green box"></span>
+                                            </div>
+                                        </div>
+                                        <div class="card__content">
+                                            <h4 style="text-transform:uppercase">{{ $key }}</h4>
+                                            @foreach ($permissions as $item)
+                                                <label for="permission_{{ $item->id }}" class="cl-checkbox">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        name="permissions[]" 
+                                                        id="permission_{{ $item->id }}" 
+                                                        value="{{ $item->name }}" 
+                                                        {{ in_array($item->id, $rolePermissions) ? 'checked' : '' }}
+                                                    /> 
+                                                    <span>{{ $item->name }}</span>
+                                                </label>
+                                                <br>
+                                            @endforeach
+                                        </div>
                                     </div>
                                 </div>
-                                
-                            </div>
+                                @endif
                             @endforeach
+
                         </div>
                                               
                         <div class="row mb-4">

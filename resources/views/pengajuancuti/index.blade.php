@@ -1,4 +1,6 @@
 @extends('layouts.app')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
 
 @section('content')
 <div class="container-fluid">
@@ -183,18 +185,28 @@
                         return moment(data.tanggal_awal).format('DD MMMM YYYY')+ ' s/d ' + moment(data.tanggal_akhir).format('DD MMMM YYYY');
                     }
                 },
-                {
-                    "data": null,
-                    "render": function(data) {
-                        if (data.approval_manager == '0') {
-                            return '<span class="badge bg-warning" style="color:black;"> Menunggu Persetujuan Manager Divisi </span>';
-                        } else if (data.approval_manager == '1') {
-                            return '<span class="badge bg-success"> Disetujui </span>';
-                        } else if (data.approval_manager == '2') {
-                            return '<span class="badge bg-danger"> Ditolak </span>';
-                        }
-                    },
-                },
+{
+    "data": null,
+    "render": function(data) {
+        if (data.approval_manager == '0') {
+            return `
+                <span class="badge rounded-pill bg-warning text-dark">
+                    <i class="bi bi-hourglass-split me-1"></i> Menunggu Persetujuan Manager Divisi
+                </span>`;
+        } else if (data.approval_manager == '1') {
+            return `
+                <span class="badge rounded-pill bg-success">
+                    <i class="bi bi-check-circle me-1"></i> Disetujui
+                </span>`;
+        } else if (data.approval_manager == '2') {
+            return `
+                <span class="badge rounded-pill bg-danger">
+                    <i class="bi bi-x-circle me-1"></i> Ditolak
+                </span>`;
+        }
+    }
+},
+
                 {   "data": null,
                     "render": function(data) {
                         if (data.alasan_manager == null) {
@@ -228,21 +240,25 @@
                             }
 
                             if (userRole == 'GM') {
-                                // GM can only approve if the requester is Office Manager, Education Manager, or SPV Sales
-                                if (['Office Manager', 'Education Manager', 'SPV Sales', 'Koordinator Office', 'Koordinator ITSM'].includes(requesterRole)) {
-                                    if (data.approval_manager === '1') {
-                                        actions += '<a class="dropdown-item" href="{{route('pengajuancuti.show', ':id')}}"><img src="{{ asset('icon/assept-document.svg') }}" style="width:24px" class=""> Form PDF</a>';
-                                        actions = actions.replace(':id', data.id);
-                                        actions += '<button type="button" class="dropdown-item disabled"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
-                                    } else if (data.approval_manager === '2') {
-                                        actions += '<button type="button" class="dropdown-item disabled"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
-                                    } else {
-                                        actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
-                                    }
-                                } else {
-                                    actions += '<button type="button" class="dropdown-item disabled"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
+                            const allowedIds = [4, 14, 29]; // ID spesial yang boleh dia approve
+                            const isOffice = data.karyawan.divisi === 'Office';
+                             const isSpesialId = allowedIds.includes(data.karyawan.id);
+
+                                if (isOffice || isSpesialId) {
+                                     if (data.approval_manager === '1') {
+                                            actions += '<a class="dropdown-item" href="{{route('pengajuancuti.show', ':id')}}"><img src="{{ asset('icon/assept-document.svg') }}" style="width:24px" class=""> Form PDF</a>';
+                                            actions = actions.replace(':id', data.id);
+                                            actions += '<button type="button" class="dropdown-item disabled"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
+                                             } else if (data.approval_manager === '2') {
+                                              actions += '<button type="button" class="dropdown-item disabled"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
+                                             } else {
+                                                 actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
+                                              }
+                                             } else {
+                                                 actions += '<button type="button" class="dropdown-item disabled"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
                                 }
-                            } else if (userRole !== requesterRole) {
+                                            }
+                                    else if (userRole !== requesterRole) {
                                 // Other roles can approve subordinate's requests, but not their own
                                 if (data.approval_manager === '1') {
                                     actions += '<a class="dropdown-item" href="{{route('pengajuancuti.show', ':id')}}"><img src="{{ asset('icon/assept-document.svg') }}" style="width:24px" class=""> Form PDF</a>';

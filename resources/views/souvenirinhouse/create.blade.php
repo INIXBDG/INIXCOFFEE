@@ -18,6 +18,7 @@
                                     <option value="">-- Pilih Souvenir --</option>
                                     {{-- @foreach ( $souvenir as $s ) --}}
                                     {{-- <option value="{{ $s->id }}">{{ $s->nama_souvenir }}</option> --}}
+                                    <option value="All Item">All Item</option>
                                     <option value="Jaket">Jaket</option>
                                     <option value="Diffuser">Diffuser</option>
                                     <option value="Pouch">Pouch</option>

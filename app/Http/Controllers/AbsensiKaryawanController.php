@@ -148,6 +148,7 @@ class AbsensiKaryawanController extends Controller
     private function validateShiftWaktu($waktu, $shift, $jabatan)
     {
         $config = $this->getShiftConfig($waktu->dayOfWeek, $jabatan, $shift);
+        $isWeekend = ($waktu->dayOfWeek == Carbon::SATURDAY || $waktu->dayOfWeek == Carbon::SUNDAY);
 
         if (!$waktu->between($config['jamAwal'], $config['jamAkhir'])) {
             return [
@@ -158,7 +159,17 @@ class AbsensiKaryawanController extends Controller
             ];
         }
 
-        // Hitung keterlambatan
+        // Jika hari Sabtu atau Minggu dan jabatan bukan Office Boy atau Technical Support,
+        // maka tidak dianggap terlambat sama sekali
+        if ($isWeekend && !in_array($jabatan, ['Office Boy', 'Technical Support'])) {
+            return [
+                'valid' => true,
+                'keterangan' => 'Masuk',
+                'keterlambatan' => '00:00:00'
+            ];
+        }
+
+        // Hitung keterlambatan untuk jabatan lain dan hari selain weekend
         $keterlambatan = '00:00:00';
         $keterangan = 'Masuk';
 
@@ -176,6 +187,7 @@ class AbsensiKaryawanController extends Controller
             'keterlambatan' => $keterlambatan
         ];
     }
+
 
     private function getShiftConfig($dayOfWeek, $jabatan, $shift)
     {
