@@ -33,6 +33,9 @@
                             <dt class="col-sm-4">Contact Person</dt>
                             <dd class="col-sm-8">{{ $data->cp ?? '-' }}</dd>
 
+                            <dt class="col-sm-4">Email</dt>
+                            <dd class="col-sm-8">{{ $data->email ?? '-' }}</dd>
+
                             <dt class="col-sm-4">No. Telp</dt>
                             <dd class="col-sm-8">{{ $data->no_telp ?? '-' }}</dd>
 
