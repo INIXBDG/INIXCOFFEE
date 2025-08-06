@@ -145,61 +145,68 @@ class AbsensiKaryawanController extends Controller
         }
     }
 
-    private function validateShiftWaktu($waktu, $shift, $jabatan)
-    {
-        $config = $this->getShiftConfig($waktu->dayOfWeek, $jabatan, $shift);
-        $isWeekend = ($waktu->dayOfWeek == Carbon::SATURDAY || $waktu->dayOfWeek == Carbon::SUNDAY);
+private function validateShiftWaktu($waktu, $shift, $jabatan, $jenisAbsen = 'masuk')
+{
+    $config = $this->getShiftConfig($waktu->dayOfWeek, $jabatan, $shift);
+    $isWeekend = ($waktu->dayOfWeek == Carbon::SATURDAY || $waktu->dayOfWeek == Carbon::SUNDAY);
 
+    $id_karyawan = auth()->user()->karyawan_id;
 
-        $id_karyawan = auth()->user()->karyawan_id;
+    $izinHariIni = izinTigaJam::where('id_karyawan', $id_karyawan)
+        ->whereDate('tanggal_pengajuan', $waktu->toDateString())
+        ->where('approval', 2)
+        ->first();
 
-        $izinHariIni = izinTigaJam::where('id_karyawan', $id_karyawan)
-            ->whereDate('tanggal_pengajuan', $waktu->toDateString())
-            ->where('approval', 2)
-            ->first();
-
-        if (!$waktu->between($config['jamAwal'], $config['jamAkhir'])) {
-            return [
-                'valid' => false,
-                'message' => 'Waktu absen tidak sesuai shift. Jam kerja: ' .
-                    $config['jamAwal']->format('H:i') . ' - ' .
-                    $config['jamAkhir']->format('H:i')
-            ];
-        }
-
-        // Jika hari Sabtu atau Minggu dan jabatan bukan Office Boy atau Technical Support,
-        // maka tidak dianggap terlambat sama sekali
-        if ($isWeekend && !in_array($jabatan, ['Office Boy', 'Technical Support'])) {
+    // Jika absen pulang dan ada izin di atas jam 12 siang
+    if ($jenisAbsen === 'pulang' && $izinHariIni) {
+        $jamMulaiIzin = Carbon::createFromFormat('H:i:s', $izinHariIni->jam_mulai);
+        if ($jamMulaiIzin->greaterThanOrEqualTo(Carbon::createFromTimeString('12:00:00'))) {
             return [
                 'valid' => true,
-                'keterangan' => 'Masuk',
+                'keterangan' => 'Pulang - Izin 3 Jam (' . $jamMulaiIzin->format('H:i') . ' - ' .
+                    Carbon::createFromFormat('H:i:s', $izinHariIni->jam_selesai)->format('H:i') . ')',
                 'keterlambatan' => '00:00:00'
             ];
         }
+    }
 
-        // Hitung keterlambatan untuk jabatan lain dan hari selain weekend
-        $keterlambatan = '00:00:00';
-        $keterangan = 'Masuk';
-        if ($izinHariIni) {
-            $keterangan = 'Izin 3 Jam';
-            $keterlambatan = '00:00:00';
-        } elseif ($waktu->greaterThan($config['jamMulaiShift'])) {
-            $diffMinutes = $waktu->diffInMinutes($config['jamMulaiShift']);
-            $hours = intdiv($diffMinutes, 60);
-            $minutes = ($diffMinutes % 60);
-            $keterlambatan = sprintf('%02d:%02d:00', $hours, $minutes);
-            $keterangan = 'Telat';
-        } else {
-            $keterangan = 'Masuk'; //fallback
-            $keterlambatan = '00:00:00';
-        }
-
+    if (!$waktu->between($config['jamAwal'], $config['jamAkhir'])) {
         return [
-            'valid' => true,
-            'keterangan' => $keterangan,
-            'keterlambatan' => $keterlambatan
+            'valid' => false,
+            'message' => 'Waktu absen tidak sesuai shift. Jam kerja: ' .
+                $config['jamAwal']->format('H:i') . ' - ' .
+                $config['jamAkhir']->format('H:i')
         ];
     }
+
+    if ($isWeekend && !in_array($jabatan, ['Office Boy', 'Technical Support'])) {
+        return [
+            'valid' => true,
+            'keterangan' => 'Masuk',
+            'keterlambatan' => '00:00:00'
+        ];
+    }
+
+    $keterlambatan = '00:00:00';
+    $keterangan = 'Masuk';
+    if ($izinHariIni) {
+        $keterangan = 'Izin 3 Jam';
+        $keterlambatan = '00:00:00';
+    } elseif ($waktu->greaterThan($config['jamMulaiShift'])) {
+        $diffMinutes = $waktu->diffInMinutes($config['jamMulaiShift']);
+        $hours = intdiv($diffMinutes, 60);
+        $minutes = ($diffMinutes % 60);
+        $keterlambatan = sprintf('%02d:%02d:00', $hours, $minutes);
+        $keterangan = 'Telat';
+    }
+
+    return [
+        'valid' => true,
+        'keterangan' => $keterangan,
+        'keterlambatan' => $keterlambatan
+    ];
+}
+
 
 
     private function getShiftConfig($dayOfWeek, $jabatan, $shift)

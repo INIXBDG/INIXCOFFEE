@@ -18,6 +18,7 @@ class karyawan extends Model
         'foto',
         'nip',
         'nama_lengkap',
+        'email',
         'divisi',
         'jabatan',
         'rekening_maybank',
