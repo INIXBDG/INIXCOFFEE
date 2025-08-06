@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Crm;
 use App\Http\Controllers\Controller;
 use App\Models\Aktivitas;
 use App\Models\Contact;
+use App\Models\Materi;
 use App\Models\Peluang;
 use App\Models\Perusahaan;
 use App\Models\RKM;
@@ -53,8 +54,13 @@ class ContactController extends Controller
     {
         $data = Perusahaan::where('id', $id)->firstOrFail();
         $peluang = Peluang::where('id_contact', $data->id)->get();
-        $aktivitas = Aktivitas::where('id_contact', $data->id)->get();
-        return view('crm.contact.detail', compact('data', 'peluang', 'aktivitas'));
+        $aktivitass = Aktivitas::where('id_contact', $data->id)->orderByDesc('created_at')->get();
+        $aktivitas = Aktivitas::where('id_contact', $data->id)
+            ->whereNull('id_peluang')
+            ->orderByDesc('created_at')
+            ->get();
+        $materi = Materi::all();
+        return view('crm.contact.detail', compact('data', 'peluang', 'aktivitas', 'materi', 'aktivitass'));
     }
 
     public function store(Request $request)

@@ -117,7 +117,7 @@ class PeluangController extends Controller
             $item->delete();
         }
 
-        return response()->json(['message' => 'Peluang berhasil dihapus.']);
+        return redirect()->route('index.contact');
     }
 
     public function update(Request $request, $id)
