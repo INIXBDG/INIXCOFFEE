@@ -39,8 +39,7 @@
                             <dt class="col-sm-4">Foto NPWP</dt>
                             <dd class="col-sm-8">
                                 @if (!empty($data->foto_npwp))
-                                    <a href="{{ asset('storage/' . $data->foto_npwp) }}" target="_blank">Lihat Foto
-                                        NPWP</a>
+                                    <a href="{{ asset('storage/' . $data->foto_npwp) }}" target="_blank">Lihat Foto NPWP</a>
                                 @else
                                     -
                                 @endif
@@ -100,21 +99,8 @@
                                             </td>
                                             <td class="px-3 py-2 text-center">
                                                 <div class="d-flex gap-2 justify-content-center">
-                                                    <button type="button" class="btn btn-sm btn-warning"
-                                                        data-bs-toggle="modal" data-bs-target="#editPeluangModal"
-                                                        onclick='editPeluang(@json($item))'>
-                                                        Edit
-                                                    </button>
-                                                    <form action="#" method="POST"
-                                                        onsubmit="return confirm('Yakin ingin menghapus?')"
-                                                        style="display: inline;">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="btn btn-sm btn-danger">Hapus</button>
-                                                    </form>
-                                                    <button type="button" class="btn btn-sm btn-primary">
-                                                        Edit
-                                                    </button>
+                                                    <a href="{{ route('detail.peluang', $item->id) }}"
+                                                        class="btn btn-sm btn-info">Detail</a>
                                                 </div>
                                             </td>
                                         </tr>
@@ -136,7 +122,8 @@
                                     aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
-                                <form id="editContactForm" method="POST" enctype="multipart/form-data" action="#">
+                                <form id="editContactForm" method="POST" enctype="multipart/form-data"
+                                    action="{{ route('update.contact', $data->id) }}">
                                     @csrf
                                     @method('PUT')
                                     <input type="hidden" name="id" id="edit_contact_id">
@@ -253,63 +240,62 @@
                                             <option value="Nusa Tenggara Barat"
                                                 {{ $data->lokasi == 'Nusa Tenggara Barat' ? 'selected' : '' }}>Nusa
                                                 Tenggara Barat</option>
-                                            <option😊 value="Nusa Tenggara Timur"
+                                            <option value="Nusa Tenggara Timur"
                                                 {{ $data->lokasi == 'Nusa Tenggara Timur' ? 'selected' : '' }}>Nusa
                                                 Tenggara Timur</option>
-                                                <option value="Kalimantan Barat"
-                                                    {{ $data->lokasi == 'Kalimantan Barat' ? 'selected' : '' }}>Kalimantan
-                                                    Barat</option>
-                                                <option value="Kalimantan Tengah"
-                                                    {{ $data->lokasi == 'Kalimantan Tengah' ? 'selected' : '' }}>Kalimantan
-                                                    Tengah</option>
-                                                <option value="Kalimantan Selatan"
-                                                    {{ $data->lokasi == 'Kalimantan Selatan' ? 'selected' : '' }}>
-                                                    Kalimantan Selatan</option>
-                                                <option value="Kalimantan Timur"
-                                                    {{ $data->lokasi == 'Kalimantan Timur' ? 'selected' : '' }}>Kalimantan
-                                                    Timur</option>
-                                                <option value="Kalimantan Utara"
-                                                    {{ $data->lokasi == 'Kalimantan Utara' ? 'selected' : '' }}>Kalimantan
-                                                    Utara</option>
-                                                <option value="Sulawesi Utara"
-                                                    {{ $data->lokasi == 'Sulawesi Utara' ? 'selected' : '' }}>Sulawesi
-                                                    Utara</option>
-                                                <option value="Gorontalo"
-                                                    {{ $data->lokasi == 'Gorontalo' ? 'selected' : '' }}>Gorontalo</option>
-                                                <option value="Sulawesi Tengah"
-                                                    {{ $data->lokasi == 'Sulawesi Tengah' ? 'selected' : '' }}>Sulawesi
-                                                    Tengah</option>
-                                                <option value="Sulawesi Barat"
-                                                    {{ $data->lokasi == 'Sulawesi Barat' ? 'selected' : '' }}>Sulawesi
-                                                    Barat</option>
-                                                <option value="Sulawesi Selatan"
-                                                    {{ $data->lokasi == 'Sulawesi Selatan' ? 'selected' : '' }}>Sulawesi
-                                                    Selatan</option>
-                                                <option value="Sulawesi Tenggara"
-                                                    {{ $data->lokasi == 'Sulawesi Tenggara' ? 'selected' : '' }}>Sulawesi
-                                                    Tenggara</option>
-                                                <option value="Maluku" {{ $data->lokasi == 'Maluku' ? 'selected' : '' }}>
-                                                    Maluku</option>
-                                                <option value="Maluku Utara"
-                                                    {{ $data->lokasi == 'Maluku Utara' ? 'selected' : '' }}>Maluku Utara
-                                                </option>
-                                                <option value="Papua" {{ $data->lokasi == 'Papua' ? 'selected' : '' }}>
-                                                    Papua</option>
-                                                <option value="Papua Barat"
-                                                    {{ $data->lokasi == 'Papua Barat' ? 'selected' : '' }}>Papua Barat
-                                                </option>
-                                                <option value="Papua Selatan"
-                                                    {{ $data->lokasi == 'Papua Selatan' ? 'selected' : '' }}>Papua Selatan
-                                                </option>
-                                                <option value="Papua Tengah"
-                                                    {{ $data->lokasi == 'Papua Tengah' ? 'selected' : '' }}>Papua Tengah
-                                                </option>
-                                                <option value="Papua Pegunungan"
-                                                    {{ $data->lokasi == 'Papua Pegunungan' ? 'selected' : '' }}>Papua
-                                                    Pegunungan</option>
-                                                <option value="Papua Barat Daya"
-                                                    {{ $data->lokasi == 'Papua Barat Daya' ? 'selected' : '' }}>Papua Barat
-                                                    Daya</option>
+                                            <option value="Kalimantan Barat"
+                                                {{ $data->lokasi == 'Kalimantan Barat' ? 'selected' : '' }}>Kalimantan
+                                                Barat</option>
+                                            <option value="Kalimantan Tengah"
+                                                {{ $data->lokasi == 'Kalimantan Tengah' ? 'selected' : '' }}>Kalimantan
+                                                Tengah</option>
+                                            <option value="Kalimantan Selatan"
+                                                {{ $data->lokasi == 'Kalimantan Selatan' ? 'selected' : '' }}>Kalimantan
+                                                Selatan</option>
+                                            <option value="Kalimantan Timur"
+                                                {{ $data->lokasi == 'Kalimantan Timur' ? 'selected' : '' }}>Kalimantan
+                                                Timur</option>
+                                            <option value="Kalimantan Utara"
+                                                {{ $data->lokasi == 'Kalimantan Utara' ? 'selected' : '' }}>Kalimantan
+                                                Utara</option>
+                                            <option value="Sulawesi Utara"
+                                                {{ $data->lokasi == 'Sulawesi Utara' ? 'selected' : '' }}>Sulawesi Utara
+                                            </option>
+                                            <option value="Gorontalo"
+                                                {{ $data->lokasi == 'Gorontalo' ? 'selected' : '' }}>Gorontalo</option>
+                                            <option value="Sulawesi Tengah"
+                                                {{ $data->lokasi == 'Sulawesi Tengah' ? 'selected' : '' }}>Sulawesi Tengah
+                                            </option>
+                                            <option value="Sulawesi Barat"
+                                                {{ $data->lokasi == 'Sulawesi Barat' ? 'selected' : '' }}>Sulawesi Barat
+                                            </option>
+                                            <option value="Sulawesi Selatan"
+                                                {{ $data->lokasi == 'Sulawesi Selatan' ? 'selected' : '' }}>Sulawesi
+                                                Selatan</option>
+                                            <option value="Sulawesi Tenggara"
+                                                {{ $data->lokasi == 'Sulawesi Tenggara' ? 'selected' : '' }}>Sulawesi
+                                                Tenggara</option>
+                                            <option value="Maluku" {{ $data->lokasi == 'Maluku' ? 'selected' : '' }}>
+                                                Maluku</option>
+                                            <option value="Maluku Utara"
+                                                {{ $data->lokasi == 'Maluku Utara' ? 'selected' : '' }}>Maluku Utara
+                                            </option>
+                                            <option value="Papua" {{ $data->lokasi == 'Papua' ? 'selected' : '' }}>Papua
+                                            </option>
+                                            <option value="Papua Barat"
+                                                {{ $data->lokasi == 'Papua Barat' ? 'selected' : '' }}>Papua Barat</option>
+                                            <option value="Papua Selatan"
+                                                {{ $data->lokasi == 'Papua Selatan' ? 'selected' : '' }}>Papua Selatan
+                                            </option>
+                                            <option value="Papua Tengah"
+                                                {{ $data->lokasi == 'Papua Tengah' ? 'selected' : '' }}>Papua Tengah
+                                            </option>
+                                            <option value="Papua Pegunungan"
+                                                {{ $data->lokasi == 'Papua Pegunungan' ? 'selected' : '' }}>Papua
+                                                Pegunungan</option>
+                                            <option value="Papua Barat Daya"
+                                                {{ $data->lokasi == 'Papua Barat Daya' ? 'selected' : '' }}>Papua Barat
+                                                Daya</option>
                                         </select>
                                     </div>
 
@@ -377,12 +363,18 @@
                                     aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
-                                <form action="#" method="POST">
+                                <form action="{{ route('store.peluang') }}" method="POST">
                                     @csrf
+                                    <input type="hidden" name="id_contact" value="{{ $data->id }}">
                                     <div class="mb-3">
                                         <label for="materi" class="form-label">Materi</label>
-                                        <input type="text" class="form-control" id="materi" name="materi"
-                                            required>
+                                        <select class="form-control" id="materi" name="materi" required>
+                                            <option value="" disabled selected>-- Pilih Materi --</option>
+                                            @foreach ($materi as $item)
+                                                <option value="{{ $item->nama_materi }}">{{ $item->nama_materi }}
+                                                </option>
+                                            @endforeach
+                                        </select>
                                     </div>
                                     <div class="mb-3">
                                         <label for="catatan" class="form-label">Catatan</label>
@@ -414,19 +406,16 @@
                                             min="1" required>
                                     </div>
                                     <div class="mb-3">
-                                        <label for="final" class="form-label">Final</label>
-                                        <input type="number" class="form-control" id="final" name="final"
-                                            step="0.01">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="tahap" class="form-label">Tahap</label>
-                                        <select class="form-select" id="tahap" name="tahap" required>
-                                            <option value="lead">Lead</option>
-                                            <option value="hitam" selected>Hitam</option>
-                                            <option value="biru">Biru</option>
-                                            <option value="merah">Merah</option>
-                                            <option value="lost">Lost</option>
+                                        <label for="id_aktivitas" class="form-label">Aktivitas</label>
+                                        <select class="form-select" id="id_aktivitas" name="id_aktivitas[]" multiple>
+                                            <option value="" disabled>-- Pilih Aktivitas (Opsional) --</option>
+                                            @foreach ($aktivitas as $item)
+                                                <option value="{{ $item->id }}">{{ $item->subject }}
+                                                    ({{ \Carbon\Carbon::parse($item->waktu_aktivitas)->translatedFormat('d F Y') }})
+                                                </option>
+                                            @endforeach
                                         </select>
+                                        <span class="form-text text-muted">*Ctrl + click untuk multi select</span>
                                     </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary btn-sm"
@@ -444,14 +433,18 @@
         <!-- Section: Aktivitas -->
         <div class="card shadow-sm">
             <div class="card-body">
-                <h2 class="card-title h4 fw-bold mb-3">Data Aktivitas</h2>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="card-title h4 fw-bold mb-0">Data Aktivitas</h2>
+                    <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal"
+                        data-bs-target="#tambahAktivitasModal">
+                        Tambah Aktivitas
+                    </button>
+                </div>
                 <div class="table-responsive">
                     <table class="table table-bordered table-hover">
                         <thead class="table-dark">
                             <tr>
                                 <th scope="col" class="px-3 py-2 text-center">ID Sales</th>
-                                <th scope="col" class="px-3 py-2 text-center">ID Contact</th>
-                                <th scope="col" class="px-3 py-2 text-center">ID Peluang</th>
                                 <th scope="col" class="px-3 py-2">Aktivitas</th>
                                 <th scope="col" class="px-3 py-2">Subject</th>
                                 <th scope="col" class="px-3 py-2">Deskripsi</th>
@@ -460,16 +453,14 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach ($aktivitas as $item)
+                            @foreach ($aktivitass as $item)
                                 <tr>
                                     <td class="px-3 py-2 text-center">{{ $item->id_sales }}</td>
-                                    <td class="px-3 py-2 text-center">{{ $item->id_contact }}</td>
-                                    <td class="px-3 py-2 text-center">{{ $item->id_peluang ?? '-' }}</td>
                                     <td class="px-3 py-2">{{ $item->aktivitas }}</td>
                                     <td class="px-3 py-2">{{ $item->subject }}</td>
                                     <td class="px-3 py-2">{{ $item->deskripsi ?? '-' }}</td>
                                     <td class="px-3 py-2">
-                                        {{ \Carbon\Carbon::parse($item->waktu_aktivitas)->translatedFormat('d F Y H:i') }}
+                                        {{ \Carbon\Carbon::parse($item->waktu_aktivitas)->translatedFormat('d F Y') }}
                                     </td>
                                     <td class="px-3 py-2 text-center">
                                         <div class="d-flex gap-2 justify-content-center">
@@ -478,16 +469,13 @@
                                                 onclick='editAktivitas(@json($item))'>
                                                 Edit
                                             </button>
-                                            <form action="#" method="POST"
+                                            <form action="{{ route('delete.aktivitas', $item->id) }}" method="POST"
                                                 onsubmit="return confirm('Yakin ingin menghapus?')"
                                                 style="display: inline;">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-sm btn-danger">Hapus</button>
                                             </form>
-                                            <button type="button" class="btn btn-sm btn-info">
-                                                Detail
-                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -497,5 +485,144 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal: Tambah Aktivitas -->
+        <div class="modal fade" id="tambahAktivitasModal" tabindex="-1" aria-labelledby="tambahAktivitasModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="tambahAktivitasModalLabel">Tambah Aktivitas</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form action="{{ route('store.aktivitas.new') }}" method="POST">
+                            @csrf
+                            <input type="hidden" name="id_contact" value="{{ $data->id }}">
+                            <div class="mb-3">
+                                <label for="aktivitas" class="form-label">Aktivitas</label>
+                                <select name="aktivitas" class="form-control" id="">
+                                    <option value=""> -- Pilih Aktivitas Anda -- </option>
+                                    <option value="Call">Call</option>
+                                    <option value="Email">Email</option>
+                                    <option value="Visit">Visit</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="subject" class="form-label">Subject</label>
+                                <input type="text" class="form-control" id="subject" name="subject" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="deskripsi" class="form-label">Deskripsi</label>
+                                <textarea class="form-control" id="deskripsi" name="deskripsi"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="waktu_aktivitas" class="form-label">Waktu Aktivitas</label>
+                                <input type="date" class="form-control" id="waktu_aktivitas" name="waktu_aktivitas"
+                                    required>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary btn-sm"
+                                    data-bs-dismiss="modal">Batal</button>
+                                <button type="submit" class="btn btn-primary btn-sm">Simpan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Edit Aktivitas -->
+        <div class="modal fade" id="editAktivitasModal" tabindex="-1" aria-labelledby="editAktivitasModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editAktivitasModalLabel">Edit Aktivitas</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="editAktivitasForm" method="POST">
+                            @csrf
+                            @method('PUT')
+                            <input type="hidden" name="id_contact" id="edit_id_contact">
+                            <input type="hidden" name="id" id="edit_id">
+                            <div class="mb-3">
+                                <label for="edit_aktivitas" class="form-label">Aktivitas</label>
+                                <select name="aktivitas" class="form-control" id="edit_aktivitas">
+                                    <option value=""> -- Pilih Aktivitas Anda -- </option>
+                                    <option value="Call">Call</option>
+                                    <option value="Email">Email</option>
+                                    <option value="Visit">Visit</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="edit_subject" class="form-label">Subject</label>
+                                <input type="text" class="form-control" id="edit_subject" name="subject" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="edit_deskripsi" class="form-label">Deskripsi</label>
+                                <textarea class="form-control" id="edit_deskripsi" name="deskripsi"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="edit_waktu_aktivitas" class="form-label">Waktu Aktivitas</label>
+                                <input type="date" class="form-control" id="edit_waktu_aktivitas"
+                                    name="waktu_aktivitas" required>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary btn-sm"
+                                    data-bs-dismiss="modal">Batal</button>
+                                <button type="submit" class="btn btn-primary btn-sm">Simpan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Submit form via AJAX
+            document.getElementById('editAktivitasForm').addEventListener('submit', function(e) {
+                e.preventDefault(); // Stop default form submit
+
+                const form = this;
+                const url = form.action;
+                const formData = new FormData(form);
+
+                fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+                        },
+                        body: formData
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            alert('Data berhasil diperbarui');
+                            window.location.reload(); // Reload page after success
+                        } else {
+                            alert('Gagal menyimpan data');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Terjadi kesalahan');
+                    });
+            });
+
+            // Fungsi ini harus berada DI LUAR event listener
+            function editAktivitas(data) {
+                document.getElementById('edit_id').value = data.id;
+                document.getElementById('edit_id_contact').value = data.id_contact;
+                document.getElementById('edit_aktivitas').value = data.aktivitas;
+                document.getElementById('edit_subject').value = data.subject;
+                document.getElementById('edit_deskripsi').value = data.deskripsi || '';
+                document.getElementById('edit_waktu_aktivitas').value = data.waktu_aktivitas.split(' ')[0];
+
+                // Set action form ke route update
+                document.getElementById('editAktivitasForm').action = `/crm/aktivitas/update/${data.id}`;
+            }
+        </script>
+
     </div>
 @endsection

@@ -22,11 +22,22 @@
                     <div class="card mb-3">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="card-title mb-0">Informasi Lead</h5>
-                            <button class="btn btn-primary btn-sm" data-bs-toggle="modal"
-                                data-bs-target="#tambahAktivitasModal">
-                                Tambah Aktivitas
-                            </button>
+
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-primary btn-sm" data-bs-toggle="modal"
+                                    data-bs-target="#tambahAktivitasModal">
+                                    Tambah Aktivitas
+                                </button>
+
+                                <form action="{{ route('delete.peluang', $peluang->id) }}" method="POST"
+                                    onsubmit="return confirm('Yakin ingin menghapus peluang ini?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-danger">Hapus</button>
+                                </form>
+                            </div>
                         </div>
+
                         <div class="card-body">
                             <dl class="row">
                                 <dt class="col-sm-4">Materi</dt>
@@ -113,10 +124,12 @@
 
                             @if ($peluang->tahap === 'lost' && $peluang->desc_lost)
                                 <div class="card mt-5 shadow-sm rounded" style="border: none; max-width: 500px;">
-                                    <div class="card-header bg-primary text-white fw-bold" style="font-size: 0.85rem; border-radius: 0.375rem 0.375rem 0 0; padding: 0.5rem 1rem;">
+                                    <div class="card-header bg-primary text-white fw-bold"
+                                        style="font-size: 0.85rem; border-radius: 0.375rem 0.375rem 0 0; padding: 0.5rem 1rem;">
                                         Deskripsi Lost :
                                     </div>
-                                    <div class="card-body bg-light" style="border-radius: 0 0 0.375rem 0.375rem; color: #444; font-size: 0.95rem; line-height: 1.5; padding: 1rem;">
+                                    <div class="card-body bg-light"
+                                        style="border-radius: 0 0 0.375rem 0.375rem; color: #444; font-size: 0.95rem; line-height: 1.5; padding: 1rem;">
                                         {{ $peluang->desc_lost }}
                                     </div>
                                 </div>
@@ -210,8 +223,8 @@
 
                             <div class="mb-3">
                                 <label for="waktu_aktivitas" class="form-label">Waktu Aktivitas</label>
-                                <input type="date" name="waktu_aktivitas" id="waktu_aktivitas"
-                                    class="form-control" required>
+                                <input type="date" name="waktu_aktivitas" id="waktu_aktivitas" class="form-control"
+                                    required>
                             </div>
                         </div>
 
@@ -297,7 +310,8 @@
 
 
         <!-- Modal Update Tahap -->
-        <div class="modal fade" id="updateProbabilitasModal" tabindex="-1" aria-labelledby="updateProbabilitasLabel" aria-hidden="true">
+        <div class="modal fade" id="updateProbabilitasModal" tabindex="-1" aria-labelledby="updateProbabilitasLabel"
+            aria-hidden="true">
             <div class="modal-dialog">
                 <form method="POST" action="{{ route('update.tahap', $peluang->id) }}">
                     @csrf
@@ -305,7 +319,8 @@
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">Update Tahap Peluang</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                aria-label="Tutup"></button>
                         </div>
                         <div class="modal-body">
                             @php
@@ -338,14 +353,16 @@
                                 <label for="close_win" class="form-label">Harga Final (Menang)</label>
                                 <div class="input-group">
                                     <span class="input-group-text">Rp</span>
-                                    <input type="number" step="0.01" min="0" class="form-control" name="final" id="close_win" placeholder="Masukkan harga final">
+                                    <input type="number" step="0.01" min="0" class="form-control"
+                                        name="final" id="close_win" placeholder="Masukkan harga final">
                                 </div>
                             </div>
 
                             <!-- Input Deskripsi Lost hanya muncul jika tahap = Lost -->
                             <div class="mb-3 d-none" id="input-desc-lost">
                                 <label for="desc_lost" class="form-label">Deskripsi Lost</label>
-                                <textarea class="form-control" name="desc_lost" id="desc_lost" rows="3" placeholder="Masukkan alasan kehilangan peluang"></textarea>
+                                <textarea class="form-control" name="desc_lost" id="desc_lost" rows="3"
+                                    placeholder="Masukkan alasan kehilangan peluang"></textarea>
                             </div>
 
                         </div>
@@ -357,37 +374,37 @@
             </div>
         </div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const tahapSelect = document.getElementById('tahap');
-        const closeWinInput = document.getElementById('input-close-win');
-        const closeWinField = document.getElementById('close_win');
-        const descLostInput = document.getElementById('input-desc-lost');
-        const descLostField = document.getElementById('desc_lost');
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const tahapSelect = document.getElementById('tahap');
+                const closeWinInput = document.getElementById('input-close-win');
+                const closeWinField = document.getElementById('close_win');
+                const descLostInput = document.getElementById('input-desc-lost');
+                const descLostField = document.getElementById('desc_lost');
 
-        function toggleInputs() {
-            if (tahapSelect.value.toLowerCase() === 'merah') {
-                closeWinInput.classList.remove('d-none');
-                closeWinField.setAttribute('required', 'required');
-                descLostInput.classList.add('d-none');
-                descLostField.removeAttribute('required');
-            } else if (tahapSelect.value.toLowerCase() === 'lost') {
-                descLostInput.classList.remove('d-none');
-                descLostField.setAttribute('required', 'required');
-                closeWinInput.classList.add('d-none');
-                closeWinField.removeAttribute('required');
-            } else {
-                closeWinInput.classList.add('d-none');
-                closeWinField.removeAttribute('required');
-                descLostInput.classList.add('d-none');
-                descLostField.removeAttribute('required');
-            }
-        }
+                function toggleInputs() {
+                    if (tahapSelect.value.toLowerCase() === 'merah') {
+                        closeWinInput.classList.remove('d-none');
+                        closeWinField.setAttribute('required', 'required');
+                        descLostInput.classList.add('d-none');
+                        descLostField.removeAttribute('required');
+                    } else if (tahapSelect.value.toLowerCase() === 'lost') {
+                        descLostInput.classList.remove('d-none');
+                        descLostField.setAttribute('required', 'required');
+                        closeWinInput.classList.add('d-none');
+                        closeWinField.removeAttribute('required');
+                    } else {
+                        closeWinInput.classList.add('d-none');
+                        closeWinField.removeAttribute('required');
+                        descLostInput.classList.add('d-none');
+                        descLostField.removeAttribute('required');
+                    }
+                }
 
-        if (tahapSelect) {
-            tahapSelect.addEventListener('change', toggleInputs);
-            toggleInputs(); // Trigger saat pertama kali modal muncul
-        }
-    });
-</script>
+                if (tahapSelect) {
+                    tahapSelect.addEventListener('change', toggleInputs);
+                    toggleInputs(); // Trigger saat pertama kali modal muncul
+                }
+            });
+        </script>
     @endsection
