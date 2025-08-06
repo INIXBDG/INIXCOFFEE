@@ -1,13 +1,13 @@
-@extends('layouts.app')
+@extends('databasekpi.berandaKPI')
 
-@section('content')
+@section('contentKPI')
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
-<div class="container-fluid">
-    <div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="spinnerModalLabel" aria-hidden="true">
+<div class="container-fluid mb-3">
+    <!-- <div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="spinnerModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="cube">
                 <div class="cube_item cube_x"></div>
@@ -16,12 +16,12 @@
                 <div class="cube_item cube_z"></div>
             </div>
         </div>
-    </div>
+    </div> -->
 
     <div class="row justify-content-center">
         <div class="col-md-12">
             <div class="text-end">
-                <a href="{{ route('ketegori.kpi.create') }}" class="btn btn-primary">Buat Penilaian</a>
+                <a href="{{ route('ketegori.kpi.create') }}" class="btn text-white cl-blue">Buat Penilaian</a>
             </div>
             <div class="card m-4">
                 <div class="card-body table-responsive">
@@ -91,38 +91,58 @@
 </div>
 </div>
 @if (session('success'))
-<div class="alert alert-success alert-dismissible fade show" role="alert">
-    {{ session('success') }}
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-</div>
+<script>
+    Swal.fire({
+        icon: 'success',
+        title: 'Berhasil',
+        text: "{{ session('success') }}",
+        confirmButtonColor: '#3085d6'
+    });
+</script>
 @endif
 
 @if (session('error'))
-<div class="alert alert-danger alert-dismissible fade show" role="alert">
-    {{ session('error') }}
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-</div>
+<script>
+    Swal.fire({
+        icon: 'error',
+        title: 'Gagal',
+        text: "{{ session('error') }}",
+        confirmButtonColor: '#d33'
+    });
+</script>
 @endif
+
+@if ($errors->any())
+<script>
+    Swal.fire({
+        icon: 'error',
+        title: 'Validasi Gagal',
+        html: `{!! implode('<br>', $errors->all()) !!}`,
+        confirmButtonColor: '#d33'
+    });
+</script>
+@endif
+
 <div class="modal fade" id="shareEvaluatorModal" tabindex="-1" aria-labelledby="shareEvaluatorModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content shadow-sm rounded">
             <form action="{{ route('penilaian.shareForm') }}" method="post">
                 @csrf
                 <div class="modal-header">
-                    <h5 class="modal-title" id="shareEvaluatorModalLabel">Bagikan Form Penilaian</h5>
-                    <button type="button" class="btn-close btn-close-danger" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title" id="shareEvaluatorModalLabel">Bagikan Formulir Penilaian</h5>
+                    <button type="button" class="btn-close text-white cl-red btn" data-bs-dismiss="modal" aria-label="Tutup">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
                 </div>
-
                 <div class="modal-body p-4">
-                    <div id="modal-body-content" class="mb-3"></div>
+                    <div id="modal-body-content"></div>
                     <div id="content_select_input"></div>
                 </div>
-
                 <div class="modal-footer p-3">
-                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
+                    <button type="button" class="btn text-white cl-red btn-sm" data-bs-dismiss="modal">
                         <i class="fa fa-times me-1"></i> Batal
                     </button>
-                    <button type="submit" class="btn btn-success btn-sm">
+                    <button type="submit" class="btn cl-green text-white btn-sm">
                         <i class="fa fa-paper-plane me-1"></i> Kirim
                     </button>
                 </div>
@@ -130,12 +150,13 @@
         </div>
     </div>
 </div>
+
 <div class="modal fade" id="reviewPenilaianModal" tabindex="-1" aria-labelledby="reviewPenilaianModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content shadow-sm rounded">
             <div class="modal-header">
                 <h5 class="modal-title" id="reviewPenilaianModalLabel">Review Penilaian</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white btn" data-dismiss="modal" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
             <div class="modal-body p-4">
@@ -143,7 +164,7 @@
             </div>
 
             <div class="modal-footer p-3">
-                <button type="button" class="btn btn-danger btn-sm" data-bs-dismiss="modal">
+                <button type="button" class="btn text-white cl-red btn-sm" data-dismiss="modal">
                     <i class="fa fa-times me-1"></i> Tutup
                 </button>
             </div>
@@ -214,11 +235,12 @@
         }
     }
 </style>
-@push('js')
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+@endsection
+@section('script')
+<!-- <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script> -->
 <script>
     $(document).ready(function() {
         const month = new Date().getMonth() + 1;
@@ -302,13 +324,7 @@
                         totalSubCriteriaForThisAssessment += detailKategori.isi_kriteria.length;
                     });
 
-                    let evaluatorHTML = '-';
-                    if (Array.isArray(item.evaluator) && item.evaluator.length > 0) {
-                        evaluatorHTML = item.evaluator.map(e => {
-                            let style = e.is_red ? 'color: red;' : 'color: black;';
-                            return `<span style="${style}">${e.name}</span>`;
-                        }).join(', ');
-                    }
+                    let evaluatorHTML = generateEvaluatorByPenilaian(item);
 
                     let firstRow = true;
 
@@ -318,7 +334,7 @@
 
                             if (firstRow) {
                                 row += `<td style="font-size: 14px;" rowspan="${totalSubCriteriaForThisAssessment}">${rowNumber++}</td>`;
-                                row += `<td style="font-size: 14px;" rowspan="${totalSubCriteriaForThisAssessment}">${evaluatorHTML}</td>`;
+                                row += `<td style="font-size: 14px; text-align: left;" class="text-start" rowspan="${totalSubCriteriaForThisAssessment}">${evaluatorHTML}</td>`;
                                 row += `<td style="font-size: 14px;" rowspan="${totalSubCriteriaForThisAssessment}">${evaluatedName}</td>`;
                                 row += `<td style="font-size: 14px;" rowspan="${totalSubCriteriaForThisAssessment}">${item.evaluatedDivisi}</td>`;
                                 row += `<td style="font-size: 14px;" rowspan="${totalSubCriteriaForThisAssessment}">${tanggal}</td>`;
@@ -326,38 +342,30 @@
                                 row += `<td style="font-size: 14px;" rowspan="${totalSubCriteriaForThisAssessment}">${tahun}</td>`;
 
                                 row += `<td style="font-size: 14px;" rowspan="${totalSubCriteriaForThisAssessment}">
-                                <div class="dropdown">
-                                    <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                        Action
-                                    </button>
-                                    <ul class="dropdown-menu">
-                                        <li>
-                                            <a href="#" class="dropdown-item" data-kode="${item.kode_form}" data-id="${item.id_karyawan}" onclick="shareForm(this)" data-bs-toggle="modal" data-bs-target="#shareEvaluatorModal">
+                                    <div class="dropdown">
+                                        <button class="btn cl-grey text-white dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            Action
+                                        </button>
+                                        <div class="dropdown-menu">
+                                            <a href="#" class="dropdown-item" data-kode="${item.kode_form}" data-id="${item.id_karyawan}" onclick="shareForm(this)" data-toggle="modal" data-target="#shareEvaluatorModal">
                                                 <i class="fa-solid fa-paper-plane me-4"></i> Share
                                             </a>
-                                        </li>
-                                        <li>
-                                            <a href="#" class="dropdown-item" data-kode="${item.kode_form}" data-id="${item.id_karyawan}" onclick="ReviewForm(this)" data-bs-toggle="modal" data-bs-target="#reviewPenilaianModal">
+                                            <a href="#" class="dropdown-item" data-kode="${item.kode_form}" data-id="${item.id_karyawan}" data-jenis_penilaian="${item.jenis_penilaian}" onclick="ReviewForm(this)" data-toggle="modal" data-target="#reviewPenilaianModal">
                                                 <i class="fa-solid fa-list-check me-4"></i> Review
                                             </a>
-                                        </li>
-                                        <li>
                                             <a href="/penilaian/detail/data-penilaian/${item.kode_form}/${item.id_karyawan}" class="dropdown-item">
                                                 <i class="fa-solid fa-magnifying-glass me-4"></i> Detail
-                                            </a>
-                                        </li>`;
+                                            </a>`;
 
                                 if (evaluatorName !== '-') {
                                     row += `
-                                        <li>
-                                            <a href="#" class="dropdown-item" data-kode="${item.kode_form}" data-id="${item.id_karyawan}" onclick="ReviewForm(this)" data-bs-toggle="modal" data-bs-target="#reviewPenilaianModal">
-                                                <i class="fa-solid fa-brush me-4"></i> Bersihkan
-                                            </a>
-                                        </li>`;
+                                    <a href="#" class="dropdown-item" data-kode="${item.kode_form}" data-id="${item.id_karyawan}" data-jenis_penilaian="${item.jenis_penilaian}" onclick="ReviewForm(this)" data-toggle="modal" data-target="#reviewPenilaianModal">
+                                        <i class="fa-solid fa-brush me-4"></i> Bersihkan
+                                    </a>`;
                                 }
 
                                 row += `
-                                        </ul>
+                                        </div>
                                     </div>
                                 </td>`;
                                 firstRow = false;
@@ -381,7 +389,6 @@
                 });
             },
             error: function(xhr, status, error) {
-                console.error("Error fetching data: ", error);
                 let tableBody = $('#tbody_table');
                 tableBody.empty();
                 tableBody.append('<tr><td colspan="5" style="font-size: 14px; color: red;">Gagal memuat data. Silakan coba lagi.</td></tr>');
@@ -392,11 +399,32 @@
         });
     }
 
+    function generateEvaluatorByPenilaian(item) {
+        let evaluatorGroupedHTML = '';
+        const evaluatorByJenis = item.evaluator_by_jenis || {};
+
+        Object.entries(evaluatorByJenis).forEach(([jenis, evaluators]) => {
+            evaluatorGroupedHTML += `– ${jenis}<br/>`;
+
+            let namesHTML = evaluators.map(e => {
+                let style = e.is_red ? 'color: red;' : 'color: black;';
+                let nameParts = e.name.split(" ");
+                let limitedName = nameParts.slice(0, 2).join(" ");
+                return `<span style="${style} ms-3">${limitedName}</span>`;
+            }).join(', ');
+
+            evaluatorGroupedHTML += `${namesHTML}<br/><br/>`;
+        });
+
+        return evaluatorGroupedHTML;
+    }
+
     let allKaryawan = [];
 
     function ReviewForm(el) {
         const kodeForm = el.dataset.kode;
         const idKaryawan = el.dataset.id;
+        const jenisPenilaian = el.dataset.jenis_penilaian;
 
         const modalBody = $('#content-body-review');
         modalBody.html(`<p class="mb-3">Pilih Evaluator Yang Akan Direview</p>`);
@@ -405,37 +433,43 @@
             url: "{{ route('penilaian.get.data') }}",
             type: 'get',
             success: function(response) {
-                console.log("Response:", response);
                 const data = response.data;
 
                 const formItem = data.find(item =>
                     item.kode_form == kodeForm && item.id_karyawan == idKaryawan
                 );
 
-                const modalBody = $('#content-body-review');
                 modalBody.html(`<p class="mb-3">Pilih Evaluator Yang Akan Direview</p>`);
 
-                if (!formItem || !formItem.evaluator || !formItem.evaluator.length) {
-                    modalBody.append('<p class="text-danger">Tidak ada evaluator untuk form ini.</p>');
+                if (!formItem || !formItem.evaluator_by_jenis) {
+                    modalBody.append('<p class="w-red">Tidak ada evaluator untuk form ini.</p>');
                     return;
                 }
 
-                formItem.evaluator.forEach((evaluator, index) => {
-                    const evaluatorId = evaluator.id;
-                    const evaluatorName = evaluator.name;
-                    const isRed = evaluator.is_red;
+                const evaluatorByJenis = formItem.evaluator_by_jenis;
 
-                    const button = `
-                        <a href="/reviewPenilaian/${kodeForm}/${evaluatorId}" 
-                        class="btn mb-2 ms-3 ${isRed ? 'btn-danger' : 'btn-secondary'}">
-                            Review Hasil Penilaian ${evaluatorName}
+                Object.entries(evaluatorByJenis).forEach(([jenis, evaluators]) => {
+                    evaluators.forEach(evaluator => {
+                        const evaluatorId = evaluator.id;
+                        const isRed = evaluator.is_red;
+
+                        // Batasi nama maksimal 2 kata pertama
+                        const nameParts = evaluator.name.split(" ");
+                        const limitedName = nameParts.slice(0, 2).join(" ");
+
+                        const button = `
+                        <a href="/reviewPenilaian/${kodeForm}/${evaluatorId}/${encodeURIComponent(jenis)}/${idKaryawan}" 
+                        class="btn mb-2 ms-3 ${isRed ? 'text-white cl-red' : 'text-white cl-grey'}">
+                            ${limitedName} – ${jenis}
                         </a>
                     `;
-                    modalBody.append(button);
+
+                        modalBody.append(button);
+                    });
                 });
             },
             error: function() {
-                modalBody.html('<p class="text-danger">Gagal mengambil data evaluator.</p>');
+                modalBody.html('<p class="w-red">Gagal mengambil data evaluator.</p>');
             }
         });
 
@@ -458,56 +492,33 @@
 
         $.ajax({
             url: "{{ route('penilaian.get.data') }}",
-            type: 'get',
+            type: 'GET',
             success: function(response) {
                 const karyawan = response.karyawan;
-                allKaryawan = karyawan;
-
-                const divisiSet = new Set();
-                karyawan.forEach(item => {
-                    if (item.divisi) divisiSet.add(item.divisi);
-                });
-
-                let optionsDivisi = '';
-                divisiSet.forEach(divisi => {
-                    optionsDivisi += `<option value="${divisi}">${divisi}</option>`;
-                });
-
-                if (!karyawan.length) {
-                    contentSelect.append('<p style="font-size: 14px;">Data Tidak Ditemukan</p>');
-                    return;
-                }
-
-                let $divisiSelectUtama = $('#divisiSelectUtama');
-                $divisiSelectUtama.empty();
-                $divisiSelectUtama.append('<option disabled selected>Pilih Divisi</option>');
-                divisiSet.forEach(divisi => {
-                    $divisiSelectUtama.append(`<option value="${divisi}">${divisi}</option>`);
-                });
+                const divisiSet = new Set(karyawan.map(item => item.divisi).filter(Boolean));
+                const gmList = karyawan.filter(item => item.jabatan === 'GM' && item.divisi === 'Sales & Marketing');
 
                 const html = `
-                    <label for="divisi">Pilih Divisi</label>
-                    <select id="multiple-select-field-divisi" name="divisi[]" multiple class="form-select">
-                        ${optionsDivisi}
-                    </select>
+                <label class="mt-4">Jenis Penilaian</label>
+                <select name="jenis_penilaian" class="form-control" required>
+                    <option disabled selected>Pilih Jenis Penilaian</option>
+                    <option value="General Manager">General Manager</option>
+                    <option value="Manager/SPV/Team Leader (Atasan Langsung)">Manager/SPV/Team Leader (Atasan Langsung)</option>
+                    <option value="Rekan Kerja (Satu Divisi)">Rekan Kerja (Satu Divisi)</option>
+                    <option value="Pekerja (Beda Divisi)">Pekerja (Beda Divisi)</option>
+                    <option value="Self Apprisial">Self Apprisial</option>
+                </select>
 
-                    <label for="evaluator" class="mt-4">Pilih Evaluator</label>
-                    <select id="multiple-select-field-karyawan" name="id_karyawan[]" multiple class="form-select">
-                    </select>
+                <label class="mt-3">Pilih Divisi</label>
+                <select id="multiple-select-field-divisi" name="divisi[]" multiple class="form-select"></select>
 
-                    <label for="evaluator" class="mt-4">Jenis Penilaian</label>
-                    <select name="jenis_penilaian" class="form-select" Required>
-                        <option selected disabled>Pilih Jenis Penilaian</option>
-                        <option value="General Manager">General Manager</option>
-                        <option value="Manager/SPV/Team Leader (Atasan Langsung)">Manager/SPV/Team Leader (Atasan Langsung)</option>
-                        <option value="Rekan Kerja (Satu Divisi)">Rekan Kerja (Satu Divisi)</option>
-                        <option value="Pekerja (Beda Divisi)">Pekerja (Beda Divisi)</option>
-                        <option value="Self Apprisial">Self Apprisial</option>
-                    </select>
-                `;
+                <label class="mt-3">Pilih Evaluator</label>
+                <select id="multiple-select-field-karyawan" name="id_karyawan[]" multiple class="form-select"></select>
+            `;
 
                 contentSelect.append(html);
 
+                const $jenisPenilaianSelect = $('select[name="jenis_penilaian"]');
                 const $divisiSelect = $('#multiple-select-field-divisi');
                 const $evaluatorSelect = $('#multiple-select-field-karyawan');
 
@@ -525,37 +536,53 @@
                     closeOnSelect: false
                 });
 
-                const gmList = karyawan.filter(item =>
-                    item.jabatan === 'GM' &&
-                    item.divisi === 'Sales & Marketing'
-                );
+                function renderDivisiSelect(allowGm) {
+                    $divisiSelect.empty();
+                    const defaultDivisi = 'Sales & Marketing';
 
-                function updateEvaluatorOptions(selectedDivisi) {
-                    let filteredKaryawan = karyawan.filter(item =>
-                        selectedDivisi.includes(item.divisi)
-                    );
+                    if (allowGm) {
+                        const option = new Option(defaultDivisi, defaultDivisi, true, true);
+                        $(option).attr('disabled', true);
+                        $divisiSelect.append(option);
 
-                    gmList.forEach(gm => {
-                        if (!filteredKaryawan.find(k => k.id === gm.id)) {
-                            filteredKaryawan.push(gm);
+                        if (!$('#defaultDivisiInput').length) {
+                            contentSelect.append(`<input type="hidden" name="divisi[]" value="${defaultDivisi}" id="defaultDivisiInput">`);
+                        }
+                    } else {
+                        $('#defaultDivisiInput').remove();
+                    }
+
+                    divisiSet.forEach(divisi => {
+                        if (!allowGm || divisi !== defaultDivisi) {
+                            const opt = new Option(divisi, divisi);
+                            $divisiSelect.append(opt);
                         }
                     });
 
-                    gmList.forEach(gm => {
-                        const option = $evaluatorSelect.find(`option[value="${gm.id}"]`);
-                        option.prop('disabled', true);
-                    });
+                    $divisiSelect.trigger('change');
+                }
 
-                    modalBody.find('input[name="id_karyawan[]"][data-gm="true"]').remove();
-                    gmList.forEach(gm => {
-                        const gmHiddenInput = `<input type="hidden" name="id_karyawan[]" value="${gm.id}" data-gm="true">`;
-                        modalBody.append(gmHiddenInput);
-                    });
+                function updateEvaluatorOptions(selectedDivisi, allowGm = false) {
+                    let filtered = karyawan.filter(item => selectedDivisi.includes(item.divisi));
+                    modalBody.find('input[data-gm="true"]').remove();
+
+                    if (allowGm) {
+                        gmList.forEach(gm => {
+                            if (!filtered.find(k => k.id === gm.id)) {
+                                filtered.push(gm);
+                            }
+                            const gmHidden = `<input type="hidden" name="id_karyawan[]" value="${gm.id}" data-gm="true">`;
+                            modalBody.append(gmHidden);
+                        });
+                    }
 
                     let options = '';
-                    filteredKaryawan.forEach(item => {
-                        const isGMFromSales = gmList.find(gm => gm.id === item.id);
-                        options += `<option value="${item.id}" ${isGMFromSales ? 'selected disabled' : ''}>
+                    filtered.forEach(item => {
+                        const isGM = gmList.find(gm => gm.id === item.id);
+                        const isSelected = isGM && allowGm;
+                        const isDisabled = isGM && allowGm;
+
+                        options += `<option value="${item.id}" ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}>
                         ${item.nama_lengkap} - ${item.divisi}
                     </option>`;
                     });
@@ -563,17 +590,30 @@
                     $evaluatorSelect.html(options).trigger('change');
                 }
 
-                $divisiSelect.on('change', function() {
-                    const selectedDivisi = $(this).val();
-                    updateEvaluatorOptions(selectedDivisi);
+                $jenisPenilaianSelect.on('change', function() {
+                    const jenis = $(this).val();
+                    const allowGm = jenis === 'General Manager' || jenis === 'Manager/SPV/Team Leader (Atasan Langsung)';
+                    renderDivisiSelect(allowGm);
+                    const selectedDivisi = $divisiSelect.val() || [];
+                    const finalDivisi = allowGm ? [...new Set([...selectedDivisi, 'Sales & Marketing'])] : selectedDivisi;
+                    updateEvaluatorOptions(finalDivisi, allowGm);
                 });
 
-                updateEvaluatorOptions([]);
+                $divisiSelect.on('change', function() {
+                    const selectedDivisi = $(this).val() || [];
+                    const jenis = $jenisPenilaianSelect.val();
+                    const allowGm = jenis === 'General Manager' || jenis === 'Manager/SPV/Team Leader (Atasan Langsung)';
+                    const finalDivisi = allowGm ? [...new Set([...selectedDivisi, 'Sales & Marketing'])] : selectedDivisi;
+                    updateEvaluatorOptions(finalDivisi, allowGm);
+                });
+
+                renderDivisiSelect(false);
+                updateEvaluatorOptions([], false);
             }
         });
 
         $('#shareEvaluatorModal').modal('show');
     }
 </script>
-@endpush
+
 @endsection

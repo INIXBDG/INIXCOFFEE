@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('kode_form');
             $table->string('quartal');
             $table->year('tahun');
+            $table->text('catatan')->nullable();
             $table->timestamps();
         });
     }

@@ -20,4 +20,9 @@ class shareForm extends Model
     {
         return $this->belongsTo(karyawan::class, 'id_karyawan');
     }
+
+    public function formPenilaian()
+    {
+        return $this->hasOne(formPenilaian::class, 'kode_form', 'kode_form');
+    }
 }

@@ -9,7 +9,7 @@ class formPenilaian extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['nama_penilaian', 'id_karyawan', 'kode_kategori', 'kode_form', 'quartal', 'tahun'];
+    protected $fillable = ['nama_penilaian', 'id_karyawan', 'kode_kategori', 'kode_form', 'quartal', 'tahun', 'catatan'];
 
     public function karyawan()
     {

@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('name_variabel');
             $table->text('pesan')->nullable();
             $table->integer('nilai')->nullable();
+            $table->string('jenis_penilaian');
             $table->boolean('status');
             $table->timestamps();
         });
