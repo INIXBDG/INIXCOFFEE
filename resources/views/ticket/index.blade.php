@@ -15,7 +15,7 @@
     <div class="row justify-content-center">
         <div class="col-md-12">
             <div class="d-flex justify-content-end">
-                    <a href="{{ route('target.create') }}" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Tambah User"><img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> Buat Target</a>
+                    <a href="{{ route('tickets.create') }}" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Tambah User"><img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> Buat Target</a>
             </div>
             <div class="card m-4">
                 <div class="card-body table-responsive">
@@ -30,13 +30,13 @@
                                 <th scope="col">Kategori</th>
                                 <th scope="col">Keperluan</th>
                                 <th scope="col">Detail Kendala</th>
-                                <th scope="col">Tanggal Response</th>
+                                {{-- <th scope="col">Tanggal Response</th>
                                 <th scope="col">PIC</th>
                                 <th scope="col">Penanganan</th>
                                 <th scope="col">Status</th>
                                 <th scope="col">Tanggal Selesai</th>
                                 <th scope="col">Keterangan</th> 
-                                <th scope="col">Tingkat Kesulitan</th>
+                                <th scope="col">Tingkat Kesulitan</th> --}}
                                 <th scope="col">Aksi</th>
                             </tr>
                         </thead>
@@ -100,6 +100,8 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
+
 <script>
     $(document).ready(function(){
         var userRole = '{{ auth()->user()->jabatan}}';
@@ -125,7 +127,13 @@
             },
             "columns": [
                 // {"data": "id"},
-                {"data": "timestamp"},
+                {
+                    "data": "timestamp",
+                    "render": function(data){
+                        moment.locale('id');
+                        return moment(data).format('DD MMMM YYYY H:m:s');
+                    }
+                },
                 {"data": "nama_karyawan"},
                 {"data": "divisi"},
                 {"data": "kategori"},
@@ -134,40 +142,30 @@
                 {
                     "data": null,
                     "render": function(data, type, row) {
-                        return data.tanggal_response + ' ' + data.jam_response
-                    }
-                },
-                {"data": "pic"},
-                {"data": "penanganan"},
-                {"data": "status"},
-                {"data": "keterangan"},
-                {
-                    "data": null,
-                    "render": function(data, type, row) {
-                        return data.tanggal_selesai + ' ' + data.jam_selesai
-                    }
-                },
-                {"data": "tingkat_kesulitan"},
-                
-                    {
-                        "data": null,
-                        "render": function(data, type, row) {
-                            var actions = "";
-                                actions += '<div class="dropdown">';
-                                actions += '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
-                                actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
-                                // actions += '<a class="dropdown-item" href="{{ url('/materi') }}/' + row.id + '/edit" data-toggle="tooltip" data-placement="top" title="Edit Peserta"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Edit</a>';
-                                // actions += '<a class="dropdown-item" href="{{ url('/materi') }}/' + row.id + '" data-toggle="tooltip" data-placement="top" title="Detail User"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Detail</a>';
-                                actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/target') }}/' + row.id + '" method="POST">';
-                                actions += '@csrf';
-                                actions += '@method('DELETE')';
-                                actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
-                                actions += '</form>';
-                                actions += '</div>';
-                                actions += '</div>';
-                                return actions;
+                        var pic = "{{auth()->user()->username}}";
+                        var actions = "";
+                            actions += '<div class="dropdown">';
+                            actions += '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
+                            actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
+                            actions += '<form onsubmit="return confirm(\'Anda akan menerima tiket ini ?\');" action="{{ url('/tickets') }}/' + row.id + '/accept" method="POST">';
+                            actions += '@csrf';
+                            actions += '<input type="hidden" name="pic" value="'+pic+'">';
+                            actions += '<input type="hidden" name="row" value="'+data.row+'">';
+                            actions += '@method('POST')';
+                            actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Terima</button>';
+                            actions += '</form>';
+                            // actions += '<a class="dropdown-item" href="{{ url('/tickets') }}/' + row.id + '/accept" data-toggle="tooltip" data-placement="top" title="Update Tiket"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Terima Tiket</a>';
+                            // actions += '<a class="dropdown-item" href="{{ url('/materi') }}/' + row.id + '" data-toggle="tooltip" data-placement="top" title="Detail User"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Detail</a>';
+                            actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/target') }}/' + row.id + '" method="POST">';
+                            actions += '@csrf';
+                            actions += '@method('DELETE')';
+                            actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
+                            actions += '</form>';
+                            actions += '</div>';
+                            actions += '</div>';
+                            return actions;
 
-                        }
+                    }
                     
                 }
             ]

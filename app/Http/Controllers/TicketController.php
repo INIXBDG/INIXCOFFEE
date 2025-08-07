@@ -110,8 +110,14 @@ class TicketController extends Controller
             ];
        
         // Panggil method appendValues
-        // $this->appendValues($spreadsheetId, $range, $values);
-       
+        $message = $this->appendValues($spreadsheetId, $range, $values);
+        $ticket->update([
+            'row' => $message
+        ]);
+        // return $message;
+
+        
+
         return redirect()->route('tickets.index')->with('success', 'Tiket berhasil dibuat, akan segera diprovide. Terimakasih!');
 
         // return response()->json(['message' => 'Tiket berhasil dibuat, notifikasi terkirim, dan data disimpan di Google Sheets.']);
@@ -127,10 +133,8 @@ class TicketController extends Controller
         $service = new Sheets($client);
 
         try {
-            // Gunakan nama class yang benar sesuai namespace
             $body = new \Google\Service\Sheets\ValueRange();
             $body->setValues($values);
-
 
             $params = ['valueInputOption' => $valueInputOption];
 
@@ -141,13 +145,22 @@ class TicketController extends Controller
                 $params
             );
 
-            printf("%d cells appended.", $result->getUpdates()->getUpdatedCells());
-            return $result;
+            $updatedRange = $result->getUpdates()->getUpdatedRange();
+
+            if (preg_match('/![A-Z]+(\d+):[A-Z]+\d+$/', $updatedRange, $matches)) {
+                $startRow = intval($matches[1]);
+                printf("%d.", $result->getUpdates()->getUpdatedCells(), $startRow);
+                return $startRow;
+            } else {
+                printf("%d cells appended. Namun gagal mengambil baris ID.", $result->getUpdates()->getUpdatedCells());
+                return null;
+            }
         } catch (\Exception $e) {
             echo 'Message: ' . $e->getMessage();
             return null;
         }
     }
+
     public function index()
     {
         return view('ticket.index');
@@ -185,22 +198,35 @@ class TicketController extends Controller
 
     public function accept(Request $request, Tickets $ticket)
     {
+        // return $request->all();
+        $dateString = \Carbon\Carbon::now()->format('Y-m-d');   // e.g., "2025-08-07"
+        $timeString = \Carbon\Carbon::now()->format('H:i');    // e.g., "14:30"
+
+        // Parse the strings back into \Carbon\Carbon instances (mostly for demonstration)
+        $tanggal_response = \Carbon\Carbon::createFromFormat('Y-m-d', $dateString);
+        $jam_response     = \Carbon\Carbon::createFromFormat('H:i', $timeString);
+        
+        // dd($tanggal_response, $jam_response);
         $ticket->update([
+            'penanganan'  => 'Sedang Diperbaiki',
             'status'  => 'Di Proses',
-            'id_ts'   => Auth::id(),
+            'tanggal_response'  => $tanggal_response,
+            'jam_response'  => $jam_response,
+            'pic'   => $request->pic,
         ]);
-
-        $id = Auth::id();
-        $username = User::where('id', $id)->first();
-        $ts = $username->username;
-
-        Http::post('http://192.168.95.130:8001/notify', [
-            'phone'     => $ticket->no_user,
-            'status'    => 'Di Proses',
-            'ticket_id' => $ticket->id,
-            'ts' => $ts,
-        ]);
-
+        
+        $spreadsheetId = '1k_NRI52B-alnGVeLTGB8cecL3f1G-C7_WCVGnQQGe9Y';
+        $range = 'Form Responses 1!I'.$ticket->row.':M'.$ticket->row.'';  // Pastikan nama sheet dan kolom sesuai di Spreadsheet Anda
+        $values = [
+                [
+                    $tanggal_response,
+                    $jam_response,
+                    $request->pic,
+                    $ticket->penanganan,
+                    $ticket->status,
+                ]
+        ];
+        $message = $this->updatedValues($spreadsheetId, $range, $values);
         return redirect()->route('tickets.index')->with('success', 'Tiket diterima.');
     }
 
@@ -242,4 +268,36 @@ class TicketController extends Controller
     {
         return view('ticket.detail', compact('ticket'));
     }
+
+    private function updatedValues($spreadsheetId, $range, $values, $valueInputOption = 'RAW')
+    {
+        $client = new Client();
+        $client->setAuthConfig(storage_path('app/google/chart-spreadsheet-api.json'));
+        $client->addScope(Sheets::SPREADSHEETS);
+
+        $service = new Sheets($client);
+
+        try {
+            // Gunakan nama class yang benar sesuai namespace
+            $body = new \Google\Service\Sheets\ValueRange();
+            $body->setValues($values);
+
+
+            $params = ['valueInputOption' => $valueInputOption];
+
+            $result = $service->spreadsheets_values->update(
+                $spreadsheetId,
+                $range,
+                $body,
+                $params
+            );
+
+            printf("%d cells updated.", $result->getUpdatedCells());
+            return $result;
+        } catch (\Exception $e) {
+            echo 'Message: ' . $e->getMessage();
+            return null;
+        }
+    }
+
 }

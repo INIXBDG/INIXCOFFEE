@@ -24,6 +24,7 @@ class Tickets extends Model
         'jam_selesai',
         'tingkat_kesulitan',
         'timestamp',
+        'row',
     ];
 
     public function karyawan()

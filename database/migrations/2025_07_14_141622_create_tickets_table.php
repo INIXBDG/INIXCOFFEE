@@ -28,6 +28,7 @@ return new class extends Migration
             $table->date('tanggal_selesai')->nullable();
             $table->time('jam_selesai')->nullable();
             $table->string('tingkat_kesulitan')->nullable();
+            $table->string('row')->nullable();
             $table->timestamps();
         });
     }
