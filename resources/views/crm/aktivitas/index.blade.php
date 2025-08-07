@@ -19,7 +19,7 @@
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-bordered table-hover">
+                        <table id="aktivitasTable" class="table table-bordered table-hover">
                             <thead class="table-dark">
                                 <tr>
                                     <th>Kontak</th>
@@ -30,29 +30,7 @@
                                     <th>Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                @foreach ($data as $aktivitas)
-                                    <tr>
-                                        <td>{{ $aktivitas->perusahaan->nama_perusahaan ?? '-' }}
-                                            ({{ $aktivitas->perusahaan->cp ?? '-' }})
-                                        </td>
-                                        <td>{{ ucfirst($aktivitas->aktivitas) }}</td>
-                                        <td>{{ $aktivitas->subject }}</td>
-                                        <td>{{ $aktivitas->deskripsi ?? '-' }}</td>
-                                        <td>{{ \Carbon\Carbon::parse($aktivitas->waktu_aktivitas)->format('d/m/Y') }}</td>
-                                        <td>
-                                            <div class="d-flex gap-2">
-                                                <form action="{{ route('delete.aktivitas', $aktivitas->id) }}"
-                                                    method="POST">
-                                                    @method('DELETE')
-                                                    @csrf
-                                                    <button type="submit" class="btn btn-sm btn-danger">Hapus</button>
-                                                </form>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
+                            <tbody></tbody>
                         </table>
                     </div>
                 </div>
@@ -75,11 +53,13 @@
                                     <label class="form-label" for="id_contact">Kontak Klien</label>
                                     <select class="form-select" id="id_contact" name="id_contact" required>
                                         <option value="" disabled selected>Pilih Kontak</option>
-                                        @foreach ($contact as $contact)
+                                        @forelse ($contact as $contact)
                                             <option value="{{ $contact->id }}">{{ $contact->nama_perusahaan }}
                                                 ({{ $contact->cp ?? '-' }})
                                             </option>
-                                        @endforeach
+                                        @empty
+                                            <option disabled>Tidak ada kontak tersedia</option>
+                                        @endforelse
                                     </select>
                                 </div>
 
@@ -118,7 +98,82 @@
         </div>
     </div>
 
+    <!-- Include jQuery and DataTables -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
     <script>
+        $(document).ready(function() {
+            $('#aktivitasTable').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: '{{ route('index.aktivitas.json') }}',
+                    type: 'GET',
+                    dataSrc: 'data',
+                    error: function(xhr, error, thrown) {
+                        console.error('Error:', xhr.responseText); // Log detailed error
+                        alert('Gagal memuat data aktivitas: ' + thrown);
+                    }
+                },
+                columns: [{
+                        data: 'kontak'
+                    },
+                    {
+                        data: 'aktivitas'
+                    },
+                    {
+                        data: 'subject'
+                    },
+                    {
+                        data: 'deskripsi'
+                    },
+                    {
+                        data: 'waktu_aktivitas'
+                    },
+                    {
+                        data: 'id',
+                        render: function(id) {
+                            return `
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-danger" onclick="hapusAktivitas(${id})">Hapus</button>
+                                </div>
+                            `;
+                        }
+                    }
+                ]
+            });
+        });
+
+        function hapusAktivitas(id) {
+            if (!confirm("Yakin ingin menghapus aktivitas ini?")) return;
+
+            fetch(`{{ url('crm/aktivitas/delete') }}/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        throw new Error('Gagal menghapus aktivitas.');
+                    }
+                })
+                .then(data => {
+                    alert(data.message || 'Aktivitas berhasil dihapus.');
+                    $('#aktivitasTable').DataTable().ajax.reload();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert(error.message || 'Terjadi kesalahan saat menghapus aktivitas.');
+                });
+        }
+
         function resetForm() {
             document.getElementById('activityForm').reset();
         }
