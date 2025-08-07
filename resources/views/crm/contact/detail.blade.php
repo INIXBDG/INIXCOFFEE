@@ -9,7 +9,7 @@
                     <div class="card-body">
                         <h2 class="card-title h4 fw-bold mb-3">Data Perusahaan</h2>
                         <dl class="row mb-3">
-                            <dt class="col-sm-4">Nama Perusahaan</dt>
+                            <dt class="col-sm-4">Nama</dt>
                             <dd class="col-sm-8">{{ $data->nama_perusahaan }}</dd>
 
                             <dt class="col-sm-4">Kategori</dt>
@@ -18,7 +18,7 @@
                             <dt class="col-sm-4">Lokasi</dt>
                             <dd class="col-sm-8">{{ $data->lokasi ?? '-' }}</dd>
 
-                            <dt class="col-sm-4">Sales Key</dt>
+                            <dt class="col-sm-4">Sales</dt>
                             <dd class="col-sm-8">{{ $data->sales_key ?? '-' }}</dd>
 
                             <dt class="col-sm-4">Status</dt>
@@ -39,7 +39,7 @@
                             <dt class="col-sm-4">No. Telp</dt>
                             <dd class="col-sm-8">{{ $data->no_telp ?? '-' }}</dd>
 
-                            <dt class="col-sm-4">Foto NPWP</dt>
+                            <dt class="col-sm-4">Foto NPW</dt>
                             <dd class="col-sm-8">
                                 @if (!empty($data->foto_npwp))
                                     <a href="{{ asset('storage/' . $data->foto_npwp) }}" target="_blank">Lihat Foto NPWP</a>
@@ -582,7 +582,7 @@
                 </div>
             </div>
         </div>
-
+        
         <script>
             // Submit form via AJAX
             document.getElementById('editAktivitasForm').addEventListener('submit', function(e) {
