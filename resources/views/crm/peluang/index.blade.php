@@ -19,7 +19,7 @@
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-bordered table-hover">
+                        <table id="peluangTable" class="table table-bordered table-hover">
                             <thead class="table-dark">
                                 <tr>
                                     <th>Materi</th>
@@ -32,24 +32,6 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($data as $peluang)
-                                    <tr>
-                                        <td>{{ $peluang['materi'] }}</td>
-                                        <td>{{ number_format($peluang['harga'], 2, ',', '.') }}</td>
-                                        <td>{{ number_format($peluang['netsales'], 2, ',', '.') }}</td>
-                                        <td>{{ $peluang['pax'] }}</td>
-                                        <td>{{ $peluang['periode_mulai'] }} s/d {{ $peluang['periode_selesai'] }}</td>
-                                        <td>{{ ucfirst($peluang['tahap']) }}</td>
-                                        <td>
-                                            <div class="d-flex gap-2">
-                                                <a href="{{ route('detail.peluang', ['id' => $peluang->id]) }}"
-                                                    class="btn btn-sm btn-warning">Detail</a>
-                                                <button onclick="hapusPeluang({{ $peluang->id }})"
-                                                    class="btn btn-sm btn-danger">Hapus</button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @endforeach
                             </tbody>
                         </table>
                     </div>
@@ -59,14 +41,15 @@
             <!-- Tambah Lead Modal -->
             <div class="modal fade" id="opportunityModal" tabindex="-1" aria-labelledby="opportunityModalLabel"
                 aria-hidden="true">
-                <div class="modal-dialog modal-xl"> <!-- Ubah ke modal-xl agar cukup untuk tabel -->
+                <div class="modal-dialog modal-xl">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">Tambah Lead</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            <form id="form-data" action="{{ route('store.peluang') }}" method="POST">
+                            <form id="form-data" action="{{ route('store.peluang') }}" method="POST"
+                                class="needs-validation" novalidate>
                                 @csrf
 
                                 <!-- Form Kontak -->
@@ -80,6 +63,7 @@
                                             </option>
                                         @endforeach
                                     </select>
+                                    <div class="invalid-feedback">Pilih contact client.</div>
                                 </div>
 
                                 <!-- Form Materi -->
@@ -91,6 +75,7 @@
                                             <option value="{{ $item->nama_materi }}">{{ $item->nama_materi }}</option>
                                         @endforeach
                                     </select>
+                                    <div class="invalid-feedback">Pilih materi.</div>
                                 </div>
 
                                 <!-- Lain-lain -->
@@ -102,35 +87,40 @@
                                 <div class="mb-3">
                                     <label class="form-label" for="harga">Harga (Rp)</label>
                                     <input type="text" class="form-control" id="harga" name="harga" required>
+                                    <div class="invalid-feedback">Masukkan harga.</div>
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label" for="netsales">Net Sales (Rp)</label>
                                     <input type="text" class="form-control" id="netsales" name="netsales" required>
+                                    <div class="invalid-feedback">Masukkan net sales.</div>
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label" for="pax">Jumlah Peserta (Pax)</label>
                                     <input type="number" class="form-control" id="pax" name="pax" min="1"
                                         required>
+                                    <div class="invalid-feedback">Masukkan jumlah peserta.</div>
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label" for="periode_mulai">Periode Mulai</label>
                                     <input type="date" class="form-control" id="periode_mulai" name="periode_mulai"
                                         required>
+                                    <div class="invalid-feedback">Pilih tanggal mulai.</div>
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label" for="periode_selesai">Periode Selesai</label>
                                     <input type="date" class="form-control" id="periode_selesai" name="periode_selesai"
                                         required>
+                                    <div class="invalid-feedback">Pilih tanggal selesai.</div>
                                 </div>
 
                                 <!-- Aktivitas yang bisa dikaitkan -->
                                 <div class="mb-3">
                                     <label class="form-label">Pilih Aktivitas (Opsional)</label>
-                                    <div id="aktivitasTableWrapper">
+                                    <div id="aktivitasTableWrapper" class="overflow-auto">
                                         <p class="text-muted">Silakan pilih contact client terlebih dahulu.</p>
                                     </div>
                                 </div>
@@ -144,7 +134,70 @@
         </div>
     </div>
 
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
     <script>
+        // Global CSRF token setup for AJAX
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
+        });
+
+        $(document).ready(function() {
+            $('#peluangTable').DataTable({
+                ajax: {
+                    url: '{{ route('index.peluang.json') }}',
+                    dataSrc: 'data',
+                    error: function(xhr, error, thrown) {
+                        alert('Gagal memuat data peluang: ' + thrown);
+                    }
+                },
+                columns: [{
+                        data: 'materi'
+                    },
+                    {
+                        data: 'harga',
+                        render: function(data) {
+                            return 'Rp ' + parseInt(data).toLocaleString('id-ID');
+                        }
+                    },
+                    {
+                        data: 'netsales',
+                        render: function(data) {
+                            return 'Rp ' + parseInt(data).toLocaleString('id-ID');
+                        }
+                    },
+                    {
+                        data: 'pax'
+                    },
+                    {
+                        data: null,
+                        render: function(data) {
+                            return data.periode_mulai + ' s/d ' + data.periode_selesai;
+                        }
+                    },
+                    {
+                        data: 'tahap',
+                        render: function(data) {
+                            return data.charAt(0).toUpperCase() + data.slice(1);
+                        }
+                    },
+                    {
+                        data: 'id',
+                        render: function(id) {
+                            return `
+                            <div class="d-flex gap-2">
+                                <a href="/crm/peluang/detail/${id}" class="btn btn-sm btn-warning">Detail</a>
+                                <button onclick="hapusPeluang(${id})" class="btn btn-sm btn-danger">Hapus</button>
+                            </div>
+                        `;
+                        }
+                    }
+                ]
+            });
+        });
+
         document.addEventListener('DOMContentLoaded', function() {
             const contactSelect = document.getElementById('id_contact');
             const tableWrapper = document.getElementById('aktivitasTableWrapper');
@@ -152,7 +205,11 @@
             contactSelect.addEventListener('change', function() {
                 const contactId = this.value;
 
-                if (!contactId) return;
+                if (!contactId) {
+                    tableWrapper.innerHTML =
+                        `<p class="text-muted">Silakan pilih contact client terlebih dahulu.</p>`;
+                    return;
+                }
 
                 fetch(`/crm/ambil/aktivitas/${contactId}`)
                     .then(response => response.json())
@@ -180,6 +237,11 @@
                     `;
 
                         data.forEach(a => {
+                            const waktu = new Date(a.waktu).toLocaleDateString('id-ID', {
+                                day: '2-digit',
+                                month: 'long',
+                                year: 'numeric'
+                            });
                             table += `
                             <tr>
                                 <td><input type="checkbox" name="id_aktivitas[]" value="${a.id}"></td>
@@ -187,7 +249,7 @@
                                 <td>${a.aktivitas}</td>
                                 <td>${a.subject}</td>
                                 <td>${a.deskripsi ?? '-'}</td>
-                                <td>${a.waktu}</td>
+                                <td>${waktu}</td>
                             </tr>
                         `;
                         });
@@ -203,6 +265,14 @@
             });
         });
 
+        function resetForm() {
+            const form = document.getElementById('form-data');
+            form.reset();
+            document.getElementById('aktivitasTableWrapper').innerHTML =
+                `<p class="text-muted">Silakan pilih contact client terlebih dahulu.</p>`;
+            form.classList.remove('was-validated');
+        }
+
         function hapusPeluang(id) {
             if (!confirm("Yakin ingin menghapus peluang ini?")) return;
 
@@ -210,19 +280,26 @@
                     method: 'DELETE',
                     headers: {
                         'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Accept': 'application/json'
-                    },
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
                 })
                 .then(response => {
                     if (response.ok) {
-                        location.reload(); // reload halaman setelah sukses hapus
+                        return response.json(); // Parse JSON response
                     } else {
-                        alert("Gagal menghapus data.");
+                        throw new Error('Gagal menghapus data.');
                     }
                 })
-                .catch(error => console.error("Error:", error));
+                .then(data => {
+                    alert(data.message || 'Peluang berhasil dihapus.'); // Show success message
+                    $('#peluangTable').DataTable().ajax.reload(); // Refresh DataTable
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    alert(error.message || 'Terjadi kesalahan saat menghapus data.');
+                });
         }
-
 
         function formatRupiah(angka) {
             let numberString = angka.replace(/[^,\d]/g, '').toString();
@@ -254,6 +331,11 @@
         });
 
         document.getElementById('form-data').addEventListener('submit', function(e) {
+            if (!this.checkValidity()) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            this.classList.add('was-validated');
             hargaInput.value = unformatRupiah(hargaInput.value);
             netsalesInput.value = unformatRupiah(netsalesInput.value);
         });

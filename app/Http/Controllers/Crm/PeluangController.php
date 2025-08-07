@@ -41,6 +41,44 @@ class PeluangController extends Controller
         return view('crm.peluang.index', compact('data', 'contact', 'materi', 'aktivitas'));
     }
 
+    public function indexJson()
+    {
+        try {
+            $user = Auth::user();
+            $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM'];
+
+            if ($user->jabatan === 'Sales') {
+                $idSales = $user->id_sales;
+                $data = Peluang::where('id_sales', $idSales)
+                    ->select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap')
+                    ->get()
+                    ->map(function ($item) {
+                        $item->periode = $item->periode_mulai . ' s/d ' . $item->periode_selesai; // Fixed concatenation
+                        return $item;
+                    });
+            } elseif (in_array($user->jabatan, $allowedJabatan)) {
+                $data = Peluang::select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap')
+                    ->get()
+                    ->map(function ($item) {
+                        $item->periode = $item->periode_mulai . ' s/d ' . $item->periode_selesai; // Fixed concatenation
+                        return $item;
+                    });
+            } else {
+                return response()->json([
+                    'error' => 'Unauthorized access.'
+                ], 403);
+            }
+
+            return response()->json([
+                'data' => $data,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Terjadi kesalahan pada server. Silakan coba lagi nanti.',
+            ], 500);
+        }
+    }
+
     public function detail($id)
     {
         $aktivitas = Aktivitas::where('id_peluang', $id)->get();
@@ -109,15 +147,19 @@ class PeluangController extends Controller
 
     public function delete($id)
     {
-        $peluang = Peluang::findOrFail($id);
-        $peluang->delete();
+        try {
+            $peluang = Peluang::findOrFail($id);
+            $peluang->delete();
 
-        $aktivitas = Aktivitas::where('id_peluang', $id)->get();
-        foreach ($aktivitas as $item) {
-            $item->delete();
+            $aktivitas = Aktivitas::where('id_peluang', $id)->get();
+            foreach ($aktivitas as $item) {
+                $item->delete();
+            }
+
+            return response()->json(['message' => 'Peluang dan aktivitas terkait berhasil dihapus.'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Gagal menghapus peluang atau aktivitas terkait.'], 500);
         }
-
-        return redirect()->route('index.contact');
     }
 
     public function update(Request $request, $id)
