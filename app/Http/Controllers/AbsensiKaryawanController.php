@@ -145,39 +145,27 @@ class AbsensiKaryawanController extends Controller
         }
     }
 
-private function validateShiftWaktu($waktu, $shift, $jabatan, $jenisAbsen = 'masuk')
-{
-    $config = $this->getShiftConfig($waktu->dayOfWeek, $jabatan, $shift);
-    $isWeekend = ($waktu->dayOfWeek == Carbon::SATURDAY || $waktu->dayOfWeek == Carbon::SUNDAY);
+    private function validateShiftWaktu($waktu, $shift, $jabatan)
+    {
+        $config = $this->getShiftConfig($waktu->dayOfWeek, $jabatan, $shift);
+        $isWeekend = ($waktu->dayOfWeek == Carbon::SATURDAY || $waktu->dayOfWeek == Carbon::SUNDAY);
 
-    $id_karyawan = auth()->user()->karyawan_id;
 
-    $izinHariIni = izinTigaJam::where('id_karyawan', $id_karyawan)
-        ->whereDate('tanggal_pengajuan', $waktu->toDateString())
-        ->where('approval', 2)
-        ->first();
+        $id_karyawan = auth()->user()->karyawan_id;
 
-    // Jika absen pulang dan ada izin di atas jam 12 siang
-    if ($jenisAbsen === 'pulang' && $izinHariIni) {
-        $jamMulaiIzin = Carbon::createFromFormat('H:i:s', $izinHariIni->jam_mulai);
-        if ($jamMulaiIzin->greaterThanOrEqualTo(Carbon::createFromTimeString('12:00:00'))) {
+        $izinHariIni = izinTigaJam::where('id_karyawan', $id_karyawan)
+            ->whereDate('tanggal_pengajuan', $waktu->toDateString())
+            ->where('approval', 2)
+            ->first();
+
+        if (!$waktu->between($config['jamAwal'], $config['jamAkhir'])) {
             return [
-                'valid' => true,
-                'keterangan' => 'Pulang - Izin 3 Jam (' . $jamMulaiIzin->format('H:i') . ' - ' .
-                    Carbon::createFromFormat('H:i:s', $izinHariIni->jam_selesai)->format('H:i') . ')',
-                'keterlambatan' => '00:00:00'
+                'valid' => false,
+                'message' => 'Waktu absen tidak sesuai shift. Jam kerja: ' .
+                    $config['jamAwal']->format('H:i') . ' - ' .
+                    $config['jamAkhir']->format('H:i')
             ];
         }
-    }
-
-    if (!$waktu->between($config['jamAwal'], $config['jamAkhir'])) {
-        return [
-            'valid' => false,
-            'message' => 'Waktu absen tidak sesuai shift. Jam kerja: ' .
-                $config['jamAwal']->format('H:i') . ' - ' .
-                $config['jamAkhir']->format('H:i')
-        ];
-    }
 
     if ($isWeekend && !in_array($jabatan, ['Office Boy', 'Technical Support'])) {
         return [
@@ -187,18 +175,22 @@ private function validateShiftWaktu($waktu, $shift, $jabatan, $jenisAbsen = 'mas
         ];
     }
 
-    $keterlambatan = '00:00:00';
-    $keterangan = 'Masuk';
-    if ($izinHariIni) {
-        $keterangan = 'Izin 3 Jam';
+        // Hitung keterlambatan untuk jabatan lain dan hari selain weekend
         $keterlambatan = '00:00:00';
-    } elseif ($waktu->greaterThan($config['jamMulaiShift'])) {
-        $diffMinutes = $waktu->diffInMinutes($config['jamMulaiShift']);
-        $hours = intdiv($diffMinutes, 60);
-        $minutes = ($diffMinutes % 60);
-        $keterlambatan = sprintf('%02d:%02d:00', $hours, $minutes);
-        $keterangan = 'Telat';
-    }
+        $keterangan = 'Masuk';
+        if ($izinHariIni) {
+            $keterangan = 'Izin 3 Jam';
+            $keterlambatan = '00:00:00';
+        } elseif ($waktu->greaterThan($config['jamMulaiShift'])) {
+            $diffMinutes = $waktu->diffInMinutes($config['jamMulaiShift']);
+            $hours = intdiv($diffMinutes, 60);
+            $minutes = ($diffMinutes % 60);
+            $keterlambatan = sprintf('%02d:%02d:00', $hours, $minutes);
+            $keterangan = 'Telat';
+        } else {
+            $keterangan = 'Masuk'; //fallback
+            $keterlambatan = '00:00:00';
+        }
 
     return [
         'valid' => true,
@@ -333,11 +325,12 @@ private function validateShiftWaktu($waktu, $shift, $jabatan, $jenisAbsen = 'mas
             ->get();
 
         $karyawan = karyawan::where('id', $id_karyawan)->first();
-        $noRecord = absensi_noRecord::where('id_karyawan', auth()->user()->karyawan_id)
-            ->where('jenis_PK', 'No Record')
-            // ->where('approval', 1)
-            ->get();
 
+        $noRecord = absensi_noRecord::where('id_karyawan', $id_karyawan)
+            ->where('jenis_PK', 'No Record')
+            ->whereHas('absensiKaryawan')
+            ->with('absensiKaryawan')
+            ->get();
 
         $schemeWork = absensi_noRecord::where('id_karyawan', $id_karyawan)
             ->where('jenis_PK', 'Scheme Work')
@@ -504,7 +497,7 @@ private function validateShiftWaktu($waktu, $shift, $jabatan, $jenisAbsen = 'mas
             ->whereYear('tanggal_awal', $tahun)
             ->whereMonth('tanggal_awal', $bulan)
             ->get();
-        // dd($absensiKaryawan);
+            // dd($absensiKaryawan);
 
         // Inisialisasi jumlahAbsensi
         if ($karyawanId == '2') {
@@ -514,6 +507,7 @@ private function validateShiftWaktu($waktu, $shift, $jabatan, $jenisAbsen = 'mas
                 ->whereRaw('DAYOFWEEK(tanggal) NOT IN (1, 7)') // Mengecualikan Minggu (1) dan Sabtu (7)
                 ->distinct('tanggal')
                 ->count();
+
         } else {
             $jumlahAbsensi = $absensiKaryawan->count();
             $jumlahAbsensiPulang = $absen_pulang->count();
@@ -602,7 +596,7 @@ private function validateShiftWaktu($waktu, $shift, $jabatan, $jenisAbsen = 'mas
         $this->validate($request, [
             'id_karyawan'   => 'required|integer',
             'kendala'       => 'required|string|in:Human Error,System Error',
-            'tanggal_absen' => 'required|date',
+            'tanggal_absen' => 'required|integer',
             'bukti_gambar'  => 'required|image',
             'kronologi'     => 'required|string',
         ]);
@@ -639,7 +633,7 @@ private function validateShiftWaktu($waktu, $shift, $jabatan, $jenisAbsen = 'mas
             'id_karyawan'   => $request->id_karyawan,
             'jenis_PK'      => 'No Record',
             'kendala'       => $request->kendala,
-            'id_absen'      => '0',
+            'id_absen'      => $request->tanggal_absen,
             'bukti_gambar'  => $fotoPath,
             'kronologi'     => $request->kronologi,
             'approval'      => '0',

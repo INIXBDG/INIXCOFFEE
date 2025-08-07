@@ -160,7 +160,7 @@
     <div class="col-4 col-sm-4 col-md-4 col-lg-4 text-center d-flex justify-content-center">
         <div class="card_foto">
             <div class="imgbox">
-                <img src="https://randomuser.me/api/portraits/lego/5.jpg" alt="Sales Image" class="dynamic-image" id="foto_sales">
+                <img src="{{ asset('images/download.png') }}" alt="Sales Image" class="dynamic-image" id="foto_sales">
             </div>
             <div class="details">
                 <span class="caption">Sales Terbaik</span>
@@ -173,7 +173,7 @@
     <div class="col-4 col-sm-4 col-md-4 col-lg-4 text-center d-flex justify-content-center">
         <div class="card_foto">
             <div class="imgbox">
-                <img src="https://randomuser.me/api/portraits/lego/5.jpg" alt="Instruktur Image" class="dynamic-image" id="foto_instruktur">
+                <img src="{{ asset('images/download.png') }}" alt="Instruktur Image" class="dynamic-image" id="foto_instruktur">
             </div>
             <div class="details">
                 <span class="caption mb-30">Instruktur Terbaik</span>
@@ -186,7 +186,7 @@
     <div class="col-4 col-sm-4 col-md-4 col-lg-4 text-center d-flex justify-content-center">
         <div class="card_foto">
             <div class="imgbox">
-                <img src="https://randomuser.me/api/portraits/lego/5.jpg" alt="Office Image" class="dynamic-image" id="foto_office">
+                <img src="{{ asset('images/download.png') }}" alt="Office Image" class="dynamic-image" id="foto_office">
             </div>
             <div class="details">
                 <span class="caption">Office Terbaik</span>
@@ -1269,7 +1269,7 @@
         border-radius: 15px;
         padding:0 4px 12px rgba(0,0,0,0.08);
         transition: transform 0.3 ease;
-        /* box-shadow: 0 2px 10px rgba(0, 0, 0, .2); */
+        box-shadow: 0 2px 10px rgba(0, 0, 0, .2);
         text-align: center;
           /* animation: floatCard 6s ease-in-out infinite; */
     }
