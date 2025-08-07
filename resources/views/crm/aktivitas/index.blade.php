@@ -95,6 +95,59 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Modal untuk Edit Aktivitas -->
+            <div class="modal fade" id="editActivityModal" tabindex="-1" aria-labelledby="editActivityModalLabel"
+                aria-hidden="true">
+                <div class="modal-dialog">
+                    <form id="editActivityForm" method="POST">
+                        @csrf
+                        @method('PUT')
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="editActivityModalLabel">Edit Aktivitas</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+
+                                <input type="hidden" id="edit_id">
+
+                                <div class="mb-3">
+                                    <label class="form-label" for="edit_aktivitas">Jenis Aktivitas</label>
+                                    <select class="form-select" id="edit_aktivitas" name="aktivitas" required>
+                                        <option value="Call">Call</option>
+                                        <option value="Email">Email</option>
+                                        <option value="Visit">Visit</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label" for="edit_subject">Subjek</label>
+                                    <input type="text" class="form-control" id="edit_subject" name="subject"
+                                        required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label" for="edit_deskripsi">Deskripsi</label>
+                                    <textarea class="form-control" id="edit_deskripsi" name="deskripsi"></textarea>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label" for="edit_waktu_aktivitas">Waktu Aktivitas</label>
+                                    <input type="date" class="form-control" id="edit_waktu_aktivitas"
+                                        name="waktu_aktivitas" required>
+                                </div>
+
+                            </div>
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-primary">Perbarui</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -113,7 +166,7 @@
                     type: 'GET',
                     dataSrc: 'data',
                     error: function(xhr, error, thrown) {
-                        console.error('Error:', xhr.responseText); // Log detailed error
+                        console.error('Error:', xhr.responseText);
                         alert('Gagal memuat data aktivitas: ' + thrown);
                     }
                 },
@@ -134,16 +187,72 @@
                     },
                     {
                         data: 'id',
-                        render: function(id) {
+                        render: function(id, type, row) {
                             return `
-                                <div class="d-flex gap-2">
-                                    <button class="btn btn-sm btn-danger" onclick="hapusAktivitas(${id})">Hapus</button>
-                                </div>
-                            `;
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-warning" onclick='editAktivitas(${JSON.stringify(row)})'>Edit</button>
+                                <button class="btn btn-sm btn-danger" onclick="hapusAktivitas(${id})">Hapus</button>
+                            </div>
+                        `;
                         }
                     }
                 ]
             });
+        });
+
+        function editAktivitas(row) {
+            $('#edit_id').val(row.id);
+            $('#edit_aktivitas').val(row.aktivitas);
+            $('#edit_subject').val(row.subject);
+            $('#edit_deskripsi').val(row.deskripsi);
+
+            if (row.waktu_aktivitas) {
+                const tanggal = new Date(row.waktu_aktivitas).toISOString().split('T')[0];
+                $('#edit_waktu_aktivitas').val(tanggal);
+            }
+
+            const modal = new bootstrap.Modal(document.getElementById('editActivityModal'));
+            modal.show();
+        }
+
+        $('#editActivityForm').submit(function(e) {
+            e.preventDefault();
+
+            const id = $('#edit_id').val();
+            const url = `/crm/aktivitas/update/${id}`;
+            const data = {
+                aktivitas: $('#edit_aktivitas').val(),
+                subject: $('#edit_subject').val(),
+                deskripsi: $('#edit_deskripsi').val(),
+                waktu_aktivitas: $('#edit_waktu_aktivitas').val()
+            };
+
+            fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(async (res) => {
+                    if (!res.ok) {
+                        const text = await res.text();
+                        throw new Error('Gagal update: ' + text);
+                    }
+                    return res.json();
+                })
+                .then(res => {
+                    alert(res.message || 'Aktivitas berhasil diperbarui.');
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('editActivityModal'));
+                    modal.hide();
+                    $('#aktivitasTable').DataTable().ajax.reload();
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('Terjadi kesalahan saat memperbarui aktivitas.');
+                });
         });
 
         function hapusAktivitas(id) {
@@ -158,11 +267,8 @@
                     }
                 })
                 .then(response => {
-                    if (response.ok) {
-                        return response.json();
-                    } else {
-                        throw new Error('Gagal menghapus aktivitas.');
-                    }
+                    if (response.ok) return response.json();
+                    throw new Error('Gagal menghapus aktivitas.');
                 })
                 .then(data => {
                     alert(data.message || 'Aktivitas berhasil dihapus.');

@@ -175,19 +175,16 @@ class AktivitasController extends Controller
         }
     }
 
-    public function update($id, Request $request)
+    public function update(Request $request, $id)
     {
-        $aktivitas = Aktivitas::where('id', $id)->first();
-
-        $aktivitas->aktivitas = $request->aktivitas;
-        $aktivitas->subject = $request->subject;
-        $aktivitas->deskripsi = $request->deskripsi;
-        $aktivitas->waktu_aktivitas = $request->waktu_aktivitas;
-
-        $aktivitas->update();
-
-        return back()->with([
-            'message' => 'Aktivitas berhasil di perbarui.',
+        $aktivitas = Aktivitas::findOrFail($id);
+        $aktivitas->update([
+            'aktivitas' => $request->aktivitas,
+            'subject' => $request->subject,
+            'deskripsi' => $request->deskripsi,
+            'waktu_aktivitas' => $request->waktu_aktivitas,
         ]);
+
+        return response()->json(['message' => 'Aktivitas berhasil diperbarui.']);
     }
 }
