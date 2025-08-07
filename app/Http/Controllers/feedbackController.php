@@ -87,6 +87,18 @@ class feedbackController extends Controller
 
         // Transform the feedback data
         $transformedFeedbacks = $feedbacks->map(function ($feedback) {
+            $materi = isset($feedback->M) ? intval($feedback->M) : round(($feedback->M1 + $feedback->M2 + $feedback->M3 + $feedback->M4) / 4, 1);
+            $pelayanan = isset($feedback->P) ? intval($feedback->P) : round(($feedback->P1 + $feedback->P2 + $feedback->P3 + $feedback->P4 + $feedback->P5 + $feedback->P6 + $feedback->P7) / 7, 1);
+            $fasilitas = isset($feedback->F) ? intval($feedback->F) : round(($feedback->F1 + $feedback->F2 + $feedback->F3 + $feedback->F4 + $feedback->F5) / 5, 1);
+            $instruktur = isset($feedback->I) ? intval($feedback->I) : round(($feedback->I1 + $feedback->I2 + $feedback->I3 + $feedback->I4 + $feedback->I5 + $feedback->I6 + $feedback->I7 + $feedback->I8) / 8, 1);
+            $instruktur2 = isset($feedback->IB) ? intval($feedback->IB) : round(($feedback->I1b + $feedback->I2b + $feedback->I3b + $feedback->I4b + $feedback->I5b + $feedback->I6b + $feedback->I7b + $feedback->I8b) / 8, 1);
+            $asisten = isset($feedback->IAS) ? intval($feedback->IAS) : round(($feedback->I1as + $feedback->I2as + $feedback->I3as + $feedback->I4as + $feedback->I5as + $feedback->I6as + $feedback->I7as + $feedback->I8as) / 8, 1);
+            $sales = isset($feedback->S) ? intval($feedback->S) : round(($feedback->S1 + $feedback->S2 + $feedback->S3 + $feedback->S4 + $feedback->S5 + $feedback->S6 + $feedback->S7) / 7, 1);
+            if($sales == '0' || $sales == 0){
+                $total_feedback = round(($materi + $pelayanan + $fasilitas + $instruktur) / 4, 2);
+            }else{
+                $total_feedback = round(($materi + $pelayanan + $fasilitas + $instruktur + $sales) / 5, 2);
+            }
             return [
                 'id_regist' => $feedback->id_regist,
                 'id_rkm' => $feedback->id_rkm,
@@ -99,30 +111,72 @@ class feedbackController extends Controller
                 'tanggal_akhir' => $feedback->rkm->tanggal_akhir,
                 'email' => $feedback->email,
                 'nama_perusahaan' => $feedback->rkm->perusahaan->nama_perusahaan,
-                'materi' => round(($feedback->M1 + $feedback->M2 + $feedback->M3 + $feedback->M4) / 4, 1),
-                'pelayanan' => round(($feedback->P1 + $feedback->P2 + $feedback->P3 + $feedback->P4 + $feedback->P5 + $feedback->P6 + $feedback->P7) / 7, 1),
-                'fasilitas' => round(($feedback->F1 + $feedback->F2 + $feedback->F3 + $feedback->F4 + $feedback->F5) / 5, 1),
-                'instruktur' => round(($feedback->I1 + $feedback->I2 + $feedback->I3 + $feedback->I4 + $feedback->I5 + $feedback->I6 + $feedback->I7 + $feedback->I8) / 8, 1),
-                'instruktur2' => round(($feedback->I1b + $feedback->I2b + $feedback->I3b + $feedback->I4b + $feedback->I5b + $feedback->I6b + $feedback->I7b + $feedback->I8b) / 8, 1),
-                'asisten' => round(($feedback->I1as + $feedback->I2as + $feedback->I3as + $feedback->I4as + $feedback->I5as + $feedback->I6as + $feedback->I7as + $feedback->I8as) / 8, 1),
+                'materi' => $materi,
+                'pelayanan' => $pelayanan,
+                'fasilitas' => $fasilitas,
+                'instruktur' => $instruktur,
+                'instruktur2' => $instruktur2,
+                'asisten' => $asisten,
+                'sales' => $sales,
                 'umum1' => $feedback->U1,
                 'umum2' => $feedback->U2,
+                'textM' => $feedback->TextM,
+                'textP' => $feedback->TextP,
+                'textF' => $feedback->TextF,
+                'textI' => $feedback->TextI,
+                'textIB' => $feedback->TextIB,
+                'textIAS' => $feedback->TextIAS,
+                'total_feedback' => $total_feedback,
                 'datafeedbacks' => $feedback,
             ];
         });
-
-        $groupedFeedbacks = $transformedFeedbacks->groupBy('nama_perusahaan')->map(function ($groupedFeedbacks, $nama_perusahaan) {
-            return [
-                'nama_perusahaan' => $nama_perusahaan,
-                'data' => $groupedFeedbacks,
-                // 'feedbacks' => $groupedFeedbacks->pluck('datafeedbacks')
+        $instruktur =  $transformedFeedbacks->avg('instruktur');
+        $instruktur2 = $transformedFeedbacks->avg('instruktur2');
+        $asisten = $transformedFeedbacks->avg('asisten');
+        if($instruktur2 == '0' || $instruktur == 0 && $asisten == '0' || $asisten == 0){
+            $instrukturfix =  $transformedFeedbacks->avg('instruktur');
+        }elseif($asisten == '0' || $asisten == 0){
+            $instrukturfix =  round(($transformedFeedbacks->avg('instruktur') + $transformedFeedbacks->avg('instruktur2')) / 2, 2);
+        }else{
+            $instrukturfix =  round(($transformedFeedbacks->avg('instruktur') + $transformedFeedbacks->avg('instruktur2') + $transformedFeedbacks->avg('asisten')) / 3, 2);
+        }
+        $sales = $transformedFeedbacks->avg('sales');
+        if($sales == '0' || $sales == 0){
+            $all_avg_feedback = round((
+                    $transformedFeedbacks->avg('materi') +
+                    $transformedFeedbacks->avg('pelayanan') +
+                    $transformedFeedbacks->avg('fasilitas') +
+                    $instrukturfix) / 4, 2);
+        }else{
+            $all_avg_feedback = 
+            round((
+                    $transformedFeedbacks->avg('materi') +
+                    $transformedFeedbacks->avg('pelayanan') +
+                    $transformedFeedbacks->avg('fasilitas') +
+                    $instrukturfix +
+                    $transformedFeedbacks->avg('sales')
+                ) / 5, 2);
+        }
+        
+        // return $instruktur2;
+        $post = [
+                'materi' => round($transformedFeedbacks->avg('materi'), 2),
+                'pelayanan' => round($transformedFeedbacks->avg('pelayanan'), 2),
+                'fasilitas' => round($transformedFeedbacks->avg('fasilitas'), 2),
+                'instruktur' => round($transformedFeedbacks->avg('instruktur'), 2),
+                'instruktur2' => round($transformedFeedbacks->avg('instruktur2'), 2),
+                'asisten' => round($transformedFeedbacks->avg('asisten'), 2),
+                'sales' => round($transformedFeedbacks->avg('sales'), 2),
+                'all_avg_feedback' => $all_avg_feedback,
+                'data' => $transformedFeedbacks,
             ];
-        });
 
-        $post = $groupedFeedbacks->values();
 
-        // return response()->json(['post' => $post]);
-        return view('feedback.show', compact('post', 'id'));
+// return response()->json($post);
+
+        $pertanyaan = Feedback::get();
+
+        return view('feedback.show', compact('post', 'id', 'pertanyaan'));
 
     }
     /**

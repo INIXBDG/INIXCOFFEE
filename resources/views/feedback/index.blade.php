@@ -39,6 +39,7 @@
                                 <th>Instuktur</th>
                                 <th>Instruktur 2</th>
                                 <th>Asisten</th>
+                                <th>Sales</th>
                                 <th>created_at</th>
                                 <th>Aksi</th>
                             </tr>
@@ -198,6 +199,7 @@
                     {"data": "averageI"},
                     {"data": "averageIb"},
                     {"data": "averageIas"},
+                    {"data": "averageS"},
                     {"data": "tanggal_awal", "visible": false},
 
                     {
@@ -220,8 +222,8 @@
                         }
                     }
                 ],
-                "columnDefs" : [{"targets":[11], "type":"date"}],
-                "order": [[11, 'desc']], // Ubah urutan menjadi descending untuk kolom ke-6
+                "columnDefs" : [{"targets":[12], "type":"date"}],
+                "order": [[12, 'desc']], // Ubah urutan menjadi descending untuk kolom ke-6
 
                 "initComplete": function() {
                     this.api().columns(1).search(idInstruktur).draw();

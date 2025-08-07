@@ -29,7 +29,6 @@ class apiController extends Controller
         });
         // return $groupedFeedbacks;
         $averageFeedbacks = [];
-
         foreach ($groupedFeedbacks as $materi_key => $feedbackGroup) {
             $materi_key = $feedbackGroup->first()->rkm->materi_key;
             $nama_materi = $feedbackGroup->first()->rkm->materi->nama_materi;
@@ -81,7 +80,20 @@ class apiController extends Controller
             $totalI6as = $feedbackGroup->sum('I6as');
             $totalI7as = $feedbackGroup->sum('I7as');
             $totalI8as = $feedbackGroup->sum('I8as');
-
+            $totals1 = $feedbackGroup->sum('s1');
+            $totals2 = $feedbackGroup->sum('s2');
+            $totals3 = $feedbackGroup->sum('s3');
+            $totals4 = $feedbackGroup->sum('s4');
+            $totals5 = $feedbackGroup->sum('s5');
+            $totals6 = $feedbackGroup->sum('s6');
+            $totals7 = $feedbackGroup->sum('s7');
+            $totalAllM = ($feedbackGroup->avg('M'));
+            $totalAllP = ($feedbackGroup->avg('P'));
+            $totalAllF = ($feedbackGroup->avg('F'));
+            $totalAllI = ($feedbackGroup->avg('I'));
+            $totalAllIb = ($feedbackGroup->avg('Ib'));
+            $totalAllIas = ($feedbackGroup->avg('Ias'));
+            $totalAllS = ($feedbackGroup->avg('S'));
 
             $averageFeedbacks[] = [
                 'nama_materi' => $nama_materi,
@@ -132,12 +144,20 @@ class apiController extends Controller
                 'averageI6as' => $totalI6as / $totalFeedbacks,
                 'averageI7as' => $totalI7as / $totalFeedbacks,
                 'averageI8as' => $totalI8as / $totalFeedbacks,
-                'averageM' => round(($totalM1 + $totalM2 + $totalM3 + $totalM4) / ($totalFeedbacks * 4), 1),
-                'averageP' => round(($totalP1 + $totalP2 + $totalP3 + $totalP4 + $totalP5 + $totalP6 + $totalP7) / ($totalFeedbacks * 7), 1),
-                'averageF' => round(($totalF1 + $totalF2 + $totalF3 + $totalF4 + $totalF5) / ($totalFeedbacks * 5), 1),
-                'averageI' => round(($totalI1 + $totalI2 + $totalI3 + $totalI4 + $totalI5 + $totalI6 + $totalI7 + $totalI8) / ($totalFeedbacks * 8), 1),
-                'averageIb' => round(($totalI1b + $totalI2b + $totalI3b + $totalI4b + $totalI5b + $totalI6b + $totalI7b + $totalI8b) / ($totalFeedbacks * 8), 1),
-                'averageIas' => round(($totalI1as + $totalI2as + $totalI3as + $totalI4as + $totalI5as + $totalI6as + $totalI7as + $totalI8as) / ($totalFeedbacks * 8), 1),
+                'averages1' => $totals1 / $totalFeedbacks,
+                'averages2' => $totals2 / $totalFeedbacks,
+                'averages3' => $totals3 / $totalFeedbacks,
+                'averages4' => $totals4 / $totalFeedbacks,
+                'averages5' => $totals5 / $totalFeedbacks,
+                'averages6' => $totals6 / $totalFeedbacks,
+                'averages7' => $totals7 / $totalFeedbacks,
+                'averageM' => ($totalAllM == 0 && $totalFeedbacks > 0) ? round(($totalM1 + $totalM2 + $totalM3 + $totalM4) / ($totalFeedbacks * 4), 1) : intval($totalAllM),
+                'averageP' => ($totalAllP == 0 && $totalFeedbacks > 0) ?  round(($totalP1 + $totalP2 + $totalP3 + $totalP4 + $totalP5 + $totalP6 + $totalP7) / ($totalFeedbacks * 7), 1): intval($totalAllP),
+                'averageF' => ($totalAllF == 0 && $totalFeedbacks > 0) ? round(($totalF1 + $totalF2 + $totalF3 + $totalF4 + $totalF5) / ($totalFeedbacks * 5), 1) : intval($totalAllF),
+                'averageI' => ($totalAllI == 0 && $totalFeedbacks > 0) ?  round(($totalI1 + $totalI2 + $totalI3 + $totalI4 + $totalI5 + $totalI6 + $totalI7+ $totalI8) / ($totalFeedbacks * 8), 1): intval($totalAllI),
+                'averageIb' => ($totalAllIb == 0 && $totalFeedbacks > 0) ? round(($totalI1b + $totalI2b + $totalI3b + $totalI4b + $totalI5b + $totalI6b + $totalI7b + $totalI8b) / ($totalFeedbacks * 8), 1): intval($totalAllIb),
+                'averageIas' => ($totalAllIas == 0 && $totalFeedbacks > 0) ? round(($totalI1as + $totalI2as + $totalI3as + $totalI4as + $totalI5as + $totalI6as + $totalI7as + $totalI8as) / ($totalFeedbacks * 8), 1): intval($totalAllIas),
+                'averageS' => ($totalAllS == 0 && $totalFeedbacks > 0) ?  round(($totals1 + $totals2 + $totals3 + $totals4 + $totals5 + $totals6 + $totals7) / ($totalFeedbacks * 7), 1): intval($totalAllS),
             ];
         }
 

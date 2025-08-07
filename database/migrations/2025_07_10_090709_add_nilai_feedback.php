@@ -19,6 +19,20 @@ return new class extends Migration
             $table->string('s5')->nullable();
             $table->string('s6')->nullable();
             $table->text('s7')->nullable();
+            $table->string('M')->nullable();
+            $table->text('TextM')->nullable();
+            $table->string('P')->nullable();
+            $table->text('TextP')->nullable();
+            $table->string('F')->nullable();
+            $table->text('TextF')->nullable();
+            $table->string('I')->nullable();
+            $table->text('TextI')->nullable();
+            $table->string('IB')->nullable();
+            $table->text('TextIB')->nullable();
+            $table->string('IAS')->nullable();
+            $table->text('TextIAS')->nullable();
+            $table->string('S')->nullable();
+            $table->text('TextS')->nullable();
         });
     }
 
