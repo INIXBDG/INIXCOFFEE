@@ -1,16 +1,34 @@
 <?php
 
 namespace App\Http\Controllers\Crm;
+
 use App\Http\Controllers\Controller;
 use App\Models\Peluang;
+use App\Models\Perusahaan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CRMController extends Controller
 {
-    public function index(){
-        return view('crm.dashboard');
+    public function index()
+    {
+        $data = Perusahaan::select('kategori_perusahaan', DB::raw('count(*) as total'))
+            ->groupBy('kategori_perusahaan')
+            ->get();
 
+        $total = $data->sum('total');
+
+        $chartData = $data->map(function ($item) use ($total) {
+            return [
+                'kategori' => $item->kategori_perusahaan ?? 'Tidak Ada Kategori',
+                'persen' => round(($item->total / $total) * 100, 2),
+            ];
+        });
+
+        
+        return view('crm.dashboard', compact('chartData'));
     }
+
 
     public function getProfile()
     {
@@ -29,8 +47,4 @@ class CRMController extends Controller
             'ttd' => $profile->karyawan->ttd ? asset('storage/ttd/' . $profile->karyawan->ttd) : null,
         ]);
     }
-
-    
-
 }
-
