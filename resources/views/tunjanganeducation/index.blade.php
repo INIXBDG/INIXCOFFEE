@@ -368,6 +368,7 @@
                                             <thead>
                                                 <tr>
                                                     <th scope="col">Nama Materi</th>
+                                                    <th scope="col">Tanggal</th>
                                                     <th scope="col">Instruktur</th>
                                                     <th scope="col">Kode Karyawan</th>
                                                     <th scope="col">Durasi</th>
@@ -581,7 +582,7 @@
                         }
                         // console.log(data.data.id_rkm)
                         // Panggil fungsi generatefeedbackedit dengan cek yang ditentukan
-                        generatefeedbackedit(data.data.id_rkm, cek);
+                        // generatefeedbackedit(data.data.id_rkm, cek);
                     } else {
                         console.error("Tanggal awal atau tanggal akhir tidak ditemukan");
                     }
@@ -673,7 +674,17 @@
             },
             "columns": [
                 {"data": "rkm.materi.nama_materi"},
-                // {"data": "id"},
+                {
+                    "data": null,
+                    "render": function(data, type, row) {
+                        if (!data || !data.tanggal_awal || !data.tanggal_akhir) return '-';
+
+                        const awal = moment(data.tanggal_awal).format('DD MMM YYYY');
+                        const akhir = moment(data.tanggal_akhir).format('DD MMM YYYY');
+
+                        return `${awal} s/d ${akhir}`;
+                    }
+                },
                 {"data": "instruktur.nama_lengkap"},
                 {
                     "data": "instruktur.kode_karyawan",
@@ -757,7 +768,7 @@
                 }
             ],
             // "columnDefs": [{"targets": [10],}],
-            "order": [[10, 'desc']],
+            "order": [[1, 'desc']],
             "initComplete": function() {
                 this.api().columns(2).search(idInstruktur).draw();
             }
