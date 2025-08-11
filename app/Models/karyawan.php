@@ -40,6 +40,10 @@ class karyawan extends Model
     {
         return $this->hasOne(User::class, 'karyawan_id');
     }
+    public function formPenilaian()
+    {
+        return $this->hasMany(formPenilaian::class, 'id_karyawan', 'id');
+    }
 
     public function perusahaan()
     {
@@ -87,8 +91,8 @@ class karyawan extends Model
         return $this->hasMany(lembur::class);
     }
 
-    public function getHashidsAttribute()
-    {
-        return Hashids::encode($this->id);
-    }
+    // public function getHashidsAttribute()
+    // {
+    //     return Hashids::encode($this->id);
+    // }
 }
