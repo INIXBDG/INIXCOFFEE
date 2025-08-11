@@ -73,7 +73,7 @@ class izinTigaJamController extends Controller
     // dd($request->all());
     $this->validate($request, [
         'id_karyawan'   => 'required',
-        'tangal'        => 'required|date',
+        'tanggal'        => 'required|date',
         'jam_mulai'     => 'required|date_format:H:i',
         'jam_selesai'   => 'required|date_format:H:i',
         'durasi'        => 'required|string',
