@@ -67,7 +67,7 @@
                 <div class="card shadow-sm h-100">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h2 class="card-title h4 fw-bold mb-0">Data Peluang</h2>
+                            <h2 class="card-title h4 fw-bold mb-0">Data Prospect</h2>
                             <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal"
                                 data-bs-target="#tambahLeadModal">
                                 Tambah Lead
@@ -82,6 +82,7 @@
                                         <th scope="col" class="px-3 py-2">Materi</th>
                                         <th scope="col" class="px-3 py-2">Periode</th>
                                         <th scope="col" class="px-3 py-2 text-center">Pax</th>
+                                        <th scope="col" class="px-3 py-2 text-center">Prospect Terbuat</th>
                                         <th scope="col" class="px-3 py-2 text-center">Tahap</th>
                                         <th scope="col" class="px-3 py-2 text-center">Aksi</th>
                                     </tr>
@@ -96,9 +97,17 @@
                                                 {{ \Carbon\Carbon::parse($item->periode_selesai)->translatedFormat('d F Y') }}
                                             </td>
                                             <td class="px-3 py-2 text-center">{{ $item->pax }}</td>
-                                            <td
-                                                class="px-3 py-2 text-center {{ $item->tahap == 'merah' ? 'bg-danger text-white' : ($item->tahap == 'biru' ? 'bg-primary text-white' : ($item->tahap == 'hitam' ? 'bg-dark text-white' : ($item->tahap == 'lead' ? 'bg-info text-white' : 'bg-secondary text-white'))) }}">
-                                                {{ strtoupper($item->tahap) }}
+                                            <td class="px-3 py-2 text-center">
+                                                {{ \Carbon\Carbon::parse($item->created_at)->translatedFormat('d F Y') }}
+                                            </td>
+                                            <td class="px-3 py-2 text-center {{ match (strtolower($item->tahap)) {
+                                                    'merah' => 'bg-danger text-white',
+                                                    'biru', 'lead' => 'bg-info text-white',
+                                                    'hitam' => 'bg-dark text-white',
+                                                    'lost' => 'bg-primary text-white',
+                                                    default => 'bg-secondary text-white'
+                                                } }}">
+                                                    {{ strtoupper($item->tahap) }}
                                             </td>
                                             <td class="px-3 py-2 text-center">
                                                 <div class="d-flex gap-2 justify-content-center">
@@ -582,7 +591,7 @@
                 </div>
             </div>
         </div>
-        
+
         <script>
             // Submit form via AJAX
             document.getElementById('editAktivitasForm').addEventListener('submit', function(e) {

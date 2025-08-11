@@ -63,7 +63,7 @@
                                 <dd class="col-sm-8">
                                     {{ \Carbon\Carbon::parse($peluang->periode_selesai)->translatedFormat('d F Y') }}</dd>
 
-                                <dt class="col-sm-4">Contact</dt>
+                                <dt class="col-sm-4">Client</dt>
                                 <dd class="col-sm-8">
                                     {{ $peluang->perusahaan->nama_perusahaan ?? '-' }}
                                 </dd>
