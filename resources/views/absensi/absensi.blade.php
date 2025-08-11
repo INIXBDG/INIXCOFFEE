@@ -300,39 +300,80 @@
                     </div>
                 </div>
             </div>
-            <div class="row my-2">
-                <div class="col-md-12">
-                    <div class="card">
-                        <div class="card-body table-responsive">
-                            Data Kehadiran Anda bulan ini
-                            <table class="table table-bordered">
-                                <thead>
-                                    <th>Tanggal</th>
-                                    <th>Jam Masuk</th>
-                                    <th>Jam Pulang</th>
-                                    <th>Keterangan</th>
-                                    <th>Waktu Keterlambatan</th>
-                                </thead>
-                                <tbody>
-                                    @foreach ($absen as $item)
-                                        @php
-                                            $isToday = \Carbon\Carbon::parse($item->tanggal)->isToday();
-                                        @endphp
-                                        <tr class="{{ $isToday ? 'tabel-custom' : '' }}">
-                                            <td>{{ \Carbon\Carbon::parse($item->tanggal)->translatedFormat('l, d F Y') }}</td>
-                                            <td>{{ $item->jam_masuk }}</td>
-                                            <td>{{ $item->jam_keluar }}</td>
-                                            <td>{{ $item->keterangan }}</td>
-                                            <td>{{ $item->waktu_keterlambatan }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+@php
+    use Illuminate\Support\Str;
+    use Carbon\Carbon;
+    use App\Models\izinTigaJam;
+@endphp
+
+<div class="row my-2">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body table-responsive">
+                Data Kehadiran Anda bulan ini
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>Jam Masuk</th>
+                            <th>Keterangan Masuk</th>
+                            <th>Jam Pulang</th>
+                            <th>Keterangan Pulang</th>
+                            <th>Waktu Keterlambatan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($absen as $item)
+                            @php
+                                $isToday = Carbon::parse($item->tanggal)->isToday();
+
+                                // Ambil data izin 3 jam jika ada
+                                $izin = izinTigaJam::where('id_karyawan', auth()->user()->karyawan_id)
+                                        ->whereDate('tanggal_pengajuan', $item->tanggal)
+                                        ->where('approval', 2)
+                                        ->first();
+
+                                // Keterangan Masuk: ambil dari field keterangan
+                                $keteranganMasuk = $item->jam_masuk ? $item->keterangan : '-';
+
+                                // Default keterangan pulang
+                                $ket_pul = '-';
+
+                                if ($item->jam_keluar) {
+                                    if ($izin) {
+                                        $jamMulaiIzin = Carbon::createFromFormat('H:i:s', $izin->jam_mulai);
+                                        $jamSelesaiIzin = Carbon::createFromFormat('H:i:s', $izin->jam_selesai);
+
+                                        if ($jamMulaiIzin->greaterThan(Carbon::createFromTime(12, 0))) {
+                                            $ket_pul = 'Pulang - Izin 3 Jam (' . $jamMulaiIzin->format('H:i') . ' - ' . $jamSelesaiIzin->format('H:i') . ')';
+                                        } else {
+                                            $ket_pul = 'Pulang';
+                                        }
+                                    } else {
+                                        $ket_pul = 'Pulang';
+                                    }
+                                }
+                            @endphp
+                            <tr class="{{ $isToday ? 'tabel-custom' : '' }}">
+                                <td>{{ Carbon::parse($item->tanggal)->translatedFormat('l, d F Y') }}</td>
+                                <td>{{ $item->jam_masuk ?? '-' }}</td>
+                                <td>{{ $keteranganMasuk }}</td>
+                                <td>{{ $item->jam_keluar ?? '-' }}</td>
+                                <td>{{ $ket_pul }}</td>
+                                <td>{{ $item->waktu_keterlambatan ?? '-' }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
-            <div class="row my-2">
+
+        </div>
+    </div>
+</div>
+
+
+
+             <div class="row my-2">
                 <div class="col-md-12">
                     <div class="card">
                         <div class="card-body">

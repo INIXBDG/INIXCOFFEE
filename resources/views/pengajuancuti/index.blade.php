@@ -145,7 +145,7 @@
         var userRole = '{{ auth()->user()->jabatan}}';
         var user = '{{ auth()->user()->karyawan_id }}';
         console.log(user);
-        $('#jabatantable').DataTable({
+        var table = $('#jabatantable').DataTable({
             "ajax": {
                 "url": "{{ route('getPengajuanCuti') }}", // URL API untuk mengambil data
                 "type": "GET",
@@ -320,11 +320,54 @@
             "order": [[0, 'desc']], // Ubah urutan menjadi descending untuk kolom ke-6
                 "columnDefs" : [{"targets":[0], "type":"date"}],
         });
+
+        function reloadTableKeepPage() {
+            var currentPage = table.page();
+            table.ajax.reload(function () {
+                table.page(currentPage).draw(false);
+            }, false);
+        }
+
+        // ✅ Submit form approve pakai AJAX
+$('#approveForm').on('submit', function(e) {
+    e.preventDefault(); // Jangan reload page
+
+    var form = $(this);
+    var url = form.attr('action');
+
+    $.ajax({
+        type: "POST",
+        url: url,
+        data: form.serialize(),
+        success: function(response) {
+            $('#approveModal').modal('hide');
+
+            // 🚀 Reload DataTable setelah berhasil
+            $('#jabatantable').DataTable().ajax.reload(null, false); // false = tetap di page sekarang
+
+            // ✅ Tampilkan alert Bootstrap biasa
+            $('#alert-success').remove(); // hapus alert sebelumnya kalau ada
+            $('#content-wrapper').prepend(`
+                <div id="alert-success" class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+                    Data berhasil disetujui!
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `);
+        },
+        error: function(xhr) {
+            alert('Gagal menyimpan data!');
+        }
+    });
+});
+
+
+
+
     });
         function openApproveModal(id, jabatan) {
             // Set the action URL for the approval form
             var approveUrl = "{{ url('/pengajuancuti') }}/" + id;
-            $('#approveForm').attr('action', approveUrl);
+            $('#approveForm').attr('action', '/pengajuancuti/' + id);
             $('#approveModal').modal('show');
         }
 

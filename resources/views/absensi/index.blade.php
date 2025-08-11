@@ -64,37 +64,51 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-6">
-            <div class="card m-4">
-                <div class="card-body table-responsive">
-                    <h3 class="card-title text-center my-1">{{ __('Data Absensi Karyawan') }}</h3>
-                    @can('Create RekapAbsensi')
-                        <a href="/absensi/create" class="btn btn-primary my-2">Buat Absensi</a>
-                    @endcan
-                    <table class="table table-bordered" id="tableAbsen">
-                        <thead>
-                            <th>Tanggal</th>
-                            <th>Jam Masuk</th>
-                            <th>Jam Pulang</th>
-                            <th>Keterangan Masuk</th>
-                            <th>Keterangan Pulang</th>
-                            <th>Waktu Keterlambatan</th>
-                            <th>Foto</th>
-                            <th>Aksi</th>
-                        </thead>
-                        <tbody>
-                        </tbody>
-                        <tfoot>
-                            <th colspan="4">Total Keterlambatan:</th>
-                            <th colspan="3" id="totalKeterlambatan"></th>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
+<div class="col-md-6">
+    <div class="card m-4">
+        <div class="card-body table-responsive">
+            <h3 class="card-title text-center my-1">{{ __('Data Absensi Karyawan') }}</h3>
+            @can('Create RekapAbsensi')
+                <a href="/absensi/create" class="btn btn-primary my-2">Buat Absensi</a>
+            @endcan
+            <table class="table table-bordered" id="tableAbsen">
+                <thead>
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Jam Masuk</th>
+                        <th>Jam Pulang</th>
+                        <th>Keterangan Masuk</th>
+                        <th>Keterangan Pulang</th>
+                        <th>Waktu Keterlambatan</th>
+                        <th>Izin</th>
+                        <th>Foto</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="6">Total Keterlambatan:</th>
+                        <th colspan="3" id="totalKeterlambatan">-</th>
+                    </tr>
+                </tfoot>
+            </table>
         </div>
     </div>
 </div>
+
+
+    </div>
+</div>
 <style>
+        /* Kolom ke-7 adalah kolom "Izin" */
+    #tableAbsen th:nth-child(7),
+    #tableAbsen td:nth-child(7) {
+        min-width: 180px; /* Bisa diubah ke 200px atau lebih jika masih sempit */
+        white-space: nowrap; /* Agar tidak turun ke baris baru */
+    }
+
     .loader {
     position: relative;
     text-align: center;
@@ -243,6 +257,16 @@
                     {"data": "keterangan_pulang"},
                     {"data": "waktu_keterlambatan"},
                     {
+    "data": "izin",
+    "render": function(data, type, row) {
+        if (data && data.jam_mulai && data.jam_selesai) {
+            return "Izin 3 Jam "+ data.jam_mulai + " - " + data.jam_selesai;
+        }
+        return "-";
+    }
+},
+
+                    {
                         "data": null,
                         "render": function(data, type, row) {
                             // Assuming data.foto contains the path like 'absensi/asjdasd.jpeg'
@@ -250,6 +274,7 @@
                             return '<img src="' + imagePath + '" style="max-width:100px">';
                         }
                     },
+                    
                     {
                     "data": null,
                     "render": function(data, type, row) {
@@ -332,6 +357,8 @@
 
         exportLink.attr('href', '/RekapitulasiAbsenperBulanExport/' + tahun + '/' + bulan);
     }
+
+    
 </script>
 
 @endpush
