@@ -336,7 +336,12 @@ public function update(Request $request, $id)
         NotificationFacade::send($user, new ApprovalCutiNotification($data, $path, $to));
     }
 
-    return redirect()->route('pengajuancuti.index')->with(['success' => 'Data Berhasil Diubah!']);
+    // return redirect()->route('pengajuancuti.index')->with(['success' => 'Data Berhasil Diubah!']);
+      $lastPage = $request->input('last_page', 0); // default ke 0 jika kosong
+    return redirect()->route('pengajuancuti.index') . '?page=' . ($lastPage + 1); // karena DataTables 0-based
+
+
+
 }
 
 

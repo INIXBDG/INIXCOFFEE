@@ -50,6 +50,7 @@ class RKMController extends Controller
                         'r_k_m_s.ruang',
                         'r_k_m_s.metode_kelas',
                         'r_k_m_s.event',
+                        'r_k_m_s.exam',
                         DB::raw('GROUP_CONCAT(r_k_m_s.instruktur_key SEPARATOR ", ") AS instruktur_all'),
                         DB::raw('GROUP_CONCAT(r_k_m_s.perusahaan_key SEPARATOR ", ") AS perusahaan_all'),
                         DB::raw('GROUP_CONCAT(r_k_m_s.sales_key SEPARATOR ", ") AS sales_all'),
@@ -63,6 +64,7 @@ class RKMController extends Controller
                         'r_k_m_s.ruang',
                         'r_k_m_s.metode_kelas',
                         'r_k_m_s.event',
+                        'r_k_m_s.exam',
                         'r_k_m_s.tanggal_awal'
                     )
                     ->orderBy('status_all', 'asc')
@@ -130,6 +132,7 @@ class RKMController extends Controller
                         'r_k_m_s.ruang',
                         'r_k_m_s.metode_kelas',
                         'r_k_m_s.event',
+                        'r_k_m_s.exam',
                         DB::raw('GROUP_CONCAT(r_k_m_s.instruktur_key SEPARATOR ", ") AS instruktur_all'),
                         DB::raw('GROUP_CONCAT(r_k_m_s.perusahaan_key SEPARATOR ", ") AS perusahaan_all'),
                         DB::raw('GROUP_CONCAT(r_k_m_s.sales_key SEPARATOR ", ") AS sales_all'),
