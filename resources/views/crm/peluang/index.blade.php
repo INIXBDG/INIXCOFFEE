@@ -13,26 +13,24 @@
             </div>
 
             <!-- Tabel Peluang -->
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title">Daftar Lead</h5>
-                </div>
+            <div class="card ">
                 <div class="card-body">
                     <div class="table-responsive">
                         <table id="peluangTable" class="table table-bordered table-hover">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th>Materi</th>
-                                    <th>Harga (Rp)</th>
-                                    <th>Net Sales</th>
-                                    <th>Pax</th>
-                                    <th>Periode</th>
-                                    <th>Tahap</th>
-                                    <th>Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            </tbody>
+                                <thead class="table-primary">
+                                    <tr>
+                                        <th>Materi</th>
+                                        <th>Harga (Rp)</th>
+                                        <th>Net Sales</th>
+                                        <th>Pax</th>
+                                        <th>Periode</th>
+                                        <th>Tahap</th>
+                                        <th>Prospek Terbuat</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
                         </table>
                     </div>
                 </div>
@@ -135,7 +133,7 @@
     </div>
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
     <script>
         // Global CSRF token setup for AJAX
         $.ajaxSetup({
@@ -173,14 +171,22 @@
                     },
                     {
                         data: null,
-                        render: function(data) {
-                            return data.periode_mulai + ' s/d ' + data.periode_selesai;
+                        render: function(data, type, row) {
+                            const startDate = data.periode_mulai ? moment(data.periode_mulai).format('DD-MM-YYYY') : '';
+                            const endDate = data.periode_selesai ? moment(data.periode_selesai).format('DD-MM-YYYY') : '';
+                            return startDate && endDate ? `${startDate} s/d ${endDate}` : 'Invalid date';
                         }
                     },
                     {
                         data: 'tahap',
                         render: function(data) {
                             return data.charAt(0).toUpperCase() + data.slice(1);
+                        }
+                    },
+                    {
+                        data: 'created_at',
+                        render: function(data, type, row) {
+                            return moment(data).format('DD-MM-YYYY');
                         }
                     },
                     {

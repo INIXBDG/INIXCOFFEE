@@ -50,14 +50,14 @@ class PeluangController extends Controller
             if ($user->jabatan === 'Sales') {
                 $idSales = $user->id_sales;
                 $data = Peluang::where('id_sales', $idSales)
-                    ->select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap')
+                    ->select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap', 'created_at',)
                     ->get()
                     ->map(function ($item) {
                         $item->periode = $item->periode_mulai . ' s/d ' . $item->periode_selesai; // Fixed concatenation
                         return $item;
                     });
             } elseif (in_array($user->jabatan, $allowedJabatan)) {
-                $data = Peluang::select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap')
+                $data = Peluang::select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap', 'created_at',)
                     ->get()
                     ->map(function ($item) {
                         $item->periode = $item->periode_mulai . ' s/d ' . $item->periode_selesai; // Fixed concatenation

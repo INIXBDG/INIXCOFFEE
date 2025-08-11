@@ -14,13 +14,10 @@
 
             <!-- Tabel Aktivitas -->
             <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title">Daftar Aktivitas</h5>
-                </div>
                 <div class="card-body">
                     <div class="table-responsive">
                         <table id="aktivitasTable" class="table table-bordered table-hover">
-                            <thead class="table-dark">
+                            <thead class="table-primary">
                                 <tr>
                                     <th>Kontak</th>
                                     <th>Jenis Aktivitas</th>
