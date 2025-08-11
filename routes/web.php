@@ -8,6 +8,7 @@ use App\Http\Controllers\Crm\CRMController;
 use App\Http\Controllers\Crm\AktivitasController;
 use App\Http\Controllers\Crm\PeluangController;
 use App\Http\Controllers\Crm\salesPribadiController;
+use App\Http\Controllers\crm\TargetAktivitas;
 use App\Http\Controllers\databasekpiContoller;
 use App\Http\Controllers\izinTigaJamController;
 use App\Http\Controllers\KelasAnalisisController;
@@ -382,6 +383,11 @@ Route::prefix('crm')->group(function () {
     Route::post('/aktivitas/store', [AktivitasController::class, 'store'])->name('store.aktivitas');
     Route::delete('/aktivitas/delete/{id}', [AktivitasController::class, 'delete'])->name('delete.aktivitas');
     Route::put('/aktivitas/update/{id}', [AktivitasController::class, 'update'])->name('update.aktivitas');
+
+    Route::get('/target/aktivity', [TargetAktivitas::class, 'index'])->name('index.target');
+    Route::post('/target/aktivity/store', [TargetAktivitas::class, 'store'])->name('index.target.store');
+    Route::put('/target/aktivity/{id}/update', [TargetAktivitas::class, 'update'])->name('index.target.update');
+    Route::delete('/target/aktivity/{id}/delete', [TargetAktivitas::class, 'delete'])->name('index.target.delete');
 
     // Catatan Sales CRM
     Route::post('/catatan/sales/store', [CatatanSalesController::class, 'store'])->name('store.catatan.sales');

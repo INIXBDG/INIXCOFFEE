@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Crm;
 
 use App\Http\Controllers\Controller;
+use App\Models\Aktivitas;
 use App\Models\Peluang;
 use App\Models\Perusahaan;
+use App\Models\TargetActivity;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -12,6 +15,7 @@ class CRMController extends Controller
 {
     public function index()
     {
+        // Kategori perusahaan chart
         $data = Perusahaan::select('kategori_perusahaan', DB::raw('count(*) as total'))
             ->groupBy('kategori_perusahaan')
             ->get();
@@ -25,9 +29,36 @@ class CRMController extends Controller
             ];
         });
 
-        
-        return view('crm.dashboard', compact('chartData'));
+        // Target dan aktivitas
+        $target = TargetActivity::all()->keyBy('id_sales'); // supaya mudah akses per id_sales
+        $aktivitas = Aktivitas::all();
+        $sales = User::where('jabatan', 'Sales')->pluck('id_sales')->toArray();
+
+        $activitysales = [];
+
+        foreach ($sales as $id_sales) {
+            $userAktivitas = $aktivitas->where('id_sales', $id_sales);
+
+            $actualCall = $userAktivitas->where('aktivitas', 'Call')->count();
+            $actualEmail = $userAktivitas->where('aktivitas', 'Email')->count();
+            $actualVisit = $userAktivitas->where('aktivitas', 'Visit')->count();
+
+            $salesTarget = $target[$id_sales] ?? null;
+
+            $activitysales[] = [
+                'id_sales' => $id_sales,
+                'call' => $actualCall,
+                'email' => $actualEmail,
+                'visit' => $actualVisit,
+                'target_call' => $salesTarget->Call ?? 0,
+                'target_email' => $salesTarget->Email ?? 0,
+                'target_visit' => $salesTarget->Visit ?? 0,
+            ];
+        }
+
+        return view('crm.dashboard', compact('chartData', 'activitysales'));
     }
+
 
 
     public function getProfile()
