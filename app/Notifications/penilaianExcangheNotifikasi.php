@@ -8,7 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 
-class CommentNotification extends Notification
+class penilaianExcangheNotifikasi extends Notification
 {
     use Queueable;
 
@@ -34,10 +34,8 @@ class CommentNotification extends Notification
             'user' => auth()->user()->username,
             'message' => [
                 'karyawan_key' => $this->comment->karyawan_key,
-                'tipe' => 'komentar',
+                'tipe' => 'Penilaian',
                 'content' => $this->comment->content,
-                'materi_key' => $this->comment->materi_key,
-                'rkm_key' => $this->comment->rkm_key,
             ],
             'path' => $this->path,
             'status' => 'unread',
@@ -51,8 +49,6 @@ class CommentNotification extends Notification
             'message' => [
                 'karyawan_key' => $this->comment->karyawan_key,
                 'content' => $this->comment->content,
-                'materi_key' => $this->comment->materi_key,
-                'rkm_key' => $this->comment->rkm_key,
             ],
             'path' => $this->url,
             'status' => 'unread',

@@ -332,7 +332,7 @@
                     </div>
                 </div>
             </div>
-             <div class="row my-2">
+            <div class="row my-2">
                 <div class="col-md-12">
                     <div class="card">
                         <div class="card-body">
@@ -609,7 +609,6 @@
                                     </div>
                                 </div>
 
-                                <!-- First position in the center -->
                                 <div class="col-4 col-sm-4 col-md-4 col-lg-4 text-center">
                                     <div class="circle-satu first-position">
                                         <img src="{{asset('css/b1.png')}}" alt="" class="position-badge">
