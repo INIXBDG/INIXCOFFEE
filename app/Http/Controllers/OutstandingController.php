@@ -103,7 +103,7 @@ class OutstandingController extends Controller
                     'nama_materi' => $rkmData->materi->nama_materi,
                     'nama_perusahaan' => $rkmData->perusahaan->nama_perusahaan,
                     'due_date' => $outstanding->due_date,
-                    'net_sales' => $request->net_sales,
+                    // 'net_sales' => $request->net_sales,
                     'status_pembayaran' => $request->status_pembayaran,
                     'sales_key' => $rkmData->sales_key,
                 ];
@@ -121,7 +121,6 @@ class OutstandingController extends Controller
                     [$sales]
                 );
 
-                // Filter user dan kirim notifikasi
                 $users = array_filter($users);
                 $notifiedUsers = User::whereHas('karyawan', function ($q) use ($users) {
                     $q->whereIn('kode_karyawan', $users);
@@ -141,7 +140,6 @@ class OutstandingController extends Controller
             $user = '';
         }
         if ($user) {
-            // Ambil data RKM yang belum ada di tabel outstanding
             $outstanding = outstanding::with('rkm', 'rkm.perusahaan', 'rkm.materi', 'tracking_outstanding')
                 ->where('status_pembayaran', '1')
                 ->whereHas('rkm', function ($query) use ($user) {
@@ -149,7 +147,6 @@ class OutstandingController extends Controller
                 })
                 ->get();
         } else {
-            // Ambil data RKM yang belum ada di tabel outstanding
             $outstanding = outstanding::with('rkm', 'rkm.perusahaan', 'rkm.materi', 'tracking_outstanding')->where('status_pembayaran', '1')->get();
         }
         return response()->json([

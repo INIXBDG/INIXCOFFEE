@@ -29,7 +29,7 @@
                         <div id="manager-row">
                             <div class="btn-group" role="group" aria-label="Approval Options">
                                 <input type="radio" class="btn-check" name="approval" id="approveYes"
-                                    @if (auth()->user()->jabatan === 'HRD')
+                                @if (auth()->user()->jabatan === 'HRD')
                                 value="2"
                                 @else
                                 value="1"
@@ -269,6 +269,7 @@
                 {
                     "data": null,
                     "render": function(data, type, row) {
+
                         let approval = row.approval;
                         let userRole = '{{ auth()->user()->jabatan }}';
                         let requesterDivisi = row.karyawan.divisi;
