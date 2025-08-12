@@ -131,7 +131,7 @@
                     "data": "timestamp",
                     "render": function(data){
                         moment.locale('id');
-                        return moment(data).format('DD MMMM YYYY H:m:s');
+                        return moment(data).format('DD MMMM YYYY H:mm:ss');
                     }
                 },
                 {"data": "nama_karyawan"},
@@ -152,7 +152,21 @@
                             actions += '<input type="hidden" name="pic" value="'+pic+'">';
                             actions += '<input type="hidden" name="row" value="'+data.row+'">';
                             actions += '@method('POST')';
-                            actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Terima</button>';
+                            actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Terima</button>';
+                            actions += '</form>';
+                            actions += '<form onsubmit="return confirm(\'Anda akan menerima tiket ini ?\');" action="{{ url('/tickets') }}/' + row.id + '/block" method="POST">';
+                            actions += '@csrf';
+                            actions += '<input type="hidden" name="pic" value="'+pic+'">';
+                            actions += '<input type="hidden" name="row" value="'+data.row+'">';
+                            actions += '@method('POST')';
+                            actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/x-circle.svg') }}" class=""> Tolak</button>';
+                            actions += '</form>';
+                            actions += '<form onsubmit="return confirm(\'Anda akan menerima tiket ini ?\');" action="{{ url('/tickets') }}/' + row.id + '/finish" method="POST">';
+                            actions += '@csrf';
+                            actions += '<input type="hidden" name="pic" value="'+pic+'">';
+                            actions += '<input type="hidden" name="row" value="'+data.row+'">';
+                            actions += '@method('POST')';
+                            actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/thumbs-up.svg') }}" class=""> Selesai</button>';
                             actions += '</form>';
                             // actions += '<a class="dropdown-item" href="{{ url('/tickets') }}/' + row.id + '/accept" data-toggle="tooltip" data-placement="top" title="Update Tiket"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Terima Tiket</a>';
                             // actions += '<a class="dropdown-item" href="{{ url('/materi') }}/' + row.id + '" data-toggle="tooltip" data-placement="top" title="Detail User"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Detail</a>';
