@@ -70,7 +70,7 @@
                                     <select class="form-select" id="materi" name="materi" required>
                                         <option value="" disabled selected>Pilih Materi</option>
                                         @foreach ($materi as $item)
-                                            <option value="{{ $item->nama_materi }}">{{ $item->nama_materi }}</option>
+                                            <option value="{{ $item->id }}">{{ $item->nama_materi }}</option>
                                         @endforeach
                                     </select>
                                     <div class="invalid-feedback">Pilih materi.</div>
@@ -113,6 +113,55 @@
                                     <input type="date" class="form-control" id="periode_selesai" name="periode_selesai"
                                         required>
                                     <div class="invalid-feedback">Pilih tanggal selesai.</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label" for="metode_kelas">Metode Kelas</label>
+                                    <select class="form-select" id="metode_kelas" name="metode_kelas" required>
+                                        <option value="" disabled selected>Pilih Metode Kelas</option>
+                                        <option value="Inhouse Bandung">Inhouse Bandung</option>
+                                        <option value="Inhouse Luar Bandung">Inhouse Luar Bandung</option>
+                                        <option value="Offline">Offline</option>
+                                        <option value="Virtual">Virtual</option>
+                                        <!-- Tambahkan opsi lain jika diperlukan -->
+                                    </select>
+                                    <div class="invalid-feedback">Pilih metode kelas.</div>
+                                </div>
+
+                                <!-- Tambahan: Event (Dropdown) -->
+                                <div class="mb-3">
+                                    <label class="form-label" for="event">Event</label>
+                                    <select class="form-select" id="event" name="event" required>
+                                        <option value="" disabled selected>Pilih Event</option>
+                                        <option value="Kelas">Kelas</option>
+                                        <option value="Workshop">Workshop</option>
+                                        <option value="Webinar">Webinar</option>
+                                        <option value="Narasumber">Narasumber</option>
+                                        <option value="Pinjam Instruktur">Pinjam Instruktur</option>
+                                    </select>
+                                    <div class="invalid-feedback">Pilih event.</div>
+                                </div>
+
+                                <!-- Tambahan: Exam (Button Toggle) -->
+                                <div class="mb-3">
+                                    <label class="form-label">Exam</label>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="examToggle" role="switch" onchange="document.getElementById('exam').value = this.checked ? '1' : '0';">
+                                        <label class="form-check-label" for="examToggle">Aktif</label>
+                                    </div>
+                                    <input type="hidden" id="exam" name="exam" value="0">
+                                    <div class="invalid-feedback">Pilih status exam.</div>
+                                </div>
+
+                                <!-- Tambahan: Authorize (Toggle Switch) -->
+                                <div class="mb-3">
+                                    <label class="form-label">Authorize</label>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="authorizeToggle" role="switch" onchange="document.getElementById('authorize').value = this.checked ? '1' : '0';">
+                                        <label class="form-check-label" for="authorizeToggle">Aktif</label>
+                                    </div>
+                                    <input type="hidden" id="authorize" name="authorize" value="0">
+                                    <div class="invalid-feedback">Pilih status authorize.</div>
                                 </div>
 
                                 <!-- Aktivitas yang bisa dikaitkan -->

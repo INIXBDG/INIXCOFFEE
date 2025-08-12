@@ -36,7 +36,7 @@ class RKM extends Model
     public function perhitunganNetSales()
     {
         return $this->hasOne(perhitunganNetSales::class, 'id_rkm', 'id');
-    }    
+    }
 
     public function sales()
     {
@@ -105,6 +105,10 @@ class RKM extends Model
     public function absensiPDF(){
         return $this->hasOne(absensiPDF::class, 'id_rkm', 'id');
     }
-    
+
+    public function peluang()
+    {
+        return $this->hasOne(Peluang::class, 'id_rkm', 'id'); // Relasi dengan Peluang
+    }
 
 }

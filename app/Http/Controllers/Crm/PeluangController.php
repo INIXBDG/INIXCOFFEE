@@ -9,6 +9,7 @@ use App\Models\Contact;
 use App\Models\Materi;
 use App\Models\Peluang;
 use App\Models\Perusahaan;
+use App\Models\RKM;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -108,14 +109,15 @@ class PeluangController extends Controller
         return response()->json($result);
     }
 
-
     public function store(Request $request)
     {
+        // Bersihkan input harga dan netsales agar hanya berisi angka
         $request->merge([
             'harga' => preg_replace('/[^0-9]/', '', $request->harga),
             'netsales' => preg_replace('/[^0-9]/', '', $request->netsales),
         ]);
 
+        // Validasi data untuk tabel Peluang
         $validated = $request->validate([
             'id_contact' => 'required|integer|exists:perusahaans,id',
             'materi' => 'required|string|max:255',
@@ -129,21 +131,93 @@ class PeluangController extends Controller
             'id_aktivitas.*' => 'integer|exists:aktivitas,id',
         ]);
 
-        $validated['id_sales'] = $request->input('id_sales', auth()->user()->id_sales ?? null);
+        // Validasi data untuk tabel RKM
+        $validatedRKM = $request->validate([
+            'metode_kelas' => 'required|string|max:255',
+            'event' => 'required|string|max:255',
+            'exam' => 'required|in:0,1',
+            'authorize' => 'required|in:0,1',
+        ]);
 
-        $peluang = Peluang::create($validated);
-
-        if ($request->filled('id_aktivitas')) {
-            Aktivitas::whereIn('id', $request->id_aktivitas)
-                ->update(['id_peluang' => $peluang->id]);
+        // Parse tanggal dengan Carbon
+        try {
+            $start = Carbon::parse($request->input('periode_mulai'));
+        } catch (\Exception $e) {
+            return back()->withErrors(['periode_mulai' => 'Format tanggal periode_mulai tidak valid.']);
         }
 
+        $bulanNamaMap = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+        ];
+        $bulanInt = (int) $start->format('n');
+
+        try {
+            Carbon::setLocale('id');
+            $bulanNama = $start->translatedFormat('F');
+            if (in_array(strtolower($bulanNama), [
+                'january','february','march','april','may','june','july','august','september','october','november','december'
+            ])) {
+                $bulanNama = $bulanNamaMap[$bulanInt];
+            }
+        } catch (\Exception $e) {
+            $bulanNama = $bulanNamaMap[$bulanInt];
+        }
+
+        // Hitung kuartal sebagai string "Q1".."Q4"
+        if ($bulanInt >= 1 && $bulanInt <= 3) {
+            $kuartal = 'Q1';
+        } elseif ($bulanInt >= 4 && $bulanInt <= 6) {
+            $kuartal = 'Q2';
+        } elseif ($bulanInt >= 7 && $bulanInt <= 9) {
+            $kuartal = 'Q3';
+        } else {
+            $kuartal = 'Q4';
+        }
+
+        $tahun = $start->format('Y');
+
+
+        // Siapkan data RKM, termasuk yang diambil dari request dan user login, plus bulan, kuartal, tahun
+        $rkmData = array_merge($validatedRKM, [
+            'sales_key' => auth()->user()->id_sales ?? null,
+            'materi_key' => $request->materi,
+            'perusahaan_key' => $request->id_contact,
+            'harga_jual' => $request->harga,
+            'pax' => $request->pax,
+            'isi_pax' => $request->pax,
+            'tanggal_awal' => $request->periode_mulai,
+            'tanggal_akhir' => $request->periode_selesai,
+            'bulan' => $bulanNama,
+            'quartal' => $kuartal,
+            'tahun' => $tahun,
+            'status' => '2',
+        ]);
+
+        // Buat record RKM lebih dulu supaya mendapatkan id
+        $rkm = RKM::create($rkmData);
+
+        // Masukkan id_rkm ke data untuk Peluang
+        $validated['id_rkm'] = $rkm->id;
+
+        // Isi id_sales jika tidak ada di input, ambil dari user yang login
+        $validated['id_sales'] = $request->input('id_sales', auth()->user()->id_sales ?? null);
+
+        // Buat record Peluang sekarang dengan id_rkm yang sudah ada
+        $peluang = Peluang::create($validated);
+
+        // Jika ada aktivitas yang ingin dikaitkan, update id_peluang pada aktivitas tersebut
+        if ($request->filled('id_aktivitas')) {
+            Aktivitas::whereIn('id', $request->id_aktivitas)->update(['id_peluang' => $peluang->id]);
+        }
+
+        // Redirect kembali dengan pesan sukses dan data peluang
         return back()->with([
             'message' => 'Peluang berhasil dibuat dan aktivitas berhasil dikaitkan.',
             'data' => $peluang,
         ]);
     }
-
 
     public function delete($id)
     {
@@ -184,38 +258,55 @@ class PeluangController extends Controller
 
     public function updateTahap($id, Request $request)
     {
-        $peluang = Peluang::where('id', $id)->first();
+        // Ambil peluang beserta relasi RKM jika ada (pastikan relation 'rkm' didefinisikan di model Peluang)
+        $peluang = Peluang::with('rkm')->where('id', $id)->firstOrFail();
 
-        if ($request->tahap === 'biru') {
-            $peluang->tahap = $request->tahap;
-            $time = Carbon::now();
-            $peluang->biru = $time;
+        DB::transaction(function() use ($peluang, $request) {
+            $now = Carbon::now();
 
-            // Kosongkan kolom lost yang sebelumnya mungkin ada
-            $peluang->desc_lost = null;
-        }
+            // Reset kolom-kolom waktu yang relevan apabila perlu (optional)
+            // $peluang->biru = null; $peluang->merah = null; $peluang->lost = null;
 
-        if ($request->tahap === 'lost') {
-            $peluang->tahap = $request->tahap;
-            $time = Carbon::now();
-            $peluang->lost = $time;
-            $peluang->desc_lost = $request->desc_lost; // Simpan deskripsi lost
-        }
+            if ($request->tahap === 'biru') {
+                $peluang->tahap = 'biru';
+                $peluang->biru = $now;
+                $peluang->desc_lost = null;
 
-        if ($request->tahap === 'merah') {
-            $peluang->tahap = $request->tahap;
-            $peluang->final = $request->final;
-            $time = Carbon::now();
-            $peluang->merah = $time;
+                // Update status RKM jika ada relasi
+                if ($peluang->rkm) {
+                    $peluang->rkm->status = '1'; // biru -> status '1'
+                    $peluang->rkm->save();
+                }
+            }
 
-            // Kosongkan kolom lost yang sebelumnya mungkin ada
-            $peluang->desc_lost = null;
-        }
+            if ($request->tahap === 'lost') {
+                $peluang->tahap = 'lost';
+                $peluang->lost = $now;
+                $peluang->desc_lost = $request->input('desc_lost');
 
-        $peluang->update();
+                if ($peluang->rkm) {
+                    $peluang->rkm->status = '3'; // lost -> status '3'
+                    $peluang->rkm->save();
+                }
+            }
+
+            if ($request->tahap === 'merah') {
+                $peluang->tahap = 'merah';
+                $peluang->final = $request->input('final');
+                $peluang->merah = $now;
+                $peluang->desc_lost = null;
+
+                if ($peluang->rkm) {
+                    $peluang->rkm->status = '0'; // merah -> status '0'
+                    $peluang->rkm->save();
+                }
+            }
+
+            $peluang->save();
+        });
 
         return back()->with([
-            'message' => 'Tahap berhasil di perbarui.',
+            'message' => 'Tahap berhasil diperbarui dan status RKM telah di-sync.',
         ]);
     }
 
