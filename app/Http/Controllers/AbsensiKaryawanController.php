@@ -178,19 +178,43 @@ class AbsensiKaryawanController extends Controller
         // Hitung keterlambatan untuk jabatan lain dan hari selain weekend
         $keterlambatan = '00:00:00';
         $keterangan = 'Masuk';
-        if ($izinHariIni) {
-            $keterangan = 'Izin 3 Jam';
-            $keterlambatan = '00:00:00';
-        } elseif ($waktu->greaterThan($config['jamMulaiShift'])) {
-            $diffMinutes = $waktu->diffInMinutes($config['jamMulaiShift']);
-            $hours = intdiv($diffMinutes, 60);
-            $minutes = ($diffMinutes % 60);
-            $keterlambatan = sprintf('%02d:%02d:00', $hours, $minutes);
-            $keterangan = 'Telat';
-        } else {
-            $keterangan = 'Masuk'; //fallback
-            $keterlambatan = '00:00:00';
-        }
+      if ($izinHariIni) {
+    // Jam mulai izin dari database
+    $izinMulai = Carbon::parse($izinHariIni->jam_mulai);
+    $batasAwalMasuk = $izinMulai->copy()->addHour(); // 1 jam setelah izin
+    $batasAkhirMasuk = $izinMulai->copy()->addHours(3); // 3 jam setelah izin
+
+    if ($waktu->lessThan($batasAwalMasuk)) {
+        // Terlalu cepat
+        return [
+            'valid' => false,
+            'message' => 'Anda belum bisa absen. Minimal pukul ' . $batasAwalMasuk->format('H:i')
+        ];
+    } elseif ($waktu->greaterThan($batasAkhirMasuk)) {
+        // Telat lebih dari 3 jam
+        $diffMinutes = $waktu->diffInMinutes($batasAkhirMasuk);
+        $hours = intdiv($diffMinutes, 60);
+        $minutes = ($diffMinutes % 60);
+        $keterlambatan = sprintf('%02d:%02d:00', $hours, $minutes);
+        $keterangan = 'Telat';
+    } else {
+        // Masuk sesuai izin
+        $keterangan = 'Masuk (Izin 3 Jam)';
+        $keterlambatan = '00:00:00';
+    }
+
+} elseif ($waktu->greaterThan($config['jamMulaiShift'])) {
+    // Telat normal
+    $diffMinutes = $waktu->diffInMinutes($config['jamMulaiShift']);
+    $hours = intdiv($diffMinutes, 60);
+    $minutes = ($diffMinutes % 60);
+    $keterlambatan = sprintf('%02d:%02d:00', $hours, $minutes);
+    $keterangan = 'Telat';
+} else {
+    // Masuk tepat waktu
+    $keterangan = 'Masuk';
+    $keterlambatan = '00:00:00';
+}
 
     return [
         'valid' => true,
