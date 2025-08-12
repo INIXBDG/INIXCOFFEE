@@ -51,7 +51,7 @@ class PeluangController extends Controller
             if ($user->jabatan === 'Sales') {
                 $idSales = $user->id_sales;
                 $data = Peluang::where('id_sales', $idSales)
-                    ->with('materi')
+                    ->with('materiRelation')
                     ->select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap', 'created_at',)
                     ->get()
                     ->map(function ($item) {
@@ -60,6 +60,7 @@ class PeluangController extends Controller
                     });
             } elseif (in_array($user->jabatan, $allowedJabatan)) {
                 $data = Peluang::select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap', 'created_at',)
+                    ->with('materiRelation')
                     ->get()
                     ->map(function ($item) {
                         $item->periode = $item->periode_mulai . ' s/d ' . $item->periode_selesai; // Fixed concatenation
@@ -84,7 +85,7 @@ class PeluangController extends Controller
     public function detail($id)
     {
         $aktivitas = Aktivitas::where('id_peluang', $id)->get();
-        $peluang = Peluang::where('id', $id)->first();
+        $peluang = Peluang::with('materiRelation')->where('id', $id)->first();
         $materi = Materi::all();
         return view('crm.peluang.detail', compact('peluang', 'aktivitas', 'materi'));
     }

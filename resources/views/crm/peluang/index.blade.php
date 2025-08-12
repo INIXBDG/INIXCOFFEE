@@ -17,20 +17,20 @@
                 <div class="card-body">
                     <div class="table-responsive">
                         <table id="peluangTable" class="table table-bordered table-hover">
-                                <thead class="table-primary">
-                                    <tr>
-                                        <th>Materi</th>
-                                        <th>Harga (Rp)</th>
-                                        <th>Net Sales</th>
-                                        <th>Pax</th>
-                                        <th>Periode</th>
-                                        <th>Tahap</th>
-                                        <th>Prospek Terbuat</th>
-                                        <th>Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                </tbody>
+                            <thead class="table-primary">
+                                <tr>
+                                    <th>Materi</th>
+                                    <th>Harga (Rp)</th>
+                                    <th>Net Sales</th>
+                                    <th>Pax</th>
+                                    <th>Periode</th>
+                                    <th>Tahap</th>
+                                    <th>Prospek Terbuat</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
                         </table>
                     </div>
                 </div>
@@ -146,7 +146,8 @@
                                 <div class="mb-3">
                                     <label class="form-label">Exam</label>
                                     <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="examToggle" role="switch" onchange="document.getElementById('exam').value = this.checked ? '1' : '0';">
+                                        <input class="form-check-input" type="checkbox" id="examToggle" role="switch"
+                                            onchange="document.getElementById('exam').value = this.checked ? '1' : '0';">
                                         <label class="form-check-label" for="examToggle">Aktif</label>
                                     </div>
                                     <input type="hidden" id="exam" name="exam" value="0">
@@ -157,7 +158,9 @@
                                 <div class="mb-3">
                                     <label class="form-label">Authorize</label>
                                     <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="authorizeToggle" role="switch" onchange="document.getElementById('authorize').value = this.checked ? '1' : '0';">
+                                        <input class="form-check-input" type="checkbox" id="authorizeToggle"
+                                            role="switch"
+                                            onchange="document.getElementById('authorize').value = this.checked ? '1' : '0';">
                                         <label class="form-check-label" for="authorizeToggle">Aktif</label>
                                     </div>
                                     <input type="hidden" id="authorize" name="authorize" value="0">
@@ -195,13 +198,19 @@
             $('#peluangTable').DataTable({
                 ajax: {
                     url: '{{ route('index.peluang.json') }}',
-                    dataSrc: 'data',
+                    dataSrc: function(json) {
+                        console.log("Data dari server:", json); // log full JSON
+                        return json.data; // tetap return data array agar DataTable jalan
+                    },
                     error: function(xhr, error, thrown) {
                         alert('Gagal memuat data peluang: ' + thrown);
                     }
                 },
                 columns: [{
-                        data: 'materi.nama_materi'
+                        data: 'materi_relation.nama_materi', // Updated to use materiRelation
+                        render: function(data) {
+                            return data || '-'; // Fallback to '-' if nama_materi is null
+                        }
                     },
                     {
                         data: 'harga',
@@ -221,9 +230,12 @@
                     {
                         data: null,
                         render: function(data, type, row) {
-                            const startDate = data.periode_mulai ? moment(data.periode_mulai).format('DD-MM-YYYY') : '';
-                            const endDate = data.periode_selesai ? moment(data.periode_selesai).format('DD-MM-YYYY') : '';
-                            return startDate && endDate ? `${startDate} s/d ${endDate}` : 'Invalid date';
+                            const startDate = data.periode_mulai ? moment(data.periode_mulai)
+                                .format('DD-MM-YYYY') : '';
+                            const endDate = data.periode_selesai ? moment(data.periode_selesai)
+                                .format('DD-MM-YYYY') : '';
+                            return startDate && endDate ? `${startDate} s/d ${endDate}` :
+                                'Invalid date';
                         }
                     },
                     {
