@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Aktivitas;
 use App\Models\Peluang;
 use App\Models\Perusahaan;
+use App\Models\RKM;
 use App\Models\TargetActivity;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -15,7 +16,7 @@ class CRMController extends Controller
 {
     public function index()
     {
-        // Kategori perusahaan chart
+        // 1. Kategori perusahaan chart
         $data = Perusahaan::select('kategori_perusahaan', DB::raw('count(*) as total'))
             ->groupBy('kategori_perusahaan')
             ->get();
@@ -29,8 +30,8 @@ class CRMController extends Controller
             ];
         });
 
-        // Target dan aktivitas
-        $target = TargetActivity::all()->keyBy('id_sales'); // supaya mudah akses per id_sales
+        // 2. Target dan aktivitas
+        $target = TargetActivity::all()->keyBy('id_sales');
         $aktivitas = Aktivitas::all();
         $sales = User::where('jabatan', 'Sales')->pluck('id_sales')->toArray();
 
@@ -53,11 +54,36 @@ class CRMController extends Controller
                 'target_call' => $salesTarget->Call ?? 0,
                 'target_email' => $salesTarget->Email ?? 0,
                 'target_visit' => $salesTarget->Visit ?? 0,
+
             ];
         }
 
-        return view('crm.dashboard', compact('chartData', 'activitysales'));
+        // 3. Top 5 produk paling banyak terjual
+        $best = RKM::with('materi')
+            ->select('materi_key', DB::raw('SUM(pax) as total_pax'))
+            ->where('status', '0')
+            ->groupBy('materi_key')
+            ->orderByDesc('total_pax')
+            ->limit(5)
+            ->get();
+
+        // 4. Top 5 produk paling menguntungkan
+        $profit = RKM::with('materi')
+            ->select('materi_key', DB::raw('SUM(harga_jual * pax) as total_revenue'))
+            ->where('status', '0')
+            ->groupBy('materi_key')
+            ->orderByDesc('total_revenue')
+            ->limit(5)
+            ->get();
+
+        return view('crm.dashboard', compact(
+            'chartData',
+            'activitysales',
+            'best',
+            'profit'
+        ));
     }
+
 
 
 
