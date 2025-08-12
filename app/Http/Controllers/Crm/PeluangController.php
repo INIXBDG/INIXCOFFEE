@@ -52,18 +52,42 @@ class PeluangController extends Controller
                 $idSales = $user->id_sales;
                 $data = Peluang::where('id_sales', $idSales)
                     ->with('materiRelation')
-                    ->select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap', 'created_at',)
+                    ->select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap', 'created_at', 'id_rkm')
                     ->get()
                     ->map(function ($item) {
-                        $item->periode = $item->periode_mulai . ' s/d ' . $item->periode_selesai; // Fixed concatenation
+                        $item->periode = $item->periode_mulai . ' s/d ' . $item->periode_selesai;
+                        // Fetch RKM data based on id_rkm
+                        $rkm = RKM::where('id', $item->id_rkm)->first();
+                        // Append RKM data or null if not found
+                        $item->rkm_data = $rkm ? $rkm : null;
+                        // Create new rkm_formatted data if rkm exists
+                        $item->rkm_formatted = $rkm ? [
+                            'materi_key' => $rkm->materi_key,
+                            'metode_kelas' => $rkm->metode_kelas === 'Offline' ? 'off' : ($rkm->metode_kelas === 'Inhouse Bandung' ? 'inhb' : ($rkm->metode_kelas === 'Inhouse Luar Bandung' ? 'inhlb' : 'vir')),
+                            'tanggal_awal_day' => $rkm->tanggal_awal ? date('d', strtotime($rkm->tanggal_awal)) : null,
+                            'tanggal_awal_month' => $rkm->tanggal_awal ? date('n', strtotime($rkm->tanggal_awal)) : null,
+                            'tanggal_awal_year' => $rkm->tanggal_awal ? date('Y', strtotime($rkm->tanggal_awal)) : null,
+                        ] : null;
                         return $item;
                     });
             } elseif (in_array($user->jabatan, $allowedJabatan)) {
-                $data = Peluang::select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap', 'created_at',)
+                $data = Peluang::select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap', 'created_at', 'id_rkm')
                     ->with('materiRelation')
                     ->get()
                     ->map(function ($item) {
-                        $item->periode = $item->periode_mulai . ' s/d ' . $item->periode_selesai; // Fixed concatenation
+                        $item->periode = $item->periode_mulai . ' s/d ' . $item->periode_selesai;
+                        // Fetch RKM data based on id_rkm
+                        $rkm = RKM::where('id', $item->id_rkm)->first();
+                        // Append RKM data or null if not found
+                        $item->rkm_data = $rkm ? $rkm : null;
+                        // Create new rkm_formatted data if rkm exists
+                        $item->rkm_formatted = $rkm ? [
+                            'materi_key' => $rkm->materi_key,
+                            'metode_kelas' => $rkm->metode_kelas === 'Offline' ? 'off' : ($rkm->metode_kelas === 'Inhouse Bandung' ? 'inhb' : ($rkm->metode_kelas === 'Inhouse Luar Bandung' ? 'inhlb' : 'vir')),
+                            'tanggal_awal_day' => $rkm->tanggal_awal ? date('d', strtotime($rkm->tanggal_awal)) : null,
+                            'tanggal_awal_month' => $rkm->tanggal_awal ? date('n', strtotime($rkm->tanggal_awal)) : null,
+                            'tanggal_awal_year' => $rkm->tanggal_awal ? date('Y', strtotime($rkm->tanggal_awal)) : null,
+                        ] : null;
                         return $item;
                     });
             } else {
@@ -149,9 +173,18 @@ class PeluangController extends Controller
         }
 
         $bulanNamaMap = [
-            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
-            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
-            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+            1 => 'Januari',
+            2 => 'Februari',
+            3 => 'Maret',
+            4 => 'April',
+            5 => 'Mei',
+            6 => 'Juni',
+            7 => 'Juli',
+            8 => 'Agustus',
+            9 => 'September',
+            10 => 'Oktober',
+            11 => 'November',
+            12 => 'Desember'
         ];
         $bulanInt = (int) $start->format('n');
 
@@ -159,7 +192,18 @@ class PeluangController extends Controller
             Carbon::setLocale('id');
             $bulanNama = $start->translatedFormat('F');
             if (in_array(strtolower($bulanNama), [
-                'january','february','march','april','may','june','july','august','september','october','november','december'
+                'january',
+                'february',
+                'march',
+                'april',
+                'may',
+                'june',
+                'july',
+                'august',
+                'september',
+                'october',
+                'november',
+                'december'
             ])) {
                 $bulanNama = $bulanNamaMap[$bulanInt];
             }
@@ -263,7 +307,7 @@ class PeluangController extends Controller
         // Ambil peluang beserta relasi RKM jika ada (pastikan relation 'rkm' didefinisikan di model Peluang)
         $peluang = Peluang::with('rkm')->where('id', $id)->firstOrFail();
 
-        DB::transaction(function() use ($peluang, $request) {
+        DB::transaction(function () use ($peluang, $request) {
             $now = Carbon::now();
 
             // Reset kolom-kolom waktu yang relevan apabila perlu (optional)
