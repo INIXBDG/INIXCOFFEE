@@ -221,44 +221,44 @@
                         return moment(data).format('DD MMMM YYYY');
                     }
                 },
-{
-    "data": "tanggal_pengajuan_terformat"
-},
+                {
+                    "data": "tanggal_pengajuan_terformat"
+                },
 
 
 
-{
-    "data": "approval",
-    "render": function(data, type, row) {
-        switch (parseInt(row.approval)) {
-            case 0:
-                return `
-                    <span class="badge rounded-pill bg-warning text-dark">
-                        <i class="bi bi-hourglass-split me-1"></i> Menunggu Koordinator
-                    </span>`;
-            case 1:
-                return `
-                    <span class="badge rounded-pill bg-warning text-dark">
-                        <i class="bi bi-hourglass-top me-1"></i> Menunggu HRD
-                    </span>`;
-            case 2:
-                return `
-                    <span class="badge rounded-pill bg-success">
-                        <i class="bi bi-check-circle me-1"></i> Disetujui
-                    </span>`;
-            case 4:
-                return `
-                    <span class="badge rounded-pill bg-danger">
-                        <i class="bi bi-x-circle me-1"></i> Ditolak
-                    </span>`;
-            default:
-                return `
-                    <span class="badge rounded-pill bg-secondary text-dark">
-                        <i class="bi bi-question-circle me-1"></i> Tidak Diketahui
-                    </span>`;
-        }
-    }
-},
+                {
+                    "data": "approval",
+                    "render": function(data, type, row) {
+                        switch (parseInt(row.approval)) {
+                            case 0:
+                                return `
+                                    <span class="badge rounded-pill bg-warning text-dark">
+                                        <i class="bi bi-hourglass-split me-1"></i> Menunggu Koordinator
+                                    </span>`;
+                            case 1:
+                                return `
+                                    <span class="badge rounded-pill bg-warning text-dark">
+                                        <i class="bi bi-hourglass-top me-1"></i> Menunggu HRD
+                                    </span>`;
+                            case 2:
+                                return `
+                                    <span class="badge rounded-pill bg-success">
+                                        <i class="bi bi-check-circle me-1"></i> Disetujui
+                                    </span>`;
+                            case 4:
+                                return `
+                                    <span class="badge rounded-pill bg-danger">
+                                        <i class="bi bi-x-circle me-1"></i> Ditolak
+                                    </span>`;
+                            default:
+                                return `
+                                    <span class="badge rounded-pill bg-secondary text-dark">
+                                        <i class="bi bi-question-circle me-1"></i> Tidak Diketahui
+                                    </span>`;
+                        }
+                    }
+                },
 
                 {
                     "data": "alasan_approval",
