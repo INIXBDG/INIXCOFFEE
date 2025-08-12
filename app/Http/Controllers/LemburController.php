@@ -68,7 +68,7 @@ public function getLemburKaryawan()
         // GM hanya melihat semua lembur dari divisi Office (tanpa peduli jabatannya)
         $lembur = Lembur::with('karyawan')
             ->whereHas('karyawan', function ($query) {
-                $query->where('jabatan', ['Office Boy', 'Driver']);
+                $query->whereIn('jabatan', ['Office Boy', 'Driver']);
             })
             ->latest()
             ->get();
