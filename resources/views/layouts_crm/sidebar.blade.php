@@ -91,7 +91,7 @@
         <li class="menu-item {{ request()->routeIs('index.contact') ? 'active open' : '' }}">
             <a href="{{ route('index.contact') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-phone"></i>
-                <div class="text-truncate" data-i18n="contact">Contact</div>
+                <div class="text-truncate" data-i18n="contact">Database Client</div>
             </a>
         </li>
 

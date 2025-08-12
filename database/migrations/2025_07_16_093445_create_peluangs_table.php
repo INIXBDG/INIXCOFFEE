@@ -15,7 +15,8 @@ return new class extends Migration
             $table->id();
             $table->integer('id_contact');
             $table->string('id_sales');
-            $table->text('materi');
+            $table->integer('id_rkm');
+            $table->integer('materi');
             $table->text('catatan')->nullable();
             $table->decimal('harga', 15,2);
             $table->decimal('netsales', 15,2);

@@ -11,6 +11,7 @@ class Peluang extends Model
     protected $fillable = [
         'id_contact',
         'id_sales',
+        'id_rkm',
         'materi',
         'catatan',
         'harga',
@@ -32,5 +33,10 @@ class Peluang extends Model
     public function aktivitas()
     {
         return $this->hasMany(Aktivitas::class, 'id_peluang', 'id');
+    }
+
+    public function rkm()
+    {
+        return $this->belongsTo(RKM::class, 'id_rkm', 'id');
     }
 }

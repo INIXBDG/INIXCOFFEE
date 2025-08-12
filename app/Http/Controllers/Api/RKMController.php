@@ -44,6 +44,7 @@ class RKMController extends Controller
                 $rows = RKM::with('materi')
                     ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
                     ->whereBetween('r_k_m_s.tanggal_awal', [$start, $end])
+                    ->where('r_k_m_s.status', '!=', '3')
                     // ->whereBetween('r_k_m_s.tanggal_akhir', [$start, $end])
                     ->select(
                         'r_k_m_s.materi_key',
