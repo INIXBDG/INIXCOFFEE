@@ -117,7 +117,7 @@ class PeluangController extends Controller
             'netsales' => preg_replace('/[^0-9]/', '', $request->netsales),
         ]);
 
-        // Validasi data untuk tabel Peluang
+        // Validasi data untuk tabel Peluangl
         $validated = $request->validate([
             'id_contact' => 'required|integer|exists:perusahaans,id',
             'materi' => 'required|string|max:255',
