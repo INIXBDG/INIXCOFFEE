@@ -41,7 +41,7 @@
                         <div class="card-body">
                             <dl class="row">
                                 <dt class="col-sm-4">Materi</dt>
-                                <dd class="col-sm-8">{{ $peluang->materi ?? '-' }}</dd>
+                                <dd class="col-sm-8">{{ $peluang->materiRelation->nama_materi ?? '-' }}</dd>
 
                                 <dt class="col-sm-4">Catatan</dt>
                                 <dd class="col-sm-8">{{ $peluang->catatan ?? '-' }}</dd>
@@ -256,8 +256,8 @@
                                 <select class="form-select" id="materi" name="materi" required>
                                     <option value="">-- Pilih Materi --</option>
                                     @foreach ($materi as $item)
-                                        <option value="{{ $item->nama_materi }}"
-                                            {{ $item->nama_materi === $peluang->materi ? 'selected' : '' }}>
+                                        <option value="{{ $item->id }}"
+                                            {{ $item->id == $peluang->materi ? 'selected' : '' }}>
                                             {{ $item->nama_materi }}
                                         </option>
                                     @endforeach
@@ -307,7 +307,6 @@
                 </form>
             </div>
         </div>
-
 
         <!-- Modal Update Tahap -->
         <div class="modal fade" id="updateProbabilitasModal" tabindex="-1" aria-labelledby="updateProbabilitasLabel"
@@ -364,7 +363,6 @@
                                 <textarea class="form-control" name="desc_lost" id="desc_lost" rows="3"
                                     placeholder="Masukkan alasan kehilangan peluang"></textarea>
                             </div>
-
                         </div>
                         <div class="modal-footer">
                             <button type="submit" class="btn btn-success">Simpan</button>
@@ -376,6 +374,10 @@
 
         <script>
             document.addEventListener('DOMContentLoaded', function() {
+
+                let peluang = @json($peluang);
+                console.log(peluang.materi.nama_materi);
+
                 const tahapSelect = document.getElementById('tahap');
                 const closeWinInput = document.getElementById('input-close-win');
                 const closeWinField = document.getElementById('close_win');

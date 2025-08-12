@@ -41,7 +41,7 @@ class Peluang extends Model
     }
 
     // Add the relationship to Materi
-    public function materi()
+    public function materiRelation()
     {
         return $this->belongsTo(Materi::class, 'materi', 'id');
     }
