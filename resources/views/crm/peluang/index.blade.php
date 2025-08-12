@@ -252,11 +252,13 @@
                     },
                     {
                         data: 'id',
-                        render: function(id) {
+                        render: function(id, type, data, row) {
+                            const rkm = data.rkm_formatted;
                             return `
                             <div class="d-flex gap-2">
                                 <a href="/crm/peluang/detail/${id}" class="btn btn-sm btn-warning">Detail</a>
                                 <button onclick="hapusPeluang(${id})" class="btn btn-sm btn-danger">Hapus</button>
+                                <a class="btn btn-sm btn-info" href="/rkm/${data.rkm_formatted.materi_key}ixb${data.rkm_formatted.tanggal_awal_day}ie${data.rkm_formatted.tanggal_awal_year}ie${data.rkm_formatted.tanggal_awal_month}ixb${data.rkm_formatted.metode_kelas}">RKM</a>
                             </div>
                         `;
                         }
