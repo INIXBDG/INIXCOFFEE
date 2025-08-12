@@ -201,7 +201,7 @@
                     }
                 },
                 columns: [{
-                        data: 'materi'
+                        data: 'materi.nama_materi'
                     },
                     {
                         data: 'harga',

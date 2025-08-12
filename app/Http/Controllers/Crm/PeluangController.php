@@ -51,6 +51,7 @@ class PeluangController extends Controller
             if ($user->jabatan === 'Sales') {
                 $idSales = $user->id_sales;
                 $data = Peluang::where('id_sales', $idSales)
+                    ->with('materi')
                     ->select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap', 'created_at',)
                     ->get()
                     ->map(function ($item) {

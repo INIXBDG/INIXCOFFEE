@@ -12,7 +12,7 @@ class Peluang extends Model
         'id_contact',
         'id_sales',
         'id_rkm',
-        'materi',
+        'materi', // This is assumed to be the foreign key for Materi
         'catatan',
         'harga',
         'netsales',
@@ -38,5 +38,11 @@ class Peluang extends Model
     public function rkm()
     {
         return $this->belongsTo(RKM::class, 'id_rkm', 'id');
+    }
+
+    // Add the relationship to Materi
+    public function materi()
+    {
+        return $this->belongsTo(Materi::class, 'materi', 'id');
     }
 }
