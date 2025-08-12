@@ -32,6 +32,8 @@
 
     {{-- <link rel="stylesheet" href="//cdn.datatables.net/2.0.3/css/dataTables.dataTables.min.css"> --}}
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <style>
         /* From Uiverse.io by jamik-dev */
         .cube {
@@ -1107,22 +1109,21 @@
                         @endcan
                     </div>
                 </div>
-                <div class="col-md-1 col-sm-1 col-xs-1 d-flex justify-content-end" id="navbarpalingkanan">
-                    <ul class="navbar-nav">
-                        <li class="nav-item mx-1">
-                            <a class="nav-link" href="{{ route('logout') }}" data-bs-toggle="tooltip"
-                                data-bs-placement="top" title="Logout"
-                                onclick="event.preventDefault(); if(confirm('Apakah Anda Yakin?')) { document.getElementById('logout-form').submit(); }">
-                                <img src="{{ asset('icon/power.svg') }}" class="img-responsive" width="30px">
-                            </a>
-                            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                                @csrf
-                            </form>
-                        </li>
-                    </ul>
-                </div>
+            <div class="col-md-1 col-sm-1 col-xs-1 d-flex justify-content-end" id="navbarpalingkanan">
+                <ul class="navbar-nav">
+                    <li class="nav-item mx-1">
+                        <a class="nav-link" href="#" id="logout-link" data-bs-toggle="tooltip"
+                            data-bs-placement="top" title="Logout">
+                            <img src="{{ asset('icon/power.svg') }}" class="img-responsive" width="30px">
+                        </a>
+                        <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                            @csrf
+                        </form>
+                    </li>
+                </ul>
             </div>
-        </nav>
+        </div>
+     </nav>
         <main class="container-fluid" style="height: 92vh" id="bgsvg">
             {{-- {{auth()->user()->hashids}} --}}
             <div class="tab-content" id="pills-tabContent">
@@ -2051,6 +2052,35 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/locale/id.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/timepicker/1.3.5/jquery.timepicker.min.js"></script>
+    {{-- SweetAlert2 --}}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.getElementById('logout-link').addEventListener('click', function (e) {
+    e.preventDefault();
+
+Swal.fire({
+    title: 'Apakah Anda yakin?',
+    text: "Anda akan keluar dari aplikasi",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Ya, keluar',
+    cancelButtonText: 'Batal',
+    showClass: {
+        popup: 'animate__animated animate__fadeInDown animate__faster'
+    },
+    hideClass: {
+        popup: 'animate__animated animate__fadeOutUp animate__faster'
+    }
+}).then((result) => {
+    if (result.isConfirmed) {
+        document.getElementById('logout-form').submit();
+    }
+});
+
+});
+</script>
     <script>
         $(document).ready(function() {
             handleNotificationDismissal();
