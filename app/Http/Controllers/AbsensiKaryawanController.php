@@ -318,7 +318,7 @@ class AbsensiKaryawanController extends Controller
     public function absensiKaryawan()
     {
         $id_karyawan = auth()->user()->karyawan_id;
-        $month = now()->month; // Mendapatkan bulan saat ini
+        $month = now()->month;
         $absen = AbsensiKaryawan::where('id_karyawan', $id_karyawan)
             ->whereMonth('tanggal', $month)
             ->orderBy('tanggal', 'asc') // Urutkan berdasarkan tanggal secara ascending (terkecil ke terbesar)
@@ -425,7 +425,23 @@ class AbsensiKaryawanController extends Controller
         // return $totalketerlambatan;
         // return $leaderboard;
 
-        return view('absensi.absensi', compact('absen', 'leaderboard', 'totalketerlambatan', 'topKaryawan', 'remainingLeaderboard', 'noRecord', 'schemeWork', 'cancelLeave'));
+        // Tambahkan query izin tiga jam
+        $izinTigaJam = izinTigaJam::where('id_karyawan', $id_karyawan)
+            ->whereMonth('tanggal_pengajuan', $month)
+            ->orderBy('tanggal_pengajuan', 'desc')
+            ->get();
+
+        return view('absensi.absensi', compact(
+            'absen',
+            'leaderboard',
+            'totalketerlambatan',
+            'topKaryawan',
+            'remainingLeaderboard',
+            'noRecord',
+            'schemeWork',
+            'cancelLeave',
+            'izinTigaJam' // <-- tambahkan ini
+        ));
     }
 
     public function update(Request $request)
