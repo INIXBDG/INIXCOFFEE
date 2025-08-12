@@ -14,14 +14,14 @@ use Illuminate\Support\Facades\DB;
 
 class CRMController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         // 1. Kategori perusahaan chart
         $data = Perusahaan::select('kategori_perusahaan', DB::raw('count(*) as total'))
             ->groupBy('kategori_perusahaan')
             ->get();
 
-        $total = $data->sum('total');
+        $total = $data->sum('total') ?: 1; // Prevent division by zero
 
         $chartData = $data->map(function ($item) use ($total) {
             return [
@@ -54,7 +54,6 @@ class CRMController extends Controller
                 'target_call' => $salesTarget->Call ?? 0,
                 'target_email' => $salesTarget->Email ?? 0,
                 'target_visit' => $salesTarget->Visit ?? 0,
-
             ];
         }
 
@@ -69,22 +68,89 @@ class CRMController extends Controller
 
         // 4. Top 5 produk paling menguntungkan
         $profit = RKM::with('materi')
-            ->select('materi_key', DB::raw('SUM(harga_jual * pax) as total_revenue'))
+            ->select('materi_key', DB::raw('SUM(COALESCE(harga_jual, 0) * COALESCE(pax, 0)) as total_revenue'))
             ->where('status', '0')
             ->groupBy('materi_key')
             ->orderByDesc('total_revenue')
             ->limit(5)
             ->get();
 
+        // 5. Total Win
+        $tahunDipilih = $request->query('tahun', now()->year);
+
+        $dataRingkasanWin = Peluang::whereNotNull('merah')
+            ->whereYear('merah', $tahunDipilih)
+            ->select(
+                'id_sales',
+                DB::raw('CASE
+                WHEN MONTH(merah) BETWEEN 1 AND 3 THEN "TR1"
+                WHEN MONTH(merah) BETWEEN 4 AND 6 THEN "TR2"
+                WHEN MONTH(merah) BETWEEN 7 AND 9 THEN "TR3"
+                WHEN MONTH(merah) BETWEEN 10 AND 12 THEN "TR4"
+            END as triwulan'),
+                DB::raw('SUM(final) as total_jumlah')
+            )
+            ->groupBy('id_sales', 'triwulan')
+            ->get()
+            ->groupBy('id_sales')
+            ->map(function ($grup) {
+                return $grup->pluck('total_jumlah', 'triwulan')->toArray();
+            })->toArray();
+
+        // 6. Total Lost
+        $dataRingkasanLost = Peluang::whereNotNull('lost')
+            ->whereYear('lost', $tahunDipilih)
+            ->select(
+                'id_sales',
+                DB::raw('CASE
+                WHEN MONTH(lost) BETWEEN 1 AND 3 THEN "TR1"
+                WHEN MONTH(lost) BETWEEN 4 AND 6 THEN "TR2"
+                WHEN MONTH(lost) BETWEEN 7 AND 9 THEN "TR3"
+                WHEN MONTH(lost) BETWEEN 10 AND 12 THEN "TR4"
+            END as triwulan'),
+                DB::raw('SUM(COALESCE(harga, 0) * COALESCE(pax, 0)) as total_jumlah')
+            )
+            ->groupBy('id_sales', 'triwulan')
+            ->get()
+            ->groupBy('id_sales')
+            ->map(function ($grup) {
+                return $grup->pluck('total_jumlah', 'triwulan')->toArray();
+            })->toArray();
+
+        $pengguna = User::select('id_sales', 'username')->get()->keyBy('id_sales')->toArray();
+
+        // Ensure all sales users are included for both win and lost
+        $triwulanList = ['TR1', 'TR2', 'TR3', 'TR4'];
+        $totalWin = [];
+        $totalLost = [];
+
+        foreach ($sales as $id_sales) {
+            $totalWin[$id_sales] = [
+                'username' => $pengguna[$id_sales]['username'] ?? $id_sales,
+                'TR1' => $dataRingkasanWin[$id_sales]['TR1'] ?? 0,
+                'TR2' => $dataRingkasanWin[$id_sales]['TR2'] ?? 0,
+                'TR3' => $dataRingkasanWin[$id_sales]['TR3'] ?? 0,
+                'TR4' => $dataRingkasanWin[$id_sales]['TR4'] ?? 0,
+            ];
+            $totalLost[$id_sales] = [
+                'username' => $pengguna[$id_sales]['username'] ?? $id_sales,
+                'TR1' => $dataRingkasanLost[$id_sales]['TR1'] ?? 0,
+                'TR2' => $dataRingkasanLost[$id_sales]['TR2'] ?? 0,
+                'TR3' => $dataRingkasanLost[$id_sales]['TR3'] ?? 0,
+                'TR4' => $dataRingkasanLost[$id_sales]['TR4'] ?? 0,
+            ];
+        }
+
         return view('crm.dashboard', compact(
             'chartData',
             'activitysales',
             'best',
-            'profit'
+            'profit',
+            'totalWin',
+            'totalLost',
+            'tahunDipilih'
         ));
     }
-
-
 
 
     public function getProfile()
