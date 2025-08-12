@@ -404,6 +404,27 @@
             "order": [[0, 'desc']], // Ubah urutan menjadi descending untuk kolom ke-6
                 "columnDefs" : [{"targets":[0], "type":"date"}],
         });
+        $('#approveForm').on('submit', function (e) {
+    e.preventDefault();
+    const form = $(this);
+    const url = form.attr('action');
+    const data = form.serialize();
+
+    $.ajax({
+        url: url,
+        method: 'POST',
+        data: data + '&_method=PUT',
+        success: function (res) {
+            $('#approveModal').modal('hide');
+            $('#jabatantable').DataTable().ajax.reload(null, false); // reload data tanpa reset halaman
+            // tampilkan alert Bootstrap kalau mau
+        },
+        error: function (err) {
+            alert("Gagal menyimpan data!");
+        }
+    });
+});
+
     });
         function openApproveModal(id, jabatan) {
             // Set the action URL for the approval form

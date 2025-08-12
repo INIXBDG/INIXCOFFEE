@@ -50,11 +50,13 @@ class RKMController extends Controller
                         'r_k_m_s.ruang',
                         'r_k_m_s.metode_kelas',
                         'r_k_m_s.event',
+                        'r_k_m_s.exam',
                         DB::raw('GROUP_CONCAT(r_k_m_s.instruktur_key SEPARATOR ", ") AS instruktur_all'),
                         DB::raw('GROUP_CONCAT(r_k_m_s.perusahaan_key SEPARATOR ", ") AS perusahaan_all'),
                         DB::raw('GROUP_CONCAT(r_k_m_s.sales_key SEPARATOR ", ") AS sales_all'),
                         DB::raw('CASE WHEN SUM(r_k_m_s.status = 0) > 0 THEN 0 ELSE MIN(r_k_m_s.status) END AS status_all'),
                         DB::raw('SUM(r_k_m_s.pax) AS total_pax'),
+                        DB::raw('MAX(r_k_m_s.exam) AS jumlah_exam'),
                         DB::raw('MIN(r_k_m_s.tanggal_awal) AS tanggal_awal'), // Adding tanggal_awal
                         DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir') // Adding tanggal_akhir
                     )
@@ -63,6 +65,7 @@ class RKMController extends Controller
                         'r_k_m_s.ruang',
                         'r_k_m_s.metode_kelas',
                         'r_k_m_s.event',
+                        'r_k_m_s.exam',
                         'r_k_m_s.tanggal_awal'
                     )
                     ->orderBy('status_all', 'asc')
@@ -130,6 +133,7 @@ class RKMController extends Controller
                         'r_k_m_s.ruang',
                         'r_k_m_s.metode_kelas',
                         'r_k_m_s.event',
+                        'r_k_m_s.exam',
                         DB::raw('GROUP_CONCAT(r_k_m_s.instruktur_key SEPARATOR ", ") AS instruktur_all'),
                         DB::raw('GROUP_CONCAT(r_k_m_s.perusahaan_key SEPARATOR ", ") AS perusahaan_all'),
                         DB::raw('GROUP_CONCAT(r_k_m_s.sales_key SEPARATOR ", ") AS sales_all'),

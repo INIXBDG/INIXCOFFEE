@@ -838,32 +838,36 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
     @endif
-    <div id="app">
-        <div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel"
-            aria-hidden="true">
-            <div class="modal-dialog modal-dialog-scrollable">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="notificationModalLabel">Alert Pemberitahuan</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        @include('partials.notifications')
-                    </div>
-                    <div class="modal-footer">
-                        @if (auth()->user()->unreadNotifications->count() > 0)
-                        <form action="{{ route('notifications.markAllAsRead') }}" method="POST" class="d-inline">
-                            @csrf
-                            @method('PUT')
-                            <button type="submit" class="btn btn-primary btn-sm">Tandai Semua sebagai
-                                Dibaca</button>
-                        </form>
-                        @endif
-                        <button type="button" class="btn btn-custom btn-sm" data-bs-dismiss="modal">Tutup</button>
-                    </div>
+<div id="app">
+    <div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable" style="max-width: 550px;"> {{-- default 500-600px --}}
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="notificationModalLabel">Alert Pemberitahuan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    @include('partials.notifications')
+                </div>
+                <div class="modal-footer">
+                    @if(auth()->user()->unreadNotifications->count() > 0)
+                    <form action="{{ route('notifications.markAllAsRead') }}" method="POST" class="d-inline">
+                        @csrf
+                        @method('PUT')
+                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-4">
+                            Tandai Semua sebagai Dibaca
+                        </button>
+                    </form>
+                    @endif
+                    <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-4" data-bs-dismiss="modal">
+                        Tutup
+                    </button>
                 </div>
             </div>
         </div>
+    </div>
+</div>
+
         <div class="modal fade" id="modalPemberitahuan" tabindex="-1" aria-labelledby="exampleModalLabel"
             aria-hidden="true">
             <div class="modal-dialog">
@@ -1850,6 +1854,85 @@
                                     </div>
                                 </div>
                                 @endcan
+                                {{-- @can('View DatabaseKPI') --}}
+                                <div class="row">
+                                    <div class="col-md-12 mt-1">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h5 class="text-center card-title">KPI</h5>
+                                                <div class="row">
+                                                    @can('View Penilaian')
+                                                    <div class="col-sm-6 mt-2">
+                                                        <div class="card" id="card-hover">
+                                                            <div class="card-body d-flex">
+                                                                <div class="col-md-2">
+                                                                    <i class="fa fa-ranking-star" style="font-size: 30px;"></i>
+                                                                </div>
+                                                                <div class="col-md-10" style="margin-left: 10px">
+                                                                    <a href="{{ route('berandaKPI.get') }}" class="link stretched-link text-decoration-none">
+                                                                        <h5 class="card-title">Penilaian</h5>
+                                                                    </a>
+                                                                    <p class="card-text">Data Penilaian Semua Karyawan.</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    @endcan
+                                                    @php
+                                                    $id_karyawan = Auth()->user()->karyawan_id;
+                                                        $month = \Carbon\Carbon::now()->month;
+                                                        $year = \Carbon\Carbon::now()->year;
+                                                        $Q = '[Kesalahan Program]';
+
+                                                        if ($month >= 1 && $month <= 3) {
+                                                            $Q = 'Q1';
+                                                        } elseif ($month >= 4 && $month <= 6) {
+                                                            $Q = 'Q2';
+                                                        } elseif ($month >= 7 && $month <= 9) {
+                                                            $Q = 'Q3';
+                                                        } elseif ($month >= 10 && $month <= 12) {
+                                                            $Q = 'Q4';
+                                                        }
+                                                    @endphp
+
+                                                    <div class="col-sm-6 mt-2">
+                                                        <div class="card" id="card-hover">
+                                                            <div class="card-body d-flex">
+                                                                <div class="col-md-2">
+                                                                    <img src="{{ asset('icon/bookOpen.svg') }}" class="img-responsive" width="30px">
+                                                                </div>
+                                                                <div class="col-md-10" style="margin-left: 10px">
+                                                                    <a href="{{ '/penilaian360/index/' . $id_karyawan }}" class="link stretched-link text-decoration-none">
+                                                                        <h5 class="card-title">Penilaian 360</h5>
+                                                                    </a>
+                                                                    <p class="card-text">Data Penilaian {{ $Q }} Anda Tahun {{ $year }}.</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-sm-6 mt-2">
+                                                        <div class="card" id="card-hover">
+                                                            <div class="card-body d-flex">
+                                                                <div class="col-md-2">
+                                                                    <img src="{{ asset('icon/bookOpen.svg') }}" class="img-responsive" width="30px">
+                                                                </div>
+                                                                <div class="col-md-10" style="margin-left: 10px">
+                                                                    <a href="{{ '/getFormPenilaianUser/' . $id_karyawan }}" class="link stretched-link text-decoration-none">
+                                                                        <h5 class="card-title">Evaluator</h5>
+                                                                    </a>
+                                                                    <p class="card-text">
+                                                                        Form Penilaian {{ $Q }} Yang Harus Anda Evaluasi  di Tahun {{ $year }} .
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {{-- @endcan --}}
                                 @can('Fitur Menu Office')
                                 <div class="row">
                                     <div class="col-md-12 mt-1">
@@ -1893,23 +1976,6 @@
                                                                         <h5 class="card-title">Pengajuan Klaim</h5>
                                                                     </a>
                                                                     <p class="card-text">Pengajuan Absen, Jam Kerja, & Cuti</p>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    @endcan
-                                                    @can('View DatabaseKPI')
-                                                    <div class="col-sm-6 mt-2">
-                                                        <div class="card" id="card-hover">
-                                                            <div class="card-body d-flex">
-                                                                <div class="col-md-2">
-                                                                    <i class="fa fa-ranking-star" style="font-size: 30px;"></i>
-                                                                </div>
-                                                                <div class="col-md-10" style="margin-left: 10px">
-                                                                    <a href="/databasekpi" class="link stretched-link text-decoration-none">
-                                                                        <h5 class="card-title">Database KPI</h5>
-                                                                    </a>
-                                                                    <p class="card-text">Database KPI Karyawan.</p>
                                                                 </div>
                                                             </div>
                                                         </div>

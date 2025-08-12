@@ -21,9 +21,9 @@
                             <div class="col-md-6">
                                 <input id="nama_materi" readonly type="text" class="form-control @error('nama_materi') is-invalid @enderror" name="nama_materi" value="{{ $rkm->materi->nama_materi }}" autocomplete="nama_materi" autofocus>
                                 @error('rkm_key')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
                                 @enderror
                             </div>
                         </div>
@@ -33,9 +33,9 @@
                             <div class="col-md-6">
                                 <input id="id_rkm" readonly type="text" class="form-control @error('id_rkm') is-invalid @enderror" name="id_rkm" value="{{ $rkm->id }}" autocomplete="id_rkm" autofocus>
                                 @error('id_rkm')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
                                 @enderror
                             </div>
                         </div>
@@ -45,9 +45,9 @@
                             <div class="col-md-6">
                                 <input id="materi_key" readonly type="text" class="form-control @error('materi_key') is-invalid @enderror" name="materi_key" value="{{ $rkm->materi_key }}" autocomplete="materi_key" autofocus>
                                 @error('materi_key')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
                                 @enderror
                             </div>
                         </div>
@@ -57,9 +57,9 @@
                             <div class="col-md-6">
                                 <input id="tanggal_awal" type="date" placeholder="tanggal_awal" class="form-control @error('tanggal_awal') is-invalid @enderror" name="tanggal_awal" readonly value="{{ old('tanggal_awal', $rkm->tanggal_awal) }}" autocomplete="tanggal_awal" autofocus>
                                 @error('tanggal_awal')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
                                 @enderror
                             </div>
                         </div>
@@ -67,11 +67,11 @@
                         <div class="row mb-3">
                             <label for="tanggal_akhir" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Akhir') }}</label>
                             <div class="col-md-6">
-                                <input id="tanggal_akhir" type="date" placeholder="tanggal_akhir" class="form-control @error('tanggal_akhir') is-invalid @enderror" name="tanggal_akhir"  readonly value="{{ old('tanggal_akhir', $rkm->tanggal_akhir) }}" autocomplete="tanggal_akhir" autofocus>
+                                <input id="tanggal_akhir" type="date" placeholder="tanggal_akhir" class="form-control @error('tanggal_akhir') is-invalid @enderror" name="tanggal_akhir" readonly value="{{ old('tanggal_akhir', $rkm->tanggal_akhir) }}" autocomplete="tanggal_akhir" autofocus>
                                 @error('tanggal_akhir')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
                                 @enderror
                             </div>
                         </div>
@@ -91,9 +91,9 @@
 
                                 </select>
                                 @error('instruktur_key')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
                                 @enderror
                             </div>
                         </div>
@@ -108,9 +108,9 @@
                                     @endforeach
                                 </select>
                                 @error('instruktur_key2')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
                                 @enderror
                             </div>
                         </div>
@@ -125,9 +125,9 @@
                                     @endforeach
                                 </select>
                                 @error('asisten_key')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
                                 @enderror
                             </div>
                         </div>
@@ -136,22 +136,34 @@
                         <div class="row mb-3">
                             <label for="ruang" class="col-md-4 col-form-label text-md-start">{{ __('Ruang') }}</label>
                             <div class="col-md-6">
-                                <select class="form-select @error('ruang') is-invalid @enderror" name="ruang" value="{{ old('ruang', $rkm->ruang) }}" autocomplete="ruang">
-                                    <option value="-">Pilih Ruang</option>
-                                    <option value="1" @if ($rkm->ruang == "1") selected @endif>1</option>
-                                    <option value="2" @if ($rkm->ruang == "2") selected @endif>2</option>
-                                    <option value="3" @if ($rkm->ruang == "3") selected @endif>3</option>
-                                    <option value="4" @if ($rkm->ruang == "4") selected @endif>4</option>
-                                    <option value="5" @if ($rkm->ruang == "5") selected @endif>5</option>
-                                    <option value="6" @if ($rkm->ruang == "6") selected @endif>6</option>
-                                    <option value="7" @if ($rkm->ruang == "7") selected @endif>7</option>
-                                    <option value="ADOC" @if ($rkm->ruang == "ADOC") selected @endif>ADOC</option>
-                                    <option value="Inhouse" @if ($rkm->ruang == "Inhouse") selected @endif>Inhouse</option>
+                                <select class="form-select @error('ruang') is-invalid @enderror" id="select-ruang">
+                                    <option value="">Pilih Ruang</option>
+                                    <option value="1" {{ old('ruang', $rkm->ruang) == "1" ? 'selected' : '' }}>1</option>
+                                    <option value="2" {{ old('ruang', $rkm->ruang) == "2" ? 'selected' : '' }}>2</option>
+                                    <option value="3" {{ old('ruang', $rkm->ruang) == "3" ? 'selected' : '' }}>3</option>
+                                    <option value="4" {{ old('ruang', $rkm->ruang) == "4" ? 'selected' : '' }}>4</option>
+                                    <option value="5" {{ old('ruang', $rkm->ruang) == "5" ? 'selected' : '' }}>5</option>
+                                    <option value="6" {{ old('ruang', $rkm->ruang) == "6" ? 'selected' : '' }}>6</option>
+                                    <option value="7" {{ old('ruang', $rkm->ruang) == "7" ? 'selected' : '' }}>7</option>
+                                    <option value="ADOC" {{ old('ruang', $rkm->ruang) == "ADOC" ? 'selected' : '' }}>ADOC</option>
+                                    <option value="Inhouse" {{ old('ruang', $rkm->ruang) == "Inhouse" ? 'selected' : '' }}>Inhouse</option>
+                                    <option value="Working Space" {{ Str::startsWith(old('ruang', $rkm->ruang), 'Working Space') ? 'selected' : '' }}>
+                                        Working Space (isi manual)
+                                    </option>
                                 </select>
+
+                                <div id="working-space-input" class="mt-2" style="display: none;">
+                                    <input type="text" class="form-control" id="manual-ruang" placeholder="Tulis nama Working Space"
+                                        value="{{ Str::startsWith(old('ruang', $rkm->ruang), 'Working Space') ? Str::between(old('ruang', $rkm->ruang), '(', ')') : '' }}">
+                                </div>
+
+                                <input type="hidden" name="ruang" id="ruang-hidden" value="{{ old('ruang', $rkm->ruang) }}">
+
+
                                 @error('ruang')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
                                 @enderror
                             </div>
                         </div>
@@ -172,4 +184,36 @@
 <style>
 
 </style>
+<script>
+    const ruangSelect = document.getElementById('select-ruang');
+    const manualInput = document.getElementById('manual-ruang');
+    const ruangHidden = document.getElementById('ruang-hidden');
+    const workingSpaceDiv = document.getElementById('working-space-input');
+
+    function updateHiddenRuang() {
+        if (ruangSelect.value === 'Working Space') {
+            ruangHidden.value = `Working Space (${manualInput.value})`;
+        } else {
+            ruangHidden.value = ruangSelect.value;
+        }
+    }
+
+    function initRuangField() {
+        if (ruangSelect.value === 'Working Space') {
+            workingSpaceDiv.style.display = 'block';
+        } else {
+            workingSpaceDiv.style.display = 'none';
+        }
+        updateHiddenRuang();
+    }
+
+    ruangSelect.addEventListener('change', () => {
+        workingSpaceDiv.style.display = ruangSelect.value === 'Working Space' ? 'block' : 'none';
+        updateHiddenRuang();
+    });
+
+    manualInput.addEventListener('input', updateHiddenRuang);
+
+    initRuangField();
+</script>
 @endsection

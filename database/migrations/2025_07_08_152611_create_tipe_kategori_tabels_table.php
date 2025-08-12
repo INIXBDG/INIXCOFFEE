@@ -11,8 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('absensi_no_records', function (Blueprint $table) {
-            $table->date('tanggal')->nullable();
+        Schema::create('tipe_kategori_tabels', function (Blueprint $table) {
+            $table->id();
+            $table->integer('id_kategori');
+            $table->string('ket_tipe')->nullable();
+            $table->string('nilai_ket_tipe')->nullable();
+            $table->timestamps();
         });
     }
 
@@ -21,8 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('absensi_no_records', function (Blueprint $table) {
-            //
-        });
+        Schema::dropIfExists('tipe_kategori_tabels');
     }
 };

@@ -167,15 +167,13 @@ class AbsensiKaryawanController extends Controller
             ];
         }
 
-        // Jika hari Sabtu atau Minggu dan jabatan bukan Office Boy atau Technical Support,
-        // maka tidak dianggap terlambat sama sekali
-        if ($isWeekend && !in_array($jabatan, ['Office Boy', 'Technical Support'])) {
-            return [
-                'valid' => true,
-                'keterangan' => 'Masuk',
-                'keterlambatan' => '00:00:00'
-            ];
-        }
+    if ($isWeekend && !in_array($jabatan, ['Office Boy', 'Technical Support'])) {
+        return [
+            'valid' => true,
+            'keterangan' => 'Masuk',
+            'keterlambatan' => '00:00:00'
+        ];
+    }
 
         // Hitung keterlambatan untuk jabatan lain dan hari selain weekend
         $keterlambatan = '00:00:00';
@@ -194,12 +192,13 @@ class AbsensiKaryawanController extends Controller
             $keterlambatan = '00:00:00';
         }
 
-        return [
-            'valid' => true,
-            'keterangan' => $keterangan,
-            'keterlambatan' => $keterlambatan
-        ];
-    }
+    return [
+        'valid' => true,
+        'keterangan' => $keterangan,
+        'keterlambatan' => $keterlambatan
+    ];
+}
+
 
 
     private function getShiftConfig($dayOfWeek, $jabatan, $shift)

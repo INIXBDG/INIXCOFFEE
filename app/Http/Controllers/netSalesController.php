@@ -83,7 +83,7 @@ class netSalesController extends Controller
                     'rkm_key'      => $data['id_rkm'],
                 ];
 
-                $url = url('paymantAdvance.index');
+                $url = url('paymantAdvance.index'); 
                 $path = request()->path();
 
                 Notification::send($user, new CommentNotification($dummyComment, $url, $path));
