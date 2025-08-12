@@ -779,6 +779,7 @@
                                             <tr>
                                                 <th scope="col">Nama Materi</th>
                                                 <th scope="col">Instruktur</th>
+                                                <th scope="col">tanggal</th>
                                                 <th scope="col">Tanggal Mulai</th>
                                                 <th scope="col">Tanggal Selesai</th>
                                                 <th scope="col">Durasi RKM</th>
@@ -1215,13 +1216,15 @@
             },
             "columns": [
                 {"data": "nama_materi"},
-                // {"data": "id"},
-                // {"data": "instruktur.nama_lengkap"},
                 {
                     "data": "instruktur.nama_lengkap",
                     render: function(data, type, row) {
                         return (data == null || data == '-') ? '-' : data;
                     }
+                },
+                {
+                        "data": "tanggal_awal",
+                        "visible": false,
                 },
                 {
                         "data": null,
@@ -1255,7 +1258,7 @@
                 }
             ],
             "columnDefs" : [{"targets":[2], "type":"date"}],
-            "order": [[2, 'desc']],
+            "order": [[2, 'asc']],
         });
     }
     function tableInstruktur(kode_karyawan) {
