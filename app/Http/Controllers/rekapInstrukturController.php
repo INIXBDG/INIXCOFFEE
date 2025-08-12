@@ -45,36 +45,42 @@ class rekapInstrukturController extends Controller
 
         $uniqueRKMs = array_unique($id_rkm);
         $id_rkm = array_values($uniqueRKMs);
-        // return $id_rkm;
-        $data = RKM::with('materi')
-                ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
-                ->whereMonth('r_k_m_s.tanggal_awal', $bulan)
-                ->whereYear('r_k_m_s.tanggal_awal', $tahun)
-                ->whereNotIn('r_k_m_s.id', $id_rkm) // Menambahkan kondisi untuk mengecualikan id_rkm
-                ->select(
-                    'r_k_m_s.materi_key',
-                    'r_k_m_s.ruang',
-                    'r_k_m_s.event',
-                    DB::raw('GROUP_CONCAT(r_k_m_s.instruktur_key SEPARATOR ", ") AS instruktur_all'),
-                    DB::raw('GROUP_CONCAT(r_k_m_s.perusahaan_key SEPARATOR ", ") AS perusahaan_all'),
-                    DB::raw('GROUP_CONCAT(r_k_m_s.sales_key SEPARATOR ", ") AS sales_all'),
-                    DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id_all'),
-                    DB::raw('CASE WHEN SUM(r_k_m_s.status = 0) > 0 THEN 0 ELSE MIN(r_k_m_s.status) END AS status_all'),
-                    DB::raw('SUM(r_k_m_s.pax) AS total_pax'),
-                    DB::raw('MIN(r_k_m_s.tanggal_awal) AS tanggal_awal'), // Adding tanggal_awal
-                    DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir') // Adding tanggal_akhir
-                )
-                ->groupBy(
-                    'r_k_m_s.materi_key',
-                    'r_k_m_s.ruang',
-                    'r_k_m_s.event',
-                    'r_k_m_s.tanggal_awal'
-                )
-                ->orderBy('status_all', 'asc')
-                ->orderBy('r_k_m_s.tanggal_awal', 'asc')
-                ->orderBy('r_k_m_s.tanggal_akhir', 'asc')
-                ->get();
+        $monthColumn = DB::raw("
+            CASE
+                WHEN MONTH(r_k_m_s.tanggal_awal) <> MONTH(r_k_m_s.tanggal_akhir) THEN MONTH(r_k_m_s.tanggal_akhir)
+                ELSE MONTH(r_k_m_s.tanggal_awal)
+            END AS bulan_berlaku
+        ");
 
+        $data = RKM::with('materi')
+            ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
+            ->whereYear('r_k_m_s.tanggal_awal', $tahun) // atau sesuaikan tahun logika lintas tahun
+            ->whereNotIn('r_k_m_s.id', $id_rkm)
+            ->select(
+                $monthColumn,
+                'r_k_m_s.materi_key',
+                'r_k_m_s.ruang',
+                'r_k_m_s.event',
+                DB::raw('GROUP_CONCAT(r_k_m_s.instruktur_key SEPARATOR ", ") AS instruktur_all'),
+                DB::raw('GROUP_CONCAT(r_k_m_s.perusahaan_key SEPARATOR ", ") AS perusahaan_all'),
+                DB::raw('GROUP_CONCAT(r_k_m_s.sales_key SEPARATOR ", ") AS sales_all'),
+                DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id_all'),
+                DB::raw('CASE WHEN SUM(r_k_m_s.status = 0) > 0 THEN 0 ELSE MIN(r_k_m_s.status) END AS status_all'),
+                DB::raw('SUM(r_k_m_s.pax) AS total_pax'),
+                DB::raw('MIN(r_k_m_s.tanggal_awal) AS tanggal_awal'),
+                DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir')
+            )
+            ->groupBy(
+                'r_k_m_s.materi_key',
+                'r_k_m_s.ruang',
+                'r_k_m_s.event',
+                'bulan_berlaku' // pastikan nama alias ini ada di GROUP BY
+            )
+            ->havingRaw('bulan_berlaku = ?', [$bulan]) // filter berdasarkan bulan_berlaku setelah group
+            ->orderBy('status_all', 'asc')
+            ->orderBy('tanggal_awal', 'asc')
+            ->orderBy('tanggal_akhir', 'asc')
+            ->get();
 
         foreach ($data as $row) {
             if ($row->instruktur_all == null) {
@@ -123,11 +129,11 @@ class rekapInstrukturController extends Controller
         // dd($request->all());
         $rkm = RKM::findOrFail($request->id_rkm);
         $materi_key = $rkm->materi_key;
-        $tanggal_awal = $rkm->tanggal_awal; // Misalnya, formatnya 'YYYY-MM-DD'
-        $date = Carbon::parse($tanggal_awal);
+        $tanggal_akhir = $rkm->tanggal_akhir; // Misalnya, formatnya 'YYYY-MM-DD'
+        $date = Carbon::parse($tanggal_akhir);
         $tahun = $date->year;
         $bulan = $date->month;
-        $tanggal_akhir = $rkm->tanggal_akhir;
+        $tanggal_awal = $rkm->tanggal_awal;
         $datarkm = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan', 'instruktur2', 'asisten'])
             ->where('materi_key', $materi_key)
             ->whereBetween('tanggal_awal', [$tanggal_awal, $tanggal_akhir])

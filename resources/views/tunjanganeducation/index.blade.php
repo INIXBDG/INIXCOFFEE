@@ -368,6 +368,7 @@
                                             <thead>
                                                 <tr>
                                                     <th scope="col">Nama Materi</th>
+                                                    <th scope="col">Tanggal</th>
                                                     <th scope="col">Instruktur</th>
                                                     <th scope="col">Kode Karyawan</th>
                                                     <th scope="col">Durasi</th>
@@ -673,7 +674,12 @@
             },
             "columns": [
                 {"data": "rkm.materi.nama_materi"},
-                // {"data": "id"},
+                {
+                    "data": null,
+                    "render" : function(data, type, row) {
+                        return data.tanggal_awal + ' s/d ' + data.tanggal_akhir;
+                    }
+                },
                 {"data": "instruktur.nama_lengkap"},
                 {
                     "data": "instruktur.kode_karyawan",
