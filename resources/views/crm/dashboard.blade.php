@@ -2,18 +2,16 @@
 
 @section('crm_contents')
     <div class="container-xxl flex-grow-1 container-p-y">
-        <!-- Chart dan Target Sales dalam satu baris -->
-        <div class="row g-4">
-            <!-- Kategori Perusahaan -->
+        <!-- Chart dan Target Sales -->
+        <div class="row g-4 mb-4">
+            <!-- Data Perusahaan -->
             <div class="col-md-6">
                 <div class="card h-100 shadow-sm border-0 rounded-3">
-                    <div class="card-header bg-transparent border-bottom-0 pb-0">
-                        <h5 class="card-title mb-0 text-primary">Distribusi Kategori Perusahaan</h5>
+                    <div class="card-header bg-transparent border-0 pb-0">
+                        <h5 class="card-title mb-0 text-primary">Data Perusahaan</h5>
                     </div>
-                    <div class="card-body d-flex align-items-center justify-content-center">
-                        <div style="width: 100%; height: 300px;">
-                            <canvas id="kategoriChart"></canvas>
-                        </div>
+                    <div class="card-body">
+                        <canvas id="kategoriChart" style="height: 280px;"></canvas>
                     </div>
                 </div>
             </div>
@@ -21,67 +19,138 @@
             <!-- Target Aktivitas Sales -->
             <div class="col-md-6">
                 <div class="card h-100 shadow-sm border-0 rounded-3">
-                    <div class="card-header bg-transparent border-bottom-0 pb-0">
-                        <h5 class="card-title mb-0 text-primary">Target Aktivitas per Sales</h5>
+                    <div class="card-header bg-transparent border-0 pb-0">
+                        <h5 class="card-title mb-0 text-primary">Target Aktivitas Sales</h5>
                     </div>
-                    <div class="card-body" style="max-height: 300px; overflow-y: auto; font-size: 0.875rem;">
-                        @forelse ($activitysales as $sales)
-                            <div class="mb-3">
-                                <strong class="text-dark">{{ $sales['id_sales'] }}</strong>
-                                @php
-                                    $aktivitas = [
-                                        'Call' => [
-                                            'jumlah' => $sales['call'],
-                                            'target' => $sales['target_call'],
-                                            'warna' => 'info',
-                                        ],
-                                        'Email' => [
-                                            'jumlah' => $sales['email'],
-                                            'target' => $sales['target_email'],
-                                            'warna' => 'warning',
-                                        ],
-                                        'Visit' => [
-                                            'jumlah' => $sales['visit'],
-                                            'target' => $sales['target_visit'],
-                                            'warna' => 'success',
-                                        ],
-                                    ];
-                                @endphp
-
-                                @foreach ($aktivitas as $label => $data)
+                    <div class="card-body">
+                        <!-- Filter Section -->
+                        <div class="mb-3">
+                            <div class="d-flex flex-wrap gap-2 align-items-center">
+                                <div class="btn-group">
+                                    <button class="btn btn-outline-primary btn-sm filter-btn active"
+                                        data-filter="all">All</button>
+                                    <button class="btn btn-outline-primary btn-sm filter-btn"
+                                        data-filter="Call">Call</button>
+                                    <button class="btn btn-outline-primary btn-sm filter-btn"
+                                        data-filter="Email">Email</button>
+                                    <button class="btn btn-outline-primary btn-sm filter-btn"
+                                        data-filter="Visit">Visit</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="max-height: 280px; overflow-y: auto;">
+                            @forelse ($activitysales as $sales)
+                                <div class="mb-3 sales-item" data-sales-id="{{ $sales['id_sales'] }}">
+                                    <strong class="text-dark">{{ $sales['id_sales'] }}</strong>
                                     @php
-                                        $persen =
-                                            $data['target'] > 0
-                                                ? min(round(($data['jumlah'] / $data['target']) * 100), 100)
-                                                : 0;
+                                        $aktivitas = [
+                                            'Call' => [
+                                                'jumlah' => $sales['call'],
+                                                'target' => $sales['target_call'],
+                                                'warna' => 'info',
+                                            ],
+                                            'Email' => [
+                                                'jumlah' => $sales['email'],
+                                                'target' => $sales['target_email'],
+                                                'warna' => 'warning',
+                                            ],
+                                            'Visit' => [
+                                                'jumlah' => $sales['visit'],
+                                                'target' => $sales['target_visit'],
+                                                'warna' => 'success',
+                                            ],
+                                        ];
                                     @endphp
-                                    <div class="mb-1">
-                                        <div class="d-flex justify-content-between small mb-1">
-                                            <span>{{ $label }}: {{ $data['jumlah'] }}/{{ $data['target'] }}</span>
-                                            <span class="badge bg-light text-dark">{{ $persen }}%</span>
-                                        </div>
-                                        <div class="progress" style="height: 6px;">
-                                            <div class="progress-bar bg-{{ $data['warna'] }}" role="progressbar"
-                                                style="width: {{ $persen }}%;" aria-valuenow="{{ $persen }}"
-                                                aria-valuemin="0" aria-valuemax="100">
+                                    @foreach ($aktivitas as $label => $data)
+                                        @php
+                                            $persen =
+                                                $data['target'] > 0
+                                                    ? min(round(($data['jumlah'] / $data['target']) * 100), 100)
+                                                    : 0;
+                                        @endphp
+                                        <div class="mb-2 activity-item" data-activity="{{ $label }}">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <span class="small">{{ $label }}:
+                                                    {{ $data['jumlah'] }}/{{ $data['target'] }}</span>
+                                                <span
+                                                    class="badge bg-{{ $data['warna'] }}-subtle text-dark">{{ $persen }}%</span>
+                                            </div>
+                                            <div class="progress" style="height: 5px;">
+                                                <div class="progress-bar bg-{{ $data['warna'] }}"
+                                                    style="width: {{ $persen }}%;"></div>
                                             </div>
                                         </div>
-                                    </div>
-                                @endforeach
+                                    @endforeach
+                                    @if (!$loop->last)
+                                        <hr class="my-2 opacity-25">
+                                    @endif
+                                </div>
+                            @empty
+                                <p class="text-muted small mb-0">Tidak ada data aktivitas sales.</p>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                                @if (!$loop->last)
-                                    <hr class="my-2">
-                                @endif
+        <!-- Top 5 Produk -->
+        <div class="row g-2">
+            <!-- Top 5 Produk Terjual -->
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm border-0 rounded-3">
+                    <div class="card-header bg-transparent border-0 pb-0">
+                        <h5 class="card-title mb-0 text-primary">Top 5 Produk Terjual</h5>
+                    </div>
+                    <div class="card-body" style="max-height: 280px; overflow-y: auto;">
+                        @forelse ($best as $item)
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <strong
+                                        class="text-dark">{{ $item->materi->nama_materi ?? $item->materi_key }}</strong>
+                                    </p>
+                                </div>
+                                <span
+                                    class="badge bg-success-subtle text-success">{{ number_format($item->total_pax, 0, ',', '.') }}
+                                    Pax</span>
                             </div>
+                            @if (!$loop->last)
+                                <hr class="my-2 opacity-25">
+                            @endif
                         @empty
-                            <p class="text-muted small">Tidak ada data aktivitas sales.</p>
+                            <p class="text-muted small mb-0">Tidak ada data produk terjual.</p>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top 5 Produk Menguntungkan -->
+            <div class="col-md-4">
+                <div class="card h-100 shadow-sm border-0 rounded-3">
+                    <div class="card-header bg-transparent border-0 pb-0">
+                        <h5 class="card-title mb-0 text-primary">Top 5 Produk Menguntungkan</h5>
+                    </div>
+                    <div class="card-body" style="max-height: 280px; overflow-y: auto;">
+                        @forelse ($profit as $item)
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <strong
+                                        class="text-dark">{{ $item->materi->nama_materi ?? $item->materi_key }}</strong>
+                                </div>
+                                <span class="badge bg-info-subtle text-info">Rp
+                                    {{ number_format($item->total_revenue, 0, ',', '.') }}</span>
+                            </div>
+                            @if (!$loop->last)
+                                <hr class="my-2 opacity-25">
+                            @endif
+                        @empty
+                            <p class="text-muted small mb-0">Tidak ada data produk menguntungkan.</p>
                         @endforelse
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
@@ -104,8 +173,7 @@
                             'rgba(255, 206, 86, 0.8)',
                             'rgba(153, 102, 255, 0.8)',
                         ],
-                        borderColor: '#fff',
-                        borderWidth: 2
+                        borderWidth: 1
                     }]
                 },
                 options: {
@@ -116,20 +184,53 @@
                             position: 'bottom',
                             labels: {
                                 font: {
-                                    size: 13
+                                    size: 12
                                 },
                                 padding: 10
                             }
                         },
                         tooltip: {
                             callbacks: {
-                                label: (context) => `${context.label}: ${context.raw}%`
+                                label: context => `${context.label}: ${context.raw}%`
                             }
                         }
                     }
                 }
             });
+
+            // Filter functionality
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            const salesItems = document.querySelectorAll('.sales-item');
+            const activityItems = document.querySelectorAll('.activity-item');
+            const startDateInput = document.getElementById('startDate');
+            const endDateInput = document.getElementById('endDate');
+            const applyDateFilter = document.getElementById('applyDateFilter');
+
+            // Handle activity type filter
+            filterButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    const filter = button.getAttribute('data-filter');
+
+                    activityItems.forEach(item => {
+                        const activityType = item.getAttribute('data-activity');
+                        if (filter === 'all' || activityType === filter) {
+                            item.style.display = 'block';
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+
+                    // Show/hide sales items based on visible activities
+                    salesItems.forEach(item => {
+                        const visibleActivities = item.querySelectorAll(
+                            '.activity-item[style="display: block;"]');
+                        item.style.display = visibleActivities.length > 0 ? 'block' :
+                        'none';
+                    });
+                });
+            });
         });
     </script>
-
 @endsection
