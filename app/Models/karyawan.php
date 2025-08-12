@@ -91,8 +91,8 @@ class karyawan extends Model
         return $this->hasMany(lembur::class);
     }
 
-    // public function getHashidsAttribute()
-    // {
-    //     return Hashids::encode($this->id);
-    // }
+    public function getHashidsAttribute()
+    {
+        return Hashids::encode($this->id);
+    }
 }
