@@ -196,7 +196,7 @@ class AbsensiKaryawanController extends Controller
         $hours = intdiv($diffMinutes, 60);
         $minutes = ($diffMinutes % 60);
         $keterlambatan = sprintf('%02d:%02d:00', $hours, $minutes);
-        $keterangan = 'Telat';
+        $keterangan = 'Telat (izin 3 Jam)';
     } else {
         // Masuk sesuai izin
         $keterangan = 'Masuk (Izin 3 Jam)';
