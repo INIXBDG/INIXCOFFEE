@@ -142,7 +142,7 @@
                                             <div class="ket-tipe-wrapper text-right">
                                                 <div class="input-group mb-2">
                                                     <input type="text" name="kriteria[0][sub_kriteria][0][ket_tipe][]" class="form-control" placeholder="Masukkan keterangan tipe">
-                                                    <input type="text" name="kriteria[0][sub_kriteria][0][nilai_ket_tipe][]" class="form-control" placeholder="Nilai tipe (opsional)...">
+                                                    <input type="text" name="kriteria[0][sub_kriteria][0][nilai_ket_tipe][]" class="form-control" placeholder="Nilai tipe...">
                                                     <button type="button" class="btn text-white cl-red btn-sm remove-ket-tipe">Hapus</button>
                                                 </div>
                                                 <button type="button" class="btn text-white cl-blue text-end btn-sm add-ket-tipe">+ Tambah Keterangan</button>
@@ -230,7 +230,7 @@
                                             inputGroup.className = 'input-group mb-2';
                                             inputGroup.innerHTML = `
                                                 <input type="text" name="kriteria[${currentKriteriaIndex}][sub_kriteria][${currentSubKriteriaIndex}][ket_tipe][]" class="form-control" placeholder="Masukkan keterangan tipe">
-                                                <input type="text" name="kriteria[${currentKriteriaIndex}][sub_kriteria][${currentSubKriteriaIndex}][nilai_ket_tipe][]" class="form-control" placeholder="Nilai tipe (opsional)">
+                                                <input type="text" name="kriteria[${currentKriteriaIndex}][sub_kriteria][${currentSubKriteriaIndex}][nilai_ket_tipe][]" class="form-control" placeholder="Nilai tipe...">
                                                 <button type="button" class="btn text-white cl-red btn-sm remove-ket-tipe">Hapus</button>
                                             `;
                                             ketTipeWrapper.insertBefore(inputGroup, addKeteranganBtn);
@@ -298,7 +298,7 @@
                                     ketWrapper.innerHTML = `
                     <div class="input-group mb-2">
                         <input type="text" name="kriteria[${currentKriteriaIndex}][sub_kriteria][${newSubIndex}][ket_tipe][]" class="form-control" placeholder="Masukkan keterangan tipe">
-                        <input type="text" name="kriteria[${currentKriteriaIndex}][sub_kriteria][${newSubIndex}][nilai_ket_tipe][]" class="form-control" placeholder="Nilai tipe (opsional)">
+                        <input type="text" name="kriteria[${currentKriteriaIndex}][sub_kriteria][${newSubIndex}][nilai_ket_tipe][]" class="form-control" placeholder="Nilai tipe...">
                         <button type="button" class="btn text-white cl-red btn-sm remove-ket-tipe">Hapus</button>
                     </div>
                     <button type="button" class="btn text-white cl-blue btn-sm add-ket-tipe mt-2">+ Tambah Keterangan</button>
@@ -358,7 +358,7 @@
                                         ketWrapper.innerHTML = `
                         <div class="input-group mb-2">
                             <input type="text" name="kriteria[${kriteriaMainIndex}][sub_kriteria][0][ket_tipe][]" class="form-control" placeholder="Masukkan keterangan tipe">
-                            <input type="text" name="kriteria[${kriteriaMainIndex}][sub_kriteria][0][nilai_ket_tipe][]" class="form-control" placeholder="Nilai tipe (opsional)">
+                            <input type="text" name="kriteria[${kriteriaMainIndex}][sub_kriteria][0][nilai_ket_tipe][]" class="form-control" placeholder="Nilai tipe...>
                             <button type="button" class="btn text-white cl-red btn-sm remove-ket-tipe">Hapus</button>
                         </div>
                         <button type="button" class="btn text-white cl-blue btn-sm add-ket-tipe mt-2">+ Tambah Keterangan</button>

@@ -305,99 +305,163 @@
                 let tableBody = $('#tbody_table');
                 tableBody.empty();
 
+                if ($.fn.DataTable.isDataTable('#table_karyawan')) {
+                    var table = $('#table_karyawan').DataTable();
+                    var currentPage = table.page(); // simpan page sekarang
+                    table.destroy(); // destroy dulu sebelum rebuild
+                } else {
+                    var currentPage = 0;
+                }
+
                 if (data.length === 0) {
                     tableBody.append('<tr><td colspan="8" style="font-size: 14px;">Tidak Ada Data</td></tr>');
-                    return;
-                }
+                } else {
+                    let rowNumber = 1;
 
-                let rowNumber = 1;
+                    data.forEach(function(item) {
+                        let evaluatorName = item.evaluator || '-';
+                        let evaluatedName = item.evaluated;
+                        let tanggal = item.detail_kategori[0]?.isi_kriteria[0]?.tanggal || '-';
+                        let quartal = item.quartal;
+                        let tahun = item.tahun;
 
-                data.forEach(function(item) {
-                    let evaluatorName = item.evaluator || '-';
-                    let evaluatedName = item.evaluated;
-                    let tanggal = item.detail_kategori[0]?.isi_kriteria[0]?.tanggal || '-';
-                    let quartal = item.quartal;
-                    let tahun = item.tahun;
+                        let totalSubCriteriaForThisAssessment = 0;
+                        item.detail_kategori.forEach(function(detailKategori) {
+                            totalSubCriteriaForThisAssessment += detailKategori.isi_kriteria.length;
+                        });
 
-                    let totalSubCriteriaForThisAssessment = 0;
-                    item.detail_kategori.forEach(function(detailKategori) {
-                        totalSubCriteriaForThisAssessment += detailKategori.isi_kriteria.length;
-                    });
+                        let evaluatorHTML = generateEvaluatorByPenilaian(item);
 
-                    let evaluatorHTML = generateEvaluatorByPenilaian(item);
+                        let firstRow = true;
 
-                    let firstRow = true;
+                        item.detail_kategori.forEach(function(detailKategori) {
+                            detailKategori.isi_kriteria.forEach(function(isiKriteria, indexKriteria) {
+                                let row = `<tr style="color: black;">`;
 
-                    item.detail_kategori.forEach(function(detailKategori) {
-                        detailKategori.isi_kriteria.forEach(function(isiKriteria, indexKriteria) {
-                            let row = `<tr style="color: black;">`;
+                                if (firstRow) {
+                                    row += `<td style="font-size: 14px;" rowspan="${totalSubCriteriaForThisAssessment}">${rowNumber++}</td>`;
+                                    row += `<td style="font-size: 14px; text-align: left;" class="text-start" rowspan="${totalSubCriteriaForThisAssessment}">${evaluatorHTML}</td>`;
+                                    row += `<td style="font-size: 14px;" rowspan="${totalSubCriteriaForThisAssessment}">${evaluatedName}</td>`;
+                                    row += `<td style="font-size: 14px;" rowspan="${totalSubCriteriaForThisAssessment}">${item.evaluatedDivisi}</td>`;
+                                    row += `<td style="font-size: 14px;" rowspan="${totalSubCriteriaForThisAssessment}">${tanggal}</td>`;
+                                    row += `<td style="font-size: 14px;" rowspan="${totalSubCriteriaForThisAssessment}">${quartal}</td>`;
+                                    row += `<td style="font-size: 14px;" rowspan="${totalSubCriteriaForThisAssessment}">${tahun}</td>`;
 
-                            if (firstRow) {
-                                row += `<td style="font-size: 14px;" rowspan="${totalSubCriteriaForThisAssessment}">${rowNumber++}</td>`;
-                                row += `<td style="font-size: 14px; text-align: left;" class="text-start" rowspan="${totalSubCriteriaForThisAssessment}">${evaluatorHTML}</td>`;
-                                row += `<td style="font-size: 14px;" rowspan="${totalSubCriteriaForThisAssessment}">${evaluatedName}</td>`;
-                                row += `<td style="font-size: 14px;" rowspan="${totalSubCriteriaForThisAssessment}">${item.evaluatedDivisi}</td>`;
-                                row += `<td style="font-size: 14px;" rowspan="${totalSubCriteriaForThisAssessment}">${tanggal}</td>`;
-                                row += `<td style="font-size: 14px;" rowspan="${totalSubCriteriaForThisAssessment}">${quartal}</td>`;
-                                row += `<td style="font-size: 14px;" rowspan="${totalSubCriteriaForThisAssessment}">${tahun}</td>`;
-
-                                row += `<td style="font-size: 14px;" rowspan="${totalSubCriteriaForThisAssessment}">
-                                    <div class="dropdown">
-                                        <button class="btn cl-grey text-white dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                            Action
-                                        </button>
-                                        <div class="dropdown-menu">
-                                            <a href="#" class="dropdown-item" data-kode="${item.kode_form}" data-id="${item.id_karyawan}" onclick="shareForm(this)" data-toggle="modal" data-target="#shareEvaluatorModal">
-                                                <i class="fa-solid fa-paper-plane me-4"></i> Share
-                                            </a>
-                                            <a href="#" class="dropdown-item" data-kode="${item.kode_form}" data-id="${item.id_karyawan}" data-jenis_penilaian="${item.jenis_penilaian}" onclick="ReviewForm(this)" data-toggle="modal" data-target="#reviewPenilaianModal">
-                                                <i class="fa-solid fa-list-check me-4"></i> Review
-                                            </a>
-                                            <a href="/penilaian/detail/data-penilaian/${item.kode_form}/${item.id_karyawan}" class="dropdown-item">
-                                                <i class="fa-solid fa-magnifying-glass me-4"></i> Detail
-                                            </a>`;
-
-                                if (evaluatorName !== '-') {
-                                    row += `
+                                    row += `<td style="font-size: 14px;" rowspan="${totalSubCriteriaForThisAssessment}">
+                            <div class="dropdown">
+                                <button class="btn cl-grey text-white dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    Action
+                                </button>
+                                <div class="dropdown-menu">
+                                    <a href="#" class="dropdown-item" data-kode="${item.kode_form}" data-id="${item.id_karyawan}" onclick="shareForm(this)" data-toggle="modal" data-target="#shareEvaluatorModal">
+                                        <i class="fa-solid fa-paper-plane me-4"></i> Share
+                                    </a>
                                     <a href="#" class="dropdown-item" data-kode="${item.kode_form}" data-id="${item.id_karyawan}" data-jenis_penilaian="${item.jenis_penilaian}" onclick="ReviewForm(this)" data-toggle="modal" data-target="#reviewPenilaianModal">
+                                        <i class="fa-solid fa-list-check me-4"></i> Review
+                                    </a>
+                                    <a href="/penilaian/detail/data-penilaian/${item.kode_form}/${item.id_karyawan}" class="dropdown-item">
+                                        <i class="fa-solid fa-magnifying-glass me-4"></i> Detail
+                                    </a>`;
+
+                                    if (evaluatorName !== '-') {
+                                        row += `
+                                    <a href="javascript:void(0)" class="dropdown-item btn-clean" data-kode_form="${item.kode_form}" data-id_karyawan="${item.id_karyawan}" 
+                                    data-jenis_penilaian="${item.jenis_penilaian}" data-quartal="${quartal}" data-tahun="${tahun}">
                                         <i class="fa-solid fa-brush me-4"></i> Bersihkan
                                     </a>`;
+                                    }
+
+                                    row += `
+                                </div>
+                            </div>
+                        </td>`;
+                                    firstRow = false;
                                 }
 
-                                row += `
-                                        </div>
-                                    </div>
-                                </td>`;
-                                firstRow = false;
-                            }
-
-                            row += `</tr>`;
-                            tableBody.append(row);
+                                row += `</tr>`;
+                                tableBody.append(row);
+                            });
                         });
                     });
-                });
-
-                if ($.fn.DataTable.isDataTable('#table_karyawan')) {
-                    $('#table_karyawan').DataTable().destroy();
                 }
 
-                $('#table_karyawan').DataTable({
+                var table = $('#table_karyawan').DataTable({
                     "paging": true,
+                    "pageLength": 10,
                     "searching": true,
                     "ordering": true,
-                    "info": true
+                    "info": true,
+                    "lengthChange": false,
+                    "language": {
+                        "emptyTable": "Tidak Ada Data"
+                    }
                 });
+
+                table.page(currentPage).draw(false);
             },
             error: function(xhr, status, error) {
                 let tableBody = $('#tbody_table');
                 tableBody.empty();
-                tableBody.append('<tr><td colspan="5" style="font-size: 14px; color: red;">Gagal memuat data. Silakan coba lagi.</td></tr>');
+                tableBody.append('<tr><td colspan="8" style="font-size: 14px; color: red;">Gagal memuat data. Silakan coba lagi.</td></tr>');
             },
             complete: function() {
                 $('#loadingModal').modal('hide');
             }
         });
     }
+
+    $(document).on('click', '.btn-clean', function(e) {
+        e.preventDefault();
+
+        let kode_form = $(this).data('kode_form');
+        let id_karyawan = $(this).data('id_karyawan');
+        let jenis_penilaian = $(this).data('jenis_penilaian');
+        let quartal = $(this).data('quartal');
+        let tahun = $(this).data('tahun');
+
+        let formData = new FormData();
+        formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+        formData.append('kode_form', kode_form);
+        formData.append('id_karyawan', id_karyawan);
+        formData.append('jenis_penilaian', jenis_penilaian);
+        formData.append('quartal', quartal);
+        formData.append('tahun', tahun);
+
+        Swal.fire({
+            title: 'Yakin ingin membersihkan data?',
+            text: "Data yang dihapus tidak bisa dikembalikan!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Ya, bersihkan!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: `/penilaian/clean`,
+                    type: 'POST',
+                    data: formData,
+                    processData: false, // penting
+                    contentType: false, // penting
+                    success: function(response) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil!',
+                            text: response.message || 'Data berhasil dibersihkan.'
+                        });
+                        loadData();
+                    },
+                    error: function(xhr) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal!',
+                            text: xhr.responseJSON?.message || 'Terjadi kesalahan.'
+                        });
+                    }
+                });
+            }
+        });
+    });
 
     function generateEvaluatorByPenilaian(item) {
         let evaluatorGroupedHTML = '';
