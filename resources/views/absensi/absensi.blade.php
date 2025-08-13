@@ -396,16 +396,29 @@
                             <td>
                                 @switch($izin->approval)
                                     @case(0)
-                                        <span class="badge bg-warning text-dark">Menunggu</span>
+                                    <span class="badge rounded-pill bg-warning text-dark">
+                                        <i class="bi bi-hourglass-split me-1"></i> Menunggu Koordinator
+                                    </span>
                                         @break
                                     @case(1)
-                                        <span class="badge bg-success">Disetujui</span>
+                                    <span class="badge rounded-pill bg-warning text-dark">
+                                        <i class="bi bi-hourglass-top me-1"></i> Menunggu HRD
+                                    </span>
                                         @break
                                     @case(2)
-                                        <span class="badge bg-danger">Ditolak</span>
+                                     <span class="badge rounded-pill bg-success">
+                                        <i class="bi bi-check-circle me-1"></i> Disetujui
+                                    </span>
+                                        @break
+                                    @case(4)
+                                    <span class="badge rounded-pill bg-danger">
+                                        <i class="bi bi-x-circle me-1"></i> Ditolak
+                                    </span>
                                         @break
                                     @default
-                                        <span class="badge bg-secondary">Tidak Diketahui</span>
+                                    <span class="badge rounded-pill bg-secondary text-dark">
+                                        <i class="bi bi-question-circle me-1"></i> Tidak Diketahui
+                                    </span>`;
                                 @endswitch
                             </td>
                         </tr>
