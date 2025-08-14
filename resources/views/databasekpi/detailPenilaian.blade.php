@@ -26,6 +26,48 @@
         height: 0;
     }
 
+    @media (max-width: 768px) {
+        #jenis-penilaian-tab {
+            flex-direction: column !important;
+            overflow-x: unset;
+            width: 100%;
+        }
+
+        #jenis-penilaian-tab .list-group-item {
+            text-align: left;
+        }
+    }
+
+    #table-fixed {
+        width: 100%;
+        table-layout: auto;
+        border-collapse: collapse;
+    }
+
+    #table-fixed th,
+    #table-fixed td {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        white-space: normal;
+        text-align: center;
+        padding: 0.25rem 0.5rem;
+        font-size: 12px;
+    }
+
+    #table-fixed td.text-left,
+    #table-fixed th.text-left {
+        text-align: left;
+    }
+
+    @media (max-width: 480px) {
+
+        #table-fixed th,
+        #table-fixed td {
+            font-size: 10px;
+            padding: 0.2rem 0.3rem;
+        }
+    }
+
     .stylish-textarea {
         border: 1.5px solid #ced4da;
         border-radius: 12px;
@@ -42,6 +84,48 @@
         background-color: #ffffff;
         box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
         outline: none;
+    }
+
+    #table-fixed {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    #table-fixed thead th {
+        white-space: nowrap;
+    }
+
+    #table-fixed tbody td {
+        white-space: nowrap;
+    }
+
+    .table-responsive-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .form-group label {
+        font-weight: bold;
+    }
+
+    @media (max-width: 768px) {
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 14px;
+        }
+
+        .form-group ul.list-group {
+            font-size: 14px;
+        }
+
+        .stylish-textarea {
+            font-size: 14px;
+        }
     }
 </style>
 <div class="container-fluid mb-5 mt-4">
@@ -100,12 +184,6 @@
     @endif
     <div id="shareEmail" class="mb-2 text-start fixed justify-content-start"></div>
 
-    <div class="d-flex justify-content-end me-5">
-        <div>
-            <div class="list-group text-center list-group-horizontal mb-3" id="jenis-penilaian-tab" role="tablist">
-            </div>
-        </div>
-    </div>
     <div class="container text-center">
         <div class="row justify-content-center">
             <div class="col-sm-4 mx-auto">
@@ -117,19 +195,27 @@
             <div class="col-sm-8">
                 <div class="card p-3">
                     <div id="scrollable-table">
-                        <table class="table" id="table-fixed">
-                            <thead>
-                                <tr>
-                                    <th scope="col">Kriteria</th>
-                                    <th scope="col">Sub Kriteria</th>
-                                    <th scope="col">Bobot</th>
-                                    <th scope="col">Nilai</th>
-                                    <th scope="col">Total</th>
-                                </tr>
-                            </thead>
-                            <tbody id="body_content">
-                            </tbody>
-                        </table>
+                        <div class="d-flex justify-content-end me-5">
+                            <div>
+                                <div class="list-group text-center list-group-horizontal mb-3" id="jenis-penilaian-tab" role="tablist">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="table-responsive-wrap">
+                            <table class="table" id="table-fixed">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Kriteria</th>
+                                        <th scope="col">Sub Kriteria</th>
+                                        <th scope="col">Bobot</th>
+                                        <th scope="col">Nilai</th>
+                                        <th scope="col">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="body_content">
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
                 <div class="card p-3 mt-4">
@@ -353,7 +439,7 @@
                         <ul class="list-group ms-2">${listEvaluatorHTML}</ul>
                     </div>
                     <div class="form-group mb-3 text-start">
-                        <label class="mb-2">Evaluated</label>
+                        <label class="mb-2">Yang Dinilai</label>
                         <ul class="list-group ms-2"><li class="list-group-item">${globalEvaluated.nama}</li></ul>
                     </div>
                     <div class="form-group mb-3 text-start">
@@ -447,7 +533,7 @@
                     content.append(`
                         <tr>
                             ${idxSub === 0 ? `<td rowspan="${rowspan}" class="text-left">${kriteria.kriteria}</td>` : ''}
-                            <td class="text-start">${sub.sub_kriteria}</td>
+                            <td style="text-align: left;">${sub.sub_kriteria}</td>
                             <td>${bobot} %</td>
                             <td>${nilai}</td>
                             <td>${skor.toFixed(2)}</td>

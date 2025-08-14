@@ -371,6 +371,64 @@
     </div>
 </div>
 
+<div class="row my-2">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body table-responsive">
+                <h6>Data Izin 3 Jam Karyawan</h6>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Tanggal Pengajuan</th>
+                            <th>Jam Mulai</th>
+                            <th>Jam Selesai</th>
+                            <th>Alasan</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($izinTigaJam as $izin)
+                        <tr>
+                            <td>{{ \Carbon\Carbon::parse($izin->tanggal_pengajuan)->translatedFormat('l, d F Y') }}</td>
+                            <td>{{ $izin->jam_mulai }}</td>
+                            <td>{{ $izin->jam_selesai }}</td>
+                            <td>{{ $izin->alasan }}</td>
+                            <td>
+                                @switch($izin->approval)
+                                    @case(0)
+                                    <span class="badge rounded-pill bg-warning text-dark">
+                                        <i class="bi bi-hourglass-split me-1"></i> Menunggu Koordinator
+                                    </span>
+                                        @break
+                                    @case(1)
+                                    <span class="badge rounded-pill bg-warning text-dark">
+                                        <i class="bi bi-hourglass-top me-1"></i> Menunggu HRD
+                                    </span>
+                                        @break
+                                    @case(2)
+                                     <span class="badge rounded-pill bg-success">
+                                        <i class="bi bi-check-circle me-1"></i> Disetujui
+                                    </span>
+                                        @break
+                                    @case(4)
+                                    <span class="badge rounded-pill bg-danger">
+                                        <i class="bi bi-x-circle me-1"></i> Ditolak
+                                    </span>
+                                        @break
+                                    @default
+                                    <span class="badge rounded-pill bg-secondary text-dark">
+                                        <i class="bi bi-question-circle me-1"></i> Tidak Diketahui
+                                    </span>`;
+                                @endswitch
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 
 
              <div class="row my-2">
@@ -386,6 +444,7 @@
                                 </div>
                             </div>
 
+
                             <div class="col-md-12">
                                 <div class="card-body table-responsive text-end justify-content-end">
                                     <h6 class="justify-content-start">Pilih Tabel:</h6>
@@ -398,6 +457,7 @@
 
                                     </div>
                                 </div>
+
                             </div>
                             <div class="table-responsive jenis-table" id="table-tidak-terekam">
                                 <h6>Data Pengajuan Klaim Absen Tidak Terekam</h6>
@@ -1079,6 +1139,8 @@
                 document.getElementById('table-skema-kerja').classList.remove('d-none');
             } else if (jenis === 'Pembatalan Cuti') {
                 document.getElementById('table-pembatalan-cuti').classList.remove('d-none');
+            } else if (jenis === 'Izin 3 Jam') { // Tambahkan ini
+                document.getElementById('table-izin-tiga-jam').classList.remove('d-none');
             }
 
             if (updateURL) {
@@ -1089,6 +1151,8 @@
                     urlParams.set('page', 'scheme_work');
                 } else if (jenis === 'Pembatalan Cuti') {
                     urlParams.set('page', 'cancel_leave');
+                } else if (jenis === 'Izin 3 Jam') { // Tambahkan ini
+                    urlParams.set('page', 'izin_tiga_jam');
                 }
                 const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
                 window.history.replaceState({}, '', newUrl);

@@ -77,9 +77,9 @@
                         </script>
 
                         <div id="form-karyawan" class="mb-4">
-                            <h5>Daftar Evaluated</h5>
+                            <h5>Daftar Yang Dinilai</h5>
                             <div class="text-left">
-                                <button type="button" class="btn text-white cl-green btn-sm mb-3" id="add-karyawan-block">+ Tambah Evaluated</button>
+                                <button type="button" class="btn text-white cl-green btn-sm mb-3" id="add-karyawan-block">+ Tambah Yang Dinilai</button>
                             </div>
                             <div class="border rounded p-3 karyawan-block mb-3 bg-light">
                                 <div class="row g-2">
@@ -93,9 +93,9 @@
                                         </select>
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label">Evaluated</label>
+                                        <label class="form-label">Yang Dinilai</label>
                                         <select name="nama_karyawan[]" class="form-control karyawan-select" required>
-                                            <option selected disabled>Pilih Evaluated</option>
+                                            <option selected disabled>Pilih Dinilai</option>
                                         </select>
                                         <input type="hidden" name="id_karyawan[]" class="id-karyawan">
                                     </div>
@@ -142,7 +142,7 @@
                                             <div class="ket-tipe-wrapper text-right">
                                                 <div class="input-group mb-2">
                                                     <input type="text" name="kriteria[0][sub_kriteria][0][ket_tipe][]" class="form-control" placeholder="Masukkan keterangan tipe">
-                                                    <input type="text" name="kriteria[0][sub_kriteria][0][nilai_ket_tipe][]" class="form-control" placeholder="Nilai tipe (opsional)...">
+                                                    <input type="text" name="kriteria[0][sub_kriteria][0][nilai_ket_tipe][]" class="form-control" placeholder="Nilai tipe...">
                                                     <button type="button" class="btn text-white cl-red btn-sm remove-ket-tipe">Hapus</button>
                                                 </div>
                                                 <button type="button" class="btn text-white cl-blue text-end btn-sm add-ket-tipe">+ Tambah Keterangan</button>
@@ -230,7 +230,7 @@
                                             inputGroup.className = 'input-group mb-2';
                                             inputGroup.innerHTML = `
                                                 <input type="text" name="kriteria[${currentKriteriaIndex}][sub_kriteria][${currentSubKriteriaIndex}][ket_tipe][]" class="form-control" placeholder="Masukkan keterangan tipe">
-                                                <input type="text" name="kriteria[${currentKriteriaIndex}][sub_kriteria][${currentSubKriteriaIndex}][nilai_ket_tipe][]" class="form-control" placeholder="Nilai tipe (opsional)">
+                                                <input type="text" name="kriteria[${currentKriteriaIndex}][sub_kriteria][${currentSubKriteriaIndex}][nilai_ket_tipe][]" class="form-control" placeholder="Nilai tipe...">
                                                 <button type="button" class="btn text-white cl-red btn-sm remove-ket-tipe">Hapus</button>
                                             `;
                                             ketTipeWrapper.insertBefore(inputGroup, addKeteranganBtn);
@@ -298,7 +298,7 @@
                                     ketWrapper.innerHTML = `
                     <div class="input-group mb-2">
                         <input type="text" name="kriteria[${currentKriteriaIndex}][sub_kriteria][${newSubIndex}][ket_tipe][]" class="form-control" placeholder="Masukkan keterangan tipe">
-                        <input type="text" name="kriteria[${currentKriteriaIndex}][sub_kriteria][${newSubIndex}][nilai_ket_tipe][]" class="form-control" placeholder="Nilai tipe (opsional)">
+                        <input type="text" name="kriteria[${currentKriteriaIndex}][sub_kriteria][${newSubIndex}][nilai_ket_tipe][]" class="form-control" placeholder="Nilai tipe...">
                         <button type="button" class="btn text-white cl-red btn-sm remove-ket-tipe">Hapus</button>
                     </div>
                     <button type="button" class="btn text-white cl-blue btn-sm add-ket-tipe mt-2">+ Tambah Keterangan</button>
@@ -356,13 +356,13 @@
 
                                         const ketWrapper = item.querySelector('.ket-tipe-wrapper');
                                         ketWrapper.innerHTML = `
-                        <div class="input-group mb-2">
-                            <input type="text" name="kriteria[${kriteriaMainIndex}][sub_kriteria][0][ket_tipe][]" class="form-control" placeholder="Masukkan keterangan tipe">
-                            <input type="text" name="kriteria[${kriteriaMainIndex}][sub_kriteria][0][nilai_ket_tipe][]" class="form-control" placeholder="Nilai tipe (opsional)">
-                            <button type="button" class="btn text-white cl-red btn-sm remove-ket-tipe">Hapus</button>
-                        </div>
-                        <button type="button" class="btn text-white cl-blue btn-sm add-ket-tipe mt-2">+ Tambah Keterangan</button>
-                    `;
+                                            <div class="input-group mb-2">
+                                                <input type="text" name="kriteria[${kriteriaMainIndex}][sub_kriteria][0][ket_tipe][]" class="form-control" placeholder="Masukkan keterangan tipe">
+                                                <input type="text" name="kriteria[${kriteriaMainIndex}][sub_kriteria][0][nilai_ket_tipe][]" class="form-control" placeholder="Nilai tipe...>
+                                                <button type="button" class="btn text-white cl-red btn-sm remove-ket-tipe">Hapus</button>
+                                            </div>
+                                            <button type="button" class="btn text-white cl-blue btn-sm add-ket-tipe mt-2">+ Tambah Keterangan</button>
+                                        `;
                                     } else {
                                         item.remove();
                                     }
@@ -379,7 +379,7 @@
 
                                 clone.querySelector('.divisi-select').selectedIndex = 0;
                                 const karyawanSelect = clone.querySelector('.karyawan-select');
-                                karyawanSelect.innerHTML = `<option selected disabled>Pilih Evaluated</option>`;
+                                karyawanSelect.innerHTML = `<option selected disabled>Yang Dinilai</option>`;
                                 clone.querySelector('.id-karyawan').value = '';
 
                                 wrapper.appendChild(clone);

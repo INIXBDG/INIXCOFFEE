@@ -155,7 +155,9 @@ class DatabaseKPIController extends Controller
             $nilaiCollection = nilaiKPI::where('id_evaluator', $evaluatorItem->id_evaluator)
                 ->where('id_evaluated', $evaluatorItem->id_evaluated)
                 ->where('kode_form', $kodeForm)
+                ->where('jenis_penilaian', $evaluatorItem->jenis_penilaian)
                 ->get();
+
 
             $listNilaiEvaluator = [];
 
@@ -314,6 +316,7 @@ class DatabaseKPIController extends Controller
                 $nilaiCollection = nilaiKPI::where('id_evaluator', $evaluatorItem->id_evaluator)
                     ->where('id_evaluated', $evaluatorItem->id_evaluated)
                     ->where('kode_form', $kodeForm)
+                    ->where('jenis_penilaian', $evaluatorItem->jenis_penilaian) // << Tambahan penting
                     ->get();
 
                 $listNilaiEvaluator = [];
@@ -596,14 +599,26 @@ class DatabaseKPIController extends Controller
         $kode_form = $request->input('kode_form');
         $id_evaluated = $request->input('id_evaluated');
         $id_evaluator = Auth::user()->karyawan->id;
+        $jenis_penilaian = $request->input('jenis_penilaian');
+        $quartal = $request->input('quartal');
+        $tahun = $request->input('tahun');
 
         $jenis_penilaian = shareForm::where('kode_form', $kode_form)
             ->where('id_evaluator', $id_evaluator)
             ->where('id_evaluated', $id_evaluated)
+            ->where('jenis_penilaian', $jenis_penilaian)
             ->value('jenis_penilaian');
 
+        $sharedForm = shareForm::where('kode_form', $kode_form)
+            ->where('id_evaluator', $id_evaluator)
+            ->where('id_evaluated', $id_evaluated)
+            ->where('jenis_penilaian', $jenis_penilaian)
+            ->first();
+
         $formInfo = formPenilaian::where('kode_form', $kode_form)
-            ->where('id_karyawan', $id_evaluated)
+            ->where('id_karyawan', $sharedForm->id_evaluated)
+            ->where('quartal', $quartal)
+            ->where('tahun', $tahun)
             ->select('kode_kategori')
             ->get();
 
@@ -613,7 +628,6 @@ class DatabaseKPIController extends Controller
 
         $kategoriYangDigunakan = $formInfo->pluck('kode_kategori')->toArray();
 
-        // Cegah duplikat penilaian
         $isAlreadyRated = nilaiKPI::where('kode_form', $kode_form)
             ->where('id_evaluator', $id_evaluator)
             ->where('id_evaluated', $id_evaluated)
@@ -623,11 +637,10 @@ class DatabaseKPIController extends Controller
             })
             ->exists();
 
-        if ($isAlreadyRated) {
+        if ($isAlreadyRated === true) {
             return redirect()->back()->with('error', 'Anda sudah menilai form ini sebelumnya.');
         }
 
-        // Ambil semua input yang diawali dengan 'field_'
         $allFields = collect($request->all())->filter(function ($_, $key) {
             return Str::startsWith($key, 'field_');
         });
@@ -1029,7 +1042,6 @@ class DatabaseKPIController extends Controller
             return redirect()->back()->with('error', 'Form tidak tersedia.');
         }
 
-        // Tambahkan pengecekan: jika sudah dinilai (nilai atau pesan tidak null), redirect
         $isAlreadyRated = nilaiKPI::where(function ($query) use ($kode_form, $id_evaluator, $id_karyawan) {
             $query->where('kode_form', $kode_form)
                 ->where('id_evaluator', $id_evaluator)
@@ -1098,7 +1110,7 @@ class DatabaseKPIController extends Controller
         }
 
         return view('databasekpi.formPenilaian', [
-            'outputData' => [$outputData], // tetap array agar compatible
+            'outputData' => [$outputData],
             'evaluatedEmployee' => $evaluatedEmployee,
             'status' => true
         ]);
@@ -1538,5 +1550,100 @@ class DatabaseKPIController extends Controller
         ];
 
         return response()->json($dataForm);
+    }
+
+    public function clean(Request $request)
+    {
+        $kode_form = $request->input('kode_form');
+        $id_karyawan = $request->input('id_karyawan');
+        $jenis_penilaian = $request->input('jenis_penilaian');
+        $quartal = $request->input('quartal');
+        $tahun = $request->input('tahun');
+
+        $data_evaluated = formPenilaian::where('kode_form', $kode_form)
+            ->where('id_karyawan', $id_karyawan)
+            ->where('quartal', $quartal)
+            ->where('tahun', $tahun)
+            ->get();
+
+        if ($data_evaluated->isEmpty()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Data penilaian tidak ditemukan.'
+            ]);
+        }
+
+        $kodeKategoriList = $data_evaluated->pluck('kode_kategori')->unique();
+        $kodeFormList = $data_evaluated->pluck('kode_form')->unique();
+
+        $idEvaluators = shareForm::where('id_evaluated', $id_karyawan)
+            ->whereIn('kode_form', $kodeFormList)
+            ->pluck('id_evaluator');
+
+        if ($idEvaluators->isEmpty()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal membersihkan, evaluator tidak ditemukan.'
+            ]);
+        }
+
+        $subKriteria = kategoriKPI::whereIn('kode_kategori', $kodeKategoriList)
+            ->pluck('judul_kategori');
+
+        if ($subKriteria->isEmpty()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Sub kriteria tidak ditemukan!'
+            ]);
+        }
+
+        $dataNilai = NilaiKPI::whereIn('id_evaluator', $idEvaluators)
+            ->where('id_evaluated', $id_karyawan)
+            ->whereIn('kode_form', $kodeFormList)
+            ->whereIn('kode_kategori', $kodeKategoriList)
+            ->whereIn('name_variabel', $subKriteria)
+            ->get();
+
+        $dataShare = shareForm::whereIn('id_evaluator', $idEvaluators)
+            ->where('id_evaluated', $id_karyawan)
+            ->whereIn('kode_form', $kodeFormList)
+            ->get();
+
+        if ($dataNilai->isEmpty() && $dataShare->isEmpty()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Tidak ada data yang cocok untuk dihapus.'
+            ]);
+        }
+
+        $deletedNilai = NilaiKPI::whereIn('id_evaluator', $idEvaluators)
+            ->where('id_evaluated', $id_karyawan)
+            ->whereIn('kode_form', $kodeFormList)
+            ->whereIn('kode_kategori', $kodeKategoriList)
+            ->whereIn('name_variabel', $subKriteria)
+            ->delete();
+
+        $deletedShare = shareForm::whereIn('id_evaluator', $idEvaluators)
+            ->where('id_evaluated', $id_karyawan)
+            ->whereIn('kode_form', $kodeFormList)
+            ->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Berhasil membersihkan penilaian!',
+            'deleted_nilai' => $deletedNilai,
+            'deleted_share' => $deletedShare
+        ]);
+    }
+
+    public function contentDashboard() {
+        $totalKaryawan = karyawan::where('status_aktif', 1)->count();
+        // $formPenilaian = formPenilaian::get();
+        // $shareForm = shareForm::where('id_evaluated', $formPenilaian->id_karyawan)->where('kode_form', $formPenilaian->kode_form)->get();
+        // $kategoriKPI
+
+        return response()->json([
+            'countKaryawan' => $totalKaryawan
+        ]);
     }
 }

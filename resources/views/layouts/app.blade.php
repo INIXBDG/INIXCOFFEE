@@ -10,6 +10,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <link rel="apple-touch-icon" sizes="180x180" href="{{asset('icon/apple-touch-icon-180x180.png')}}" /> --}}
 
+
     <title>INIXCOFFEE</title>
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
@@ -28,7 +29,10 @@
     {{-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"> --}}
 
     {{-- <link rel="stylesheet" href="//cdn.datatables.net/2.0.3/css/dataTables.dataTables.min.css"> --}}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+
     <style>
             /* From Uiverse.io by jamik-dev */
         .cube {
@@ -568,20 +572,20 @@
                         </li>
                     </ul>
                 </div>
-                <div class="col-md-4 col-sm-4 col-xs-4 d-flex justify-content-end" id="navbarkanan">
-                    <ul class="navbar-nav">
-                        <li class="nav-item mx-1">
-                            <a class="nav-link" href="{{ route('logout') }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Logout"
-                                onclick="event.preventDefault(); if(confirm('Apakah Anda Yakin?')) { document.getElementById('logout-form').submit(); }">
-                                <img src="{{ asset('icon/power.svg') }}" class="img-responsive" width="30px">
-                            </a>
-                            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                                @csrf
-                            </form>
-                        </li>
-                    </ul>
-                </div>
+            <div class="col-md-1 col-sm-1 col-xs-1 d-flex justify-content-end" id="navbarpalingkanan">
+                <ul class="navbar-nav">
+                    <li class="nav-item mx-1">
+                        <a class="nav-link" href="#" id="logout-link" data-bs-toggle="tooltip"
+                            data-bs-placement="top" title="Logout">
+                            <img src="{{ asset('icon/power.svg') }}" class="img-responsive" width="30px">
+                        </a>
+                        <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                            @csrf
+                        </form>
+                    </li>
+                </ul>
             </div>
+        </div>
         </nav>
 
         <main class="py-2" id="bgsvg">
@@ -596,5 +600,32 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/js/bootstrap-datetimepicker.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.getElementById('logout-link').addEventListener('click', function (e) {
+    e.preventDefault();
+
+Swal.fire({
+    title: 'Apakah Anda yakin?',
+    text: "Anda akan keluar dari aplikasi",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Ya, keluar',
+    cancelButtonText: 'Batal',
+    showClass: {
+        popup: 'animate__animated animate__fadeInDown animate__faster'
+    },
+    hideClass: {
+        popup: 'animate__animated animate__fadeOutUp animate__faster'
+    }
+}).then((result) => {
+    if (result.isConfirmed) {
+        document.getElementById('logout-form').submit();
+    }
+});
+});
+</script>
 </body>
 </html>
