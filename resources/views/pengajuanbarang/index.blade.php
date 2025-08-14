@@ -446,14 +446,21 @@ function tableKaryawan(){
     "order": [[0, 'desc']], // Ubah urutan menjadi descending untuk kolom ke-6
     "columnDefs" : [{"targets":[0], "type":"date"}],
 });
-}
+};
 function tableFinance(){
-    if ($.fn.DataTable.isDataTable('#datasudah')) {
-        $('#datasudah').DataTable().clear().destroy();
-    }
+    // Get current page for both tables before destroying
+    var currentPageBelum = 0;
     if ($.fn.DataTable.isDataTable('#databelum')) {
+        currentPageBelum = $('#databelum').DataTable().page();
         $('#databelum').DataTable().clear().destroy();
     }
+
+    var currentPageSudah = 0;
+    if ($.fn.DataTable.isDataTable('#datasudah')) {
+        currentPageSudah = $('#datasudah').DataTable().page();
+        $('#datasudah').DataTable().clear().destroy();
+    }
+
     $('#loadingModal').modal('show');
     var tahun = $('#tahun').val();
     var bulan = $('#bulan').val();
@@ -486,7 +493,8 @@ function tableFinance(){
                 }
             });
 
-            $('#datasudah').DataTable({
+            // Initialize datasudah table
+            var datasudahTable = $('#datasudah').DataTable({
                 data: dataSelesai,
                 columns: [
                     {
@@ -578,7 +586,13 @@ function tableFinance(){
                 }
             });
 
-            $('#databelum').DataTable({
+            // Set page for datasudah table
+            if (currentPageSudah > 0) {
+                datasudahTable.page(currentPageSudah).draw('page');
+            }
+
+            // Initialize databelum table
+            var databelumTable = $('#databelum').DataTable({
                 data: dataBelum,
                 "columns": [
                     {
@@ -710,9 +724,15 @@ function tableFinance(){
                     $('#databelum tfoot').html(footerHtml);
                 }
             });
+
+            // Set page for databelum table
+            if (currentPageBelum > 0) {
+                databelumTable.page(currentPageBelum).draw('page');
+            }
         },
     });
 }
+
 function openApproveModal(id, jabatan) {
     var approveUrl = "{{ url('/pengajuanbarang') }}/" + id;
     $('#approveForm').attr('action', approveUrl);
@@ -720,38 +740,59 @@ function openApproveModal(id, jabatan) {
 }
 
 function toggleAlasanManager(show) {
+    const alasanManagerInput = document.getElementById('alasanManagerInput');
     if (show) {
-        document.getElementById('alasanManagerInput').style.display = 'block';
+        alasanManagerInput.style.display = 'block';
     } else {
-        document.getElementById('alasanManagerInput').style.display = 'none';
+        alasanManagerInput.style.display = 'none';
         document.getElementById('alasan_manager').value = '';
     }
 }
-// Skrip AJAX untuk form approve yang baru Anda berikan
-$('#approveForm').on('submit', function (e) {
+
+// Skrip AJAX untuk form approve
+$('#approveForm').on('submit', function(e) {
     e.preventDefault();
-    const form = $(this);
-    const url = form.attr('action');
-    const data = form.serialize();
+    let form = $(this);
+    let actionUrl = form.attr('action');
+    $('#loadingModal').modal('show'); // Tampilkan loading modal
 
     $.ajax({
-        url: url,
-        method: 'POST',
-        data: data + '&_method=PUT',
-        success: function (res) {
-            $('#approveModal').modal('hide');
-            // Cek role pengguna untuk menentukan tabel mana yang akan di-reload
-            if ('{{ auth()->user()->jabatan}}' == 'Finance & Accounting') {
-                tableFinance(); // Memanggil ulang fungsi untuk me-reload kedua tabel
-            } else {
-                $('#barangTable').DataTable().ajax.reload(null, false);
-            }
+        url: actionUrl,
+        type: 'POST',
+        data: form.serialize(),
+        success: function(res) {
+            $('#loadingModal').modal('hide'); // Sembunyikan loading modal
+            $('#approveModal').modal('hide'); // Sembunyikan modal approve
+
+            // Simpan status paginasi saat ini sebelum refresh
+            var currentPageBelum = $('#databelum').DataTable().page();
+            var currentPageSudah = $('#datasudah').DataTable().page();
+
+            // Refresh tabel
+            tableFinance().then(function() {
+                // Kembalikan ke halaman sebelumnya
+                $('#databelum').DataTable().page(currentPageBelum).draw('page');
+                $('#datasudah').DataTable().page(currentPageSudah).draw('page');
+            });
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: res.message || 'Pengajuan berhasil disetujui'
+            });
         },
-        error: function (err) {
-            alert("Gagal menyimpan data!");
+        error: function(err) {
+            $('#loadingModal').modal('hide'); // Sembunyikan loading modal
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: err.responseJSON?.message || 'Gagal menyimpan'
+            });
         }
     });
 });
+
+
 </script>
 @endpush
 @endsection
