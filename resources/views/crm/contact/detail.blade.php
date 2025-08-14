@@ -39,7 +39,7 @@
                             <dt class="col-sm-4">No. Telp</dt>
                             <dd class="col-sm-8">{{ $data->no_telp ?? '-' }}</dd>
 
-                            <dt class="col-sm-4">Foto NPW</dt>
+                            <dt class="col-sm-4">Foto NPWP</dt>
                             <dd class="col-sm-8">
                                 @if (!empty($data->foto_npwp))
                                     <a href="{{ asset('storage/' . $data->foto_npwp) }}" target="_blank">Lihat Foto NPWP</a>
@@ -90,7 +90,7 @@
                                 <tbody>
                                     @foreach ($peluang as $item)
                                         <tr>
-                                            <td class="px-3 py-2">{{ $item->materi }}</td>
+                                            <td class="px-3 py-2">{{ $item->materiRelation->nama_materi }}</td>
                                             <td class="px-3 py-2">
                                                 {{ \Carbon\Carbon::parse($item->periode_mulai)->translatedFormat('d F Y') }}
                                                 -
@@ -383,7 +383,7 @@
                                         <select class="form-control" id="materi" name="materi" required>
                                             <option value="" disabled selected>-- Pilih Materi --</option>
                                             @foreach ($materi as $item)
-                                                <option value="{{ $item->nama_materi }}">{{ $item->nama_materi }}
+                                                <option value="{{ $item->id }}">{{ $item->nama_materi }}
                                                 </option>
                                             @endforeach
                                         </select>
@@ -396,6 +396,11 @@
                                         <label for="harga" class="form-label">Harga</label>
                                         <input type="number" class="form-control" id="harga" name="harga"
                                             step="0.01" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="pax" class="form-label">Jumlah Peserta (Pax)</label>
+                                        <input type="number" class="form-control" id="pax" name="pax"
+                                            min="1" required>
                                     </div>
                                     <div class="mb-3">
                                         <label for="netsales" class="form-label">Net Sales</label>
@@ -413,9 +418,47 @@
                                             name="periode_selesai" required>
                                     </div>
                                     <div class="mb-3">
-                                        <label for="pax" class="form-label">Jumlah Peserta (Pax)</label>
-                                        <input type="number" class="form-control" id="pax" name="pax"
-                                            min="1" required>
+                                        <label class="form-label" for="metode_kelas">Metode Kelas</label>
+                                        <select class="form-select" id="metode_kelas" name="metode_kelas" required>
+                                            <option value="" disabled selected>Pilih Metode Kelas</option>
+                                            <option value="Inhouse Bandung">Inhouse Bandung</option>
+                                            <option value="Inhouse Luar Bandung">Inhouse Luar Bandung</option>
+                                            <option value="Offline">Offline</option>
+                                            <option value="Virtual">Virtual</option>
+                                        </select>
+                                        <div class="invalid-feedback">Pilih metode kelas.</div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label" for="event">Event</label>
+                                        <select class="form-select" id="event" name="event" required>
+                                            <option value="" disabled selected>Pilih Event</option>
+                                            <option value="Kelas">Kelas</option>
+                                            <option value="Workshop">Workshop</option>
+                                            <option value="Webinar">Webinar</option>
+                                            <option value="Narasumber">Narasumber</option>
+                                            <option value="Pinjam Instruktur">Pinjam Instruktur</option>
+                                        </select>
+                                        <div class="invalid-feedback">Pilih event.</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Exam</label>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="examToggle" role="switch"
+                                                onchange="document.getElementById('exam').value = this.checked ? '1' : '0';">
+                                            <label class="form-check-label" for="examToggle">Aktifkan Exam</label>
+                                        </div>
+                                        <input type="hidden" id="exam" name="exam" value="0">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Authorize</label>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="authorizeToggle" role="switch"
+                                                onchange="document.getElementById('authorize').value = this.checked ? '1' : '0';">
+                                            <label class="form-check-label" for="authorizeToggle">Aktif</label>
+                                        </div>
+                                        <input type="hidden" id="authorize" name="authorize" value="0">
+                                        <div class="invalid-feedback">Pilih status authorize.</div>
                                     </div>
                                     <div class="mb-3">
                                         <label for="id_aktivitas" class="form-label">Aktivitas</label>

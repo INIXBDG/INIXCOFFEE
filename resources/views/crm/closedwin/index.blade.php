@@ -19,7 +19,7 @@
                     @else
                         <div class="table-responsive">
                             <table class="table table-striped table-bordered">
-                                <thead class="table-dark">
+                                <thead class="table-primary">
                                     <tr>
                                         <th>Sales</th>
                                         <th>TR1 (Jan-Mar)</th>

@@ -5,7 +5,7 @@
         <div class="container-xxl flex-grow-1 container-p-y">
             <!-- Header -->
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h4 class="fw-bold">Manajemen Lead</h4>
+                <h4 class="fw-bold">Prospect Management</h4>
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#opportunityModal"
                     onclick="resetForm()">
                     Tambah Lead
@@ -20,6 +20,7 @@
                             <thead class="table-primary">
                                 <tr>
                                     <th>Materi</th>
+                                    <th>Client</th>
                                     <th>Harga (Rp)</th>
                                     <th>Net Sales</th>
                                     <th>Pax</th>
@@ -207,9 +208,17 @@
                     }
                 },
                 columns: [{
-                        data: 'materi_relation.nama_materi', // Updated to use materiRelation
+                        data: 'materi_relation.nama_materi',
                         render: function(data) {
-                            return data || '-'; // Fallback to '-' if nama_materi is null
+                            return data || '-';
+                        }
+                    },
+                    {
+                        data: 'rkm_data.perusahaan.nama_perusahaan',
+                        render: function(data, type, row) {
+                            var namaPerusahaan = data || '-';
+                            var cp = row.rkm_data.perusahaan.cp;
+                            return cp ? namaPerusahaan + ' (' + cp + ')' : namaPerusahaan;
                         }
                     },
                     {
@@ -254,13 +263,17 @@
                         data: 'id',
                         render: function(id, type, data, row) {
                             const rkm = data.rkm_formatted;
+                            const isLost = data.tahap.toLowerCase() === 'lost';
+                            const rkmButton = isLost
+                                ? `<span class="btn btn-sm btn-info disabled" style="pointer-events: none; opacity: 0.5;">RKM</span>`
+                                : `<a class="btn btn-sm btn-info" target="blank_" href="/rkm/${rkm.materi_key}ixb${rkm.tanggal_awal_day}ie${rkm.tanggal_awal_year}ie${rkm.tanggal_awal_month}ixb${rkm.metode_kelas}">RKM</a>`;
                             return `
-                            <div class="d-flex gap-2">
-                                <a href="/crm/peluang/detail/${id}" class="btn btn-sm btn-warning">Detail</a>
-                                <button onclick="hapusPeluang(${id})" class="btn btn-sm btn-danger">Hapus</button>
-                                <a class="btn btn-sm btn-info" href="/rkm/${data.rkm_formatted.materi_key}ixb${data.rkm_formatted.tanggal_awal_day}ie${data.rkm_formatted.tanggal_awal_year}ie${data.rkm_formatted.tanggal_awal_month}ixb${data.rkm_formatted.metode_kelas}">RKM</a>
-                            </div>
-                        `;
+                                <div class="d-flex gap-2">
+                                    <a href="/crm/peluang/detail/${id}" class="btn btn-sm btn-warning">Detail</a>
+                                    <button onclick="hapusPeluang(${id})" class="btn btn-sm btn-danger">Hapus</button>
+                                    ${rkmButton}
+                                </div>
+                            `;
                         }
                     }
                 ]

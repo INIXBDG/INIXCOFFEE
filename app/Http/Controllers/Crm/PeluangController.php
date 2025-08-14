@@ -57,7 +57,7 @@ class PeluangController extends Controller
                     ->map(function ($item) {
                         $item->periode = $item->periode_mulai . ' s/d ' . $item->periode_selesai;
                         // Fetch RKM data based on id_rkm
-                        $rkm = RKM::where('id', $item->id_rkm)->first();
+                        $rkm = RKM::with('perusahaan')->where('id', $item->id_rkm)->first();
                         // Append RKM data or null if not found
                         $item->rkm_data = $rkm ? $rkm : null;
                         // Create new rkm_formatted data if rkm exists
@@ -77,7 +77,7 @@ class PeluangController extends Controller
                     ->map(function ($item) {
                         $item->periode = $item->periode_mulai . ' s/d ' . $item->periode_selesai;
                         // Fetch RKM data based on id_rkm
-                        $rkm = RKM::where('id', $item->id_rkm)->first();
+                        $rkm = RKM::with('perusahaan')->where('id', $item->id_rkm)->first();
                         // Append RKM data or null if not found
                         $item->rkm_data = $rkm ? $rkm : null;
                         // Create new rkm_formatted data if rkm exists
@@ -109,7 +109,15 @@ class PeluangController extends Controller
     public function detail($id)
     {
         $aktivitas = Aktivitas::where('id_peluang', $id)->get();
-        $peluang = Peluang::with('materiRelation')->where('id', $id)->first();
+        $peluang = Peluang::with(['materiRelation', 'rkm'])->where('id', $id)->first();
+            if ($peluang && $peluang->rkm) {
+            $peluang->rkm->metode_kelas = $peluang->rkm->metode_kelas === 'Offline' ? 'off' :
+                ($peluang->rkm->metode_kelas === 'Inhouse Bandung' ? 'inhb' :
+                ($peluang->rkm->metode_kelas === 'Inhouse Luar Bandung' ? 'inhlb' : 'vir'));
+            $peluang->rkm->tanggal_awal_day = $peluang->rkm->tanggal_awal ? date('d', strtotime($peluang->rkm->tanggal_awal)) : null;
+            $peluang->rkm->tanggal_awal_month = $peluang->rkm->tanggal_awal ? date('n', strtotime($peluang->rkm->tanggal_awal)) : null;
+            $peluang->rkm->tanggal_awal_year = $peluang->rkm->tanggal_awal ? date('Y', strtotime($peluang->rkm->tanggal_awal)) : null;
+    }
         $materi = Materi::all();
         return view('crm.peluang.detail', compact('peluang', 'aktivitas', 'materi'));
     }
@@ -241,13 +249,10 @@ class PeluangController extends Controller
             'status' => '2',
         ]);
 
-        // Buat record RKM lebih dulu supaya mendapatkan id
         $rkm = RKM::create($rkmData);
 
-        // Masukkan id_rkm ke data untuk Peluang
         $validated['id_rkm'] = $rkm->id;
 
-        // Isi id_sales jika tidak ada di input, ambil dari user yang login
         $validated['id_sales'] = $request->input('id_sales', auth()->user()->id_sales ?? null);
 
         // Buat record Peluang sekarang dengan id_rkm yang sudah ada
@@ -389,7 +394,7 @@ class PeluangController extends Controller
     {
         $data = Peluang::where('id_sales', $id)
             ->where('tahap', 'merah')
-            ->with('aktivitas')
+            ->with('aktivitas', 'materiRelation')
             ->with('perusahaan')
             ->get();
         return view('crm.closedwin.detail', compact('data'));
@@ -428,7 +433,7 @@ class PeluangController extends Controller
     {
         $data = Peluang::where('id_sales', $id)
             ->where('tahap', 'lost')
-            ->with('aktivitas')
+            ->with('aktivitas', 'materiRelation')
             ->with('perusahaan')
             ->get();
         return view('crm.closedlost.detail', compact('data'));

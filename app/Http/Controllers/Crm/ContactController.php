@@ -129,7 +129,7 @@ class ContactController extends Controller
     public function detail($id)
     {
         $data = Perusahaan::where('id', $id)->firstOrFail();
-        $peluang = Peluang::where('id_contact', $data->id)->get();
+        $peluang = Peluang::with('materiRelation')->where('id_contact', $data->id)->get();
         $aktivitass = Aktivitas::where('id_contact', $data->id)->orderByDesc('created_at')->get();
         $aktivitas = Aktivitas::where('id_contact', $data->id)
             ->whereNull('id_peluang')
