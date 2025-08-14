@@ -23,7 +23,7 @@
             <div class="text-end">
                 <a href="{{ route('ketegori.kpi.create') }}" class="btn text-white cl-blue">Buat Penilaian</a>
             </div>
-            <div class="card m-4">
+            <div class="card mt-2">
                 <div class="card-body table-responsive">
                     <h3 class="card-title text-center my-1 mb-5">Database Penilaian </h3>
                     <div class="container text-start w-100 d-flex justify-content-start">
@@ -70,7 +70,7 @@
                             <tr>
                                 <th rowspan="2" style="font-size: 14px; text-align: center;">No</th>
                                 <th rowspan="2" style="font-size: 14px; text-align: center;">Nama Evaluator</th>
-                                <th rowspan="2" style="font-size: 14px; text-align: center;">Nama Evaluated</th>
+                                <th rowspan="2" style="font-size: 14px; text-align: center;">Yang Dinilai</th>
                                 <th rowspan="2" style="font-size: 14px; text-align: center;">Divisi</th>
                                 <th rowspan="2" style="font-size: 14px; text-align: center;">Taggal Pembuatan</th>
                                 <th rowspan="2" style="font-size: 14px; text-align: center;">Quartal</th>
@@ -307,8 +307,8 @@
 
                 if ($.fn.DataTable.isDataTable('#table_karyawan')) {
                     var table = $('#table_karyawan').DataTable();
-                    var currentPage = table.page(); // simpan page sekarang
-                    table.destroy(); // destroy dulu sebelum rebuild
+                    var currentPage = table.page();
+                    table.destroy();
                 } else {
                     var currentPage = 0;
                 }
@@ -348,33 +348,33 @@
                                     row += `<td style="font-size: 14px;" rowspan="${totalSubCriteriaForThisAssessment}">${tahun}</td>`;
 
                                     row += `<td style="font-size: 14px;" rowspan="${totalSubCriteriaForThisAssessment}">
-                            <div class="dropdown">
-                                <button class="btn cl-grey text-white dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    Action
-                                </button>
-                                <div class="dropdown-menu">
-                                    <a href="#" class="dropdown-item" data-kode="${item.kode_form}" data-id="${item.id_karyawan}" onclick="shareForm(this)" data-toggle="modal" data-target="#shareEvaluatorModal">
-                                        <i class="fa-solid fa-paper-plane me-4"></i> Share
-                                    </a>
-                                    <a href="#" class="dropdown-item" data-kode="${item.kode_form}" data-id="${item.id_karyawan}" data-jenis_penilaian="${item.jenis_penilaian}" onclick="ReviewForm(this)" data-toggle="modal" data-target="#reviewPenilaianModal">
-                                        <i class="fa-solid fa-list-check me-4"></i> Review
-                                    </a>
-                                    <a href="/penilaian/detail/data-penilaian/${item.kode_form}/${item.id_karyawan}" class="dropdown-item">
-                                        <i class="fa-solid fa-magnifying-glass me-4"></i> Detail
-                                    </a>`;
+                                        <div class="dropdown">
+                                            <button class="btn cl-grey text-white dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                Action
+                                            </button>
+                                            <div class="dropdown-menu">
+                                                <a href="#" class="dropdown-item" data-kode="${item.kode_form}" data-id="${item.id_karyawan}" onclick="shareForm(this)" data-toggle="modal" data-target="#shareEvaluatorModal">
+                                                    <i class="fa-solid fa-paper-plane me-4"></i> Share
+                                                </a>
+                                                <a href="#" class="dropdown-item" data-kode="${item.kode_form}" data-id="${item.id_karyawan}" data-jenis_penilaian="${item.jenis_penilaian}" onclick="ReviewForm(this)" data-toggle="modal" data-target="#reviewPenilaianModal">
+                                                    <i class="fa-solid fa-list-check me-4"></i> Review
+                                                </a>
+                                                <a href="/penilaian/detail/data-penilaian/${item.kode_form}/${item.id_karyawan}" class="dropdown-item">
+                                                    <i class="fa-solid fa-magnifying-glass me-4"></i> Detail
+                                                </a>`;
 
                                     if (evaluatorName !== '-') {
                                         row += `
-                                    <a href="javascript:void(0)" class="dropdown-item btn-clean" data-kode_form="${item.kode_form}" data-id_karyawan="${item.id_karyawan}" 
-                                    data-jenis_penilaian="${item.jenis_penilaian}" data-quartal="${quartal}" data-tahun="${tahun}">
-                                        <i class="fa-solid fa-brush me-4"></i> Bersihkan
-                                    </a>`;
+                                        <a href="javascript:void(0)" class="dropdown-item btn-clean" data-kode_form="${item.kode_form}" data-id_karyawan="${item.id_karyawan}" 
+                                        data-jenis_penilaian="${item.jenis_penilaian}" data-quartal="${quartal}" data-tahun="${tahun}">
+                                            <i class="fa-solid fa-brush me-4"></i> Bersihkan
+                                        </a>`;
                                     }
 
                                     row += `
-                                </div>
-                            </div>
-                        </td>`;
+                                            </div>
+                                        </div>
+                                    </td>`;
                                     firstRow = false;
                                 }
 

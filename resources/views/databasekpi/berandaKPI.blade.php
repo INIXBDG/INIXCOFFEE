@@ -49,7 +49,7 @@
       position: fixed;
       top: 0;
       left: -220px;
-      width: 100px;
+      width: 120px;
       height: 100%;
       background-color: #102B48;
       z-index: 1050;
@@ -270,7 +270,7 @@
 
     <ul class="navbar-nav sidebar-mobile sidebar-dark accordion" id="accordionSidebarMobile" style="box-shadow: 5px 0 10px rgba(0,0,0,0.3); box-shadow: 10px 0 0 white;">
       <div class="d-flex justify-content-between align-items-center p-3">
-        <a class="sidebar-brand d-flex align-items-center" href="#" style="text-decoration: none;">
+        <a class="sidebar-brand d-flex align-items-left" href="#" style="text-decoration: none; font-size : 25px;">
           <div class="sidebar-brand-text mx-3">KPI</div>
         </a>
         <button id="closeSidebarMobile" class="btn btn-sm text-white" style="font-size: 20px; background: transparent; border: none;">
@@ -279,9 +279,9 @@
       </div>
       <hr class="sidebar-divider my-0 mt-2 mb-2">
       <li class="nav-item {{ Route::currentRouteName() == 'berandaKPI.get' ? 'active' : '' }}">
-        <a class="nav-link p-1 ml-2" href="{{ route('berandaKPI.get') }}" style="font-size: 25px;">
+        <a class="nav-link p-1 ml-2" href="{{ route('berandaKPI.get') }}" style="font-size: 10px;">
           <i class="fas fa-fw fa-tachometer-alt"></i>
-          <!-- <span>Dashboard</span> -->
+          <span>Dashboard</span>
         </a>
       </li>
       <!-- <li class="nav-item label-nav-item mt-2 mb-1">
@@ -292,15 +292,15 @@
       <hr class="sidebar-divider my-0 mt-2 mb-2">
 
       <li class="nav-item {{ Route::currentRouteName() == 'ketegoriKPI.get' ? 'active' : '' }}">
-        <a class="nav-link p-1 ml-2" href="{{ route('ketegoriKPI.get') }}" style="font-size: 25px;">
+        <a class="nav-link p-1 ml-2" href="{{ route('ketegoriKPI.get') }}" style="font-size: 10px;">
           <i class="fas fa-table"></i>
-          <!-- <span>Tabel Data</span> -->
+          <span>Tabel Data</span>
         </a>
       </li>
       <li class="nav-item {{ Route::currentRouteName() == 'ketegori.kpi.create' ? 'active' : '' }}">
-        <a class="nav-link p-1 ml-2" href="{{ route('ketegori.kpi.create') }}" style="font-size: 25px;">
+        <a class="nav-link p-1 ml-2" href="{{ route('ketegori.kpi.create') }}" style="font-size: 10px;">
           <i class="fas fa-plus-circle"></i>
-          <!-- <span>Buat Penilaian</span> -->
+          <span>Buat Penilaian</span>
         </a>
       </li>
     </ul>
