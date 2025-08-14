@@ -19,15 +19,15 @@
                         <table id="peluangTable" class="table table-bordered table-hover">
                             <thead class="table-primary">
                                 <tr>
-                                    <th>Materi</th>
-                                    <th>Client</th>
-                                    <th>Harga (Rp)</th>
-                                    <th>Net Sales</th>
-                                    <th>Pax</th>
-                                    <th>Periode</th>
-                                    <th>Tahap</th>
-                                    <th>Prospek Terbuat</th>
-                                    <th>Aksi</th>
+                                    <th style="text-align: center;">Materi</th>
+                                    <th style="text-align: center;">Client</th>
+                                    <th style="text-align: center;">Harga (Rp)</th>
+                                    <th style="text-align: center;">Net Sales</th>
+                                    <th style="text-align: center;">Pax</th>
+                                    <th style="text-align: center;">Periode</th>
+                                    <th style="text-align: center;">Tahap</th>
+                                    <th style="text-align: center;">Prospek Terbuat</th>
+                                    <th style="text-align: center;">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -264,14 +264,16 @@
                         render: function(id, type, data, row) {
                             const rkm = data.rkm_formatted;
                             const isLost = data.tahap.toLowerCase() === 'lost';
+
                             const rkmButton = isLost
-                                ? `<span class="btn btn-sm btn-info disabled" style="pointer-events: none; opacity: 0.5;">RKM</span>`
-                                : `<a class="btn btn-sm btn-info" target="blank_" href="/rkm/${rkm.materi_key}ixb${rkm.tanggal_awal_day}ie${rkm.tanggal_awal_year}ie${rkm.tanggal_awal_month}ixb${rkm.metode_kelas}">RKM</a>`;
+                                ? `<span class="btn btn-sm btn-info disabled w-100" style="pointer-events: none; opacity: 0.5;">RKM</span>`
+                                : `<a class="btn btn-sm btn-info w-100" target="_blank" href="/rkm/${rkm.materi_key}ixb${rkm.tanggal_awal_day}ie${rkm.tanggal_awal_year}ie${rkm.tanggal_awal_month}ixb${rkm.metode_kelas}">RKM</a>`;
+
                             return `
-                                <div class="d-flex gap-2">
-                                    <a href="/crm/peluang/detail/${id}" class="btn btn-sm btn-warning">Detail</a>
-                                    <button onclick="hapusPeluang(${id})" class="btn btn-sm btn-danger">Hapus</button>
+                                <div class="d-flex flex-column gap-2" style="min-width: 80px;">
+                                    <a href="/crm/peluang/detail/${id}" class="btn btn-sm btn-warning w-100">Detail</a>
                                     ${rkmButton}
+                                    <button onclick="hapusPeluang(${id})" class="btn btn-sm btn-danger w-100">Hapus</button>
                                 </div>
                             `;
                         }

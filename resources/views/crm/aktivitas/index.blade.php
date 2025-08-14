@@ -20,11 +20,11 @@
                             <thead class="table-primary">
                                 <tr>
                                     <th>Client</th>
-                                    <th>Jenis Aktivitas</th>
-                                    <th>Subjek</th>
+                                    <th style="text-align: center;">Jenis Aktivitas</th>
+                                    <th style="text-align: center;">Subjek</th>
                                     <th>Deskripsi</th>
-                                    <th>Waktu Aktivitas</th>
-                                    <th>Aksi</th>
+                                    <th style="text-align: center;">Waktu Aktivitas</th>
+                                    <th style="text-align: center;">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>

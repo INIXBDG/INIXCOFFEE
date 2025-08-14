@@ -86,21 +86,22 @@
             <!-- Tabel Contact -->
             <div class="card card-rounded shadow-sm">
                 <div class="card-body">
-                    <div class="table-responsive">
-                        <div class="rounded overflow-hidden border">
+                    <!-- Wrapper untuk scroll horizontal -->
+                    <div class="table-responsive" style="overflow-x: auto;">
+                        <div class="rounded border" style="display: inline-block;">
                             <table class="table table-bordered table-hover mb-0" id="perusahaanTable">
                                 <thead class="table-primary">
                                     <tr>
-                                        <th>No</th>
-                                        <th>Perusahaan</th>
-                                        <th>Lokasi</th>
-                                        <th>PIC</th>
-                                        <th>No Telepon</th>
-                                        <th>Status</th>
-                                        <th>Sales</th>
-                                        <th>Kelas Terakhir</th>
-                                        <th>Aktivitas Terakhir</th>
-                                        <th>Aksi</th>
+                                        <th style="text-align: center;">No</th>
+                                        <th style="text-align: center;">Perusahaan</th>
+                                        <th style="text-align: center;">Lokasi</th>
+                                        <th style="text-align: center;">PIC</th>
+                                        <th style="text-align: center;">No Telepon</th>
+                                        <th style="text-align: center;">Status</th>
+                                        <th style="text-align: center;">Sales</th>
+                                        <th style="text-align: center;">Kelas Terakhir</th>
+                                        <th style="text-align: center;">Aktivitas Terakhir</th>
+                                        <th style="text-align: center;">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -443,14 +444,27 @@ document.addEventListener('DOMContentLoaded', function() {
                     <td>${contact.kelas_terakhir} ${contact.kelas_terakhir_date ? ' | <span style="color:red;">(' + contact.kelas_terakhir_date + ')</span>' : ''}</td>
                     <td>${contact.aktivitas_terakhir_date || ''}</td>
                     <td>
-                        <div class="d-flex gap-1">
-                            <button class="btn btn-sm btn-warning" data-contact="${contactData}" data-bs-toggle="modal" data-bs-target="#editContactModal" onclick="editContactFromButton(this)">Edit</button>
-                            <form action="/crm/contact/delete/${contact.id}" method="POST" onsubmit="return confirm('Yakin ingin menghapus?')" style="display:inline;">
+                        <div class="d-flex flex-column gap-2">
+                            <button class="btn btn-sm btn-warning"
+                                data-contact="${contactData}"
+                                data-bs-toggle="modal"
+                                data-bs-target="#editContactModal"
+                                onclick="editContactFromButton(this)">
+                                Edit
+                            </button>
+
+                            <form action="/crm/contact/delete/${contact.id}"
+                                method="POST"
+                                onsubmit="return confirm('Yakin ingin menghapus?')"
+                                style="display:inline;">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-sm btn-danger">Hapus</button>
                             </form>
-                            <a href="/crm/contact/${contact.id}/detail" class="btn btn-sm btn-info">Detail</a>
+
+                            <a href="/crm/contact/${contact.id}/detail" class="btn btn-sm btn-info">
+                                Detail
+                            </a>
                         </div>
                     </td>
                 </tr>`;
