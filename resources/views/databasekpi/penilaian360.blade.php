@@ -44,8 +44,23 @@
                                     <td>Izin</td>
                                 </tr>
                             </thead>
-                            <tbody id="content_body_absen"></tbody>
-                            <tfoot id="content_footer_absen"></tfoot>
+                            <tbody id="content_body_absen">
+                                <tr>
+                                    <td colspan="3">Tidak ada Data...</td>
+                                </tr>
+                            </tbody>
+                            <tfoot id="content_footer_absen">
+                                <tr>
+                                    <td colspan="3">Data Absen quartal tahun ...</td>
+                                </tr>
+                                <tr>
+                                    <td style="max-width: 400px; word-wrap: break-word; white-space: normal;" class="text-start" colspan="3">
+                                        <strong>Catatan : </strong>
+                                        <br />
+                                        Belum ada catatan mengenai anda
+                                    </td>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
                 </div>
@@ -320,7 +335,7 @@
                             <br/>
                            ${response.catatan === null | response.catatan === 'null' ? 'belum ada catatan!' : response.catatan.join('<br>')}
                         </td>
-                    <tr>
+                    </tr>
                 `);
 
                 globalData = response.data;
