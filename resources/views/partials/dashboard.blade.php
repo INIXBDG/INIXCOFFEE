@@ -1,3 +1,4 @@
+
 <div class="card" style="margin-bottom: 8px">
     <div class="card-body d-flex justify-content-start">
         <div class="col-md-12 mx-1">
@@ -157,7 +158,7 @@
                                     </div>
 <div class="row">
     <!-- SALES TERBAIK -->
-    <div class="col-4 col-sm-4 col-md-4 col-lg-4 text-center d-flex justify-content-center">
+    <div class="col-6 col-sm-6 col-md-3 col-lg-3 text-center d-flex justify-content-center">
         <div class="card_foto">
             <div class="imgbox">
                 <img src="{{ asset('images/download.png') }}" alt="Sales Image" class="dynamic-image" id="foto_sales">
@@ -170,7 +171,7 @@
     </div>
 
     <!-- INSTRUKTUR TERBAIK -->
-    <div class="col-4 col-sm-4 col-md-4 col-lg-4 text-center d-flex justify-content-center">
+    <div class="col-6 col-sm-6 col-md-3 col-lg-3 text-center d-flex justify-content-center">
         <div class="card_foto">
             <div class="imgbox">
                 <img src="{{ asset('images/download.png') }}" alt="Instruktur Image" class="dynamic-image" id="foto_instruktur">
@@ -183,7 +184,7 @@
     </div>
 
     <!-- OFFICE TERBAIK -->
-    <div class="col-4 col-sm-4 col-md-4 col-lg-4 text-center d-flex justify-content-center">
+    <div class="col-6 col-sm-6 col-md-3 col-lg-3 text-center d-flex justify-content-center">
         <div class="card_foto">
             <div class="imgbox">
                 <img src="{{ asset('images/download.png') }}" alt="Office Image" class="dynamic-image" id="foto_office">
@@ -194,7 +195,21 @@
             </div>
         </div>
     </div>
+
+    <!-- ITSM TERBAIK -->
+    <div class="col-6 col-sm-6 col-md-3 col-lg-3 text-center d-flex justify-content-center">
+        <div class="card_foto">
+            <div class="imgbox">
+                <img src="{{ asset('images/download.png') }}" alt="ITSM Image" class="dynamic-image" id="foto_itsm">
+            </div>
+            <div class="details">
+                <span class="caption">ITSM Terbaik</span>
+                <h4 class="title" id="nama_itsm">John doe</h4> 
+            </div>
+        </div>
+    </div>
 </div>
+                            
 
                                 </div>
                             </div>
@@ -1497,4 +1512,18 @@
             font-size: 0.7rem;
         }
     }
+    
+</style>
+<style>
+@media (max-width: 576px) {
+    .feedback-card .dekorasi {
+        transform: none !important;
+        position: static !important;
+        max-width: 100% !important;
+        height: auto !important;
+    }
+    .feedback-card {
+        overflow: hidden !important;
+    }
+}
 </style>
