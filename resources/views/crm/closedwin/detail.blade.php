@@ -15,7 +15,7 @@
                     @else
                         <div class="table-responsive">
                             <table class="table table-striped table-bordered">
-                                <thead class="table-dark">
+                                <thead class="table-primary">
                                     <tr>
                                         <th>Materi</th>
                                         <th>Harga</th>
@@ -24,13 +24,14 @@
                                         <th>Pax</th>
                                         <th>Final</th>
                                         <th>Sales</th>
+                                        <th>Perusahaan / PIC</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach ($data as $peluang)
                                         <tr data-peluang='@json($peluang)'>
-                                            <td>{{ $peluang->materi }}</td>
+                                            <td>{{ $peluang->materiRelation->nama_materi }}</td>
                                             <td>Rp {{ number_format($peluang->harga, 0, ',', '.') }}</td>
                                             <td>Rp {{ number_format($peluang->netsales, 0, ',', '.') }}</td>
                                             <td>
@@ -47,6 +48,12 @@
                                                 @endif
                                             </td>
                                             <td>{{ $peluang->id_sales }}</td>
+                                            <td>
+                                                {{ $peluang->perusahaan->nama_perusahaan }}
+                                                @if ($peluang->perusahaan->cp)
+                                                    ({{ $peluang->perusahaan->cp }})
+                                                @endif
+                                            </td>
                                             <td>
                                                 <button class="btn btn-sm btn-info" data-bs-toggle="modal"
                                                     data-bs-target="#detailModal">Detail</button>
@@ -75,8 +82,8 @@
                                     <div class="card mb-3">
                                         <div class="card-header d-flex justify-content-between align-items-center">
                                             <h5 class="card-title mb-0">Informasi Lead</h5>
-                                            <button class="btn btn-primary btn-sm" data-bs-toggle="modal"
-                                                data-bs-target="#tambahAktivitasModal">Tambah Aktivitas</button>
+                                            {{-- <button class="btn btn-primary btn-sm" data-bs-toggle="modal"
+                                                data-bs-target="#tambahAktivitasModal">Tambah Aktivitas</button> --}}
                                         </div>
                                         <div class="card-body">
                                             <dl class="row">
@@ -101,7 +108,7 @@
                                                 <dt class="col-sm-4">Periode Selesai</dt>
                                                 <dd class="col-sm-8" id="modal-periode-selesai">-</dd>
 
-                                                <dt class="col-sm-4">Contact</dt>
+                                                <dt class="col-sm-4">Client</dt>
                                                 <dd class="col-sm-8" id="modal-contact">-</dd>
 
                                                 <dt class="col-sm-4">Sales</dt>
@@ -165,9 +172,10 @@
             detailModal.addEventListener('show.bs.modal', function(event) {
                 const button = event.relatedTarget;
                 const peluang = JSON.parse(button.closest('tr').dataset.peluang);
+                console.log(peluang)
 
                 // Isi Informasi Lead
-                document.getElementById('modal-materi').textContent = peluang.materi || '-';
+                document.getElementById('modal-materi').textContent = peluang.materi_relation.nama_materi || '-';
                 document.getElementById('modal-catatan').textContent = peluang.catatan || '-';
                 document.getElementById('modal-harga').textContent = peluang.harga ? 'Rp ' + Number(peluang
                     .harga).toLocaleString('id-ID') : '-';

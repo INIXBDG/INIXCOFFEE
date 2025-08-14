@@ -15,22 +15,22 @@
                     @else
                         <div class="table-responsive">
                             <table class="table table-striped table-bordered">
-                                <thead class="table-dark">
+                                <thead class="table-primary">
                                     <tr>
                                         <th>Materi</th>
                                         <th>Harga</th>
                                         <th>Netsales</th>
                                         <th>Periode</th>
                                         <th>Pax</th>
-                                        <th>Final</th>
                                         <th>Sales</th>
+                                        <th>Pic</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach ($data as $peluang)
                                         <tr data-peluang='@json($peluang)'>
-                                            <td>{{ $peluang->materi }}</td>
+                                            <td>{{ $peluang->materiRelation->nama_materi }}</td>
                                             <td>Rp {{ number_format($peluang->harga, 0, ',', '.') }}</td>
                                             <td>Rp {{ number_format($peluang->netsales, 0, ',', '.') }}</td>
                                             <td>
@@ -39,14 +39,13 @@
                                                 {{ \Carbon\Carbon::parse($peluang->periode_selesai)->translatedFormat('d M Y') }}
                                             </td>
                                             <td>{{ $peluang->pax }}</td>
+                                            <td>{{ $peluang->id_sales }}</td>
                                             <td>
-                                                @if (!is_null($peluang->final))
-                                                Rp {{ number_format($peluang->final, 0, ',', '.') }}
-                                                @else
-                                                -
+                                                {{ $peluang->perusahaan->nama_perusahaan }}
+                                                @if ($peluang->perusahaan->cp)
+                                                    ({{ $peluang->perusahaan->cp }})
                                                 @endif
                                             </td>
-                                            <td>{{ $peluang->id_sales }}</td>
                                             <td>
                                                 <button class="btn btn-sm btn-info" data-bs-toggle="modal"
                                                     data-bs-target="#detailModal">Detail</button>
@@ -176,7 +175,7 @@
                 const peluang = JSON.parse(button.closest('tr').dataset.peluang);
 
                 // Isi Informasi Lead
-                document.getElementById('modal-materi').textContent = peluang.materi || '-';
+                document.getElementById('modal-materi').textContent = peluang.materi_relation.nama_materi || '-';
                 document.getElementById('modal-catatan').textContent = peluang.catatan || '-';
                 document.getElementById('modal-harga').textContent = peluang.harga ? 'Rp ' + Number(peluang
                     .harga).toLocaleString('id-ID') : '-';
@@ -233,7 +232,6 @@
                 const descLostElement = document.getElementById('desc-lost-text');
                 if (peluang.desc_lost && peluang.desc_lost.trim() !== '') {
                     descLostElement.textContent = peluang.desc_lost;
-                    // Pastikan card-nya juga ditampilkan kalau semula tersembunyi (optional)
                     descLostElement.closest('.card').style.display = 'block';
                 } else {
                     descLostElement.textContent = '-';

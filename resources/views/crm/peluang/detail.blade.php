@@ -1,12 +1,20 @@
 @extends('layouts_crm.app')
 
 @section('crm_contents')
+@php
+    $isLost = strtolower($peluang->tahap) === 'lost';
+@endphp
     <div class="content-wrapper">
         <div class="container-xxl flex-grow-1 container-p-y">
 
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="fw-bold mb-0">Detail Lead</h4>
                 <div class="d-flex gap-2">
+                    @if ($isLost)
+                        <span class="btn btn-sm btn-info" style="pointer-events: none; opacity: 0.5;">Lihat di RKM</span>
+                    @else
+                        <a class="btn btn-sm btn-info" target="blank_" href="/rkm/{{$peluang->rkm->materi_key}}ixb{{$peluang->rkm->tanggal_awal_day}}ie{{$peluang->rkm->tanggal_awal_year}}ie{{$peluang->rkm->tanggal_awal_month}}ixb{{$peluang->rkm->metode_kelas}}">Lihat di RKM</a>
+                    @endif
                     <button type="button" class="btn btn-warning" data-bs-toggle="modal"
                         data-bs-target="#editPeluangModal">Edit Lead</button>
                     <button type="button" class="btn btn-success" data-bs-toggle="modal"
@@ -169,7 +177,7 @@
                                                 <td>{{ $item->aktivitas }}</td>
                                                 <td>{{ $item->subject }}</td>
                                                 <td>{{ $item->deskripsi }}</td>
-                                                <td>{{ \Carbon\Carbon::parse($item->waktu_aktivitas)->translatedFormat('d F Y H:i') }}
+                                                <td>{{ \Carbon\Carbon::parse($item->waktu_aktivitas)->translatedFormat('d F Y') }}
                                                 </td>
                                                 <td>{{ $item->id_sales ?? '-' }}</td>
                                             </tr>
@@ -376,6 +384,7 @@
             document.addEventListener('DOMContentLoaded', function() {
 
                 let peluang = @json($peluang);
+                console.log(peluang)
                 console.log(peluang.materi.nama_materi);
 
                 const tahapSelect = document.getElementById('tahap');

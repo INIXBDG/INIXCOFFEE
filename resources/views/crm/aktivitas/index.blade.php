@@ -5,7 +5,7 @@
         <div class="container-xxl flex-grow-1 container-p-y">
             <!-- Header -->
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h4 class="fw-bold">Manajemen Aktivitas</h4>
+                <h4 class="fw-bold">Activity Management</h4>
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#activityModal"
                     onclick="resetForm()">
                     Tambah Aktivitas
@@ -19,7 +19,7 @@
                         <table id="aktivitasTable" class="table table-bordered table-hover">
                             <thead class="table-primary">
                                 <tr>
-                                    <th>Kontak</th>
+                                    <th>Client</th>
                                     <th>Jenis Aktivitas</th>
                                     <th>Subjek</th>
                                     <th>Deskripsi</th>
@@ -67,6 +67,7 @@
                                         <option value="Call">Call</option>
                                         <option value="Email">Email</option>
                                         <option value="Visit">Visit</option>
+                                        <option value="Meet">Meeting</option>
                                     </select>
                                 </div>
 

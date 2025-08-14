@@ -77,10 +77,13 @@ class AktivitasController extends Controller
                 ->get()
                 ->map(function ($item) {
                     // Safely handle perusahaan relationship
-                    $kontak = '-';
-                    if ($item->perusahaan instanceof \Illuminate\Database\Eloquent\Model) {
-                        $kontak = $item->perusahaan->nama_perusahaan . ' (' . ($item->perusahaan->cp ?? '-') . ')';
+                $kontak = '-';
+                if ($item->perusahaan instanceof \Illuminate\Database\Eloquent\Model) {
+                    $kontak = $item->perusahaan->nama_perusahaan;
+                    if ($item->perusahaan->cp) {
+                        $kontak .= ' (' . $item->perusahaan->cp . ')';
                     }
+                }
                     return [
                         'id' => $item->id,
                         'kontak' => $kontak,
@@ -110,7 +113,7 @@ class AktivitasController extends Controller
         $validated = $request->validate([
             'id_contact' => 'required|integer',
             'id_peluang' => 'required|integer',
-            'aktivitas' => 'required|in:Call,Email,Visit',
+            'aktivitas' => 'required|in:Call,Email,Visit,Meet',
             'subject' => 'required|string',
             'deskripsi' => 'required|string',
             'waktu_aktivitas' => 'required|date',
@@ -118,7 +121,7 @@ class AktivitasController extends Controller
 
         // hanya untuk test function di postman, setelah selesai tolong diubah -> auth()->user()->id_sales
         $validated['id_sales'] = $request->input('id_sales', auth()->user()->id_sales ?? null);
-
+        dd($validated);
         $aktivitas = Aktivitas::create($validated);
 
         return back()->with([
@@ -131,7 +134,7 @@ class AktivitasController extends Controller
     {
         $validated = $request->validate([
             'id_contact' => 'required|integer',
-            'aktivitas' => 'required|in:Call,Email,Visit',
+            'aktivitas' => 'required|in:Call,Email,Visit,Meet',
             'subject' => 'required|string',
             'deskripsi' => 'nullable|string',
             'waktu_aktivitas' => 'required|date',
