@@ -1672,7 +1672,7 @@
                                                                         </div>
                                                                     </div>
                                                                 @endcan
-                                                                @can('View CC')
+                                                                @can('View PaymantAdvance')
                                                                     <div class="col-sm-6 mt-2">
                                                                         <div class="card" id="card-hover">
                                                                             <div class="card-body d-flex">
