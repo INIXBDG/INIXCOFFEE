@@ -38,22 +38,22 @@ class netSalesController extends Controller
     public function store(Request $request)
     {
         $request->merge([
-            'harga_penawaran' => str_replace('.', '', $request->harga_penawaran),
-            'transportasi'    => str_replace('.', '', $request->transportasi),
-            'penginapan'      => str_replace('.', '', $request->penginapan),
-            'fresh_money'     => str_replace('.', '', $request->fresh_money),
-            'souvenir'        => str_replace('.', '', $request->souvenir),
-            'entertaint'      => str_replace('.', '', $request->entertaint),
+            'harga_penawaran' => $request->harga_penawaran ? str_replace('.', '', $request->harga_penawaran) : null,
+            'transportasi'    => $request->transportasi ? str_replace('.', '', $request->transportasi) : null,
+            'penginapan'      => $request->penginapan ? str_replace('.', '', $request->penginapan) : null,
+            'fresh_money'     => $request->fresh_money ? str_replace('.', '', $request->fresh_money) : null,
+            'souvenir'        => $request->souvenir ? str_replace('.', '', $request->souvenir) : null,
+            'entertaint'      => $request->entertaint ? str_replace('.', '', $request->entertaint) : null,
         ]);
 
         $data = $request->validate([
             'harga_penawaran' => 'required',
             'id_rkm'          => 'required',
-            'transportasi'    => 'required',
-            'penginapan'      => 'required',
-            'fresh_money'     => 'required',
-            'entertaint'      => 'required',
-            'souvenir'        => 'required',
+            'transportasi'    => 'nullable|numeric',
+            'penginapan'      => 'nullable|numeric',
+            'fresh_money'     => 'nullable|numeric',
+            'entertaint'      => 'nullable|numeric',
+            'souvenir'        => 'nullable|numeric',
             'tgl_pa'          => 'required',
             'tipe_pembayaran' => 'required',
         ]);
@@ -78,12 +78,12 @@ class netSalesController extends Controller
             if ($user) {
                 $dummyComment = (object) [
                     'karyawan_key' => auth()->user()->karyawan->id ?? null,
-                    'content'      => 'Pengajuan Paymant Advance baru oleh Sales, anda dimohon untuk melakukan persetujuan.',
+                    'content'      => 'Pengajuan Payment Advance baru oleh Sales, anda dimohon untuk melakukan persetujuan.',
                     'materi_key'   => null,
                     'rkm_key'      => $data['id_rkm'],
                 ];
 
-                $url = url('paymantAdvance.index');
+                $url = url('paymentAdvance.index');
                 $path = request()->path();
 
                 Notification::send($user, new CommentNotification($dummyComment, $url, $path));
@@ -92,7 +92,7 @@ class netSalesController extends Controller
 
         return redirect()->route('paymantAdvance.index')->with(['success' => 'Data Berhasil Disimpan!']);
     }
-
+    
     public function create($id)
     {
         $rkm = RKM::with('perusahaan', 'materi')->findOrFail($id);

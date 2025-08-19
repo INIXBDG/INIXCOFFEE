@@ -11,10 +11,15 @@ use App\Models\Peluang;
 use App\Models\Perusahaan;
 use App\Models\RKM;
 use App\Models\User;
+use App\Models\perhitunganNetSales;
+use App\Models\karyawan;
+use App\Models\trackingNetSales;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Notifications\CommentNotification;
+use Illuminate\Support\Facades\Notification;
 
 class PeluangController extends Controller
 {
@@ -119,7 +124,9 @@ class PeluangController extends Controller
             $peluang->rkm->tanggal_awal_year = $peluang->rkm->tanggal_awal ? date('Y', strtotime($peluang->rkm->tanggal_awal)) : null;
     }
         $materi = Materi::all();
-        return view('crm.peluang.detail', compact('peluang', 'aktivitas', 'materi'));
+        $netsales = perhitunganNetSales::with('trackingNetSales', 'approvedNetSales')->where('id_rkm', $peluang->id_rkm)->first();
+        // dd($netsales);
+        return view('crm.peluang.detail', compact('peluang', 'aktivitas', 'materi', 'netsales'));
     }
 
     public function AmbilAktivitas($id)
@@ -438,4 +445,66 @@ class PeluangController extends Controller
             ->get();
         return view('crm.closedlost.detail', compact('data'));
     }
+
+    public function storePaymentAdvance(Request $request)
+    {
+        $request->validate([
+            'id_rkm' => 'required|numeric',
+            'hargaPenawaran' => 'required|numeric',
+            'transportasi' => 'nullable|numeric',
+            'penginapan' => 'nullable|numeric',
+            'freshMoney' => 'nullable|numeric',
+            'entertaint' => 'nullable|numeric',
+            'souvenir' => 'nullable|numeric',
+            'tanggalPayment' => 'required|date',
+            'tipePembayaran' => 'required|string',
+        ]);
+
+        $data = [
+            'id_rkm' => $request->id_rkm,
+            'harga_penawaran' => $request->hargaPenawaran,
+            'transportasi' => $request->transportasi,
+            'penginapan' => $request->penginapan,
+            'fresh_money' => $request->freshMoney,
+            'entertaint' => $request->entertaint,
+            'souvenir' => $request->souvenir,
+            'tgl_pa' => $request->tanggalPayment,
+            'tipe_pembayaran' => $request->tipePembayaran,
+        ];
+
+        $netSales = perhitunganNetSales::create($data);
+
+        $dataTracking = trackingNetSales::create([
+            'id_netSales' => $netSales->id,
+        ]);
+
+        $netSales->update([
+            'id_tracking' => $dataTracking->id,
+        ]);
+
+        $spv = karyawan::where('jabatan', 'SPV Sales')->first();
+
+        if ($spv) {
+            $user = User::whereHas('karyawan', function ($q) use ($spv) {
+                $q->where('kode_karyawan', $spv->kode_karyawan);
+            })->first();
+
+            if ($user) {
+                $dummyComment = (object) [
+                    'karyawan_key' => auth()->user()->karyawan->id ?? null,
+                    'content'      => 'Pengajuan Payment Advance baru oleh Sales, anda dimohon untuk melakukan persetujuan.',
+                    'materi_key'   => null,
+                    'rkm_key'      => $data['id_rkm'],
+                ];
+
+                $url = url('paymentAdvance.index');
+                $path = request()->path();
+
+                Notification::send($user, new CommentNotification($dummyComment, $url, $path));
+            }
+        }
+
+        return redirect()->back()->with('success', 'Data payment advance berhasil disimpan.');
+    }
+
 }

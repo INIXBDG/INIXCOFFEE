@@ -121,7 +121,6 @@ class AktivitasController extends Controller
 
         // hanya untuk test function di postman, setelah selesai tolong diubah -> auth()->user()->id_sales
         $validated['id_sales'] = $request->input('id_sales', auth()->user()->id_sales ?? null);
-        dd($validated);
         $aktivitas = Aktivitas::create($validated);
 
         return back()->with([
