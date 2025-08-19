@@ -9,7 +9,7 @@
     /* Mario-inspired theme variables */
     :root {
       --mario-red: #e74c3c;
-      --mario-blue: #3498db;
+      --mario-blue: #3498db;          
       --mario-yellow: #f1c40f;
       --mario-bg: #2c3e50;
       --mario-brick: #c1440e;
