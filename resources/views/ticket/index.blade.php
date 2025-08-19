@@ -142,39 +142,76 @@
                 {
                     "data": null,
                     "render": function(data, type, row) {
-                        var pic = "{{auth()->user()->username}}";
+                        var pic = "{{ auth()->user()->username }}";
+                        switch(pic.toLowerCase()) {
+                            case 'ardhan':
+                                pic = 'Ardhan';
+                                break;
+                            case 'naufal':
+                                pic = 'Naufal';
+                                break;
+                            case 'ferdi':
+                                pic = 'Ferdi';
+                                break;
+                            case 'donna':
+                                pic = 'Donna';
+                                break;
+                            case 'juliet':
+                                pic = 'Juli';
+                                break;
+                            case 'stepanusberkatsinaga':
+                                pic = 'Stefan';
+                                break;
+                            case 'sergiomosesriyanto':
+                                pic = 'Sergio';
+                                break;
+                            case 'vickyryandysaputra':
+                                pic = 'Vicky';
+                                break;
+                            // Tambahkan case lain jika diperlukan
+                            default:
+                                pic = '';
+                                break;
+                        }
                         var actions = "";
                             actions += '<div class="dropdown">';
                             actions += '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
                             actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
-                            actions += '<form onsubmit="return confirm(\'Anda akan menerima tiket ini ?\');" action="{{ url('/tickets') }}/' + row.id + '/accept" method="POST">';
-                            actions += '@csrf';
-                            actions += '<input type="hidden" name="pic" value="'+pic+'">';
-                            actions += '<input type="hidden" name="row" value="'+data.row+'">';
-                            actions += '@method('POST')';
-                            actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Terima</button>';
-                            actions += '</form>';
-                            actions += '<form onsubmit="return confirm(\'Anda akan menerima tiket ini ?\');" action="{{ url('/tickets') }}/' + row.id + '/block" method="POST">';
-                            actions += '@csrf';
-                            actions += '<input type="hidden" name="pic" value="'+pic+'">';
-                            actions += '<input type="hidden" name="row" value="'+data.row+'">';
-                            actions += '@method('POST')';
-                            actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/x-circle.svg') }}" class=""> Tolak</button>';
-                            actions += '</form>';
-                            actions += '<form onsubmit="return confirm(\'Anda akan menerima tiket ini ?\');" action="{{ url('/tickets') }}/' + row.id + '/finish" method="POST">';
-                            actions += '@csrf';
-                            actions += '<input type="hidden" name="pic" value="'+pic+'">';
-                            actions += '<input type="hidden" name="row" value="'+data.row+'">';
-                            actions += '@method('POST')';
-                            actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/thumbs-up.svg') }}" class=""> Selesai</button>';
-                            actions += '</form>';
+                            
+                            console.log(data);
+                            if(data.status == 'Di Proses'){
+                                actions += '<form onsubmit="return confirm(\'Anda akan menerima tiket ini ?\');" action="{{ url('/tickets') }}/' + row.id + '/block" method="POST">';
+                                actions += '@csrf';
+                                actions += '<input type="hidden" name="pic" value="'+pic+'">';
+                                actions += '<input type="hidden" name="row" value="'+data.row+'">';
+                                actions += '@method('POST')';
+                                actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/x-circle.svg') }}" class=""> Tolak</button>';
+                                actions += '</form>';
+                                actions += '<form onsubmit="return confirm(\'Anda akan menerima tiket ini ?\');" action="{{ url('/tickets') }}/' + row.id + '/finish" method="POST">';
+                                actions += '@csrf';
+                                actions += '<input type="hidden" name="pic" value="'+pic+'">';
+                                actions += '<input type="hidden" name="row" value="'+data.row+'">';
+                                
+                                actions += '@method('POST')';
+                                actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/thumbs-up.svg') }}" class=""> Selesai</button>';
+                                actions += '</form>';
+                            }else{
+                                actions += '<form onsubmit="return confirm(\'Anda akan menerima tiket ini ?\');" action="{{ url('/tickets') }}/' + row.id + '/accept" method="POST">';
+                                actions += '@csrf';
+                                actions += '<input type="hidden" name="pic" value="'+pic+'">';
+                                actions += '<input type="hidden" name="row" value="'+data.row+'">';
+                                actions += '@method('POST')';
+                                actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Terima</button>';
+                                actions += '</form>';
+                            }
+                            
                             // actions += '<a class="dropdown-item" href="{{ url('/tickets') }}/' + row.id + '/accept" data-toggle="tooltip" data-placement="top" title="Update Tiket"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Terima Tiket</a>';
                             // actions += '<a class="dropdown-item" href="{{ url('/materi') }}/' + row.id + '" data-toggle="tooltip" data-placement="top" title="Detail User"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Detail</a>';
-                            actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/target') }}/' + row.id + '" method="POST">';
-                            actions += '@csrf';
-                            actions += '@method('DELETE')';
-                            actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
-                            actions += '</form>';
+                            // actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/tickets') }}/' + row.id + '" method="POST">';
+                            // actions += '@csrf';
+                            // actions += '@method('DELETE')';
+                            // actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
+                            // actions += '</form>';
                             actions += '</div>';
                             actions += '</div>';
                             return actions;

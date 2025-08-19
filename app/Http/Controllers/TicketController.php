@@ -198,68 +198,88 @@ class TicketController extends Controller
 
     public function accept(Request $request, Tickets $ticket)
     {
-        // return $request->all();
-        $dateString = \Carbon\Carbon::now()->format('Y-m-d');   // e.g., "2025-08-07"
-        $timeString = \Carbon\Carbon::now()->format('H:i');    // e.g., "14:30"
+        $tanggal_response = \Carbon\Carbon::now()->format('Y-m-d');
+        $jam_response = \Carbon\Carbon::now()->format('H:i:s');
 
-        // Parse the strings back into \Carbon\Carbon instances (mostly for demonstration)
-        $tanggal_response = \Carbon\Carbon::createFromFormat('Y-m-d', $dateString);
-        $jam_response     = \Carbon\Carbon::createFromFormat('H:i', $timeString);
-        
-        // dd($tanggal_response, $jam_response);
         $ticket->update([
-            'penanganan'  => 'Sedang Diperbaiki',
-            'status'  => 'Di Proses',
-            'tanggal_response'  => $tanggal_response,
-            'jam_response'  => $jam_response,
-            'pic'   => $request->pic,
+            'penanganan' => 'Sedang Diperbaiki',
+            'status' => 'Di Proses',
+            'tanggal_response' => $tanggal_response,
+            'jam_response' => $jam_response,
+            'pic' => $request->pic,
         ]);
-        
+
         $spreadsheetId = '1k_NRI52B-alnGVeLTGB8cecL3f1G-C7_WCVGnQQGe9Y';
-        $range = 'Form Responses 1!I'.$ticket->row.':M'.$ticket->row.'';  // Pastikan nama sheet dan kolom sesuai di Spreadsheet Anda
+        $range = 'Form Responses 1!I'.$ticket->row.':M'.$ticket->row;
         $values = [
-                [
-                    $tanggal_response,
-                    $jam_response,
-                    $request->pic,
-                    $ticket->penanganan,
-                    $ticket->status,
-                ]
+            [
+                $tanggal_response,
+                $jam_response,
+                $request->pic,
+                $ticket->penanganan,
+                $ticket->status,
+            ]
         ];
         $message = $this->updatedValues($spreadsheetId, $range, $values);
+
         return redirect()->route('tickets.index')->with('success', 'Tiket diterima.');
     }
-
     public function finish(Request $request, Tickets $ticket)
     {
+        $tanggal_selesai = \Carbon\Carbon::now()->format('Y-m-d');
+        $jam_selesai = \Carbon\Carbon::now()->format('H:i:s');
+
         $ticket->update([
             'status' => 'Selesai',
-            'alasan' => $request->alasan,
+            'keterangan' => $request->keterangan,
+            'tanggal_selesai' => $tanggal_selesai,
+            'jam_selesai' => $jam_selesai,
         ]);
 
-        Http::post('http://localhost:3000/notify', [
-            'phone'           => $ticket->no_user,
-            'status'          => 'Selesai',
-            'ticket_id'       => $ticket->id,
-            'resolution_notes' => $request->alasan,
-        ]);
+        $spreadsheetId = '1k_NRI52B-alnGVeLTGB8cecL3f1G-C7_WCVGnQQGe9Y';
+        $range = 'Form Responses 1!M'.$ticket->row.':S'.$ticket->row;
+        $values = [
+            [
+                $ticket->status,
+                $tanggal_selesai,
+                $jam_selesai,
+                $request->keterangan,
+                '',
+                '',
+                $ticket->kesulitan,
+            ]
+        ];
+        $message = $this->updatedValues($spreadsheetId, $range, $values);
 
         return redirect()->route('tickets.index')->with('success', 'Tiket selesai.');
     }
 
     public function block(Request $request, Tickets $ticket)
     {
+        $tanggal_selesai = \Carbon\Carbon::now()->format('Y-m-d');
+        $jam_selesai = \Carbon\Carbon::now()->format('H:i:s');
+
         $ticket->update([
             'status' => 'Terkendala',
-            'alasan' => $request->alasan,
+            'keterangan' => $request->keterangan,
+            'tanggal_selesai' => $tanggal_selesai,
+            'jam_selesai' => $jam_selesai,
         ]);
 
-        Http::post('http://localhost:3000/notify', [
-            'phone'           => $ticket->no_user,
-            'status'          => 'Terkendala',
-            'ticket_id'       => $ticket->id,
-            'resolution_notes' => $request->alasan,
-        ]);
+        $spreadsheetId = '1k_NRI52B-alnGVeLTGB8cecL3f1G-C7_WCVGnQQGe9Y';
+        $range = 'Form Responses 1!M'.$ticket->row.':S'.$ticket->row;
+        $values = [
+            [
+                $ticket->status,
+                $tanggal_selesai,
+                $jam_selesai,
+                $request->keterangan,
+                '',
+                '',
+                $ticket->kesulitan,
+            ]
+        ];
+        $message = $this->updatedValues($spreadsheetId, $range, $values);
 
         return redirect()->route('tickets.index')->with('success', 'Tiket ditandai sebagai terkendala.');
     }
