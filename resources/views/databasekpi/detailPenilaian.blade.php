@@ -93,6 +93,9 @@
 
     #table-fixed thead th {
         white-space: nowrap;
+        background-color: var(--bs-body-bg) !important;
+        color: var(--bs-body-color) !important;
+
     }
 
     #table-fixed tbody td {
@@ -202,8 +205,8 @@
                             </div>
                         </div>
                         <div class="table-responsive-wrap">
-                            <table class="table" id="table-fixed">
-                                <thead>
+                            <table class="table" id="table-fixed bg-theme">
+                                <thead class="bg-theme">
                                     <tr>
                                         <th scope="col">Kriteria</th>
                                         <th scope="col">Sub Kriteria</th>
@@ -218,11 +221,11 @@
                         </div>
                     </div>
                 </div>
-                <div class="card p-3 mt-4">
+                <div class="card  bg-theme p-3 mt-4">
                     <div class="title">Data Jumlah Absensi</div>
                     <div id="scrollable-table">
-                        <table class="table" id="table-fixed">
-                            <thead>
+                        <table class="table bg-theme" id="table-fixed">
+                            <thead class="bg-theme">
                                 <tr>
                                     <th scope="col">Telat</th>
                                     <th scope="col">Sakit</th>
@@ -459,7 +462,7 @@
 
                         <div class="form-group mb-3 text-start">
                             <label class="mb-2">Catatan</label>
-                            <textarea class="list-group ms-2 form-control stylish-textarea" placeholder="berikan catatan..." rows="4" name="catatan">${globalEvaluated.catatan === 'null' | globalEvaluated.catatan === null ? '' : globalEvaluated.catatan}</textarea>
+                            <textarea class="list-group ms-2 form-control stylish-textarea bg-theme border-none" placeholder="berikan catatan..." rows="4" name="catatan">${globalEvaluated.catatan === 'null' | globalEvaluated.catatan === null ? '' : globalEvaluated.catatan}</textarea>
                         </div>
                         <div class="form-group mb-3 text-end">
                             <button type="submit" class="btn cl-blue text-white">Kirim</button>
@@ -505,7 +508,7 @@
         filteredEvaluators.forEach((evaluator) => {
             content.append(`
                 <tr>
-                    <td colspan="5" class="bg-light fw-bold">
+                    <td colspan="5" class="bg-theme fw-bold">
                         ${evaluator.nama} - ${evaluator.jenis_penilaian}
                     </td>
                 </tr>
@@ -598,7 +601,7 @@
                 <td colspan="1" class="text-center">${keterangan}</td>
             </tr>
             <tr class="fw-bold text-white" style="background: #546E7A">
-                <td colspan="4" class="text-center">Grade</td>
+                <td colspan="4" class="text-end">Grade</td>
                 <td colspan="1" class="text-end">${grade}</td>
             </tr>
         `);

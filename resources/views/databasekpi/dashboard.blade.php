@@ -96,6 +96,7 @@
         font-weight: 600;
         margin-left: 10px;
         flex: 1;
+        font-size: 12px;
     }
 
     .titik-tiga {
@@ -104,7 +105,7 @@
     }
 
     .angka-persentase {
-        font-size: 24px;
+        font-size: 20px;
         font-weight: 700;
         margin-top: 10px;
     }
@@ -161,6 +162,24 @@
             min-width: 120px !important;
         }
     }
+
+    .loading-text {
+        display: inline-block;
+        overflow: hidden;
+        white-space: nowrap;
+        width: 0;
+        animation: typing 2s steps(100, end) forwards;
+    }
+
+    @keyframes typing {
+        from {
+            width: 0;
+        }
+
+        to {
+            width: 100%;
+        }
+    }
 </style>
 
 <div class="container mt-4">
@@ -168,41 +187,57 @@
         <div class="container">
             <div class="row">
                 <div class="col-sm mb-2">
-                    <div class="kartu-statistik">
+                    <div class="kartu-statistik bg-theme border">
                         <div class="kepala-kartu">
                             <div class="ikon-bulat telepon">
                                 <i class="fa-solid fa-user-tie"></i>
                             </div>
-                            <span class="judul-kartu">Jumlah karyawan</span>
+                            <span class="judul-kartu">Jumlah Karyawan Aktif</span>
                         </div>
-                        <div class="angka-persentase">
-                            15 karyawan
+                        <div class="angka-persentase" id="content_JK">
+                            <small class="loading-text">memuat...</small>
                         </div>
                     </div>
                 </div>
+
                 <div class="col-sm mb-2">
-                    <div class="kartu-statistik">
+                    <div class="kartu-statistik bg-theme border">
                         <div class="kepala-kartu">
                             <div class="ikon-bulat pengguna">
-                                <i class="fa-solid fa-stopwatch"></i>
+                                <i class="fa-solid fa-house-medical"></i>
                             </div>
-                            <span class="judul-kartu">Jam Kerja</span>
+                            <span class="judul-kartu">Sakit Dalam Triwulan Ini</span>
                         </div>
-                        <div class="angka-persentase">
-                            10 jam
+                        <div class="angka-persentase" id="content_KS">
+                            <small class="loading-text">memuat...</small>
                         </div>
                     </div>
                 </div>
+
                 <div class="col-sm mb-2">
-                    <div class="kartu-statistik">
+                    <div class="kartu-statistik bg-theme border">
                         <div class="kepala-kartu">
-                            <div class="ikon-bulat petir">
-                                <i class="fa-solid fa-book"></i>
+                            <div class="ikon-bulat pengguna">
+                                <i class="fa-solid fa-scroll"></i>
                             </div>
-                            <span class="judul-kartu">Tugas</span>
+                            <span class="judul-kartu">Izin Dalam Triwlan Ini</span>
                         </div>
-                        <div class="angka-persentase">
-                            16 Tugas
+                        <div class="angka-persentase" id="content_KI">
+                            <small class="loading-text">memuat...</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-sm mb-2">
+                    <div class="kartu-statistik bg-theme border">
+                        <div class="kepala-kartu">
+                            <div class="ikon-bulat pengguna">
+                                <i class="fa-solid fa-person-hiking"></i>
+                            </div>
+                            <span class="judul-kartu">Cuti Dalam Triwulan Ini</span>
+                        </div>
+                        <div class="angka-persentase" id="content_KC">
+                            <small class="loading-text">memuat...</small>
                         </div>
                     </div>
                 </div>
@@ -217,7 +252,7 @@
             <div class="card h-100">
                 <div class="card-header bg-body-tertiary py-2">
                     <div class="row flex-between-center">
-                        <div class="col-auto">
+                        <div class="col-auto p-2">
                             <h6 class="mb-0">Kinerja Kantor</h6>
                         </div>
                     </div>
@@ -228,9 +263,9 @@
             </div>
         </div>
         <div class="col-sm-5 mt-2">
-            <div class="card h-100 shadow-sm border-0">
-                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0 fw-bold text-dark">Manager Goal In 2025</h6>
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-theme border-bottom py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-bold">Manager Goal In 2025</h6>
                     <button class="btn btn-link text-muted p-0">
                         <i class="fas fa-ellipsis-h"></i>
                     </button>
@@ -238,31 +273,27 @@
                 <div class="card-body d-flex flex-column flex-lg-row align-items-start p-4 goal-card-body">
                     <div class="flex-grow-1 me-lg-4 mb-4 mb-lg-0 goal-card-list">
                         <div class="d-flex align-items-start mb-3 p-2" style="border-left : 3px solid #24C6F9">
-                            <span class="border-start border-3 border-info me-3" style="height: 30px;"></span>
                             <div class="ms-2">
                                 <small class="text-muted d-block">General Manager</small>
-                                <p class="fw-bold mb-0">98% <span class="badge text-bg-success ms-2 rounded-pill text-success"><i class="fa-solid fa-circle-check"></i> Selesai</span></p>
+                                <p class="fw-bold mb-0">98% <span class="ms-2 rounded-pill text-success"><i class="fa-solid fa-circle-check"></i> Selesai</span></p>
                             </div>
                         </div>
                         <div class="d-flex align-items-start mb-3 p-2" style="border-left : 3px solid #2E86FC">
-                            <span class="border-start border-3 border-primary me-3" style="height: 30px;"></span>
                             <div>
                                 <small class="text-muted d-block">Education Manager</small>
-                                <p class="fw-bold mb-0">186% <span class="badge text-bg-primary ms-2 rounded-pill"><i class="fa-solid fa-bars-progress text-primary"></i> half way</span></p>
+                                <p class="fw-bold mb-0">18% <span class="ms-2 rounded-pill"><i class="fa-solid fa-bars-progress text-warning"></i> Process</span></p>
                             </div>
                         </div>
                         <div class="d-flex align-items-start mb-3 p-2" style="border-left : 3px solid #28A745">
-                            <span class="border-start border-3 border-danger me-3" style="height: 30px;"></span>
                             <div>
                                 <small class="text-muted d-block">SPV Sales</small>
-                                <p class="fw-bold mb-0">70% <span class="badge text-bg-danger ms-2 rounded-pill text-danger"><i class="fa-solid fa-circle-exclamation"></i> fail</span></p>
+                                <p class="fw-bold mb-0">70% <span class="ms-2 rounded-pill text-danger"><i class="fa-solid fa-circle-exclamation"></i> fail</span></p>
                             </div>
                         </div>
                         <div class="d-flex align-items-start mb-3 p-2" style="border-left : 3px solid #B71CFF">
-                            <span class="border-start border-3 border-danger me-3" style="height: 30px;"></span>
                             <div>
                                 <small class="text-muted d-block">Koordinator ITSM</small>
-                                <p class="fw-bold mb-0">90% <span class="badge text-bg-danger ms-2 rounded-pill text-success"><i class="fa-solid fa-circle-exclamation"></i> success</span></p>
+                                <p class="fw-bold mb-0">90% <span class="ms-2 rounded-pill text-success"><i class="fa-solid fa-circle-exclamation"></i> success</span></p>
                             </div>
                         </div>
                     </div>
@@ -284,6 +315,34 @@
 @section('script')
 <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    $(document).ready(function() {
+        loadData();
+    })
+
+    function loadData() {
+        $.ajax({
+            url: "{{ route('databaseKPI.dashboardContent') }}",
+            type: 'GET',
+            success: function(response) {
+                const content_JK = $('#content_JK');
+                const content_KS = $('#content_KS');
+                const content_KC = $('#content_KC');
+                const content_KI = $('#content_KI');
+
+                const dataCardFirst = response.dataCard_first ?? 0;
+
+                content_JK.text(`${dataCardFirst.karyawan_aktif} Karyawan`);
+                content_KS.text(`${dataCardFirst.dataSakit} Karyawan`);
+                content_KC.text(`${dataCardFirst.dataCuti} Karyawan`);
+                content_KI.text(`${dataCardFirst.dataIzin} Karyawan`);
+            },
+            error: function(err) {
+                console.error('Gagal load data:', err);
+            }
+        });
+    }
+</script>
 <script>
     const ctx2 = document.getElementById('weeklyGoalChart').getContext('2d');
 
@@ -364,7 +423,7 @@
                 {
                     label: '2018',
                     data: [84, 72, 60, 50, 48, 68, 88],
-                    backgroundColor: '#d6e0f5', // abu muda
+                    backgroundColor: '#d6e0f5',
                     borderRadius: 4,
                     barPercentage: 0.5
                 }

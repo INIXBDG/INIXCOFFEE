@@ -7,6 +7,7 @@ use App\Models\karyawan;
 use App\Models\kategoriKPI;
 use App\Models\NilaiKPI;
 use App\Models\nilaiKPI as ModelsNilaiKPI;
+use App\Models\pengajuancuti;
 use App\Models\shareForm;
 use App\Models\tipeKategoriTabel;
 use App\Models\User;
@@ -23,6 +24,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules\Unique;
 use App\Mail\mailPenilaian;
 use App\Models\AbsensiKaryawan;
+use App\Models\izinTigaJam;
 use Illuminate\Support\Facades\Mail;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -1636,14 +1638,54 @@ class DatabaseKPIController extends Controller
         ]);
     }
 
-    public function contentDashboard() {
-        $totalKaryawan = karyawan::where('status_aktif', 1)->count();
-        // $formPenilaian = formPenilaian::get();
-        // $shareForm = shareForm::where('id_evaluated', $formPenilaian->id_karyawan)->where('kode_form', $formPenilaian->kode_form)->get();
-        // $kategoriKPI
+    public function contentDashboard()
+    {
+        $totalKaryawan = karyawan::where('status_aktif', '1')
+            ->whereNot('divisi', 'Direksi')
+            ->count();
+
+        $year = date('Y');
+        $month = date('n');
+
+        if ($month >= 1 && $month <= 3) {
+            $startMonth = 1;
+            $endMonth = 3;
+        } elseif ($month >= 4 && $month <= 6) {
+            $startMonth = 4;
+            $endMonth = 6;
+        } elseif ($month >= 7 && $month <= 9) {
+            $startMonth = 7;
+            $endMonth = 9;
+        } else {
+            $startMonth = 10;
+            $endMonth = 12;
+        }
+
+        $startDate = date("$year-$startMonth-01 00:00:00");
+        $endDate   = date("$year-$endMonth-" . date("t", strtotime("$year-$endMonth-01")) . " 23:59:59");
+
+        $dataAbsensiCuti = pengajuancuti::where('tipe', 'Cuti')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->where('approval_manager', '1')
+            ->count();
+
+        $dataAbsensiSakit = pengajuancuti::where('tipe', 'Sakit')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->where('approval_manager', '1')
+            ->count();
+
+        $dataAbsensiIzin = izinTigaJam::whereBetween('created_at', [$startDate, $endDate])
+            ->count();
+
+        $dataCard_utama = [
+            'karyawan_aktif' => $totalKaryawan,
+            'dataSakit'      => $dataAbsensiSakit,
+            'dataCuti'       => $dataAbsensiCuti,
+            'dataIzin'       => $dataAbsensiIzin
+        ];
 
         return response()->json([
-            'countKaryawan' => $totalKaryawan
+            'dataCard_first' => $dataCard_utama
         ]);
     }
 }

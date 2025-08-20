@@ -56,7 +56,7 @@
 </script>
 @endif
 
-<div class="container" style="margin-bottom: 40px;">
+<div class="container mt-3" style="margin-bottom: 40px;">
     <a href="{{ route('ketegoriKPI.get') }}" class="btn text-white cl-blue my-2">
         <i class="fa-solid fa-arrow-left"></i> Penilaian
     </a>
@@ -81,7 +81,7 @@
                             <div class="text-left">
                                 <button type="button" class="btn text-white cl-green btn-sm mb-3" id="add-karyawan-block">+ Tambah Yang Dinilai</button>
                             </div>
-                            <div class="border rounded p-3 karyawan-block mb-3 bg-light">
+                            <div class="border rounded p-3 karyawan-block mb-3 bg-theme">
                                 <div class="row g-2">
                                     <div class="col-md-6">
                                         <label class="form-label">Divisi</label>
@@ -108,7 +108,7 @@
 
                         <div id="kriteria-container">
                             <h5>Kriteria Penilaian</h5>
-                            <div class="form-kriteria-block border rounded p-3 mb-4 bg-light" data-kriteria-index="0">
+                            <div class="form-kriteria-block border rounded p-3 mb-4 bg-theme" data-kriteria-index="0">
                                 <div class="text-right">
                                     <button type="button" class="btn text-white cl-red btn-sm remove-kriteria-block">Hapus Kriteria</button>
                                 </div>
@@ -117,11 +117,11 @@
                                     <input type="text" name="kriteria[0][nama_penilaian]" class="form-control" placeholder="Masukan nama kriteria...">
                                 </div>
                                 <div class="form-wrapper-sub-kriteria">
-                                    <div class="form-group-item p-3 border rounded mb-2 bg-white" data-sub-kriteria-index="0">
+                                    <div class="form-group-item p-3 border rounded mb-2 bg-theme" data-sub-kriteria-index="0">
                                         <div class="row g-2 mb-2">
                                             <div class="col-md-6">
                                                 <label class="form-label">Sub Kriteria</label>
-                                                <input type="text" name="kriteria[0][sub_kriteria][0][judul_kategori]" class="form-control" required>
+                                                <input type="text" name="kriteria[0][sub_kriteria][0][judul_kategori]" class="form-control" placeholder="masukan sub kriteria..." required>
                                             </div>
                                             <div class="col-md-6">
                                                 <label class="form-label">Tipe</label>
@@ -151,7 +151,7 @@
                                         <div class="row g-2 mb-2">
                                             <div class="col-md-6">
                                                 <label class="form-label">Bobot</label>
-                                                <input type="number" name="kriteria[0][sub_kriteria][0][bobot]" class="form-control" required>
+                                                <input type="number" name="kriteria[0][sub_kriteria][0][bobot]" placeholder="masukan bobot..." class="form-control" required>
                                             </div>
                                             <div class="col-md-6">
                                                 <label class="form-label">Level</label>

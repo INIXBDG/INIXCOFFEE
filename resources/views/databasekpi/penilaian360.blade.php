@@ -185,13 +185,13 @@
         if (!evaluatorData) return;
 
         let html = `
-        <form class="w-100 text-start">
-            <div class="mb-5 text-center">
-                <h4 class="fw-semibold text-secondary">Penilaian ${jenis}</h4>
-                <span class="text-dark fw-bold">${evaluatedName}</span>
-            </div>
-            <div style="height: auto;">
-    `;
+            <form class="w-100 text-start">
+                <div class="mb-5 text-center">
+                    <h4 class="fw-semibold text-secondary">Penilaian ${jenis}</h4>
+                    <span class="text-dark fw-bold">${evaluatedName}</span>
+                </div>
+                <div style="height: auto;">
+        `;
 
         evaluatorData.kriteria.forEach(function(k) {
             html += `<h5 class="fw-semibold text-primary border-start border-4 ps-2 mb-3">${k.kriteria}</h5>`;
@@ -325,6 +325,13 @@
                 let content_footer_absen = $('#content_footer_absen');
                 content_footer_absen.empty();
 
+                let catatanText = 'belum ada catatan!';
+                if (Array.isArray(response.catatan)) {
+                    catatanText = response.catatan.join('<br>');
+                } else if (typeof response.catatan === 'string' && response.catatan.trim() !== '' && response.catatan !== 'null') {
+                    catatanText = response.catatan; 
+                }
+
                 content_footer_absen.append(`
                     <tr>
                         <td colspan="3">Data Absen ${response.quartal} tahun ${response.tahun}</td>
@@ -333,7 +340,7 @@
                         <td style="max-width: 400px; word-wrap: break-word; white-space: normal;" class="text-start" colspan="3">
                             <strong>Catatan : </strong>
                             <br/>
-                           ${response.catatan === null | response.catatan === 'null' ? 'belum ada catatan!' : response.catatan.join('<br>')}
+                            ${catatanText}
                         </td>
                     </tr>
                 `);
