@@ -8,7 +8,23 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/gh/BlackrockDigital/startbootstrap-sb-admin-2@gh-pages/css/sb-admin-2.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script>
+    (function() {
+      try {
+        let savedTheme = localStorage.getItem('theme');
+
+        if (!savedTheme) {
+          savedTheme = 'light';
+          localStorage.setItem('theme', savedTheme);
+        }
+
+        document.documentElement.setAttribute('data-bs-theme', savedTheme);
+      } catch (e) {}
+    })();
+  </script>
+
+  <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet"> -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -49,11 +65,11 @@
       position: fixed;
       top: 0;
       left: -220px;
-      width: 120px;
+      width: 150px;
       height: 100%;
       background-color: #102B48;
       z-index: 1050;
-      transition: left 0.3s ease;
+      transition: left .3s ease;
     }
 
     .sidebar-mobile.active {
@@ -73,6 +89,10 @@
         margin-left: 0;
         width: 100%;
       }
+
+      .logo-navbar {
+        width: 10rem;
+      }
     }
 
     @media (min-width: 992px) {
@@ -82,6 +102,10 @@
 
       .sidebar-mobile {
         display: none;
+      }
+
+      .logo-navbar {
+        margin-left: 15rem;
       }
     }
 
@@ -107,13 +131,13 @@
     .nav-link.active:hover,
     .collapse-item.active:hover {
       color: black !important;
-      background-color: #ffffff;
+      background-color: #fff;
     }
 
     .nav-link,
     .collapse-item {
       cursor: pointer;
-      transition: background-color 0.3s ease, color 0.3s ease;
+      transition: background-color .3s ease, color .3s ease;
     }
 
     .nav-item.active>.nav-link i,
@@ -182,52 +206,136 @@
       box-shadow: 8px -8px 0 white;
     }
 
+    [data-bs-theme="dark"] .sidebar-desktop {
+      background-color: #102B48;
+      box-shadow: 10px 0 0 #343a40;
+    }
+
+    [data-bs-theme="dark"] .nav-item.active>.nav-link,
+    [data-bs-theme="dark"] .collapse-item.active {
+      color: #EEEEEE !important;
+    }
+
+    [data-bs-theme="dark"] .nav-item.active>.nav-link,
+    [data-bs-theme="dark"] .collapse-item.active {
+      background-color: #343a40 !important;
+      color: #fff !important;
+    }
+
+    [data-bs-theme="dark"] .nav-item.active>.nav-link::before {
+      background-color: #1E1E1E;
+      box-shadow: 8px 8px 0 #343a40;
+    }
+
+    [data-bs-theme="dark"] .nav-item.active>.nav-link::after {
+      background-color: #1E1E1E;
+      box-shadow: 8px -8px 0 #343a40;
+    }
+
+    [data-bs-theme="light"] .nav-item.active>.nav-link::before {
+      background-color: #F8F9FA;
+      box-shadow: 8px 8px 0 #E9ECEF;
+    }
+
+    [data-bs-theme="light"] .nav-item.active>.nav-link::after {
+      background-color: #F8F9FA;
+      box-shadow: 8px -8px 0 #E9ECEF;
+    }
+
+    [data-bs-theme="light"] .sidebar-desktop {
+      background-color: #102B48;
+      box-shadow: 10px 0 0 #E9ECEF;
+    }
+
+    [data-bs-theme="auto"] .sidebar-desktop {
+      box-shadow: 10px 0 0 #ffffff;
+    }
+
+    [data-bs-theme="light"] .nav-item>.nav-link,
+    [data-bs-theme="light"] .nav-item>.nav-link i,
+    [data-bs-theme="light"] .sidebar-brand {
+      color: black !important;
+    }
+
+    [data-bs-theme="light"] .nav-item>.nav-link * {
+      color: black !important;
+    }
+
+    [data-bs-theme="dark"] .sidebar-desktop,
+    [data-bs-theme="dark"] .sidebar-mobile {
+      background-color: #1e1e1e !important;
+    }
+
+    [data-bs-theme="light"] .sidebar-desktop,
+    [data-bs-theme="light"] .sidebar-mobile {
+      background-color: #f8f9fa !important;
+    }
+
+    [data-bs-theme="auto"] .sidebar-desktop,
+    [data-bs-theme="auto"] .sidebar-mobile {
+      background-color: #102B48 !important;
+    }
+
+    [data-bs-theme="dark"] .sidebar-mobile {
+      box-shadow: 10px 0 0 #343a40;
+    }
+
+    [data-bs-theme="light"] .sidebar-mobile {
+      box-shadow: 10px 0 0 #E9ECEF;
+    }
+
+
+
     .cl-blue {
-      background-color: #3F51B5;
+      background-color: #2E86FC;
     }
 
     .w-blue {
-      color: #3F51B5;
+      color: #2E86FC;
     }
 
     .cl-green {
-      background-color: #009688;
+      background-color: #28A745;
     }
 
     .w-green {
-      color: #009688;
+      color: #28A745;
     }
 
     .cl-red {
-      background-color: #C62828;
+      background-color: #E74C3C;
     }
 
     .w-red {
-      color: #C62828;
+      color: #E74C3C;
     }
 
     .cl-yellow {
-      background-color: #FFB300;
+      background-color: #FFC107;
     }
 
     .w-yellow {
-      color: #FFB300;
+      color: #FFC107;
     }
 
     .cl-grey {
-      background-color: #546E7A;
+      background-color: #6C757D;
     }
 
     .w-grey {
-      color: #546E7A;
+      color: #6C757D;
+    }
+
+    .bg-theme {
+      background-color: var(--bs-body-bg) !important;
+      color: var(--bs-body-color) !important;
     }
   </style>
 </head>
 
 <body id="page-top">
-
   <div id="wrapper">
-    <ul class="navbar-nav sidebar-desktop sidebar sidebar-dark accordion" id="accordionSidebar" style="background-color: #102B48;  box-shadow: 10px 0 0 white">
+    <ul class="navbar-nav sidebar-desktop sidebar sidebar-dark accordion" id="accordionSidebar">
       <a class="sidebar-brand d-flex align-items-center justify-content-center" href="#">
         <div class="sidebar-brand-text mx-3">database kpi</div>
       </a>
@@ -267,70 +375,89 @@
       </li>
       <hr class="sidebar-divider d-none d-md-block">
     </ul>
-
-    <ul class="navbar-nav sidebar-mobile sidebar-dark accordion" id="accordionSidebarMobile" style="box-shadow: 5px 0 10px rgba(0,0,0,0.3); box-shadow: 10px 0 0 white;">
+    <ul class="navbar-nav sidebar-mobile sidebar-dark accordion" id="accordionSidebarMobile">
       <div class="d-flex justify-content-between align-items-center p-3">
         <a class="sidebar-brand d-flex align-items-left" href="#" style="text-decoration: none; font-size : 25px;">
           <div class="sidebar-brand-text mx-3">KPI</div>
         </a>
-        <button id="closeSidebarMobile" class="btn btn-sm text-white" style="font-size: 20px; background: transparent; border: none;">
+        <button id="closeSidebarMobile" class="btn btn-sm text-danger" style="font-size: 20px; background: transparent; border: none;">
           &times;
         </button>
       </div>
-      <hr class="sidebar-divider my-0 mt-2 mb-2">
+      <hr class="sidebar-divider my-0 mt-2 mb-2 bg-theme">
       <li class="nav-item {{ Route::currentRouteName() == 'berandaKPI.get' ? 'active' : '' }}">
-        <a class="nav-link p-1 ml-2" href="{{ route('berandaKPI.get') }}" style="font-size: 10px;">
+        <a class="nav-link p-3 ml-2" href="{{ route('berandaKPI.get') }}" style="font-size: 12px;">
           <i class="fas fa-fw fa-tachometer-alt"></i>
           <span>Dashboard</span>
         </a>
       </li>
-      <!-- <li class="nav-item label-nav-item mt-2 mb-1">
-        <label class="nav-link text-white font-weight-bold" style="cursor: default;">
-          Penilaian 360
-        </label>
-      </li> -->
       <hr class="sidebar-divider my-0 mt-2 mb-2">
-
       <li class="nav-item {{ Route::currentRouteName() == 'ketegoriKPI.get' ? 'active' : '' }}">
-        <a class="nav-link p-1 ml-2" href="{{ route('ketegoriKPI.get') }}" style="font-size: 10px;">
+        <a class="nav-link p-3 ml-2" href="{{ route('ketegoriKPI.get') }}" style="font-size: 12px;">
           <i class="fas fa-table"></i>
           <span>Tabel Data</span>
         </a>
       </li>
       <li class="nav-item {{ Route::currentRouteName() == 'ketegori.kpi.create' ? 'active' : '' }}">
-        <a class="nav-link p-1 ml-2" href="{{ route('ketegori.kpi.create') }}" style="font-size: 10px;">
+        <a class="nav-link p-3 ml-2" href="{{ route('ketegori.kpi.create') }}" style="font-size: 12px;">
           <i class="fas fa-plus-circle"></i>
           <span>Buat Penilaian</span>
         </a>
       </li>
     </ul>
-
     <div id="content-wrapper" class="d-flex flex-column">
       <div id="content">
-        <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
-          <button id="sidebarToggleMobile" class="btn btn-link d-lg-none rounded-circle mr-3">
+        <nav class="navbar navbar-expand topbar mb-4 static-top shadow px-3 bg-theme">
+          <button id="sidebarToggleMobile" class="btn btn-link d-lg-none rounded-circle me-3">
             <i class="fa fa-bars"></i>
           </button>
-          <ul class="navbar-nav ml-auto">
-            <li class="nav-item text-start">
-              <img src="{{ asset('icon/logo_e-officeb.svg') }}" alt="" width="40%">
+          <a class="navbar-brand d-flex align-items-center" href="#">
+            <img src="logo_original.png" alt="Logo" class="logo-navbar" style="height: 40px;">
+          </a>
+          <ul class="navbar-nav ms-auto align-items-center">
+            <li class="nav-item dropdown me-2">
+              <button class="btn btn-link nav-link dropdown-toggle d-flex align-items-center" id="themeDropdown" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fa-solid fa-moon theme-icon-active"></i>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                  <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="light">
+                    <i class="fa-solid fa-sun me-2"></i> Light
+                    <i class="fa-solid fa-check ms-auto d-none"></i>
+                  </button>
+                </li>
+                <li>
+                  <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="dark">
+                    <i class="fa-solid fa-moon me-2"></i> Dark
+                    <i class="fa-solid fa-check ms-auto d-none"></i>
+                  </button>
+                </li>
+                <li>
+                  <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="auto">
+                    <i class="fa-solid fa-circle-half-stroke me-2"></i> Auto
+                    <i class="fa-solid fa-check ms-auto d-none"></i>
+                  </button>
+                </li>
+              </ul>
             </li>
             <li class="nav-item">
-              <a href="{{ route('home') }}" class="btn text-white cl-red rounded"><i class="fa-solid fa-arrow-right-from-bracket"></i></a>
+              <a href="{{ route('home') }}" class="btn text-white" style="background-color: #d9534f;">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+              </a>
             </li>
           </ul>
         </nav>
-        <div class="container-fluid" style="margin-top: 80px;">
-          @yield('contentKPI')
+        <div class="container-fluid bg-theme" style="margin-top: 40px;">
+          <div class="pt-4 pb-4 mt-4">
+            @yield('contentKPI')
+          </div>
         </div>
       </div>
     </div>
   </div>
-
   <a class="scroll-to-top rounded" href="#page-top">
     <i class="fas fa-angle-up"></i>
   </a>
-
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>
@@ -338,6 +465,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
   <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     $(document).ready(function() {
       $('#sidebarToggleMobile').on('click', function() {
@@ -345,6 +473,76 @@
       });
       $('#closeSidebarMobile').on('click', function() {
         $('.sidebar-mobile').removeClass('active');
+      });
+    });
+  </script>
+  <script>
+    const themeButtons = document.querySelectorAll('[data-bs-theme-value]');
+    const activeIcon = document.querySelector('#themeDropdown .theme-icon-active');
+    const logoNavbar = document.querySelector('.logo-navbar');
+
+    function applyThemeStyles(theme) {
+      const sidebarDesktop = document.querySelector('.sidebar-desktop');
+      const sidebarMobile = document.querySelector('.sidebar-mobile');
+      const activeLinks = document.querySelectorAll('.nav-item.active > .nav-link, .nav-link.active');
+
+      if (theme === 'auto') {
+        sidebarDesktop.style.backgroundColor = '#102B48';
+        sidebarMobile.style.backgroundColor = '#102B48';
+        activeLinks.forEach(link => {
+          link.style.backgroundColor = 'white';
+          link.style.color = 'black';
+        });
+        logoNavbar.src = 'logo_original.png';
+      }
+      if (theme === 'light') {
+        sidebarDesktop.style.backgroundColor = '#f8f9fa';
+        sidebarMobile.style.backgroundColor = '#f8f9fa';
+        activeLinks.forEach(link => {
+          link.style.backgroundColor = '#e9ecef';
+          link.style.color = '#000';
+        });
+        logoNavbar.src = "{{ asset('icon/logo_e-officeb.svg') }}";
+      }
+      if (theme === 'dark') {
+        sidebarDesktop.style.backgroundColor = '#1e1e1e';
+        sidebarMobile.style.backgroundColor = '#1e1e1e';
+        activeLinks.forEach(link => {
+          link.style.backgroundColor = '#333';
+          link.style.color = '#fff';
+        });
+        logoNavbar.src = "{{ asset('icon/logo_e-officew.svg') }}";
+      }
+      if (theme === 'auto') {
+        logoNavbar.src = "{{ asset('icon/logo_e-officeb.svg') }}";
+      }
+    }
+
+    function setTheme(theme, save = true) {
+      document.documentElement.setAttribute('data-bs-theme', theme);
+      themeButtons.forEach(btn => {
+        btn.classList.remove('active');
+        btn.querySelector('.fa-check').classList.add('d-none');
+      });
+      const activeBtn = document.querySelector(`[data-bs-theme-value="${theme}"]`);
+      if (activeBtn) {
+        activeBtn.classList.add('active');
+        activeBtn.querySelector('.fa-check').classList.remove('d-none');
+        activeIcon.className = activeBtn.querySelector('i').className + ' theme-icon-active';
+      }
+      applyThemeStyles(theme);
+      if (save) {
+        localStorage.setItem('theme', theme);
+      }
+    }
+
+    const savedTheme = localStorage.getItem('theme') || 'auto';
+    setTheme(savedTheme, false);
+
+    themeButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const theme = button.getAttribute('data-bs-theme-value');
+        setTheme(theme);
       });
     });
   </script>

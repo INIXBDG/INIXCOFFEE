@@ -87,7 +87,7 @@
 </script>
 @endif
 
-<div class="container mb-5">
+<div class="container mb-5 mt-4">
     <a href="javascript:history.back()" class="btn text-white cl-blue mb-3">Kembali</a>
 
     <div class="row justify-content-center">
