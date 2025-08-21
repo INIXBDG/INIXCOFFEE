@@ -5,8 +5,90 @@
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<style>
+    #table_karyawan {
+        width: 100% !important;
+        table-layout: auto;
+    }
 
-<div class="container-fluid mb-3">
+    #table_karyawan th,
+    #table_karyawan td {
+        font-size: 13px;
+        white-space: nowrap;
+        text-align: center;
+    }
+
+    #table_karyawan td.text-start {
+        text-align: left;
+    }
+
+    @media (max-width: 768px) {
+
+        #table_karyawan th,
+        #table_karyawan td {
+            font-size: 12px;
+            white-space: normal;
+        }
+    }
+
+    table.dataTable {
+        background-color: var(--bs-body-bg) !important;
+        color: var(--bs-body-color) !important;
+    }
+
+    table.dataTable thead th {
+        background-color: var(--bs-secondary-bg) !important;
+        color: var(--bs-body-color) !important;
+    }
+
+    .dataTables_wrapper .dataTables_paginate .paginate_button {
+        background: var(--bs-body-bg) !important;
+        color: var(--bs-body-color) !important;
+        border: 1px solid var(--bs-border-color) !important;
+        border-radius: .375rem;
+        margin: 2px;
+        padding: 4px 10px;
+    }
+
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+        background: var(--bs-primary) !important;
+        color: #fff !important;
+        border: 1px solid var(--bs-primary) !important;
+    }
+
+    .dataTables_wrapper .dataTables_filter input,
+    .dataTables_wrapper .dataTables_length select {
+        background-color: var(--bs-body-bg) !important;
+        color: var(--bs-body-color) !important;
+        border: 1px solid var(--bs-border-color) !important;
+    }
+
+    .dataTables_wrapper .dataTables_info {
+        color: var(--bs-body-color) !important;
+    }
+
+    .dataTables_wrapper .dataTables_filter input {
+        background-color: var(--bs-body-bg) !important;
+        color: var(--bs-body-color) !important;
+        border: 1px solid var(--bs-border-color) !important;
+        border-radius: .375rem;
+        padding: .375rem .75rem;
+    }
+
+    .dataTables_wrapper .dataTables_filter input::placeholder {
+        color: var(--bs-secondary-color, #6c757d) !important;
+        opacity: 0.7;
+    }
+
+    .dataTables_wrapper .dataTables_filter input:focus {
+        outline: none;
+        border-color: var(--bs-primary) !important;
+        box-shadow: 0 0 0 .25rem rgba(var(--bs-primary-rgb), .25);
+    }
+</style>
+<div class="container-fluid mb-3 mt-3">
     <!-- <div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="spinnerModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="cube">
@@ -65,30 +147,31 @@
                             </div>
                         </div>
                     </div>
-                    <table id="table_karyawan" class="table table-bordered mt-4">
-                        <thead>
-                            <tr>
-                                <th rowspan="2" style="font-size: 14px; text-align: center;">No</th>
-                                <th rowspan="2" style="font-size: 14px; text-align: center;">Nama Evaluator</th>
-                                <th rowspan="2" style="font-size: 14px; text-align: center;">Yang Dinilai</th>
-                                <th rowspan="2" style="font-size: 14px; text-align: center;">Divisi</th>
-                                <th rowspan="2" style="font-size: 14px; text-align: center;">Taggal Pembuatan</th>
-                                <th rowspan="2" style="font-size: 14px; text-align: center;">Quartal</th>
-                                <th rowspan="2" style="font-size: 14px; text-align: center;">Tahun</th>
-                                <th rowspan="2" style="font-size: 14px; text-align: center;">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tbody_table" class="text-center">
-                            <tr style="color: black;">
-                                <td style="font-size: 14px; text-align: center;" colspan="8">Tidak Ada Data</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="table-responsive">
+                        <table id="table_karyawan" class="table table-bordered mt-4">
+                            <thead>
+                                <tr>
+                                    <th style="font-size: 14px; text-align: center;">No</th>
+                                    <th style="font-size: 14px; text-align: center;">Nama Evaluator</th>
+                                    <th style="font-size: 14px; text-align: center;">Yang Dinilai</th>
+                                    <th style="font-size: 14px; text-align: center;">Divisi</th>
+                                    <th style="font-size: 14px; text-align: center;">Tanggal Pembuatan</th>
+                                    <th style="font-size: 14px; text-align: center;">Quartal</th>
+                                    <th style="font-size: 14px; text-align: center;">Tahun</th>
+                                    <th style="font-size: 14px; text-align: center;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody_table" class="text-center">
+                                <tr style="color: black;">
+                                    <td style="font-size: 14px; text-align: center;" colspan="8">Tidak Ada Data</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 </div>
 @if (session('success'))
 <script>
@@ -130,8 +213,7 @@
                 @csrf
                 <div class="modal-header">
                     <h5 class="modal-title" id="shareEvaluatorModalLabel">Bagikan Formulir Penilaian</h5>
-                    <button type="button" class="btn-close text-white cl-red btn" data-bs-dismiss="modal" aria-label="Tutup">
-                        <i class="fa-solid fa-xmark"></i>
+                    <button type="button" class="btn-close text-white cl-red btn" data-dismiss="modal" aria-label="Tutup">
                     </button>
                 </div>
                 <div class="modal-body p-4">
@@ -139,7 +221,7 @@
                     <div id="content_select_input"></div>
                 </div>
                 <div class="modal-footer p-3">
-                    <button type="button" class="btn text-white cl-red btn-sm" data-bs-dismiss="modal">
+                    <button type="button" class="btn text-white cl-red btn-sm" data-dismiss="modal">
                         <i class="fa fa-times me-1"></i> Batal
                     </button>
                     <button type="submit" class="btn cl-green text-white btn-sm">
@@ -234,53 +316,63 @@
             }
         }
     }
+
+    #table_karyawan {
+        width: 100% !important;
+        font-size: 14px;
+    }
+
+    .dataTables_wrapper .dataTables_paginate {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .25rem;
+        justify-content: center;
+    }
+
+    .dataTables_wrapper .dataTables_filter,
+    .dataTables_wrapper .dataTables_info {
+        text-align: left;
+        margin-bottom: .5rem;
+    }
+
+    @media (max-width: 576px) {
+        .dataTables_wrapper .dataTables_filter {
+            width: 100%;
+            text-align: center;
+        }
+
+        .dataTables_wrapper .dataTables_filter input {
+            width: 100%;
+            margin-top: .5rem;
+        }
+    }
 </style>
 @endsection
 @section('script')
-<!-- <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script> -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
     $(document).ready(function() {
         const month = new Date().getMonth() + 1;
-
-        let selectedQuarter = '';
-        if (month >= 1 && month <= 3) {
-            selectedQuarter = 'Q1';
-        } else if (month >= 4 && month <= 6) {
-            selectedQuarter = 'Q2';
-        } else if (month >= 7 && month <= 9) {
-            selectedQuarter = 'Q3';
-        } else if (month >= 10 && month <= 12) {
-            selectedQuarter = 'Q4';
-        }
-
+        let selectedQuarter = month <= 3 ? 'Q1' : month <= 6 ? 'Q2' : month <= 9 ? 'Q3' : 'Q4';
         $('#quartalSelectUtama').val(selectedQuarter);
-    });
 
-    document.addEventListener('DOMContentLoaded', function() {
         const tahunSelect = document.getElementById('tahunSelectUtama');
         const tahunSekarang = new Date().getFullYear();
-        const tahunAwal = 2020;
-
-        for (let tahun = tahunAwal; tahun <= tahunSekarang; tahun++) {
+        for (let tahun = 2020; tahun <= tahunSekarang; tahun++) {
             const option = document.createElement('option');
             option.value = tahun;
             option.text = tahun;
-            if (tahun === tahunSekarang) {
-                option.selected = true;
-            }
+            if (tahun === tahunSekarang) option.selected = true;
             tahunSelect.appendChild(option);
         }
-    });
-</script>
-<script>
-    $('#quartalSelectUtama, #tahunSelectUtama, #divisiSelectUtama').on('change', function() {
-        loadData();
-    });
 
-    $(document).ready(function() {
+        $('#quartalSelectUtama, #tahunSelectUtama, #divisiSelectUtama').on('change', function() {
+            loadData();
+        });
+
         loadData();
     });
 
@@ -302,107 +394,56 @@
             },
             success: function(response) {
                 let data = response.data;
-                let tableBody = $('#tbody_table');
-                tableBody.empty();
 
                 if ($.fn.DataTable.isDataTable('#table_karyawan')) {
-                    var table = $('#table_karyawan').DataTable();
-                    var currentPage = table.page();
-                    table.destroy();
-                } else {
-                    var currentPage = 0;
+                    $('#table_karyawan').DataTable().destroy();
                 }
 
-                if (data.length === 0) {
-                    tableBody.append('<tr><td colspan="8" style="font-size: 14px;">Tidak Ada Data</td></tr>');
-                } else {
-                    let rowNumber = 1;
-
-                    data.forEach(function(item) {
-                        let evaluatorName = item.evaluator || '-';
-                        let evaluatedName = item.evaluated;
-                        let tanggal = item.detail_kategori[0]?.isi_kriteria[0]?.tanggal || '-';
-                        let quartal = item.quartal;
-                        let tahun = item.tahun;
-
-                        let totalSubCriteriaForThisAssessment = 0;
-                        item.detail_kategori.forEach(function(detailKategori) {
-                            totalSubCriteriaForThisAssessment += detailKategori.isi_kriteria.length;
-                        });
-
-                        let evaluatorHTML = generateEvaluatorByPenilaian(item);
-
-                        let firstRow = true;
-
-                        item.detail_kategori.forEach(function(detailKategori) {
-                            detailKategori.isi_kriteria.forEach(function(isiKriteria, indexKriteria) {
-                                let row = `<tr style="color: black;">`;
-
-                                if (firstRow) {
-                                    row += `<td style="font-size: 14px;" rowspan="${totalSubCriteriaForThisAssessment}">${rowNumber++}</td>`;
-                                    row += `<td style="font-size: 14px; text-align: left;" class="text-start" rowspan="${totalSubCriteriaForThisAssessment}">${evaluatorHTML}</td>`;
-                                    row += `<td style="font-size: 14px;" rowspan="${totalSubCriteriaForThisAssessment}">${evaluatedName}</td>`;
-                                    row += `<td style="font-size: 14px;" rowspan="${totalSubCriteriaForThisAssessment}">${item.evaluatedDivisi}</td>`;
-                                    row += `<td style="font-size: 14px;" rowspan="${totalSubCriteriaForThisAssessment}">${tanggal}</td>`;
-                                    row += `<td style="font-size: 14px;" rowspan="${totalSubCriteriaForThisAssessment}">${quartal}</td>`;
-                                    row += `<td style="font-size: 14px;" rowspan="${totalSubCriteriaForThisAssessment}">${tahun}</td>`;
-
-                                    row += `<td style="font-size: 14px;" rowspan="${totalSubCriteriaForThisAssessment}">
-                                        <div class="dropdown">
-                                            <button class="btn cl-grey text-white dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                                Action
-                                            </button>
-                                            <div class="dropdown-menu">
-                                                <a href="#" class="dropdown-item" data-kode="${item.kode_form}" data-id="${item.id_karyawan}" onclick="shareForm(this)" data-toggle="modal" data-target="#shareEvaluatorModal">
-                                                    <i class="fa-solid fa-paper-plane me-4"></i> Share
-                                                </a>
-                                                <a href="#" class="dropdown-item" data-kode="${item.kode_form}" data-id="${item.id_karyawan}" data-jenis_penilaian="${item.jenis_penilaian}" onclick="ReviewForm(this)" data-toggle="modal" data-target="#reviewPenilaianModal">
-                                                    <i class="fa-solid fa-list-check me-4"></i> Review
-                                                </a>
-                                                <a href="/penilaian/detail/data-penilaian/${item.kode_form}/${item.id_karyawan}" class="dropdown-item">
-                                                    <i class="fa-solid fa-magnifying-glass me-4"></i> Detail
-                                                </a>`;
-
-                                    if (evaluatorName !== '-') {
-                                        row += `
-                                        <a href="javascript:void(0)" class="dropdown-item btn-clean" data-kode_form="${item.kode_form}" data-id_karyawan="${item.id_karyawan}" 
-                                        data-jenis_penilaian="${item.jenis_penilaian}" data-quartal="${quartal}" data-tahun="${tahun}">
-                                            <i class="fa-solid fa-brush me-4"></i> Bersihkan
-                                        </a>`;
-                                    }
-
-                                    row += `
-                                            </div>
-                                        </div>
-                                    </td>`;
-                                    firstRow = false;
-                                }
-
-                                row += `</tr>`;
-                                tableBody.append(row);
-                            });
-                        });
-                    });
-                }
-
-                var table = $('#table_karyawan').DataTable({
-                    "paging": true,
-                    "pageLength": 10,
-                    "searching": true,
-                    "ordering": true,
-                    "info": true,
-                    "lengthChange": false,
-                    "language": {
-                        "emptyTable": "Tidak Ada Data"
-                    }
+                $('#table_karyawan').DataTable({
+                    data: data.map((item, index) => {
+                        return [
+                            index + 1,
+                            generateEvaluatorByPenilaian(item),
+                            item.evaluated,
+                            item.evaluatedDivisi || '-',
+                            item.detail_kategori[0]?.isi_kriteria[0]?.tanggal || '-',
+                            item.quartal,
+                            item.tahun,
+                            `<div class="dropdown">
+                                <button class="btn cl-grey text-white dropdown-toggle" type="button" data-toggle="dropdown">Action</button>
+                                <div class="dropdown-menu">
+                                    <a href="#" class="dropdown-item" data-kode="${item.kode_form}" data-id="${item.id_karyawan}" onclick="shareForm(this)" data-toggle="modal" data-target="#shareEvaluatorModal">
+                                        <i class="fa-solid fa-paper-plane me-4"></i> Share
+                                    </a>
+                                    <a href="#" class="dropdown-item" data-kode="${item.kode_form}" data-id="${item.id_karyawan}" data-jenis_penilaian="${item.jenis_penilaian}" onclick="ReviewForm(this)" data-toggle="modal" data-target="#reviewPenilaianModal">
+                                        <i class="fa-solid fa-list-check me-4"></i> Review
+                                    </a>
+                                    <a href="/penilaian/detail/data-penilaian/${item.kode_form}/${item.id_karyawan}" class="dropdown-item">
+                                        <i class="fa-solid fa-magnifying-glass me-4"></i> Detail
+                                    </a>
+                                    <a href="javascript:void(0)" class="dropdown-item btn-clean" data-kode_form="${item.kode_form}" data-id_karyawan="${item.id_karyawan}"  data-jenis_penilaian="${item.jenis_penilaian}" data-quartal="${item.quartal}" data-tahun="${item.tahun}">
+                                        <i class="fa-solid fa-brush me-4"></i> Bersihkan
+                                    </a>
+                                </div>
+                            </div>`
+                        ];
+                    }),
+                    paging: true,
+                    pageLength: 10,
+                    searching: true,
+                    ordering: true,
+                    info: true,
+                    lengthChange: false,
+                    responsive: true,
+                    language: {
+                        emptyTable: "Tidak Ada Data"
+                    },
+                    columnDefs: [{
+                        targets: 7,
+                        orderable: false,
+                        searchable: false
+                    }]
                 });
-
-                table.page(currentPage).draw(false);
-            },
-            error: function(xhr, status, error) {
-                let tableBody = $('#tbody_table');
-                tableBody.empty();
-                tableBody.append('<tr><td colspan="8" style="font-size: 14px; color: red;">Gagal memuat data. Silakan coba lagi.</td></tr>');
             },
             complete: function() {
                 $('#loadingModal').modal('hide');
@@ -471,7 +512,7 @@
             evaluatorGroupedHTML += `– ${jenis}<br/>`;
 
             let namesHTML = evaluators.map(e => {
-                let style = e.is_red ? 'color: red;' : 'color: black;';
+                let style = e.is_red ? 'color: red;' : '';
                 let nameParts = e.name.split(" ");
                 let limitedName = nameParts.slice(0, 2).join(" ");
                 return `<span style="${style} ms-3">${limitedName}</span>`;

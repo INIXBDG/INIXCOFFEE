@@ -341,6 +341,8 @@ public function approveNoRecord(Request $request)
 
         $data_cuti = pengajuancuti::where('id', $request->tanggal_cuti)->first();
 
+        
+
         pembatalanCuti::create([
             'id_karyawan'   => $request->id_karyawan,
             'id_cuti'       => $request->tanggal_cuti,

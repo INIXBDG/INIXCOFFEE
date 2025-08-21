@@ -259,7 +259,7 @@ Route::post('/pengajuan-klaim/excel-download/no-record', [pengajuanKlaimControll
 Route::post('/pengajuan-klaim/pdf-download/no-record', [pengajuanKlaimController::class, 'pengajuanKlaimPDF'])->name('pengajuanklaim.PDFNoRecord');
 Route::get('/pengajuan-klaim/create/no-record', [pengajuanKlaimController::class, 'noRecord'])->name('pengajuanklaim.createNoRecord');
 Route::get('/pengajuan-klaim/create/scheme-work', [pengajuanKlaimController::class, 'schemeWork'])->name('pengajuanklaim.createSchemeWork');
-Route::get('/pengajuan-klaim/create/cancel-leave', [pengajuanKlaimController::class, 'cancelLeave'])->name('pengajuanklaim.createCancelLeave');
+Route::get('/pengajuan-klaim/create/cancel-leave', [pengajuanKlaimController::class, 'createcancelLeave'])->name('pengajuanklaim.createCancelLeave');
 Route::post('/pengajuan-klaim/add/no-record', [pengajuanKlaimController::class, 'createNoRecord'])->name('pengajuanklaim.addNoRecord');
 Route::post('/pengajuan-klaim/add/scheme-work', [pengajuanKlaimController::class, 'createCancelLeave'])->name('pengajuanklaim.addCancelLeave');
 Route::post('/pengajuan-klaim/add/cancel-leave', [pengajuanKlaimController::class, 'createSchemeWork'])->name('pengajuanklaim.addSchemeWork');

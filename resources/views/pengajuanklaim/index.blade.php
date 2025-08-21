@@ -4,34 +4,49 @@
 
 @section('content')
 @foreach ($cancelLeave as $data)
-<div class="modal fade" id="modalApproveCancelLeave{{ $data->id }}" tabindex="-1" aria-labelledby="modalLabel{{ $data->id }}" aria-hidden="true" data-bs-backdrop="false" data-bs-keyboard="false" style="background-color: transparent !important;">
+{{-- Modal Approve Cancel Leave --}}
+<div class="modal fade" id="modalApproveCancelLeave{{ $data->id }}" tabindex="-1"
+     aria-labelledby="modalLabel{{ $data->id }}" aria-hidden="true"
+     data-bs-backdrop="false" data-bs-keyboard="false">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
-            <form id="formApproval{{ $data->id }}" action="{{ route('pengajuanklaim.aproveCancelLeave') }}" method="POST">
+            <form id="formApprovalCancelLeave{{ $data->id }}"
+                  action="{{ route('pengajuanklaim.approveCancelLeave') }}"
+                  method="POST">
                 @csrf
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modalLabel{{ $data->id }}">Approve</h5>
+                    <h5 class="modal-title" id="modalLabel{{ $data->id }}">Approval Cancel Leave</h5>
                 </div>
                 <div class="modal-body text-start">
                     @if($data->bukti_gambar)
-                    <input type="hidden" name="id_CL" id="id_CL" value="{{ $data->id }}">
-                    <input type="hidden" name="id_karyawan" id="id_karyawan" value="{{ $data->id_karyawan }}">
-                    <input type="hidden" name="approval" id="approvalInput{{ $data->id }}">
+                        <input type="hidden" name="id_CL" value="{{ $data->id }}">
+                        <input type="hidden" name="id_karyawan" value="{{ $data->id_karyawan }}">
+                        <input type="hidden" name="approval" id="approvalInput{{ $data->id }}">
 
-                    <div class="btn-group mb-3" role="group">
-                        <input type="button" class="btn btn-outline-primary" value="Ya" onclick="submitApproval('{{ $data->id }}', 1)">
-                        <input type="button" class="btn btn-outline-danger" value="Tidak" onclick="showTextarea('{{ $data->id }}')">
-                    </div>
+                        <div class="btn-group mb-3" role="group">
+                            <input type="button" class="btn btn-outline-primary"
+                                   value="Ya"
+                                   onclick="submitApproval('{{ $data->id }}', 1)">
+                            <input type="button" class="btn btn-outline-danger"
+                                   value="Tidak"
+                                   onclick="showTextarea('{{ $data->id }}')">
+                        </div>
 
-                    <div class="form-group d-none" id="textareaDiv{{ $data->id }}">
-                        <label for="alasan_approval{{ $data->id }}">Keterangan</label>
-                        <textarea class="form-control" name="alasan_approval" id="alasan_approval{{ $data->id }}" placeholder="Keterangan"></textarea>
-                        <button type="button" class="btn btn-success mt-2 text-end" onclick="submitApproval('{{ $data->id }}', 2)">Kirim</button>
-                    </div>
+                        <div class="form-group d-none" id="textareaDiv{{ $data->id }}">
+                            <label for="alasan_approval{{ $data->id }}">Keterangan</label>
+                            <textarea class="form-control"
+                                      name="alasan_approval"
+                                      id="alasan_approval{{ $data->id }}"
+                                      placeholder="Keterangan"></textarea>
+                            <button type="button"
+                                    class="btn btn-success mt-2"
+                                    onclick="submitApproval('{{ $data->id }}', 2)">Kirim</button>
+                        </div>
                     @endif
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                    <button type="button" class="btn btn-secondary"
+                            data-bs-dismiss="modal">Tutup</button>
                 </div>
             </form>
         </div>
@@ -225,6 +240,7 @@
     </div>
 </div>
 @endforeach
+
 @foreach ($cancelLeave as $data)
 <div class="modal fade" id="DetailcancelLeaveModal{{ $data->id }}" tabindex="-1" aria-labelledby="modalLabel{{ $data->id }}" aria-hidden="true" style="backdrop-filter: blur(5px); background-color: rgba(0, 0, 0, 0.4);">
     <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -307,9 +323,9 @@
     <div class="row justify-content-center">
         <div class="col-md-12">
             <div class="d-flex justify-content-end">
-                <a href="{{ route('pengajuanklaim.createNoRecord') }}" class="btn btn-info color-white me-2">Absen Tidak Terekap</a>
+<!--                 <a href="{{ route('pengajuanklaim.createNoRecord') }}" class="btn btn-info color-white me-2">Absen Tidak Terekap</a>
                 <a href="{{ route('pengajuanklaim.createSchemeWork') }}" class="btn btn-warning me-2">Perubahan Jam Kerja</a>
-                <a href="{{ route('pengajuanklaim.createCancelLeave') }}" class="btn btn-danger me-2">Pembatalan Cuti</a>
+                <a href="{{ route('pengajuanklaim.createCancelLeave') }}" class="btn btn-danger me-2">Pembatalan Cuti</a> -->
                 <div>
                     <select class="form-select" id="tabelSelector">
                         <option value="no_record">Absen Tidak Terekam</option>
@@ -635,6 +651,8 @@
                                                 <button class="dropdown-item" data-toggle="modal" data-toggle="tooltip" title="Approve Pengajuan" data-target="#modalApproveCancelLeave{{ $data->id }}">
                                                     <span><img src="{{ asset('icon/clipboard-primary.svg') }}" alt="eye.png" width="20px" height="20px"></span> Approve
                                                 </button>
+
+
                                                 @endif
                                                 @endif
                                             </div>
@@ -642,6 +660,7 @@
                                     </td>
                                 </tr>
                                 @endforeach
+
                             </tbody>
                         </table>
                     </div>
@@ -806,6 +825,12 @@
     });
 </script>
 <script>
+$(function () {
+  $('[title]').tooltip();
+});
+</script>
+
+<script>
 function submitApproval(id, value) {
   const approvalInput = document.getElementById(`approvalInput${id}`);
   const form = document.getElementById(`formApprovalNoRecord${id}`);
@@ -819,7 +844,39 @@ function submitApproval(id, value) {
   form.submit();
 }
 </script>
+<script>
+    // Buka modal
+    function openApproveModal(id) {
+        const modal = document.getElementById('modalApproveCancelLeave' + id);
+        if (modal) {
+            const bsModal = new bootstrap.Modal(modal);
+            bsModal.show();
+        }
 
+        // reset textarea setiap kali buka modal
+        document.getElementById('textareaDiv' + id)?.classList.add('d-none');
+    }
+
+    // Klik "Tidak" => munculin textarea
+    function showTextarea(id) {
+        const div = document.getElementById('textareaDiv' + id);
+        if (div) div.classList.remove('d-none');
+    }
+
+    // Submit approve / reject
+    function submitApproval(id, value) {
+        const approvalInput = document.getElementById('approvalInput' + id);
+        const form = document.getElementById('formApprovalCancelLeave' + id);
+
+        if (!approvalInput || !form) {
+            console.error('Form / input tidak ditemukan', id);
+            return;
+        }
+
+        approvalInput.value = value;
+        form.submit();
+    }
+</script>
 
 <script>
     $(document).ready(function() {
