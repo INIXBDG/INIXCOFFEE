@@ -76,21 +76,6 @@ public function createNoRecord(Request $request)
         'kronologi'     => 'required|string',
     ]);
 
-//     dd([
-//     'tanggal_dari_form' => $request->tanggal_absen,
-//     'semua_input' => $request->all()
-// ]);
-
-
-    // Ambil data absensi berdasarkan tanggal & karyawan
-    $absen = AbsensiKaryawan::whereDate('tanggal', $request->tanggal_absen)
-        ->where('id_karyawan', $request->id_karyawan)
-        ->first();
-
-    if (!$absen) {
-        return back()->withErrors(['tanggal_absen' => 'Tanggal tidak ditemukan di data absensi. Anda hanya dapat mengajukan No Record pada tanggal kerja yang valid.']);
-    }
-
     // Cegah pengajuan ganda untuk tanggal yang sama
     $existingKlaim = absensi_noRecord::where('id_karyawan', $request->id_karyawan)
         ->whereDate('tanggal', $request->tanggal_absen)
@@ -129,60 +114,18 @@ public function createNoRecord(Request $request)
         return back()->withErrors(['bukti_gambar' => 'Tidak dapat melampirkan bukti'])->withInput();
     }
 
-    if (!$request->filled('tanggal_absen')) {
-    return back()->withErrors(['tanggal_absen' => 'Tanggal absen tidak boleh kosong.'])->withInput();
-}
-
-
-    // Simpan data ke tabel absensi_no_records
+    // Simpan ke database
 absensi_noRecord::create([
     'id_karyawan'   => $request->id_karyawan,
-    'tanggal'       => $request->tanggal_absen, // ✅ HARUS ADA & VALID
-    'jenis_PK'      => 'No Record',
     'kendala'       => $request->kendala,
+    'tanggal'       => $request->tanggal_absen,
     'bukti_gambar'  => $fotoPath,
     'kronologi'     => $request->kronologi,
-    'approval'      => 0,
+    'approval'      => 0, 
+    'jenis_PK'      => 'No Record', 
 ]);
 
-
-
-    // Kirim notifikasi
-    $karyawan = karyawan::find($request->id_karyawan);
-    $hrd = karyawan::where('jabatan', 'HRD')->first();
-
-    $kodePenerima = [];
-    if ($hrd) $kodePenerima[] = $hrd->kode_karyawan;
-    if ($karyawan) $kodePenerima[] = $karyawan->kode_karyawan;
-
-    $users = User::whereHas('karyawan', function ($query) use ($kodePenerima) {
-        $query->whereIn('kode_karyawan', $kodePenerima);
-    })->get();
-
-    $statusMessage = "Menunggu Persetujuan HRD";
-    $notificationData = [
-        'tipe'            => 'no_record',
-        'nama_lengkap'    => $karyawan->nama_lengkap,
-        'kendala'         => $request->kendala,
-        'tanggal'         => $request->tanggal_absen,
-        'kronologi'       => $request->kronologi,
-        'status'          => $statusMessage,
-        'approval'        => 0,
-        'alasan_approval' => null,
-    ];
-
-    $path = '/pengajuan-klaim?tabel=no_record';
-    foreach ($users as $user) {
-        NotificationFacade::send($user, new noRecordExchangeNotification($notificationData, $path));
-    }
-
-    // Redirect sesuai jabatan
-    $jabatan = auth()->user()->karyawan->jabatan ?? null;
-    if ($jabatan === 'HRD') {
-        return redirect('/pengajuan-klaim?tabel=no_record')->with('success', 'Berhasil mengajukan, menunggu persetujuan HRD.');
-    }
-
-    return redirect('/absensi/karyawan')->with('success', 'Berhasil mengajukan.');
+    return redirect()->back()->with('success', 'Pengajuan No Record berhasil dibuat');
 }
 
 
@@ -340,8 +283,6 @@ public function approveNoRecord(Request $request)
         }
 
         $data_cuti = pengajuancuti::where('id', $request->tanggal_cuti)->first();
-
-        
 
         pembatalanCuti::create([
             'id_karyawan'   => $request->id_karyawan,
