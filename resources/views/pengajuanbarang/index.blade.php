@@ -765,7 +765,7 @@ $('#approveForm').on('submit', function(e) {
             $('#loadingModal').modal('hide'); // Sembunyikan loading modal
             $('#approveModal').modal('hide'); // Sembunyikan modal approve
 
-            // Simpan status paginasi saat ini sebelum refresh
+  
             var currentPageBelum = $('#databelum').DataTable().page();
             var currentPageSudah = $('#datasudah').DataTable().page();
 
@@ -783,7 +783,7 @@ $('#approveForm').on('submit', function(e) {
             });
         },
         error: function(err) {
-            $('#loadingModal').modal('hide'); // Sembunyikan loading modal
+            $('#loadingModal').modal('hide'); 
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
