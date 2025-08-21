@@ -73,7 +73,7 @@
         <table border="1" cellspacing="0" cellpadding="6" width="100%">
             <thead>
                 <tr style="background-color: #e0e0e0;">
-                    <th colspan="6">Evaluator {{ $nomor }} - {{ $evaluatorItem['nama'] }} ({{ $jenis }})</th>
+                    <th colspan="6">Evaluator {{ $nomor }} - Penilaian {{ $jenis }}</th>
                 </tr>
                 <tr style="background-color: #f5f5f5;">
                     <th>Kriteria</th>

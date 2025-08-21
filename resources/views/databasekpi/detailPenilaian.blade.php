@@ -4,7 +4,6 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <style>
     #table-fixed thead th {
         position: sticky;
@@ -301,16 +300,11 @@
     {{ session('error') }}
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 </div>
-<!-- <div class="form-group mb-3 text-start">
-    <label class="mb-2">Jenis Penilaian</label>
-    <ul class="list-group ms-2">
-        <li class="list-group-item">${jenisPenilaian}</li>
-    </ul>
-</div> -->
 @endif
 @endsection
 @section('script')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -602,7 +596,7 @@
             </tr>
             <tr class="fw-bold text-white" style="background: #546E7A">
                 <td colspan="4" class="text-end">Grade</td>
-                <td colspan="1" class="text-end">${grade}</td>
+                <td colspan="1" class="text-center">${grade}</td>
             </tr>
         `);
 

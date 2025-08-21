@@ -424,6 +424,9 @@
                                     <a href="javascript:void(0)" class="dropdown-item btn-clean" data-kode_form="${item.kode_form}" data-id_karyawan="${item.id_karyawan}"  data-jenis_penilaian="${item.jenis_penilaian}" data-quartal="${item.quartal}" data-tahun="${item.tahun}">
                                         <i class="fa-solid fa-brush me-4"></i> Bersihkan
                                     </a>
+                                    <a href="javascript:void(0)" class="dropdown-item btn-hapus" data-kode_form="${item.kode_form}" data-id_karyawan="${item.id_karyawan}"  data-jenis_penilaian="${item.jenis_penilaian}" data-quartal="${item.quartal}" data-tahun="${item.tahun}">
+                                        <i class="fa-solid fa-trash me-4"></i> Hapus
+                                    </a>
                                 </div>
                             </div>`
                         ];
@@ -451,6 +454,59 @@
         });
     }
 
+    $(document).on('click', '.btn-hapus', function(e) {
+        e.preventDefault();
+
+        let kode_form = $(this).data('kode_form');
+        let id_karyawan = $(this).data('id_karyawan');
+        let jenis_penilaian = $(this).data('jenis_penilaian');
+        let quartal = $(this).data('quartal');
+        let tahun = $(this).data('tahun');
+
+        let formData = new FormData();
+        formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+        formData.append('kode_form', kode_form);
+        formData.append('id_karyawan', id_karyawan);
+        formData.append('jenis_penilaian', jenis_penilaian);
+        formData.append('quartal', quartal);
+        formData.append('tahun', tahun);
+
+        Swal.fire({
+            title: 'Yakin ingin menghapus data?',
+            text: "Data yang dihapus tidak bisa dikembalikan!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Ya, hapus!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: `/penilaian/hapus`,
+                    type: 'POST',
+                    data: formData,
+                    processData: false, 
+                    contentType: false, 
+                    success: function(response) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil!',
+                            text: response.message || 'Data berhasil dihapus.'
+                        });
+                        loadData();
+                    },
+                    error: function(xhr) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal!',
+                            text: xhr.responseJSON?.message || 'Terjadi kesalahan.'
+                        });
+                    }
+                });
+            }
+        });
+    });
+
     $(document).on('click', '.btn-clean', function(e) {
         e.preventDefault();
 
@@ -470,7 +526,7 @@
 
         Swal.fire({
             title: 'Yakin ingin membersihkan data?',
-            text: "Data yang dihapus tidak bisa dikembalikan!",
+            text: "Data yang dibersihkan tidak bisa dikembalikan!",
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#3085d6',

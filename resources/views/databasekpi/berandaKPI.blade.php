@@ -284,46 +284,94 @@
       box-shadow: 10px 0 0 #E9ECEF;
     }
 
-
-
     .cl-blue {
       background-color: #2E86FC;
+      transition: background-color 0.3s ease;
     }
 
-    .w-blue {
-      color: #2E86FC;
+    .cl-blue:hover {
+      background-color: #1c6fe0;
     }
 
     .cl-green {
       background-color: #28A745;
+      transition: background-color 0.3s ease;
     }
 
-    .w-green {
-      color: #28A745;
+    .cl-green:hover {
+      background-color: #218838;
     }
 
     .cl-red {
       background-color: #E74C3C;
+      transition: background-color 0.3s ease;
     }
 
-    .w-red {
-      color: #E74C3C;
+    .cl-red:hover {
+      background-color: #c0392b;
     }
 
     .cl-yellow {
       background-color: #FFC107;
+      transition: background-color 0.3s ease;
     }
 
-    .w-yellow {
-      color: #FFC107;
+    .cl-yellow:hover {
+      background-color: #e0a800;
     }
 
     .cl-grey {
       background-color: #6C757D;
+      transition: background-color 0.3s ease;
+    }
+
+    .cl-grey:hover {
+      background-color: #5a6268;
+    }
+
+    .w-blue {
+      color: #2E86FC;
+      transition: color 0.3s ease;
+    }
+
+    .w-blue:hover {
+      color: #1c6fe0;
+    }
+
+    .w-green {
+      color: #28A745;
+      transition: color 0.3s ease;
+    }
+
+    .w-green:hover {
+      color: #218838;
+    }
+
+    .w-red {
+      color: #E74C3C;
+      transition: color 0.3s ease;
+    }
+
+    .w-red:hover {
+      color: #c0392b;
+    }
+
+    .w-yellow {
+      color: #FFC107;
+      transition: color 0.3s ease;
+    }
+
+    .w-yellow:hover {
+      color: #e0a800;
     }
 
     .w-grey {
       color: #6C757D;
+      transition: color 0.3s ease;
+    }
+
+    .w-grey:hover {
+      color: #5a6268;
     }
 
     .bg-theme {
@@ -358,7 +406,7 @@
       @endphp
       <li class="nav-item label-nav-item">
         <label class="nav-link text-white font-weight-bold" style="cursor: default;">
-          Penilaian 360
+          Penilaian 360°
         </label>
       </li>
       <li class="nav-item {{ Route::currentRouteName() == 'ketegoriKPI.get' ? 'active' : '' }}">
