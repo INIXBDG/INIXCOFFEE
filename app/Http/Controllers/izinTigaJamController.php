@@ -98,7 +98,6 @@ class izinTigaJamController extends Controller
         return redirect()->route('pengajuanizin.index')->with(['error' => 'Anda harus absen terlebih dahulu jika mengajukan izin untuk hari ini.']);
     }
 
-    // 🆕 Tambahan validasi jam_mulai tidak boleh kurang dari waktu saat ini
     $jamMulai = \Carbon\Carbon::createFromFormat('H:i', $request->jam_mulai);
     $sekarang = \Carbon\Carbon::now();
 
