@@ -34,7 +34,7 @@ class KaryawanController extends Controller
         $user = User::where('karyawan_id', $users->id)->firstOrFail();
 
         // Batasi akses ke user sendiri atau admin
-        if (auth()->id() !== $user->id && auth()->user()->role !== 'Admin') {
+        if (auth()->id() !== $user->id && auth()->user()->role !== 'Admin' && auth()->user()->jabatan !== 'HRD') {
             abort(403);
         }
 
@@ -54,7 +54,7 @@ class KaryawanController extends Controller
         $user = User::where('karyawan_id', $karyawan->id)->firstOrFail();
 
         // Batasi akses ke user sendiri atau admin
-        if (auth()->id() !== $user->id && auth()->user()->role !== 'Admin') {
+        if (auth()->id() !== $user->id && auth()->user()->role !== 'Admin' ) {
             abort(403);
         }
 
