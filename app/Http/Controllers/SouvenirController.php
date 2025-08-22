@@ -310,16 +310,11 @@ public function storeSouvenirInhouse(Request $request): RedirectResponse
     $idRkm = $request->id_rkm;
 
     if ($request->nama_souvenir === 'All Item') {
-        // $sourceRkmId = 1;
-        $sourceSouvenirs = souvenirinhouse::where('id_rkm', $idRkm)->get();
-        $data = $sourceSouvenirs->map(function ($item) use ($idRkm) {
-            return [
-                'nama_souvenir' => $item->nama_souvenir,
-                'id_rkm'        => $idRkm,
-            ];
-        })->toArray();
-
-        souvenirinhouse::insert($data);
+		souvenirinhouse::create([
+            'nama_souvenir' => $request->nama_souvenir,
+            'id_rkm'        => $idRkm,
+        ]);
+        //souvenirinhouse::insert($data);
     } else {
         // Simpan satu souvenir biasa
         souvenirinhouse::create([
