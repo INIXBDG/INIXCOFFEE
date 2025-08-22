@@ -238,6 +238,7 @@ Route::get('RekapitulasiAbsenperBulanExport/{year}/{month}', [App\Http\Controlle
 Route::get('RekapitulasiWaktuKeterlambatanExport/{year}', [App\Http\Controllers\RekapitulasiAbsenController::class, 'exportKeterlambatan'])->name('RekapitulasiWaktuKeterlambatanExport');
 
 Route::post('/penilaian/clean', [App\Http\Controllers\DatabaseKPIController::class, 'clean']);
+Route::post('/penilaian/hapus', [App\Http\Controllers\DatabaseKPIController::class, 'hapus']);
 Route::get('/penilaian/content/dahsboardKPI/get', [App\Http\Controllers\DatabaseKPIController::class, 'contentDashboard'])->name('databaseKPI.dashboardContent');
 Route::post('/penilaian/detail/send/catatan', [App\Http\Controllers\DatabaseKPIController::class, 'sendCatatan'])->name('penilaian.sendCatatan');
 Route::post('/download-pdf/penilaian-360', [App\Http\Controllers\DatabaseKPIController::class, 'downloadPDF'])->name('penilaian.download.pdf');

@@ -89,7 +89,7 @@
         <table>
             <thead>
                 <tr class="table-title">
-                    <th colspan="6">Evaluator {{ $nomor }} - {{ $evaluatorItem['nama'] }} ({{ $jenis }})</th>
+                    <th colspan="6">Evaluator {{ $nomor }} - Penilaian {{ $jenis }}</th>
                 </tr>
                 <tr class="table-header">
                     <th>Kriteria</th>

@@ -105,7 +105,6 @@
                                 </div>
                             </div>
                         </div>
-
                         <div id="kriteria-container">
                             <h5>Kriteria Penilaian</h5>
                             <div class="form-kriteria-block border rounded p-3 mb-4 bg-theme" data-kriteria-index="0">
@@ -114,14 +113,16 @@
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Nama Kriteria</label>
-                                    <input type="text" name="kriteria[0][nama_penilaian]" class="form-control" placeholder="Masukan nama kriteria...">
+                                    <input type="text" name="kriteria[0][nama_penilaian]" class="form-control" placeholder="Masukan nama kriteria..." maxlength="250" title="Hanya huruf dan spasi, maksimal 250 karakter">
+                                    <small id="kriteriaHelp" class="form-text text-muted">limit text itu tidak lebih dari 250 kata.</small>
                                 </div>
                                 <div class="form-wrapper-sub-kriteria">
                                     <div class="form-group-item p-3 border rounded mb-2 bg-theme" data-sub-kriteria-index="0">
                                         <div class="row g-2 mb-2">
                                             <div class="col-md-6">
                                                 <label class="form-label">Sub Kriteria</label>
-                                                <input type="text" name="kriteria[0][sub_kriteria][0][judul_kategori]" class="form-control" placeholder="masukan sub kriteria..." required>
+                                                <input type="text" name="kriteria[0][sub_kriteria][0][judul_kategori]" maxlength="250" class="form-control" placeholder="masukan sub kriteria..." required title="Hanya huruf dan spasi, maksimal 250 karakter">
+                                                <small id="kriteriaHelp" class="form-text text-muted">limit text itu tidak lebih dari 250 kata.</small>
                                             </div>
                                             <div class="col-md-6">
                                                 <label class="form-label">Tipe</label>
