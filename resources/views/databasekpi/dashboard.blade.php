@@ -1044,10 +1044,12 @@
                                     <small class="text-muted">${item.divisi}</small>
                                 </div>
                                 <div class="ms-auto me-4 fw-bold">${item.total_nilai}</div>
-                                <div class="flex items-center gap-4">
-                                    <input id="rangeInput" type="range" min="0" max="100" value="${item.total_nilai}" 
-                                        class="form-range" readonly disabled 
-                                        oninput="rangeValue.textContent = this.value">
+                                 <div class="progress" style="width: 400px;"> 
+                                <div class="progress-bar" role="progressbar" 
+                                    style="width: ${item.total_nilai}%;" 
+                                    aria-valuenow="${item.total_nilai}" 
+                                    aria-valuemin="0" aria-valuemax="100">
+                                ${item.total_nilai}%
                                 </div>
                             </div>
                         `);
