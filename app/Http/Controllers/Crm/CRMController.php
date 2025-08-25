@@ -141,6 +141,49 @@ class CRMController extends Controller
             ];
         }
 
+        // Status
+        $totalStatus = Perusahaan::select('status', 'sales_key', DB::raw('count(*) as total'))->groupBy('status', 'sales_key')->get();
+
+
+        // Pengelompokan daerah
+        // Ambil data jumlah perusahaan per sales_key & lokasi
+        // Location data for pie chart
+        $lokasi = Perusahaan::select('sales_key', 'lokasi', DB::raw('count(*) as total'))
+            ->whereNotNull('sales_key')
+            ->whereNotNull('lokasi')
+            ->groupBy('sales_key', 'lokasi')
+            ->get();
+
+        // Fetch unique sales_key values (no totaling)
+        $salesKeys = Perusahaan::select('sales_key')
+            ->whereNotNull('sales_key')
+            ->distinct()
+            ->pluck('sales_key');
+
+        $salesTotals = Perusahaan::select('sales_key', DB::raw('count(*) as total'))
+            ->whereNotNull('sales_key')
+            ->groupBy('sales_key')
+            ->pluck('total', 'sales_key')
+            ->toArray();
+
+        $totalDaerah = [];
+        foreach ($lokasi as $row) {
+            if (empty($row->sales_key) || empty($row->lokasi)) {
+                continue;
+            }
+            $totalSales = $salesTotals[$row->sales_key] ?? 0;
+            $persen = $totalSales > 0 ? round(($row->total / $totalSales) * 100, 2) : 0;
+            $totalDaerah[$row->sales_key][] = [
+                'lokasi' => $row->lokasi,
+                'total' => $row->total,
+                'persen' => $persen,
+            ];
+        }
+
+        // Pass sales_keys as a Collection
+        $sales = $salesKeys;
+
+
         return view('crm.dashboard', compact(
             'chartData',
             'activitysales',
@@ -148,7 +191,10 @@ class CRMController extends Controller
             'profit',
             'totalWin',
             'totalLost',
-            'tahunDipilih'
+            'tahunDipilih',
+            'totalStatus',
+            'totalDaerah',
+            'sales'
         ));
     }
 
