@@ -105,6 +105,11 @@ class RKM extends Model
     public function absensiPDF(){
         return $this->hasOne(absensiPDF::class, 'id_rkm', 'id');
     }
+
+    public function invoice()
+    {
+    return $this->hasOne(Invoice::class, 'id_rkm');
+    }
     
 
 }

@@ -15,6 +15,8 @@ use App\Models\Inventaris;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
+use App\Http\Controllers\InvoiceRKMController;
+
 
 
 
@@ -366,3 +368,13 @@ Route::get('/rerata-ketepatan-response-data', [DashboardItsmController::class, '
 Route::get('/jumlah-permintaan-per-bulan', [DashboardItsmController::class, 'getJumlahPermintaanPerBulan']);
 Route::get('/permintaan-sering-diajukan', [DashboardItsmController::class, 'getPermintaanSeringDiajukan']);
 Route::get('/list-bulan', [DashboardItsmController::class, 'getListBulan']);
+
+//INVOICE
+Route::get('/invoice', [InvoiceRKMController::class, 'index'])->name('invoice.index');
+Route::get('/invoice/create/{id}', [InvoiceRKMController::class, 'create'])->name('invoice.create');
+Route::post('/invoice', [InvoiceRKMController::class, 'store'])->name('invoice.store');
+Route::get('/invoice/{id}', [InvoiceRKMController::class, 'show'])->name('invoice.show');
+Route::get('/invoice/{id}/edit', [InvoiceRKMController::class, 'edit'])->name('invoice.edit');
+Route::put('/invoice/{id}', [InvoiceRKMController::class, 'update'])->name('invoice.update');
+Route::delete('/invoice/{id}', [InvoiceRKMController::class, 'destroy'])->name('invoice.destroy');
+
