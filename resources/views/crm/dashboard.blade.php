@@ -198,6 +198,80 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Total Status Perusahaan per Sales -->
+            <div class="col-12">
+                <div class="card h-100 shadow-sm border-0 rounded-3">
+                    <div class="card-header bg-transparent border-0 pb-0">
+                        <h5 class="card-title mb-0 text-primary">Total Status Perusahaan per Sales</h5>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="table-responsive" style="max-height: 280px; overflow-y: auto;">
+                            <table class="table table-hover table-striped">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" class="text-primary">Sales</th>
+                                        @php
+                                            $statuses = $totalStatus->pluck('status')->unique()->sort();
+                                        @endphp
+                                        @foreach ($statuses as $status)
+                                            <th scope="col" class="text-primary">{{ $status }}</th>
+                                        @endforeach
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @php
+                                        $pivotData = [];
+                                        foreach ($totalStatus as $item) {
+                                            $pivotData[$item->sales_key][$item->status] = $item->total;
+                                        }
+                                    @endphp
+                                    @forelse ($pivotData as $salesKey => $statusData)
+                                        <tr>
+                                            <td>{{ $salesKey }}</td>
+                                            @foreach ($statuses as $status)
+                                                <td>{{ number_format($statusData[$status] ?? 0, 0, ',', '.') }}</td>
+                                            @endforeach
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="{{ $statuses->count() + 1 }}" class="text-center text-muted">
+                                                Tidak ada data status perusahaan.
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Distribusi Perusahaan per Lokasi -->
+            <div class="col-12">
+                <div class="card h-100 shadow-sm border-0 rounded-3">
+                    <div
+                        class="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0 text-primary">Distribusi Perusahaan per Lokasi</h5>
+                        <select class="form-select form-select-sm lokasi-sales-filter" style="max-width: 150px;">
+                            <option value="all" selected>Semua Sales</option>
+                            <option value="AN">AN</option>
+                            <option value="HW">HW</option>
+                            <option value="ZN">ZN</option>
+                            <option value="VN">VN</option>
+                            <option value="RR">RR</option>
+                            <option value="NA">NA</option>
+                        </select>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="chart-container" style="position: relative; height: 280px;">
+                            <canvas id="lokasiPieChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
         </div>
     </div>
 
@@ -362,9 +436,93 @@
                 }
             });
 
+            // Lokasi Pie Chart
+            const lokasiData = @json($totalDaerah);
+            let lokasiPieChart;
+
+            const updateLokasiPieChart = (salesKey) => {
+                let chartData;
+                if (salesKey === 'all') {
+                    const aggregated = {};
+                    Object.values(lokasiData).flat().forEach(item => {
+                        aggregated[item.lokasi] = (aggregated[item.lokasi] || 0) + item.total;
+                    });
+                    chartData = {
+                        labels: Object.keys(aggregated),
+                        datasets: [{
+                            label: 'Jumlah Perusahaan',
+                            data: Object.values(aggregated),
+                            backgroundColor: [
+                                'rgba(75, 192, 192, 0.8)',
+                                'rgba(255, 99, 132, 0.8)',
+                                'rgba(54, 162, 235, 0.8)',
+                                'rgba(255, 206, 86, 0.8)',
+                                'rgba(153, 102, 255, 0.8)',
+                                'rgba(255, 159, 64, 0.8)',
+                                'rgba(199, 199, 199, 0.8)',
+                            ],
+                            borderWidth: 1
+                        }]
+                    };
+                } else {
+                    const data = lokasiData[salesKey] || [];
+                    chartData = {
+                        labels: data.map(item => item.lokasi),
+                        datasets: [{
+                            label: 'Jumlah Perusahaan',
+                            data: data.map(item => item.total),
+                            backgroundColor: [
+                                'rgba(75, 192, 192, 0.8)',
+                                'rgba(255, 99, 132, 0.8)',
+                                'rgba(54, 162, 235, 0.8)',
+                                'rgba(255, 206, 86, 0.8)',
+                                'rgba(153, 102, 255, 0.8)',
+                                'rgba(255, 159, 64, 0.8)',
+                                'rgba(199, 199, 199, 0.8)',
+                            ],
+                            borderWidth: 1
+                        }]
+                    };
+                }
+
+                if (lokasiPieChart) {
+                    lokasiPieChart.destroy();
+                }
+
+                lokasiPieChart = initChart('lokasiPieChart', {
+                    type: 'pie',
+                    data: chartData,
+                    options: {
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: context => {
+                                        const label = context.label || '';
+                                        const value = context.raw;
+                                        const total = context.dataset.data.reduce((sum, val) =>
+                                            sum + val, 0);
+                                        const percentage = total > 0 ? ((value / total) * 100)
+                                            .toFixed(2) : 0;
+                                        return `${label}: ${value} (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            };
+
+            updateLokasiPieChart('all');
+
+            const lokasiSalesFilter = document.querySelector('.lokasi-sales-filter');
+            if (lokasiSalesFilter) {
+                lokasiSalesFilter.addEventListener('change', () => {
+                    updateLokasiPieChart(lokasiSalesFilter.value);
+                });
+            }
+
             // Filter functionality for activities
             const filterButtons = document.querySelectorAll('.filter-btn');
-
             filterButtons.forEach(button => {
                 button.addEventListener('click', () => {
                     filterButtons.forEach(btn => btn.classList.remove('active'));
@@ -374,7 +532,9 @@
             });
 
             function applyActivityFilter() {
-                const activityFilter = document.querySelector('.filter-btn.active').dataset.filter;
+                const activityFilter = document.querySelector('.filter-btn.active')?.dataset.filter;
+                if (!activityFilter) return;
+
                 const salesItems = document.querySelectorAll('.sales-item');
                 const activityItems = document.querySelectorAll('.activity-item');
 
@@ -405,8 +565,8 @@
                 window.location.href = `?tahun=${selectedYear}`;
             }
 
-            winYearFilter.addEventListener('change', handleYearChange);
-            lostYearFilter.addEventListener('change', handleYearChange);
+            if (winYearFilter) winYearFilter.addEventListener('change', handleYearChange);
+            if (lostYearFilter) lostYearFilter.addEventListener('change', handleYearChange);
 
             // Initialize filters
             applyActivityFilter();
@@ -438,19 +598,22 @@
 
         /* Better scrollbars */
         .activity-container::-webkit-scrollbar,
-        .card-body::-webkit-scrollbar {
+        .card-body::-webkit-scrollbar,
+        .table-responsive::-webkit-scrollbar {
             width: 6px;
             height: 6px;
         }
 
         .activity-container::-webkit-scrollbar-track,
-        .card-body::-webkit-scrollbar-track {
+        .card-body::-webkit-scrollbar-track,
+        .table-responsive::-webkit-scrollbar-track {
             background: #f1f1f1;
             border-radius: 3px;
         }
 
         .activity-container::-webkit-scrollbar-thumb,
-        .card-body::-webkit-scrollbar-thumb {
+        .card-body::-webkit-scrollbar-thumb,
+        .table-responsive::-webkit-scrollbar-thumb {
             background: #c1c1c1;
             border-radius: 3px;
         }
@@ -463,6 +626,26 @@
 
         .progress-bar {
             border-radius: 3px;
+        }
+
+        /* Table styling */
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table th,
+        .table td {
+            padding: 0.75rem;
+            vertical-align: middle;
+            text-align: center;
+        }
+
+        .table thead th {
+            position: sticky;
+            top: 0;
+            background: #fff;
+            z-index: 1;
+            border-bottom: 2px solid #dee2e6;
         }
     </style>
 @endsection
