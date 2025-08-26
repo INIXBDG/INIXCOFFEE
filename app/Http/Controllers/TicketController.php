@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\karyawan;
 use App\Models\Tickets;
 use App\Models\User;
+use App\Notifications\TicketNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
@@ -14,37 +15,39 @@ use Google\Service\Sheets\ValueRange;
 use Illuminate\Support\Facades\Log;
 use Telegram\Bot\Laravel\Facades\Telegram;
 use DateTime;
+use Illuminate\Support\Facades\Notification as NotificationFacade;
 // use Google_Service_Sheets_ValueRange;
 class TicketController extends Controller
 {
-    private function normalizeTimestamp($timestamp) {
-    // Jika sudah objek DateTime
-    if ($timestamp instanceof DateTime) {
-        return $timestamp->format('n/j/Y H:i:s');
+    private function normalizeTimestamp($timestamp) 
+    {
+        // Jika sudah objek DateTime
+        if ($timestamp instanceof DateTime) {
+            return $timestamp->format('n/j/Y H:i:s');
+        }
+
+        // Jika string, coba deteksi format terlebih dahulu
+        if (is_string($timestamp)) {
+            // Cek format dengan regex atau coba parse dulu
+            $date = DateTime::createFromFormat('m/d/Y H:i:s', $timestamp);
+            if ($date !== false) {
+                return $date->format('n/j/Y H:i:s');
+            }
+            $date = DateTime::createFromFormat('Y-m-d H:i:s', $timestamp);
+            if ($date !== false) {
+                return $date->format('n/j/Y H:i:s');
+            }
+
+            // Jika tidak cocok format di atas, coba pakai strtotime
+            $time = strtotime($timestamp);
+            if ($time !== false) {
+                return date('n/j/Y H:i:s', $time);
+            }
+        }
+
+        // Jika timestamp tidak dikenali, return apa adanya (atau bisa dikasih default)
+        return (string)$timestamp;
     }
-
-    // Jika string, coba deteksi format terlebih dahulu
-    if (is_string($timestamp)) {
-        // Cek format dengan regex atau coba parse dulu
-        $date = DateTime::createFromFormat('m/d/Y H:i:s', $timestamp);
-        if ($date !== false) {
-            return $date->format('n/j/Y H:i:s');
-        }
-        $date = DateTime::createFromFormat('Y-m-d H:i:s', $timestamp);
-        if ($date !== false) {
-            return $date->format('n/j/Y H:i:s');
-        }
-
-        // Jika tidak cocok format di atas, coba pakai strtotime
-        $time = strtotime($timestamp);
-        if ($time !== false) {
-            return date('n/j/Y H:i:s', $time);
-        }
-    }
-
-    // Jika timestamp tidak dikenali, return apa adanya (atau bisa dikasih default)
-    return (string)$timestamp;
-}
 
     public function store(Request $request)
     {
@@ -96,25 +99,40 @@ class TicketController extends Controller
         } else {
             $detail_kendala_td = $ticket->detail_kendala;
         }
-            $values = [
-                [
-                    $timestamp,
-                    $ticket->nama_karyawan,
-                    $ticket->divisi,
-                    $ticket->kategori,
-                    $detail_kendala_ts,
-                    $ticket->keperluan,
-                    $detail_kendala_pr,
-                    $detail_kendala_td,
-                ]
-            ];
-       
+        $values = [
+            [
+                $timestamp,
+                $ticket->nama_karyawan,
+                $ticket->divisi,
+                $ticket->kategori,
+                $detail_kendala_ts,
+                $ticket->keperluan,
+                $detail_kendala_pr,
+                $detail_kendala_td,
+            ]
+        ];
+
+        $itsm = karyawan::where('divisi', 'IT Service Management')->get();
         // Panggil method appendValues
         $message = $this->appendValues($spreadsheetId, $range, $values);
         $ticket->update([
             'row' => $message
         ]);
-        // return $message;
+
+        $users = array_map(function ($user) {
+            return $user === '-' ? null : $user;
+        }, [
+            $itsm
+        ]);
+
+        $users = User::whereHas('karyawan', function ($query) use ($users) {
+            $query->whereIn('kode_karyawan', array_filter($users));
+        })->get();
+        $path = '/tickets';
+        $status = "Ticketing Baru";
+        foreach ($users as $user) {
+            NotificationFacade::send($user, new TicketNotification($values, $status, $path));
+        }
 
         
 
@@ -226,27 +244,31 @@ class TicketController extends Controller
     }
     public function finish(Request $request, Tickets $ticket)
     {
+        // dd($request->all());
         $tanggal_selesai = \Carbon\Carbon::now()->format('Y-m-d');
         $jam_selesai = \Carbon\Carbon::now()->format('H:i:s');
 
         $ticket->update([
             'status' => 'Selesai',
+            'penanganan' => $request->penanganan,
             'keterangan' => $request->keterangan,
             'tanggal_selesai' => $tanggal_selesai,
             'jam_selesai' => $jam_selesai,
+            'tingkat_kesulitan' => $request->kesulitan,
         ]);
 
         $spreadsheetId = '1k_NRI52B-alnGVeLTGB8cecL3f1G-C7_WCVGnQQGe9Y';
-        $range = 'Form Responses 1!M'.$ticket->row.':S'.$ticket->row;
+        $range = 'Form Responses 1!L'.$ticket->row.':S'.$ticket->row;
         $values = [
             [
+                $ticket->penanganan,
                 $ticket->status,
                 $tanggal_selesai,
                 $jam_selesai,
                 $request->keterangan,
                 '',
                 '',
-                $ticket->kesulitan,
+                $ticket->tingkat_kesulitan,
             ]
         ];
         $message = $this->updatedValues($spreadsheetId, $range, $values);
@@ -256,20 +278,23 @@ class TicketController extends Controller
 
     public function block(Request $request, Tickets $ticket)
     {
+        // dd($request->all());
         $tanggal_selesai = \Carbon\Carbon::now()->format('Y-m-d');
         $jam_selesai = \Carbon\Carbon::now()->format('H:i:s');
 
         $ticket->update([
             'status' => 'Terkendala',
             'keterangan' => $request->keterangan,
+            'penanganan' => $request->penanganan,
             'tanggal_selesai' => $tanggal_selesai,
             'jam_selesai' => $jam_selesai,
         ]);
 
         $spreadsheetId = '1k_NRI52B-alnGVeLTGB8cecL3f1G-C7_WCVGnQQGe9Y';
-        $range = 'Form Responses 1!M'.$ticket->row.':S'.$ticket->row;
+        $range = 'Form Responses 1!L'.$ticket->row.':S'.$ticket->row;
         $values = [
             [
+                $ticket->penanganan,
                 $ticket->status,
                 $tanggal_selesai,
                 $jam_selesai,
