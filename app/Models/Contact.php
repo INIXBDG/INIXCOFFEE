@@ -10,8 +10,9 @@ class Contact extends Model
     use HasFactory;
     protected $fillable = [
         'id_perusahaan',
-        'id_sales',
-        'nama_lengkap',
+        'sales_key',
+        'nama',
+        'status',
         'email',
         'cp',
         'divisi',
@@ -24,6 +25,6 @@ class Contact extends Model
 
     public function perusahaan()
     {
-        return $this->belongsTo(Perusahaan::class, 'id_perusahaan', 'id');
+        return $this->belongsTo(Perusahaan::class, 'id_perusahaan');
     }
 }

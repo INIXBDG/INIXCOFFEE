@@ -23,8 +23,8 @@ class Aktivitas extends Model
         return $this->belongsTo(Peluang::class, 'id_peluang', 'id');
     }
 
-    public function perusahaan()
+    public function contact()
     {
-        return $this->belongsTo(Perusahaan::class, 'id_contact');
+        return $this->belongsTo(Contact::class, 'id_contact');
     }
 }

@@ -77,7 +77,7 @@
                             {{ number_format($peluang->sum('final'), 2, ',', '.') }}</p>
                         <div class="table-responsive">
                             <table class="table table-bordered table-hover">
-                                <thead class="table-dark">
+                                <thead class="table-primary">
                                     <tr>
                                         <th scope="col" class="px-3 py-2">Materi</th>
                                         <th scope="col" class="px-3 py-2">Periode</th>
@@ -465,8 +465,11 @@
                                         <select class="form-select" id="id_aktivitas" name="id_aktivitas[]" multiple>
                                             <option value="" disabled>-- Pilih Aktivitas (Opsional) --</option>
                                             @foreach ($aktivitas as $item)
-                                                <option value="{{ $item->id }}">{{ $item->subject }}
+                                                <option value="{{ $item->id }}">
+                                                    {{ $item->contact->nama }}
                                                     ({{ \Carbon\Carbon::parse($item->waktu_aktivitas)->translatedFormat('d F Y') }})
+                                                    {{ $item->aktivitas  }}
+                                                    {{ $item->subject }}
                                                 </option>
                                             @endforeach
                                         </select>
@@ -497,9 +500,10 @@
                 </div>
                 <div class="table-responsive">
                     <table class="table table-bordered table-hover">
-                        <thead class="table-dark">
+                        <thead class="table-primary">
                             <tr>
                                 <th scope="col" class="px-3 py-2 text-center">ID Sales</th>
+                                <th scope="col" class="px-3 py-2">Contact (PIC)</th>
                                 <th scope="col" class="px-3 py-2">Aktivitas</th>
                                 <th scope="col" class="px-3 py-2">Subject</th>
                                 <th scope="col" class="px-3 py-2">Deskripsi</th>
@@ -511,6 +515,7 @@
                             @foreach ($aktivitass as $item)
                                 <tr>
                                     <td class="px-3 py-2 text-center">{{ $item->id_sales }}</td>
+                                    <td class="px-3 py-2">{{ $item->contact->nama }}</td>
                                     <td class="px-3 py-2">{{ $item->aktivitas }}</td>
                                     <td class="px-3 py-2">{{ $item->subject }}</td>
                                     <td class="px-3 py-2">{{ $item->deskripsi ?? '-' }}</td>
@@ -534,6 +539,9 @@
                                         </div>
                                     </td>
                                 </tr>
+                                <script>
+                                    console.log($item)
+                                </script>
                             @endforeach
                         </tbody>
                     </table>
@@ -553,7 +561,16 @@
                     <div class="modal-body">
                         <form action="{{ route('store.aktivitas.new') }}" method="POST">
                             @csrf
-                            <input type="hidden" name="id_contact" value="{{ $data->id }}">
+                            <input type="hidden" name="id_perusahaan" value="{{ $data->id }}">
+                            <div class="mb-3">
+                                <label for="id_contact" class="form-label">Pilih Contact</label>
+                                <select name="id_contact" class="form-control" id="id_contact" required>
+                                    <option value=""> -- Pilih Contact -- </option>
+                                    @foreach($data->contacts as $contact)
+                                        <option value="{{ $contact->id }}">{{ $contact->nama }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                             <div class="mb-3">
                                 <label for="aktivitas" class="form-label">Aktivitas</label>
                                 <select name="aktivitas" class="form-control" id="">
@@ -561,6 +578,7 @@
                                     <option value="Call">Call</option>
                                     <option value="Email">Email</option>
                                     <option value="Visit">Visit</option>
+                                    <option value="Meet">Meeting</option>
                                 </select>
                             </div>
                             <div class="mb-3">
