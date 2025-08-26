@@ -111,6 +111,13 @@
             </a>
         </li>
 
+        <li class="menu-item {{ request()->routeIs('index.pic') ? 'active open' : '' }}">
+            <a href="{{ route('index.pic') }}" class="menu-link">
+                <i class='menu-icon tf-icons bx bx-user-circle'></i>
+                <div class="text-truncate" data-i18n="aktivitas">Contact Client</div>
+            </a>
+        </li>
+
         <li class="menu-item {{ request()->routeIs('CRM.myDasboard') ? 'active open' : '' }}">
             <a href="{{ route('CRM.myDasboard') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-home"></i>

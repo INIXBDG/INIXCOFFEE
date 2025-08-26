@@ -12,7 +12,7 @@
                 <div class="d-flex gap-2">
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#paymentAdvanceModal"
                         {{ $peluang->tahap === 'merah' ? '' : 'disabled' }}>
-                        <i class="bx bx-plus"></i>  Payment Advance
+                        <i class="menu-icon bx bx-plus"></i>  Payment Advance
                     </button>
                     @if ($isLost)
                         <span class="btn btn-sm btn-info" style="pointer-events: none; opacity: 0.5;">Lihat di RKM</span>
@@ -148,7 +148,7 @@
                                     </div>
                                 </div>
                             @endif
-                            
+
                             @if ($netsales)
                                 <p class="mt-4"><strong>Lihat detail Payment Advance :</strong></p>
 

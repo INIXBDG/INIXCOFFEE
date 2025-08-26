@@ -5,6 +5,7 @@ use App\Http\Controllers\approvedNetSalesController;
 use App\Http\Controllers\Crm\CatatanSalesController;
 use App\Http\Controllers\Crm\ContactController;
 use App\Http\Controllers\Crm\CRMController;
+use App\Http\Controllers\Crm\PicController;
 use App\Http\Controllers\Crm\AktivitasController;
 use App\Http\Controllers\Crm\PeluangController;
 use App\Http\Controllers\Crm\salesPribadiController;
@@ -385,6 +386,8 @@ Route::prefix('crm')->group(function () {
     Route::post('/aktivitas/store', [AktivitasController::class, 'store'])->name('store.aktivitas');
     Route::delete('/aktivitas/delete/{id}', [AktivitasController::class, 'delete'])->name('delete.aktivitas');
     Route::put('/aktivitas/update/{id}', [AktivitasController::class, 'update'])->name('update.aktivitas');
+    Route::get('/get-contacts/{id}', [AktivitasController::class, 'getContacts'])->name('get.contacts');
+
 
     Route::get('/target/aktivity', [TargetAktivitas::class, 'index'])->name('index.target');
     Route::post('/target/aktivity/store', [TargetAktivitas::class, 'store'])->name('index.target.store');
@@ -401,4 +404,11 @@ Route::prefix('crm')->group(function () {
     Route::get('/detail/closed/win/{id}', [PeluangController::class, 'detailRingkasan'])->name('detail.ringkasanPeluang');
     Route::get('/closed/lost', [PeluangController::class, 'ringkasanPeluanglost'])->name('index.ringkasanlost');
     Route::get('/detail/closed/lost/{id}', [PeluangController::class, 'detailRingkasanlost'])->name('detail.Ringkasanlost');
+
+    Route::get('/pic', [PicController::class, 'index'])->name('index.pic');
+    Route::get('/index/pic', [PicController::class, 'indexJson'])->name('index.json.pic');
+    Route::post('/pic/store', [PicController::class, 'store'])->name('store.pic');
+
+
+
 });

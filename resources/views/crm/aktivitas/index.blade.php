@@ -36,7 +36,7 @@
             <!-- Modal untuk Create Aktivitas -->
             <div class="modal fade" id="activityModal" tabindex="-1" aria-labelledby="activityModalLabel"
                 aria-hidden="true">
-                <div class="modal-dialog">
+                <div class="modal-dialog modal-lg">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title" id="activityModalLabel">Tambah Aktivitas</h5>
@@ -46,20 +46,51 @@
                             <form id="activityForm" action="{{ route('store.aktivitas.new') }}" method="POST">
                                 @csrf
 
+                                {{-- Dropdown perusahaan Klien --}}
                                 <div class="mb-3">
-                                    <label class="form-label" for="id_contact">Kontak Klien</label>
-                                    <select class="form-select" id="id_contact" name="id_contact" required>
-                                        <option value="" disabled selected>Pilih Kontak</option>
-                                        @forelse ($contact as $contact)
-                                            <option value="{{ $contact->id }}">{{ $contact->nama_perusahaan }}
-                                                ({{ $contact->cp ?? '-' }})
-                                            </option>
+                                    <label class="form-label" for="id_perusahaan">Nama Perusahaan</label>
+                                    <select class="form-select" id="id_perusahaan" name="id_perusahaan" required>
+                                        <option value="" disabled selected>Pilih Perusahaan</option>
+                                        @forelse ($perusahaan as $p)
+                                            <option value="{{ $p->id }}">{{ $p->nama_perusahaan }}</option>
                                         @empty
                                             <option disabled>Tidak ada kontak tersedia</option>
                                         @endforelse
                                     </select>
                                 </div>
 
+                                <div class="mb-3">
+                                    <label class="form-label" for="id_contact">Nama Kontak</label>
+                                    <select class="form-select" id="id_contact" name="id_contact" required>
+                                    </select>
+                                </div>
+
+                                {{-- Input Manual untuk Kontak Baru --}}
+                                <div id="newContactFields" style="display: none; border: 1px solid #ddd; border-radius: 8px; padding: 15px; background-color: #f8f9fa;">
+                                    <h6 class="mb-3">Tambah Kontak Baru</h6>
+
+                                    <div class="mb-3">
+                                        <label class="form-label" for="nama_perusahaan">Nama</label>
+                                        <input type="text" class="form-control" id="nama_perusahaan" name="nama_perusahaan">
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label" for="email_perusahaan">Email</label>
+                                        <input type="email" class="form-control" id="email_perusahaan" name="email_perusahaan">
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label" for="divisi_perusahaan">Divisi</label>
+                                        <input type="text" class="form-control" id="divisi_perusahaan" name="divisi_perusahaan">
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label" for="cp_perusahaan">Contact Person (No)</label>
+                                        <input type="text" class="form-control" id="cp_perusahaan" name="cp_perusahaan">
+                                    </div>
+                                </div>
+
+                                {{-- Jenis Aktivitas --}}
                                 <div class="mb-3">
                                     <label class="form-label" for="aktivitas">Jenis Aktivitas</label>
                                     <select class="form-select" id="aktivitas" name="aktivitas" required>
@@ -71,20 +102,22 @@
                                     </select>
                                 </div>
 
+                                {{-- Subjek --}}
                                 <div class="mb-3">
                                     <label class="form-label" for="subject">Subjek</label>
                                     <input type="text" class="form-control" id="subject" name="subject" required>
                                 </div>
 
+                                {{-- Deskripsi --}}
                                 <div class="mb-3">
                                     <label class="form-label" for="deskripsi">Deskripsi</label>
                                     <textarea class="form-control" id="deskripsi" name="deskripsi"></textarea>
                                 </div>
 
+                                {{-- Waktu Aktivitas --}}
                                 <div class="mb-3">
                                     <label class="form-label" for="waktu_aktivitas">Waktu Aktivitas</label>
-                                    <input type="date" class="form-control" id="waktu_aktivitas" name="waktu_aktivitas"
-                                        required>
+                                    <input type="date" class="form-control" id="waktu_aktivitas" name="waktu_aktivitas" required>
                                 </div>
 
                                 <button type="submit" class="btn btn-primary">Simpan</button>
@@ -93,6 +126,7 @@
                     </div>
                 </div>
             </div>
+
 
             <!-- Modal untuk Edit Aktivitas -->
             <div class="modal fade" id="editActivityModal" tabindex="-1" aria-labelledby="editActivityModalLabel"
@@ -196,6 +230,8 @@
                     }
                 ]
             });
+
+
         });
 
         function editAktivitas(row) {
@@ -281,5 +317,67 @@
         function resetForm() {
             document.getElementById('activityForm').reset();
         }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const perusahaanSelect = document.getElementById("id_perusahaan");
+            const contactSelect = document.getElementById("id_contact");
+            const newContactFields = document.getElementById("newContactFields");
+
+            // Cek apakah elemen kontak ada
+            if (!perusahaanSelect || !contactSelect) {
+                console.error("Dropdown perusahaan atau kontak tidak ditemukan!");
+                return;
+            }
+
+            // Saat pilih perusahaan → load kontak via AJAX
+            perusahaanSelect.addEventListener("change", function() {
+                const perusahaanId = this.value;
+
+                // Reset dropdown kontak
+                contactSelect.innerHTML = `
+                    <option value="" disabled selected>Pilih Kontak</option>
+                    <option value="new">+ Tambahkan Kontak Baru</option>
+                `;
+
+                // Jika tidak ada perusahaan yang dipilih, hentikan proses
+                if (!perusahaanId) return;
+
+                // Ambil kontak via AJAX
+                fetch(`/crm/get-contacts/${perusahaanId}`)
+                    .then(response => {
+                        if (!response.ok) throw new Error("Gagal fetch data kontak");
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.length === 0) {
+                            const option = document.createElement("option");
+                            option.value = "";
+                            option.textContent = "Tidak ada kontak tersedia";
+                            option.disabled = true;
+                            contactSelect.appendChild(option);
+                        } else {
+                            data.forEach(contact => {
+                                const option = document.createElement("option");
+                                option.value = contact.id;
+                                option.textContent = `${contact.nama} (${contact.divisi || "Tidak ada divisi"}) - ${contact.email || "Tidak ada email"}`;
+                                contactSelect.appendChild(option);
+                            });
+                        }
+                    })
+                    .catch(error => console.error("Gagal mengambil data kontak:", error));
+            });
+
+            // Tampilkan form tambah kontak baru jika pilih "+ Tambahkan Kontak Baru"
+            contactSelect.addEventListener("change", function() {
+                if (this.value === "new") {
+                    newContactFields.style.display = "block";
+                    newContactFields.querySelectorAll("input").forEach(input => input.required = true);
+                } else {
+                    newContactFields.style.display = "none";
+                    newContactFields.querySelectorAll("input").forEach(input => input.required = false);
+                }
+            });
+        });
+
     </script>
 @endsection

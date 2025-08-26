@@ -99,7 +99,9 @@ class ContactController extends Controller
                 ->with('materi')
                 ->first();
 
-            $aktivitasTerakhir[$item->id] = Aktivitas::where('id_contact', $item->id)
+            $contactIds = $item->contacts->pluck('id');
+
+            $aktivitasTerakhir[$item->id] = Aktivitas::whereIn('id_contact',$contactIds)
                 ->latest()
                 ->first();
         }
@@ -128,15 +130,18 @@ class ContactController extends Controller
 
     public function detail($id)
     {
-        $data = Perusahaan::where('id', $id)->firstOrFail();
-        $peluang = Peluang::with('materiRelation')->where('id_contact', $data->id)->get();
-        $aktivitass = Aktivitas::where('id_contact', $data->id)->orderByDesc('created_at')->get();
-        $aktivitas = Aktivitas::where('id_contact', $data->id)
+        $data = Perusahaan::with('contacts')->where('id', $id)->firstOrFail();
+        $contactIds = $data->contacts->pluck('id');
+        $aktivitass = Aktivitas::whereIn('id_contact', $contactIds)
+            ->orderByDesc('created_at')
+            ->get();
+        $aktivitas = Aktivitas::whereIn('id_contact', $contactIds)
             ->whereNull('id_peluang')
             ->orderByDesc('created_at')
             ->get();
+        $peluang = Peluang::with('materiRelation')->where('id_contact', $data->id)->get();
         $materi = Materi::all();
-        return view('crm.contact.detail', compact('data', 'peluang', 'aktivitas', 'materi', 'aktivitass'));
+            return view('crm.contact.detail', compact('data', 'peluang', 'aktivitas', 'materi', 'aktivitass'));
     }
 
     public function store(Request $request)
