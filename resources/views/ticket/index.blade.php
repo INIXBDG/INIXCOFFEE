@@ -206,7 +206,12 @@
                 {"data": "kategori"},
                 {"data": "keperluan"},
                 {"data": "detail_kendala"},
-                {"data": "pic"},
+                {
+                    "data": "pic",
+                    "render": function(data) {
+                        return data ? data : '-';
+                    }
+                },
                {
                     "data": null,
                     "render": function(data) {
@@ -225,6 +230,8 @@
                                 <span class="badge rounded-pill bg-danger">
                                     <i class="bi bi-x-circle me-1"></i> Terkendala
                                 </span>`;
+                        } else{
+                            return '-';
                         }
                     }
                 },
@@ -334,70 +341,72 @@
         var html = '';
             html += '<table class="table table-responsive table-borderless">';
             html += '<tbody>';
-                html += '<tr>';
-                 html += '<td>Nama Karyawan</td>';
-                 html += '<td>:</td>';
-                 html += '<td>' + data.nama_karyawan + '</td>';
-                html += '</tr>';
-                html += '<tr>';
-                 html += '<td>Divisi</td>';
-                 html += '<td>:</td>';
-                 html += '<td>' + data.divisi + '</td>';
-                html += '</tr>';
-                html += '<tr>';
-                 html += '<td>Kategori</td>';
-                 html += '<td>:</td>';
-                 html += '<td>' + data.kategori + '</td>';
-                html += '</tr>';
-                html += '<tr>';
-                 html += '<td>Detail Kendala</td>';
-                 html += '<td>:</td>';
-                 html += '<td>' + data.detail_kendala + '</td>';
-                html += '</tr>';
-                html += '<tr>';
-                 html += '<td>Keperluan</td>';
-                 html += '<td>:</td>';
-                 html += '<td>' + data.keperluan + '</td>';
-                html += '</tr>';
-                html += '<tr>';
-                 html += '<td>Waktu Response</td>';
-                 html += '<td>:</td>';
-                 html += '<td>' + data.tanggal_response +' '+ data.jam_response + '</td>';
-                html += '</tr>';
-                html += '<tr>';
-                 html += '<td>Penanganan</td>';
-                 html += '<td>:</td>';
-                 html += '<td>' + data.penanganan + '</td>';
-                html += '</tr>';
-                html += '<tr>';
-                 html += '<td>PIC</td>';
-                 html += '<td>:</td>';
-                 html += '<td>' + data.pic + '</td>';
-                html += '</tr>';
-                html += '<tr>';
-                 html += '<td>Status</td>';
-                 html += '<td>:</td>';
-                 html += '<td>' + data.status + '</td>';
-                html += '</tr>';
-                html += '<tr>';
-                 html += '<td>Waktu Selesai</td>';
-                 html += '<td>:</td>';
-                 html += '<td>' + data.tanggal_selesai +' '+ data.jam_selesai + '</td>';
-                html += '</tr>';
-                html += '<tr>';
-                 html += '<td>Keterangan</td>';
-                 html += '<td>:</td>';
-                 html += '<td>' + data.keterangan + '</td>';
-                html += '</tr>';
-                html += '<tr>';
-                 html += '<td>Tingkat Kesulitan</td>';
-                 html += '<td>:</td>';
-                 html += '<td>' + data.tingkat_kesulitan + '</td>';
-                html += '</tr>';
-
+            html += '<tr>';
+            html += '<td>Nama Karyawan</td>';
+            html += '<td>:</td>';
+            html += '<td>' + (data.nama_karyawan || '-') + '</td>'; // Tambahkan || '-'
+            html += '</tr>';
+            html += '<tr>';
+            html += '<td>Divisi</td>';
+            html += '<td>:</td>';
+            html += '<td>' + (data.divisi || '-') + '</td>'; // Tambahkan || '-'
+            html += '</tr>';
+            html += '<tr>';
+            html += '<td>Kategori</td>';
+            html += '<td>:</td>';
+            html += '<td>' + (data.kategori || '-') + '</td>'; // Tambahkan || '-'
+            html += '</tr>';
+            html += '<tr>';
+            html += '<td>Detail Kendala</td>';
+            html += '<td>:</td>';
+            html += '<td>' + (data.detail_kendala || '-') + '</td>'; // Tambahkan || '-'
+            html += '</tr>';
+            html += '<tr>';
+            html += '<td>Keperluan</td>';
+            html += '<td>:</td>';
+            html += '<td>' + (data.keperluan || '-') + '</td>'; // Tambahkan || '-'
+            html += '</tr>';
+            html += '<tr>';
+            html += '<td>Waktu Response</td>';
+            // Pastikan kedua bagian ada sebelum digabung, jika tidak, tampilkan '-'
+            html += '<td>:</td>';
+            html += '<td>' + ((data.tanggal_response || '-') + ' ' + (data.jam_response || '-')) + '</td>';
+            html += '</tr>';
+            html += '<tr>';
+            html += '<td>Penanganan</td>';
+            html += '<td>:</td>';
+            html += '<td>' + (data.penanganan || '-') + '</td>'; // Tambahkan || '-'
+            html += '</tr>';
+            html += '<tr>';
+            html += '<td>PIC</td>';
+            html += '<td>:</td>';
+            html += '<td>' + (data.pic || '-') + '</td>'; // Tambahkan || '-'
+            html += '</tr>';
+            html += '<tr>';
+            html += '<td>Status</td>';
+            html += '<td>:</td>';
+            html += '<td>' + (data.status || '-') + '</td>'; // Tambahkan || '-'
+            html += '</tr>';
+            html += '<tr>';
+            html += '<td>Waktu Selesai</td>';
+            // Pastikan kedua bagian ada sebelum digabung, jika tidak, tampilkan '-'
+            html += '<td>:</td>';
+            html += '<td>' + ((data.tanggal_selesai || '-') + ' ' + (data.jam_selesai || '-')) + '</td>';
+            html += '</tr>';
+            html += '<tr>';
+            html += '<td>Keterangan</td>';
+            html += '<td>:</td>';
+            html += '<td>' + (data.keterangan || '-') + '</td>'; // Tambahkan || '-'
+            html += '</tr>';
+            html += '<tr>';
+            html += '<td>Tingkat Kesulitan</td>';
+            html += '<td>:</td>';
+            html += '<td>' + (data.tingkat_kesulitan || '-') + '</td>'; // Tambahkan || '-'
+            html += '</tr>';
             html += '</tbody>';
             html += '</table>';
-        $('#content').html(html);
+            $('#content').html(html);
+
 
         $('#detailModal').modal('show');
     }

@@ -111,30 +111,31 @@ class TicketController extends Controller
                 $detail_kendala_td,
             ]
         ];
-
-        $itsm = karyawan::where('divisi', 'IT Service Management')->get();
-        // Panggil method appendValues
         $message = $this->appendValues($spreadsheetId, $range, $values);
         $ticket->update([
             'row' => $message
         ]);
+        $itsm = karyawan::where('divisi', 'IT Service Management')->get();
 
+        // Ambil array kode_karyawan
+        $kodeKaryawanList = $itsm->pluck('kode_karyawan')->toArray();
+
+        // Filter dan olah nilai yang '-' jadi null (atau sesuai logika Anda)
         $users = array_map(function ($user) {
             return $user === '-' ? null : $user;
-        }, [
-            $itsm
-        ]);
+        }, $kodeKaryawanList);
 
+        // Ambil data User yang terkait dengan kode_karyawan setelah difilter
         $users = User::whereHas('karyawan', function ($query) use ($users) {
-            $query->whereIn('kode_karyawan', array_filter($users));
+            $query->whereIn('kode_karyawan', array_filter($users)); // pastikan tidak ada null
         })->get();
+
         $path = '/tickets';
         $status = "Ticketing Baru";
-        foreach ($users as $user) {
-            NotificationFacade::send($user, new TicketNotification($values, $status, $path));
-        }
 
-        
+        foreach ($users as $user) {
+            NotificationFacade::send($user, new TicketNotification($ticket, $path, $status));
+        }
 
         return redirect()->route('tickets.index')->with('success', 'Tiket berhasil dibuat, akan segera diprovide. Terimakasih!');
 

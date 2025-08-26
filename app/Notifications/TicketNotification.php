@@ -29,10 +29,11 @@ class TicketNotification extends Notification
 
     public function toArray(object $notifiable): array
     {
+        // dd($this->data);
         // Akses variabel menggunakan $this->
         if($this->status == 'Ticketing Baru'){
             return [
-                'user' => auth()->user()->username,
+                'user' => $this->data['nama_karyawan'],
                 'message' => [
                     'tipe' => $this->status,
                     'nama_karyawan' => $this->data['nama_karyawan'] ?? null,
@@ -67,7 +68,21 @@ class TicketNotification extends Notification
                     'jam_selesai' => $this->data['jam_selesai'] ?? null,
                     'keterangan' => $this->data['keterangan'] ?? null,
                     'status' => $this->data['status'] ?? null,
-
+                ],
+                'path' => $this->path,
+                'status' => 'unread',
+            ];
+        }
+        elseif($this->status == 'Ticketing Terkendala'){
+            return [
+                'user' => auth()->user()->username,
+                'message' => [
+                    'tipe' => $this->status,
+                    'pic' => $this->data['pic'] ?? null,
+                    'tanggal_selesai' => $this->data['tanggal_selesai'] ?? null,
+                    'jam_selesai' => $this->data['jam_selesai'] ?? null,
+                    'keterangan' => $this->data['keterangan'] ?? null,
+                    'status' => $this->data['status'] ?? null,
                 ],
                 'path' => $this->path,
                 'status' => 'unread',
