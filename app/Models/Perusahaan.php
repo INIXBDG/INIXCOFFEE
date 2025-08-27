@@ -36,4 +36,8 @@ class Perusahaan extends Model
     {
         return $this->hasMany(Peserta::class, 'perusahaan_key', 'id');
     }
+
+    public function contacts(){
+        return $this->hasMany(Contact::class, 'id_perusahaan', 'id');
+    }
 }

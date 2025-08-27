@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Crm;
 use App\Http\Controllers\Controller;
 use App\Models\Aktivitas;
 use App\Models\Perusahaan;
+use App\Models\Contact;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -20,17 +21,24 @@ class AktivitasController extends Controller
         if ($user->jabatan === 'Sales') {
             $idSales = $user->id_sales;
             $data = Aktivitas::where('id_sales', $idSales)->get();
-            $contact = Perusahaan::where('sales_key', $idSales)->get();
+            $perusahaan = Perusahaan::where('sales_key', $idSales)->get();
         } elseif (in_array($user->jabatan, $allowedJabatan)) {
             $data = Aktivitas::all();
-            $contact = Perusahaan::all();
+            $perusahaan = Perusahaan::all();
+
         } else {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 
-        return view('crm.aktivitas.index', compact('data', 'contact'));
+        return view('crm.aktivitas.index', compact('data', 'perusahaan'));
     }
 
+    public function getContacts($id)
+    {
+        $contacts = Contact::where('id_perusahaan', $id)->get();
+
+        return response()->json($contacts);
+    }
 
     public function indexJson()
     {
@@ -38,7 +46,7 @@ class AktivitasController extends Controller
             $user = Auth::user();
             $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM'];
 
-            $query = Aktivitas::with('perusahaan') // Eager load perusahaan to avoid N+1 queries
+            $query = Aktivitas::with('contact')
                 ->select('id', 'id_sales', 'id_contact', 'aktivitas', 'subject', 'deskripsi', 'waktu_aktivitas');
 
             if ($user->jabatan === 'Sales') {
@@ -76,14 +84,16 @@ class AktivitasController extends Controller
                 ->limit($length)
                 ->get()
                 ->map(function ($item) {
-                    // Safely handle perusahaan relationship
-                $kontak = '-';
-                if ($item->perusahaan instanceof \Illuminate\Database\Eloquent\Model) {
-                    $kontak = $item->perusahaan->nama_perusahaan;
-                    if ($item->perusahaan->cp) {
-                        $kontak .= ' (' . $item->perusahaan->cp . ')';
+                    $namaKontak = $item->contact?->nama ?? '-';
+
+                    // Ambil nama perusahaan dari Perusahaan (jika ada)
+                    $namaPerusahaan = $item->contact?->perusahaan?->nama_perusahaan ?? '-';
+
+                    // Format kontak: "Nama Kontak (Nama Perusahaan)" jika ada perusahaan
+                    $kontak = $namaKontak;
+                    if ($namaPerusahaan !== '-') {
+                        $kontak .= ' (' . $namaPerusahaan . ')';
                     }
-                }
                     return [
                         'id' => $item->id,
                         'kontak' => $kontak,
@@ -131,25 +141,52 @@ class AktivitasController extends Controller
 
     public function storeNew(Request $request)
     {
+        // Validasi data dasar
         $validated = $request->validate([
-            'id_contact' => 'required|integer',
+            'id_perusahaan' => 'required|integer',
+            'id_contact' => 'required|string',
             'aktivitas' => 'required|in:Call,Email,Visit,Meet',
-            'subject' => 'required|string',
+            'subject' => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
             'waktu_aktivitas' => 'required|date',
         ]);
 
-        // hanya untuk test function di postman, setelah selesai tolong diubah -> auth()->user()->id_sales
-        $validated['id_sales'] = $request->input('id_sales', auth()->user()->id_sales ?? null);
+        // Ambil id_sales dari user atau fallback ke auth user
+        $validated['id_sales'] = $request->input('id_sales', auth()->user()->id_sales);
+
+        if ($request->id_contact === 'new') {
+            // Jika pilih "Tambahkan Kontak Baru" → buat contact baru
+            $contact = Contact::create([
+                'id_perusahaan' => (int) $request->id_perusahaan,
+                'sales_key' => $validated['id_sales'],
+                'nama' => trim($request->nama_perusahaan),
+                'email' => trim($request->email_perusahaan),
+                'cp' => trim($request->cp_perusahaan),
+                'divisi' => trim($request->divisi_perusahaan),
+                'status' => '1'
+            ]);
+
+            $validated['id_contact'] = $contact->id;
+
+        } else {
+            $contactId = (int) $request->id_contact;
+
+            if (!Contact::where('id', $contactId)->exists()) {
+                return back()->withErrors([
+                    'id_contact' => 'Kontak yang dipilih tidak valid.'
+                ]);
+            }
+
+            $validated['id_contact'] = $contactId;
+        }
 
         $aktivitas = Aktivitas::create($validated);
 
         return back()->with([
-            'message' => 'Aktivitas berhasil direcord.',
+            'message' => 'Aktivitas berhasil direkam.',
             'data' => $aktivitas,
         ]);
     }
-
 
     public function delete($id)
     {

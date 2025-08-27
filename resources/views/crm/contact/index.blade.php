@@ -431,6 +431,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             let tbody = '';
             data.forEach((contact, i) => {
+                console.log('Data contact saat ini (index:', i, '):', contact);
                 const contactData = JSON.stringify(contact).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
                 tbody += `
                 <tr>
@@ -469,7 +470,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     </td>
                 </tr>`;
             });
-
             tbodyElement.innerHTML = tbody;
         } catch (e) {
             console.error(e);

@@ -197,6 +197,7 @@
 
         $(document).ready(function() {
             $('#peluangTable').DataTable({
+                processing: true,
                 ajax: {
                     url: '{{ route('index.peluang.json') }}',
                     dataSrc: function(json) {

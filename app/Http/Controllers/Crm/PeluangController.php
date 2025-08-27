@@ -154,7 +154,6 @@ class PeluangController extends Controller
 
     public function store(Request $request)
     {
-        // Bersihkan input harga dan netsales agar hanya berisi angka
         $request->merge([
             'harga' => preg_replace('/[^0-9]/', '', $request->harga),
             'netsales' => preg_replace('/[^0-9]/', '', $request->netsales),
