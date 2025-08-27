@@ -90,7 +90,7 @@
                 </div>
             </div>
 
-            <div class="modal fade" id="editClientModal" tabindex="-1" aria-labelledby="editClientModalLabel" aria-hidden="true">
+            {{-- <div class="modal fade" id="editClientModal" tabindex="-1" aria-labelledby="editClientModalLabel" aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
@@ -145,7 +145,7 @@
                         </form>
                     </div>
                 </div>
-            </div>
+            </div> --}}
 
     </div>
 </div>
