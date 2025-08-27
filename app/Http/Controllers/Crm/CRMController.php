@@ -9,6 +9,7 @@ use App\Models\Perusahaan;
 use App\Models\RKM;
 use App\Models\TargetActivity;
 use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
