@@ -6,8 +6,11 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Contact;
 use App\Models\Perusahaan;
+use App\Models\Peserta;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+
 
 class PicController extends Controller
 {
@@ -30,78 +33,142 @@ class PicController extends Controller
         return view('crm.pic.index', compact('perusahaans'));
     }
 
-
-    public function indexJson()
+    public function indexJson(Request $request)
     {
         try {
             $user = Auth::user();
             $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM'];
 
-            $query = Contact::with('perusahaan')
-                ->select(
-                'id',
-                'id_perusahaan',
-                'sales_key',
-                'nama',
-                'status',
-                'email',
-                'cp',
-                'divisi')->first();
+            Log::debug('User Jabatan: ' . ($user->jabatan ?? 'unknown'));
 
-            // Contoh pengecekan user, sesuaikan dengan kebutuhan
+            // Validasi akses jabatan
             if ($user->jabatan === 'Sales') {
-                $query->where('sales_key', $user->sales_key);
+                $salesFilter = 'HW'; // Hardcode to match SQL query
             } elseif (!in_array($user->jabatan, $allowedJabatan)) {
                 return response()->json([
-                    'error' => 'Unauthorized access.'
+                    'error' => 'Unauthorized access.',
                 ], 403);
             }
 
-            // Server-side processing datatables
-            $draw = request()->get('draw', 1);
-            $start = request()->get('start', 0);
-            $length = request()->get('length', 10);
-            $searchValue = request()->get('search')['value'] ?? '';
-            $orderColumnIndex = request()->get('order')[0]['column'] ?? 0;
-            $orderDirection = request()->get('order')[0]['dir'] ?? 'asc';
+            $pesertaQuery = DB::table('pesertas as p')
+                ->selectRaw('
+                    p.id AS peserta_id,
+                    p.nama,
+                    p.email,
+                    p.no_hp AS cp,
+                    p.perusahaan_key,
+                    NULL AS divisi,
+                    pr.nama_perusahaan,
+                    pr.sales_key,
+                    p.updated_at AS created_at,
+                    NULL AS contact_status,
+                    "Peserta Regist" AS status_text
+                ')
+                ->join('perusahaans as pr', 'p.perusahaan_key', '=', 'pr.id');
 
-            $orderColumns = ['id', 'id_perusahaan', 'sales_key', 'nama', 'status', 'email', 'cp', 'divisi'];
-            $orderColumn = $orderColumns[$orderColumnIndex] ?? 'id';
+            if ($user->jabatan === 'Sales') {
+                $pesertaQuery->where('pr.sales_key', $salesFilter);
+            }
 
-            $totalRecords = $query->count();
+            $contactQuery = DB::table('contacts as c')
+                ->selectRaw('
+                    c.id AS contact_id,
+                    c.nama,
+                    c.email,
+                    c.cp,
+                    c.id_perusahaan AS perusahaan_key,
+                    c.divisi,
+                    pr.nama_perusahaan,
+                    pr.sales_key,
+                    c.updated_at AS created_at,
+                    c.status AS contact_status,
+                    CASE
+                        WHEN c.status = "1" THEN "Contact Baru"
+                        WHEN c.status = "0" THEN "Contact"
+                        ELSE "Unknown"
+                    END AS status_text
+                ')
+                ->join('perusahaans as pr', 'c.id_perusahaan', '=', 'pr.id');
+
+            if ($user->jabatan === 'Sales') {
+                $contactQuery->where('pr.sales_key', $salesFilter);
+            }
+
+            $pesertaSql = $pesertaQuery->toSql();
+            $pesertaBindings = $pesertaQuery->getBindings();
+
+            $contactSql = $contactQuery->toSql();
+            $contactBindings = $contactQuery->getBindings();
+
+            $unionSql = "({$pesertaSql}) UNION ALL ({$contactSql})";
+            $unionBindings = array_merge($pesertaBindings, $contactBindings);
+
+            Log::debug('Manual Union SQL', [
+                'sql' => $unionSql,
+                'bindings' => $unionBindings,
+            ]);
+
+            $masterQuery = DB::table(DB::raw("({$unionSql}) as master"))
+                ->setBindings($unionBindings);
+
+            $draw = $request->get('draw', 1);
+            $start = $request->get('start', 0);
+            $length = $request->get('length', 10);
+            $searchValue = $request->get('search')['value'] ?? '';
+            $orderColumnIndex = $request->get('order')[0]['column'] ?? 0;
+            $orderDirection = $request->get('order')[0]['dir'] ?? 'desc';
+
+            $orderColumns = [
+                'nama', 'email', 'cp', 'perusahaan_key', 'divisi', 'contact_status', 'nama_perusahaan', 'sales_key', 'created_at'
+            ];
+            $orderColumn = $orderColumns[$orderColumnIndex] ?? 'created_at';
 
             if (!empty($searchValue)) {
-                $query->where(function ($q) use ($searchValue) {
-                    $q->where('nama', 'like', "%{$searchValue}%")
-                      ->orWhere('email', 'like', "%{$searchValue}%")
-                      ->orWhere('cp', 'like', "%{$searchValue}%")
-                      ->orWhere('divisi', 'like', "%{$searchValue}%");
+                $masterQuery->where(function ($q) use ($searchValue) {
+                    $searchValueLower = strtolower($searchValue);
+
+                    // Cek pencarian berdasarkan nama, email, cp, dan perusahaan
+                    $q->whereRaw('LOWER(nama) LIKE ?', ["%{$searchValueLower}%"])
+                    ->orWhereRaw('LOWER(email) LIKE ?', ["%{$searchValueLower}%"])
+                    ->orWhereRaw('LOWER(cp) LIKE ?', ["%{$searchValueLower}%"])
+                    ->orWhereRaw('LOWER(nama_perusahaan) LIKE ?', ["%{$searchValueLower}%"])
+                    ->orWhereRaw('LOWER(status_text) LIKE ?', ["%{$searchValueLower}%"]);
                 });
             }
 
-            $totalFiltered = $query->count();
 
-            $data = $query->orderBy($orderColumn, $orderDirection)
+            $totalFiltered = $masterQuery->count();
+            Log::debug('TotalFiltered: ' . $totalFiltered);
+
+            $rawData = $masterQuery
+                ->orderBy($orderColumn, $orderDirection)
                 ->offset($start)
                 ->limit($length)
-                ->get()
-                ->map(function ($item) {
-                    // Format tampilan status misalnya
-                    $statusLabel = $item->status == 1 ? 'Kontak Baru' : 'Aktif';
+                ->get();
 
-                    $namaPerusahaan = $item->perusahaan?->nama_perusahaan ?? '-';
+            $totalRecords = DB::table(DB::raw("({$unionSql}) as master"))
+                ->setBindings($unionBindings)
+                ->count();
 
-                    return [
-                        'nama' => $item->nama,
-                        'perusahaan' => $namaPerusahaan,
-                        'sales_key' => $item->sales_key,
-                        'status' => $statusLabel,
-                        'email' => $item->email,
-                        'cp' => $item->cp,
-                        'divisi' => $item->divisi,
-                        'test' => 'test'
-                    ];
-                });
+            $data = $rawData->map(function ($item) {
+                if ($item->contact_status === '1' || $item->contact_status === 1) {
+                    $statusText = 'Contact Baru';
+                } elseif ($item->contact_status === '0' || $item->contact_status === 0) {
+                    $statusText = 'Contact';
+                } else {
+                    $statusText = 'Peserta Regist';
+                }
+
+                return [
+                    'nama' => $item->nama ?? '-',
+                    'perusahaan' => $item->nama_perusahaan ?? '-',
+                    'sales_key' => $item->sales_key ?? '-',
+                    'status' => $statusText,
+                    'email' => $item->email ?? '-',
+                    'cp' => $item->cp ?? '-',
+                    'divisi' => $item->divisi ?? '-',
+                ];
+            });
 
             return response()->json([
                 'draw' => intval($draw),
@@ -109,13 +176,23 @@ class PicController extends Controller
                 'recordsFiltered' => $totalFiltered,
                 'data' => $data,
             ]);
+
         } catch (\Exception $e) {
-            Log::error('PicController@indexJson Error: ' . $e->getMessage());
+            Log::error('PesertaController@indexJson Error: ' . $e->getMessage(), [
+                'user_id' => Auth::id() ?? 'unknown',
+                'user_jabatan' => $user->jabatan ?? 'unknown',
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return response()->json([
-                'error' => 'Terjadi kesalahan pada server. Silakan coba lagi nanti.',
+                'error' => 'Terjadi kesalahan pada server. Silakan hubungi administrator.',
+                'message' => config('app.debug') ? $e->getMessage() : 'Internal Server Error',
             ], 500);
         }
     }
+
 
     public function store(Request $request)
     {
@@ -146,7 +223,7 @@ class PicController extends Controller
     //     ]);
 
     //     $contact = Contact::findOrFail($id);
-    // }   
+    // }
 
 
 }
