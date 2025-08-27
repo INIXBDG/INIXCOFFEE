@@ -13,6 +13,7 @@ use App\Models\RKM;
 use App\Models\User;
 use App\Models\perhitunganNetSales;
 use App\Models\karyawan;
+use App\Models\RegisForm;
 use App\Models\trackingNetSales;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -125,8 +126,9 @@ class PeluangController extends Controller
     }
         $materi = Materi::all();
         $netsales = perhitunganNetSales::with('trackingNetSales', 'approvedNetSales')->where('id_rkm', $peluang->id_rkm)->first();
+        $regis = RegisForm::where('id_peluang', $id)->first();
         // dd($netsales);
-        return view('crm.peluang.detail', compact('peluang', 'aktivitas', 'materi', 'netsales'));
+        return view('crm.peluang.detail', compact('peluang', 'aktivitas', 'materi', 'netsales', 'regis'));
     }
 
     public function AmbilAktivitas($id)

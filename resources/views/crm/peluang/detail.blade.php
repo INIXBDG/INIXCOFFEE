@@ -12,7 +12,7 @@
                 <div class="d-flex gap-2">
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#paymentAdvanceModal"
                         {{ $peluang->tahap === 'merah' ? '' : 'disabled' }}>
-                        <i class="bx bx-plus"></i>  Payment Advance
+                        <i class="bx bx-plus"></i> Payment Advance
                     </button>
                     @if ($isLost)
                         <span class="btn btn-sm btn-info" style="pointer-events: none; opacity: 0.5;">Lihat di RKM</span>
@@ -107,56 +107,83 @@
                         </div>
                         <div class="card-body">
                             <ul class="list-unstyled mb-0">
+
+                                {{-- Tahap Biru --}}
                                 @if ($peluang->biru)
-                                    <li>
+                                    <li class="mb-3">
                                         <strong class="text-info">Update Biru:</strong><br>
                                         {{ \Carbon\Carbon::parse($peluang->biru)->translatedFormat('d F Y') }}
                                     </li>
+
+                                    <div class="d-flex gap-2 flex-wrap mb-3">
+                                        <a href="{{ route('crm.index.regis', ['id' => $peluang->id]) }}" target="_blank"
+                                            class="btn btn-sm btn-info">
+                                            <i class="bi bi-file-earmark-plus"></i> Generate Regis Form
+                                        </a>
+
+                                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal"
+                                            data-bs-target="#uploadPdfModal">
+                                            <i class="bi bi-upload"></i> Upload PDF
+                                        </button>
+
+                                        @if ($regis)
+                                            <a href="{{ asset('storage/' . $regis->path) }}" target="_blank"
+                                                class="btn btn-sm btn-success">
+                                                <i class="bi bi-file-earmark-pdf"></i> Lihat Regis Form
+                                            </a>
+                                        @endif
+                                    </div>
                                 @endif
 
+                                {{-- Tahap Lost --}}
                                 @if ($peluang->lost)
-                                    <li>
+                                    <li class="mb-3">
                                         <strong class="text-primary">Lost:</strong><br>
                                         {{ \Carbon\Carbon::parse($peluang->lost)->translatedFormat('d F Y') }}
                                     </li>
                                 @endif
 
+                                {{-- Tahap Merah --}}
                                 @if ($peluang->merah)
-                                    <li class="mt-2">
+                                    <li class="mb-3">
                                         <strong class="text-danger">Update Merah:</strong><br>
                                         {{ \Carbon\Carbon::parse($peluang->merah)->translatedFormat('d F Y') }}
                                     </li>
                                 @endif
 
+                                {{-- Final Harga --}}
                                 @if ($peluang->final)
-                                    <li class="mt-2">
+                                    <li class="mb-3">
                                         <strong class="text-success">Final Harga:</strong><br>
                                         Rp {{ number_format($peluang->final, 2, ',', '.') }}
                                     </li>
                                 @endif
                             </ul>
 
+                            {{-- Deskripsi Lost --}}
                             @if ($peluang->tahap === 'lost' && $peluang->desc_lost)
-                                <div class="card mt-5 shadow-sm rounded" style="border: none; max-width: 500px;">
-                                    <div class="card-header bg-primary text-white fw-bold"
-                                        style="font-size: 0.85rem; border-radius: 0.375rem 0.375rem 0 0; padding: 0.5rem 1rem;">
-                                        Deskripsi Lost :
+                                <div class="card mt-4 shadow-sm border-0">
+                                    <div class="card-header bg-primary text-white fw-bold small">
+                                        Deskripsi Lost
                                     </div>
-                                    <div class="card-body bg-light"
-                                        style="border-radius: 0 0 0.375rem 0.375rem; color: #444; font-size: 0.95rem; line-height: 1.5; padding: 1rem;">
+                                    <div class="card-body bg-light text-muted">
                                         {{ $peluang->desc_lost }}
                                     </div>
                                 </div>
                             @endif
-                            
-                            @if ($netsales)
-                                <p class="mt-4"><strong>Lihat detail Payment Advance :</strong></p>
 
-                                <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#detailPAModal">
-                                    Detail PA
-                                </button>
+                            {{-- Detail Payment Advance --}}
+                            @if ($netsales)
+                                <div class="mt-4">
+                                    <p class="fw-bold mb-2">Lihat detail Payment Advance :</p>
+                                    <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal"
+                                        data-bs-target="#detailPAModal">
+                                        <i class="bi bi-credit-card"></i> Detail PA
+                                    </button>
+                                </div>
                             @endif
                         </div>
+
                     </div>
                 </div>
             </div>
@@ -464,111 +491,166 @@
         </div>
 
 
-<!-- Modal Detail PA -->
-    <div class="modal fade" id="detailPAModal" tabindex="-1" aria-labelledby="detailPAModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="detailPAModalLabel">Detail Payment Advance</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    @if ($netsales)
-                        <h6 class="mb-3">Informasi Payment Advance</h6>
-                        <dl class="row">
-                            <dt class="col-sm-4">Harga Penawaran</dt>
-                            <dd class="col-sm-8">Rp {{ $netsales->harga_penawaran ? number_format($netsales->harga_penawaran, 2, ',', '.') : '-' }}</dd>
-                            <dt class="col-sm-4">Transportasi</dt>
-                            <dd class="col-sm-8">Rp {{ $netsales->transportasi ? number_format($netsales->transportasi, 2, ',', '.') : '-' }}</dd>
-                            <dt class="col-sm-4">Penginapan</dt>
-                            <dd class="col-sm-8">Rp {{ $netsales->penginapan ? number_format($netsales->penginapan, 2, ',', '.') : '-' }}</dd>
-                            <dt class="col-sm-4">Fresh Money</dt>
-                            <dd class="col-sm-8">Rp {{ $netsales->fresh_money ? number_format($netsales->fresh_money, 2, ',', '.') : '-' }}</dd>
-                            <dt class="col-sm-4">Entertaint</dt>
-                            <dd class="col-sm-8">Rp {{ $netsales->entertaint ? number_format($netsales->entertaint, 2, ',', '.') : '-' }}</dd>
-                            <dt class="col-sm-4">Souvenir</dt>
-                            <dd class="col-sm-8">Rp {{ $netsales->souvenir ? number_format($netsales->souvenir, 2, ',', '.') : '-' }}</dd>
-                            <dt class="col-sm-4">Tanggal Payment Advance</dt>
-                            <dd class="col-sm-8">{{ $netsales->tgl_pa ? \Carbon\Carbon::parse($netsales->tgl_pa)->translatedFormat('d F Y') : '-' }}</dd>
-                            <dt class="col-sm-4">Tipe Pembayaran</dt>
-                            <dd class="col-sm-8">{{ $netsales->tipe_pembayaran ? ucfirst($netsales->tipe_pembayaran) : '-' }}</dd>
-                            <dt class="col-sm-4">Pajak</dt>
-                            <dd class="col-sm-8">{{ $netsales->pajak ? number_format($netsales->pajak, 2, ',', '.') . '%' : '-' }}</dd>
-                        </dl>
+        <!-- Modal Detail PA -->
+        <div class="modal fade" id="detailPAModal" tabindex="-1" aria-labelledby="detailPAModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="detailPAModalLabel">Detail Payment Advance</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        @if ($netsales)
+                            <h6 class="mb-3">Informasi Payment Advance</h6>
+                            <dl class="row">
+                                <dt class="col-sm-4">Harga Penawaran</dt>
+                                <dd class="col-sm-8">Rp
+                                    {{ $netsales->harga_penawaran ? number_format($netsales->harga_penawaran, 2, ',', '.') : '-' }}
+                                </dd>
+                                <dt class="col-sm-4">Transportasi</dt>
+                                <dd class="col-sm-8">Rp
+                                    {{ $netsales->transportasi ? number_format($netsales->transportasi, 2, ',', '.') : '-' }}
+                                </dd>
+                                <dt class="col-sm-4">Penginapan</dt>
+                                <dd class="col-sm-8">Rp
+                                    {{ $netsales->penginapan ? number_format($netsales->penginapan, 2, ',', '.') : '-' }}
+                                </dd>
+                                <dt class="col-sm-4">Fresh Money</dt>
+                                <dd class="col-sm-8">Rp
+                                    {{ $netsales->fresh_money ? number_format($netsales->fresh_money, 2, ',', '.') : '-' }}
+                                </dd>
+                                <dt class="col-sm-4">Entertaint</dt>
+                                <dd class="col-sm-8">Rp
+                                    {{ $netsales->entertaint ? number_format($netsales->entertaint, 2, ',', '.') : '-' }}
+                                </dd>
+                                <dt class="col-sm-4">Souvenir</dt>
+                                <dd class="col-sm-8">Rp
+                                    {{ $netsales->souvenir ? number_format($netsales->souvenir, 2, ',', '.') : '-' }}</dd>
+                                <dt class="col-sm-4">Tanggal Payment Advance</dt>
+                                <dd class="col-sm-8">
+                                    {{ $netsales->tgl_pa ? \Carbon\Carbon::parse($netsales->tgl_pa)->translatedFormat('d F Y') : '-' }}
+                                </dd>
+                                <dt class="col-sm-4">Tipe Pembayaran</dt>
+                                <dd class="col-sm-8">
+                                    {{ $netsales->tipe_pembayaran ? ucfirst($netsales->tipe_pembayaran) : '-' }}</dd>
+                                <dt class="col-sm-4">Pajak</dt>
+                                <dd class="col-sm-8">
+                                    {{ $netsales->pajak ? number_format($netsales->pajak, 2, ',', '.') . '%' : '-' }}</dd>
+                            </dl>
 
-                        <h6 class="mt-4 mb-3">Tracking Information</h6>
-                        @if ($netsales->trackingNetSales)
-                            <div class="table-responsive">
-                                <table class="table table-striped table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>Tracking</th>
-                                            <th>Tanggal Dibuat</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td>{{ $netsales->trackingNetSales->tracking ?? '-' }}</td>
-                                            <td>{{ $netsales->created_at ? \Carbon\Carbon::parse($netsales->created_at)->translatedFormat('d F Y') : '-' }}</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        @else
-                            <p class="text-muted">Belum ada data tracking untuk Payment Advance ini.</p>
-                        @endif
-
-                        <h6 class="mt-4 mb-3">Approval Information</h6>
-                        @if ($netsales->approvedNetSales->isNotEmpty())
-                            <div class="table-responsive">
-                                <table class="table table-striped table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>Status</th>
-                                            <th>Approver</th>
-                                            <th>Keterangan</th>
-                                            <th>Tanggal</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach ($netsales->approvedNetSales as $approval)
-                                            @php
-                                                $status = match (true) {
-                                                    $approval->status === 1 && $approval->level_status === 'III' && $approval->keterangan !== 'Selesai' => 'Diproses',
-                                                    $approval->status === 1 => 'Disetujui',
-                                                    $approval->status === 0 => 'Ditolak',
-                                                    default => 'Belum diketahui',
-                                                };
-                                                $approver = match ($approval->level_status) {
-                                                    'I' => 'SPV Sales',
-                                                    'II' => 'GM',
-                                                    'III' => 'Finance & Accounting',
-                                                    default => $approval->level_status ?? '-',
-                                                };
-                                            @endphp
+                            <h6 class="mt-4 mb-3">Tracking Information</h6>
+                            @if ($netsales->trackingNetSales)
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-hover">
+                                        <thead>
                                             <tr>
-                                                <td>{{ $status }}</td>
-                                                <td>{{ $approver }}</td>
-                                                <td>{{ $approval->keterangan ?? '-' }}</td>
-                                                <td>{{ $approval->created_at ? \Carbon\Carbon::parse($approval->created_at)->translatedFormat('d F Y H:i') : '-' }}</td>
+                                                <th>Tracking</th>
+                                                <th>Tanggal Dibuat</th>
                                             </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>{{ $netsales->trackingNetSales->tracking ?? '-' }}</td>
+                                                <td>{{ $netsales->created_at ? \Carbon\Carbon::parse($netsales->created_at)->translatedFormat('d F Y') : '-' }}
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @else
+                                <p class="text-muted">Belum ada data tracking untuk Payment Advance ini.</p>
+                            @endif
+
+                            <h6 class="mt-4 mb-3">Approval Information</h6>
+                            @if ($netsales->approvedNetSales->isNotEmpty())
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Status</th>
+                                                <th>Approver</th>
+                                                <th>Keterangan</th>
+                                                <th>Tanggal</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($netsales->approvedNetSales as $approval)
+                                                @php
+                                                    $status = match (true) {
+                                                        $approval->status === 1 &&
+                                                            $approval->level_status === 'III' &&
+                                                            $approval->keterangan !== 'Selesai'
+                                                            => 'Diproses',
+                                                        $approval->status === 1 => 'Disetujui',
+                                                        $approval->status === 0 => 'Ditolak',
+                                                        default => 'Belum diketahui',
+                                                    };
+                                                    $approver = match ($approval->level_status) {
+                                                        'I' => 'SPV Sales',
+                                                        'II' => 'GM',
+                                                        'III' => 'Finance & Accounting',
+                                                        default => $approval->level_status ?? '-',
+                                                    };
+                                                @endphp
+                                                <tr>
+                                                    <td>{{ $status }}</td>
+                                                    <td>{{ $approver }}</td>
+                                                    <td>{{ $approval->keterangan ?? '-' }}</td>
+                                                    <td>{{ $approval->created_at ? \Carbon\Carbon::parse($approval->created_at)->translatedFormat('d F Y H:i') : '-' }}
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @else
+                                <p class="text-muted">Belum ada data approval untuk Payment Advance ini.</p>
+                            @endif
                         @else
-                            <p class="text-muted">Belum ada data approval untuk Payment Advance ini.</p>
+                            <p class="text-muted">Belum ada data Payment Advance untuk peluang ini.</p>
                         @endif
-                    @else
-                        <p class="text-muted">Belum ada data Payment Advance untuk peluang ini.</p>
-                    @endif
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+
+        <!-- Modal Upload RegisForm-->
+        <div class="modal fade" id="uploadPdfModal" tabindex="-1" aria-labelledby="uploadPdfModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content rounded-3 shadow">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title" id="upladPdfModalLabel">Upload PDF</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    </div>
+
+                    <form action="{{ route('crm.upload.regis') }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <input type="hidden" name="id_peluang" value="{{ $peluang->id }}">
+
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="pdfFile" class="form-label">Pilih File PDF</label>
+                                <input type="file" name="pdf" id="pdfFile" class="form-control"
+                                    accept="application/pdf" required>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary btn-sm"
+                                data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-primary btn-sm">Upload</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
 
 
 

@@ -45,4 +45,9 @@ class Peluang extends Model
     {
         return $this->belongsTo(Materi::class, 'materi', 'id');
     }
+
+    public function regis()
+    {
+        return $this->belongsTo(RegisForm::class, 'id_peluang');
+    }
 }

@@ -7,6 +7,7 @@ use App\Http\Controllers\Crm\ContactController;
 use App\Http\Controllers\Crm\CRMController;
 use App\Http\Controllers\Crm\AktivitasController;
 use App\Http\Controllers\Crm\PeluangController;
+use App\Http\Controllers\crm\RegisFormController;
 use App\Http\Controllers\Crm\salesPribadiController;
 use App\Http\Controllers\crm\TargetAktivitas;
 use App\Http\Controllers\databasekpiContoller;
@@ -401,4 +402,12 @@ Route::prefix('crm')->group(function () {
     Route::get('/detail/closed/win/{id}', [PeluangController::class, 'detailRingkasan'])->name('detail.ringkasanPeluang');
     Route::get('/closed/lost', [PeluangController::class, 'ringkasanPeluanglost'])->name('index.ringkasanlost');
     Route::get('/detail/closed/lost/{id}', [PeluangController::class, 'detailRingkasanlost'])->name('detail.Ringkasanlost');
+
+
+    Route::get('/ketentuan', [RegisFormController::class, 'ketentuan'])->name('crm.ketentuan');
+    Route::post('/add/ketentuan', [RegisFormController::class, 'storeKetentuan'])->name('crm.store.ketentuan');
+    Route::post('/upload/regisform', [RegisFormController::class, 'upload'])->name('crm.upload.regis');
+    Route::put('/update/ketentuan/{id}', [RegisFormController::class, 'updateKetentuan'])->name('crm.update.ketentuan');
+    Route::delete('/delete/ketentuan/{id}', [RegisFormController::class, 'deleteKetentuan'])->name('crm.delete.ketentuan');
+    Route::get('/generate/regis/form/{id}', [RegisFormController::class, 'index'])->name('crm.index.regis');
 });
