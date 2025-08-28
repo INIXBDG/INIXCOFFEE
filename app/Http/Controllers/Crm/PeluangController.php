@@ -126,7 +126,7 @@ class PeluangController extends Controller
     }
         $materi = Materi::all();
         $netsales = perhitunganNetSales::with('trackingNetSales', 'approvedNetSales')->where('id_rkm', $peluang->id_rkm)->first();
-        $regis = RegisForm::where('id_peluang', $id)->first();
+        $regis = Regisform::where('id_peluang', $id)->first();
         // dd($netsales);
         return view('crm.peluang.detail', compact('peluang', 'aktivitas', 'materi', 'netsales', 'regis'));
     }
@@ -171,6 +171,7 @@ class PeluangController extends Controller
             'pax' => 'required|numeric|min:1',
             'id_aktivitas' => 'nullable|array',
             'id_aktivitas.*' => 'integer|exists:aktivitas,id',
+            'tentatif' => 'nullable|boolean',
         ]);
 
         // Validasi data untuk tabel RKM
@@ -305,6 +306,7 @@ class PeluangController extends Controller
             'periode_mulai' => 'required|date',
             'periode_selesai' => 'required|date|after_or_equal:periode_mulai',
             'pax' => 'required|numeric|min:1',
+            'tentatif' => 'nullable|boolean',
         ]);
 
         $peluang = Peluang::findOrFail($id);

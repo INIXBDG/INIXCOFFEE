@@ -76,10 +76,17 @@
             </a>
         </li>
 
-        <li class="menu-item {{ request()->routeIs('index.ringkasanPeluangLost') ? 'active open' : '' }}">
+        <li class="menu-item {{ request()->routeIs('index.ringkasanlost') ? 'active open' : '' }}">
             <a href="{{ route('index.ringkasanlost') }}" class="menu-link">
                 <i class='menu-icon tf-icons bx bx-line-chart-down'></i>
                 <div class="text-truncate" data-i18n="ringkasanPeluang">Closed Lost</div>
+            </a>
+        </li>
+
+        <li class="menu-item {{ request()->routeIs('crm.ketentuan') ? 'active open' : '' }}">
+            <a href="{{ route('crm.ketentuan') }}" class="menu-link">
+                <i class='menu-icon tf-icons bx bx-bookmark-alt'></i>
+                <div class="text-truncate" data-i18n="crmKetentuan">Ketentuan Regis</div>
             </a>
         </li>
 

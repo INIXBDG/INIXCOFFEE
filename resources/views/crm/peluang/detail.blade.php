@@ -13,7 +13,7 @@
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#paymentAdvanceModal"
                         {{ $peluang->tahap === 'merah' ? '' : 'disabled' }}>
 
-                        <i class="menu-icon bx bx-plus"></i>  Payment Advance
+                        <i class="menu-icon bx bx-plus"></i> Payment Advance
 
                     </button>
                     @if ($isLost)
@@ -26,7 +26,7 @@
                     <button type="button" class="btn btn-warning" data-bs-toggle="modal"
                         data-bs-target="#editPeluangModal">Edit Lead</button>
                     <button type="button" class="btn btn-success" data-bs-toggle="modal"
-                        data-bs-target="#updateProbabilitasModal" @disabled($peluang->tahap === 'merah' || $peluang->tahap === 'lost')>
+                        data-bs-target="#updateProbabilitasModal" @disabled($peluang->tahap === 'merah' || $peluang->tahap === 'lost' || ($peluang->tahap === 'biru' && !$regis))>
                         Update Lead
                     </button>
                 </div>
@@ -118,15 +118,18 @@
                                     </li>
 
                                     <div class="d-flex gap-2 flex-wrap mb-3">
-                                        <a href="{{ route('crm.index.regis', ['id' => $peluang->id]) }}" target="_blank"
-                                            class="btn btn-sm btn-info">
-                                            <i class="bi bi-file-earmark-plus"></i> Generate Regis Form
-                                        </a>
+                                        {{-- Hanya tampil kalau biru sudah ada & belum merah --}}
+                                        @if (!$peluang->merah)
+                                            <a href="{{ route('crm.index.regis', ['id' => $peluang->id]) }}"
+                                                target="_blank" class="btn btn-sm btn-info">
+                                                <i class="bi bi-file-earmark-plus"></i> Generate Regis Form
+                                            </a>
 
-                                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal"
-                                            data-bs-target="#uploadPdfModal">
-                                            <i class="bi bi-upload"></i> Upload PDF
-                                        </button>
+                                            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal"
+                                                data-bs-target="#uploadPdfModal">
+                                                <i class="bi bi-upload"></i> Upload PDF
+                                            </button>
+                                        @endif
 
                                         @if ($regis)
                                             <a href="{{ asset('storage/' . $regis->path) }}" target="_blank"
@@ -136,6 +139,7 @@
                                         @endif
                                     </div>
                                 @endif
+
 
                                 {{-- Tahap Lost --}}
                                 @if ($peluang->lost)
@@ -173,11 +177,6 @@
                                     </div>
                                 </div>
                             @endif
-
-
-                            @if ($netsales)
-                                <p class="mt-4"><strong>Lihat detail Payment Advance :</strong></p>
-
 
                             {{-- Detail Payment Advance --}}
                             @if ($netsales)
@@ -355,6 +354,15 @@
                                 <label for="periode_selesai" class="form-label">Periode Selesai</label>
                                 <input type="date" class="form-control" id="periode_selesai" name="periode_selesai"
                                     value="{{ $peluang->periode_selesai }}" required>
+                            </div>
+
+                            <input type="hidden" name="tentatif" value="0">
+
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" role="switch" id="tentatifSwitch"
+                                    name="tentatif" value="1"
+                                    {{ old('tentatif', $peluang->tentatif) ? 'checked' : '' }}>
+                                <label class="form-check-label" for="tentatifSwitch">Tentatif</label>
                             </div>
                         </div>
 
