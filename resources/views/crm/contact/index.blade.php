@@ -8,7 +8,7 @@
                 <h4 class="fw-bold">Database Client</h4>
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#opportunityModal"
                     onclick="resetForm()">
-                    Tambah Contact
+                    Tambah Perusahaan
                 </button>
             </div>
 

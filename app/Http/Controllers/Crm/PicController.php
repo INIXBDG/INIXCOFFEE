@@ -43,7 +43,7 @@ class PicController extends Controller
 
             // Validasi akses jabatan
             if ($user->jabatan === 'Sales') {
-                $salesFilter = 'HW'; // Hardcode to match SQL query
+                $salesFilter = $user->id_sales;
             } elseif (!in_array($user->jabatan, $allowedJabatan)) {
                 return response()->json([
                     'error' => 'Unauthorized access.',

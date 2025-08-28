@@ -241,13 +241,24 @@
             $('#edit_deskripsi').val(row.deskripsi);
 
             if (row.waktu_aktivitas) {
-                const tanggal = new Date(row.waktu_aktivitas).toISOString().split('T')[0];
-                $('#edit_waktu_aktivitas').val(tanggal);
+                const dateObj = new Date(row.waktu_aktivitas);
+                if (!isNaN(dateObj)) {
+                    const tanggal = dateObj.toISOString().split('T')[0];
+                    $('#edit_waktu_aktivitas').val(tanggal);
+                } else {
+                    console.error("Nilai waktu_aktivitas tidak valid:", row.waktu_aktivitas);
+                    $('#edit_waktu_aktivitas').val('');
+                }
+            } else {
+                $('#edit_waktu_aktivitas').val('');
             }
+            console.log('buka');
 
             const modal = new bootstrap.Modal(document.getElementById('editActivityModal'));
+
             modal.show();
         }
+
 
         $('#editActivityForm').submit(function(e) {
             e.preventDefault();
