@@ -57,7 +57,6 @@ class AktivitasController extends Controller
                 ], 403);
             }
 
-            // Server-side processing
             $draw = request()->get('draw', 1);
             $start = request()->get('start', 0);
             $length = request()->get('length', 10);
@@ -86,10 +85,8 @@ class AktivitasController extends Controller
                 ->map(function ($item) {
                     $namaKontak = $item->contact?->nama ?? '-';
 
-                    // Ambil nama perusahaan dari Perusahaan (jika ada)
                     $namaPerusahaan = $item->contact?->perusahaan?->nama_perusahaan ?? '-';
 
-                    // Format kontak: "Nama Kontak (Nama Perusahaan)" jika ada perusahaan
                     $kontak = $namaKontak;
                     if ($namaPerusahaan !== '-') {
                         $kontak .= ' (' . $namaPerusahaan . ')';
@@ -129,7 +126,6 @@ class AktivitasController extends Controller
             'waktu_aktivitas' => 'required|date',
         ]);
 
-        // hanya untuk test function di postman, setelah selesai tolong diubah -> auth()->user()->id_sales
         $validated['id_sales'] = $request->input('id_sales', auth()->user()->id_sales ?? null);
         $aktivitas = Aktivitas::create($validated);
 
@@ -141,7 +137,6 @@ class AktivitasController extends Controller
 
     public function storeNew(Request $request)
     {
-        // Validasi data dasar
         $validated = $request->validate([
             'id_perusahaan' => 'required|integer',
             'id_contact' => 'required|string',
@@ -151,11 +146,9 @@ class AktivitasController extends Controller
             'waktu_aktivitas' => 'required|date',
         ]);
 
-        // Ambil id_sales dari user atau fallback ke auth user
         $validated['id_sales'] = $request->input('id_sales', auth()->user()->id_sales);
 
         if ($request->id_contact === 'new') {
-            // Jika pilih "Tambahkan Kontak Baru" → buat contact baru
             $contact = Contact::create([
                 'id_perusahaan' => (int) $request->id_perusahaan,
                 'sales_key' => $validated['id_sales'],

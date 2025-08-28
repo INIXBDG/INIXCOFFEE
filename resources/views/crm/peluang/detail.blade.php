@@ -174,11 +174,6 @@
                                 </div>
                             @endif
 
-
-                            @if ($netsales)
-                                <p class="mt-4"><strong>Lihat detail Payment Advance :</strong></p>
-
-
                             {{-- Detail Payment Advance --}}
                             @if ($netsales)
                                 <div class="mt-4">
