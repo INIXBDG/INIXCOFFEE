@@ -111,8 +111,8 @@
 
                                 <div class="mb-3">
                                     <label class="form-label" for="periode_selesai">Periode Selesai</label>
-                                    <input type="date" class="form-control" id="periode_selesai" name="periode_selesai"
-                                        required>
+                                    <input type="date" class="form-control" id="periode_selesai"
+                                        name="periode_selesai" required>
                                     <div class="invalid-feedback">Pilih tanggal selesai.</div>
                                 </div>
 
@@ -166,6 +166,17 @@
                                     </div>
                                     <input type="hidden" id="authorize" name="authorize" value="0">
                                     <div class="invalid-feedback">Pilih status authorize.</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Tentatif</label>
+                                    <input type="hidden" name="tentatif" value="0">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" role="switch"
+                                            id="tentatifSwitch" name="tentatif" value="1"
+                                            {{ old('tentatif', $model->tentatif ?? false) ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="tentatifSwitch">Tentatif</label>
+                                    </div>
                                 </div>
 
                                 <!-- Aktivitas yang bisa dikaitkan -->
@@ -266,9 +277,9 @@
                             const rkm = data.rkm_formatted;
                             const isLost = data.tahap.toLowerCase() === 'lost';
 
-                            const rkmButton = isLost
-                                ? `<span class="btn btn-sm btn-info disabled w-100" style="pointer-events: none; opacity: 0.5;">RKM</span>`
-                                : `<a class="btn btn-sm btn-info w-100" target="_blank" href="/rkm/${rkm.materi_key}ixb${rkm.tanggal_awal_day}ie${rkm.tanggal_awal_year}ie${rkm.tanggal_awal_month}ixb${rkm.metode_kelas}">RKM</a>`;
+                            const rkmButton = isLost ?
+                                `<span class="btn btn-sm btn-info disabled w-100" style="pointer-events: none; opacity: 0.5;">RKM</span>` :
+                                `<a class="btn btn-sm btn-info w-100" target="_blank" href="/rkm/${rkm.materi_key}ixb${rkm.tanggal_awal_day}ie${rkm.tanggal_awal_year}ie${rkm.tanggal_awal_month}ixb${rkm.metode_kelas}">RKM</a>`;
 
                             return `
                                 <div class="d-flex flex-column gap-2" style="min-width: 80px;">

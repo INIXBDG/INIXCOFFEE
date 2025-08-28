@@ -23,6 +23,7 @@ class Peluang extends Model
         'biru',
         'merah',
         'tahap',
+        'tentatif',
     ];
 
     public function perusahaan()

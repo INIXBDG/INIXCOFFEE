@@ -29,6 +29,7 @@ return new class extends Migration
             $table->date('merah')->nullable();
             $table->date('lost')->nullable();
             $table->enum('tahap', ['lead', 'hitam', 'biru', 'merah','lost'])->default('hitam');
+            $table->boolean('tentatif')->default(0);
             $table->timestamps();
         });
     }
