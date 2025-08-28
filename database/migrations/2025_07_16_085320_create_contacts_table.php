@@ -15,11 +15,11 @@ return new class extends Migration
             $table->id();
             $table->integer('id_perusahaan');
             $table->text('sales_key');
-            $table->string('nama');
+            $table->string('nama')->nullable();
             $table->enum('status', ['0', '1'])->default('1');
-            $table->text('email');
-            $table->text('cp');
-            $table->text('divisi');
+            $table->text('email')->nullable();
+            $table->text('cp')->nullable();
+            $table->text('divisi')->nullable();
             $table->timestamps();
         });
     }

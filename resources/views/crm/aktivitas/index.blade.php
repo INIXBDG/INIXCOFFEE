@@ -382,10 +382,10 @@
             contactSelect.addEventListener("change", function() {
                 if (this.value === "new") {
                     newContactFields.style.display = "block";
-                    newContactFields.querySelectorAll("input").forEach(input => input.required = true);
+                    // newContactFields.querySelectorAll("input").forEach(input => input.required = true);
                 } else {
                     newContactFields.style.display = "none";
-                    newContactFields.querySelectorAll("input").forEach(input => input.required = false);
+                    // newContactFields.querySelectorAll("input").forEach(input => input.required = false);
                 }
             });
         });
