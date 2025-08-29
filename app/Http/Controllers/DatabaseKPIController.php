@@ -1746,8 +1746,7 @@ class DatabaseKPIController extends Controller
         ]);
 
         $kodeForm = $validated['kode_form'];
-        $evaluatorCheck = shareForm::where('kode_form', $kodeForm)->exists();
-        if ($evaluatorCheck) {
+        if (shareForm::where('kode_form', $kodeForm)->exists()) {
             return redirect()->back()->with('error', 'Jangan lupa dibersihkan terlebih dahulu');
         }
 
@@ -1759,8 +1758,20 @@ class DatabaseKPIController extends Controller
 
             $dataQuartalDanTahun = formPenilaian::where('kode_form', $kodeForm)
                 ->select('quartal', 'tahun')
-                ->distinct()
-                ->get();
+                ->first();
+
+            $existingForms = formPenilaian::where('kode_form', $kodeForm)->get();
+            $inputFormIds = collect($validated['kriteria'])->pluck('id_nama_penilaian')->filter()->toArray();
+            $formsToDelete = $existingForms->filter(function ($form) use ($inputFormIds) {
+                return !in_array($form->id, $inputFormIds);
+            });
+
+            foreach ($formsToDelete as $form) {
+                $kategoriIds = kategoriKPI::where('kode_kategori', $form->kode_kategori)->pluck('id')->toArray();
+                tipeKategoriTabel::whereIn('id_kategori', $kategoriIds)->delete();
+                kategoriKPI::whereIn('id', $kategoriIds)->delete();
+                $form->delete();
+            }
 
             foreach ($validated['kriteria'] as $krit) {
                 $namaPenilaian = $krit['nama_penilaian'];
@@ -1776,8 +1787,14 @@ class DatabaseKPIController extends Controller
                         foreach ($formsToUpdate as $form) {
                             $form->update(['nama_penilaian' => $namaPenilaian]);
 
+                            $existingKategoriIds = kategoriKPI::where('kode_kategori', $form->kode_kategori)
+                                ->pluck('id')
+                                ->toArray();
+                            $requestKategoriIds = [];
+
                             foreach ($subKriteriaInput as $sub) {
                                 if (!empty($sub['id_judul_kategori'])) {
+                                    $requestKategoriIds[] = $sub['id_judul_kategori'];
                                     $kategori = kategoriKPI::find($sub['id_judul_kategori']);
                                     if ($kategori) {
                                         $kategori->update([
@@ -1795,30 +1812,35 @@ class DatabaseKPIController extends Controller
                                         'level'          => $sub['level'],
                                         'kode_kategori'  => $form->kode_kategori,
                                     ]);
+                                    $requestKategoriIds[] = $kategori->id;
                                 }
 
                                 if (in_array($sub['tipe_kategori'], ['radio', 'checkbox', 'select'])) {
                                     $ket_tipe_list = $sub['ket_tipe'] ?? [];
                                     $nilai_list    = $sub['nilai_ket_tipe'] ?? [];
+                                    tipeKategoriTabel::where('id_kategori', $kategori->id)->delete();
                                     foreach ($ket_tipe_list as $i => $ket) {
                                         if (!is_null($ket) && $ket !== '') {
-                                            tipeKategoriTabel::updateOrCreate(
-                                                ['id_kategori' => $kategori->id, 'ket_tipe' => $ket],
-                                                ['nilai_ket_tipe' => $nilai_list[$i] ?? null]
-                                            );
+                                            tipeKategoriTabel::create([
+                                                'id_kategori'    => $kategori->id,
+                                                'ket_tipe'       => $ket,
+                                                'nilai_ket_tipe' => $nilai_list[$i] ?? null,
+                                            ]);
                                         }
                                     }
                                 }
+                            }
+
+                            $toDelete = array_diff($existingKategoriIds, $requestKategoriIds);
+                            if (!empty($toDelete)) {
+                                tipeKategoriTabel::whereIn('id_kategori', $toDelete)->delete();
+                                kategoriKPI::whereIn('id', $toDelete)->delete();
                             }
                         }
                     }
                 } else {
                     foreach ($idKaryawanList as $idKaryawan) {
                         $kodeKategori = Str::random(15);
-                        $dataQuartalDanTahun = formPenilaian::where('kode_form', $kodeForm)
-                            ->select('quartal', 'tahun')
-                            ->first();
-                            
                         $form = formPenilaian::create([
                             'id_karyawan'    => $idKaryawan,
                             'kode_form'      => $kodeForm,
