@@ -1,82 +1,425 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registration Form</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        input, select, textarea { width: 100%; margin: 5px 0; padding: 5px; }
-        select[multiple] { height: 150px; }
-        textarea { height: 100px; resize: vertical; }
-        button { padding: 10px; margin: 10px 0; }
-        #peserta-list, #signature-list { margin-top: 10px; }
-        .peserta-row, .signature-row { display: flex; gap: 10px; margin-bottom: 10px; }
-        .peserta-row input, .signature-row input { flex: 1; }
-        .readonly { background-color: #f0f0f0; }
-        #preview-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
-        #preview-content { background: white; padding: 20px; max-width: 900px; overflow: auto; }
-        #preview-content .container { max-width: 190mm; padding: 5mm; font-size: 12pt; }
-        .container { max-width: 800px; margin: 0 auto; position: relative; }
-        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px; }
-        .logo { text-align: left; }
-        .logo img { width: 120px; height: auto; }
-        .office-info { text-align: right; font-size: 10px; line-height: 14px; max-width: 200px; }
-        .headertext { text-decoration: underline; font-weight: bold; font-size: 16px; margin: 5px 0; padding: 3px 0; text-align: center; }
-        .section-header { font-weight: bold; font-size: 14px; background-color: #f5f5f5; padding: 3px 0; margin: 5px 0; }
-        table { border-collapse: collapse; width: 100%; margin: 5px 0; }
-        caption { caption-side: top; font-weight: bold; font-size: 14px; margin-bottom: 3px; }
-        th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; font-size: 12px; word-wrap: break-word; }
-        th { background-color: #f2f2f2; }
-        thead { text-align: center; }
-        th.no-column, td.no-column { width: 5%; min-width: 20px; }
-        th.name-column, td.name-column { width: 35%; }
-        th.contact-column, td.contact-column { width: 40%; }
-        th.price-column, td.price-column { width: 20%; }
-        .note { color: red; text-align: left; font-size: 10px; margin: 3px 0; }
-        .syarat { text-align: left; margin-top: 5px; page-break-inside: avoid; }
-        .syarat h3 { font-size: 14px; margin-bottom: 3px; }
-        .syarat ol { font-size: 12px; padding-left: 15px; margin: 3px 0; }
-        .statement { text-align: left; font-size: 12px; margin: 5px 0; page-break-inside: avoid; }
-        .description { text-align: left; font-size: 12px; margin: 10px 0; page-break-inside: avoid; border: 1px solid #ccc; padding: 8px; }
-        .description h3 { font-size: 14px; margin-bottom: 5px; }
-        .signature-section { display: flex; justify-content: flex-end; gap: 20px; margin-top: 10px; page-break-inside: avoid; }
-        .signature { text-align: center; width: 30%; }
-        .signature p { margin: 2px 0; font-size: 12px; }
-        .signature .name { margin-top: 20px; border-top: 1px solid #000; padding-top: 2px; }
-        .signature .position { font-size: 10px; color: #555; }
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            margin: 5px 0;
+            padding: 5px;
+        }
+
+        select[multiple] {
+            height: 150px;
+        }
+
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+
+        button {
+            padding: 10px;
+            margin: 10px 0;
+        }
+
+        #peserta-list,
+        #signature-list {
+            margin-top: 10px;
+        }
+
+        .peserta-row,
+        .signature-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .peserta-row input,
+        .signature-row input {
+            flex: 1;
+        }
+
+        .readonly {
+            background-color: #f0f0f0;
+        }
+
+        #preview-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        #preview-content {
+            background: white;
+            padding: 20px;
+            max-width: 900px;
+            overflow: auto;
+        }
+
+        #preview-content .container {
+            max-width: 190mm;
+            padding: 5mm;
+            font-size: 12pt;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 5px;
+        }
+
+        .logo {
+            text-align: left;
+        }
+
+        .logo img {
+            width: 120px;
+            height: auto;
+        }
+
+        .office-info {
+            text-align: right;
+            font-size: 10px;
+            line-height: 14px;
+            max-width: 200px;
+        }
+
+        .headertext {
+            text-decoration: underline;
+            font-weight: bold;
+            font-size: 16px;
+            margin: 5px 0;
+            padding: 3px 0;
+            text-align: center;
+        }
+
+        .section-header {
+            font-weight: bold;
+            font-size: 14px;
+            background-color: #f5f5f5;
+            padding: 3px 0;
+            margin: 5px 0;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 5px 0;
+        }
+
+        caption {
+            caption-side: top;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ccc;
+            padding: 6px 8px;
+            text-align: left;
+            font-size: 12px;
+            word-wrap: break-word;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        thead {
+            text-align: center;
+        }
+
+        th.no-column,
+        td.no-column {
+            width: 5%;
+            min-width: 20px;
+        }
+
+        th.name-column,
+        td.name-column {
+            width: 35%;
+        }
+
+        th.contact-column,
+        td.contact-column {
+            width: 40%;
+        }
+
+        th.price-column,
+        td.price-column {
+            width: 20%;
+        }
+
+        .note {
+            color: red;
+            text-align: left;
+            font-size: 10px;
+            margin: 3px 0;
+        }
+
+        .syarat {
+            text-align: left;
+            margin-top: 5px;
+            page-break-inside: avoid;
+        }
+
+        .syarat h3 {
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+
+        .syarat ol {
+            font-size: 12px;
+            padding-left: 15px;
+            margin: 3px 0;
+        }
+
+        .statement {
+            text-align: left;
+            font-size: 12px;
+            margin: 5px 0;
+            page-break-inside: avoid;
+        }
+
+        .description {
+            text-align: left;
+            font-size: 12px;
+            margin: 10px 0;
+            page-break-inside: avoid;
+            border: 1px solid #ccc;
+            padding: 8px;
+        }
+
+        .description h3 {
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .signature-section {
+            display: flex;
+            justify-content: flex-end;
+            gap: 20px;
+            margin-top: 10px;
+            page-break-inside: avoid;
+        }
+
+        .signature {
+            text-align: center;
+            width: 30%;
+        }
+
+        .signature p {
+            margin: 2px 0;
+            font-size: 12px;
+        }
+
+        .signature .name {
+            margin-top: 20px;
+            border-top: 1px solid #000;
+            padding-top: 2px;
+        }
+
+        .signature .position {
+            font-size: 10px;
+            color: #555;
+        }
+
         @media print {
-            body { margin: 0; padding: 0; font-size: 12pt; }
-            .container { max-width: 190mm; width: 100%; margin: 0; padding: 5mm; }
-            .header { margin-bottom: 2mm; }
-            .logo img { width: 100px; }
-            .office-info { font-size: 10pt; line-height: 12pt; max-width: 70mm; line-height: 1; }
-            .headertext { font-size: 14pt; margin: 2mm 0; padding: 1mm 0; text-align: center; }
-            table { width: 100%; page-break-inside: avoid; margin: 2mm 0; border-collapse: collapse; }
-            caption { font-size: 12pt; margin-bottom: 1mm; }
-            th, td { font-size: 10pt; padding: 4pt 6pt; border: 1px solid #ccc; text-align: left; word-wrap: break-word; }
-            th { background-color: #f2f2f2; }
-            th.no-column, td.no-column { width: 5%; min-width: 6mm; }
-            th.name-column, td.name-column { width: 35%; }
-            th.contact-column, td.contact-column { width: 40%; }
-            th.price-column, td.price-column { width: 20%; }
-            .note { color: red; font-size: 10pt; margin: 1mm 0; text-align: left; }
-            .syarat { margin-top: 2mm; text-align: left; page-break-inside: avoid; }
-            .syarat h3 { font-size: 12pt; margin-bottom: 1mm; }
-            .syarat ol { font-size: 10pt; margin: 1mm 0; padding-left: 15px; }
-            .statement { font-size: 10pt; margin: 2mm 0; text-align: left; page-break-inside: avoid; }
-            .description { font-size: 10pt; margin: 2mm 0; text-align: left; page-break-inside: avoid; border: 1px solid #ccc; padding: 6pt; }
-            .description h3 { font-size: 12pt; margin-bottom: 1mm; }
-            .signature-section { margin-top: 10mm; display: flex; justify-content: flex-end; gap: 10mm; page-break-inside: avoid; }
-            .signature { text-align: center; width: 30%; }
-            .signature p { font-size: 10pt; margin: 2pt 0; }
-            .signature .name { margin-top: 10mm; padding-top: 1mm; border-top: 1px solid #000; }
-            .signature .position { font-size: 9pt; color: #555; }
-            button { display: none; }
-            @page { size: A4; margin: 5mm; }
+            body {
+                margin: 0;
+                padding: 0;
+                font-size: 12pt;
+            }
+
+            .container {
+                max-width: 190mm;
+                width: 100%;
+                margin: 0;
+                padding: 5mm;
+            }
+
+            .header {
+                margin-bottom: 2mm;
+            }
+
+            .logo img {
+                width: 100px;
+            }
+
+            .office-info {
+                font-size: 10pt;
+                line-height: 12pt;
+                max-width: 70mm;
+                line-height: 1;
+            }
+
+            .headertext {
+                font-size: 14pt;
+                margin: 2mm 0;
+                padding: 1mm 0;
+                text-align: center;
+            }
+
+            table {
+                width: 100%;
+                page-break-inside: avoid;
+                margin: 2mm 0;
+                border-collapse: collapse;
+            }
+
+            caption {
+                font-size: 12pt;
+                margin-bottom: 1mm;
+            }
+
+            th,
+            td {
+                font-size: 10pt;
+                padding: 4pt 6pt;
+                border: 1px solid #ccc;
+                text-align: left;
+                word-wrap: break-word;
+            }
+
+            th {
+                background-color: #f2f2f2;
+            }
+
+            th.no-column,
+            td.no-column {
+                width: 5%;
+                min-width: 6mm;
+            }
+
+            th.name-column,
+            td.name-column {
+                width: 35%;
+            }
+
+            th.contact-column,
+            td.contact-column {
+                width: 40%;
+            }
+
+            th.price-column,
+            td.price-column {
+                width: 20%;
+            }
+
+            .note {
+                color: red;
+                font-size: 10pt;
+                margin: 1mm 0;
+                text-align: left;
+            }
+
+            .syarat {
+                margin-top: 2mm;
+                text-align: left;
+                page-break-inside: avoid;
+            }
+
+            .syarat h3 {
+                font-size: 12pt;
+                margin-bottom: 1mm;
+            }
+
+            .syarat ol {
+                font-size: 10pt;
+                margin: 1mm 0;
+                padding-left: 15px;
+            }
+
+            .statement {
+                font-size: 10pt;
+                margin: 2mm 0;
+                text-align: left;
+                page-break-inside: avoid;
+            }
+
+            .description {
+                font-size: 10pt;
+                margin: 2mm 0;
+                text-align: left;
+                page-break-inside: avoid;
+                border: 1px solid #ccc;
+                padding: 6pt;
+            }
+
+            .description h3 {
+                font-size: 12pt;
+                margin-bottom: 1mm;
+            }
+
+            .signature-section {
+                margin-top: 10mm;
+                display: flex;
+                justify-content: flex-end;
+                gap: 10mm;
+                page-break-inside: avoid;
+            }
+
+            .signature {
+                text-align: center;
+                width: 30%;
+            }
+
+            .signature p {
+                font-size: 10pt;
+                margin: 2pt 0;
+            }
+
+            .signature .name {
+                margin-top: 10mm;
+                padding-top: 1mm;
+                border-top: 1px solid #000;
+            }
+
+            .signature .position {
+                font-size: 9pt;
+                color: #555;
+            }
+
+            button {
+                display: none;
+            }
+
+            @page {
+                size: A4;
+                margin: 5mm;
+            }
         }
     </style>
 </head>
+
 <body>
     <h2>Input Data Registrasi</h2>
     <!-- Debug: Tampilkan $ketentuan untuk memeriksa data -->
@@ -85,19 +428,23 @@
         <!-- Data Perusahaan (Read-only dari $lead->perusahaan) -->
         <h3>Data Perusahaan</h3>
         <label>Nama Perusahaan:</label>
-        <input type="text" id="nama-perusahaan" class="readonly" value="{{ $lead->perusahaan->nama_perusahaan ?? '-' }}" readonly>
+        <input type="text" id="nama-perusahaan" class="readonly" value="{{ $lead->perusahaan->nama_perusahaan ?? '-' }}"
+            readonly>
         <label>Alamat:</label>
         <input type="text" id="alamat" class="readonly" value="{{ $lead->perusahaan->alamat ?? '-' }}" readonly>
         <label>PIC Penagihan:</label>
         <input type="text" id="pic" class="readonly" value="{{ $lead->perusahaan->cp ?? '-' }}" readonly>
         <label>Telepon dan Email:</label>
-        <input type="text" id="telepon-email" class="readonly" value="{{ $lead->perusahaan->no_telp ?? '-' }} & {{ $lead->perusahaan->email ?? '-' }}" readonly>
+        <input type="text" id="telepon-email" class="readonly"
+            value="{{ $lead->perusahaan->no_telp ?? '-' }} & {{ $lead->perusahaan->email ?? '-' }}" readonly>
         <label>NPWP:</label>
         <input type="text" id="npwp" class="readonly" value="{{ $lead->perusahaan->npwp ?? '-' }}" readonly>
 
         <!-- Materi Pelatihan (dari $lead->materiRelation) -->
         <label>Materi dan Tanggal Pelatihan:</label>
-        <input type="text" class="readonly" id="materi" value="{{ $lead->materiRelation->nama_materi }} || {{ \Carbon\Carbon::parse($lead->periode_mulai)->format('d M Y') }} → {{ \Carbon\Carbon::parse($lead->periode_selesai)->format('d M Y') }}" readonly>
+        <input type="text" class="readonly" id="materi"
+            value="{{ $lead->materiRelation->nama_materi }} || {{ \Carbon\Carbon::parse($lead->periode_mulai)->format('d M Y') }} → {{ \Carbon\Carbon::parse($lead->periode_selesai)->format('d M Y') }}"
+            readonly>
 
         <!-- Data Peserta (Dynamic) -->
         <h3>Data Peserta</h3>
@@ -109,24 +456,31 @@
         <label>Pilih Syarat (bisa lebih dari satu):</label>
         <select id="syarat-select" multiple required>
             @foreach ($ketentuan as $ket)
-                <option value="{{ $ket->id }}" data-content="{{ $ket->ketentuan }}">{{ $ket->ketentuan }}</option>
+                <option value="{{ $ket->id }}" data-content="{{ $ket->ketentuan }}">{{ $ket->ketentuan }}
+                </option>
             @endforeach
         </select>
+
+        @php
+            use App\Models\karyawan;
+            $sales = Karyawan::where('kode_karyawan', $lead->id_sales)->first();
+
+        @endphp
 
         <!-- Input Tanda Tangan -->
         <h3>Tanda Tangan</h3>
         <div id="signature-list">
             <div class="signature-row">
                 <input type="text" placeholder="Nama Penandatangan 1" class="signature-name" required>
-                <input type="text" placeholder="Jabatan Penandatangan 1" class="signature-position" required>
+                <input type="text" placeholder="Jabatan Penandatangan 1" class="signature-position" required value="Peserta">
             </div>
             <div class="signature-row">
-                <input type="text" placeholder="Nama Penandatangan 2" class="signature-name" required>
-                <input type="text" placeholder="Jabatan Penandatangan 2" class="signature-position" required>
+                <input type="text" placeholder="Nama Penandatangan 2" class="signature-name" required value="{{$sales->nama_lengkap}}">
+                <input type="text" placeholder="Jabatan Penandatangan 2" class="signature-position" required value="Account Executive">
             </div>
             <div class="signature-row">
-                <input type="text" placeholder="Nama Penandatangan 3" class="signature-name" required>
-                <input type="text" placeholder="Jabatan Penandatangan 3" class="signature-position" required>
+                <input type="text" placeholder="Nama Penandatangan 3" class="signature-name" required value="Aryani Meitasari">
+                <input type="text" placeholder="Jabatan Penandatangan 3" class="signature-position" required value="Chief Marketing Manager">
             </div>
         </div>
 
@@ -236,7 +590,7 @@
             const previewHTML = `
                 <div class="container">
                     <div class="header">
-                        <div class="logo"><img src="{{asset('assets/img/inix.png')}}" alt="Inixindo Logo" /></div>
+                        <div class="logo"><img src="{{ asset('assets/img/inix.png') }}" alt="Inixindo Logo" /></div>
                         <div class="office-info">
                             <p>Jl. Cipaganti No.95, Bandung</p>
                             <p>Tel: 022-2032831</p>
@@ -279,7 +633,8 @@
             // Tampilkan preview di modal
             const modal = document.getElementById('preview-modal');
             const content = document.getElementById('preview-content');
-            content.innerHTML = previewHTML + '<button onclick="printPreview()">Print to PDF</button><button onclick="closeModal()">Tutup</button>';
+            content.innerHTML = previewHTML +
+                '<button onclick="printPreview()">Print to PDF</button><button onclick="closeModal()">Tutup</button>';
             modal.style.display = 'flex';
         });
 
@@ -330,4 +685,5 @@
         }
     </script>
 </body>
+
 </html>
