@@ -393,9 +393,15 @@
                             @csrf
                             <input type="hidden" name="kodeForm" value="${kodeForm}">
                             <input type="hidden" name="id_karyawan" value="${id_karyawan}">
-                            <button type="submit" class="btn text-white cl-red">
-                                <i class="fa-solid fa-file-pdf"></i> Pdf
-                            </button>
+
+                            <div class="btn-group" role="group">
+                                <button type="submit" name="tipe" value="office" class="btn text-white cl-red">
+                                    <i class="fa-solid fa-file-pdf"></i> Office
+                                </button>
+                                <button type="submit" name="tipe" value="non_office" class="btn text-white cl-red">
+                                    <i class="fa-solid fa-file-pdf"></i> Non Office
+                                </button>
+                            </div>
                         </form>
                     </div>
                 `;

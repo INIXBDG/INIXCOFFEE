@@ -44,9 +44,11 @@ class DatabaseKPIController extends Controller
     {
         $request->validate([
             'id_karyawan' => 'required',
-            'kodeForm'    => 'required|string'
+            'kodeForm'    => 'required|string',
+            'tipe'        => 'required'
         ]);
 
+        $tipe_button = $request->input('tipe');
         $id_karyawan = $request->input('id_karyawan');
         $kodeForm = $request->input('kodeForm');
 
@@ -219,7 +221,8 @@ class DatabaseKPIController extends Controller
                     'data' => [
                         'evaluator' => $evaluatorList,
                         'dataKriteria' => $dataKriteria
-                    ]
+                    ],
+                    'tipe_pdf' => $tipe_button
                 ]
             ]
         ];
@@ -449,12 +452,12 @@ class DatabaseKPIController extends Controller
 
         $form = $formPenilaians->first();
         $evaluated = [
-            'nama'        => optional($form->karyawan)->nama_lengkap . ' - ' . optional($form->karyawan)->divisi ?? '-',
-            'id_karyawan' => $form->id_karyawan,
-            'quartal'     => $form->quartal,
-            'tahun'       => $form->tahun,
-            'catatan'     => $form->catatan,
-            'kode_form'   => $form->kode_form
+            'nama'              => optional($form->karyawan)->nama_lengkap . ' - ' . optional($form->karyawan)->divisi ?? '-',
+            'id_karyawan'       => $form->id_karyawan,
+            'quartal'           => $form->quartal,
+            'tahun'             => $form->tahun,
+            'catatan'           => $form->catatan,
+            'kode_form'         => $form->kode_form
         ];
 
         $currentMonth = now()->month;
@@ -641,12 +644,12 @@ class DatabaseKPIController extends Controller
             })
             ->exists();
 
-        if ($isAlreadyRated === true) {
+        if ($isAlreadyRated) {
             return redirect()->back()->with('error', 'Anda sudah menilai form ini sebelumnya.');
         }
 
         $allFields = collect($request->all())->filter(function ($_, $key) {
-            return Str::startsWith($key, 'field_');
+            return Str::startsWith($key, 'field_') || Str::startsWith($key, 'teks_field_') || Str::startsWith($key, 'pesan_field_');
         });
 
         if ($allFields->isEmpty()) {
@@ -657,38 +660,37 @@ class DatabaseKPIController extends Controller
         try {
             foreach ($allFields as $fieldKey => $fieldGroup) {
                 foreach ($fieldGroup as $label => $value) {
-                    // Ubah nama label jadi readable (dari slug ke normal)
                     $labelReadable = str_replace('_', ' ', $label);
 
-                    // Cari pasangan nilai jika ada
-                    $nilaiKey = 'nilai_' . $fieldKey;
                     $nilai = null;
+                    $valueToSave = null;
 
-                    if ($request->has($nilaiKey)) {
-                        $nilaiGroup = $request->input($nilaiKey);
-                        if (isset($nilaiGroup[$label]) && is_numeric($nilaiGroup[$label])) {
-                            $nilai = (int) $nilaiGroup[$label];
+                    if (Str::startsWith($fieldKey, 'teks_field_')) {
+                        $valueToSave = $value;
+                        $nilaiKey = str_replace('teks_field_', 'nilai_field_', $fieldKey);
+                        if ($request->has($nilaiKey) && isset($request->input($nilaiKey)[$label])) {
+                            $nilai = (int) $request->input($nilaiKey)[$label];
                         }
-                    }
-
-                    // Decode jika JSON string
-                    if (is_string($value) && (str_starts_with($value, '[') || str_starts_with($value, '{'))) {
-                        $decoded = json_decode($value, true);
-                        if (is_array($decoded)) {
-                            $value = $decoded;
+                    } elseif (Str::startsWith($fieldKey, 'pesan_field_')) {
+                        $valueToSave = $value;
+                        $nilai = null;
+                    } else {
+                        if (is_string($value) && (str_starts_with($value, '[') || str_starts_with($value, '{'))) {
+                            $decoded = json_decode($value, true);
+                            if (is_array($decoded)) {
+                                $value = $decoded;
+                            }
                         }
+
+                        if (is_array($value) && collect($value)->every(fn($v) => is_numeric($v))) {
+                            $nilai = array_sum(array_map('intval', $value));
+                        } elseif (is_numeric($value)) {
+                            $nilai = (int) $value;
+                        }
+
+                        $valueToSave = is_array($value) ? json_encode($value) : $value;
                     }
 
-                    // Hitung nilai dari array jika numeric
-                    if ($nilai === null && is_array($value) && collect($value)->every(fn($v) => is_numeric($v))) {
-                        $nilai = array_sum(array_map('intval', $value));
-                    } elseif ($nilai === null && is_numeric($value)) {
-                        $nilai = (int) $value;
-                    }
-
-                    $valueToSave = is_array($value) ? json_encode($value) : $value;
-
-                    // Ambil semua record nilaiKPI untuk kriteria ini
                     $records = nilaiKPI::where('kode_form', $kode_form)
                         ->where('id_evaluator', $id_evaluator)
                         ->where('id_evaluated', $id_evaluated)
@@ -714,7 +716,6 @@ class DatabaseKPIController extends Controller
             return redirect()->back()->with('error', 'Terjadi kesalahan saat menyimpan: ' . $e->getMessage());
         }
     }
-
     public function getAveragePenilaian($kode_form, $id_evaluated)
     {
         $result = nilaiKPI::select('name_variabel', DB::raw('AVG(nilai) as average'))
@@ -727,12 +728,26 @@ class DatabaseKPIController extends Controller
         return $result;
     }
 
-    public function reviewPenilaian($kodeForm, $evaluatorId, $jenis, $idKaryawan)
+    public function reviewPenilaian($kodeForm, $evaluatorId, $jenis_penilaian, $idKaryawan)
     {
         $kode_form = $kodeForm;
         $id_evaluator = $evaluatorId;
         $id_karyawan = $idKaryawan;
-        $jenis_penilaian = $jenis;
+
+        if ($jenis_penilaian === 'J01P') {
+            $jenis_penilaian = 'General Manager';
+        } else if ($jenis_penilaian === 'J02P') {
+            $jenis_penilaian = 'Manager/SPV/Team Leader (Atasan Langsung)';
+        } else if ($jenis_penilaian === 'J03P') {
+            $jenis_penilaian = 'Rekan Kerja (Satu Divisi)';
+        } else if ($jenis_penilaian === 'J04P') {
+            $jenis_penilaian = 'Pekerja (Beda Divisi)';
+        } else if ($jenis_penilaian === 'J05P') {
+            $jenis_penilaian = 'Self Apprisial';
+        } else {
+            $jenis_penilaian = 'not_found';
+        }
+
 
         $dataEvaluator = shareForm::where('kode_form', $kode_form)
             ->where('id_evaluator', $id_evaluator)
@@ -1166,7 +1181,7 @@ class DatabaseKPIController extends Controller
                     ->count();
 
                 $filledItems = nilaiKPI::where('kode_form', $share->kode_form)
-                    ->where('id_evaluator', $id_evaluator)
+                    ->where('id_evaluator', operator: $id_evaluator)
                     ->where('id_evaluated', $evaluatedEmployee->id)
                     ->where('jenis_penilaian', $share->jenis_penilaian)
                     ->whereNotNull('pesan')
@@ -1234,6 +1249,8 @@ class DatabaseKPIController extends Controller
         $outputData = array_values($groupedOutputData);
         $status = count($outputData) > 0 ? true : false;
 
+        // dd([$outputData, $evaluatorEmploye, $status]);
+
         return view('databasekpi.formPenilaian', compact('outputData', 'evaluatorEmploye', 'status'));
     }
 
@@ -1283,6 +1300,13 @@ class DatabaseKPIController extends Controller
             ->when($filterQuartal, fn($q) => $q->where('quartal', $filterQuartal))
             ->when($filterTahun, fn($q) => $q->where('tahun', $filterTahun))
             ->get();
+
+        $allKodeForms = $dataFormPenilaianCollection->pluck('kode_form')->unique()->values();
+
+        $kodeFormMapping = [];
+        foreach ($allKodeForms as $index => $kode) {
+            $kodeFormMapping[$kode] = 'PK-' . str_pad($index + 1, 3, '0', STR_PAD_LEFT);
+        }
 
         $dataKaryawan = karyawan::where('status_aktif', '1')->get();
         $groupedOutputData = [];
@@ -1360,9 +1384,11 @@ class DatabaseKPIController extends Controller
                 $groupedOutputData[$groupKey] = [
                     'form_penilaian_id'  => $formPenilaian->id,
                     'kode_form'          => $kodeFormGlobal,
+                    'kode_form_label'    => $kodeFormMapping[$formPenilaian->kode_form] ?? $formPenilaian->kode_form,
                     'id_karyawan'        => $formPenilaian->id_karyawan,
                     'evaluated'          => $evaluatedName,
                     'evaluatedDivisi'    => $evaluatedDivisi,
+                    'tanggal'            => $formPenilaian->created_at->translatedFormat('l, d F Y'),
                     'quartal'            => $quartal,
                     'tahun'              => $tahun,
                     'jenis_penilaian'    => $jenisPenilaianList,
@@ -1370,7 +1396,7 @@ class DatabaseKPIController extends Controller
                     'evaluator_by_jenis' => $evaluatorGroupedByJenis,
                     'id_evaluator'       => $evaluatorIds,
                     'detail_kategori'    => [],
-                    'status'             => $status
+                    'status'             => $status,
                 ];
             }
 
@@ -1638,6 +1664,287 @@ class DatabaseKPIController extends Controller
             'deleted_nilai' => $deletedNilai,
             'deleted_share' => $deletedShare
         ]);
+    }
+
+    public function getFormPenilaianData(Request $request)
+    {
+        $quartal = $request->get('quartal');
+        $tahun   = $request->get('tahun');
+
+        $query = formPenilaian::with('karyawan');
+
+        if ($quartal) {
+            $query->where('quartal', $quartal);
+        }
+
+        if ($tahun) {
+            $query->where('tahun', $tahun);
+        }
+
+        $formPenilaian = $query->get();
+
+        if ($formPenilaian->isEmpty()) {
+            return response()->json(['data' => []]);
+        }
+
+        $uniqueKodeForms = $formPenilaian->pluck('kode_form')->unique()->values();
+
+        $kodeFormMapping = [];
+        foreach ($uniqueKodeForms as $i => $kode) {
+            $kodeFormMapping[$kode] = 'PK-' . str_pad($i + 1, 3, '0', STR_PAD_LEFT);
+        }
+
+        $grouped = $formPenilaian->groupBy('kode_form')->map(function ($items, $kodeForm) use ($kodeFormMapping) {
+            $first = $items->first();
+
+            $evaluated = $items->map(function ($form) {
+                return [
+                    'id_karyawan' => $form->id_karyawan,
+                    'nama'        => optional($form->karyawan)->nama_lengkap . ' - ' . (optional($form->karyawan)->divisi ?? '-'),
+                    'quartal'     => $form->quartal,
+                    'tahun'       => $form->tahun,
+                    'catatan'     => $form->catatan,
+                ];
+            })->unique('id_karyawan')->values();
+
+            return [
+                'kode_form'       => $kodeForm,
+                'label_kode_form' => $kodeFormMapping[$kodeForm] ?? $kodeForm,
+                'quartal'         => $first->quartal,
+                'tahun'           => $first->tahun,
+                'evaluated'       => $evaluated
+            ];
+        })->values();
+
+        return response()->json([
+            'data' => $grouped
+        ]);
+    }
+
+    public function formPenilaianData()
+    {
+        return view('databasekpi.dataFormPenilaian');
+    }
+
+    public function formPenilaianUpdate(Request $request)
+    {
+        $validated = $request->validate([
+            'kode_form'                                   => 'required|string|max:50',
+            'kriteria'                                    => 'required|array|min:1',
+            'kriteria.*.id_nama_penilaian'                => 'nullable|integer|exists:form_penilaians,id',
+            'kriteria.*.nama_penilaian'                   => 'required|string',
+            'kriteria.*.sub_kriteria'                     => 'nullable|array|min:1',
+            'kriteria.*.sub_kriteria.*.id_judul_kategori' => 'nullable|integer|exists:kategori_k_p_i_s,id',
+            'kriteria.*.sub_kriteria.*.judul_kategori'    => 'required|string',
+            'kriteria.*.sub_kriteria.*.tipe_kategori'     => 'required|string',
+            'kriteria.*.sub_kriteria.*.level'             => 'required|string',
+            'kriteria.*.sub_kriteria.*.bobot'             => 'required|numeric',
+            'kriteria.*.sub_kriteria.*.ket_tipe'          => 'nullable|array',
+            'kriteria.*.sub_kriteria.*.ket_tipe.*'        => 'nullable|string',
+            'kriteria.*.sub_kriteria.*.nilai_ket_tipe'    => 'nullable|array',
+            'kriteria.*.sub_kriteria.*.nilai_ket_tipe.*'  => 'nullable|string',
+        ]);
+
+        $kodeForm = $validated['kode_form'];
+        if (shareForm::where('kode_form', $kodeForm)->exists()) {
+            return redirect()->back()->with('error', 'Jangan lupa dibersihkan terlebih dahulu');
+        }
+
+        DB::beginTransaction();
+        try {
+            $idKaryawanList = formPenilaian::where('kode_form', $kodeForm)
+                ->pluck('id_karyawan')
+                ->unique();
+
+            $dataQuartalDanTahun = formPenilaian::where('kode_form', $kodeForm)
+                ->select('quartal', 'tahun')
+                ->first();
+
+            $existingForms = formPenilaian::where('kode_form', $kodeForm)->get();
+            $inputFormIds = collect($validated['kriteria'])->pluck('id_nama_penilaian')->filter()->toArray();
+            $formsToDelete = $existingForms->filter(function ($form) use ($inputFormIds) {
+                return !in_array($form->id, $inputFormIds);
+            });
+
+            foreach ($formsToDelete as $form) {
+                $kategoriIds = kategoriKPI::where('kode_kategori', $form->kode_kategori)->pluck('id')->toArray();
+                tipeKategoriTabel::whereIn('id_kategori', $kategoriIds)->delete();
+                kategoriKPI::whereIn('id', $kategoriIds)->delete();
+                $form->delete();
+            }
+
+            foreach ($validated['kriteria'] as $krit) {
+                $namaPenilaian = $krit['nama_penilaian'];
+                $subKriteriaInput = $krit['sub_kriteria'] ?? [];
+
+                if (!empty($krit['id_nama_penilaian'])) {
+                    $formRef = formPenilaian::find($krit['id_nama_penilaian']);
+                    if ($formRef) {
+                        $formsToUpdate = formPenilaian::where('nama_penilaian', $formRef->nama_penilaian)
+                            ->where('kode_form', $kodeForm)
+                            ->get();
+
+                        foreach ($formsToUpdate as $form) {
+                            $form->update(['nama_penilaian' => $namaPenilaian]);
+
+                            $existingKategoriIds = kategoriKPI::where('kode_kategori', $form->kode_kategori)
+                                ->pluck('id')
+                                ->toArray();
+                            $requestKategoriIds = [];
+
+                            foreach ($subKriteriaInput as $sub) {
+                                if (!empty($sub['id_judul_kategori'])) {
+                                    $requestKategoriIds[] = $sub['id_judul_kategori'];
+                                    $kategori = kategoriKPI::find($sub['id_judul_kategori']);
+                                    if ($kategori) {
+                                        $kategori->update([
+                                            'judul_kategori' => $sub['judul_kategori'],
+                                            'tipe_kategori'  => $sub['tipe_kategori'],
+                                            'bobot'          => $sub['bobot'],
+                                            'level'          => $sub['level'],
+                                        ]);
+                                    }
+                                } else {
+                                    $kategori = kategoriKPI::create([
+                                        'judul_kategori' => $sub['judul_kategori'],
+                                        'tipe_kategori'  => $sub['tipe_kategori'],
+                                        'bobot'          => $sub['bobot'],
+                                        'level'          => $sub['level'],
+                                        'kode_kategori'  => $form->kode_kategori,
+                                    ]);
+                                    $requestKategoriIds[] = $kategori->id;
+                                }
+
+                                if (in_array($sub['tipe_kategori'], ['radio', 'checkbox', 'select'])) {
+                                    $ket_tipe_list = $sub['ket_tipe'] ?? [];
+                                    $nilai_list    = $sub['nilai_ket_tipe'] ?? [];
+                                    tipeKategoriTabel::where('id_kategori', $kategori->id)->delete();
+                                    foreach ($ket_tipe_list as $i => $ket) {
+                                        if (!is_null($ket) && $ket !== '') {
+                                            tipeKategoriTabel::create([
+                                                'id_kategori'    => $kategori->id,
+                                                'ket_tipe'       => $ket,
+                                                'nilai_ket_tipe' => $nilai_list[$i] ?? null,
+                                            ]);
+                                        }
+                                    }
+                                }
+                            }
+
+                            $toDelete = array_diff($existingKategoriIds, $requestKategoriIds);
+                            if (!empty($toDelete)) {
+                                tipeKategoriTabel::whereIn('id_kategori', $toDelete)->delete();
+                                kategoriKPI::whereIn('id', $toDelete)->delete();
+                            }
+                        }
+                    }
+                } else {
+                    foreach ($idKaryawanList as $idKaryawan) {
+                        $kodeKategori = Str::random(15);
+                        $form = formPenilaian::create([
+                            'id_karyawan'    => $idKaryawan,
+                            'kode_form'      => $kodeForm,
+                            'kode_kategori'  => $kodeKategori,
+                            'nama_penilaian' => $namaPenilaian,
+                            'quartal'        => $dataQuartalDanTahun->quartal,
+                            'tahun'          => $dataQuartalDanTahun->tahun,
+                            'catatan'        => null,
+                        ]);
+
+                        foreach ($subKriteriaInput as $sub) {
+                            $kategori = kategoriKPI::create([
+                                'judul_kategori' => $sub['judul_kategori'],
+                                'tipe_kategori'  => $sub['tipe_kategori'],
+                                'bobot'          => $sub['bobot'],
+                                'level'          => $sub['level'],
+                                'kode_kategori'  => $kodeKategori,
+                            ]);
+
+                            if (in_array($sub['tipe_kategori'], ['radio', 'checkbox', 'select'])) {
+                                $ket_tipe_list = $sub['ket_tipe'] ?? [];
+                                $nilai_list    = $sub['nilai_ket_tipe'] ?? [];
+                                foreach ($ket_tipe_list as $i => $ket) {
+                                    if (!is_null($ket) && $ket !== '') {
+                                        tipeKategoriTabel::create([
+                                            'id_kategori'    => $kategori->id,
+                                            'ket_tipe'       => $ket,
+                                            'nilai_ket_tipe' => $nilai_list[$i] ?? null,
+                                        ]);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            DB::commit();
+            return back()->with('success', 'Berhasil update data.');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return back()->with('error', 'Gagal update data: ' . $e->getMessage());
+        }
+    }
+
+    public function formPenilaianEdit($kode_form)
+    {
+        $evaluatorCheck = shareForm::where('kode_form', $kode_form)->exists();
+
+        if ($evaluatorCheck) {
+            return redirect()->back()->with('error', 'Jangan lupa dibersihkan terlebih dahulu');
+        }
+
+        $allFormIds = formPenilaian::where('kode_form', $kode_form)
+            ->pluck('id')
+            ->toArray();
+
+        $formPenilaianUnique = formPenilaian::where('kode_form', $kode_form)
+            ->get()
+            ->unique('nama_penilaian')
+            ->values();
+
+        $result = [];
+
+        foreach ($formPenilaianUnique as $data) {
+            $kategori = kategoriKPI::where('kode_kategori', $data->kode_kategori)->get();
+
+            $kategoriArr = [];
+            foreach ($kategori as $itemSub) {
+                $dataTipeKategori = tipeKategoriTabel::where('id_kategori', $itemSub->id)->get();
+
+                $tipeKategoriAll = [];
+                foreach ($dataTipeKategori as $item) {
+                    $tipeKategoriAll[] = [
+                        'id'              => $item->id,
+                        'keterangan_tipe' => $item->ket_tipe,
+                        'nilai_ket_tipe'  => $item->nilai_ket_tipe,
+                    ];
+                }
+
+                $kategoriArr[] = [
+                    'id_kategori'         => $itemSub->id,
+                    'judul_kategori'      => $itemSub->judul_kategori,
+                    'tipe_kategori'       => $itemSub->tipe_kategori,
+                    'bobot'               => $itemSub->bobot,
+                    'level'               => $itemSub->level,
+                    'dataTipeKeterangan'  => $tipeKategoriAll
+                ];
+            }
+
+            $result[] = [
+                'id_formPenilaian' => $data->id,
+                'nama_penilaian'   => $data->nama_penilaian,
+                'kategori'         => $kategoriArr
+            ];
+        }
+
+        $data = [
+            'kode_form' => $kode_form,
+            'result'    => $result,
+            'allFormIds' => $allFormIds
+        ];
+
+        return view('databasekpi.formEditPenilaian', compact('data'));
     }
 
     public function hapus(Request $request)

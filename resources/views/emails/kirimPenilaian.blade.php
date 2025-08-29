@@ -76,6 +76,7 @@
         $jenisEvaluatorCount = [];
         @endphp
 
+        {{-- Loop tabel per evaluator --}}
         @foreach ($evaluator as $indexEvaluator => $evaluatorItem)
         @php
         $jenis = $evaluatorItem['jenis_penilaian'];
@@ -86,12 +87,12 @@
         $nilaiIndex = 0;
         @endphp
 
-        <table>
+        <table border="1" cellspacing="0" cellpadding="6" width="100%" style="margin-bottom:15px;">
             <thead>
-                <tr class="table-title">
+                <tr style="background:#f0f0f0;">
                     <th colspan="6">Evaluator {{ $nomor }} - Penilaian {{ $jenis }}</th>
                 </tr>
-                <tr class="table-header">
+                <tr style="background:#f9f9f9;">
                     <th>Kriteria</th>
                     <th>Sub Kriteria</th>
                     <th>Bobot</th>
@@ -125,7 +126,7 @@
                 @endforeach
                 @endforeach
 
-                <tr>
+                <tr style="font-weight:bold;background:#fefefe;">
                     <td colspan="5" class="text-right"><em>Jumlah (Evaluator {{ $nomor }} - Penilaian {{ $jenis }})</em></td>
                     <td>{{ number_format($totalPerEvaluator, 2) }}</td>
                 </tr>
@@ -138,69 +139,85 @@
         @endphp
         @endforeach
 
+        {{-- REKAP TOTAL HASIL PENILAIAN --}}
         @php
         $totalSemuaSkor = 0;
         @endphp
-        @foreach ($jenisTotalTemp as $jenis => $totalJenis)
-        @php
-        $jumlahEvaluator = $jenisEvaluatorCount[$jenis] ?? 1;
-        $rataRataJenis = $totalJenis / $jumlahEvaluator;
 
-        $bobotJenis = match ($jenis) {
-        'General Manager' => 35,
-        'Manager/Team Leader/SPV', 'Manager/SPV/Team Leader (Atasan Langsung)' => 30,
-        'Rekan Kerja' => 20,
-        'Pekerja (Beda Divisi)' => 10,
-        'Self Appraisal' => 5,
-        default => 0,
-        };
+        <h4 style="margin-top:20px;">Rekap Total Hasil Penilaian</h4>
+        <table border="1" cellspacing="0" cellpadding="6" width="100%" style="margin-bottom:20px;">
+            <thead>
+                <tr style="background:#f0f0f0;">
+                    <th>Jenis Penilaian</th>
+                    <th>Rata-rata</th>
+                    <th>Bobot</th>
+                    <th>Final</th>
+                    <th>Kriteria</th>
+                    <th>Grade</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($jenisTotalTemp as $jenis => $totalJenis)
+                @php
+                $jumlahEvaluator = $jenisEvaluatorCount[$jenis] ?? 1;
+                $rataRataJenis = $totalJenis / $jumlahEvaluator;
 
-        $finalJenis = ($rataRataJenis * $bobotJenis) / 100;
-        $totalSemuaSkor += $finalJenis;
-        @endphp
-        <table style="margin-bottom:10px;">
-            <tr>
-                <td colspan="3" class="text-right"><strong>Rata-rata</strong></td>
-                <td class="text-center"><strong>{{ number_format($rataRataJenis, 2) }}</strong></td>
-                <td class="text-right"><strong>Total {{ $jenis }} Setelah Bobot</strong></td>
-                <td class="text-center"><strong>{{ number_format($finalJenis, 2) }}</strong></td>
-            </tr>
-            @php
-            if ($finalJenis >= 90) {
-            $grade = 'A';
-            $keterangan = 'Sangat Baik';
-            } elseif ($finalJenis >= 80) {
-            $grade = 'B';
-            $keterangan = 'Baik';
-            } elseif ($finalJenis >= 70) {
-            $grade = 'C';
-            $keterangan = 'Cukup';
-            } elseif ($finalJenis >= 60) {
-            $grade = 'D';
-            $keterangan = 'Kurang';
-            } else {
-            $grade = 'E';
-            $keterangan = 'Sangat Kurang';
-            }
-            @endphp
-            <tr class="summary-row">
-                <td colspan="5" class="text-right">Kriteria</td>
-                <td colspan="1" class="text-center">{{ $keterangan }}</td>
-            </tr>
-            <tr class="summary-row">
-                <td colspan="5" class="text-right">Grade</td>
-                <td colspan="1" class="text-center">{{ $grade }}</td>
-            </tr>
+                $bobotJenis = match ($jenis) {
+                'General Manager' => 35,
+                'Manager/Team Leader/SPV', 'Manager/SPV/Team Leader (Atasan Langsung)' => 30,
+                'Rekan Kerja' => 20,
+                'Pekerja (Beda Divisi)' => 10,
+                'Self Appraisal' => 5,
+                default => 0,
+                };
+
+                $finalJenis = ($rataRataJenis * $bobotJenis) / 100;
+                $totalSemuaSkor += $finalJenis;
+
+                if ($finalJenis >= 90) {
+                $grade = 'A';
+                $keterangan = 'Sangat Baik';
+                } elseif ($finalJenis >= 80) {
+                $grade = 'B';
+                $keterangan = 'Baik';
+                } elseif ($finalJenis >= 70) {
+                $grade = 'C';
+                $keterangan = 'Cukup';
+                } elseif ($finalJenis >= 60) {
+                $grade = 'D';
+                $keterangan = 'Kurang';
+                } else {
+                $grade = 'E';
+                $keterangan = 'Sangat Kurang';
+                }
+                @endphp
+                <tr>
+                    <td>{{ $jenis }}</td>
+                    <td class="text-center">{{ number_format($rataRataJenis, 2) }}</td>
+                    <td class="text-center">{{ $bobotJenis }}%</td>
+                    <td class="text-center">{{ number_format($finalJenis, 2) }}</td>
+                    <td class="text-center">{{ $keterangan }}</td>
+                    <td class="text-center">{{ $grade }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+            <tfoot>
+                <tr style="font-weight:bold;background:#f9f9f9;">
+                    <td colspan="3" class="text-right">Total Semua Skor</td>
+                    <td class="text-center">{{ number_format($totalSemuaSkor, 2) }}</td>
+                    <td colspan="2"></td>
+                </tr>
+            </tfoot>
         </table>
-        @endforeach
     </div>
 
+    {{-- TABEL ABSEN --}}
     <div class="title">Data Jumlah Absen</div>
-    <table style="margin-bottom: 10px;">
-        <tr>
-            <td>Telat</td>
-            <td>Sakit</td>
-            <td>Izin</td>
+    <table border="1" cellspacing="0" cellpadding="6" width="50%" style="margin-bottom: 20px;">
+        <tr style="background:#f0f0f0;">
+            <th>Telat</th>
+            <th>Sakit</th>
+            <th>Izin</th>
         </tr>
         <tr>
             <td>{{ $dataAbsen['telat'] }}</td>
@@ -209,10 +226,12 @@
         </tr>
     </table>
 
-    <label for="catatan">Catatan :</label>
-    <div id="catatan" style="width: 20%;">
+    {{-- CATATAN --}}
+    <label for="catatan"><strong>Catatan :</strong></label>
+    <div id="catatan" style="margin-top:5px;">
         {{ $evaluated['catatan'] }}
     </div>
 </body>
+
 
 </html>
