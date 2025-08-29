@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\KetentuanForm;
 use App\Models\Peluang;
 use App\Models\RegisForm;
+use App\Models\RKM;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
@@ -37,6 +38,7 @@ class RegisFormController extends Controller
             'public'                      // disk
         );
 
+        // ✅ Cek RegisForm
         $existing = RegisForm::where('id_peluang', $data['id_peluang'])->first();
 
         if ($existing) {
@@ -54,6 +56,23 @@ class RegisFormController extends Controller
                 'name'       => $file->getClientOriginalName(),
                 'path'       => $storedPath,
             ]);
+        }
+
+        // ✅ Cek juga di RKM
+        $peluang = Peluang::find($data['id_peluang']);
+        if ($peluang && $peluang->id_rkm) {
+            $rkm = RKM::find($peluang->id_rkm);
+            if ($rkm) {
+                // kalau sudah ada file lama, hapus
+                if ($rkm->registrasi_form && Storage::disk('public')->exists($rkm->registrasi_form)) {
+                    Storage::disk('public')->delete($rkm->registrasi_form);
+                }
+
+                // update dengan file baru
+                $rkm->update([
+                    'registrasi_form' => $storedPath
+                ]);
+            }
         }
 
         return back()->with('success', 'PDF berhasil diupload');
