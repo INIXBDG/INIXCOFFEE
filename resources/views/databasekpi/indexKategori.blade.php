@@ -156,6 +156,7 @@
                                     <th style="font-size: 14px; text-align: center;">Yang Dinilai</th>
                                     <th style="font-size: 14px; text-align: center;">Divisi</th>
                                     <th style="font-size: 14px; text-align: center;">Tanggal Pembuatan</th>
+                                    <th style="font-size: 14px; text-align: center;">Kode Form</th>
                                     <th style="font-size: 14px; text-align: center;">Quartal</th>
                                     <th style="font-size: 14px; text-align: center;">Tahun</th>
                                     <th style="font-size: 14px; text-align: center;">Action</th>
@@ -163,7 +164,7 @@
                             </thead>
                             <tbody id="tbody_table" class="text-center">
                                 <tr style="color: black;">
-                                    <td style="font-size: 14px; text-align: center;" colspan="8">Tidak Ada Data</td>
+                                    <td style="font-size: 14px; text-align: center;" colspan="9">Tidak Ada Data</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -401,12 +402,29 @@
 
                 $('#table_karyawan').DataTable({
                     data: data.map((item, index) => {
+                        let jenis = '';
+
+                        if (item.jenis_penilaian === 'General Manager') {
+                            jenis = 'J01P';
+                        } else if (item.jenis_penilaian === 'Manager/SPV/Team Leader (Atasan Langsung)') {
+                            jenis = 'J02P';
+                        } else if (item.jenis_penilaian === 'Rekan Kerja (Satu Divisi)') {
+                            jenis = 'J03P';
+                        } else if (item.jenis_penilaian === 'Pekerja (Beda Divisi)') {
+                            jenis = 'J04P';
+                        } else if (item.jenis_penilaian === 'Self Apprisial') {
+                            jenis = 'J05P';
+                        } else {
+                            jenis = 'not_found';
+                        }
+
                         return [
                             index + 1,
                             generateEvaluatorByPenilaian(item),
                             item.evaluated,
                             item.evaluatedDivisi || '-',
-                            item.detail_kategori[0]?.isi_kriteria[0]?.tanggal || '-',
+                            item.tanggal,
+                            item.kode_form_label,
                             item.quartal,
                             item.tahun,
                             `<div class="dropdown">
@@ -415,13 +433,13 @@
                                     <a href="#" class="dropdown-item" data-kode="${item.kode_form}" data-id="${item.id_karyawan}" onclick="shareForm(this)" data-toggle="modal" data-target="#shareEvaluatorModal">
                                         <i class="fa-solid fa-paper-plane me-4"></i> Share
                                     </a>
-                                    <a href="#" class="dropdown-item" data-kode="${item.kode_form}" data-id="${item.id_karyawan}" data-jenis_penilaian="${item.jenis_penilaian}" onclick="ReviewForm(this)" data-toggle="modal" data-target="#reviewPenilaianModal">
+                                    <a href="#" class="dropdown-item" data-kode="${item.kode_form}" data-id="${item.id_karyawan}" data-jenis_penilaian="${jenis}" onclick="ReviewForm(this)" data-toggle="modal" data-target="#reviewPenilaianModal">
                                         <i class="fa-solid fa-list-check me-4"></i> Review
                                     </a>
                                     <a href="/penilaian/detail/data-penilaian/${item.kode_form}/${item.id_karyawan}" class="dropdown-item">
                                         <i class="fa-solid fa-magnifying-glass me-4"></i> Detail
                                     </a>
-                                    <a href="javascript:void(0)" class="dropdown-item btn-clean" data-kode_form="${item.kode_form}" data-id_karyawan="${item.id_karyawan}"  data-jenis_penilaian="${item.jenis_penilaian}" data-quartal="${item.quartal}" data-tahun="${item.tahun}">
+                                    <a href="javascript:void(0)" class="dropdown-item btn-clean" data-kode_form="${item.kode_form}" data-id_karyawan="${item.id_karyawan}"  data-jenis_penilaian="${jenis}" data-quartal="${item.quartal}" data-tahun="${item.tahun}">
                                         <i class="fa-solid fa-brush me-4"></i> Bersihkan
                                     </a>
                                     <a href="javascript:void(0)" class="dropdown-item btn-hapus" data-kode_form="${item.kode_form}" data-id_karyawan="${item.id_karyawan}"  data-jenis_penilaian="${item.jenis_penilaian}" data-quartal="${item.quartal}" data-tahun="${item.tahun}">
@@ -485,8 +503,8 @@
                     url: `/penilaian/hapus`,
                     type: 'POST',
                     data: formData,
-                    processData: false, 
-                    contentType: false, 
+                    processData: false,
+                    contentType: false,
                     success: function(response) {
                         Swal.fire({
                             icon: 'success',
@@ -614,16 +632,32 @@
                         const evaluatorId = evaluator.id;
                         const isRed = evaluator.is_red;
 
-                        // Batasi nama maksimal 2 kata pertama
                         const nameParts = evaluator.name.split(" ");
                         const limitedName = nameParts.slice(0, 2).join(" ");
 
+                        let jenis_penilaian = '';
+
+                        if (jenis === 'General Manager') {
+                            jenis_penilaian = 'J01P';
+                        } else if (jenis === 'Manager/SPV/Team Leader (Atasan Langsung)') {
+                            jenis_penilaian = 'J02P';
+                        } else if (jenis === 'Rekan Kerja (Satu Divisi)') {
+                            jenis_penilaian = 'J03P';
+                        } else if (jenis === 'Pekerja (Beda Divisi)') {
+                            jenis_penilaian = 'J04P';
+                        } else if (jenis === 'Self Apprisial') {
+                            jenis_penilaian = 'J05P';
+                        } else {
+                            jenis_penilaian = 'not_found';
+                        }
+
+
                         const button = `
-                        <a href="/reviewPenilaian/${kodeForm}/${evaluatorId}/${encodeURIComponent(jenis)}/${idKaryawan}" 
-                        class="btn mb-2 ms-3 ${isRed ? 'text-white cl-red' : 'text-white cl-grey'}">
-                            ${limitedName} – ${jenis}
-                        </a>
-                    `;
+                            <a href="/reviewPenilaian/${kodeForm}/${evaluatorId}/${jenis_penilaian}/${idKaryawan}" 
+                            class="btn mb-2 ms-3 ${isRed ? 'text-white cl-red' : 'text-white cl-grey'}">
+                                ${limitedName} – ${jenis}
+                            </a>
+                        `;
 
                         modalBody.append(button);
                     });
@@ -753,7 +787,7 @@
 
                 $jenisPenilaianSelect.on('change', function() {
                     const jenis = $(this).val();
-                    const allowGm = jenis === 'General Manager' || jenis === 'Manager/SPV/Team Leader (Atasan Langsung)';
+                    const allowGm = jenis === 'General Manager';
                     renderDivisiSelect(allowGm);
                     const selectedDivisi = $divisiSelect.val() || [];
                     const finalDivisi = allowGm ? [...new Set([...selectedDivisi, 'Sales & Marketing'])] : selectedDivisi;
@@ -763,7 +797,7 @@
                 $divisiSelect.on('change', function() {
                     const selectedDivisi = $(this).val() || [];
                     const jenis = $jenisPenilaianSelect.val();
-                    const allowGm = jenis === 'General Manager' || jenis === 'Manager/SPV/Team Leader (Atasan Langsung)';
+                    const allowGm = jenis === 'General Manager';
                     const finalDivisi = allowGm ? [...new Set([...selectedDivisi, 'Sales & Marketing'])] : selectedDivisi;
                     updateEvaluatorOptions(finalDivisi, allowGm);
                 });

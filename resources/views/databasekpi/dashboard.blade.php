@@ -318,7 +318,7 @@
     }
 </style>
 
-<div class="container mt-4">
+<div class="container mt-4 mb-4 bg-theme">
     <div class="wadah-kartu-indikator">
         <div class="container">
             <div class="row">

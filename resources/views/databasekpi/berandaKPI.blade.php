@@ -421,6 +421,12 @@
           <span>Buat Penilaian</span>
         </a>
       </li>
+      <li class="nav-item {{ Route::currentRouteName() == 'penilaian.form.data' ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('penilaian.form.data') }}">
+          <i class="fa-solid fa-table-list"></i>
+          <span>Data Form</span>
+        </a>
+      </li>
       <hr class="sidebar-divider d-none d-md-block">
     </ul>
     <ul class="navbar-nav sidebar-mobile sidebar-dark accordion" id="accordionSidebarMobile">
@@ -450,6 +456,12 @@
         <a class="nav-link p-3 ml-2" href="{{ route('ketegori.kpi.create') }}" style="font-size: 12px;">
           <i class="fas fa-plus-circle"></i>
           <span>Buat Penilaian</span>
+        </a>
+      </li>
+      <li class="nav-item {{ Route::currentRouteName() == 'penilaian.form.data' ? 'active' : '' }}">
+        <a class="nav-link p-3 ml-2" href="{{ route('penilaian.form.data') }}" style="font-size: 12px;">
+          <i class="fa-solid fa-table-list"></i>
+          <span>Data Form</span>
         </a>
       </li>
     </ul>

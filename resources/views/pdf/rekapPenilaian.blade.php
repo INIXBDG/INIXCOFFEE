@@ -57,9 +57,10 @@
         $jenisCounter = [];
         $jenisTotalTemp = [];
         $jenisEvaluatorCount = [];
+        $rekapGlobal = [];
+        $totalKeseluruhanGlobal = 0;
         @endphp
 
-        {{-- Loop Evaluator --}}
         @foreach ($formGroup['data']['evaluator'] as $indexEvaluator => $evaluatorItem)
         @php
         $jenis = $evaluatorItem['jenis_penilaian'];
@@ -73,7 +74,14 @@
         <table border="1" cellspacing="0" cellpadding="6" width="100%">
             <thead>
                 <tr style="background-color: #e0e0e0;">
-                    <th colspan="6">Evaluator {{ $nomor }} - Penilaian {{ $jenis }}</th>
+                    <th colspan="6">Evaluator
+                        @if ($formGroup['tipe_pdf'] === 'office')
+                        {{ $evaluatorItem['nama'] }}
+                        @else
+                        {{ $nomor }}
+                        @endif
+                        - Penilaian {{ $jenis }}
+                    </th>
                 </tr>
                 <tr style="background-color: #f5f5f5;">
                     <th>Kriteria</th>
@@ -123,10 +131,6 @@
         @endphp
         @endforeach
 
-        {{-- Perhitungan rata-rata dan bobot --}}
-        @php
-        $totalSemuaSkor = 0;
-        @endphp
         @foreach ($jenisTotalTemp as $jenis => $totalJenis)
         @php
         $jumlahEvaluator = $jenisEvaluatorCount[$jenis] ?? 1;
@@ -142,44 +146,56 @@
         };
 
         $finalJenis = ($rataRataJenis * $bobotJenis) / 100;
-        $totalSemuaSkor += $finalJenis;
-        @endphp
+        $totalKeseluruhanGlobal += $finalJenis;
 
-        <table border="1" cellspacing="0" cellpadding="6" width="100%" style="margin-bottom:10px;">
-            <tr style="background-color: #f0f0f0;">
-                <td colspan="3" class="text-right"><strong>Rata-rata</strong></td>
-                <td class="text-center"><strong>{{ number_format($rataRataJenis, 2) }}</strong></td>
-                <td class="text-right"><strong>Total {{ $jenis }} Setelah Bobot</strong></td>
-                <td class="text-center"><strong>{{ number_format($finalJenis, 2) }}</strong></td>
-            </tr>
-            @php
-            if ($finalJenis >= 90) {
-            $grade = 'A';
-            $keterangan = 'Sangat Baik';
-            } elseif ($finalJenis >= 80) {
-            $grade = 'B';
-            $keterangan = 'Baik';
-            } elseif ($finalJenis >= 70) {
-            $grade = 'C';
-            $keterangan = 'Cukup';
-            } elseif ($finalJenis >= 60) {
-            $grade = 'D';
-            $keterangan = 'Kurang';
-            } else {
-            $grade = 'E';
-            $keterangan = 'Sangat Kurang';
-            }
-            @endphp
-            <tr style="background: #393E46; color: white;">
-                <td colspan="5" class="text-right">Kriteria</td>
-                <td colspan="1" class="text-center">{{ $keterangan }}</td>
-            </tr>
-            <tr style="background: #393E46; color: white;">
-                <td colspan="5" class="text-right">Grade</td>
-                <td colspan="1" class="text-center">{{ $grade }}</td>
-            </tr>
-        </table>
+        if ($finalJenis >= 90) {
+        $grade = 'A'; $keterangan = 'Sangat Baik';
+        } elseif ($finalJenis >= 80) {
+        $grade = 'B'; $keterangan = 'Baik';
+        } elseif ($finalJenis >= 70) {
+        $grade = 'C'; $keterangan = 'Cukup';
+        } elseif ($finalJenis >= 60) {
+        $grade = 'D'; $keterangan = 'Kurang';
+        } else {
+        $grade = 'E'; $keterangan = 'Sangat Kurang';
+        }
+
+        $rekapGlobal[] = [
+        'jenis' => $jenis,
+        'rata' => $rataRataJenis,
+        'final' => $finalJenis,
+        'keterangan' => $keterangan,
+        'grade' => $grade,
+        ];
+        @endphp
         @endforeach
+
+        <table border="1" cellspacing="0" cellpadding="6" width="100%" style="margin-bottom:10px; border-collapse: collapse;">
+            <thead style="background-color: #f0f0f0;">
+                <tr>
+                    <th>Jenis Penilaian</th>
+                    <th>Rata-rata</th>
+                    <th>Total Setelah Bobot</th>
+                    <th>Kriteria</th>
+                    <th>Grade</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($rekapGlobal as $row)
+                <tr>
+                    <td class="text-center">{{ $row['jenis'] }}</td>
+                    <td class="text-center">{{ number_format($row['rata'], 2) }}</td>
+                    <td class="text-center">{{ number_format($row['final'], 2) }}</td>
+                    <td class="text-center">{{ $row['keterangan'] }}</td>
+                    <td class="text-center">{{ $row['grade'] }}</td>
+                </tr>
+                @endforeach
+                <tr>
+                    <td colspan="5" class="text-right"><strong>Total Keseluruhan : {{ number_format($totalKeseluruhanGlobal, 2) }}</strong></td>
+                </tr>
+            </tbody>
+        </table>
+
         <div class="title" style="margin-top: 20px;">Data Jumlah Absen</div>
         <table border="1" cellspacing="0" cellpadding="6" width="50%" style="margin-bottom:20px;">
             <tr>
@@ -194,13 +210,9 @@
             </tr>
         </table>
 
-        {{-- Catatan --}}
-        <label for="catatan">Catatan :</label>
-        <div style="width: 75%; padding: 10px;">
-            {{ $formGroup['evaluated']['catatan'] }}
-        </div>
+        <label for="catatan">Catatan : 
+        <br><span style="width: 200px;">{{ $formGroup['evaluated']['catatan'] }}</span></label>  
     </div>
     @endforeach
 </body>
-
 </html>
