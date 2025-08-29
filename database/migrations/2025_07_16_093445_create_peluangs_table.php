@@ -15,13 +15,13 @@ return new class extends Migration
             $table->id();
             $table->integer('id_contact');
             $table->string('id_sales');
-            $table->integer('id_rkm');
+            $table->integer('id_rkm')->nullable();
             $table->integer('materi');
             $table->text('catatan')->nullable();
             $table->decimal('harga', 15,2);
-            $table->decimal('netsales', 15,2);
-            $table->date('periode_mulai');
-            $table->date('periode_selesai');
+            $table->decimal('netsales', 15,2)->nullable();
+            $table->date('periode_mulai')->nullable();
+            $table->date('periode_selesai')->nullable();
             $table->integer('pax');
             $table->decimal('final', 15,2)->nullable();
             $table->text('desc_lost')->nullable();

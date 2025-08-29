@@ -23,8 +23,10 @@
                             href="/rkm/{{ $peluang->rkm->materi_key }}ixb{{ $peluang->rkm->tanggal_awal_day }}ie{{ $peluang->rkm->tanggal_awal_year }}ie{{ $peluang->rkm->tanggal_awal_month }}ixb{{ $peluang->rkm->metode_kelas }}">Lihat
                             di RKM</a>
                     @endif
-                    <button type="button" class="btn btn-warning" data-bs-toggle="modal"
-                        data-bs-target="#editPeluangModal">Edit Lead</button>
+                    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#editPeluangModal"
+                        {{ $peluang->merah ? 'disabled' : '' }}>
+                        Edit Lead
+                    </button>
                     <button type="button" class="btn btn-success" data-bs-toggle="modal"
                         data-bs-target="#updateProbabilitasModal" @disabled($peluang->tahap === 'merah' || $peluang->tahap === 'lost' || ($peluang->tahap === 'biru' && !$regis))>
                         Update Lead
@@ -41,7 +43,7 @@
 
                             <div class="d-flex gap-2">
                                 <button class="btn btn-primary btn-sm" data-bs-toggle="modal"
-                                    data-bs-target="#tambahAktivitasModal">
+                                    data-bs-target="#tambahAktivitasModal" {{ $peluang->merah ? 'disabled' : '' }}>
                                     Tambah Aktivitas
                                 </button>
 
@@ -70,6 +72,11 @@
 
                                 <dt class="col-sm-4">Jumlah Peserta (Pax)</dt>
                                 <dd class="col-sm-8">{{ $peluang->pax }}</dd>
+
+                                @if ($peluang->tentatif == true)
+                                        <dt class="col-sm-4">Status</dt>
+                                        <dd class="col-sm-8"><strong>Tentatif</strong></dd>
+                                @endif
 
                                 <dt class="col-sm-4">Periode Mulai</dt>
                                 <dd class="col-sm-8">

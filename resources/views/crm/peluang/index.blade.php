@@ -91,7 +91,7 @@
 
                                 <div class="mb-3">
                                     <label class="form-label" for="netsales">Net Sales (Rp)</label>
-                                    <input type="text" class="form-control" id="netsales" name="netsales" required>
+                                    <input type="text" class="form-control" id="netsales" name="netsales">
                                     <div class="invalid-feedback">Masukkan net sales.</div>
                                 </div>
 
@@ -104,15 +104,14 @@
 
                                 <div class="mb-3">
                                     <label class="form-label" for="periode_mulai">Periode Mulai</label>
-                                    <input type="date" class="form-control" id="periode_mulai" name="periode_mulai"
-                                        required>
+                                    <input type="date" class="form-control" id="periode_mulai" name="periode_mulai">
                                     <div class="invalid-feedback">Pilih tanggal mulai.</div>
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label" for="periode_selesai">Periode Selesai</label>
                                     <input type="date" class="form-control" id="periode_selesai"
-                                        name="periode_selesai" required>
+                                        name="periode_selesai">
                                     <div class="invalid-feedback">Pilih tanggal selesai.</div>
                                 </div>
 
@@ -242,6 +241,9 @@
                     {
                         data: 'netsales',
                         render: function(data) {
+                            if (data === null || data === '') {
+                                return 'Rp 0,00';
+                            }
                             return 'Rp ' + parseInt(data).toLocaleString('id-ID');
                         }
                     },
@@ -256,7 +258,7 @@
                             const endDate = data.periode_selesai ? moment(data.periode_selesai)
                                 .format('DD-MM-YYYY') : '';
                             return startDate && endDate ? `${startDate} s/d ${endDate}` :
-                                'Invalid date';
+                                'Tentatif';
                         }
                     },
                     {

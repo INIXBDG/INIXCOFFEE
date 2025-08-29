@@ -116,14 +116,12 @@ class PeluangController extends Controller
     {
         $aktivitas = Aktivitas::where('id_peluang', $id)->get();
         $peluang = Peluang::with(['materiRelation', 'rkm'])->where('id', $id)->first();
-            if ($peluang && $peluang->rkm) {
-            $peluang->rkm->metode_kelas = $peluang->rkm->metode_kelas === 'Offline' ? 'off' :
-                ($peluang->rkm->metode_kelas === 'Inhouse Bandung' ? 'inhb' :
-                ($peluang->rkm->metode_kelas === 'Inhouse Luar Bandung' ? 'inhlb' : 'vir'));
+        if ($peluang && $peluang->rkm) {
+            $peluang->rkm->metode_kelas = $peluang->rkm->metode_kelas === 'Offline' ? 'off' : ($peluang->rkm->metode_kelas === 'Inhouse Bandung' ? 'inhb' : ($peluang->rkm->metode_kelas === 'Inhouse Luar Bandung' ? 'inhlb' : 'vir'));
             $peluang->rkm->tanggal_awal_day = $peluang->rkm->tanggal_awal ? date('d', strtotime($peluang->rkm->tanggal_awal)) : null;
             $peluang->rkm->tanggal_awal_month = $peluang->rkm->tanggal_awal ? date('n', strtotime($peluang->rkm->tanggal_awal)) : null;
             $peluang->rkm->tanggal_awal_year = $peluang->rkm->tanggal_awal ? date('Y', strtotime($peluang->rkm->tanggal_awal)) : null;
-    }
+        }
         $materi = Materi::all();
         $netsales = perhitunganNetSales::with('trackingNetSales', 'approvedNetSales')->where('id_rkm', $peluang->id_rkm)->first();
         $regis = Regisform::where('id_peluang', $id)->first();
@@ -165,9 +163,9 @@ class PeluangController extends Controller
             'materi' => 'required|string|max:255',
             'catatan' => 'nullable|string|max:255',
             'harga' => 'required|numeric',
-            'netsales' => 'required|numeric',
-            'periode_mulai' => 'required|date',
-            'periode_selesai' => 'required|date|after_or_equal:periode_mulai',
+            'netsales' => 'nullable',
+            'periode_mulai' => 'nullable|date',
+            'periode_selesai' => 'nullable|date|after_or_equal:periode_mulai',
             'pax' => 'required|numeric|min:1',
             'id_aktivitas' => 'nullable|array',
             'id_aktivitas.*' => 'integer|exists:aktivitas,id',
@@ -250,8 +248,12 @@ class PeluangController extends Controller
             'harga_jual' => $request->harga,
             'pax' => $request->pax,
             'isi_pax' => $request->pax,
-            'tanggal_awal' => $request->periode_mulai,
-            'tanggal_akhir' => $request->periode_selesai,
+            'tanggal_awal'   => $request->filled('periode_mulai')
+                ? $request->periode_mulai
+                : now()->toDateString(),
+            'tanggal_akhir'  => $request->filled('periode_selesai')
+                ? $request->periode_selesai
+                : now()->toDateString(),
             'bulan' => $bulanNama,
             'quartal' => $kuartal,
             'tahun' => $tahun,
@@ -260,9 +262,15 @@ class PeluangController extends Controller
 
         $rkm = RKM::create($rkmData);
 
-        $validated['id_rkm'] = $rkm->id;
+        $validated['id_rkm'] = $rkm ? $rkm->id : null;
 
         $validated['id_sales'] = $request->input('id_sales', auth()->user()->id_sales ?? null);
+
+        foreach (['periode_mulai', 'periode_selesai', 'netsales'] as $field) {
+            if (empty($validated[$field])) {
+                $validated[$field] = null;
+            }
+        }
 
         // Buat record Peluang sekarang dengan id_rkm yang sudah ada
         $peluang = Peluang::create($validated);
@@ -283,6 +291,8 @@ class PeluangController extends Controller
     {
         try {
             $peluang = Peluang::findOrFail($id);
+            $rkm = RKM::where('id', $peluang->id_rkm)->first();
+            $rkm->delete();
             $peluang->delete();
 
             $aktivitas = Aktivitas::where('id_peluang', $id)->get();
@@ -310,6 +320,16 @@ class PeluangController extends Controller
         ]);
 
         $peluang = Peluang::findOrFail($id);
+
+        $rkm = RKM::where('id', $peluang->id_rkm)->first();
+        $rkm->materi_key = $request->materi;
+        $rkm->harga_jual = $request->harga;
+        $rkm->tanggal_awal = $request->periode_mulai;
+        $rkm->tanggal_akhir = $request->periode_selesai;
+        $rkm->pax = $request->pax;
+        $rkm->isi_pax = $request->pax;
+        $rkm->update();
+
         $peluang->update($validated);
 
         return back()->with([
@@ -509,5 +529,4 @@ class PeluangController extends Controller
 
         return redirect()->back()->with('success', 'Data payment advance berhasil disimpan.');
     }
-
 }
