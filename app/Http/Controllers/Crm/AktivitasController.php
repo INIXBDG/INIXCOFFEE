@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Aktivitas;
 use App\Models\Perusahaan;
 use App\Models\Contact;
+use App\Models\Peserta;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -33,11 +34,37 @@ class AktivitasController extends Controller
         return view('crm.aktivitas.index', compact('data', 'perusahaan'));
     }
 
-    public function getContacts($id)
+    public function getContactsAndPeserta($id)
     {
-        $contacts = Contact::where('id_perusahaan', $id)->get();
+        $contacts = Contact::where('id_perusahaan', $id)
+            ->select('id', 'nama', 'email', 'divisi')
+            ->get()
+            ->map(function ($contact) {
+                return [
+                    'id' => $contact->id,
+                    'nama' => $contact->nama,
+                    'email' => $contact->email,
+                    'divisi' => $contact->divisi,
+                    'type' => 'contact',
+                ];
+            });
 
-        return response()->json($contacts);
+        $peserta = Peserta::where('perusahaan_key', $id)
+            ->select('id', 'nama', 'email')
+            ->get()
+            ->map(function ($p) {
+                return [
+                    'id' => $p->id,
+                    'nama' => $p->nama,
+                    'email' => $p->email,
+                    'divisi' => 'C-Peserta',
+                    'type' => 'peserta',
+                ];
+            });
+
+        $allData = $contacts->concat($peserta);
+
+        return response()->json($allData);
     }
 
     public function indexJson()
