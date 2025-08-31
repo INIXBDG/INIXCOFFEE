@@ -45,6 +45,7 @@
                         <div class="modal-body">
                             <form id="activityForm" action="{{ route('store.aktivitas.new') }}" method="POST">
                                 @csrf
+                                <input type="hidden" id="contact_type" name="contact_type" value="contact">
 
                                 {{-- Dropdown perusahaan Klien --}}
                                 <div class="mb-3">
@@ -332,6 +333,7 @@
         document.addEventListener("DOMContentLoaded", function () {
             const perusahaanSelect = document.getElementById("id_perusahaan");
             const contactSelect = document.getElementById("id_contact");
+            const contactTypeInput = document.getElementById("contact_type");
             const newContactFields = document.getElementById("newContactFields");
 
             if (!perusahaanSelect || !contactSelect) {
@@ -344,12 +346,11 @@
 
                 contactSelect.innerHTML = `
                     <option value="" disabled selected>Pilih Kontak</option>
-                    <option value="new">+ Tambahkan Kontak Baru</option>
+                    <option value="new" data-type="contact">+ Tambahkan Kontak Baru</option>
                 `;
 
                 if (!perusahaanId) return;
 
-                // Fungsi untuk menggabungkan data dari Contact dan Peserta
                 fetch(`/crm/get-contacts-peserta/${perusahaanId}`)
                     .then(response => {
                         if (!response.ok) throw new Error("Gagal mengambil data kontak dan peserta");
@@ -366,7 +367,7 @@
                             data.forEach(item => {
                                 const option = document.createElement("option");
                                 option.value = item.id;
-                                option.dataset.type = item.type; // Untuk validasi nanti jika perlu
+                                option.dataset.type = item.type;
 
                                 const nama = item.nama || "Tidak ada nama";
                                 const email = item.email || "Tidak ada email";
@@ -387,8 +388,11 @@
                     });
             });
 
-            // Tampilkan formulir baru jika memilih "Tambahkan Kontak Baru"
             contactSelect.addEventListener("change", function () {
+                const selectedOption = this.options[this.selectedIndex];
+                const type = selectedOption.dataset.type || "contact";
+                contactTypeInput.value = type;
+
                 if (this.value === "new") {
                     newContactFields.style.display = "block";
                 } else {
@@ -396,7 +400,5 @@
                 }
             });
         });
-
-
     </script>
 @endsection
