@@ -11,6 +11,7 @@ class Aktivitas extends Model
     protected $fillable = [
         'id_sales',
         'id_contact',
+        'id_peserta',
         'id_peluang',
         'aktivitas',
         'subject',
@@ -26,5 +27,10 @@ class Aktivitas extends Model
     public function contact()
     {
         return $this->belongsTo(Contact::class, 'id_contact');
+    }
+
+    public function peserta()
+    {
+        return $this->belongsTo(Peserta::class, 'id_peserta');
     }
 }
