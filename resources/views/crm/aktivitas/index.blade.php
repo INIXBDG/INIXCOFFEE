@@ -329,66 +329,74 @@
             document.getElementById('activityForm').reset();
         }
 
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener("DOMContentLoaded", function () {
             const perusahaanSelect = document.getElementById("id_perusahaan");
             const contactSelect = document.getElementById("id_contact");
             const newContactFields = document.getElementById("newContactFields");
 
-            // Cek apakah elemen kontak ada
             if (!perusahaanSelect || !contactSelect) {
                 console.error("Dropdown perusahaan atau kontak tidak ditemukan!");
                 return;
             }
 
-            // Saat pilih perusahaan → load kontak via AJAX
-            perusahaanSelect.addEventListener("change", function() {
+            perusahaanSelect.addEventListener("change", function () {
                 const perusahaanId = this.value;
 
-                // Reset dropdown kontak
                 contactSelect.innerHTML = `
                     <option value="" disabled selected>Pilih Kontak</option>
                     <option value="new">+ Tambahkan Kontak Baru</option>
                 `;
 
-                // Jika tidak ada perusahaan yang dipilih, hentikan proses
                 if (!perusahaanId) return;
 
-                // Ambil kontak via AJAX
-                fetch(`/crm/get-contacts/${perusahaanId}`)
+                // Fungsi untuk menggabungkan data dari Contact dan Peserta
+                fetch(`/crm/get-contacts-peserta/${perusahaanId}`)
                     .then(response => {
-                        if (!response.ok) throw new Error("Gagal fetch data kontak");
+                        if (!response.ok) throw new Error("Gagal mengambil data kontak dan peserta");
                         return response.json();
                     })
                     .then(data => {
                         if (data.length === 0) {
                             const option = document.createElement("option");
                             option.value = "";
-                            option.textContent = "Tidak ada kontak tersedia";
+                            option.textContent = "Tidak ada kontak atau peserta tersedia";
                             option.disabled = true;
                             contactSelect.appendChild(option);
                         } else {
-                            data.forEach(contact => {
+                            data.forEach(item => {
                                 const option = document.createElement("option");
-                                option.value = contact.id;
-                                option.textContent = `${contact.nama} (${contact.divisi || "Tidak ada divisi"}) - ${contact.email || "Tidak ada email"}`;
+                                option.value = item.id;
+                                option.dataset.type = item.type; // Untuk validasi nanti jika perlu
+
+                                const nama = item.nama || "Tidak ada nama";
+                                const email = item.email || "Tidak ada email";
+                                const divisi = item.type === 'peserta' ? 'C-Peserta' : (item.divisi || 'tidak ada divisi');
+
+                                option.textContent = `${nama} (${divisi}) - ${email}`;
                                 contactSelect.appendChild(option);
                             });
                         }
                     })
-                    .catch(error => console.error("Gagal mengambil data kontak:", error));
+                    .catch(error => {
+                        console.error("Gagal mengambil data kontak dan peserta:", error);
+                        const option = document.createElement("option");
+                        option.value = "";
+                        option.textContent = "Terjadi kesalahan saat mengambil data";
+                        option.disabled = true;
+                        contactSelect.appendChild(option);
+                    });
             });
 
-            // Tampilkan form tambah kontak baru jika pilih "+ Tambahkan Kontak Baru"
-            contactSelect.addEventListener("change", function() {
+            // Tampilkan formulir baru jika memilih "Tambahkan Kontak Baru"
+            contactSelect.addEventListener("change", function () {
                 if (this.value === "new") {
                     newContactFields.style.display = "block";
-                    // newContactFields.querySelectorAll("input").forEach(input => input.required = true);
                 } else {
                     newContactFields.style.display = "none";
-                    // newContactFields.querySelectorAll("input").forEach(input => input.required = false);
                 }
             });
         });
+
 
     </script>
 @endsection

@@ -387,7 +387,7 @@ Route::prefix('crm')->group(function () {
     Route::post('/aktivitas/store', [AktivitasController::class, 'store'])->name('store.aktivitas');
     Route::delete('/aktivitas/delete/{id}', [AktivitasController::class, 'delete'])->name('delete.aktivitas');
     Route::put('/aktivitas/update/{id}', [AktivitasController::class, 'update'])->name('update.aktivitas');
-    Route::get('/get-contacts/{id}', [AktivitasController::class, 'getContacts'])->name('get.contacts');
+    Route::get('/get-contacts-peserta/{id}', [AktivitasController::class, 'getContactsAndPeserta'])->name('get.contacts');
 
 
     Route::get('/target/aktivity', [TargetAktivitas::class, 'index'])->name('index.target');
