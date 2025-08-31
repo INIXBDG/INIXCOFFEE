@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\crm;
+namespace App\Http\Controllers\Crm;
 
 use App\Http\Controllers\Controller;
 use App\Models\KetentuanForm;
