@@ -32,6 +32,9 @@ use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 // Route::get('/', function () {
 //     return view('auth.login');
 // });
+Route::get('/partials/dashboard', function () {
+    return view('partials.dashboard');
+});
 
 Route::redirect('/', '/login');
 
@@ -258,29 +261,24 @@ Route::get('/createKategorikpi', [App\Http\Controllers\DatabaseKPIController::cl
 Route::post('/storeKategorikpi', [App\Http\Controllers\DatabaseKPIController::class, 'kategoriStore'])->name('ketegori.kpi.store');
 Route::post('/pengajuan-klaim/excel-download/no-record', [pengajuanKlaimController::class, 'pengajuanKlaimExcel'])->name('pengajuanklaim.excelNoRecord');
 Route::post('/pengajuan-klaim/pdf-download/no-record', [pengajuanKlaimController::class, 'pengajuanKlaimPDF'])->name('pengajuanklaim.PDFNoRecord');
-Route::get('/pengajuan-klaim/create/no-record', [pengajuanKlaimController::class, 'noRecord'])->name('pengajuanklaim.createNoRecord');
-Route::get('/pengajuan-klaim/create/scheme-work', [pengajuanKlaimController::class, 'schemeWork'])->name('pengajuanklaim.createSchemeWork');
-Route::get('/pengajuan-klaim/create/cancel-leave', [pengajuanKlaimController::class, 'createcancelLeave'])->name('pengajuanklaim.createCancelLeave');
+Route::get('/pengajuan-klaim/create/no-record', [pengajuanKlaimController::class, 'noRecord'])->name('pengajuanklaim.NoRecord');
+Route::get('/pengajuan-klaim/create/scheme-work', [pengajuanKlaimController::class, 'schemeWork'])->name('pengajuanklaim.SchemeWork');
+Route::get('/pengajuan-klaim/create/cancel-leave', [pengajuanKlaimController::class, 'cancelLeave'])->name('pengajuanklaim.CancelLeave');
 Route::post('/pengajuan-klaim/add/no-record', [pengajuanKlaimController::class, 'createNoRecord'])->name('pengajuanklaim.addNoRecord');
-Route::post('/pengajuan-klaim/add/scheme-work', [pengajuanKlaimController::class, 'createCancelLeave'])->name('pengajuanklaim.addCancelLeave');
-Route::post('/pengajuan-klaim/add/cancel-leave', [pengajuanKlaimController::class, 'createSchemeWork'])->name('pengajuanklaim.addSchemeWork');
-Route::post('/pengajuan-klaim/aprove/no-record', [pengajuanKlaimController::class, 'approveNoRecord'])->name('pengajuanklaim.approveNoRecord');
-// Approve Scheme Work
-Route::post('/pengajuan-klaim/approve/scheme-work', [pengajuanKlaimController::class, 'approveSchemeWork'])->name('pengajuanklaim.approveSchemeWork');
-
-// Approve Cancel Leave
-Route::post('/pengajuan-klaim/approve/cancel-leave', [pengajuanKlaimController::class, 'approveCancelLeave'])->name('pengajuanklaim.approveCancelLeave');
-
+Route::post('/pengajuan-klaim/add/scheme-work', [pengajuanKlaimController::class, 'createSchemeWork'])->name('pengajuanklaim.addSchemeWork');
+Route::post('/pengajuan-klaim/add/cancel-leave', [pengajuanKlaimController::class, 'createCancelLeave'])->name('pengajuanklaim.addCancelLeave');
+Route::post('/pengajuan-klaim/approval', [pengajuanKlaimController::class, 'approval'])->name('pengajuanklaim.approval');
+Route::post('/pengajuan-klaim/reject', [pengajuanKlaimController::class, 'reject'])->name('pengajuanklaim.reject');
 Route::post('/pengajuan-klaim/delete/no-record', [pengajuanKlaimController::class, 'deleteNoRecord'])->name('pengajuanklaim.deleteNoRecord');
-Route::post('/pengajuan-klaim/delete/scheme-work', [pengajuanKlaimController::class, 'deleteCancelLeave'])->name('pengajuanklaim.deleteCancelLeave');
-Route::post('/pengajuan-klaim/delete/cancel-leave', [pengajuanKlaimController::class, 'deleteSchemeWork'])->name('pengajuanklaim.deleteSchemeWork');
+Route::post('/pengajuan-klaim/delete/cancel-leave', [pengajuanKlaimController::class, ''])->name('pengajuanklaim.deleteCancelLeave');
+Route::post('/pengajuan-klaim/delete/scheme-work', [pengajuanKlaimController::class, 'deleteSchemeWork'])->name('pengajuanklaim.deleteSchemeWork');
 Route::get('/pengajuan-klaim', [pengajuanKlaimController::class, 'index'])->name('pengajuanklaim.index');
 Route::put('notifications/{notification}/read', [App\Http\Controllers\CommentController::class, 'markAsRead'])->name('notifications.markAsRead');
 Route::put('/notifications/markAllAsRead', [App\Http\Controllers\CommentController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
 Route::get('/rkm/{id}/absensi', [App\Http\Controllers\RKMController::class, 'absensiPeserta'])->name('absensiPeserta');
 Route::put('/suratperjalanan/{id}/approval', [App\Http\Controllers\SuratPerjalananController::class, 'approval'])->name('suratperjalanan.approval');
 Route::get('/fetch-attendance', [\App\Http\Controllers\RKMController::class, 'fetchAttendance'])->name('attendance.fetch');
-Route::post('/absensi', [\App\Http\Controllers\AbsensiKaryawanController::class, 'storeAbsensi'])->name('absensi.store');
+Route::post('/absensi', [\App\Http\Controllers\AbsensiKaryawanController::class, 'storeMasuk'])->name('absensi.masuk');
 Route::get('/absensi/karyawan',  [App\Http\Controllers\AbsensiKaryawanController::class, 'absensiKaryawan'])->name('absensi.karyawan');
 Route::get('/absensi/pengajuan-klaim/no-recorded',  [App\Http\Controllers\AbsensiKaryawanController::class, 'noRecord'])->name('absensi.noRecord');
 Route::post('/absensi/approve/pengajuan-klaim/no-recorded',  [App\Http\Controllers\AbsensiKaryawanController::class, 'ApproveNoRecord'])->name('absensi.approveNoRecord');
@@ -294,7 +292,7 @@ Route::post('/absensi/delete/pengajuan-klaim/cancel-leave',  [App\Http\Controlle
 Route::post('/absensi/create/pengajuan-klaim/no-recorded', [App\Http\Controllers\AbsensiKaryawanController::class, 'createNoRecord'])->name('absensi.createNoRecord');
 Route::post('/absensi/create/pengajuan-klaim/cancel-leave', [App\Http\Controllers\AbsensiKaryawanController::class, 'createCancelLeave'])->name('absensi.createCancelLeave');
 Route::post('/absensi/create/pengajuan-klaim/scheme_work', [App\Http\Controllers\AbsensiKaryawanController::class, 'createSchemeWork'])->name('absensi.createSchemeWork');
-Route::post('/absensi/update', [\App\Http\Controllers\AbsensiKaryawanController::class, 'update'])->name('absensi.update');
+Route::post('/absensi/update', [\App\Http\Controllers\AbsensiKaryawanController::class, 'storeKeluar'])->name('absensi.keluar');
 Route::get('/absensi/{id}/edit', [App\Http\Controllers\RekapitulasiAbsenController::class, 'edit'])->name('absensi.edit');
 Route::get('/absensi/create', [App\Http\Controllers\AbsensiKaryawanController::class, 'create'])->name('absensi.create');
 Route::post('/absensi/manual', [\App\Http\Controllers\AbsensiKaryawanController::class, 'absenManual'])->name('absensi.manual');
