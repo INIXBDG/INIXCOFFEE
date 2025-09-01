@@ -199,6 +199,63 @@
                 </div>
             </div>
 
+            <!-- Prospek Terbuat Minggu Ini -->
+            <div class="row g-3 mb-4">
+                <div class="col-12">
+                    <div class="card h-100 shadow-sm border-0 rounded-3">
+                        <div class="card-header bg-transparent border-0 pb-0">
+                            <h5 class="card-title mb-0 text-primary">Prospek Terbuat Minggu Ini</h5>
+                        </div>
+                        <div class="card-body p-3">
+                            <div class="table-responsive" style="max-height: 280px; overflow-y: auto;">
+                                <table class="table table-hover table-striped table-bordered align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Materi</th>
+                                            <th scope="col">Harga</th>
+                                            <th scope="col">Periode</th>
+                                            <th scope="col">Pax</th>
+                                            <th scope="col">Tahap</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($prospek as $item)
+                                            <tr>
+                                                <td class="text-truncate" style="max-width: 250px;">
+                                                    {{ $item->materiRelation->nama_materi }}
+                                                </td>
+                                                <td>Rp {{ number_format($item->harga, 0, ',', '.') }}</td>
+                                                <td>
+                                                    @if ($item->tentatif == 1)
+                                                        <span class="badge bg-warning-subtle text-warning">Tentatif</span>
+                                                    @else
+                                                        {{ \Carbon\Carbon::parse($item->periode_mulai)->format('d-m-Y') }}
+                                                        s/d
+                                                        {{ \Carbon\Carbon::parse($item->periode_selesai)->format('d-m-Y') }}
+                                                    @endif
+                                                </td>
+                                                <td>{{ number_format($item->pax, 0, ',', '.') }}</td>
+                                                <td>
+                                                    <span class="badge bg-info-subtle text-info">
+                                                        {{ strtoupper($item->tahap) }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="5" class="text-center text-muted">
+                                                    Tidak ada data prospek minggu ini
+                                                </td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Total Status Perusahaan per Sales -->
             <div class="col-12">
                 <div class="card h-100 shadow-sm border-0 rounded-3">

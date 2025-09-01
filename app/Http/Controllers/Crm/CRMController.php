@@ -10,6 +10,7 @@ use App\Models\RKM;
 use App\Models\TargetActivity;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -142,13 +143,10 @@ class CRMController extends Controller
             ];
         }
 
-        // Status
+        // 7. Status Perusahaan per sales
         $totalStatus = Perusahaan::select('status', 'sales_key', DB::raw('count(*) as total'))->groupBy('status', 'sales_key')->get();
 
-
-        // Pengelompokan daerah
-        // Ambil data jumlah perusahaan per sales_key & lokasi
-        // Location data for pie chart
+        // 8. Segmentasi Daerah per sales
         $lokasi = Perusahaan::select('sales_key', 'lokasi', DB::raw('count(*) as total'))
             ->whereNotNull('sales_key')
             ->whereNotNull('lokasi')
@@ -184,6 +182,11 @@ class CRMController extends Controller
         // Pass sales_keys as a Collection
         $sales = $salesKeys;
 
+        // 10. Prospek terbuat minggu ini
+        $prospek = Peluang::with('materiRelation')->whereBetween('created_at', [
+            Carbon::now()->startOfWeek(),   
+            Carbon::now()->endOfWeek(),     
+        ])->get();
 
         return view('crm.dashboard', compact(
             'chartData',
@@ -195,7 +198,8 @@ class CRMController extends Controller
             'tahunDipilih',
             'totalStatus',
             'totalDaerah',
-            'sales'
+            'sales',
+            'prospek'
         ));
     }
 
