@@ -257,13 +257,13 @@
         }
 
         .signature img.signature-img {
-            max-width: 100px;
+            width: 100px;
             height: auto;
             margin-top: 10px;
         }
 
         .signature img.cap-img {
-            max-width: 80px;
+            width: 80px;
             height: auto;
             position: absolute;
             right: 0;
@@ -309,7 +309,7 @@
             }
 
             .logo img {
-                width: 100px;
+                width: 200px;
             }
 
             .office-info {
@@ -434,19 +434,19 @@
             }
 
             .signature img.signature-img {
-                max-width: 80pt;
+                width: 80pt;
                 height: auto;
                 margin-top: 5mm;
             }
 
             .signature img.cap-img {
-                max-width: 60pt;
+                width: 60pt;
                 height: auto;
                 position: absolute;
                 right: 0;
                 top: 50%;
                 transform: translateY(-50%);
-                opacity: 0.8;
+                opacity: 0.4;
             }
 
             .approval-text {
@@ -703,9 +703,6 @@
                     }
                 }
 
-                // Tambahkan teks "Mengetahui, " untuk penandatangan ketiga di luar elemen .signature
-                const approvalText = index === 2 ? '<p class="approval-text">Mengetahui, </p>' : '';
-
                 signatureHTML += `
                     <div class="signature">
                         ${capSrc ? `<img src="${capSrc}" class="cap-img" alt="Cap Perusahaan">` : ''}
@@ -808,9 +805,9 @@
                 .description h3 { font-size: 12pt; margin-bottom: 1mm; }
                 .signature-section { margin-top: 10mm; display: flex; justify-content: flex-end; gap: 10mm; page-break-inside: avoid; align-items: flex-start; }
                 .signature { text-align: center; width: 30%; position: relative; min-height: 80pt; }
-                .signature img.signature-img { max-width: 80pt; height: auto; margin-top: 5mm; }
-                .signature img.cap-img { max-width: 60pt; height: auto; position: absolute; right: 0; top: 50%; transform: translateY(-50%); opacity: 0.4; }
-                .approval-text { font-size: 10pt; font-weight: bold; margin-bottom: 3mm; text-align: center;}
+                .signature img.signature-img { width: 90pt; height: 80pt; margin-top: 5mm; }
+                .signature img.cap-img { width: 60pt; height: auto; position: absolute; right: 0; top: 50%; transform: translateY(-50%); opacity: 0.4; }
+                .approval-text { font-size: 10pt; font-weight: bold; margin-bottom: 3mm; text-align: center; }
                 .signature p { font-size: 10pt; margin: 2pt 0; }
                 .signature .name { margin-top: 10mm; padding-top: 1mm; border-top: 1px solid #000; }
                 .signature .position { font-size: 9pt; color: #555; }

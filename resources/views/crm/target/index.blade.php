@@ -28,6 +28,8 @@
                     <th>Call</th>
                     <th>Visit</th>
                     <th>Email</th>
+                    <th>Meet</th>
+                    <th>Incharge</th>
                     <th>Aksi</th>
                 </tr>
             </thead>
@@ -39,6 +41,8 @@
                         <td>{{ $activity->Call }}</td>
                         <td>{{ $activity->Visit }}</td>
                         <td>{{ $activity->Email }}</td>
+                        <td>{{ $activity->Meet }}</td>
+                        <td>{{ $activity->Incharge }}</td>
                         <td>
                             <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal"
                                 data-bs-target="#editModal{{ $activity->id }}">Edit</button>
@@ -100,6 +104,16 @@
                                             <input type="number" class="form-control" id="Email{{ $activity->id }}"
                                                 name="Email" value="{{ $activity->Email }}" required>
                                         </div>
+                                        <div class="mb-3">
+                                            <label for="Meet{{ $activity->id }}" class="form-label">Meet</label>
+                                            <input type="number" class="form-control" id="Meet{{ $activity->id }}"
+                                                name="Meet" value="{{ $activity->Meet }}" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="Incharge{{ $activity->id }}" class="form-label">Incharge</label>
+                                            <input type="number" class="form-control" id="Incharge{{ $activity->id }}"
+                                                name="Incharge" value="{{ $activity->Incharge }}" required>
+                                        </div>
                                     </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary"
@@ -150,6 +164,14 @@
                             <div class="mb-3">
                                 <label for="Email" class="form-label">Email</label>
                                 <input type="number" class="form-control" id="Email" name="Email" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="Meet" class="form-label">Meet</label>
+                                <input type="number" class="form-control" id="Meet" name="Meet" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="Incharge" class="form-label">Incharge</label>
+                                <input type="number" class="form-control" id="Incharge" name="Incharge" required>
                             </div>
                         </div>
                         <div class="modal-footer">

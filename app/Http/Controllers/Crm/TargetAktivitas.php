@@ -11,9 +11,12 @@ use Illuminate\Http\Request;
 class TargetAktivitas extends Controller
 {
 
-    public function index(){
+    public function index()
+    {
         $target = TargetActivity::all();
-        $user = User::where('jabatan', 'Sales')->get();
+        $user = User::where('jabatan', 'Sales')
+            ->where('status_akun', '1')
+            ->get();
         return view('crm.target.index', compact('target', 'user'));
     }
 
@@ -25,6 +28,8 @@ class TargetAktivitas extends Controller
             'Call' => 'required|integer',
             'Visit' => 'required|integer',
             'Email' => 'required|integer',
+            'Meet' => 'required|integer',
+            'Incharge' => 'required|integer',
         ]);
 
         $data = new TargetActivity();
@@ -33,6 +38,8 @@ class TargetAktivitas extends Controller
         $data->Call = $validated['Call'];
         $data->Visit = $validated['Visit'];
         $data->Email = $validated['Email'];
+        $data->Meet = $validated['Meet'];
+        $data->Incharge = $validated['Incharge'];
         $data->save();
 
         return redirect()->back()->with('success', 'Target activity berhasil disimpan.');
@@ -46,6 +53,8 @@ class TargetAktivitas extends Controller
             'Call' => 'required|integer',
             'Visit' => 'required|integer',
             'Email' => 'required|integer',
+            'Meet' => 'required|integer',
+            'Incharge' => 'required|integer',
         ]);
 
         $data = TargetActivity::findOrFail($id);
@@ -54,6 +63,8 @@ class TargetAktivitas extends Controller
         $data->Call = $validated['Call'];
         $data->Visit = $validated['Visit'];
         $data->Email = $validated['Email'];
+        $data->Meet = $validated['Meet'];
+        $data->Incharge = $validated['Incharge'];
         $data->save();
 
         return redirect()->back()->with('success', 'Target activity berhasil diperbarui.');

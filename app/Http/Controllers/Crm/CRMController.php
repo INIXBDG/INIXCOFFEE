@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Crm;
 
 use App\Http\Controllers\Controller;
 use App\Models\Aktivitas;
+use App\Models\Contact;
 use App\Models\Peluang;
 use App\Models\Perusahaan;
 use App\Models\RKM;
@@ -34,30 +35,49 @@ class CRMController extends Controller
 
         // 2. Target dan aktivitas
         $target = TargetActivity::all()->keyBy('id_sales');
-        $aktivitas = Aktivitas::all();
-        $sales = User::where('jabatan', 'Sales')->pluck('id_sales')->toArray();
 
+        $aktivitas = Aktivitas::whereMonth('waktu_aktivitas', Carbon::now()->month)
+            ->whereYear('waktu_aktivitas', Carbon::now()->year)
+            ->get();
+
+        $sales = User::where('jabatan', 'Sales')->where('status_akun', '1')->pluck('id_sales')->toArray();
         $activitysales = [];
 
         foreach ($sales as $id_sales) {
             $userAktivitas = $aktivitas->where('id_sales', $id_sales);
 
+            $actualContact = $userAktivitas->where('aktivitas', 'Contact')->count();
             $actualCall = $userAktivitas->where('aktivitas', 'Call')->count();
             $actualEmail = $userAktivitas->where('aktivitas', 'Email')->count();
             $actualVisit = $userAktivitas->where('aktivitas', 'Visit')->count();
+            $actualMeet = $userAktivitas->where('aktivitas', 'Meet')->count();
+            $actualIncharge = $userAktivitas->where('aktivitas', 'Incharge')->count();
 
             $salesTarget = $target[$id_sales] ?? null;
 
+            $contactbaru = Contact::where('sales_key', $id_sales)
+                ->where('status', '1')
+                ->whereMonth('created_at', Carbon::now()->month)
+                ->whereYear('created_at', Carbon::now()->year)
+                ->count();
+                
             $activitysales[] = [
                 'id_sales' => $id_sales,
+                'contact' => $contactbaru,
                 'call' => $actualCall,
                 'email' => $actualEmail,
                 'visit' => $actualVisit,
+                'meet' => $actualMeet,
+                'incharge' => $actualIncharge,
+                'target_contact' => $salesTarget->Contact ?? 0,
                 'target_call' => $salesTarget->Call ?? 0,
                 'target_email' => $salesTarget->Email ?? 0,
                 'target_visit' => $salesTarget->Visit ?? 0,
+                'target_meet' => $salesTarget->Meet ?? 0,
+                'target_incharge' => $salesTarget->Incharge ?? 0,
             ];
         }
+
 
         // 3. Top 5 produk paling banyak terjual
         $best = RKM::with('materi')

@@ -18,6 +18,8 @@ return new class extends Migration
             $table->integer('Call');
             $table->integer('Visit');
             $table->integer('Email');
+            $table->integer('Meet');
+            $table->integer('Incharge');
             $table->timestamps();
         });
     }
