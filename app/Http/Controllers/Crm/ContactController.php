@@ -130,18 +130,62 @@ class ContactController extends Controller
 
     public function detail($id)
     {
-        $data = Perusahaan::with('contacts')->where('id', $id)->firstOrFail();
-        $contactIds = $data->contacts->pluck('id');
-        $aktivitass = Aktivitas::whereIn('id_contact', $contactIds)
+        $data = Perusahaan::with(['contacts', 'peserta'])->where('id', $id)->firstOrFail();
+
+        $items = [];
+
+        // Tambahkan semua contacts
+        foreach ($data->contacts as $contact) {
+            $items[] = [
+                'id' => $contact->id,
+                'nama' => $contact->nama,
+                'type' => 'contact',
+                'label' => "[Contact] " . $contact->nama . " (" . ($contact->email ?? 'Tidak ada email') . ")"
+            ];
+        }
+
+        // Tambahkan semua peserta
+        foreach ($data->peserta as $peserta) {
+            $items[] = [
+                'id' => $peserta->id,
+                'nama' => $peserta->nama,
+                'type' => 'peserta',
+                'label' => "[Peserta] " . $peserta->nama. " (" . ($peserta->email ?? 'Tidak ada email') . ")"
+            ];
+        }
+
+        // Urutkan berdasarkan nama
+        usort($items, function ($a, $b) {
+            return strcasecmp($a['label'], $b['label']);
+        });
+
+        // Ambil data lainnya (jika diperlukan)
+        $aktivitass = Aktivitas::with(['contact', 'peserta'])
+            ->where(function ($query) use ($data) {
+                $query->whereIn('id_contact', $data->contacts->pluck('id'))
+                    ->orWhereIn('id_peserta', $data->peserta->pluck('id'));
+            })
             ->orderByDesc('created_at')
             ->get();
-        $aktivitas = Aktivitas::whereIn('id_contact', $contactIds)
+
+        $aktivitas = Aktivitas::with(['contact', 'peserta'])
+            ->where(function ($query) use ($data) {
+                $query->whereIn('id_contact', $data->contacts->pluck('id'))
+                    ->orWhereIn('id_peserta', $data->peserta->pluck('id'));
+            })
             ->whereNull('id_peluang')
             ->orderByDesc('created_at')
             ->get();
-        $peluang = Peluang::with('materiRelation')->where('id_contact', $data->id)->get();
+
+
+        $peluang = Peluang::where('id_contact', $data->id)
+            ->with('materiRelation')
+            ->get();
+
         $materi = Materi::all();
-            return view('crm.contact.detail', compact('data', 'peluang', 'aktivitas', 'materi', 'aktivitass'));
+
+
+        return view('crm.contact.detail', compact('data', 'items', 'aktivitas','aktivitass', 'peluang', 'materi'));
     }
 
     public function store(Request $request)

@@ -171,8 +171,8 @@ class AktivitasController extends Controller
     {
         $validated = $request->validate([
             'id_perusahaan'   => 'required|integer',
-            'id_contact'      => 'required|string',
-            'contact_type'    => 'nullable|string|in:contact,peserta',
+            'id_contact'      => 'required|string', // ID dari dropdown
+            'contact_type'    => 'nullable|string|in:contact,peserta', // Tipe: contact atau peserta
             'aktivitas'       => 'required|in:Call,Email,Visit,Meet',
             'subject'         => 'required|string|max:255',
             'deskripsi'       => 'nullable|string',
@@ -199,13 +199,19 @@ class AktivitasController extends Controller
         } else {
             $contactId = (int) $request->id_contact;
 
-            // Jika tipe data peserta → simpan ke kolom id_peserta
+            // Cek apakah tipe data adalah peserta → simpan ke id_peserta
             if ($request->contact_type === 'peserta') {
+                // Pastikan peserta ada di database
+                if (!Peserta::where('id', $contactId)->exists()) {
+                    return back()->withErrors([
+                        'id_contact' => 'Peserta yang dipilih tidak ditemukan.'
+                    ]);
+                }
                 $validated['id_peserta'] = $contactId;
                 $validated['id_contact'] = null;
 
             } else {
-                // Jika tipe contact → simpan ke kolom id_contact
+                // Jika tipe contact → simpan ke id_contact
                 if (!Contact::where('id', $contactId)->exists()) {
                     return back()->withErrors([
                         'id_contact' => 'Kontak yang dipilih tidak valid.'

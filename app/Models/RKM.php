@@ -40,7 +40,7 @@ class RKM extends Model
 
     public function sales()
     {
-        return $this->belongsTo(Karyawan::class, 'sales_key', 'kode_karyawan');
+        return $this->belongsTo(karyawan::class, 'sales_key', 'kode_karyawan');
     }
 
     public function materi()
@@ -70,7 +70,7 @@ class RKM extends Model
 
     public function comments()
     {
-        return $this->hasMany(Comment::class, 'rkm_key', 'id');
+        return $this->hasMany(comment::class, 'rkm_key', 'id');
     }
 
     public function exam()

@@ -296,72 +296,72 @@
             });
         });
 
-        document.addEventListener('DOMContentLoaded', function() {
-            const contactSelect = document.getElementById('id_contact');
-            const tableWrapper = document.getElementById('aktivitasTableWrapper');
+    document.addEventListener('DOMContentLoaded', function() {
+        const contactSelect = document.getElementById('id_contact');
+        const tableWrapper = document.getElementById('aktivitasTableWrapper');
 
-            contactSelect.addEventListener('change', function() {
-                const contactId = this.value;
+        contactSelect.addEventListener('change', function() {
+            const perusahaanId = this.value; // sekarang ini ID perusahaan
 
-                if (!contactId) {
-                    tableWrapper.innerHTML =
+                if (!perusahaanId) {
+                tableWrapper.innerHTML =
                         `<p class="text-muted">Silakan pilih contact client terlebih dahulu.</p>`;
-                    return;
-                }
+                return;
+            }
 
-                fetch(`/crm/ambil/aktivitas/${contactId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.length === 0) {
-                            tableWrapper.innerHTML =
+                fetch(`/crm/ambil/aktivitas/${perusahaanId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length === 0) {
+                        tableWrapper.innerHTML =
                                 `<p class="text-muted">Tidak ada aktivitas yang tersedia untuk contact ini.</p>`;
-                            return;
-                        }
+                        return;
+                    }
 
-                        let table = `
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-hover">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Pilih</th>
+                    let table = `
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Pilih</th>
                                         <th>Kontak</th>
-                                        <th>Jenis Aktivitas</th>
-                                        <th>Subjek</th>
-                                        <th>Deskripsi</th>
-                                        <th>Waktu Aktivitas</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+                                    <th>Jenis Aktivitas</th>
+                                    <th>Subjek</th>
+                                    <th>Deskripsi</th>
+                                    <th>Waktu Aktivitas</th>
+                                </tr>
+                            </thead>
+                            <tbody>
                     `;
 
-                        data.forEach(a => {
-                            const waktu = new Date(a.waktu).toLocaleDateString('id-ID', {
-                                day: '2-digit',
-                                month: 'long',
-                                year: 'numeric'
-                            });
-                            table += `
-                            <tr>
-                                <td><input type="checkbox" name="id_aktivitas[]" value="${a.id}"></td>
-                                <td>${a.kontak}</td>
-                                <td>${a.aktivitas}</td>
-                                <td>${a.subject}</td>
-                                <td>${a.deskripsi ?? '-'}</td>
-                                <td>${waktu}</td>
-                            </tr>
-                        `;
+                    data.forEach(a => {
+                        const waktu = new Date(a.waktu).toLocaleDateString('id-ID', {
+                            day: '2-digit',
+                            month: 'long',
+                            year: 'numeric'
                         });
-
-                        table += `</tbody></table></div>`;
-                        tableWrapper.innerHTML = table;
-                    })
-                    .catch(err => {
-                        console.error('Gagal memuat aktivitas:', err);
-                        tableWrapper.innerHTML =
-                            `<p class="text-danger">Terjadi kesalahan saat memuat aktivitas.</p>`;
+                        table += `
+                        <tr>
+                            <td><input type="checkbox" name="id_aktivitas[]" value="${a.id}"></td>
+                            <td>${a.kontak}</td>
+                            <td>${a.aktivitas}</td>
+                            <td>${a.subject}</td>
+                            <td>${a.deskripsi ?? '-'}</td>
+                            <td>${waktu}</td>
+                        </tr>
+                    `;
                     });
-            });
+
+                    table += `</tbody></table></div>`;
+                    tableWrapper.innerHTML = table;
+                })
+                .catch(err => {
+                    console.error('Gagal memuat aktivitas:', err);
+                    tableWrapper.innerHTML =
+                        `<p class="text-danger">Terjadi kesalahan saat memuat aktivitas.</p>`;
+                });
         });
+    });
 
         function resetForm() {
             const form = document.getElementById('form-data');
