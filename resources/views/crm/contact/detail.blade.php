@@ -516,7 +516,13 @@
                                 <tr>
                                     <td class="px-3 py-2 text-center">{{ $item->id_sales }}</td>
                                     <td class="px-3 py-2">{{ $item->contact->nama ?? $item->peserta->nama ?? '-' }}</td>
-                                    <td class="px-3 py-2">{{ $item->aktivitas }}</td>
+                                    <td class="px-3 py-2">
+                                        @if($item->aktivitas === 'Incharge')
+                                            Incharge Inhouse
+                                        @else
+                                            {{ $item->aktivitas }}
+                                        @endif
+                                    </td>
                                     <td class="px-3 py-2">{{ $item->subject }}</td>
                                     <td class="px-3 py-2">{{ $item->deskripsi ?? '-' }}</td>
                                     <td class="px-3 py-2">

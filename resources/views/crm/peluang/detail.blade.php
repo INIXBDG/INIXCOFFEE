@@ -228,7 +228,13 @@
                                         @if ($item->id_sales == $peluang->id_sales)
                                             <tr>
                                                 <td>{{ $no++ }}</td>
-                                                <td>{{ $item->aktivitas }}</td>
+                                                <td>
+                                                    @if($item->aktivitas === 'Incharge')
+                                                        Incharge Inhouse
+                                                    @else
+                                                        {{ $item->aktivitas }}
+                                                    @endif
+                                                </td>
                                                 <td>{{ $item->subject }}</td>
                                                 <td>{{ $item->deskripsi }}</td>
                                                 <td>{{ \Carbon\Carbon::parse($item->waktu_aktivitas)->translatedFormat('d F Y') }}

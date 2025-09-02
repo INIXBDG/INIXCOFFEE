@@ -126,7 +126,7 @@ class AktivitasController extends Controller
                     return [
                         'id' => $item->id,
                         'kontak' => $kontak,
-                        'aktivitas' => ucfirst($item->aktivitas),
+                        'aktivitas' => ($item->aktivitas === 'Incharge') ? 'Incharge Inhouse' : ucfirst($item->aktivitas),
                         'subject' => $item->subject,
                         'deskripsi' => $item->deskripsi ?? '-',
                         'waktu_aktivitas' => \Carbon\Carbon::parse($item->waktu_aktivitas)->format('d/m/Y'),
