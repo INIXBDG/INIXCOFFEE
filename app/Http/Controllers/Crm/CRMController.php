@@ -119,7 +119,11 @@ class CRMController extends Controller
                 return $grup->pluck('total_jumlah', 'triwulan')->toArray();
             })->toArray();
 
-        $pengguna = User::select('id_sales', 'username')->get()->keyBy('id_sales')->toArray();
+        $pengguna = User::where('status_akun', '1')
+            ->select('id_sales', 'username')
+            ->get()
+            ->values()
+            ->toArray();
 
         // Ensure all sales users are included for both win and lost
         $triwulanList = ['TR1', 'TR2', 'TR3', 'TR4'];
@@ -184,8 +188,8 @@ class CRMController extends Controller
 
         // 10. Prospek terbuat minggu ini
         $prospek = Peluang::with('materiRelation')->whereBetween('created_at', [
-            Carbon::now()->startOfWeek(),   
-            Carbon::now()->endOfWeek(),     
+            Carbon::now()->startOfWeek(),
+            Carbon::now()->endOfWeek(),
         ])->get();
 
         return view('crm.dashboard', compact(

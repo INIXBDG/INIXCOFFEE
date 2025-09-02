@@ -211,6 +211,7 @@
                                 <table class="table table-hover table-striped table-bordered align-middle">
                                     <thead>
                                         <tr>
+                                            <th scope="col">Sales</th>
                                             <th scope="col">Materi</th>
                                             <th scope="col">Harga</th>
                                             <th scope="col">Periode</th>
@@ -221,6 +222,9 @@
                                     <tbody>
                                         @forelse($prospek as $item)
                                             <tr>
+                                                <td class="text-truncate" style="max-width: 250px;">
+                                                    {{ $item->id_sales }}
+                                                </td>
                                                 <td class="text-truncate" style="max-width: 250px;">
                                                     {{ $item->materiRelation->nama_materi }}
                                                 </td>
