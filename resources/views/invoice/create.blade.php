@@ -183,13 +183,14 @@
                                 <label for="bank_name" class="fw-bold">Nama Bank:</label>
                                 <select name="bank_name" id="bank_name" class="form-control mb-2">
                                     <option value="">Pilih Nama Bank</option>
-                                    <option value="BANK MANDIRI KK BANDUNG CIHAMPELAS" {{ old('bank_name') === 'BANK MANDIRI KK BANDUNG CIHAMPELAS' ? 'selected' : '' }}>BANK MANDIRI KK BANDUNG CIHAMPELAS</option>
+                                    <option value="BANK MANDIRI KK BANDUNG CIHAMPELAS">BANK MANDIRI KK BANDUNG CIHAMPELAS</option>
+                                <option value="BANK BCA KK BANDUNG ABDUL RIVAI">BANK BCA KK BANDUNG ABDUL RIVAI</option>
+                                    <option value="BANK BJB KCP CIHAMPELAS BANDUNG">BANK BJB KCP CIHAMPELAS BANDUNG</option>
                                 </select>
 
                                 <label for="account_number" class="fw-bold">Nomor Rekening:</label>
                                 <select name="account_number" id="account_number" class="form-control">
                                     <option value="">Pilih Nomor Rekening</option>
-                                    <option value="131-00-0734797-6" {{ old('account_number') === '131-00-0734797-6' ? 'selected' : '' }}>131-00-0734797-6</option>
                                 </select>
                             </td>
                             <td class="text-end">SubTotal</td>
@@ -439,6 +440,29 @@
 
             html2pdf().set(options).from(element).save();
         }
+
+            // Mapping Bank dengan Nomor Rekening
+    const bankAccounts = {
+        "BANK MANDIRI KK BANDUNG CIHAMPELAS": "131-00-0734797-6",
+        "BANK BCA KK BANDUNG ABDUL RIVAI": "5170583738",
+        "BANK BJB KCP CIHAMPELAS BANDUNG": "0142016095100"
+    };
+
+    const bankSelect = document.getElementById("bank_name");
+    const accountSelect = document.getElementById("account_number");
+
+    bankSelect.addEventListener("change", function () {
+        const selectedBank = this.value;
+        accountSelect.innerHTML = '<option value="">Pilih Nomor Rekening</option>'; // reset dulu
+
+        if (selectedBank && bankAccounts[selectedBank]) {
+            const option = document.createElement("option");
+            option.value = bankAccounts[selectedBank];
+            option.textContent = bankAccounts[selectedBank];
+            option.selected = true; // otomatis terpilih
+            accountSelect.appendChild(option);
+        }
+    });
     </script>
 </body>
 

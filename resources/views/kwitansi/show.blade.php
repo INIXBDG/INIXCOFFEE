@@ -193,21 +193,31 @@
 
 
 
-    <table style="width:100%; margin-top:40px; border-collapse:collapse; border: 1px solid #000;">
-        <tr>
-            <td style="width:100%; text-align:center; vertical-align:top; border: 1px solid #000;">
-                <p style="margin:0;">Pembayaran dapat dilakukan melalui transfer ke :</p>
-                <p style="margin:0; font-weight:bold;">{{ $invoice->bank_name ?? 'BANK MANDIRI KK BANDUNG CIHAMPELAS' }}</p>
-                <p style="margin:0; font-weight:bold;">No. Rek : {{ $invoice->account_number ?? '131-00-0734797-6' }}</p>
-                <p style="margin:0; font-weight:bold;">a/n PT. INIXINDO AMIETE MANDIRI</p>
-                @if($kwitansi->invoice->catatan_pembayaran)
+<table style="width:100%; margin-top:40px; border-collapse:collapse; border: 1px solid #000;">
+    <tr>
+        <td style="width:100%; text-align:center; vertical-align:top; border: 1px solid #000;">
+            <p style="margin:0;">Pembayaran dapat dilakukan melalui transfer ke :</p>
+            <p style="margin:0; font-weight:bold;">{{ $kwitansi->invoice->bank_name ?? 'BANK MANDIRI KK BANDUNG CIHAMPELAS' }}</p>
+            <p style="margin:0; font-weight:bold;">No. Rek : {{ $kwitansi->invoice->account_number ?? '131-00-0734797-6' }}</p>
+
+            @php
+                $accountName = 'PT. INIXINDO AMIETE MANDIRI';
+                if (($kwitansi->invoice->bank_name ?? '') === 'BANK BCA KK BANDUNG ABDUL RIVAI') {
+                    $accountName = 'RAY GUTAFSON MANURUNG';
+                }
+            @endphp
+
+            <p style="margin:0; font-weight:bold;">a/n {{ $accountName }}</p>
+
+            @if($kwitansi->invoice->catatan_pembayaran)
                 <p style="margin:0;">{{ $invoice->catatan_pembayaran }}</p>
-                @else
+            @else
                 <p style="margin:0;">Note : Mohon nomor invoice dan nama perusahaan dicantumkan</p>
-                @endif
-            </td>
-        </tr>
-    </table>
+            @endif
+        </td>
+    </tr>
+</table>
+
 
     <table class="signature">
         <tr>
