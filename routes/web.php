@@ -390,10 +390,10 @@ Route::prefix('crm')->group(function () {
     Route::get('/get-contacts-peserta/{id}', [AktivitasController::class, 'getContactsAndPeserta'])->name('get.contacts');
 
 
-    Route::get('/target/aktivity', [TargetAktivitas::class, 'index'])->name('index.target');
-    Route::post('/target/aktivity/store', [TargetAktivitas::class, 'store'])->name('index.target.store');
-    Route::put('/target/aktivity/{id}/update', [TargetAktivitas::class, 'update'])->name('index.target.update');
-    Route::delete('/target/aktivity/{id}/delete', [TargetAktivitas::class, 'delete'])->name('index.target.delete');
+    Route::get('/target/activity', [TargetAktivitas::class, 'index'])->name('index.target');
+    Route::post('/target/activity/store', [TargetAktivitas::class, 'store'])->name('index.target.store');
+    Route::put('/target/activity/{id}/update', [TargetAktivitas::class, 'update'])->name('index.target.update');
+    Route::delete('/target/activity/{id}/delete', [TargetAktivitas::class, 'delete'])->name('index.target.delete');
 
     // Catatan Sales CRM
     Route::post('/catatan/sales/store', [CatatanSalesController::class, 'store'])->name('store.catatan.sales');

@@ -31,11 +31,17 @@
                                 <button type="button" class="btn btn-outline-primary filter-btn active"
                                     data-filter="all">All</button>
                                 <button type="button" class="btn btn-outline-primary filter-btn"
+                                    data-filter="Contact">Contact</button>
+                                <button type="button" class="btn btn-outline-primary filter-btn"
                                     data-filter="Call">Call</button>
                                 <button type="button" class="btn btn-outline-primary filter-btn"
                                     data-filter="Email">Email</button>
                                 <button type="button" class="btn btn-outline-primary filter-btn"
                                     data-filter="Visit">Visit</button>
+                                <button type="button" class="btn btn-outline-primary filter-btn"
+                                    data-filter="Meet">Meet</button>
+                                <button type="button" class="btn btn-outline-primary filter-btn"
+                                    data-filter="Incharge">Incharge</button>
                             </div>
                         </div>
                         <div class="activity-container" style="max-height: 280px; overflow-y: auto;">
@@ -44,6 +50,11 @@
                                     <strong class="text-dark d-block mb-2">{{ $sales['id_sales'] }}</strong>
                                     @php
                                         $aktivitas = [
+                                            'Contact' => [
+                                                'jumlah' => $sales['contact'],
+                                                'target' => $sales['target_contact'],
+                                                'warna' => 'info',
+                                            ],
                                             'Call' => [
                                                 'jumlah' => $sales['call'],
                                                 'target' => $sales['target_call'],
@@ -57,6 +68,16 @@
                                             'Visit' => [
                                                 'jumlah' => $sales['visit'],
                                                 'target' => $sales['target_visit'],
+                                                'warna' => 'warning',
+                                            ],
+                                            'Meet' => [
+                                                'jumlah' => $sales['meet'],
+                                                'target' => $sales['target_meet'],
+                                                'warna' => 'success',
+                                            ],
+                                            'Incharge' => [
+                                                'jumlah' => $sales['incharge'],
+                                                'target' => $sales['target_incharge'],
                                                 'warna' => 'success',
                                             ],
                                         ];

@@ -13,5 +13,7 @@ class TargetActivity extends Model
         'Call',
         'Visit',
         'Email',
+        'Meet',
+        'Incharge',
     ];
 }
