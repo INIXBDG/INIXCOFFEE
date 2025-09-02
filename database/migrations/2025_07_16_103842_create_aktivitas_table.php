@@ -17,7 +17,7 @@ return new class extends Migration
             $table->integer('id_contact')->nullable();
             $table->integer('id_peserta')->nullable();
             $table->integer('id_peluang')->nullable();
-            $table->enum('aktivitas', ['Call', 'Email', 'Visit', 'Meet']);
+            $table->enum('aktivitas', ['Call', 'Email', 'Visit', 'Meet', 'Incharge']);
             $table->text('subject');
             $table->text('deskripsi')->nullable();
             $table->date('waktu_aktivitas');

@@ -272,6 +272,7 @@
                                     <option value="Email">Email</option>
                                     <option value="Visit">Visit</option>
                                     <option value="Meet">Meeting</option>
+                                    <option value="Incharge">Incharge Inhouse</option>
                                 </select>
                             </div>
 
