@@ -252,6 +252,12 @@
             color: #555;
         }
 
+        #ppn-percentage {
+            display: none;
+            width: 100px;
+            margin: 5px 0;
+        }
+
         @media print {
             body {
                 margin: 0;
@@ -422,10 +428,8 @@
 
 <body>
     <h2>Input Data Registrasi</h2>
-    <!-- Debug: Tampilkan $ketentuan untuk memeriksa data -->
     <pre style="display: none;">{{ print_r($ketentuan->toArray(), true) }}</pre>
     <form id="regis-form">
-        <!-- Data Perusahaan (Read-only dari $lead->perusahaan) -->
         <h3>Data Perusahaan</h3>
         <label>Nama Perusahaan:</label>
         <input type="text" id="nama-perusahaan" class="readonly" value="{{ $lead->perusahaan->nama_perusahaan ?? '-' }}"
@@ -434,24 +438,22 @@
         <input type="text" id="alamat" class="readonly" value="{{ $lead->perusahaan->alamat ?? '-' }}" readonly>
         <label>PIC Penagihan:</label>
         <input type="text" id="pic" class="readonly" value="{{ $lead->perusahaan->cp ?? '-' }}" readonly>
-        <label>Telepon dan Email:</label>
-        <input type="text" id="telepon-email" class="readonly"
-            value="{{ $lead->perusahaan->no_telp ?? '-' }} & {{ $lead->perusahaan->email ?? '-' }}" readonly>
+        <label>Telepon:</label>
+        <input type="text" id="telepon" class="readonly" value="{{ $lead->perusahaan->no_telp ?? '-' }}" readonly>
+        <label>Email:</label>
+        <input type="text" id="email" class="readonly" value="{{ $lead->perusahaan->email ?? '-' }}" readonly>
         <label>NPWP:</label>
         <input type="text" id="npwp" class="readonly" value="{{ $lead->perusahaan->npwp ?? '-' }}" readonly>
 
-        <!-- Materi Pelatihan (dari $lead->materiRelation) -->
         <label>Materi dan Tanggal Pelatihan:</label>
         <input type="text" class="readonly" id="materi"
             value="{{ $lead->materiRelation->nama_materi }} || {{ \Carbon\Carbon::parse($lead->periode_mulai)->format('d M Y') }} → {{ \Carbon\Carbon::parse($lead->periode_selesai)->format('d M Y') }}"
             readonly>
 
-        <!-- Data Peserta (Dynamic) -->
         <h3>Data Peserta</h3>
         <div id="peserta-list"></div>
         <button type="button" id="add-peserta">Tambah Peserta</button>
 
-        <!-- Pilih Syarat dari $ketentuan (Multi-Select) -->
         <h3>Syarat & Ketentuan</h3>
         <label>Pilih Syarat (bisa lebih dari satu):</label>
         <select id="syarat-select" multiple required>
@@ -464,15 +466,13 @@
         @php
             use App\Models\karyawan;
             $sales = Karyawan::where('kode_karyawan', $lead->id_sales)->first();
-
         @endphp
 
-        <!-- Input Tanda Tangan -->
         <h3>Tanda Tangan</h3>
         <div id="signature-list">
             <div class="signature-row">
                 <input type="text" placeholder="Nama Penandatangan 1" class="signature-name" required>
-                <input type="text" placeholder="Jabatan Penandatangan 1" class="signature-position" required value="Peserta">
+                <input type="text" placeholder="Jabatan Penandatangan 1" class="signature-position" required value="Pendaftar">
             </div>
             <div class="signature-row">
                 <input type="text" placeholder="Nama Penandatangan 2" class="signature-name" required value="{{$sales->nama_lengkap}}">
@@ -484,14 +484,16 @@
             </div>
         </div>
 
-        <!-- Deskripsi Tambahan -->
+        <h3>PPN</h3>
+        <label><input type="checkbox" id="include-ppn"> Sertakan PPN?</label>
+        <input type="number" id="ppn-percentage" placeholder="PPN (%)" min="0" step="0.01" value="11">
+
         <h3>Deskripsi Tambahan</h3>
         <textarea id="deskripsi-tambahan" placeholder="Masukkan deskripsi tambahan (opsional)"></textarea>
 
         <button type="button" id="preview-btn">Generate Preview</button>
     </form>
 
-    <!-- Modal untuk Preview -->
     <div id="preview-modal">
         <div id="preview-content"></div>
     </div>
@@ -500,59 +502,71 @@
         let pesertaCount = 0;
         const termsData = @json($ketentuan);
 
-        // Debug: Log data ketentuan untuk memastikan terisi
         console.log('Data ketentuan:', termsData);
 
-        // Tambah row peserta
+        const ppnCheckbox = document.getElementById('include-ppn');
+        const ppnInput = document.getElementById('ppn-percentage');
+        ppnCheckbox.addEventListener('change', () => {
+            ppnInput.style.display = ppnCheckbox.checked ? 'block' : 'none';
+        });
+
         document.getElementById('add-peserta').addEventListener('click', () => {
             pesertaCount++;
             const row = document.createElement('div');
             row.className = 'peserta-row';
             row.innerHTML = `
                 <input type="text" placeholder="Nama Peserta" class="nama-peserta" required>
-                <input type="text" placeholder="Kontak HP & Email & Divisi" class="kontak-peserta" required>
-                <input type="text" placeholder="Harga (Rp)" class="harga-peserta" required>
+                <input type="text" placeholder="Kontak HP & Email" class="kontak-peserta" required>
+                <input type="text" placeholder="Harga (Rp)" class="harga-peserta">
                 <button type="button" onclick="this.parentElement.remove()">Hapus</button>
             `;
             document.getElementById('peserta-list').appendChild(row);
         });
 
-        // Generate Preview
         document.getElementById('preview-btn').addEventListener('click', () => {
-            // Ambil data perusahaan dari input read-only
             const namaPerusahaan = document.getElementById('nama-perusahaan').value;
             const alamat = document.getElementById('alamat').value;
             const pic = document.getElementById('pic').value;
-            const teleponEmail = document.getElementById('telepon-email').value;
+            const telepon = document.getElementById('telepon').value;
+            const email = document.getElementById('email').value;
             const npwp = document.getElementById('npwp').value;
             const materi = document.getElementById('materi').value;
             const deskripsiTambahan = document.getElementById('deskripsi-tambahan').value;
+            const includePPN = document.getElementById('include-ppn').checked;
+            const ppnPercentage = parseFloat(document.getElementById('ppn-percentage').value) || 0;
 
-            // Ambil data peserta
             const pesertaRows = document.querySelectorAll('.peserta-row');
             let pesertaHTML = '';
             let totalHarga = 0;
             pesertaRows.forEach((row, index) => {
                 const nama = row.querySelector('.nama-peserta').value;
                 const kontak = row.querySelector('.kontak-peserta').value;
-                const harga = parseInt(row.querySelector('.harga-peserta').value) || 0;
-                totalHarga += harga;
+                const hargaInput = row.querySelector('.harga-peserta').value;
+                const harga = hargaInput ? parseInt(hargaInput) : null;
+                if (harga !== null) {
+                    totalHarga += harga;
+                }
+                const hargaDisplay = harga !== null ? `Rp ${harga.toLocaleString('id-ID')},00` : '';
                 pesertaHTML += `
                     <tr>
                         <td class="no-column">${index + 1}</td>
                         <td class="name-column">${nama}</td>
                         <td class="contact-column">${kontak}</td>
-                        <td class="price-column">Rp ${harga.toLocaleString('id-ID')},00</td>
+                        <td class="price-column">${hargaDisplay}</td>
                     </tr>
                 `;
             });
-            const totalPPN = totalHarga * 1.11;
             pesertaHTML += `
-                <tr><th colspan="3">Total</th><td class="price-column">Rp ${totalHarga.toLocaleString('id-ID')},00</td></tr>
-                <tr><th colspan="3">Total Keseluruhan + PPN 11%</th><td class="price-column">Rp ${totalPPN.toLocaleString('id-ID')},00</td></tr>
+                <tr><th colspan="3">Total</th><td class="price-column">${totalHarga ? `Rp ${totalHarga.toLocaleString('id-ID')},00` : ''}</td></tr>
             `;
+            if (includePPN && ppnPercentage > 0 && totalHarga > 0) {
+                const ppnMultiplier = 1 + (ppnPercentage / 100);
+                const totalPPN = totalHarga * ppnMultiplier;
+                pesertaHTML += `
+                    <tr><th colspan="3">Total Keseluruhan + PPN ${ppnPercentage}%</th><td class="price-column">Rp ${totalPPN.toLocaleString('id-ID')},00</td></tr>
+                `;
+            }
 
-            // Ambil syarat yang dipilih (multi-select)
             const select = document.getElementById('syarat-select');
             const selectedOptions = Array.from(select.selectedOptions);
             let syaratList = '';
@@ -565,7 +579,6 @@
                 });
             }
 
-            // Ambil tanda tangan
             const signatureRows = document.querySelectorAll('.signature-row');
             let signatureHTML = '';
             signatureRows.forEach(row => {
@@ -579,14 +592,12 @@
                 `;
             });
 
-            // Generate deskripsi tambahan
-            const deskripsiHTML = deskripsiTambahan ? `
+            const deskripsiHTML = `
                 <div class="description">
-                    <p>${deskripsiTambahan.replace(/\n/g, '<br>')}</p>
+                    <p>${deskripsiTambahan.replace(/\n/g, '<br>') || ''}</p>
                 </div>
-            ` : '';
+            `;
 
-            // Generate HTML preview
             const previewHTML = `
                 <div class="container">
                     <div class="header">
@@ -604,7 +615,8 @@
                             <tr><th style="width: 25%">Nama Perusahaan</th><td style="width: 75%">${namaPerusahaan}</td></tr>
                             <tr><th style="width: 25%">Alamat</th><td style="width: 75%">${alamat}</td></tr>
                             <tr><th style="width: 25%">PIC Penagihan Pelatihan</th><td style="width: 75%">${pic}</td></tr>
-                            <tr><th style="width: 25%">Telepon dan Email</th><td style="width: 75%">${teleponEmail}</td></tr>
+                            <tr><th style="width: 25%">Telepon</th><td style="width: 75%">${telepon}</td></tr>
+                            <tr><th style="width: 25%">Email</th><td style="width: 75%">${email}</td></tr>
                             <tr><th style="width: 25%">*NPWP</th><td style="width: 75%">${npwp}</td></tr>
                         </tbody>
                     </table>
@@ -630,7 +642,6 @@
                 </div>
             `;
 
-            // Tampilkan preview di modal
             const modal = document.getElementById('preview-modal');
             const content = document.getElementById('preview-content');
             content.innerHTML = previewHTML +
@@ -681,7 +692,6 @@
             printWindow.document.write(content);
             printWindow.document.write('</body></html>');
             printWindow.document.close();
-            // printWindow.print();
         }
     </script>
 </body>
