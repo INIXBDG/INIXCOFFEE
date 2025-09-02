@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Crm;
 
 use App\Http\Controllers\Controller;
+use App\Models\karyawan;
 use App\Models\KetentuanForm;
 use App\Models\Peluang;
 use App\Models\RegisForm;
@@ -18,6 +19,12 @@ class RegisFormController extends Controller
         $lead = Peluang::with('perusahaan', 'aktivitas', 'rkm', 'materiRelation')
             ->findOrFail($id);
         $ketentuan = KetentuanForm::all();
+        $ttdauth = karyawan::where('id', auth()->id())->value('ttd');
+        $ttdSPV = karyawan::where('jabatan', 'SPV Sales')->value('ttd');
+        $ttd = [
+            'ttd_user' => $ttdauth,
+            'ttd_spv'  => $ttdSPV,
+        ];
         return view('crm.regisform.regis', compact('lead', 'ketentuan'));
     }
 
