@@ -1366,6 +1366,7 @@
                                                         </div>
                                                     </div>
                                                 </div>
+                                                @if (Auth::user()->karyawan && Auth::user()->karyawan->divisi === 'IT Service Management')
                                                 <div class="col-sm-6 mt-2">
                                                     <div class="card" id="card-hover">
                                                         <div class="card-body d-flex">
@@ -1382,6 +1383,7 @@
                                                         </div>
                                                     </div>
                                                 </div>
+                                                @endif
                                             </div>
                                         </div>
                                     </div>

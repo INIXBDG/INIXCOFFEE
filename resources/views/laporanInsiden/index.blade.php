@@ -24,10 +24,10 @@
                     <h3 class="card-title text-center my-1 mb-5">Laporan Insiden</h3>
 
                     <div class="row mb-4">
-                        <div class="col-md-4">
+                        <div class="col-md-2">
                             <label for="tahun" class="form-label">Tahun</label>
                             <select id="tahun" class="form-select" aria-label="tahun">
-                                <option disabled>Pilih Tahun</option>
+                                <option value="" selected disabled>Pilih Tahun</option>
                                 @php
                                 $tahun_sekarang = now()->year;
                                 for ($tahun = 2020; $tahun <= $tahun_sekarang + 2; $tahun++) {
@@ -37,10 +37,10 @@
                                     @endphp
                             </select>
                         </div>
-                        <div class="col-md-4">
-                            <label for="bulanRange" class="form-label">Bulan</label>
-                            <select id="bulanRange" class="form-select">
-                                <option disabled>Pilih Bulan</option>
+                        <div class="col-md-2">
+                            <label for="bulan" class="form-label">Bulan</label>
+                            <select id="bulan" class="form-select">
+                                <option value="" selected disabled>Pilih Bulan</option>
                                 @php
                                 $bulan_sekarang = now()->month;
                                 $nama_bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
@@ -51,11 +51,17 @@
                                     @endphp
                             </select>
                         </div>
+                        <div class="col-md-2">
+                            <label for="kategori" class="form-label">Kategori</label>
+                            <select id="kategori" class="form-select">
+                                <option value="" selected disabled>Pilih Kategori</option>
+                                <option value="major">Major</option>
+                                <option value="minor">Minor</option>
+                                <option value="moderate">Moderate</option>
+                            </select>
+                        </div>
                         <div class="col-md-4 d-flex align-items-end gap-2">
-                            <button type="submit" onclick="getData()" class="btn btn-primary">Cari Data</button>
-                            @if (auth()->user()->jabatan == 'HRD' || auth()->user()->jabatan == 'Koordinator Office')
-                            <button type="button" onclick="sinkronData()" class="btn btn-success">Sinkron Data</button>
-                            @endif
+                            <button type="button" onclick="getData()" class="btn btn-primary">Cari Data</button>
                         </div>
                     </div>
 
@@ -90,6 +96,53 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="modalResponsyy" tabindex="-1" role="dialog" aria-labelledby="modalResponsyyLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form action="{{ route('respon.laporanInsiden') }}" method="post">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalResponsyyLabel">Respon</h5>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" value="" name="id" id="id">
+                    <div class="form-group mb-3">
+                        <label for="nama_pelapor">Nama Pelapor</label>
+                        <input type="text" class="form-control" id="nama_pelapor" readonly>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="kejadian">Kejadian</label>
+                        <input type="text" class="form-control" id="kejadian" readonly>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="deskripsi">Deskripsi Kejadian</label>
+                        <textarea id="deskripsi" class="form-control" readonly></textarea>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="status">Tanggapan</label>
+                        <select name="status" id="status" class="form-control" required>
+                            <option selected disabled>Tanggapan</option>
+                            <option value="Dalam Penanganan">Dalam Penanganan</option>
+                            <option value="Selesai">Selesai</option>
+                            <option value="Tidak Ditangani">Tidak Ditangani</option>
+                        </select>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="solusi" id="labelSolusi">Solusi</label>
+                        <textarea name="solusi" id="solusi" class="form-control"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <input type="hidden" id="status" value="">
+
+                    <button type="submit" class="btn btn-primary" id="btnKirim">Kirim</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 <style>
     .loader {
         position: relative;
@@ -120,7 +173,6 @@
         opacity: 0.75;
     }
 
-    /* Atur font size tabel DataTable */
     table.dataTable thead th,
     table.dataTable tbody td {
         font-size: 12px !important;
@@ -140,19 +192,35 @@
         loadData();
     })
 
-    function loadData() {
+    function getData() {
+        let tahun = $('#tahun').val();
+        let bulan = $('#bulan').val();
+        let kategori = $('#kategori').val();
+
+        // panggil loadData dengan parameter
+        loadData(tahun, bulan, kategori);
+    }
+
+    function loadData(tahun = '', bulan = '', kategori = '') {
         $.ajax({
             url: "{{ route('get.laporanInsiden') }}",
             type: 'get',
+            data: {
+                tahun: tahun,
+                bulan: bulan,
+                kategori: kategori
+            },
             success: function(response) {
                 let content = $('#content_Tbody');
-                let data = response.data
+                content.empty(); // kosongkan sebelum isi ulang
+                let data = response.data;
                 let no = 1;
 
-                if (data.lenght === 0) {
-                    content.append(`<tr style="background-color: rgba(0, 99, 71, 0.5); color:#fff">
-                                            <td colspan="9">Tidak Ada Data</td>
-                                    </tr>`);
+                if (data.length === 0) {
+                    content.append(`
+                    <tr style="background-color: rgba(0, 99, 71, 0.5); color:#fff">
+                        <td colspan="10">Tidak Ada Data</td>
+                    </tr>`);
                 } else {
                     data.forEach(function(item) {
                         content.append(`
@@ -165,27 +233,67 @@
                                 <td>${item.tanggal}</td>
                                 <td>${item.waktu}</td>
                                 <td>${item.status}</td>
-                                <td>${item.waktu_pengajuan}</td>                                
+                                <td>${item.waktu_pengajuan}</td>
                                 <td>
                                     <div class="btn-group dropup">
                                         <button type="button" class="btn btn-sm btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Actions</button>
                                         <ul class="dropdown-menu">
                                             <li>
-                                                <a class="dropdown-item" href="/paymantAdvance/detail/1/view"><i class="fa-solid fa-magnifying-glass me-4"></i> Detail</a>
+                                                <a class="dropdown-item" href="/laporan-insiden/detail/${item.id}"><i class="fa-solid fa-magnifying-glass me-4"></i> Detail</a>
+                                            </li>                                            
+                                            <li>
+                                                <a class="dropdown-item" href="/laporan-insiden/edit/${item.id}"><i class="fa-solid fa-pen-to-square me-4"></i> Edit</a>
                                             </li>
                                             <li>
-                                                <a class="dropdown-item" href="/paymantAdvance/detail/1/view" data-toggle="modal" data-target="#exampleModal"><i class="fa-solid fa-reply me-4"></i> Respon</a>
+                                                <a class="dropdown-item" href="/laporan-insiden/hapus/${item.id}"><i class="fa-regular fa-trash me-4"></i> Hapus</a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#modalResponsyy" data-nama="${item.pelapor}" data-kejadian="${item.kejadian}" data-deskripsi="${item.deskripsi}" data-id="${item.id}" data-status="${item.status}">
+                                                <i class="fa-solid fa-reply me-4"></i> Respon
+                                                </a>
                                             </li>
                                         </ul>
                                     </div>
                                 </td>
                             </tr>
                         `);
-                    })
+                    });
                 }
             }
-        })
+        });
     }
+
+    $(document).on("click", "[data-bs-target='#modalResponsyy']", function() {
+        let nama = $(this).data("nama");
+        let kejadian = $(this).data("kejadian");
+        let deskripsi = $(this).data("deskripsi");
+        let id = $(this).data("id");
+        let status = $(this).data("status");
+
+        $("#status").val(status);
+        $("#id").val(id);
+        $("#nama_pelapor").val(nama);
+        $("#kejadian").val(kejadian);
+        $("#deskripsi").val(deskripsi);
+    });
+
+    document.getElementById('tanggapan').addEventListener('change', function() {
+        let labelSolusi = document.getElementById('labelSolusi');
+        if (this.value === 'Tidak Ditangani') {
+            labelSolusi.textContent = 'Alasan';
+        } else if (this.value === 'selesai') {
+            labelSolusi.textContent = 'Catatan';
+        } else {
+            labelSolusi.textContent = 'Solusi';
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        let status = document.getElementById('status').value;
+        if (status === 'Selesai') {
+            document.getElementById('btnKirim').style.display = 'none';
+        }
+    });
 </script>
 @endpush
 @endsection

@@ -20,7 +20,7 @@ return new class extends Migration
             $table->date('tanggal_kejadian');
             $table->time('waktu_kejadian');
             $table->string('lampiran');
-            $table->enum('status', ['Baru', 'Dalam Penanganan', 'Ditindaklanjuti', 'Selesai', 'Tidak Ditindaklanjuti', 'Dibatalkan'])->default('Baru');
+            $table->enum('status', ['Baru', 'Dalam Penanganan', 'Selesai', 'Tidak Ditangani'])->default('Baru');
             $table->text('catatan')->nullable();
             $table->timestamps();
         });

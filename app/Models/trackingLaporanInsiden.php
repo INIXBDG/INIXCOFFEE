@@ -9,15 +9,23 @@ class trackingLaporanInsiden extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['id_laporanInsiden', 'responder', 'status', 'detail'];
+    protected $fillable = [
+        'id_laporanInsiden',
+        'responder',
+        'status',
+        'solusi',
+        'tanggal_response',
+        'waktu_response',
+        'keterangan'
+    ];
 
-    public function responder()
+    public function karyawan()
     {
-        return $this->belongsTo(karyawan::class, 'id', 'responder');
+        return $this->belongsTo(karyawan::class, 'responder', 'id');
     }
 
-    public function laporanInsiden() 
+    public function laporanInsiden()
     {
-        return $this->belongsTo(laporanInsiden::class, 'id', 'id_laporanInsiden');
+        return $this->belongsTo(laporanInsiden::class, 'id_laporanInsiden', 'id');
     }
 }

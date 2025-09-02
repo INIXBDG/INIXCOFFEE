@@ -14,11 +14,11 @@ return new class extends Migration
         Schema::create('tracking_laporan_insidens', function (Blueprint $table) {
             $table->id();
             $table->string('id_laporanInsiden');
-            $table->integer('responder');
-            $table->text('solusi');
+            $table->integer('responder')->nullable();
+            $table->text('solusi')->nullable();
             $table->date('tanggal_response');
             $table->time('waktu_response');
-            $table->enum('status', ['Baru','Dalam Penanganan','Ditindaklanjuti','Selesai','Tidak Ditindaklanjuti'])->default('Baru');
+            $table->enum('status', ['Baru','Dalam Penanganan','Selesai','Tidak Ditangani'])->default('Baru');
             $table->text('keterangan')->nullable();
             $table->timestamps();
         });
