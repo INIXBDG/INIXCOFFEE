@@ -8,6 +8,7 @@ use App\Models\Aktivitas;
 use App\Models\Contact;
 use App\Models\Materi;
 use App\Models\Peluang;
+use App\Models\Peserta;
 use App\Models\Perusahaan;
 use App\Models\RKM;
 use App\Models\User;
@@ -131,19 +132,61 @@ class PeluangController extends Controller
 
     public function AmbilAktivitas($id)
     {
-        $aktivitas = Aktivitas::where('id_contact', $id)
+        // Ambil semua contact berdasarkan perusahaan
+        $contacts = Contact::where('id_perusahaan', $id)
+            ->select('id', 'nama', 'email', 'divisi')
+            ->get()
+            ->map(function ($contact) {
+                return [
+                    'id' => $contact->id,
+                    'nama' => $contact->nama,
+                    'email' => $contact->email,
+                    'divisi' => $contact->divisi,
+                    'type' => 'contact',
+                ];
+            });
+
+        // Ambil semua peserta berdasarkan perusahaan
+        $peserta = Peserta::where('perusahaan_key', $id)
+            ->select('id', 'nama', 'email')
+            ->get()
+            ->map(function ($p) {
+                return [
+                    'id' => $p->id,
+                    'nama' => $p->nama,
+                    'email' => $p->email,
+                    'divisi' => 'C-Peserta',
+                    'type' => 'peserta',
+                ];
+            });
+
+        // Ambil semua ID contact dan peserta
+        $contactIds = $contacts->pluck('id')->toArray();
+        $pesertaIds = $peserta->pluck('id')->toArray();
+
+        // Ambil semua aktivitas berdasarkan id_contact atau id_peserta
+        $aktivitas = Aktivitas::with(['contact', 'peserta'])
+            ->where(function ($query) use ($contactIds, $pesertaIds) {
+                if (!empty($contactIds)) {
+                    $query->whereIn('id_contact', $contactIds);
+                }
+                if (!empty($pesertaIds)) {
+                    $query->orWhereIn('id_peserta', $pesertaIds);
+                }
+            })
             ->whereNull('id_peluang')
-            ->with('perusahaan')
+            ->orderByDesc('created_at')
             ->get();
 
+        // Format data untuk response JSON
         $result = $aktivitas->map(function ($a) {
             return [
-                'id' => $a->id,
-                'kontak' => $a->perusahaan->nama_perusahaan ?? '-',
+                'id'        => $a->id,
+                'kontak'    => $a->contact->nama ?? $a->peserta->nama ?? '-',
                 'aktivitas' => ucfirst($a->aktivitas),
-                'subject' => $a->subject,
-                'deskripsi' => $a->deskripsi,
-                'waktu' => \Carbon\Carbon::parse($a->waktu_aktivitas)->format('d/m/Y'),
+                'subject'   => $a->subject,
+                'deskripsi' => $a->deskripsi ?? '-',
+                'waktu'     => \Carbon\Carbon::parse($a->waktu_aktivitas)->format('Y-m-d'),
             ];
         });
 

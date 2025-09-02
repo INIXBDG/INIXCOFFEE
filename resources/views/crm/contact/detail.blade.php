@@ -466,9 +466,9 @@
                                             <option value="" disabled>-- Pilih Aktivitas (Opsional) --</option>
                                             @foreach ($aktivitas as $item)
                                                 <option value="{{ $item->id }}">
-                                                    {{ $item->contact->nama }}
+                                                    {{ $item->contact->nama ?? $item->peserta->nama ?? '-' }}
                                                     ({{ \Carbon\Carbon::parse($item->waktu_aktivitas)->translatedFormat('d F Y') }})
-                                                    {{ $item->aktivitas  }}
+                                                    {{ $item->aktivitas }}
                                                     {{ $item->subject }}
                                                 </option>
                                             @endforeach
@@ -515,7 +515,7 @@
                             @foreach ($aktivitass as $item)
                                 <tr>
                                     <td class="px-3 py-2 text-center">{{ $item->id_sales }}</td>
-                                    <td class="px-3 py-2">{{ $item->contact->nama }}</td>
+                                    <td class="px-3 py-2">{{ $item->contact->nama ?? $item->peserta->nama ?? '-' }}</td>
                                     <td class="px-3 py-2">{{ $item->aktivitas }}</td>
                                     <td class="px-3 py-2">{{ $item->subject }}</td>
                                     <td class="px-3 py-2">{{ $item->deskripsi ?? '-' }}</td>
@@ -563,14 +563,20 @@
                             @csrf
                             <input type="hidden" name="id_perusahaan" value="{{ $data->id }}">
                             <div class="mb-3">
-                                <label for="id_contact" class="form-label">Pilih Contact</label>
+                                <label for="id_contact" class="form-label">Pilih Contact atau Peserta</label>
                                 <select name="id_contact" class="form-control" id="id_contact" required>
-                                    <option value=""> -- Pilih Contact -- </option>
-                                    @foreach($data->contacts as $contact)
-                                        <option value="{{ $contact->id }}">{{ $contact->nama }}</option>
+                                    <option value="">-- Pilih Kategori --</option>
+                                    @foreach($items as $contact)
+                                        <option value="{{ $contact['id'] }}" data-type="{{ $contact['type'] }}">
+                                            {{ $contact['label'] }}
+                                        </option>
                                     @endforeach
+                                    </option>
                                 </select>
+                                <!-- Input tersembunyi untuk melacak tipe -->
+                                <input type="hidden" name="contact_type" id="contact_type" value="">
                             </div>
+
                             <div class="mb-3">
                                 <label for="aktivitas" class="form-label">Aktivitas</label>
                                 <select name="aktivitas" class="form-control" id="">
@@ -695,7 +701,12 @@
                 // Set action form ke route update
                 document.getElementById('editAktivitasForm').action = `/crm/aktivitas/update/${data.id}`;
             }
-        </script>
 
+            document.getElementById('id_contact').addEventListener('change', function () {
+                const selectedOption = this.options[this.selectedIndex];
+                const type = selectedOption.getAttribute('data-type');
+                document.getElementById('contact_type').value = type || '';
+            });
+        </script>
     </div>
 @endsection
