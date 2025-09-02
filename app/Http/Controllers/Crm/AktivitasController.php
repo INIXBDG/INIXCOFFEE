@@ -173,7 +173,7 @@ class AktivitasController extends Controller
             'id_perusahaan'   => 'required|integer',
             'id_contact'      => 'required|string', // ID dari dropdown
             'contact_type'    => 'nullable|string|in:contact,peserta', // Tipe: contact atau peserta
-            'aktivitas'       => 'required|in:Call,Email,Visit,Meet',
+            'aktivitas'       => 'required|in:Call,Email,Visit,Meet,Incharge',
             'subject'         => 'required|string|max:255',
             'deskripsi'       => 'nullable|string',
             'waktu_aktivitas' => 'required|date',
