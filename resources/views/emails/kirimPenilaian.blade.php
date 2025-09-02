@@ -152,8 +152,6 @@
                     <th>Rata-rata</th>
                     <th>Bobot</th>
                     <th>Final</th>
-                    <th>Kriteria</th>
-                    <th>Grade</th>
                 </tr>
             </thead>
             <tbody>
@@ -165,25 +163,25 @@
                 $bobotJenis = match ($jenis) {
                 'General Manager' => 35,
                 'Manager/Team Leader/SPV', 'Manager/SPV/Team Leader (Atasan Langsung)' => 30,
-                'Rekan Kerja' => 20,
+                'Rekan Kerja (Satu Divisi)' => 20,
                 'Pekerja (Beda Divisi)' => 10,
-                'Self Appraisal' => 5,
+                'Self Apprisial' => 5,
                 default => 0,
                 };
 
                 $finalJenis = ($rataRataJenis * $bobotJenis) / 100;
                 $totalSemuaSkor += $finalJenis;
 
-                if ($finalJenis >= 90) {
+                if ($totalSemuaSkor >= 90) {
                 $grade = 'A';
                 $keterangan = 'Sangat Baik';
-                } elseif ($finalJenis >= 80) {
+                } elseif ($totalSemuaSkor >= 80) {
                 $grade = 'B';
                 $keterangan = 'Baik';
-                } elseif ($finalJenis >= 70) {
+                } elseif ($totalSemuaSkor >= 70) {
                 $grade = 'C';
                 $keterangan = 'Cukup';
-                } elseif ($finalJenis >= 60) {
+                } elseif ($totalSemuaSkor >= 60) {
                 $grade = 'D';
                 $keterangan = 'Kurang';
                 } else {
@@ -196,8 +194,6 @@
                     <td class="text-center">{{ number_format($rataRataJenis, 2) }}</td>
                     <td class="text-center">{{ $bobotJenis }}%</td>
                     <td class="text-center">{{ number_format($finalJenis, 2) }}</td>
-                    <td class="text-center">{{ $keterangan }}</td>
-                    <td class="text-center">{{ $grade }}</td>
                 </tr>
                 @endforeach
             </tbody>
@@ -205,7 +201,14 @@
                 <tr style="font-weight:bold;background:#f9f9f9;">
                     <td colspan="3" class="text-right">Total Semua Skor</td>
                     <td class="text-center">{{ number_format($totalSemuaSkor, 2) }}</td>
-                    <td colspan="2"></td>
+                </tr>
+                <tr style="font-weight:bold;background:#f9f9f9;">
+                    <td colspan="3" class="text-right">Keterangan</td>
+                    <td class="text-center">{{ $keterangan }}</td>
+                </tr>
+                <tr style="font-weight:bold;background:#f9f9f9;">
+                    <td colspan="3" class="text-right">Total Semua Skor</td>
+                    <td class="text-center">{{ $grade }}<td>
                 </tr>
             </tfoot>
         </table>

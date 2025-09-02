@@ -129,6 +129,17 @@
             font-size: 14px;
         }
     }
+
+    .evaluator-list {
+        max-height: 200px;
+        overflow-y: scroll;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .evaluator-list::-webkit-scrollbar {
+        display: none;
+    }
 </style>
 <div class="container-fluid mb-5 mt-4">
     @if (session('success'))
@@ -238,53 +249,49 @@
                 </div>
             </div>
         </div>
-        <div class="container">
-            <select id="selectTahun" name="tahun" class="form-control w-25 mt-5 p-2" style="margin-bottom: -40px; margin-top: 40px;">
-            </select>
-            <div class="row">
-                <div class="col-sm">
-                    <div class="text-center mt-5 mb-3">
-                        <h4>Trend Line Tahun Ini</h4>
-                    </div>
+        <div class="container mt-5">
+            <div class="row mb-4">
+                <div class="col-3">
+                    <select id="selectTahun" name="tahun" class="form-control p-2">
+                    </select>
+                </div>
+            </div>
 
-                    <div class="card flex-fill w-100 draggable p-2">
-                        <div class="card-body py-3">
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header text-center">
+                            <h5 class="mb-0">Trend Line Tahun Ini</h5>
+                        </div>
+                        <div class="card-body">
                             <div class="chart chart-sm">
-                                <div class="chartjs-size-monitor">
-                                    <div class="chartjs-size-monitor-expand">
-                                        <div class=""></div>
-                                    </div>
-                                    <div class="chartjs-size-monitor-shrink">
-                                        <div class=""></div>
-                                    </div>
-                                </div>
-                                <canvas id="chartjs-dashboard-line chart-bar" style="display: block; height: 252px; width: 100%;" width="856" height="504" class="chart-bar chartjs-render-monitor"></canvas>
+                                <canvas id="chartjs-dashboard-line chart-bar"
+                                    class="chart-bar chartjs-render-monitor w-100"
+                                    height="252">
+                                </canvas>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-sm">
-                    <div class="text-center mt-5 mb-3">
-                        <h4>Trend Line Progress</h4>
-                    </div>
-                    <div class="card flex-fill w-100 draggable p-2">
-                        <div class="card-body py-3">
+
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header text-center">
+                            <h5 class="mb-0">Trend Line Progress</h5>
+                        </div>
+                        <div class="card-body">
                             <div class="chart chart-sm">
-                                <div class="chartjs-size-monitor">
-                                    <div class="chartjs-size-monitor-expand">
-                                        <div class=""></div>
-                                    </div>
-                                    <div class="chartjs-size-monitor-shrink">
-                                        <div class=""></div>
-                                    </div>
-                                </div>
-                                <canvas id="chartjs-dashboard-line chart-line" style="display: block; height: 252px; width: 100%;" width="856" height="504" class="chart-line chartjs-render-monitor"></canvas>
+                                <canvas id="chartjs-dashboard-line chart-line"
+                                    class="chart-line chartjs-render-monitor w-100"
+                                    height="252">
+                                </canvas>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
     </div>
 </div>
 </div>
@@ -439,7 +446,7 @@
                 content_utama.append(`
                     <div class="form-group mb-3 text-start">
                         <label class="mb-2">Evaluator</label>
-                        <ul class="list-group ms-2">${listEvaluatorHTML}</ul>
+                        <ul class="list-group ms-2 evaluator-list">${listEvaluatorHTML}</ul>
                     </div>
                     <div class="form-group mb-3 text-start">
                         <label class="mb-2">Yang Dinilai</label>
@@ -462,7 +469,9 @@
 
                         <div class="form-group mb-3 text-start">
                             <label class="mb-2">Catatan</label>
-                            <textarea class="list-group ms-2 form-control stylish-textarea bg-theme border-none" placeholder="berikan catatan..." rows="4" name="catatan">${globalEvaluated.catatan === 'null' | globalEvaluated.catatan === null ? '' : globalEvaluated.catatan}</textarea>
+                            <textarea class="list-group ms-2 form-control stylish-textarea bg-theme border-none" placeholder="berikan catatan..." rows="4" name="catatan">
+                                ${globalEvaluated.catatan === 'null' || globalEvaluated.catatan === null ? '' : globalEvaluated.catatan}
+                            </textarea>
                         </div>
                         <div class="form-group mb-3 text-end">
                             <button type="submit" class="btn cl-blue text-white">Kirim</button>
@@ -482,7 +491,7 @@
         const persentaseJenis = {
             'General Manager': 35,
             'Manager/SPV/Team Leader (Atasan Langsung)': 30,
-            'Rekan Kerja (Satu Divisi)': 16,
+            'Rekan Kerja (Satu Divisi)': 20,
             'Pekerja (Beda Divisi)': 10,
             'Self Apprisial': 5
         };
@@ -507,12 +516,12 @@
 
         filteredEvaluators.forEach((evaluator) => {
             content.append(`
-                <tr>
-                    <td colspan="5" class="bg-theme fw-bold">
-                        ${evaluator.nama} - ${evaluator.jenis_penilaian}
-                    </td>
-                </tr>
-            `);
+            <tr>
+                <td colspan="5" class="bg-theme fw-bold">
+                    ${evaluator.nama} - ${evaluator.jenis_penilaian}
+                </td>
+            </tr>
+        `);
 
             let nilaiList = evaluator.nilai;
             let nilaiIndex = 0;
@@ -534,14 +543,14 @@
                     totalSkorEvaluator += skor;
 
                     content.append(`
-                        <tr>
-                            ${idxSub === 0 ? `<td rowspan="${rowspan}" class="text-left">${kriteria.kriteria}</td>` : ''}
-                            <td style="text-align: left;">${sub.sub_kriteria}</td>
-                            <td>${bobot} %</td>
-                            <td>${nilai}</td>
-                            <td>${skor.toFixed(2)}</td>
-                        </tr>
-                    `);
+                    <tr>
+                        ${idxSub === 0 ? `<td rowspan="${rowspan}" class="text-left">${kriteria.kriteria}</td>` : ''}
+                        <td style="text-align: left;">${sub.sub_kriteria}</td>
+                        <td>${bobot} %</td>
+                        <td>${nilai}</td>
+                        <td>${skor.toFixed(2)}</td>
+                    </tr>
+                `);
                 });
             });
 
@@ -550,13 +559,13 @@
             }
 
             content.append(`
-                <tr class="fw-bold text-center text-white" style="background: #7F8CAA">
-                    <td colspan="4" class="text-center mb-3">
-                    Total (${evaluator.nama})
-                    </td>
-                    <td>${totalSkorEvaluator.toFixed(2)}</td>
-                </tr>
-            `);
+            <tr class="fw-bold text-center text-white" style="background: #7F8CAA">
+                <td colspan="4" class="text-center mb-3">
+                Total (${evaluator.nama})
+                </td>
+                <td>${totalSkorEvaluator.toFixed(2)}</td>
+            </tr>
+        `);
         });
 
         let totalSemuaSkor = 0;
@@ -564,9 +573,10 @@
         for (const [jenis, skorList] of Object.entries(groupSkor)) {
             if (skorList.length > 0) {
                 const total = skorList.reduce((a, b) => a + b, 0);
-                const rata2 = total / skorList.length;
-                const persen = persentaseJenis[jenis] ?? 0;
-                const skorFinal = (rata2 * persen) / 100;
+                const rataRata = total / skorList.length;
+                const persen = parseFloat(persentaseJenis[jenis]) || 0;
+                const skorFinal = (rataRata * persen) / 100;
+
                 totalSemuaSkor += skorFinal;
             }
         }
@@ -611,6 +621,7 @@
         tampilkanChartTahunIni(globalTahun, totalSemuaSkor);
         tampilkanChartSemuaTahun(dataTotalPerTahun);
     }
+
     $(document).on('click', '#kirimEmail', function(e) {
         e.preventDefault();
 
