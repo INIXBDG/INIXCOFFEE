@@ -637,4 +637,6 @@ class PengajuanBarangController extends Controller
 
         // return $pdf->download('Data_pengajuan_barang.pdf');
     }
+
+    
 }

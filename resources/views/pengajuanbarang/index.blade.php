@@ -150,6 +150,33 @@
             </div>
             <div class="card m-4">
                 <div class="card-body table-responsive">
+                    <h3 class="card-title text-center my-1">{{ __('Data Pengajuan Barang (Has Invoice)') }}</h3>
+                    <table class="table table-striped" id="datasudahinv">
+                        <thead>
+                            <tr>
+                                <th scope="col">Tanggal Pengajuan</th>
+                                <th scope="col">Nama Karyawan</th>
+                                <th scope="col">Divisi</th>
+                                <th scope="col">Jabatan</th>
+                                <th scope="col">Tipe</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Nama Barang</th>
+                                <th scope="col">Total Item</th>
+                                <th scope="col">Total Pengajuan</th>
+                                <th scope="col">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                        </tbody>
+                        <tfoot>
+
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            <div class="card m-4">
+                <div class="card-body table-responsive">
                     <h3 class="card-title text-center my-1">{{ __('Data Pengajuan Barang (Selesai)') }}</h3>
                     <table class="table table-striped" id="datasudah">
                         <thead>
@@ -461,6 +488,12 @@ function tableFinance(){
         currentPageSudah = $('#datasudah').DataTable().page();
         $('#datasudah').DataTable().clear().destroy();
     }
+        var currentPageInvoice = 0;
+    if ($.fn.DataTable.isDataTable('#datasudahinv')) {
+        currentPageInvoice = $('#datasudahinv').DataTable().page();
+        $('#datasudahinv').DataTable().clear().destroy();
+    }
+
 
     $('#loadingModal').modal('show');
     var tahun = $('#tahun').val();
@@ -473,6 +506,7 @@ function tableFinance(){
             console.log(data.data);
             var dataSelesai = data.data.filter(item => item.tracking.tracking === 'Selesai' || item.tracking.tracking.includes("tolak"));
             var dataBelum = data.data.filter(item => item.tracking.tracking !== 'Selesai' && !item.tracking.tracking.includes("tolak"));
+            var dataHasInvoice = data.data.filter(item => item.tracking.tracking !== 'Selesai' && !item.tracking.tracking.includes("tolak") && item.invoice);
 
             let totalItemsSelesai = dataSelesai.length;
             let totalHargaSelesai = 0;
@@ -725,6 +759,78 @@ function tableFinance(){
                     $('#databelum tfoot').html(footerHtml);
                 }
             });
+            // ================= HAS INVOICE
+var datasudahinvTable = $('#datasudahinv').DataTable({
+    data: dataHasInvoice,
+    columns: [
+        {
+            "data": "created_at",
+            "render": function(data) {
+                moment.locale('id');
+                return moment(data).format('dddd, DD MMMM YYYY');
+            }
+        },
+        {"data": "karyawan.nama_lengkap"},
+        {"data": "karyawan.divisi"},
+        {"data": "karyawan.jabatan"},
+        {"data": "tipe"},
+        {"data": "tracking.tracking"},
+        {
+            "data": "detail",
+            "render": function (data) {
+                if (data && Array.isArray(data)) {
+                    return data.map(item => item.nama_barang).join('<hr>');
+                }
+                return '-';
+            }
+        },
+        {
+            "data": "detail",
+            "render": function (data) {
+                if (data && Array.isArray(data)) {
+                    return data.map(item => item.qty).join('<hr>');
+                }
+                return '-';
+            }
+        },
+        {
+            "data": "detail",
+            "render": function (data) {
+                if (data && Array.isArray(data)) {
+                    const total = data.reduce((sum, item) => sum + (item.harga * item.qty), 0);
+                    return new Intl.NumberFormat('id-ID', {
+                        style: 'currency',
+                        currency: 'IDR'
+                    }).format(total);
+                }
+                return '-';
+            }
+        },
+        {
+            "data": null,
+            "render": function(data, type, row) {
+                let actions = `
+                    <div class="dropdown">
+                        <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>
+                        <div class="dropdown-menu">
+                            <a class="dropdown-item" href="/pengajuanbarang/${row.id}">
+                                <img src="{{ asset('icon/clipboard-primary.svg') }}"> Detail
+                            </a>
+                            <a class="dropdown-item" href="/invoice/${row.invoice?.id}">
+                                <img src="{{ asset('icon/file-text.svg') }}"> Lihat Invoice
+                            </a>
+                        </div>
+                    </div>
+                `;
+                return actions;
+            }
+        }
+    ],
+    order: [[0, 'desc']]
+});
+
+
+            
 
             // Set page for databelum table
             if (currentPageBelum > 0) {
@@ -749,6 +855,8 @@ function toggleAlasanManager(show) {
         document.getElementById('alasan_manager').value = '';
     }
 }
+
+
 
 // Skrip AJAX untuk form approve
 $('#approveForm').on('submit', function(e) {
