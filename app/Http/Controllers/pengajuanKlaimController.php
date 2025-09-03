@@ -64,6 +64,7 @@ class pengajuanKlaimController extends Controller
         return view('pengajuanklaim.createNoRecord', compact('karyawan', 'karyawanall', 'data_absen'));
     }
 
+
     public function createNoRecord(Request $request)
     {
         $this->validate($request, [
@@ -87,6 +88,7 @@ class pengajuanKlaimController extends Controller
                 return back()->withErrors(['tanggal_absen' => 'Tanggal tidak ditemukan di data absensi. Anda hanya dapat mengajukan Absen Pulang pada tanggal kerja yang valid.']);
             }
         }
+
 
         // Cegah pengajuan ganda untuk tanggal yang sama
         $existingKlaim = absensi_noRecord::where('id_karyawan', $request->id_karyawan)
@@ -257,8 +259,6 @@ class pengajuanKlaimController extends Controller
         }
 
         $data_cuti = pengajuancuti::where('id', $request->tanggal_cuti)->first();
-
-        
 
         pembatalanCuti::create([
             'id_karyawan'   => $request->id_karyawan,
