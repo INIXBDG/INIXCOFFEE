@@ -496,6 +496,10 @@
                                     name="souvenir">
                             </div>
                             <div class="mb-3">
+                                <label for="desc" class="form-label">Description</label>
+                                <textarea name="desc" id="desc"  rows="4" class="form-control"></textarea>
+                            </div>
+                            <div class="mb-3">
                                 <label for="tanggalPayment" class="form-label">Tanggal Payment Advance</label>
                                 <input type="date" class="form-control" id="tanggalPayment" name="tanggalPayment"
                                     placeholder="dd/mm/yyyy">
@@ -555,18 +559,29 @@
                                 </dd>
                                 <dt class="col-sm-4">Souvenir</dt>
                                 <dd class="col-sm-8">Rp
-                                    {{ $netsales->souvenir ? number_format($netsales->souvenir, 2, ',', '.') : '-' }}</dd>
+                                    {{ $netsales->souvenir ? number_format($netsales->souvenir, 2, ',', '.') : '-' }}
+                                </dd>
                                 <dt class="col-sm-4">Tanggal Payment Advance</dt>
                                 <dd class="col-sm-8">
                                     {{ $netsales->tgl_pa ? \Carbon\Carbon::parse($netsales->tgl_pa)->translatedFormat('d F Y') : '-' }}
                                 </dd>
                                 <dt class="col-sm-4">Tipe Pembayaran</dt>
                                 <dd class="col-sm-8">
-                                    {{ $netsales->tipe_pembayaran ? ucfirst($netsales->tipe_pembayaran) : '-' }}</dd>
+                                    {{ $netsales->tipe_pembayaran ? ucfirst($netsales->tipe_pembayaran) : '-' }}
+                                </dd>
                                 <dt class="col-sm-4">Pajak</dt>
                                 <dd class="col-sm-8">
-                                    {{ $netsales->pajak ? number_format($netsales->pajak, 2, ',', '.') . '%' : '-' }}</dd>
+                                    {{ $netsales->pajak ? number_format($netsales->pajak, 2, ',', '.') . '%' : '-' }}
+                                </dd>
                             </dl>
+
+                            {{-- Tambahan untuk menampilkan deskripsi --}}
+                            <div class="mt-3">
+                                <h6 class="mb-2">Deskripsi</h6>
+                                <p class="border rounded p-2" style="white-space: pre-wrap;">
+                                    {{ $netsales->desc ?? 'Tidak ada deskripsi.' }}
+                                </p>
+                            </div>
 
                             <h6 class="mt-4 mb-3">Tracking Information</h6>
                             @if ($netsales->trackingNetSales)
@@ -581,8 +596,7 @@
                                         <tbody>
                                             <tr>
                                                 <td>{{ $netsales->trackingNetSales->tracking ?? '-' }}</td>
-                                                <td>{{ $netsales->created_at ? \Carbon\Carbon::parse($netsales->created_at)->translatedFormat('d F Y') : '-' }}
-                                                </td>
+                                                <td>{{ $netsales->created_at ? \Carbon\Carbon::parse($netsales->created_at)->translatedFormat('d F Y') : '-' }}</td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -626,8 +640,7 @@
                                                     <td>{{ $status }}</td>
                                                     <td>{{ $approver }}</td>
                                                     <td>{{ $approval->keterangan ?? '-' }}</td>
-                                                    <td>{{ $approval->created_at ? \Carbon\Carbon::parse($approval->created_at)->translatedFormat('d F Y H:i') : '-' }}
-                                                    </td>
+                                                    <td>{{ $approval->created_at ? \Carbon\Carbon::parse($approval->created_at)->translatedFormat('d F Y H:i') : '-' }}</td>
                                                 </tr>
                                             @endforeach
                                         </tbody>
