@@ -34,7 +34,7 @@ class OutstandingNotification extends Notification
             'message' => [
                 'nama_perusahaan' => $this->data['nama_perusahaan'],
                 'nama_materi' => $this->data['nama_materi'],
-                'net_sales' => $this->data['net_sales'],
+                // 'net_sales' => $this->data['net_sales'],
                 'due_date' => $this->data['due_date'],
                 'status_pembayaran' => $this->data['status_pembayaran'],
                 'tipe' => 'Outstanding',

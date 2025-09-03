@@ -806,7 +806,8 @@ function fetchTabInix(year) {
                 const imageUrls = {
                     "foto_sales": `/storage/posts/${data.sales_terbaik.sales.foto}`,
                     "foto_instruktur": `/storage/posts/${data.instruktur_terbaik.instruktur.foto}`,
-                    // "foto_office": `/storage/posts/${data.office_terbaik.sales.foto}`
+                    "foto_office": `/storage/posts/${data.office_terbaik.sales_foto}`,
+                    "foto_itsm": `/storage/posts/${data.office_terbaik.itsm_foto}`,
                 };
 
                 // Menetapkan src pada setiap elemen .dynamic-image berdasarkan id
@@ -820,7 +821,9 @@ function fetchTabInix(year) {
                 });
                 $('#nama_sales').text(data.sales_terbaik.sales.nama_lengkap);
                 $('#nama_instruktur').text(data.instruktur_terbaik.instruktur.nama_lengkap);
-
+                $('#nama_itsm').text(data.itsm_terbaik.itsm.itsm_nama);
+                $('#nama_office').text(data.office_terbaik.office.office_nama);
+                
                 if (data.keterlambatan.length >= 3) {
                     // Mengisi src untuk foto peringkat kedua
                     $('.second-position #present-photo').attr('src', '/storage/' + data.keterlambatan[1].foto);
