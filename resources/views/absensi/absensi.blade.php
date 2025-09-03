@@ -288,6 +288,7 @@
             </div>
         </div>
     </div>
+
     <div class="row">
         <div class="col-md-6">
             <div class="row my-2">
@@ -301,485 +302,482 @@
                     </div>
                 </div>
             </div>
-@php
-    use Illuminate\Support\Str;
-    use Carbon\Carbon;
-    use App\Models\izinTigaJam;
-@endphp
+            @php
+                use Illuminate\Support\Str;
+                use Carbon\Carbon;
+                use App\Models\izinTigaJam;
+            @endphp
 
-<div class="row my-2">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-body table-responsive">
-                Data Kehadiran Anda bulan ini
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Tanggal</th>
-                            <th>Jam Masuk</th>
-                            <th>Keterangan Masuk</th>
-                            <th>Jam Pulang</th>
-                            <th>Keterangan Pulang</th>
-                            <th>Waktu Keterlambatan</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($absen as $item)
-                            @php
-                                $isToday = Carbon::parse($item->tanggal)->isToday();
-
-                                // Ambil data izin 3 jam jika ada
-                                $izin = izinTigaJam::where('id_karyawan', auth()->user()->karyawan_id)
-                                        ->whereDate('tanggal_pengajuan', $item->tanggal)
-                                        ->where('approval', 2)
-                                        ->first();
-
-                                // Keterangan Masuk: ambil dari field keterangan
-                                $keteranganMasuk = $item->jam_masuk ? $item->keterangan : '-';
-
-                                // Default keterangan pulang
-                                $ket_pul = '-';
-
-                                if ($item->jam_keluar) {
-                                    if ($izin) {
-                                        $jamMulaiIzin = Carbon::createFromFormat('H:i:s', $izin->jam_mulai);
-                                        $jamSelesaiIzin = Carbon::createFromFormat('H:i:s', $izin->jam_selesai);
-
-                                        if ($jamMulaiIzin->greaterThan(Carbon::createFromTime(12, 0))) {
-                                            $ket_pul = 'Pulang - Izin 3 Jam (' . $jamMulaiIzin->format('H:i') . ' - ' . $jamSelesaiIzin->format('H:i') . ')';
-                                        } else {
-                                            $ket_pul = 'Pulang';
-                                        }
-                                    } else {
-                                        $ket_pul = 'Pulang';
-                                    }
-                                }
-                            @endphp
-                            <tr class="{{ $isToday ? 'tabel-custom' : '' }}">
-                                <td>{{ Carbon::parse($item->tanggal)->translatedFormat('l, d F Y') }}</td>
-                                <td>{{ $item->jam_masuk ?? '-' }}</td>
-                                <td>{{ $keteranganMasuk }}</td>
-                                <td>{{ $item->jam_keluar ?? '-' }}</td>
-                                <td>{{ $ket_pul }}</td>
-                                <td>{{ $item->waktu_keterlambatan ?? '-' }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-
-        </div>
-    </div>
-</div>
-
-<div class="row my-2">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-body table-responsive">
-                <h6>Data Izin 3 Jam Karyawan</h6>
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Tanggal Pengajuan</th>
-                            <th>Jam Mulai</th>
-                            <th>Jam Selesai</th>
-                            <th>Alasan</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($izinTigaJam as $izin)
-                        <tr>
-                            <td>{{ \Carbon\Carbon::parse($izin->tanggal_pengajuan)->translatedFormat('l, d F Y') }}</td>
-                            <td>{{ $izin->jam_mulai }}</td>
-                            <td>{{ $izin->jam_selesai }}</td>
-                            <td>{{ $izin->alasan }}</td>
-                            <td>
-                                @switch($izin->approval)
-                                    @case(0)
-                                    <span class="badge rounded-pill bg-warning text-dark">
-                                        <i class="bi bi-hourglass-split me-1"></i> Menunggu Koordinator
-                                    </span>
-                                        @break
-                                    @case(1)
-                                    <span class="badge rounded-pill bg-warning text-dark">
-                                        <i class="bi bi-hourglass-top me-1"></i> Menunggu HRD
-                                    </span>
-                                        @break
-                                    @case(2)
-                                     <span class="badge rounded-pill bg-success">
-                                        <i class="bi bi-check-circle me-1"></i> Disetujui
-                                    </span>
-                                        @break
-                                    @case(4)
-                                    <span class="badge rounded-pill bg-danger">
-                                        <i class="bi bi-x-circle me-1"></i> Ditolak
-                                    </span>
-                                        @break
-                                    @default
-                                    <span class="badge rounded-pill bg-secondary text-dark">
-                                        <i class="bi bi-question-circle me-1"></i> Tidak Diketahui
-                                    </span>`;
-                                @endswitch
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
-
-
-             <div class="row my-2">
+            <div class="row my-2">
                 <div class="col-md-12">
                     <div class="card">
-                        <div class="card-body">
-                            <div class="col-md-12">
-                                <div class="card-body table-responsive">
-                                    <h6>Ajukan Klaim Absen Anda:</h6>
-                                    <a href="{{ route('pengajuanklaim.createNoRecord') }}" class="btn btn-info color-white">Absen Tidak Terekap</a>
-                                    <a href="{{ route('absensi.schemeWork') }}" class="btn btn-warning">Perubahan Jam Kerja</a>
-                                    <a href="{{ route('absensi.cancelLeave') }}" class="btn btn-danger">Pembatalan Cuti</a>
-                                </div>
-                            </div>
+                        <div class="card-body table-responsive">
+                            Data Kehadiran Anda bulan ini
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Tanggal</th>
+                                        <th>Jam Masuk</th>
+                                        <th>Keterangan Masuk</th>
+                                        <th>Jam Pulang</th>
+                                        <th>Keterangan Pulang</th>
+                                        <th>Waktu Keterlambatan</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($absen as $item)
+                                        @php
+                                            $isToday = Carbon::parse($item->tanggal)->isToday();
 
+                                            // Ambil data izin 3 jam jika ada
+                                            $izin = izinTigaJam::where('id_karyawan', auth()->user()->karyawan_id)
+                                                    ->whereDate('tanggal_pengajuan', $item->tanggal)
+                                                    ->where('approval', 2)
+                                                    ->first();
 
-                            <div class="col-md-12">
-                                <div class="card-body table-responsive text-end justify-content-end">
-                                    <h6 class="justify-content-start">Pilih Tabel:</h6>
-                                    <div class="btn-group" role="group" aria-label="Basic example">
-                                        <select id="jenis_tabel" class="form-select w-auto">
-                                            <option value="Tidak Terekam" selected>Tidak Terekam</option>
-                                            <option value="Skema Kerja">Skema Kerja</option>
-                                            <option value="Pembatalan Cuti">Pembatalan Cuti</option>
-                                        </select>
+                                            // Keterangan Masuk: ambil dari field keterangan
+                                            $keteranganMasuk = $item->jam_masuk ? $item->keterangan : '-';
 
-                                    </div>
-                                </div>
+                                            // Default keterangan pulang
+                                            $ket_pul = '-';
 
-                            </div>
-                            <div class="table-responsive jenis-table" id="table-tidak-terekam">
-                                <h6>Data Pengajuan Klaim Absen Tidak Terekam</h6>
-                                <table class="table table-bordered">
-                                    <thead>
-                                        <tr>
-                                            <th>Tanggal</th>
-                                            <th>Kendala</th>
-                                            <th>Kronologi</th>
-                                            <th>Approve</th>
-                                            <th>Aksi</th>
+                                            if ($item->jam_keluar) {
+                                                if ($izin) {
+                                                    $jamMulaiIzin = Carbon::createFromFormat('H:i:s', $izin->jam_mulai);
+                                                    $jamSelesaiIzin = Carbon::createFromFormat('H:i:s', $izin->jam_selesai);
+
+                                                    if ($jamMulaiIzin->greaterThan(Carbon::createFromTime(12, 0))) {
+                                                        $ket_pul = 'Pulang - Izin 3 Jam (' . $jamMulaiIzin->format('H:i') . ' - ' . $jamSelesaiIzin->format('H:i') . ')';
+                                                    } else {
+                                                        $ket_pul = 'Pulang';
+                                                    }
+                                                } else {
+                                                    $ket_pul = 'Pulang';
+                                                }
+                                            }
+                                        @endphp
+                                        <tr class="{{ $isToday ? 'tabel-custom' : '' }}">
+                                            <td>{{ Carbon::parse($item->tanggal)->translatedFormat('l, d F Y') }}</td>
+                                            <td>{{ $item->jam_masuk ?? '-' }}</td>
+                                            <td>{{ $keteranganMasuk }}</td>
+                                            <td>{{ $item->jam_keluar ?? '-' }}</td>
+                                            <td>{{ $ket_pul }}</td>
+                                            <td>{{ $item->waktu_keterlambatan ?? '-' }}</td>
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach ($noRecord as $data)
-                                        <tr>
-                                            <td>
-    {{ \Carbon\Carbon::parse($data->absensiKaryawan->tanggal ?? $data->tanggal)->translatedFormat('l, d F Y') }}
-</td>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
 
-                                            <td>{{ $data->kendala }}</td>
-                                            <td>{{ $data->kronologi }}</td>
-                                    <td>
-                                        @switch($data->approval)
-                                        @case(0)
-                                        <span class="badge rounded-pill bg-warning text-dark">
-                                            <i class="bi bi-hourglass-split me-1"></i> Menunggu Atasan
-                                        </span>
-                                        @break
-
-                                        @case(1)
-                                        <span class="badge rounded-pill bg-success">
-                                            <i class="bi bi-check-circle me-1"></i> Disetujui
-                                        </span>
-                                        @break
-
-                                        @case(2)
-                                        <span class="badge rounded-pill bg-danger">
-                                            <i class="bi bi-x-circle me-1"></i> Ditolak
-                                        </span>
-                                        @break
-
-                                        @default
-                                        <span class="badge rounded-pill bg-secondary">
-                                            <i class="bi bi-question-circle me-1"></i> Tidak Diketahui
-                                        </span>
-                                        @endswitch
-                                    </td>
-                                            <td style="font-size: 14px;">
-                                                <div class="btn-group dropup">
-                                                    <button type="button" class="btn dropdown-toggle btn-secondary" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>
-                                                    <div class="dropdown-menu">
-                                                        <button class="dropdown-item" data-toggle="modal" data-toggle="tooltip" title="Lihat Bukti" data-target="#modalNoRecord{{ $data->id }}">
-                                                            <span><img src="{{ asset('icon/eye.svg') }}" alt="eye.png" width="20px" height="20px"></span> Bukti Gambar
-                                                        </button>
-                                                        <form action="{{ route('absensi.deleteNoRecord') }}" method="POST">
-                                                            @csrf
-                                                            <input type="hidden" value="{{ $data->id }}" name="id_noRecord">
-                                                            <button type="submit" class="dropdown-item" data-toggle="tooltip" title="Lihat Bukti">
-                                                                <span><img src="{{ asset('icon/trash-danger.svg') }}" alt="eye.png" width="20px" height="20px"></span> Hapus Data
-                                                            </button>
-                                                        </form>
-                                                        @if(auth()->user()->jabatan === 'HRD')
-                                                        @if($data->approval === 1)
-                                                        @elseif($data->approval === 0)
-                                                        <button class="dropdown-item" data-toggle="modal" data-toggle="tooltip" title="Approve Pengajuan" data-target="#modalApproveNoRecord{{ $data->id }}">
-                                                            <span><img src="{{ asset('icon/clipboard-primary.svg') }}" alt="eye.png" width="20px" height="20px"></span> Approve
-                                                        </button>
-                                                        @endif
-                                                        @endif
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <div class="table-responsive jenis-table d-none" id="table-skema-kerja">
-                                <h6>Data Pengajuan Klaim Keterlambatan Karena Perubahan Skema Kerja</h6>
-                                <table class="table table-bordered">
-                                    <thead>
-                                        <tr>
-                                            <th>Tanggal</th>
-                                            <th>Kronologi</th>
-                                            <th>Status</th>
-                                            <th>Aksi</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach ($schemeWork as $data)
-                                        @if ($data->jenis_PK === 'Scheme Work')
-                                        <tr>
-                                            <td>{{ \Carbon\Carbon::parse($data->absensiKaryawan->tanggal)->translatedFormat('l, d F Y') }}</td>
-                                            <td>{{ $data->kronologi }}</td>
-                                    <td>
-                                        @switch($data->approval)
-                                        @case(0)
-                                        <span class="badge rounded-pill bg-warning text-dark">
-                                            <i class="bi bi-hourglass-split me-1"></i> Menunggu Atasan
-                                        </span>
-                                        @break
-
-                                        @case(1)
-                                        <span class="badge rounded-pill bg-success">
-                                            <i class="bi bi-check-circle me-1"></i> Disetujui
-                                        </span>
-                                        @break
-
-                                        @case(2)
-                                        <span class="badge rounded-pill bg-danger">
-                                            <i class="bi bi-x-circle me-1"></i> Ditolak
-                                        </span>
-                                        @break
-
-                                        @default
-                                        <span class="badge rounded-pill bg-secondary">
-                                            <i class="bi bi-question-circle me-1"></i> Tidak Diketahui
-                                        </span>
-                                        @endswitch
-                                    </td>
-                                            <td style="font-size: 14px;">
-                                                <div class="btn-group dropup">
-                                                    <button type="button" class="btn dropdown-toggle btn-secondary" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>
-                                                    <div class="dropdown-menu">
-                                                        <button class="dropdown-item" data-toggle="modal" data-toggle="tooltip" title="Lihat Bukti" data-target="#schemeWorkModal{{ $data->id }}">
-                                                            <span><img src="{{ asset('icon/eye.svg') }}" alt="eye.png" width="20px" height="20px"></span> Bukti Gambar
-                                                        </button>
-                                                        <form action="{{ route('absensi.deleteSchemeWork') }}" method="POST">
-                                                            @csrf
-                                                            <input type="hidden" value="{{ $data->id }}" name="id_scheme_work">
-                                                            <button type="submit" class="dropdown-item" data-toggle="tooltip" title="Lihat Bukti">
-                                                                <span><img src="{{ asset('icon/trash-danger.svg') }}" alt="eye.png" width="20px" height="20px"></span> Hapus Data
-                                                            </button>
-                                                        </form>
-                                                        @if(auth()->user()->jabatan === 'HRD')
-                                                        @if($data->approval === 1)
-                                                        @elseif($data->approval === 0)
-                                                        <button class="dropdown-item" data-toggle="modal" data-toggle="tooltip" title="Approve Pengajuan" data-target="#modalApproveSchemeWork{{ $data->id }}">
-                                                            <span><img src="{{ asset('icon/clipboard-primary.svg') }}" alt="eye.png" width="20px" height="20px"></span> Approve
-                                                        </button>
-                                                        @endif
-                                                        @endif
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        @endif
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="table-responsive jenis-table d-none" id="table-pembatalan-cuti">
-                                <h6>Data Pembatalan Cuti</h6>
-                                <table class="table table-bordered">
-                                    <thead>
-                                        <tr>
-                                            <th>Tanggal Cuti</th>
-                                            <th>Alasan Pembatalan</th>
-                                            <th>Status</th>
-                                            <th>aksi</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach ($cancelLeave as $data)
-                                        <tr>
-                                            <td>{{ $data->tanggal_awal }}</td>
-                                            <td>{{ $data->alasan }}</td>
-                                    <td>
-                                        @switch($data->approval)
-                                        @case(0)
-                                        <span class="badge rounded-pill bg-warning text-dark">
-                                            <i class="bi bi-hourglass-split me-1"></i> Menunggu Atasan
-                                        </span>
-                                        @break
-
-                                        @case(1)
-                                        <span class="badge rounded-pill bg-success">
-                                            <i class="bi bi-check-circle me-1"></i> Disetujui
-                                        </span>
-                                        @break
-
-                                        @case(2)
-                                        <span class="badge rounded-pill bg-danger">
-                                            <i class="bi bi-x-circle me-1"></i> Ditolak
-                                        </span>
-                                        @break
-
-                                        @default
-                                        <span class="badge rounded-pill bg-secondary">
-                                            <i class="bi bi-question-circle me-1"></i> Tidak Diketahui
-                                        </span>
-                                        @endswitch
-                                    </td>
-                                            <td style="font-size: 14px;">
-                                                <div class="btn-group dropup">
-                                                    <button type="button" class="btn dropdown-toggle btn-secondary" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>
-                                                    <div class="dropdown-menu">
-                                                        <button class="dropdown-item" data-toggle="modal" data-toggle="tooltip" title="Lihat Bukti" data-target="#cancelLeaveModal{{ $data->id }}">
-                                                            <span><img src="{{ asset('icon/eye.svg') }}" alt="eye.png" width="20px" height="20px"></span> Bukti Gambar
-                                                        </button>
-                                                        <button class="dropdown-item" data-toggle="modal" data-toggle="tooltip" title="Lihat Bukti" data-target="#DetailcancelLeaveModal{{ $data->id }}">
-                                                            <span><img src="{{ asset('icon/eye.svg') }}" alt="eye.png" width="20px" height="20px"></span> Detail
-                                                        </button>
-
-                                                        <form action="{{ route('absensi.deleteCancelLeave') }}" method="POST">
-                                                            @csrf
-                                                            <input type="hidden" value="{{ $data->id }}" name="id_cancel_leave">
-                                                            <button type="submit" class="dropdown-item" data-toggle="tooltip" title="Lihat Bukti">
-                                                                <span><img src="{{ asset('icon/trash-danger.svg') }}" alt="eye.png" width="20px" height="20px"></span> Hapus Data
-                                                            </button>
-                                                        </form>
-                                                        @if(auth()->user()->jabatan === 'HRD')
-                                                        @if($data->approval === 1)
-                                                        @elseif($data->approval === 0)
-                                                        <button class="dropdown-item" data-toggle="modal" data-toggle="tooltip" title="Approve Pengajuan" data-target="#modalApproveCancelLeave{{ $data->id }}">
-                                                            <span><img src="{{ asset('icon/clipboard-primary.svg') }}" alt="eye.png" width="20px" height="20px"></span> Approve
-                                                        </button>
-                                                        @endif
-                                                        @endif
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-
+                    </div>
+                </div>
+            </div>
+            <div class="row my-2">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body table-responsive">
+                            <h6>Data Izin 3 Jam Karyawan</h6>
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Tanggal Pengajuan</th>
+                                        <th>Jam Mulai</th>
+                                        <th>Jam Selesai</th>
+                                        <th>Alasan</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($izinTigaJam as $izin)
+                                    <tr>
+                                        <td>{{ \Carbon\Carbon::parse($izin->tanggal_pengajuan)->translatedFormat('l, d F Y') }}</td>
+                                        <td>{{ $izin->jam_mulai }}</td>
+                                        <td>{{ $izin->jam_selesai }}</td>
+                                        <td>{{ $izin->alasan }}</td>
+                                        <td>
+                                            @switch($izin->approval)
+                                                @case(0)
+                                                <span class="badge rounded-pill bg-warning text-dark">
+                                                    <i class="bi bi-hourglass-split me-1"></i> Menunggu Koordinator
+                                                </span>
+                                                    @break
+                                                @case(1)
+                                                <span class="badge rounded-pill bg-warning text-dark">
+                                                    <i class="bi bi-hourglass-top me-1"></i> Menunggu HRD
+                                                </span>
+                                                    @break
+                                                @case(2)
+                                                <span class="badge rounded-pill bg-success">
+                                                    <i class="bi bi-check-circle me-1"></i> Disetujui
+                                                </span>
+                                                    @break
+                                                @case(4)
+                                                <span class="badge rounded-pill bg-danger">
+                                                    <i class="bi bi-x-circle me-1"></i> Ditolak
+                                                </span>
+                                                    @break
+                                                @default
+                                                <span class="badge rounded-pill bg-secondary text-dark">
+                                                    <i class="bi bi-question-circle me-1"></i> Tidak Diketahui
+                                                </span>`;
+                                            @endswitch
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
+            </div>
+            <div class="row my-2">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="col-md-12">
+                                        <div class="card-body table-responsive">
+                                            <h6>Ajukan Klaim Absen Anda:</h6>
+                                            <a href="{{ route('pengajuanklaim.NoRecord') }}" class="btn btn-info color-white">Absen Tidak Terekap</a>
+                                            <a href="{{ route('pengajuanklaim.SchemeWork') }}" class="btn btn-warning">Perubahan Jam Kerja</a>
+                                            <a href="{{ route('pengajuanklaim.CancelLeave') }}" class="btn btn-danger">Pembatalan Cuti</a>
+                                        </div>
+                                    </div>
+
+
+                                    <div class="col-md-12">
+                                        <div class="card-body table-responsive text-end justify-content-end">
+                                            <h6 class="justify-content-start">Pilih Tabel:</h6>
+                                            <div class="btn-group" role="group" aria-label="Basic example">
+                                                <select id="jenis_tabel" class="form-select w-auto">
+                                                    <option value="Tidak Terekam" selected>Tidak Terekam</option>
+                                                    <option value="Skema Kerja">Skema Kerja</option>
+                                                    <option value="Pembatalan Cuti">Pembatalan Cuti</option>
+                                                </select>
+
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                    <div class="table-responsive jenis-table" id="table-tidak-terekam">
+                                        <h6>Data Pengajuan Klaim Absen Tidak Terekam</h6>
+                                        <table class="table table-bordered">
+                                            <thead>
+                                                <tr>
+                                                    <th>Tanggal</th>
+                                                    <th>Kendala</th>
+                                                    <th>Kronologi</th>
+                                                    <th>Approve</th>
+                                                    <th>Aksi</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach ($noRecord as $data)
+                                                <tr>
+                                                    <td>
+                                                        {{ \Carbon\Carbon::parse($data->absensiKaryawan->tanggal ?? $data->tanggal)->translatedFormat('l, d F Y') }}
+                                                    </td>
+
+                                                    <td>{{ $data->kendala }}</td>
+                                                    <td>{{ $data->kronologi }}</td>
+                                            <td>
+                                                @switch($data->approval)
+                                                @case(0)
+                                                <span class="badge rounded-pill bg-warning text-dark">
+                                                    <i class="bi bi-hourglass-split me-1"></i> Menunggu Persetujuan
+                                                </span>
+                                                @break
+
+                                                @case(1)
+                                                <span class="badge rounded-pill bg-success">
+                                                    <i class="bi bi-check-circle me-1"></i> Disetujui
+                                                </span>
+                                                @break
+
+                                                @case(2)
+                                                <span class="badge rounded-pill bg-danger">
+                                                    <i class="bi bi-x-circle me-1"></i> Ditolak
+                                                </span>
+                                                @break
+
+                                                @default
+                                                <span class="badge rounded-pill bg-secondary">
+                                                    <i class="bi bi-question-circle me-1"></i> Tidak Diketahui
+                                                </span>
+                                                @endswitch
+                                            </td>
+                                                    <td style="font-size: 14px;">
+                                                        <div class="btn-group dropdown">
+                                                            <button type="button" class="btn dropdown-toggle btn-secondary" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>
+                                                            <div class="dropdown-menu">
+                                                                <button class="dropdown-item" data-toggle="modal" data-toggle="tooltip" title="Lihat Bukti" data-target="#modalNoRecord{{ $data->id }}">
+                                                                    <span><img src="{{ asset('icon/eye.svg') }}" alt="eye.png" width="20px" height="20px"></span> Bukti Gambar
+                                                                </button>
+                                                                <form action="{{ route('absensi.deleteNoRecord') }}" method="POST">
+                                                                    @csrf
+                                                                    <input type="hidden" value="{{ $data->id }}" name="id_noRecord">
+                                                                    <button type="submit" class="dropdown-item" data-toggle="tooltip" title="Lihat Bukti">
+                                                                        <span><img src="{{ asset('icon/trash-danger.svg') }}" alt="eye.png" width="20px" height="20px"></span> Hapus Data
+                                                                    </button>
+                                                                </form>
+                                                                @if(auth()->user()->jabatan === 'HRD')
+                                                                @if($data->approval === 1)
+                                                                @elseif($data->approval === 0)
+                                                                <button class="dropdown-item" data-toggle="modal" data-toggle="tooltip" title="Approve Pengajuan" data-target="#modalApproveNoRecord{{ $data->id }}">
+                                                                    <span><img src="{{ asset('icon/clipboard-primary.svg') }}" alt="eye.png" width="20px" height="20px"></span> Approve
+                                                                </button>
+                                                                @endif
+                                                                @endif
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div class="table-responsive jenis-table d-none" id="table-skema-kerja">
+                                        <h6>Data Pengajuan Klaim Keterlambatan Karena Perubahan Skema Kerja</h6>
+                                        <table class="table table-bordered">
+                                            <thead>
+                                                <tr>
+                                                    <th>Tanggal</th>
+                                                    <th>Kronologi</th>
+                                                    <th>Status</th>
+                                                    <th>Aksi</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach ($schemeWork as $data)
+                                                @if ($data->jenis_PK === 'Scheme Work')
+                                                <tr>
+                                                    <td>{{ \Carbon\Carbon::parse($data->absensiKaryawan->tanggal)->translatedFormat('l, d F Y') }}</td>
+                                                    <td>{{ $data->kronologi }}</td>
+                                            <td>
+                                                @switch($data->approval)
+                                                @case(0)
+                                                <span class="badge rounded-pill bg-warning text-dark">
+                                                    <i class="bi bi-hourglass-split me-1"></i> Menunggu Persetujuan
+                                                </span>
+                                                @break
+
+                                                @case(1)
+                                                <span class="badge rounded-pill bg-success">
+                                                    <i class="bi bi-check-circle me-1"></i> Disetujui
+                                                </span>
+                                                @break
+
+                                                @case(2)
+                                                <span class="badge rounded-pill bg-danger">
+                                                    <i class="bi bi-x-circle me-1"></i> Ditolak
+                                                </span>
+                                                @break
+
+                                                @default
+                                                <span class="badge rounded-pill bg-secondary">
+                                                    <i class="bi bi-question-circle me-1"></i> Tidak Diketahui
+                                                </span>
+                                                @endswitch
+                                            </td>
+                                                    <td style="font-size: 14px;">
+                                                        <div class="btn-group dropdown">
+                                                            <button type="button" class="btn dropdown-toggle btn-secondary" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>
+                                                            <div class="dropdown-menu">
+                                                                <button class="dropdown-item" data-toggle="modal" data-toggle="tooltip" title="Lihat Bukti" data-target="#schemeWorkModal{{ $data->id }}">
+                                                                    <span><img src="{{ asset('icon/eye.svg') }}" alt="eye.png" width="20px" height="20px"></span> Bukti Gambar
+                                                                </button>
+                                                                <form action="{{ route('absensi.deleteSchemeWork') }}" method="POST">
+                                                                    @csrf
+                                                                    <input type="hidden" value="{{ $data->id }}" name="id_scheme_work">
+                                                                    <button type="submit" class="dropdown-item" data-toggle="tooltip" title="Lihat Bukti">
+                                                                        <span><img src="{{ asset('icon/trash-danger.svg') }}" alt="eye.png" width="20px" height="20px"></span> Hapus Data
+                                                                    </button>
+                                                                </form>
+                                                                @if(auth()->user()->jabatan === 'HRD')
+                                                                @if($data->approval === 1)
+                                                                @elseif($data->approval === 0)
+                                                                <button class="dropdown-item" data-toggle="modal" data-toggle="tooltip" title="Approve Pengajuan" data-target="#modalApproveSchemeWork{{ $data->id }}">
+                                                                    <span><img src="{{ asset('icon/clipboard-primary.svg') }}" alt="eye.png" width="20px" height="20px"></span> Approve
+                                                                </button>
+                                                                @endif
+                                                                @endif
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                @endif
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="table-responsive jenis-table d-none" id="table-pembatalan-cuti">
+                                        <h6>Data Pembatalan Cuti</h6>
+                                        <table class="table table-bordered">
+                                            <thead>
+                                                <tr>
+                                                    <th>Tanggal Cuti</th>
+                                                    <th>Alasan Pembatalan</th>
+                                                    <th>Status</th>
+                                                    <th>aksi</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach ($cancelLeave as $data)
+                                                <tr>
+                                                    <td>{{ $data->tanggal_awal }}</td>
+                                                    <td>{{ $data->kronologi }}</td>
+                                            <td>
+                                                @switch($data->approval)
+                                                @case(0)
+                                                <span class="badge rounded-pill bg-warning text-dark">
+                                                    <i class="bi bi-hourglass-split me-1"></i> Menunggu Persetujuan
+                                                </span>
+                                                @break
+
+                                                @case(1)
+                                                <span class="badge rounded-pill bg-success">
+                                                    <i class="bi bi-check-circle me-1"></i> Disetujui
+                                                </span>
+                                                @break
+
+                                                @case(2)
+                                                <span class="badge rounded-pill bg-danger">
+                                                    <i class="bi bi-x-circle me-1"></i> Ditolak
+                                                </span>
+                                                @break
+
+                                                @default
+                                                <span class="badge rounded-pill bg-secondary">
+                                                    <i class="bi bi-question-circle me-1"></i> Tidak Diketahui
+                                                </span>
+                                                @endswitch
+                                            </td>
+                                                    <td style="font-size: 12px;">
+                                                        <div class="btn-group dropdown">
+                                                            <button type="button" class="btn dropdown-toggle btn-secondary" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>
+                                                            <div class="dropdown-menu">
+                                                                <button class="dropdown-item" data-toggle="modal" data-toggle="tooltip" title="Lihat Bukti" data-target="#cancelLeaveModal{{ $data->id }}">
+                                                                    <span><img src="{{ asset('icon/eye.svg') }}" alt="eye.png" width="20px" height="20px"></span> Bukti Gambar
+                                                                </button>
+                                                                <button class="dropdown-item" data-toggle="modal" data-toggle="tooltip" title="Lihat Bukti" data-target="#DetailcancelLeaveModal{{ $data->id }}">
+                                                                    <span><img src="{{ asset('icon/eye.svg') }}" alt="eye.png" width="20px" height="20px"></span> Detail
+                                                                </button>
+
+                                                                <form action="{{ route('absensi.deleteCancelLeave') }}" method="POST">
+                                                                    @csrf
+                                                                    <input type="hidden" value="{{ $data->id }}" name="id_cancel_leave">
+                                                                    <button type="submit" class="dropdown-item" data-toggle="tooltip" title="Lihat Bukti">
+                                                                        <span><img src="{{ asset('icon/trash-danger.svg') }}" alt="eye.png" width="20px" height="20px"></span> Hapus Data
+                                                                    </button>
+                                                                </form>
+                                                                @if(auth()->user()->jabatan === 'HRD')
+                                                                @if($data->approval === 1)
+                                                                @elseif($data->approval === 0)
+                                                                <button class="dropdown-item" data-toggle="modal" data-toggle="tooltip" title="Approve Pengajuan" data-target="#modalApproveCancelLeave{{ $data->id }}">
+                                                                    <span><img src="{{ asset('icon/clipboard-primary.svg') }}" alt="eye.png" width="20px" height="20px"></span> Approve
+                                                                </button>
+                                                                @endif
+                                                                @endif
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
             </div> 
         </div>
-<div class="col-md-6">
-    <div class="card my-2" style="background-color: #2c3e50; border: 4px solid #f1c40f; box-shadow: 0 0 10px #f1c40f;">
-        <div class="card-body">
-            <div style="text-align: center;">
-                <h4 style="font-family: 'Press Start 2P', cursive; color: white; background-color: #e74c3c; padding: 1rem; border: 4px solid #c1440e; box-shadow: 0 0 10px #f1c40f; display: inline-block;">
-                    Leaderboard
-                </h4>
+        <div class="col-md-6">
+            <div class="card my-2" style="background-color: #2c3e50; border: 4px solid #f1c40f; box-shadow: 0 0 10px #f1c40f;">
+                <div class="card-body">
+                    <div style="text-align: center;">
+                        <h4 style="font-family: 'Press Start 2P', cursive; color: white; background-color: #e74c3c; padding: 1rem; border: 4px solid #c1440e; box-shadow: 0 0 10px #f1c40f; display: inline-block;">
+                            Pahlawan Kesiangan Inixindo
+                        </h4>
+                    </div>
+
+                    <div class="podium d-flex justify-content-center align-items-end gap-3 my-4">
+                        <div class="podium-item text-center p-3 border border-warning" style="background-color: #c1440e; height: 160px; position: relative; width: 150px; display: flex; flex-direction: column; justify-content: flex-end;">
+                            <img src="{{ isset($topKaryawan[1]->foto) ? asset('storage/'.$topKaryawan[1]->foto) : asset('css/default-profile.jpg') }}" alt="Foto Karyawan" class="avatar rounded-circle position-absolute top-0 start-50 translate-middle" style="width: 80px; height: 80px; border: 3px solid #f1c40f; box-shadow: 0 0 10px #f1c40f;" />
+                            <div class="medal fs-4 position-absolute top-0 start-50 translate-middle" style="margin-top: 30px;">🥈</div>
+                            @if(isset($topKaryawan[1]))
+                                <div class="username text-white fw-bold mb-1" style="font-size: 0.9rem;">{{ $topKaryawan[1]->karyawan->nama_lengkap }}</div>
+                                <div class="job-title text-muted" style="font-size: 0.7rem;">{{ $topKaryawan[1]->karyawan->jabatan }}</div>
+                                <div class="score text-warning" style="font-size: 0.8rem;">{{ $topKaryawan[1]->total_keterlambatan }}</div>
+                            @else
+                                <div class="username text-white fw-bold mb-1" style="font-size: 0.9rem;">Kosong</div>
+                                <div class="job-title text-muted" style="font-size: 0.7rem;">-</div>
+                                <div class="score text-warning" style="font-size: 0.8rem;">-</div>
+                            @endif
+                        </div>
+
+                        <div class="podium-item text-center p-3 border border-warning" style="background-color: #e74c3c; height: 200px; position: relative; width: 150px; display: flex; flex-direction: column; justify-content: flex-end;">
+                            <img src="{{ isset($topKaryawan[0]->foto) ? asset('storage/'.$topKaryawan[0]->foto) : asset('css/default-profile.jpg') }}" alt="Foto Karyawan" class="avatar rounded-circle position-absolute top-0 start-50 translate-middle" style="width: 80px; height: 80px; border: 3px solid #f1c40f; box-shadow: 0 0 10px #f1c40f;" />
+                            <div class="medal fs-4 position-absolute top-0 start-50 translate-middle" style="margin-top: 30px;">🥇</div>
+                            @if(isset($topKaryawan[0]))
+                                <div class="username text-white fw-bold mb-1" style="font-size: 0.9rem;">{{ $topKaryawan[0]->karyawan->nama_lengkap }}</div>
+                                <div class="job-title text-muted" style="font-size: 0.7rem;">{{ $topKaryawan[0]->karyawan->jabatan }}</div>
+                                <div class="score text-warning" style="font-size: 0.8rem;">{{ $topKaryawan[0]->total_keterlambatan }}</div>
+                            @else
+                                <div class="username text-white fw-bold mb-1" style="font-size: 0.9rem;">Kosong</div>
+                                <div class="job-title text-muted" style="font-size: 0.7rem;">-</div>
+                                <div class="score text-warning" style="font-size: 0.8rem;">-</div>
+                            @endif
+                        </div>
+
+                        <div class="podium-item text-center p-3 border border-warning" style="background-color: #cd7f32; height: 140px; position: relative; width: 150px; display: flex; flex-direction: column; justify-content: flex-end;">
+                            <img src="{{ isset($topKaryawan[2]->foto) ? asset('storage/'.$topKaryawan[2]->foto) : asset('css/default-profile.jpg') }}" alt="Foto Karyawan" class="avatar rounded-circle position-absolute top-0 start-50 translate-middle" style="width: 80px; height: 80px; border: 3px solid #f1c40f; box-shadow: 0 0 10px #f1c40f;" />
+                            <div class="medal fs-4 position-absolute top-0 start-50 translate-middle" style="margin-top: 30px;">🥉</div>
+                            @if(isset($topKaryawan[2]))
+                                <div class="username text-white fw-bold mb-1" style="font-size: 0.9rem;">{{ $topKaryawan[2]->karyawan->nama_lengkap }}</div>
+                                <div class="job-title text-muted" style="font-size: 0.7rem;">{{ $topKaryawan[2]->karyawan->jabatan }}</div>
+                                <div class="score text-warning" style="font-size: 0.8rem;">{{ $topKaryawan[2]->total_keterlambatan }}</div>
+                            @else
+                                <img src="{{ asset('css/default-profile.jpg') }}" alt="Foto Karyawan" class="avatar rounded-circle position-absolute top-0 start-50 translate-middle" style="width: 80px; height: 80px; border: 3px solid #f1c40f; box-shadow: 0 0 10px #f1c40f;" />
+                                <div class="medal fs-4 position-absolute top-0 start-50 translate-middle" style="margin-top: 30px;">🥉</div>
+                                <div class="username text-white fw-bold mb-1" style="font-size: 0.9rem;">Kosong</div>
+                                <div class="job-title text-muted" style="font-size: 0.7rem;">-</div>
+                                <div class="score text-warning" style="font-size: 0.8rem;">-</div>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered text-white text-center" style="background-color: #3498db; border: 4px solid #e74c3c; box-shadow: 0 0 20px #f1c40f;">
+                            <thead>
+                                <tr style="background-color: #c1440e; color: #f1c40f; font-family: 'Press Start 2P', cursive;">
+                                    <th>Rank</th>
+                                    <th>Nama Karyawan</th>
+                                    <th>Waktu Keterlambatan</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if($remainingLeaderboard->isNotEmpty())
+                                    @foreach ($remainingLeaderboard as $item)
+                                        @if($loop->iteration <= 7)
+                                            <tr style="background-color: #2980b9;">
+                                                <td>{{ $loop->iteration + 3 }}</td>
+                                                <td>{{ $item->karyawan->nama_lengkap }}</td>
+                                                <td>{{ $item->total_keterlambatan }}</td>
+                                            </tr>
+                                        @endif
+                                    @endforeach
+                                @else
+                                    <tr>
+                                        <td colspan="3" class="text-center">Tidak ada data karyawan lain yang terlambat</td>
+                                    </tr>
+                                @endif
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
-
-            <div class="podium d-flex justify-content-center align-items-end gap-3 my-4">
-                <div class="podium-item text-center p-3 border border-warning" style="background-color: #c1440e; height: 160px; position: relative; width: 150px; display: flex; flex-direction: column; justify-content: flex-end;">
-                    <img src="{{ isset($topKaryawan[1]->foto) ? asset('storage/'.$topKaryawan[1]->foto) : asset('css/default-profile.jpg') }}" alt="Foto Karyawan" class="avatar rounded-circle position-absolute top-0 start-50 translate-middle" style="width: 80px; height: 80px; border: 3px solid #f1c40f; box-shadow: 0 0 10px #f1c40f;" />
-                    <div class="medal fs-4 position-absolute top-0 start-50 translate-middle" style="margin-top: 30px;">🥈</div>
-                    @if(isset($topKaryawan[1]))
-                        <div class="username text-white fw-bold mb-1" style="font-size: 0.9rem;">{{ $topKaryawan[1]->karyawan->nama_lengkap }}</div>
-                        <div class="job-title text-muted" style="font-size: 0.7rem;">{{ $topKaryawan[1]->karyawan->jabatan }}</div>
-                        <div class="score text-warning" style="font-size: 0.8rem;">{{ $topKaryawan[1]->total_keterlambatan }}</div>
-                    @else
-                        <div class="username text-white fw-bold mb-1" style="font-size: 0.9rem;">Kosong</div>
-                        <div class="job-title text-muted" style="font-size: 0.7rem;">-</div>
-                        <div class="score text-warning" style="font-size: 0.8rem;">-</div>
-                    @endif
-                </div>
-
-                <div class="podium-item text-center p-3 border border-warning" style="background-color: #e74c3c; height: 200px; position: relative; width: 150px; display: flex; flex-direction: column; justify-content: flex-end;">
-                    <img src="{{ isset($topKaryawan[0]->foto) ? asset('storage/'.$topKaryawan[0]->foto) : asset('css/default-profile.jpg') }}" alt="Foto Karyawan" class="avatar rounded-circle position-absolute top-0 start-50 translate-middle" style="width: 80px; height: 80px; border: 3px solid #f1c40f; box-shadow: 0 0 10px #f1c40f;" />
-                    <div class="medal fs-4 position-absolute top-0 start-50 translate-middle" style="margin-top: 30px;">🥇</div>
-                    @if(isset($topKaryawan[0]))
-                        <div class="username text-white fw-bold mb-1" style="font-size: 0.9rem;">{{ $topKaryawan[0]->karyawan->nama_lengkap }}</div>
-                        <div class="job-title text-muted" style="font-size: 0.7rem;">{{ $topKaryawan[0]->karyawan->jabatan }}</div>
-                        <div class="score text-warning" style="font-size: 0.8rem;">{{ $topKaryawan[0]->total_keterlambatan }}</div>
-                    @else
-                        <div class="username text-white fw-bold mb-1" style="font-size: 0.9rem;">Kosong</div>
-                        <div class="job-title text-muted" style="font-size: 0.7rem;">-</div>
-                        <div class="score text-warning" style="font-size: 0.8rem;">-</div>
-                    @endif
-                </div>
-
-                <div class="podium-item text-center p-3 border border-warning" style="background-color: #cd7f32; height: 140px; position: relative; width: 150px; display: flex; flex-direction: column; justify-content: flex-end;">
-                    <img src="{{ isset($topKaryawan[2]->foto) ? asset('storage/'.$topKaryawan[2]->foto) : asset('css/default-profile.jpg') }}" alt="Foto Karyawan" class="avatar rounded-circle position-absolute top-0 start-50 translate-middle" style="width: 80px; height: 80px; border: 3px solid #f1c40f; box-shadow: 0 0 10px #f1c40f;" />
-                    <div class="medal fs-4 position-absolute top-0 start-50 translate-middle" style="margin-top: 30px;">🥉</div>
-                    @if(isset($topKaryawan[2]))
-                        <div class="username text-white fw-bold mb-1" style="font-size: 0.9rem;">{{ $topKaryawan[2]->karyawan->nama_lengkap }}</div>
-                        <div class="job-title text-muted" style="font-size: 0.7rem;">{{ $topKaryawan[2]->karyawan->jabatan }}</div>
-                        <div class="score text-warning" style="font-size: 0.8rem;">{{ $topKaryawan[2]->total_keterlambatan }}</div>
-                    @else
-                        <img src="{{ asset('css/default-profile.jpg') }}" alt="Foto Karyawan" class="avatar rounded-circle position-absolute top-0 start-50 translate-middle" style="width: 80px; height: 80px; border: 3px solid #f1c40f; box-shadow: 0 0 10px #f1c40f;" />
-                        <div class="medal fs-4 position-absolute top-0 start-50 translate-middle" style="margin-top: 30px;">🥉</div>
-                        <div class="username text-white fw-bold mb-1" style="font-size: 0.9rem;">Kosong</div>
-                        <div class="job-title text-muted" style="font-size: 0.7rem;">-</div>
-                        <div class="score text-warning" style="font-size: 0.8rem;">-</div>
-                    @endif
-                </div>
-            </div>
-
-<div class="table-responsive">
-    <table class="table table-bordered text-white text-center" style="background-color: #3498db; border: 4px solid #e74c3c; box-shadow: 0 0 20px #f1c40f;">
-        <thead>
-            <tr style="background-color: #c1440e; color: #f1c40f; font-family: 'Press Start 2P', cursive;">
-                <th>Rank</th>
-                <th>Nama Karyawan</th>
-                <th>Waktu Keterlambatan</th>
-            </tr>
-        </thead>
-        <tbody>
-            @if($remainingLeaderboard->isNotEmpty())
-                @foreach ($remainingLeaderboard as $item)
-                    @if($loop->iteration <= 7)
-                        <tr style="background-color: #2980b9;">
-                            <td>{{ $loop->iteration + 3 }}</td>
-                            <td>{{ $item->karyawan->nama_lengkap }}</td>
-                            <td>{{ $item->total_keterlambatan }}</td>
-                        </tr>
-                    @endif
-                @endforeach
-            @else
-                <tr>
-                    <td colspan="3" class="text-center">Tidak ada data karyawan lain yang terlambat</td>
-                </tr>
-            @endif
-        </tbody>
-    </table>
-</div>
         </div>
-    </div>
-</div>
     </div>
 </div>
 <style>

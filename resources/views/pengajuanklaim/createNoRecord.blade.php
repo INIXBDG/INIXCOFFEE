@@ -62,6 +62,7 @@
                                     <option selected disabled>Pilih Kendala</option>
                                     <option value="Human Error">Human Error</option>
                                     <option value="System Error">System Error</option>
+                                    <option value="Absen Pulang">Absen Pulang Tidak Terekap</option>
                                 </select>
                                 @error('kendala')
                                 <span class="invalid-feedback" role="alert">

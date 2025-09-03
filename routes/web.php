@@ -11,6 +11,7 @@ use App\Http\Controllers\pengajuanKlaimController;
 use App\Http\Controllers\DashboardItsmController;
 use App\Models\izinTigaJam;
 use App\Http\Controllers\InventarisController;
+use App\Http\Controllers\laporanInsidentController;
 use App\Models\Inventaris;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
@@ -34,6 +35,9 @@ use App\Http\Controllers\InvoiceRKMController;
 // Route::get('/', function () {
 //     return view('auth.login');
 // });
+Route::get('/partials/dashboard', function () {
+    return view('partials.dashboard');
+});
 
 Route::redirect('/', '/login');
 
@@ -239,14 +243,21 @@ Route::get('RekapitulasiAbsenperKaryawanExport/{year}/{month}', [App\Http\Contro
 Route::get('RekapitulasiAbsenperBulanExport/{year}/{month}', [App\Http\Controllers\RekapitulasiAbsenController::class, 'exportperBulan'])->name('RekapitulasiAbsenperBulanExport');
 Route::get('RekapitulasiWaktuKeterlambatanExport/{year}', [App\Http\Controllers\RekapitulasiAbsenController::class, 'exportKeterlambatan'])->name('RekapitulasiWaktuKeterlambatanExport');
 
+route::get('penilaian/data-form/edit/{kode_form}', [App\Http\Controllers\DatabaseKPIController::class, 'formPenilaianEdit']);
+route::post('penilaian/data-form/update', [App\Http\Controllers\DatabaseKPIController::class, 'formPenilaianUpdate'])->name('penilaian.form.update');
+Route::get('/penilaian/form', [App\Http\Controllers\DatabaseKPIController::class, 'formPenilaianData'])->name('penilaian.form.data');
+Route::get('/penilaian/form/get', [App\Http\Controllers\DatabaseKPIController::class, 'getFormPenilaianData'])->name('penilaian.form.get');
+Route::post('/penilaian/clean', [App\Http\Controllers\DatabaseKPIController::class, 'clean']);
+Route::post('/penilaian/hapus', [App\Http\Controllers\DatabaseKPIController::class, 'hapus']);
+Route::get('/penilaian/content/dahsboardKPI/get', [App\Http\Controllers\DatabaseKPIController::class, 'contentDashboard'])->name('databaseKPI.dashboardContent');
 Route::post('/penilaian/detail/send/catatan', [App\Http\Controllers\DatabaseKPIController::class, 'sendCatatan'])->name('penilaian.sendCatatan');
 Route::post('/download-pdf/penilaian-360', [App\Http\Controllers\DatabaseKPIController::class, 'downloadPDF'])->name('penilaian.download.pdf');
 Route::post('/kirimPenilaian', [App\Http\Controllers\DatabaseKPIController::class, 'kirimEmailData'])->name('penilaian.email');
 Route::get('/penilaian/detail/data-penilaian/{kodeForm}/{id_karyawan}', [App\Http\Controllers\DatabaseKPIController::class, 'detailPenilaian'])->name('penilaian.detail');
 Route::post('/penilaian/get/detail/data-penilaian', [App\Http\Controllers\DatabaseKPIController::class, 'GetDetailPenilaian'])->name('penilaian.detail.get');
 Route::post('penilaian/reviewPenilaian', [App\Http\Controllers\DatabaseKPIController::class, 'penilaianReview'])->name('penilaianReview');
-Route::get('reviewPenilaian/{kodeForm}/{evaluatorId}/{jenis}/{idKaryawan}',[App\Http\Controllers\DatabaseKPIController::class, 'reviewPenilaian'])->where('jenis', '.*');
-Route::post('penilaianEvaloator/kirim', [App\Http\Controllers\DatabaseKPIController::class, 'penilaianEvaluator'])->name('penilaianEvaluator');
+Route::get('reviewPenilaian/{kodeForm}/{evaluatorId}/{jenis_penilaian}/{idKaryawan}',[App\Http\Controllers\DatabaseKPIController::class, 'reviewPenilaian']);
+Route::post('penilaianEvaluator/kirim', [App\Http\Controllers\DatabaseKPIController::class, 'penilaianEvaluator'])->name('penilaianEvaluator');
 Route::get('/getFormPenilaian/{kode_form}/{id_karyawan}', [App\Http\Controllers\DatabaseKPIController::class, 'getFromPenilaian'])->name('penilaian.share');
 Route::get('/getFormPenilaianUser/{id_evaluator}', [App\Http\Controllers\DatabaseKPIController::class, 'getFromPenilaianUser'])->name('penilaian.shareUser');
 Route::post('/shareFormPenilaian', [App\Http\Controllers\DatabaseKPIController::class, 'shareForm'])->name('penilaian.shareForm');
@@ -257,29 +268,24 @@ Route::get('/createKategorikpi', [App\Http\Controllers\DatabaseKPIController::cl
 Route::post('/storeKategorikpi', [App\Http\Controllers\DatabaseKPIController::class, 'kategoriStore'])->name('ketegori.kpi.store');
 Route::post('/pengajuan-klaim/excel-download/no-record', [pengajuanKlaimController::class, 'pengajuanKlaimExcel'])->name('pengajuanklaim.excelNoRecord');
 Route::post('/pengajuan-klaim/pdf-download/no-record', [pengajuanKlaimController::class, 'pengajuanKlaimPDF'])->name('pengajuanklaim.PDFNoRecord');
-Route::get('/pengajuan-klaim/create/no-record', [pengajuanKlaimController::class, 'noRecord'])->name('pengajuanklaim.createNoRecord');
-Route::get('/pengajuan-klaim/create/scheme-work', [pengajuanKlaimController::class, 'schemeWork'])->name('pengajuanklaim.createSchemeWork');
-Route::get('/pengajuan-klaim/create/cancel-leave', [pengajuanKlaimController::class, 'createcancelLeave'])->name('pengajuanklaim.createCancelLeave');
+Route::get('/pengajuan-klaim/create/no-record', [pengajuanKlaimController::class, 'noRecord'])->name('pengajuanklaim.NoRecord');
+Route::get('/pengajuan-klaim/create/scheme-work', [pengajuanKlaimController::class, 'schemeWork'])->name('pengajuanklaim.SchemeWork');
+Route::get('/pengajuan-klaim/create/cancel-leave', [pengajuanKlaimController::class, 'cancelLeave'])->name('pengajuanklaim.CancelLeave');
 Route::post('/pengajuan-klaim/add/no-record', [pengajuanKlaimController::class, 'createNoRecord'])->name('pengajuanklaim.addNoRecord');
-Route::post('/pengajuan-klaim/add/scheme-work', [pengajuanKlaimController::class, 'createCancelLeave'])->name('pengajuanklaim.addCancelLeave');
-Route::post('/pengajuan-klaim/add/cancel-leave', [pengajuanKlaimController::class, 'createSchemeWork'])->name('pengajuanklaim.addSchemeWork');
-Route::post('/pengajuan-klaim/aprove/no-record', [pengajuanKlaimController::class, 'approveNoRecord'])->name('pengajuanklaim.approveNoRecord');
-// Approve Scheme Work
-Route::post('/pengajuan-klaim/approve/scheme-work', [pengajuanKlaimController::class, 'approveSchemeWork'])->name('pengajuanklaim.approveSchemeWork');
-
-// Approve Cancel Leave
-Route::post('/pengajuan-klaim/approve/cancel-leave', [pengajuanKlaimController::class, 'approveCancelLeave'])->name('pengajuanklaim.approveCancelLeave');
-
+Route::post('/pengajuan-klaim/add/scheme-work', [pengajuanKlaimController::class, 'createSchemeWork'])->name('pengajuanklaim.addSchemeWork');
+Route::post('/pengajuan-klaim/add/cancel-leave', [pengajuanKlaimController::class, 'createCancelLeave'])->name('pengajuanklaim.addCancelLeave');
+Route::post('/pengajuan-klaim/approval', [pengajuanKlaimController::class, 'approval'])->name('pengajuanklaim.approval');
+Route::post('/pengajuan-klaim/reject', [pengajuanKlaimController::class, 'reject'])->name('pengajuanklaim.reject');
 Route::post('/pengajuan-klaim/delete/no-record', [pengajuanKlaimController::class, 'deleteNoRecord'])->name('pengajuanklaim.deleteNoRecord');
-Route::post('/pengajuan-klaim/delete/scheme-work', [pengajuanKlaimController::class, 'deleteCancelLeave'])->name('pengajuanklaim.deleteCancelLeave');
-Route::post('/pengajuan-klaim/delete/cancel-leave', [pengajuanKlaimController::class, 'deleteSchemeWork'])->name('pengajuanklaim.deleteSchemeWork');
+Route::post('/pengajuan-klaim/delete/cancel-leave', [pengajuanKlaimController::class, ''])->name('pengajuanklaim.deleteCancelLeave');
+Route::post('/pengajuan-klaim/delete/scheme-work', [pengajuanKlaimController::class, 'deleteSchemeWork'])->name('pengajuanklaim.deleteSchemeWork');
 Route::get('/pengajuan-klaim', [pengajuanKlaimController::class, 'index'])->name('pengajuanklaim.index');
 Route::put('notifications/{notification}/read', [App\Http\Controllers\CommentController::class, 'markAsRead'])->name('notifications.markAsRead');
 Route::put('/notifications/markAllAsRead', [App\Http\Controllers\CommentController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
 Route::get('/rkm/{id}/absensi', [App\Http\Controllers\RKMController::class, 'absensiPeserta'])->name('absensiPeserta');
 Route::put('/suratperjalanan/{id}/approval', [App\Http\Controllers\SuratPerjalananController::class, 'approval'])->name('suratperjalanan.approval');
 Route::get('/fetch-attendance', [\App\Http\Controllers\RKMController::class, 'fetchAttendance'])->name('attendance.fetch');
-Route::post('/absensi', [\App\Http\Controllers\AbsensiKaryawanController::class, 'storeAbsensi'])->name('absensi.store');
+Route::post('/absensi', [\App\Http\Controllers\AbsensiKaryawanController::class, 'storeMasuk'])->name('absensi.masuk');
 Route::get('/absensi/karyawan',  [App\Http\Controllers\AbsensiKaryawanController::class, 'absensiKaryawan'])->name('absensi.karyawan');
 Route::get('/absensi/pengajuan-klaim/no-recorded',  [App\Http\Controllers\AbsensiKaryawanController::class, 'noRecord'])->name('absensi.noRecord');
 Route::post('/absensi/approve/pengajuan-klaim/no-recorded',  [App\Http\Controllers\AbsensiKaryawanController::class, 'ApproveNoRecord'])->name('absensi.approveNoRecord');
@@ -293,7 +299,7 @@ Route::post('/absensi/delete/pengajuan-klaim/cancel-leave',  [App\Http\Controlle
 Route::post('/absensi/create/pengajuan-klaim/no-recorded', [App\Http\Controllers\AbsensiKaryawanController::class, 'createNoRecord'])->name('absensi.createNoRecord');
 Route::post('/absensi/create/pengajuan-klaim/cancel-leave', [App\Http\Controllers\AbsensiKaryawanController::class, 'createCancelLeave'])->name('absensi.createCancelLeave');
 Route::post('/absensi/create/pengajuan-klaim/scheme_work', [App\Http\Controllers\AbsensiKaryawanController::class, 'createSchemeWork'])->name('absensi.createSchemeWork');
-Route::post('/absensi/update', [\App\Http\Controllers\AbsensiKaryawanController::class, 'update'])->name('absensi.update');
+Route::post('/absensi/update', [\App\Http\Controllers\AbsensiKaryawanController::class, 'storeKeluar'])->name('absensi.keluar');
 Route::get('/absensi/{id}/edit', [App\Http\Controllers\RekapitulasiAbsenController::class, 'edit'])->name('absensi.edit');
 Route::get('/absensi/create', [App\Http\Controllers\AbsensiKaryawanController::class, 'create'])->name('absensi.create');
 Route::post('/absensi/manual', [\App\Http\Controllers\AbsensiKaryawanController::class, 'absenManual'])->name('absensi.manual');
@@ -378,3 +384,14 @@ Route::get('/invoice/{id}/edit', [InvoiceRKMController::class, 'edit'])->name('i
 Route::put('/invoice/{id}', [InvoiceRKMController::class, 'update'])->name('invoice.update');
 Route::delete('/invoice/{id}', [InvoiceRKMController::class, 'destroy'])->name('invoice.destroy');
 
+
+//laporan-insiden-route
+Route::get('/laporan-insiden', [laporanInsidentController::class, 'index'])->name('index.laporanInsiden');
+Route::get('/laporan-insiden/get', [laporanInsidentController::class, 'get'])->name('get.laporanInsiden');
+Route::get('/laporan-insiden/form', [laporanInsidentController::class, 'create'])->name('create.laporanInsiden');
+Route::post('/laporan-insiden/store', [laporanInsidentController::class, 'store'])->name('store.laporanInsiden');
+Route::post('/laporan-insiden/respon', [laporanInsidentController::class, 'respon'])->name('respon.laporanInsiden');
+Route::get('/laporan-insiden/detail/{id}', [laporanInsidentController::class, 'detail'])->name('detail.laporanInsiden');
+Route::get('/laporan-insiden/edit/{id}', [laporanInsidentController::class, 'edit'])->name('edit.laporanInsiden');
+Route::get('/laporan-insiden/hapus/{id}', [laporanInsidentController::class, 'hapus'])->name('hapus.laporanInsiden');
+Route::post('/laporan-insiden/update', [laporanInsidentController::class, 'update'])->name('uodate.laporanInsiden');

@@ -8,13 +8,11 @@
         background: #ddd;
         border-radius: 5px;
     }
-
     .auto-height {
         resize: none;
         overflow: hidden;
         min-height: 38px;
     }
-
     input[type="range"].form-range::-webkit-slider-thumb {
         width: 20px;
         height: 20px;
@@ -24,7 +22,38 @@
         border: 2px solid white;
         margin-top: -7px;
     }
+    @media (max-width: 768px) {
+        .container {
+            padding: 0 10px;
+        }
+        .row.align-items-center {
+            flex-direction: column;
+            align-items: flex-start !important;
+            margin-left: 0 !important;
+        }
+        .row.align-items-center label {
+            margin-bottom: 6px;
+            text-align: left !important;
+            padding-left: 0;
+        }
+        .col-md-4, .col-md-6 {
+            width: 100%;
+            max-width: 100%;
+        }
+        .text-end {
+            text-align: center !important;
+            margin-right: 0 !important;
+        }
+        .btn {
+            width: 100%;
+            padding: 12px;
+        }
+        .card {
+            margin-bottom: 20px;
+        }
+    }
 </style>
+
 @if (session('success'))
 <script>
     Swal.fire({
@@ -58,7 +87,7 @@
 </script>
 @endif
 
-<div class="container mb-5">
+<div class="container mb-5 mt-4">
     <a href="javascript:history.back()" class="btn text-white cl-blue mb-3">Kembali</a>
 
     <div class="row justify-content-center">
@@ -100,7 +129,7 @@
 
                         @foreach ($penilaianItem['items'] as $sub)
                         <div class="mb-3 row align-items-center ml-1">
-                            <label class="col-md-4 col-form-label ml-5">
+                            <label class="col-md-4 col-form-label ml-1">
                                 {{ $sub['judul'] }} :
                             </label>
                             <div class="col-md-6">
@@ -108,7 +137,6 @@
                                 <input type="text" class="form-control" value="{{ $sub['nilai'] }}" disabled>
                                 @else
                                 <input type="hidden" name="id_nilai[]" value="{{ $sub['id_nilaiKPI'] }}">
-
                                 @if ($sub['tipe'] === 'text')
                                 @php $tampilkanTombol = true; @endphp
                                 <input type="number" name="nilai[]" class="form-control" placeholder="Masukkan nilai...">
