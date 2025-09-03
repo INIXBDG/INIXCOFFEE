@@ -710,7 +710,10 @@ class DatabaseKPIController extends Controller
             }
 
             DB::commit();
-            return redirect()->back()->with('success', 'Terima kasih telah menilai. Penilaian Anda berhasil disimpan.');
+            return redirect()->route('formPenilaian.show', [
+                'kode_form' => $kode_form,
+                'id_evaluated' => $id_evaluated
+            ])->with('success', 'Terima kasih telah menilai. Penilaian Anda berhasil disimpan.');
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', 'Terjadi kesalahan saat menyimpan: ' . $e->getMessage());
@@ -933,7 +936,7 @@ class DatabaseKPIController extends Controller
                 foreach ($users as $user) {
                     $dummyComment = (object)[
                         'karyawan_key' => $karyawan->karyawan_id,
-                        'content'      => $karyawan->nama_lengkap . ' dapat mengisi formulir PENILAIAN KINERJA ' . strtoupper($karyawanEvaluated->nama_lengkap) . ' untuk ' . $quarterLabel,
+                        'content'      => $karyawan->nama_lengkap . ' dapat mengisi formulir PENILAIAN KINERJA 360 ' . strtoupper($karyawanEvaluated->nama_lengkap) . ' untuk ' . $quarterLabel,
                     ];
 
                     $url = url('getFormPenilaian/' . $kode_form . '/' . $id_evaluated);

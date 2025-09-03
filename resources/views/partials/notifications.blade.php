@@ -110,7 +110,7 @@
             </div>
         </div>
     @endif
-    @if ($notification->data['message']['tipe'] == 'Penilaian')
+    @if ($notification->data['message']['tipe'] == 'Penilaian 360')
         <div class="notification mb-3">
             <p>Mohon untuk <strong style="text-transform: capitalize;">{{ $notification->data['message']['content'] }}</strong>. terima kasih
             <p>Dibuat Pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>

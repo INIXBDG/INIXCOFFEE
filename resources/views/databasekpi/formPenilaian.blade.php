@@ -172,13 +172,13 @@
                         </div>
                         @endforeach
                     </div>
-                    @elseif (!empty($outputData))
+                    <!-- @elseif (!empty($outputData))
                     <div class="card rounded-0 rounded-bottom shadow-sm">
                         <div class="card-body">
                             @include('databasekpi.formPenilaianUser', ['data' => $outputData[0], 'index' => 0])
                         </div>
                     </div>
-                    @endif
+                    @endif -->
                 </div>
             </div>
         </div>
