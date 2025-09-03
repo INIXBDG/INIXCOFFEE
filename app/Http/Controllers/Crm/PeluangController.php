@@ -522,6 +522,7 @@ class PeluangController extends Controller
             'freshMoney' => 'nullable|numeric',
             'entertaint' => 'nullable|numeric',
             'souvenir' => 'nullable|numeric',
+            'desc'     => 'nullable',
             'tanggalPayment' => 'required|date',
             'tipePembayaran' => 'required|string',
         ]);
@@ -534,6 +535,7 @@ class PeluangController extends Controller
             'fresh_money' => $request->freshMoney,
             'entertaint' => $request->entertaint,
             'souvenir' => $request->souvenir,
+            'desc' => $request->desc,
             'tgl_pa' => $request->tanggalPayment,
             'tipe_pembayaran' => $request->tipePembayaran,
         ];
