@@ -139,22 +139,22 @@
         $bobotJenis = match ($jenis) {
         'General Manager' => 35,
         'Manager/Team Leader/SPV', 'Manager/SPV/Team Leader (Atasan Langsung)' => 30,
-        'Rekan Kerja' => 20,
+        'Rekan Kerja (Satu Divisi)' => 20,
         'Pekerja (Beda Divisi)' => 10,
-        'Self Appraisal' => 5,
+        'Self Apprisial' => 5,
         default => 0,
         };
 
         $finalJenis = ($rataRataJenis * $bobotJenis) / 100;
         $totalKeseluruhanGlobal += $finalJenis;
 
-        if ($finalJenis >= 90) {
+        if ($totalKeseluruhanGlobal >= 90) {
         $grade = 'A'; $keterangan = 'Sangat Baik';
-        } elseif ($finalJenis >= 80) {
+        } elseif ($totalKeseluruhanGlobal >= 80) {
         $grade = 'B'; $keterangan = 'Baik';
-        } elseif ($finalJenis >= 70) {
+        } elseif ($totalKeseluruhanGlobal >= 70) {
         $grade = 'C'; $keterangan = 'Cukup';
-        } elseif ($finalJenis >= 60) {
+        } elseif ($totalKeseluruhanGlobal >= 60) {
         $grade = 'D'; $keterangan = 'Kurang';
         } else {
         $grade = 'E'; $keterangan = 'Sangat Kurang';
@@ -176,8 +176,6 @@
                     <th>Jenis Penilaian</th>
                     <th>Rata-rata</th>
                     <th>Total Setelah Bobot</th>
-                    <th>Kriteria</th>
-                    <th>Grade</th>
                 </tr>
             </thead>
             <tbody>
@@ -186,12 +184,16 @@
                     <td class="text-center">{{ $row['jenis'] }}</td>
                     <td class="text-center">{{ number_format($row['rata'], 2) }}</td>
                     <td class="text-center">{{ number_format($row['final'], 2) }}</td>
-                    <td class="text-center">{{ $row['keterangan'] }}</td>
-                    <td class="text-center">{{ $row['grade'] }}</td>
                 </tr>
                 @endforeach
                 <tr>
-                    <td colspan="5" class="text-right"><strong>Total Keseluruhan : {{ number_format($totalKeseluruhanGlobal, 2) }}</strong></td>
+                    <td colspan="3" class="text-right"><strong>Total Keseluruhan : {{ number_format($totalKeseluruhanGlobal, 2) }}</strong></td>
+                </tr>
+                <tr>
+                    <td colspan="3" class="text-right"><strong>Kriteria : {{ $keterangan }}</strong></td>
+                </tr>
+                <tr>
+                    <td colspan="3" class="text-right"><strong>Grade : {{ $grade }}</strong></td>
                 </tr>
             </tbody>
         </table>
@@ -210,9 +212,10 @@
             </tr>
         </table>
 
-        <label for="catatan">Catatan : 
-        <br><span style="width: 200px;">{{ $formGroup['evaluated']['catatan'] }}</span></label>  
+        <label for="catatan">Catatan :
+            <br><span style="width: 200px;">{{ $formGroup['evaluated']['catatan'] }}</span></label>
     </div>
     @endforeach
 </body>
+
 </html>

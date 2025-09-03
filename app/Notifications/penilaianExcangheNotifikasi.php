@@ -34,7 +34,7 @@ class penilaianExcangheNotifikasi extends Notification
             'user' => auth()->user()->username,
             'message' => [
                 'karyawan_key' => $this->comment->karyawan_key,
-                'tipe' => 'Penilaian',
+                'tipe' => 'Penilaian 360',
                 'content' => $this->comment->content,
             ],
             'path' => $this->path,
