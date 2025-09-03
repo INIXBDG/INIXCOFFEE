@@ -72,18 +72,18 @@ class TicketController extends Controller
 
         // Kirim notifikasi Telegram ke admin (ganti dengan chat id admin Anda)
         $adminChatId = 2021670238;
-        $message = "Ticket baru dibuat:\n"
-            . "ID: {$ticket->id}\n"
+        $message = "Ada Ticketing Masuk:\n"
             . "Nama Karyawan: {$ticket->nama_karyawan}\n"
             . "Divisi: {$ticket->divisi}\n"
             . "Kategori: {$ticket->kategori}\n"
             . "Keperluan: {$ticket->keperluan}\n"
-            . "Detail Kendala: {$ticket->detail_kendala}";
+            . "Detail Kendala: {$ticket->detail_kendala}\n"
+            . "Mohon untuk segera dikerjakan. Terimakasih!";
 
-        Telegram::sendMessage([
-            'chat_id' => $adminChatId,
-            'text' => $message,
-        ]);
+        // Telegram::sendMessage([
+        //     'chat_id' => $adminChatId,
+        //     'text' => $message,
+        // ]);
 
         $spreadsheetId = '1k_NRI52B-alnGVeLTGB8cecL3f1G-C7_WCVGnQQGe9Y';
         $range = 'Form Responses 1!A:H';  // Pastikan nama sheet dan kolom sesuai di Spreadsheet Anda
@@ -91,6 +91,13 @@ class TicketController extends Controller
         $detail_kendala_ts = '';
         $detail_kendala_pr = '';
         $detail_kendala_td = '';
+
+        $response = Http::withHeaders([
+            'Authorization' => 'eGKWto6VRxd93cPSf9JZ',
+        ])->post('https://api.fonnte.com/send', [
+            'target'  => '120363418574215044@g.us', // pakai Group ID
+            'message' => $message,
+        ]);
 
         if ($ticket->keperluan == 'Technical Support') {
             $detail_kendala_ts = $ticket->detail_kendala;
