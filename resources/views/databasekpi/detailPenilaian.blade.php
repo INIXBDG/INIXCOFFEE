@@ -4,7 +4,6 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <style>
     #table-fixed thead th {
         position: sticky;
@@ -26,6 +25,48 @@
         height: 0;
     }
 
+    @media (max-width: 768px) {
+        #jenis-penilaian-tab {
+            flex-direction: column !important;
+            overflow-x: unset;
+            width: 100%;
+        }
+
+        #jenis-penilaian-tab .list-group-item {
+            text-align: left;
+        }
+    }
+
+    #table-fixed {
+        width: 100%;
+        table-layout: auto;
+        border-collapse: collapse;
+    }
+
+    #table-fixed th,
+    #table-fixed td {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        white-space: normal;
+        text-align: center;
+        padding: 0.25rem 0.5rem;
+        font-size: 12px;
+    }
+
+    #table-fixed td.text-left,
+    #table-fixed th.text-left {
+        text-align: left;
+    }
+
+    @media (max-width: 480px) {
+
+        #table-fixed th,
+        #table-fixed td {
+            font-size: 10px;
+            padding: 0.2rem 0.3rem;
+        }
+    }
+
     .stylish-textarea {
         border: 1.5px solid #ced4da;
         border-radius: 12px;
@@ -42,6 +83,62 @@
         background-color: #ffffff;
         box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
         outline: none;
+    }
+
+    #table-fixed {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    #table-fixed thead th {
+        white-space: nowrap;
+        background-color: var(--bs-body-bg) !important;
+        color: var(--bs-body-color) !important;
+
+    }
+
+    #table-fixed tbody td {
+        white-space: nowrap;
+    }
+
+    .table-responsive-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .form-group label {
+        font-weight: bold;
+    }
+
+    @media (max-width: 768px) {
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 14px;
+        }
+
+        .form-group ul.list-group {
+            font-size: 14px;
+        }
+
+        .stylish-textarea {
+            font-size: 14px;
+        }
+    }
+
+    .evaluator-list {
+        max-height: 200px;
+        overflow-y: scroll;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .evaluator-list::-webkit-scrollbar {
+        display: none;
     }
 </style>
 <div class="container-fluid mb-5 mt-4">
@@ -100,12 +197,6 @@
     @endif
     <div id="shareEmail" class="mb-2 text-start fixed justify-content-start"></div>
 
-    <div class="d-flex justify-content-end me-5">
-        <div>
-            <div class="list-group text-center list-group-horizontal mb-3" id="jenis-penilaian-tab" role="tablist">
-            </div>
-        </div>
-    </div>
     <div class="container text-center">
         <div class="row justify-content-center">
             <div class="col-sm-4 mx-auto">
@@ -117,26 +208,34 @@
             <div class="col-sm-8">
                 <div class="card p-3">
                     <div id="scrollable-table">
-                        <table class="table" id="table-fixed">
-                            <thead>
-                                <tr>
-                                    <th scope="col">Kriteria</th>
-                                    <th scope="col">Sub Kriteria</th>
-                                    <th scope="col">Bobot</th>
-                                    <th scope="col">Nilai</th>
-                                    <th scope="col">Total</th>
-                                </tr>
-                            </thead>
-                            <tbody id="body_content">
-                            </tbody>
-                        </table>
+                        <div class="d-flex justify-content-end me-5">
+                            <div>
+                                <div class="list-group text-center list-group-horizontal mb-3" id="jenis-penilaian-tab" role="tablist">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="table-responsive-wrap">
+                            <table class="table" id="table-fixed bg-theme">
+                                <thead class="bg-theme">
+                                    <tr>
+                                        <th scope="col">Kriteria</th>
+                                        <th scope="col">Sub Kriteria</th>
+                                        <th scope="col">Bobot</th>
+                                        <th scope="col">Nilai</th>
+                                        <th scope="col">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="body_content">
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
-                <div class="card p-3 mt-4">
+                <div class="card  bg-theme p-3 mt-4">
                     <div class="title">Data Jumlah Absensi</div>
                     <div id="scrollable-table">
-                        <table class="table" id="table-fixed">
-                            <thead>
+                        <table class="table bg-theme" id="table-fixed">
+                            <thead class="bg-theme">
                                 <tr>
                                     <th scope="col">Telat</th>
                                     <th scope="col">Sakit</th>
@@ -150,53 +249,49 @@
                 </div>
             </div>
         </div>
-        <div class="container">
-            <select id="selectTahun" name="tahun" class="form-control w-25 mt-5 p-2" style="margin-bottom: -40px; margin-top: 40px;">
-            </select>
-            <div class="row">
-                <div class="col-sm">
-                    <div class="text-center mt-5 mb-3">
-                        <h4>Trend Line Tahun Ini</h4>
-                    </div>
+        <div class="container mt-5">
+            <div class="row mb-4">
+                <div class="col-3">
+                    <select id="selectTahun" name="tahun" class="form-control p-2">
+                    </select>
+                </div>
+            </div>
 
-                    <div class="card flex-fill w-100 draggable p-2">
-                        <div class="card-body py-3">
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header text-center">
+                            <h5 class="mb-0">Trend Line Tahun Ini</h5>
+                        </div>
+                        <div class="card-body">
                             <div class="chart chart-sm">
-                                <div class="chartjs-size-monitor">
-                                    <div class="chartjs-size-monitor-expand">
-                                        <div class=""></div>
-                                    </div>
-                                    <div class="chartjs-size-monitor-shrink">
-                                        <div class=""></div>
-                                    </div>
-                                </div>
-                                <canvas id="chartjs-dashboard-line chart-bar" style="display: block; height: 252px; width: 100%;" width="856" height="504" class="chart-bar chartjs-render-monitor"></canvas>
+                                <canvas id="chartjs-dashboard-line chart-bar"
+                                    class="chart-bar chartjs-render-monitor w-100"
+                                    height="252">
+                                </canvas>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-sm">
-                    <div class="text-center mt-5 mb-3">
-                        <h4>Trend Line Progress</h4>
-                    </div>
-                    <div class="card flex-fill w-100 draggable p-2">
-                        <div class="card-body py-3">
+
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header text-center">
+                            <h5 class="mb-0">Trend Line Progress</h5>
+                        </div>
+                        <div class="card-body">
                             <div class="chart chart-sm">
-                                <div class="chartjs-size-monitor">
-                                    <div class="chartjs-size-monitor-expand">
-                                        <div class=""></div>
-                                    </div>
-                                    <div class="chartjs-size-monitor-shrink">
-                                        <div class=""></div>
-                                    </div>
-                                </div>
-                                <canvas id="chartjs-dashboard-line chart-line" style="display: block; height: 252px; width: 100%;" width="856" height="504" class="chart-line chartjs-render-monitor"></canvas>
+                                <canvas id="chartjs-dashboard-line chart-line"
+                                    class="chart-line chartjs-render-monitor w-100"
+                                    height="252">
+                                </canvas>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
     </div>
 </div>
 </div>
@@ -212,16 +307,11 @@
     {{ session('error') }}
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 </div>
-<!-- <div class="form-group mb-3 text-start">
-    <label class="mb-2">Jenis Penilaian</label>
-    <ul class="list-group ms-2">
-        <li class="list-group-item">${jenisPenilaian}</li>
-    </ul>
-</div> -->
 @endif
 @endsection
 @section('script')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -310,9 +400,15 @@
                             @csrf
                             <input type="hidden" name="kodeForm" value="${kodeForm}">
                             <input type="hidden" name="id_karyawan" value="${id_karyawan}">
-                            <button type="submit" class="btn text-white cl-red">
-                                <i class="fa-solid fa-file-pdf"></i> Pdf
-                            </button>
+
+                            <div class="btn-group" role="group">
+                                <button type="submit" name="tipe" value="office" class="btn text-white cl-red">
+                                    <i class="fa-solid fa-file-pdf"></i> Office
+                                </button>
+                                <button type="submit" name="tipe" value="non_office" class="btn text-white cl-red">
+                                    <i class="fa-solid fa-file-pdf"></i> Non Office
+                                </button>
+                            </div>
                         </form>
                     </div>
                 `;
@@ -350,10 +446,10 @@
                 content_utama.append(`
                     <div class="form-group mb-3 text-start">
                         <label class="mb-2">Evaluator</label>
-                        <ul class="list-group ms-2">${listEvaluatorHTML}</ul>
+                        <ul class="list-group ms-2 evaluator-list">${listEvaluatorHTML}</ul>
                     </div>
                     <div class="form-group mb-3 text-start">
-                        <label class="mb-2">Evaluated</label>
+                        <label class="mb-2">Yang Dinilai</label>
                         <ul class="list-group ms-2"><li class="list-group-item">${globalEvaluated.nama}</li></ul>
                     </div>
                     <div class="form-group mb-3 text-start">
@@ -373,7 +469,9 @@
 
                         <div class="form-group mb-3 text-start">
                             <label class="mb-2">Catatan</label>
-                            <textarea class="list-group ms-2 form-control stylish-textarea" placeholder="berikan catatan..." rows="4" name="catatan">${globalEvaluated.catatan === 'null' | globalEvaluated.catatan === null ? '' : globalEvaluated.catatan}</textarea>
+                            <textarea class="list-group ms-2 form-control stylish-textarea bg-theme border-none" placeholder="berikan catatan..." rows="4" name="catatan">
+                                ${globalEvaluated.catatan === 'null' || globalEvaluated.catatan === null ? '' : globalEvaluated.catatan}
+                            </textarea>
                         </div>
                         <div class="form-group mb-3 text-end">
                             <button type="submit" class="btn cl-blue text-white">Kirim</button>
@@ -393,7 +491,7 @@
         const persentaseJenis = {
             'General Manager': 35,
             'Manager/SPV/Team Leader (Atasan Langsung)': 30,
-            'Rekan Kerja (Satu Divisi)': 16,
+            'Rekan Kerja (Satu Divisi)': 20,
             'Pekerja (Beda Divisi)': 10,
             'Self Apprisial': 5
         };
@@ -418,12 +516,12 @@
 
         filteredEvaluators.forEach((evaluator) => {
             content.append(`
-                <tr>
-                    <td colspan="5" class="bg-light fw-bold">
-                        ${evaluator.nama} - ${evaluator.jenis_penilaian}
-                    </td>
-                </tr>
-            `);
+            <tr>
+                <td colspan="5" class="bg-theme fw-bold">
+                    ${evaluator.nama} - ${evaluator.jenis_penilaian}
+                </td>
+            </tr>
+        `);
 
             let nilaiList = evaluator.nilai;
             let nilaiIndex = 0;
@@ -445,14 +543,14 @@
                     totalSkorEvaluator += skor;
 
                     content.append(`
-                        <tr>
-                            ${idxSub === 0 ? `<td rowspan="${rowspan}" class="text-left">${kriteria.kriteria}</td>` : ''}
-                            <td class="text-start">${sub.sub_kriteria}</td>
-                            <td>${bobot} %</td>
-                            <td>${nilai}</td>
-                            <td>${skor.toFixed(2)}</td>
-                        </tr>
-                    `);
+                    <tr>
+                        ${idxSub === 0 ? `<td rowspan="${rowspan}" class="text-left">${kriteria.kriteria}</td>` : ''}
+                        <td style="text-align: left;">${sub.sub_kriteria}</td>
+                        <td>${bobot} %</td>
+                        <td>${nilai}</td>
+                        <td>${skor.toFixed(2)}</td>
+                    </tr>
+                `);
                 });
             });
 
@@ -461,13 +559,13 @@
             }
 
             content.append(`
-                <tr class="fw-bold text-center text-white" style="background: #7F8CAA">
-                    <td colspan="4" class="text-center mb-3">
-                    Total (${evaluator.nama})
-                    </td>
-                    <td>${totalSkorEvaluator.toFixed(2)}</td>
-                </tr>
-            `);
+            <tr class="fw-bold text-center text-white" style="background: #7F8CAA">
+                <td colspan="4" class="text-center mb-3">
+                Total (${evaluator.nama})
+                </td>
+                <td>${totalSkorEvaluator.toFixed(2)}</td>
+            </tr>
+        `);
         });
 
         let totalSemuaSkor = 0;
@@ -475,9 +573,10 @@
         for (const [jenis, skorList] of Object.entries(groupSkor)) {
             if (skorList.length > 0) {
                 const total = skorList.reduce((a, b) => a + b, 0);
-                const rata2 = total / skorList.length;
-                const persen = persentaseJenis[jenis] ?? 0;
-                const skorFinal = (rata2 * persen) / 100;
+                const rataRata = total / skorList.length;
+                const persen = parseFloat(persentaseJenis[jenis]) || 0;
+                const skorFinal = (rataRata * persen) / 100;
+
                 totalSemuaSkor += skorFinal;
             }
         }
@@ -512,8 +611,8 @@
                 <td colspan="1" class="text-center">${keterangan}</td>
             </tr>
             <tr class="fw-bold text-white" style="background: #546E7A">
-                <td colspan="4" class="text-center">Grade</td>
-                <td colspan="1" class="text-end">${grade}</td>
+                <td colspan="4" class="text-end">Grade</td>
+                <td colspan="1" class="text-center">${grade}</td>
             </tr>
         `);
 
@@ -522,6 +621,7 @@
         tampilkanChartTahunIni(globalTahun, totalSemuaSkor);
         tampilkanChartSemuaTahun(dataTotalPerTahun);
     }
+
     $(document).on('click', '#kirimEmail', function(e) {
         e.preventDefault();
 
