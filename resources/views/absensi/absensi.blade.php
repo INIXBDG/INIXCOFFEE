@@ -692,7 +692,7 @@
                         </div>
             </div> 
         </div>
-<<<<<<< HEAD
+
 <div class="col-md-6">
     <div class="card my-2 leaderboard" style="background-color: #2c3e50; border: 4px solid #f1c40f; box-shadow: 0 0 10px #f1c40f;">
         <div class="card-body">
@@ -776,7 +776,7 @@
                     </tbody>
                 </table>
             </div>
-=======
+
         <div class="col-md-6">
             <div class="card my-2" style="background-color: #2c3e50; border: 4px solid #f1c40f; box-shadow: 0 0 10px #f1c40f;">
                 <div class="card-body">
@@ -862,7 +862,93 @@
                     </div>
                 </div>
             </div>
->>>>>>> 77ce31ccfab3c1085fbab62136d95ac763fb6a90
+
+        <div class="col-md-6">
+            <div class="card my-2" style="background-color: #2c3e50; border: 4px solid #f1c40f; box-shadow: 0 0 10px #f1c40f;">
+                <div class="card-body">
+                    <div style="text-align: center;">
+                        <h4 style="font-family: 'Press Start 2P', cursive; color: white; background-color: #e74c3c; padding: 1rem; border: 4px solid #c1440e; box-shadow: 0 0 10px #f1c40f; display: inline-block;">
+                            Pahlawan Kesiangan Inixindo
+                        </h4>
+                    </div>
+
+                    <div class="podium d-flex justify-content-center align-items-end gap-3 my-4">
+                        <div class="podium-item text-center p-3 border border-warning" style="background-color: #c1440e; height: 160px; position: relative; width: 150px; display: flex; flex-direction: column; justify-content: flex-end;">
+                            <img src="{{ isset($topKaryawan[1]->foto) ? asset('storage/'.$topKaryawan[1]->foto) : asset('css/default-profile.jpg') }}" alt="Foto Karyawan" class="avatar rounded-circle position-absolute top-0 start-50 translate-middle" style="width: 80px; height: 80px; border: 3px solid #f1c40f; box-shadow: 0 0 10px #f1c40f;" />
+                            <div class="medal fs-4 position-absolute top-0 start-50 translate-middle" style="margin-top: 30px;">🥈</div>
+                            @if(isset($topKaryawan[1]))
+                                <div class="username text-white fw-bold mb-1" style="font-size: 0.9rem;">{{ $topKaryawan[1]->karyawan->nama_lengkap }}</div>
+                                <div class="job-title text-muted" style="font-size: 0.7rem;">{{ $topKaryawan[1]->karyawan->jabatan }}</div>
+                                <div class="score text-warning" style="font-size: 0.8rem;">{{ $topKaryawan[1]->total_keterlambatan }}</div>
+                            @else
+                                <div class="username text-white fw-bold mb-1" style="font-size: 0.9rem;">Kosong</div>
+                                <div class="job-title text-muted" style="font-size: 0.7rem;">-</div>
+                                <div class="score text-warning" style="font-size: 0.8rem;">-</div>
+                            @endif
+                        </div>
+
+                        <div class="podium-item text-center p-3 border border-warning" style="background-color: #e74c3c; height: 200px; position: relative; width: 150px; display: flex; flex-direction: column; justify-content: flex-end;">
+                            <img src="{{ isset($topKaryawan[0]->foto) ? asset('storage/'.$topKaryawan[0]->foto) : asset('css/default-profile.jpg') }}" alt="Foto Karyawan" class="avatar rounded-circle position-absolute top-0 start-50 translate-middle" style="width: 80px; height: 80px; border: 3px solid #f1c40f; box-shadow: 0 0 10px #f1c40f;" />
+                            <div class="medal fs-4 position-absolute top-0 start-50 translate-middle" style="margin-top: 30px;">🥇</div>
+                            @if(isset($topKaryawan[0]))
+                                <div class="username text-white fw-bold mb-1" style="font-size: 0.9rem;">{{ $topKaryawan[0]->karyawan->nama_lengkap }}</div>
+                                <div class="job-title text-muted" style="font-size: 0.7rem;">{{ $topKaryawan[0]->karyawan->jabatan }}</div>
+                                <div class="score text-warning" style="font-size: 0.8rem;">{{ $topKaryawan[0]->total_keterlambatan }}</div>
+                            @else
+                                <div class="username text-white fw-bold mb-1" style="font-size: 0.9rem;">Kosong</div>
+                                <div class="job-title text-muted" style="font-size: 0.7rem;">-</div>
+                                <div class="score text-warning" style="font-size: 0.8rem;">-</div>
+                            @endif
+                        </div>
+
+                        <div class="podium-item text-center p-3 border border-warning" style="background-color: #cd7f32; height: 140px; position: relative; width: 150px; display: flex; flex-direction: column; justify-content: flex-end;">
+                            <img src="{{ isset($topKaryawan[2]->foto) ? asset('storage/'.$topKaryawan[2]->foto) : asset('css/default-profile.jpg') }}" alt="Foto Karyawan" class="avatar rounded-circle position-absolute top-0 start-50 translate-middle" style="width: 80px; height: 80px; border: 3px solid #f1c40f; box-shadow: 0 0 10px #f1c40f;" />
+                            <div class="medal fs-4 position-absolute top-0 start-50 translate-middle" style="margin-top: 30px;">🥉</div>
+                            @if(isset($topKaryawan[2]))
+                                <div class="username text-white fw-bold mb-1" style="font-size: 0.9rem;">{{ $topKaryawan[2]->karyawan->nama_lengkap }}</div>
+                                <div class="job-title text-muted" style="font-size: 0.7rem;">{{ $topKaryawan[2]->karyawan->jabatan }}</div>
+                                <div class="score text-warning" style="font-size: 0.8rem;">{{ $topKaryawan[2]->total_keterlambatan }}</div>
+                            @else
+                                <img src="{{ asset('css/default-profile.jpg') }}" alt="Foto Karyawan" class="avatar rounded-circle position-absolute top-0 start-50 translate-middle" style="width: 80px; height: 80px; border: 3px solid #f1c40f; box-shadow: 0 0 10px #f1c40f;" />
+                                <div class="medal fs-4 position-absolute top-0 start-50 translate-middle" style="margin-top: 30px;">🥉</div>
+                                <div class="username text-white fw-bold mb-1" style="font-size: 0.9rem;">Kosong</div>
+                                <div class="job-title text-muted" style="font-size: 0.7rem;">-</div>
+                                <div class="score text-warning" style="font-size: 0.8rem;">-</div>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered text-white text-center" style="background-color: #3498db; border: 4px solid #e74c3c; box-shadow: 0 0 20px #f1c40f;">
+                            <thead>
+                                <tr style="background-color: #c1440e; color: #f1c40f; font-family: 'Press Start 2P', cursive;">
+                                    <th>Rank</th>
+                                    <th>Nama Karyawan</th>
+                                    <th>Waktu Keterlambatan</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if($remainingLeaderboard->isNotEmpty())
+                                    @foreach ($remainingLeaderboard as $item)
+                                        @if($loop->iteration <= 7)
+                                            <tr style="background-color: #2980b9;">
+                                                <td>{{ $loop->iteration + 3 }}</td>
+                                                <td>{{ $item->karyawan->nama_lengkap }}</td>
+                                                <td>{{ $item->total_keterlambatan }}</td>
+                                            </tr>
+                                        @endif
+                                    @endforeach
+                                @else
+                                    <tr>
+                                        <td colspan="3" class="text-center">Tidak ada data karyawan lain yang terlambat</td>
+                                    </tr>
+                                @endif
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
