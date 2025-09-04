@@ -504,9 +504,17 @@ function tableFinance(){
         success: function(data) {
             $('#loadingModal').modal('hide');
             console.log(data.data);
-            var dataSelesai = data.data.filter(item => item.tracking.tracking === 'Selesai' || item.tracking.tracking.includes("tolak"));
-            var dataBelum = data.data.filter(item => item.tracking.tracking !== 'Selesai' && !item.tracking.tracking.includes("tolak"));
-            var dataHasInvoice = data.data.filter(item => item.tracking.tracking !== 'Selesai' && !item.tracking.tracking.includes("tolak") && item.invoice);
+var dataSelesai = data.data.filter(item =>
+    item.tracking.tracking === 'Selesai' || item.tracking.tracking.includes("tolak")
+);
+
+var dataHasInvoice = data.data.filter(item =>
+    item.invoice && item.tracking.tracking !== 'Selesai' && !item.tracking.tracking.includes("tolak")
+);
+
+var dataBelum = data.data.filter(item =>
+    !item.invoice && item.tracking.tracking !== 'Selesai' && !item.tracking.tracking.includes("tolak")
+);
 
             let totalItemsSelesai = dataSelesai.length;
             let totalHargaSelesai = 0;
@@ -808,22 +816,24 @@ var datasudahinvTable = $('#datasudahinv').DataTable({
         },
         {
             "data": null,
-            "render": function(data, type, row) {
-                let actions = `
-                    <div class="dropdown">
-                        <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>
-                        <div class="dropdown-menu">
-                            <a class="dropdown-item" href="/pengajuanbarang/${row.id}">
-                                <img src="{{ asset('icon/clipboard-primary.svg') }}"> Detail
-                            </a>
-                            <a class="dropdown-item" href="/invoice/${row.invoice?.id}">
-                                <img src="{{ asset('icon/file-text.svg') }}"> Lihat Invoice
-                            </a>
-                        </div>
-                    </div>
-                `;
-                return actions;
-            }
+"render": function(data, type, row) {
+    let actions = `
+        <div class="dropdown">
+            <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>
+            <div class="dropdown-menu">
+                <a class="dropdown-item" href="/pengajuanbarang/${row.id}">
+                    <img src="{{ asset('icon/clipboard-primary.svg') }}"> Detail
+                </a>
+                ${row.invoice ? `
+                <a class="dropdown-item" href="/storage/${row.invoice}" target="_blank">
+                    <img src="{{ asset('icon/file-text.svg') }}"> Lihat Invoice
+                </a>` : ``}
+            </div>
+        </div>
+    `;
+    return actions;
+}
+
         }
     ],
     order: [[0, 'desc']]

@@ -962,4 +962,25 @@ class RKMController extends Controller
 
         return view('rkm.show', compact('rkm', 'comments', 'ids', 'params', 'materi_key', 'souvenir'));
     }
+
+    public function updateMakanan(Request $request, $id)
+{
+    $rkm = RKM::find($id); // jangan langsung OrFail biar bisa handle error sendiri
+    if (!$rkm) {
+        return response()->json([
+            'status' => false,
+            'message' => 'RKM tidak ditemukan'
+        ], 404);
+    }
+
+    $rkm->makanan = $request->makanan;
+    $rkm->save();
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Makanan berhasil diperbarui'
+    ]);
+}
+
+
 }

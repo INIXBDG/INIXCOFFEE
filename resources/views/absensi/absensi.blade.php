@@ -695,7 +695,7 @@
             </div> 
         </div>
 <div class="col-md-6">
-    <div class="card my-2" style="background-color: #2c3e50; border: 4px solid #f1c40f; box-shadow: 0 0 10px #f1c40f;">
+    <div class="card my-2 leaderboard" style="background-color: #2c3e50; border: 4px solid #f1c40f; box-shadow: 0 0 10px #f1c40f;">
         <div class="card-body">
             <div style="text-align: center;">
                 <h4 style="font-family: 'Press Start 2P', cursive; color: white; background-color: #e74c3c; padding: 1rem; border: 4px solid #c1440e; box-shadow: 0 0 10px #f1c40f; display: inline-block;">
@@ -704,79 +704,79 @@
             </div>
 
             <div class="podium d-flex justify-content-center align-items-end gap-3 my-4">
-                <div class="podium-item text-center p-3 border border-warning" style="background-color: #c1440e; height: 160px; position: relative; width: 150px; display: flex; flex-direction: column; justify-content: flex-end;">
-                    <img src="{{ isset($topKaryawan[1]->foto) ? asset('storage/'.$topKaryawan[1]->foto) : asset('css/default-profile.jpg') }}" alt="Foto Karyawan" class="avatar rounded-circle position-absolute top-0 start-50 translate-middle" style="width: 80px; height: 80px; border: 3px solid #f1c40f; box-shadow: 0 0 10px #f1c40f;" />
-                    <div class="medal fs-4 position-absolute top-0 start-50 translate-middle" style="margin-top: 30px;">🥈</div>
+                <div class="podium-item second text-center p-3 border border-warning" style="position: relative;">
+                    <img src="{{ isset($topKaryawan[1]->foto) ? asset('storage/'.$topKaryawan[1]->foto) : asset('css/default-profile.jpg') }}" alt="Foto Karyawan" class="avatar rounded-circle position-absolute top-0 start-50 translate-middle" />
+                    <div class="medal fs-4 position-absolute top-0 start-50 translate-middle">🥈</div>
                     @if(isset($topKaryawan[1]))
-                        <div class="username text-white fw-bold mb-1" style="font-size: 0.9rem;">{{ $topKaryawan[1]->karyawan->nama_lengkap }}</div>
-                        <div class="job-title text-muted" style="font-size: 0.7rem;">{{ $topKaryawan[1]->karyawan->jabatan }}</div>
-                        <div class="score text-warning" style="font-size: 0.8rem;">{{ $topKaryawan[1]->total_keterlambatan }}</div>
+                        <div class="username text-white fw-bold mb-1">{{ $topKaryawan[1]->karyawan->nama_lengkap }}</div>
+                        <div class="job-title text-muted">{{ $topKaryawan[1]->karyawan->jabatan }}</div>
+                        <div class="score text-warning">{{ $topKaryawan[1]->total_keterlambatan }}</div>
                     @else
-                        <div class="username text-white fw-bold mb-1" style="font-size: 0.9rem;">Kosong</div>
-                        <div class="job-title text-muted" style="font-size: 0.7rem;">-</div>
-                        <div class="score text-warning" style="font-size: 0.8rem;">-</div>
+                        <div class="username text-white fw-bold mb-1">Kosong</div>
+                        <div class="job-title text-muted">-</div>
+                        <div class="score text-warning">-</div>
                     @endif
                 </div>
 
-                <div class="podium-item text-center p-3 border border-warning" style="background-color: #e74c3c; height: 200px; position: relative; width: 150px; display: flex; flex-direction: column; justify-content: flex-end;">
-                    <img src="{{ isset($topKaryawan[0]->foto) ? asset('storage/'.$topKaryawan[0]->foto) : asset('css/default-profile.jpg') }}" alt="Foto Karyawan" class="avatar rounded-circle position-absolute top-0 start-50 translate-middle" style="width: 80px; height: 80px; border: 3px solid #f1c40f; box-shadow: 0 0 10px #f1c40f;" />
-                    <div class="medal fs-4 position-absolute top-0 start-50 translate-middle" style="margin-top: 30px;">🥇</div>
+                <div class="podium-item first text-center p-3 border border-warning" style="position: relative;">
+                    <img src="{{ isset($topKaryawan[0]->foto) ? asset('storage/'.$topKaryawan[0]->foto) : asset('css/default-profile.jpg') }}" alt="Foto Karyawan" class="avatar rounded-circle position-absolute top-0 start-50 translate-middle" />
+                    <div class="medal fs-4 position-absolute top-0 start-50 translate-middle">🥇</div>
                     @if(isset($topKaryawan[0]))
-                        <div class="username text-white fw-bold mb-1" style="font-size: 0.9rem;">{{ $topKaryawan[0]->karyawan->nama_lengkap }}</div>
-                        <div class="job-title text-muted" style="font-size: 0.7rem;">{{ $topKaryawan[0]->karyawan->jabatan }}</div>
-                        <div class="score text-warning" style="font-size: 0.8rem;">{{ $topKaryawan[0]->total_keterlambatan }}</div>
+                        <div class="username text-white fw-bold mb-1">{{ $topKaryawan[0]->karyawan->nama_lengkap }}</div>
+                        <div class="job-title text-muted">{{ $topKaryawan[0]->karyawan->jabatan }}</div>
+                        <div class="score text-warning">{{ $topKaryawan[0]->total_keterlambatan }}</div>
                     @else
-                        <div class="username text-white fw-bold mb-1" style="font-size: 0.9rem;">Kosong</div>
-                        <div class="job-title text-muted" style="font-size: 0.7rem;">-</div>
-                        <div class="score text-warning" style="font-size: 0.8rem;">-</div>
+                        <div class="username text-white fw-bold mb-1">Kosong</div>
+                        <div class="job-title text-muted">-</div>
+                        <div class="score text-warning">-</div>
                     @endif
                 </div>
 
-                <div class="podium-item text-center p-3 border border-warning" style="background-color: #cd7f32; height: 140px; position: relative; width: 150px; display: flex; flex-direction: column; justify-content: flex-end;">
-                    <img src="{{ isset($topKaryawan[2]->foto) ? asset('storage/'.$topKaryawan[2]->foto) : asset('css/default-profile.jpg') }}" alt="Foto Karyawan" class="avatar rounded-circle position-absolute top-0 start-50 translate-middle" style="width: 80px; height: 80px; border: 3px solid #f1c40f; box-shadow: 0 0 10px #f1c40f;" />
-                    <div class="medal fs-4 position-absolute top-0 start-50 translate-middle" style="margin-top: 30px;">🥉</div>
+                <div class="podium-item third text-center p-3 border border-warning" style="position: relative;">
+                    <img src="{{ isset($topKaryawan[2]->foto) ? asset('storage/'.$topKaryawan[2]->foto) : asset('css/default-profile.jpg') }}" alt="Foto Karyawan" class="avatar rounded-circle position-absolute top-0 start-50 translate-middle" />
+                    <div class="medal fs-4 position-absolute top-0 start-50 translate-middle">🥉</div>
                     @if(isset($topKaryawan[2]))
-                        <div class="username text-white fw-bold mb-1" style="font-size: 0.9rem;">{{ $topKaryawan[2]->karyawan->nama_lengkap }}</div>
-                        <div class="job-title text-muted" style="font-size: 0.7rem;">{{ $topKaryawan[2]->karyawan->jabatan }}</div>
-                        <div class="score text-warning" style="font-size: 0.8rem;">{{ $topKaryawan[2]->total_keterlambatan }}</div>
+                        <div class="username text-white fw-bold mb-1">{{ $topKaryawan[2]->karyawan->nama_lengkap }}</div>
+                        <div class="job-title text-muted">{{ $topKaryawan[2]->karyawan->jabatan }}</div>
+                        <div class="score text-warning">{{ $topKaryawan[2]->total_keterlambatan }}</div>
                     @else
-                        <img src="{{ asset('css/default-profile.jpg') }}" alt="Foto Karyawan" class="avatar rounded-circle position-absolute top-0 start-50 translate-middle" style="width: 80px; height: 80px; border: 3px solid #f1c40f; box-shadow: 0 0 10px #f1c40f;" />
-                        <div class="medal fs-4 position-absolute top-0 start-50 translate-middle" style="margin-top: 30px;">🥉</div>
-                        <div class="username text-white fw-bold mb-1" style="font-size: 0.9rem;">Kosong</div>
-                        <div class="job-title text-muted" style="font-size: 0.7rem;">-</div>
-                        <div class="score text-warning" style="font-size: 0.8rem;">-</div>
+                        <img src="{{ asset('css/default-profile.jpg') }}" alt="Foto Karyawan" class="avatar rounded-circle position-absolute top-0 start-50 translate-middle" />
+                        <div class="medal fs-4 position-absolute top-0 start-50 translate-middle">🥉</div>
+                        <div class="username text-white fw-bold mb-1">Kosong</div>
+                        <div class="job-title text-muted">-</div>
+                        <div class="score text-warning">-</div>
                     @endif
                 </div>
             </div>
 
-<div class="table-responsive">
-    <table class="table table-bordered text-white text-center" style="background-color: #3498db; border: 4px solid #e74c3c; box-shadow: 0 0 20px #f1c40f;">
-        <thead>
-            <tr style="background-color: #c1440e; color: #f1c40f; font-family: 'Press Start 2P', cursive;">
-                <th>Rank</th>
-                <th>Nama Karyawan</th>
-                <th>Waktu Keterlambatan</th>
-            </tr>
-        </thead>
-        <tbody>
-            @if($remainingLeaderboard->isNotEmpty())
-                @foreach ($remainingLeaderboard as $item)
-                    @if($loop->iteration <= 7)
-                        <tr style="background-color: #2980b9;">
-                            <td>{{ $loop->iteration + 3 }}</td>
-                            <td>{{ $item->karyawan->nama_lengkap }}</td>
-                            <td>{{ $item->total_keterlambatan }}</td>
+            <div class="table-responsive">
+                <table class="table table-bordered text-white text-center">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Nama Karyawan</th>
+                            <th>Waktu Keterlambatan</th>
                         </tr>
-                    @endif
-                @endforeach
-            @else
-                <tr>
-                    <td colspan="3" class="text-center">Tidak ada data karyawan lain yang terlambat</td>
-                </tr>
-            @endif
-        </tbody>
-    </table>
-</div>
+                    </thead>
+                    <tbody>
+                        @if($remainingLeaderboard->isNotEmpty())
+                            @foreach ($remainingLeaderboard as $item)
+                                @if($loop->iteration <= 7)
+                                    <tr>
+                                        <td>{{ $loop->iteration + 3 }}</td>
+                                        <td>{{ $item->karyawan->nama_lengkap }}</td>
+                                        <td>{{ $item->total_keterlambatan }}</td>
+                                    </tr>
+                                @endif
+                            @endforeach
+                        @else
+                            <tr>
+                                <td colspan="3" class="text-center">Tidak ada data karyawan lain yang terlambat</td>
+                            </tr>
+                        @endif
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
@@ -784,164 +784,224 @@
 </div>
 <style>
 
-    /* Mario-inspired theme variables */
+
+
+/* Mario-inspired theme variables */
 :root {
   --mario-red: #e74c3c;
   --mario-blue: #3498db;
   --mario-yellow: #f1c40f;
   --mario-bg: #2c3e50;
   --mario-brick: #c1440e;
-  --highlight: #27ae60;
 }
 
-/* Container utama untuk leaderboard agar gayanya terisolasi */
-.leaderboard-container {
-    font-family: 'Press Start 2P', cursive;
-    background-color: var(--mario-bg);
-    color: var(--mario-yellow);
-    padding: 2rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+/* Leaderboard card */
+.card.leaderboard {
+  background-color: var(--mario-bg);
+  border: 4px solid var(--mario-yellow);
+  box-shadow: 0 0 10px var(--mario-yellow);
+  margin: 0.5rem 0;
 }
 
-.leaderboard-container h4 {
-    font-size: 1.5rem;
-    background-color: var(--mario-red);
-    color: white;
-    padding: 1rem;
-    border: 4px solid var(--mario-brick);
-    text-align: center;
-    margin-bottom: 2rem;
-    box-shadow: 0 0 10px var(--mario-yellow);
+.card.leaderboard .card-body {
+  padding: 1rem;
 }
 
-.leaderboard-container .podium {
+.card.leaderboard h4 {
+  font-family: 'Press Start 2P', cursive;
+  color: white;
+  background-color: var(--mario-red);
+  padding: 0.8rem;
+  border: 4px solid var(--mario-brick);
+  box-shadow: 0 0 10px var(--mario-yellow);
+  display: inline-block;
+  font-size: 1.2rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.card.leaderboard .podium {
   display: flex;
   justify-content: center;
   align-items: flex-end;
   gap: 1rem;
-  margin-bottom: 3rem;
+  margin: 1.5rem 0;
+  width: 100%;
+  flex-wrap: nowrap;
 }
 
-.leaderboard-container .podium-item {
+.card.leaderboard .podium-item {
   text-align: center;
-  background-color: var(--mario-blue);
-  color: white;
-  padding: 1rem;
   border: 4px solid var(--mario-yellow);
   box-shadow: 0 0 10px var(--mario-yellow);
-  width: 100px;
-  border-radius: 8px;
+  padding: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  position: relative;
+  width: 150px;
   transition: transform 0.3s ease;
 }
 
-.leaderboard-container .podium-item:hover {
+.card.leaderboard .podium-item:hover {
   transform: translateY(-5px);
 }
 
-.leaderboard-container .podium-item .medal {
+.card.leaderboard .podium-item.second {
+  background-color: var(--mario-brick);
+  height: 160px;
+}
+
+.card.leaderboard .podium-item.first {
+  background-color: var(--mario-red);
+  height: 200px;
+}
+
+.card.leaderboard .podium-item.third {
+  background-color: #cd7f32;
+  height: 140px;
+}
+
+.card.leaderboard .podium-item .avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 3px solid var(--mario-yellow);
+  box-shadow: 0 0 10px var(--mario-yellow);
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.card.leaderboard .podium-item .medal {
   font-size: 1.5rem;
+  position: absolute;
+  top: 30px;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
-.leaderboard-container .podium-item .username {
-  margin-top: 0.5rem;
-  font-size: 0.8rem;
-  font-weight: bold;
-}
-
-.leaderboard-container .podium-item .score {
+.card.leaderboard .podium-item .username {
   font-size: 0.9rem;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 0.2rem;
+}
+
+.card.leaderboard .podium-item .job-title {
+  font-size: 0.7rem;
+  color: #bdc3c7;
+}
+
+.card.leaderboard .podium-item .score {
+  font-size: 0.8rem;
   color: var(--mario-yellow);
 }
 
-/* Heights to simulate podium levels */
-.leaderboard-container .first {
-  height: 200px;
-  background-color: var(--mario-red);
-}
-
-.leaderboard-container .second {
-  height: 160px;
-  background-color: var(--mario-brick);
-}
-
-.leaderboard-container .third {
-  height: 140px;
-  background-color: #cd7f32;
-}
-
-.leaderboard-container .podium-item .avatar {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  border: 3px solid var(--mario-yellow);
-  margin-bottom: 0.5rem;
-  box-shadow: 0 0 10px var(--mario-yellow);
-}
-
-.leaderboard-container .leaderboard-table {
-  width: 100%;
-  max-width: 900px;
+.card.leaderboard .table-responsive {
   overflow-x: auto;
-  border: 4px solid var(--mario-red);
-  background-color: var(--mario-blue);
-  box-shadow: 0 0 20px var(--mario-yellow);
+  -webkit-overflow-scrolling: touch;
 }
 
-.leaderboard-container table {
+.card.leaderboard .table {
+  background-color: var(--mario-blue);
+  border: 4px solid var(--mario-red);
+  box-shadow: 0 0 20px var(--mario-yellow);
   width: 100%;
+  min-width: 300px;
   border-collapse: collapse;
 }
 
-.leaderboard-container th, .leaderboard-container td {
-  padding: 1rem;
-  text-align: left;
+.card.leaderboard .table th,
+.card.leaderboard .table td {
+  padding: 0.8rem;
+  text-align: center;
   color: white;
+  font-size: 0.8rem;
 }
 
-.leaderboard-container thead {
+.card.leaderboard .table thead tr {
   background-color: var(--mario-brick);
   color: var(--mario-yellow);
+  font-family: 'Press Start 2P', cursive;
 }
 
-.leaderboard-container tbody tr {
+.card.leaderboard .table tbody tr {
+  background-color: #2980b9;
   transition: background 0.3s ease;
 }
 
-.leaderboard-container tbody tr:nth-child(even) {
-  background-color: #2980b9;
-}
-
-.leaderboard-container tbody tr:hover {
+.card.leaderboard .table tbody tr:hover {
   background-color: #1abc9c;
 }
 
-.leaderboard-container .buttons {
-  margin-top: 1rem;
-}
+/* Mobile view (≤576px) */
+@media (max-width: 576px) {
+  .card.leaderboard {
+    margin: 0.3rem 0;
+  }
 
-.leaderboard-container .buttons button {
-  font-family: 'Press Start 2P', cursive;
-  background-color: var(--mario-red);
-  color: white;
-  padding: 1rem;
-  border: 4px solid var(--mario-yellow);
-  cursor: pointer;
-  transition: transform 0.2s ease;
-}
+  .card.leaderboard .card-body {
+    padding: 0.5rem;
+  }
 
-.leaderboard-container .buttons button:hover {
-  transform: scale(1.05);
-  background-color: var(--mario-yellow);
-  color: black;
-}
+  .card.leaderboard h4 {
+    font-size: 1rem;
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+  }
 
-@media screen and (max-width: 600px) {
-    .leaderboard-container th, .leaderboard-container td {
-      font-size: 0.6rem;
-      padding: 0.5rem;
-    }
+  .card.leaderboard .podium {
+    gap: 0.3rem;
+    margin: 1rem 0;
+  }
+
+  .card.leaderboard .podium-item {
+    width: 100px;
+    padding: 0.5rem;
+  }
+
+  .card.leaderboard .podium-item.first {
+    height: 140px;
+  }
+
+  .card.leaderboard .podium-item.second {
+    height: 110px;
+  }
+
+  .card.leaderboard .podium-item.third {
+    height: 90px;
+  }
+
+  .card.leaderboard .podium-item .avatar {
+    width: 40px;
+    height: 40px;
+    top: -20px;
+  }
+
+  .card.leaderboard .podium-item .medal {
+    font-size: 1.2rem;
+    top: 10px;
+  }
+
+  .card.leaderboard .podium-item .username {
+    font-size: 0.7rem;
+  }
+
+  .card.leaderboard .podium-item .job-title {
+    font-size: 0.6rem;
+  }
+
+  .card.leaderboard .podium-item .score {
+    font-size: 0.7rem;
+  }
+
+  .card.leaderboard .table th,
+  .card.leaderboard .table td {
+    font-size: 0.6rem;
+    padding: 0.5rem;
+  }
 }
     .frame-wrapper {
         position: relative;
