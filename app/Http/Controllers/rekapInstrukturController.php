@@ -32,6 +32,16 @@ class rekapInstrukturController extends Controller
         // return $karyawan;
         return view('rekapinstruktur.index', compact('month', 'year', 'karyawan'));
     }
+
+    public function destroy($id)
+    {
+        $data = rekapMengajarInstruktur::findOrFail($id);
+        // dd($data);
+        $data->delete();
+
+        return redirect()->route('rekapmengajarinstruktur.index')->with(['success' => 'Data Berhasil Dihapus!']);
+    }
+    
     public function getListMengajar($bulan, $tahun)
     {
         // Mengambil id_rkm yang ada dari database
