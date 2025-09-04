@@ -2471,8 +2471,8 @@ Swal.fire({
             console.log('Jam Pulang:', jam_pulang);
             var karyawan = "{{ auth()->user()->karyawan_id }}";
             var jabatan = "{{ auth()->user()->jabatan }}";
-            // var shift = null;
-
+            var hariSekarang = '';
+            var jamSekarang = '';
             var keterangan_pulang = $('input[name="keterangan"]:checked').val();
             if (!keterangan_pulang) {
                 alert('Silakan pilih keterangan pulang.');
