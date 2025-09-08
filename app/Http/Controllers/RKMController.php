@@ -591,6 +591,8 @@ class RKMController extends Controller
         }
         $date = Carbon::now();
         $year = $date->year;
+        $oldData = $post->getOriginal();
+
         $post->update([
             'sales_key' => $request->sales_key,
             'materi_key' => $request->materi_key,
@@ -608,6 +610,11 @@ class RKMController extends Controller
             'authorize' => $authorize,
             'status' => $request->status,
         ]);
+
+        $changes = collect($post->getChanges())
+            ->except(['isi_pax'])
+            ->toArray();
+
         // $HRD = karyawan::where('jabatan', 'HRD')->first() ?? '-';
         $kooroff = karyawan::where('jabatan', 'Koordinator Office')->first() ?? '-';
         $users = array_map(function ($user) {
@@ -617,7 +624,7 @@ class RKMController extends Controller
             $kooroff->kode_karyawan,
         ]);
 
-        $users = User::whereHas('karyawan', function ($query) use ($users) {
+        $users = User::whereHas('karyawan', callback: function ($query) use ($users) {
             $query->whereIn('kode_karyawan', array_filter($users));
         })->get();
 
@@ -638,14 +645,65 @@ class RKMController extends Controller
             $kelas = 'vir';
         }
 
+        $perubahan = [];
+        foreach ($changes as $field => $newValue) {
+            if ($field === 'updated_at') continue;
+            $perubahan[$field] = [
+                'old' => $oldData[$field] ?? null,
+                'new' => $newValue,
+            ];
+        }
+
+
         $data = [
             'nama_materi' => $materi->nama_materi,
             'nama_perusahaan' => $perusahaan->nama_perusahaan,
+            'perubahan' => $perubahan,
+            'user_update' => auth()->user()->username,
         ];
+
+        $bersangkutan = RKM::findOrFail($id);
+
+        $Offman = karyawan::where('jabatan', 'Office Manager')->first();
+        $kooroff = karyawan::where('jabatan', 'Koordinator Office')->first();
+        $Eduman = karyawan::where('jabatan', 'Education Manager')->first();
+        $SPVSales = karyawan::where('jabatan', 'SPV Sales')->first();
+        $GM = karyawan::where('jabatan', 'GM')->first();
+        $CS = karyawan::where('jabatan', 'Customer Care')->first();
+        $TS = karyawan::where('jabatan', 'Technical Support')->first();
+        $sales = karyawan::where('kode_karyawan', $bersangkutan->sales_key)->first();
+        $instrukturs = karyawan::whereIn('kode_karyawan', [
+            $bersangkutan->instruktur_key,
+            $bersangkutan->instruktur_key2,
+            $bersangkutan->asisten_key
+        ])->get();
+
+        $users = array_map(function ($user) {
+            return $user === '-' ? null : $user;
+        }, [
+            $request->sales_key,
+            $Eduman->kode_karyawan ?? null,
+            $Offman->kode_karyawan ?? null,
+            $kooroff->kode_karyawan ?? null,
+            $SPVSales->kode_karyawan ?? null,
+            $GM->kode_karyawan ?? null,
+            $CS->kode_karyawan ?? null,
+            $TS->kode_karyawan ?? null,
+            $sales->kode_karyawan ?? null,
+        ]);
+
+        $instrukturKeys = $instrukturs->pluck('kode_karyawan')->toArray();
+
+        $users = User::whereHas('karyawan', function ($query) use ($users, $instrukturKeys) {
+            $query->whereIn('kode_karyawan', array_filter(array_merge($users, $instrukturKeys)));
+        })->get();
+
         $path = '/rkm/' . $request->materi_key . 'ixb' . $hari . 'ie' . $tahun . 'ie' . $bulan . 'ixb' . $kelas;
+
         foreach ($users as $user) {
             NotificationFacade::send($user, new RKMUpdateNotification($data, $path));
         }
+
         return redirect()->route('rkm.index')->with(['success' => 'Data Berhasil Diubah!']);
     }
     /**
