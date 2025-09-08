@@ -45,188 +45,6 @@ class AbsensiKaryawanController extends Controller
         return view('absensi.create', compact('user'));
     }
 
-    public function storeAbsensi(Request $request)
-    {
-        // Validasi input
-        $validator = Validator::make($request->all(), [
-            'shift' => 'required|in:1,2',
-            'keterangan' => 'required|string',
-            'id_karyawan' => 'required|integer',
-            'foto' => 'required|string',
-            'client_time' => 'sometimes|date'
-        ], [
-            'keterangan.required' => 'Jenis absen harus dipilih',
-            'foto.required' => 'Foto absen wajib diambil'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 400);
-        }
-
-        // Log waktu client-server
-        $this->logTimeDiscrepancy($request);
-
-        // Persiapan data
-        $sekarang = Carbon::now('Asia/Jakarta');
-        $jabatan = $request->input('jabatan') ?? auth()->user()->jabatan;
-
-        // Validasi duplikasi absen
-        if ($this->checkDuplicateAbsen($request->id_karyawan, $sekarang->toDateString())) {
-            return response()->json(['error' => 'Anda sudah melakukan absen masuk hari ini'], 400);
-        }
-
-        // Proses foto
-        $fotoPath = $this->processFoto($request->foto);
-        if (!$fotoPath) {
-            return response()->json(['error' => 'Gagal menyimpan foto absen'], 500);
-        }
-
-        // Validasi shift dan waktu
-        $validationResult = $this->validateShiftWaktu($sekarang, $request->shift, $jabatan);
-        if (!$validationResult['valid']) {
-            return response()->json(['error' => $validationResult['message']], 400);
-        }
-
-        // Simpan data
-        $absensi = AbsensiKaryawan::create([
-            'id_karyawan' => $request->id_karyawan,
-            'tanggal' => $sekarang->toDateString(),
-            'jam_masuk' => $sekarang->toTimeString(),
-            'foto' => $fotoPath,
-            'keterangan' => $validationResult['keterangan'],
-            'waktu_keterlambatan' => $validationResult['keterlambatan'],
-            'shift' => $request->shift
-        ]);
-
-        return response()->json([
-            'success' => 'Absen masuk berhasil',
-            'data' => [
-                'jam_masuk' => $sekarang->format('H:i:s'),
-                'keterangan' => $validationResult['keterangan']
-            ]
-        ]);
-    }
-
-    private function logTimeDiscrepancy(Request $request)
-    {
-        if ($request->client_time) {
-            Log::channel('absensi')->info('Time check masuk', [
-                'server' => now('Asia/Jakarta')->toDateTimeString(),
-                'client' => $request->client_time,
-                'diff_seconds' => now('Asia/Jakarta')->diffInSeconds($request->client_time)
-            ]);
-        }
-    }
-
-    private function checkDuplicateAbsen($idKaryawan, $tanggal)
-    {
-        return AbsensiKaryawan::where('id_karyawan', $idKaryawan)
-            ->where('tanggal', $tanggal)
-            ->exists();
-    }
-
-    private function processFoto($imageData)
-    {
-        try {
-            if (strpos($imageData, 'data:image/jpeg;base64,') === false) {
-                return false;
-            }
-
-            $image = str_replace('data:image/jpeg;base64,', '', $imageData);
-            $image = str_replace(' ', '+', $image);
-            $imageName = 'absensi_' . time() . '.jpeg';
-            $filePath = 'absensi/' . $imageName;
-
-            Storage::put('public/' . $filePath, base64_decode($image));
-            return $filePath;
-        } catch (\Exception $e) {
-            Log::error('Error proses foto: ' . $e->getMessage());
-            return false;
-        }
-    }
-
-    private function validateShiftWaktu($waktu, $shift, $jabatan)
-    {
-        $config = $this->getShiftConfig($waktu->dayOfWeek, $jabatan, $shift);
-        $isWeekend = ($waktu->dayOfWeek == Carbon::SATURDAY || $waktu->dayOfWeek == Carbon::SUNDAY);
-
-        if (!$waktu->between($config['jamAwal'], $config['jamAkhir'])) {
-            return [
-                'valid' => false,
-                'message' => 'Waktu absen tidak sesuai shift. Jam kerja: ' .
-                    $config['jamAwal']->format('H:i') . ' - ' .
-                    $config['jamAkhir']->format('H:i')
-            ];
-        }
-
-        // Jika hari Sabtu atau Minggu dan jabatan bukan Office Boy atau Technical Support,
-        // maka tidak dianggap terlambat sama sekali
-        if ($isWeekend && !in_array($jabatan, ['Office Boy', 'Technical Support'])) {
-            return [
-                'valid' => true,
-                'keterangan' => 'Masuk',
-                'keterlambatan' => '00:00:00'
-            ];
-        }
-
-        // Hitung keterlambatan untuk jabatan lain dan hari selain weekend
-        $keterlambatan = '00:00:00';
-        $keterangan = 'Masuk';
-
-        if ($waktu->greaterThan($config['jamMulaiShift'])) {
-            $diffMinutes = $waktu->diffInMinutes($config['jamMulaiShift']);
-            $hours = intdiv($diffMinutes, 60);
-            $minutes = ($diffMinutes % 60);
-            $keterlambatan = sprintf('%02d:%02d:00', $hours, $minutes);
-            $keterangan = 'Telat';
-        }
-
-        return [
-            'valid' => true,
-            'keterangan' => $keterangan,
-            'keterlambatan' => $keterlambatan
-        ];
-    }
-
-
-    private function getShiftConfig($dayOfWeek, $jabatan, $shift)
-    {
-        $isWeekend = ($dayOfWeek == Carbon::SATURDAY || $dayOfWeek == Carbon::SUNDAY);
-
-        // Konfigurasi default
-        $config = [
-            'jamAwal' => Carbon::createFromTimeString('00:00:00'),
-            'jamAkhir' => Carbon::createFromTimeString('23:59:59'),
-            'jamMulaiShift' => Carbon::createFromTimeString('08:00:00')
-        ];
-
-        // Penyesuaian berdasarkan jabatan dan shift
-        switch ($jabatan) {
-            case 'Office Boy':
-                if ($isWeekend) {
-                    $config['jamMulaiShift'] = $shift == 1
-                        ? Carbon::createFromTimeString('05:00:00')
-                        : Carbon::createFromTimeString('11:00:00');
-                } else {
-                    $config['jamMulaiShift'] = $shift == 1
-                        ? Carbon::createFromTimeString('05:00:00')
-                        : Carbon::createFromTimeString('16:00:00');
-                }
-                break;
-
-            case 'Technical Support':
-                $config['jamMulaiShift'] = $isWeekend
-                    ? Carbon::createFromTimeString('09:00:00')
-                    : Carbon::createFromTimeString('08:00:00');
-                $config['jamAkhir'] = $isWeekend
-                    ? Carbon::createFromTimeString('16:00:00')
-                    : Carbon::createFromTimeString('17:00:00');
-                break;
-        }
-
-        return $config;
-    }
-
     public function absenManual(Request $request)
     {
         // return $request->all();
@@ -306,18 +124,18 @@ class AbsensiKaryawanController extends Controller
     public function absensiKaryawan()
     {
         $id_karyawan = auth()->user()->karyawan_id;
-        $month = now()->month; // Mendapatkan bulan saat ini
+        $month = now()->month;
+        $year = now()->year;
         $absen = AbsensiKaryawan::where('id_karyawan', $id_karyawan)
             ->whereMonth('tanggal', $month)
+            ->whereYear('tanggal', $year)
             ->orderBy('tanggal', 'asc') // Urutkan berdasarkan tanggal secara ascending (terkecil ke terbesar)
             ->get();
 
         $karyawan = karyawan::where('id', $id_karyawan)->first();
-
-        $noRecord = absensi_noRecord::where('id_karyawan', $id_karyawan)
+        $noRecord = absensi_noRecord::where('id_karyawan', auth()->user()->karyawan_id)
             ->where('jenis_PK', 'No Record')
-            ->whereHas('absensiKaryawan')
-            ->with('absensiKaryawan')
+            // ->where('approval', 1)
             ->get();
 
         $schemeWork = absensi_noRecord::where('id_karyawan', $id_karyawan)
@@ -339,6 +157,7 @@ class AbsensiKaryawanController extends Controller
         )
             ->with('karyawan') // Load karyawan relationship to get employee details like name if needed
             ->whereMonth('tanggal', $month)
+            ->whereYear('tanggal', $year)
             ->whereHas('karyawan', function ($query) {
                 $query->whereNotIn('jabatan', ['Office boy', 'Driver']);
             })
@@ -383,13 +202,17 @@ class AbsensiKaryawanController extends Controller
 
         $totalketerlambatan = AbsensiKaryawan::select('id_karyawan', DB::raw('SUM(TIME_TO_SEC(waktu_keterlambatan)) as total_keterlambatan'))
             ->whereMonth('tanggal', $month)
-            ->where('id_karyawan', auth()->user()->karyawan_id)
+            ->whereYear('tanggal', $year)
+            ->where('id_karyawan', auth()->user()->karyawan_id) // Menggunakan Auth::user()
             ->groupBy('id_karyawan')
             ->orderBy('total_keterlambatan', 'desc')
-            ->with('karyawan')
-            ->first();
-        if ($totalketerlambatan) {
-            $totalSeconds = $totalketerlambatan->total_keterlambatan;
+            ->first(); // Tidak perlu with('karyawan') jika hanya mengambil total_keterlambatan
+
+        // Jika tidak ada data keterlambatan, atau totalnya 0
+        if (!$totalketerlambatan || $totalketerlambatan->total_keterlambatan == '0') {
+            $formattedTime = '0 menit'; // Set ke '0 menit'
+        } else {
+            $totalSeconds = (int)$totalketerlambatan->total_keterlambatan; // Pastikan ini integer
 
             // Menghitung jam, menit, dan detik
             $hours = floor($totalSeconds / 3600);
@@ -405,58 +228,36 @@ class AbsensiKaryawanController extends Controller
                 $formattedTime .= $minutes . ' menit ';
             }
             if ($seconds > 0) {
+                
                 $formattedTime .= $seconds . ' detik';
             }
 
-            // Set formatted time ke dalam objek
-            $totalketerlambatan->total_keterlambatan = $formattedTime;
+            // Hapus spasi ekstra di akhir jika ada
+            $formattedTime = trim($formattedTime);
         }
-        // return $totalketerlambatan;
+
         // return $leaderboard;
 
-        return view('absensi.absensi', compact('absen', 'leaderboard', 'totalketerlambatan', 'topKaryawan', 'remainingLeaderboard', 'noRecord', 'schemeWork', 'cancelLeave'));
+        // Tambahkan query izin tiga jam
+        $izinTigaJam = izinTigaJam::where('id_karyawan', $id_karyawan)
+            ->whereMonth('tanggal_pengajuan', $month)
+            ->orderBy('tanggal_pengajuan', 'desc')
+            ->get();
+
+        return view('absensi.absensi', compact(
+            'absen',
+            'leaderboard',
+            'totalketerlambatan',
+            'topKaryawan',
+            'remainingLeaderboard',
+            'noRecord',
+            'schemeWork',
+            'cancelLeave',
+            'izinTigaJam' // <-- tambahkan ini
+        ));
     }
 
-    public function update(Request $request)
-    {
-        $this->validate($request, [
-            'keterangan_pulang' => 'required',
-            'id_karyawan' => 'required|integer',
-        ]);
-
-        // Ambil waktu sekarang
-        $sekarang = \Carbon\Carbon::now();
-        $jamKeluar = $sekarang->copy(); // Gunakan Carbon instance untuk jam keluar
-        $jamKeluarTime = $jamKeluar->format('H:i:s');
-        // return $jamKeluar;
-        // Tentukan tanggal absensi: jika sebelum jam 08:00:00, gunakan tanggal kemarin
-        $tanggal = ($jamKeluar->lt(\Carbon\Carbon::createFromTimeString('10:00:00')))
-            ? $sekarang->copy()->subDay()->toDateString()
-            : $sekarang->toDateString();
-        // return $tanggal;
-        // Ambil absensi berdasarkan tanggal yang dihitung
-        $absensi = AbsensiKaryawan::where('id_karyawan', $request->input('id_karyawan'))
-            ->where('tanggal', $tanggal)
-            ->first();
-
-
-        if (!$absensi) {
-            return response()->json(['error' => 'Absen masuk tidak ditemukan untuk tanggal: ' . $tanggal], 404);
-        }
-
-        // Cek apakah sudah absen pulang
-        if ($absensi->jam_keluar) {
-            return response()->json(['error' => 'Anda sudah mengisi absen pulang!'], 400);
-        }
-
-        // Simpan absen pulang
-        $keterangan_pulang = 'Pulang (' . $request->keterangan_pulang . ')';
-        $absensi->keterangan_pulang = $keterangan_pulang;
-        $absensi->jam_keluar = $jamKeluarTime;
-        $absensi->save();
-
-        return response()->json(['success' => 'Terimakasih telah bekerja hari ini! Hati-hati di jalan.']);
-    }
+    
 
 
     private function getAbsensiMasuk($idKaryawan, $tanggal)
@@ -485,7 +286,7 @@ class AbsensiKaryawanController extends Controller
             ->whereYear('tanggal_awal', $tahun)
             ->whereMonth('tanggal_awal', $bulan)
             ->get();
-            // dd($absensiKaryawan);
+        // dd($absensiKaryawan);
 
         // Inisialisasi jumlahAbsensi
         if ($karyawanId == '2') {
@@ -495,7 +296,6 @@ class AbsensiKaryawanController extends Controller
                 ->whereRaw('DAYOFWEEK(tanggal) NOT IN (1, 7)') // Mengecualikan Minggu (1) dan Sabtu (7)
                 ->distinct('tanggal')
                 ->count();
-
         } else {
             $jumlahAbsensi = $absensiKaryawan->count();
             $jumlahAbsensiPulang = $absen_pulang->count();
@@ -560,579 +360,339 @@ class AbsensiKaryawanController extends Controller
         ]);
     }
 
-    public function noRecord()
+    // -----------------------------------------------------------------
+    // 1️⃣ ABsen Masuk
+    // -----------------------------------------------------------------
+    public function storeMasuk(Request $request)
     {
-        $user = auth()->user()->karyawan_id;
-        $karyawan = karyawan::findOrFail($user);
-
-        $startOfMonth = Carbon::now()->startOfMonth()->toDateString();
-        $endOfMonth = Carbon::now()->endOfMonth()->toDateString();
-
-        $data_absen = AbsensiKaryawan::where('id_karyawan', $user)
-            ->whereBetween('tanggal', [$startOfMonth, $endOfMonth])
-            ->get();
-
-        $karyawanall = karyawan::where('divisi', '!=', 'Direksi')
-            ->where('divisi', $karyawan->divisi)
-            ->get();
-
-        return view('absensi.klaim', compact('karyawan', 'karyawanall', 'data_absen'));
-    }
-
-    public function createNoRecord(Request $request)
-    {
-        $this->validate($request, [
-            'id_karyawan'   => 'required|integer',
-            'kendala'       => 'required|string|in:Human Error,System Error',
-            'tanggal_absen' => 'required|integer',
-            'bukti_gambar'  => 'required|image',
-            'kronologi'     => 'required|string',
+        $validator = Validator::make($request->all(), [
+            'shift'      => 'required|in:1,2',
+            'keterangan' => 'required|string',
+            'id_karyawan'=> 'required|integer',
+            'foto'       => 'required|string',
+            'jabatan'    => 'required|string',
+            'client_time'=> 'sometimes|date',
         ]);
 
-        $karyawan = karyawan::where('id', $request->id_karyawan)->first();
-        $absen = AbsensiKaryawan::where('id', $request->tanggal_absen)->first();
-
-        if ($request->kendala === 'Human Error') {
-            $jumlahHE = absensi_noRecord::where('id_karyawan', $request->id_karyawan)
-                ->where('kendala', 'Human Error')
-                ->whereMonth('created_at', now()->month)
-                ->whereYear('created_at', now()->year)
-                ->count();
-
-            if ($jumlahHE >= 3) {
-                return back()->withErrors(['kendala' => 'Pengajuan dengan kendala "Human Error" hanya diperbolehkan maksimal 3 kali dalam sebulan.'])->withInput();
-            }
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 400);
         }
 
-        $file = $request->file('bukti_gambar');
-        $ext = $file->getClientOriginalExtension();
-        $filename = 'bukti_' . now()->format('Y_m_d_H_i_s') . '.' . $ext;
-        $destinationPath = public_path('pengajuan_klaim');
+        $this->logTimeDiscrepancy($request);
 
-        $file->move($destinationPath, $filename);
+        $now = Carbon::now('Asia/Jakarta');
+        $jabatan = $request->input('jabatan');
 
-        $fotoPath = 'pengajuan_klaim/' . $filename;
+        // Cek **masuk** sudah ada atau belum (hanya periksa jam_masuk)
+        $exists = AbsensiKaryawan::where('id_karyawan', $request->id_karyawan)
+            ->whereDate('tanggal', $now->toDateString())
+            ->whereNotNull('jam_masuk')
+            ->exists();
 
+        if ($exists) {
+            return response()->json(['error' => 'Anda sudah absen masuk hari ini'], 400);
+        }
+
+        $fotoPath = $this->processFoto($request->foto);
         if (!$fotoPath) {
-            return back()->withErrors(['bukti_gambar' => 'Tidak dapat melampirkan bukti'])->withInput();
+            return response()->json(['error' => 'Gagal menyimpan foto'], 500);
         }
 
-        absensi_noRecord::create([
-            'id_karyawan'   => $request->id_karyawan,
-            'jenis_PK'      => 'No Record',
-            'kendala'       => $request->kendala,
-            'id_absen'      => $request->tanggal_absen,
-            'bukti_gambar'  => $fotoPath,
-            'kronologi'     => $request->kronologi,
-            'approval'      => '0',
+        $shiftCheck = $this->validateShiftWaktu($now, $request->shift, $jabatan);
+        if (!$shiftCheck['valid']) {
+            return response()->json(['error' => $shiftCheck['message']], 400);
+        }
+
+        $absensi = AbsensiKaryawan::create([
+            'id_karyawan' => $request->id_karyawan,
+            'tanggal'     => $now->toDateString(),
+            'jam_masuk'   => $now->toTimeString(),
+            'foto'  => $fotoPath,
+            'keterangan'  => $shiftCheck['keterangan'],
+            'waktu_keterlambatan' => $shiftCheck['keterlambatan'],
+            // 'shift'       => $request->shift,
+            // 'jabatan'     => $jabatan,
         ]);
 
-        $karyawan = karyawan::find($request->id_karyawan);
-        $hrd = karyawan::where('jabatan', 'HRD')->first();
-
-        $kodePenerima = [];
-
-        if ($hrd) {
-            $kodePenerima[] = $hrd->kode_karyawan;
-        }
-
-        if ($karyawan) {
-            $kodePenerima[] = $karyawan->kode_karyawan;
-        }
-
-        $users = User::whereHas('karyawan', function ($query) use ($kodePenerima) {
-            $query->whereIn('kode_karyawan', $kodePenerima);
-        })->get();
-
-        $approval = 0;
-        $statusMessage = "Menunggu Persetujuan HRD";
-
-        if ($approval === 0) {
-            $statusMessage = "Menunggu Persetujuan HRD";
-        }
-
-        $notificationData = [
-            'tipe'            => 'no_record',
-            'nama_lengkap'    => $karyawan->nama_lengkap,
-            'kendala'         => $request->kendala,
-            'tanggal'         => $absen->tanggal,
-            'kronologi'       => $request->kronologi,
-            'status'          => $statusMessage,
-            'approval'        => 0,
-            'alasan_approval' => null,
-        ];
-
-        $path = '/absensi/karyawan?page=no_record';
-
-        foreach ($users as $user) {
-            NotificationFacade::send($user, new noRecordExchangeNotification($notificationData, $path));
-        }
-
-        return redirect('/absensi/karyawan?page=no_record')->with('success', 'Berhasil mengajukan');
+        return response()->json([
+            'success' => 'Absen masuk berhasil',
+            'data'    => [
+                'jam_masuk' => $now->format('H:i:s'),
+                'keterangan'=> $shiftCheck['keterangan'],
+                'foto'      => $fotoPath,
+            ]
+        ], 201);
     }
 
-    public function deleteNoRecord(Request $request)
+    // -----------------------------------------------------------------
+    // 2️⃣ ABsen Keluar
+    // -----------------------------------------------------------------
+    public function storeKeluar(Request $request)
     {
-        $this->validate($request, [
-            'id_noRecord'       => 'required|integer',
+        $validator = Validator::make($request->all(), [
+            'id_karyawan'=> 'required|integer',
+            'client_time'=> 'sometimes|date',
         ]);
-        $noRecord = absensi_noRecord::find($request->id_noRecord);
-        $noRecord->delete();
+        
 
-        return redirect('/absensi/karyawan?page=no_record')->with('success', 'Data Berhasil Dihapus');
-    }
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 400);
+        }
 
-    public function approveNoRecord(Request $request)
-    {
-        $this->validate($request, [
-            'approval'       => 'required|integer|in:1,2',
-            'id_absen'       => 'required|integer',
-            'id_karyawan'    => 'required|integer',
-        ]);
+        $this->logTimeDiscrepancy($request);
 
-        $jenis_PK = absensi_noRecord::where('id_karyawan', $request->id_karyawan)
-            ->where('id_absen', $request->id_absen)
+        $now = Carbon::now('Asia/Jakarta');
+        $dayOfWeek = $now->dayOfWeek; // Ini mengembalikan 1 (Senin) sampai 7 (Minggu)
+
+        // Cari record hari ini yang **sudah** absen masuk tapi belum keluar
+        $absensi = AbsensiKaryawan::where('id_karyawan', $request->id_karyawan)
+            ->whereDate('tanggal', $now->toDateString())
+            ->whereNotNull('jam_masuk')
+            ->whereNull('jam_keluar')
             ->first();
 
-        if (!$jenis_PK) {
-            return redirect()->back()->withErrors('Data tidak ditemukan.');
+        if (!$absensi) {
+            return response()->json(['error' => 'Tidak ada absen masuk untuk hari ini'], 404);
         }
 
-        $jenis_PK->approval = $request->approval;
-        if ($request->filled('alasan_approval')) {
-            $jenis_PK->alasan_approval = $request->alasan_approval;
-        }
-        $jenis_PK->approval_date = now();
-        $jenis_PK->save();
+        // Optional: validasi jam keluar berada dalam shift yang sama
+        $shiftConfig = $this->getShiftConfig(
+            $dayOfWeek,     // ✅ Hari ini (integer 1–7)
+            auth()->user()->jabatan,
+            $request->shift
+        );
 
-        $absen = AbsensiKaryawan::where('id', $jenis_PK->id_absen)->first();
-        $absen->waktu_keterlambatan = "00:00:00";
-        $absen->save();
+        // -----------------------------------------------------------------
+        // 5️⃣ Cek apakah waktu keluar berada dalam “periode diizinkan”
+        // -----------------------------------------------------------------
+        // Misalnya, $isAllowedTime = true bila jam keluar berada di antara
+        // jamAwal dan jamAkhir shift (bisa dipakai untuk logika tambahan)
+        // $batas = Carbon::parse('14:00:00');          // ubah menjadi objek Carbon
 
-        $karyawan = karyawan::find($request->id_karyawan);
-        $hrd = karyawan::where('jabatan', 'HRD')->first();
+        // // Jika konfigurasi shift memiliki jamAkhir, gunakan itu, bila tidak pakai $now
+        // $jamAkhir = isset($shiftConfig['jamAkhir'])
+        //     ? Carbon::parse($shiftConfig['jamAkhir'])
+        //     : $now;                                   // fallback, tidak akan pernah false
 
-        $kodePenerima = [];
+        // $isAllowedTime = $now->between($batas, $jamAkhir);
 
-        if ($hrd) {
-            $kodePenerima[] = $hrd->kode_karyawan;
-        }
-
-        if ($karyawan) {
-            $kodePenerima[] = $karyawan->kode_karyawan;
-        }
-
-        $users = User::whereHas('karyawan', function ($query) use ($kodePenerima) {
-            $query->whereIn('kode_karyawan', $kodePenerima);
-        })->get();
+        // // ---- Shift 1 ----------------------------------------------------
+        // if ($request->shift == '1' && !$isAllowedTime) {
+        //     return response()->json([
+        //         'error' => 'Anda tidak dapat absen pulang sebelum jam '
+        //                 . $batas->format('H:i') . '.',
+        //     ], 400);
+        // }
 
 
-        $statusMessage = $request->approval == 1 ? "Telah Disetujui Oleh HRD" : "Ditolak Oleh HRD";
-
-        $notificationData = [
-            'tipe'            => 'no_record',
-            'nama_lengkap'    => $karyawan->nama_lengkap,
-            'kendala'         => $jenis_PK->kendala,
-            'tanggal'         => $absen->tanggal,
-            'kronologi'       => $jenis_PK->kronologi,
-            'status'          => $statusMessage,
-            'approval'        => $request->approval,
-            'alasan_approval' => $request->alasan_approval ?? null,
-        ];
-
-        $path = '/absensi/karyawan?page=no_record';
-
-        foreach ($users as $user) {
-            NotificationFacade::send($user, new noRecordExchangeNotification($notificationData, $path));
+        // Jika jam keluar diluar jam akhir shift, beri peringatan atau set status "pulang terlambat"
+        $keluarValid = $now->lessThanOrEqualTo($shiftConfig['jamAkhir']);
+        if (!$keluarValid) {
+            // Misalnya, tetap simpan tapi beri keterangan
+            $keteranganKeluar = 'Pulang';
+        } else {
+            $keteranganKeluar = 'Pulang';
         }
 
-        return redirect('/absensi/karyawan?page=no_record')->with('success', 'Berhasil memproses data absensi.');
-    }
-
-
-    public function schemeWork()
-    {
-        $user = auth()->user()->karyawan_id;
-        $karyawan = karyawan::findOrFail($user);
-
-        $startOfMonth = Carbon::now()->startOfMonth()->toDateString();
-        $endOfMonth = Carbon::now()->endOfMonth()->toDateString();
-
-        $data_absen = AbsensiKaryawan::where('id_karyawan', $user)
-            ->whereBetween('tanggal', [$startOfMonth, $endOfMonth])
-            ->get();
-
-        $karyawanall = karyawan::where('divisi', '!=', 'Direksi')
-            ->where('divisi', $karyawan->divisi)
-            ->get();
-
-        return view('absensi.schemework', compact('karyawan', 'karyawanall', 'data_absen'));
-    }
-
-    public function createSchemeWork(Request $request)
-    {
-        $this->validate($request, [
-            'id_karyawan'   => 'required|integer',
-            'tanggal_absen' => 'required|integer',
-            'bukti_gambar'  => 'required|image',
-            'kronologi'     => 'required|string',
+        $absensi->update([
+            'jam_keluar'   => $now->toTimeString(),
+            'keterangan_pulang' => $keteranganKeluar,
         ]);
 
-        if ($request->kendala === 'Human Error') {
-            $jumlahHE = absensi_noRecord::where('id_karyawan', $request->id_karyawan)
-                ->where('kendala', 'Human Error')
-                ->whereMonth('created_at', now()->month)
-                ->whereYear('created_at', now()->year)
-                ->count();
+        return response()->json([
+            'success' => 'Terimakasih telah bekerja hari ini! Hati-hati di jalan.',
+            'data'    => [
+                'jam_keluar' => $now->format('H:i:s'),
+                'keterangan'=> $keteranganKeluar,
+            ]
+        ]);
+    }
 
-            if ($jumlahHE >= 3) {
-                return back()->withErrors(['kendala' => 'Pengajuan dengan kendala "Human Error" hanya diperbolehkan maksimal 3 kali dalam sebulan.'])->withInput();
+    // -----------------------------------------------------------------
+    // 3️⃣ Helper‑helper yang sama (log, foto, shift, dll)
+    // -----------------------------------------------------------------
+    private function logTimeDiscrepancy(Request $request)
+    {
+        if ($request->client_time) {
+            Log::channel('absensi')->info('Time check', [
+                'server' => now('Asia/Jakarta')->toDateTimeString(),
+                'client' => $request->client_time,
+                'diff_s' => now('Asia/Jakarta')->diffInSeconds($request->client_time)
+            ]);
+        }
+    }
+
+    private function processFoto(string $imageData): ?string
+    {
+        try {
+            if (!str_contains($imageData, 'data:image')) {
+                return null;
             }
+
+            // Ambil tipe dan data base64
+            [$meta, $base64] = explode(',', $imageData, 2);
+            $extension = match (true) {
+                str_contains($meta, 'jpeg') => 'jpeg',
+                str_contains($meta, 'png')  => 'png',
+                default                     => 'jpg',
+            };
+
+            $fileName = 'absensi_' . uniqid() . '.' . $extension;
+            $path = "absensi/{$fileName}";
+            Storage::put('public/' . $path, base64_decode($base64));
+
+            return $path;
+        } catch (\Throwable $e) {
+            Log::error('Proses foto gagal: ' . $e->getMessage());
+            return null;
         }
+    }
 
-        $file = $request->file('bukti_gambar');
-        $ext = $file->getClientOriginalExtension();
-        $filename = 'bukti_' . now()->format('Y_m_d_H_i_s') . '.' . $ext;
-        $destinationPath = public_path('pengajuan_klaim');
+    /**
+     * Mengembalikan konfigurasi shift (jam mulai, jam akhir, jam mulai shift)
+     * Hasilnya **Carbon** yang sudah di‑set ke timezone Asia/Jakarta
+     */
+    private function getShiftConfig(int $dayOfWeek, string $jabatan, int $shift): array
+    {
+        $isWeekend = in_array($dayOfWeek, [Carbon::SATURDAY, Carbon::SUNDAY]);
 
-        $file->move($destinationPath, $filename);
-
-        $fotoPath = 'pengajuan_klaim/' . $filename;
-
-        if (!$fotoPath) {
-            return back()->withErrors(['bukti_gambar' => 'Tidak dapat melampirkan bukti'])->withInput();
-        }
-
-        absensi_noRecord::create([
-            'id_karyawan'   => $request->id_karyawan,
-            'jenis_PK'      => 'Scheme Work',
-            'id_absen'      => $request->tanggal_absen,
-            'bukti_gambar'  => $fotoPath,
-            'kronologi'     => $request->kronologi,
-            'approval'      => '0',
-        ]);
-        $absen = AbsensiKaryawan::where('id', $request->tanggal_absen)->first();
-
-        $karyawan = karyawan::find($request->id_karyawan);
-        $hrd = karyawan::where('jabatan', 'HRD')->first();
-
-        $kodePenerima = [];
-
-        if ($hrd) {
-            $kodePenerima[] = $hrd->kode_karyawan;
-        }
-
-        if ($karyawan) {
-            $kodePenerima[] = $karyawan->kode_karyawan;
-        }
-
-        $users = User::whereHas('karyawan', function ($query) use ($kodePenerima) {
-            $query->whereIn('kode_karyawan', $kodePenerima);
-        })->get();
-
-        $approval = 0;
-        $statusMessage = "Menunggu Persetujuan HRD";
-
-        if ($approval === 0) {
-            $statusMessage = "Menunggu Persetujuan HRD";
-        }
-
-        $notificationData = [
-            'tipe'            => 'scheme_work',
-            'nama_lengkap'    => $karyawan->nama_lengkap,
-            'tanggal'         => $absen->tanggal,
-            'status'          => $statusMessage,
-            'kronologi'       => $request->kronologi,
-            'approval'        => 0,
-            'alasan_approval' => null,
+        // Default standar kantor (Senin‑Jumat)
+        $config = [
+            'jamAwal'      => Carbon::createFromTimeString('08:00:00', 'Asia/Jakarta'),
+            'jamAkhir'     => Carbon::createFromTimeString('17:00:00', 'Asia/Jakarta'),
+            'jamMulaiShift'=> Carbon::createFromTimeString('08:00:00', 'Asia/Jakarta'),
         ];
 
-        $path = '/absensi/karyawan?page=scheme_work';
+        switch ($jabatan) {
+            case 'Office Boy':
+                if ($isWeekend) {
+                    // Weekend shift Office Boy
+                    $config['jamMulaiShift'] = $shift == 1
+                        ? Carbon::createFromTimeString('05:00:00', 'Asia/Jakarta')
+                        : Carbon::createFromTimeString('17:00:00', 'Asia/Jakarta');
+                    $config['jamAwal'] = $config['jamMulaiShift'];
+                    $config['jamAkhir'] = $config['jamMulaiShift']->copy()->addHours(12);
+                } else {
+                    // Weekday shift Office Boy
+                    $config['jamMulaiShift'] = $shift == 1
+                        ? Carbon::createFromTimeString('05:00:00', 'Asia/Jakarta')
+                        : Carbon::createFromTimeString('17:00:00', 'Asia/Jakarta');
+                    $config['jamAwal'] = $config['jamMulaiShift'];
+                    $config['jamAkhir'] = $config['jamMulaiShift']->copy()->addHours(12);
+                }
+                break;
 
-        foreach ($users as $user) {
-            NotificationFacade::send($user, new schemeWorkExchangeNotification($notificationData, $path));
+            case 'Driver':
+                // Driver hanya satu shift (08‑17) semua hari
+                $config['jamMulaiShift'] = Carbon::createFromTimeString('08:00:00', 'Asia/Jakarta');
+                $config['jamAwal'] = $config['jamMulaiShift'];
+                $config['jamAkhir'] = Carbon::createFromTimeString('17:00:00', 'Asia/Jakarta');
+                break;
+
+            case 'Technical Support':
+                if ($isWeekend) {
+                    // Weekend Technical Support 09‑16
+                    $config['jamMulaiShift'] = Carbon::createFromTimeString('09:00:00', 'Asia/Jakarta');
+                    $config['jamAwal'] = $config['jamMulaiShift'];
+                    $config['jamAkhir'] = Carbon::createFromTimeString('16:00:00', 'Asia/Jakarta');
+                } else {
+                    // Weekday Technical Support 08‑17
+                    $config['jamMulaiShift'] = Carbon::createFromTimeString('08:00:00', 'Asia/Jakarta');
+                    $config['jamAwal'] = $config['jamMulaiShift'];
+                    $config['jamAkhir'] = Carbon::createFromTimeString('17:00:00', 'Asia/Jakarta');
+                }
+                break;
+
+            default:
+                // Karyawan reguler (sen‑jum 08‑17)
+                $config['jamMulaiShift'] = Carbon::createFromTimeString('08:00:00', 'Asia/Jakarta');
+                $config['jamAwal'] = $config['jamMulaiShift'];
+                $config['jamAkhir'] = Carbon::createFromTimeString('17:00:00', 'Asia/Jakarta');
+                break;
         }
 
-        return redirect('/absensi/karyawan?page=scheme_work')->with('success', 'Berhasil mengajukan');
+        return $config;
     }
 
-    public function deleteSchemeWork(Request $request)
+    /**
+     * Validasi jam masuk terhadap konfigurasi shift.
+     * Mengembalikan array: valid|keterangan|keterlambatan|message
+     */
+    private function validateShiftWaktu($waktu, $shift, $jabatan)
     {
-        $this->validate($request, [
-            'id_scheme_work'       => 'required|integer',
-        ]);
-        $schemeWork = absensi_noRecord::find($request->id_scheme_work);
-        $schemeWork->delete();
+        $config = $this->getShiftConfig($waktu->dayOfWeek, $jabatan, $shift);
+        $isWeekend = ($waktu->dayOfWeek == Carbon::SATURDAY || $waktu->dayOfWeek == Carbon::SUNDAY);
 
-        return redirect('/absensi/karyawan?page=scheme_work')->with('success', 'Data Berhasil Dihapus');
-    }
 
-    public function approveSchemeWork(Request $request)
-    {
-        $this->validate($request, [
-            'approval'       => 'required|integer|in:1,2',
-            'id_absen'       => 'required|integer',
-            'id_karyawan'    => 'required|integer',
-        ]);
+        $id_karyawan = auth()->user()->karyawan_id;
 
-        $jenis_PK = absensi_noRecord::where('id_karyawan', $request->id_karyawan)
-            ->where('id_absen', $request->id_absen)
+        $izinHariIni = izinTigaJam::where('id_karyawan', $id_karyawan)
+            ->whereDate('tanggal_pengajuan', $waktu->toDateString())
+            ->where('approval', 2)
             ->first();
 
-        if (!$jenis_PK) {
-            return redirect()->back()->withErrors('Data tidak ditemukan.');
+        if (!$waktu->between($config['jamAwal'], $config['jamAkhir'])) {
+            return [
+                'valid' => false,
+                'message' => 'Waktu absen tidak sesuai shift. Jam kerja: ' .
+                    $config['jamAwal']->format('H:i') . ' - ' .
+                    $config['jamAkhir']->format('H:i')
+            ];
         }
 
-        $jenis_PK->approval = $request->approval;
-        if ($request->filled('alasan_approval')) {
-            $jenis_PK->alasan_approval = $request->alasan_approval;
-        }
-        $jenis_PK->approval_date = now();
-        $jenis_PK->save();
-
-        $absen = AbsensiKaryawan::where('id', $jenis_PK->id_absen)->first();
-        $absen->waktu_keterlambatan = "00:00:00";
-        $absen->save();
-
-        $karyawan = karyawan::find($request->id_karyawan);
-        $hrd = karyawan::where('jabatan', 'HRD')->first();
-
-        $kodePenerima = [];
-
-        if ($hrd) {
-            $kodePenerima[] = $hrd->kode_karyawan;
+        if ($isWeekend && !in_array($jabatan, ['Office Boy', 'Technical Support'])) {
+            return [
+                'valid' => true,
+                'keterangan' => 'Masuk',
+                'keterlambatan' => '00:00:00'
+            ];
         }
 
-        if ($karyawan) {
-            $kodePenerima[] = $karyawan->kode_karyawan;
+        // Hitung keterlambatan untuk jabatan lain dan hari selain weekend
+        $keterlambatan = '00:00:00';
+        $keterangan = 'Masuk';
+      if ($izinHariIni) {
+        // Jam mulai izin dari database
+        $izinMulai = Carbon::parse($izinHariIni->jam_mulai);
+        $batasAwalMasuk = $izinMulai->copy()->addHour(); // 1 jam setelah izin
+        $batasAkhirMasuk = $izinMulai->copy()->addHours(3); // 3 jam setelah izin
+
+        if ($waktu->lessThan($batasAwalMasuk)) {
+            // Terlalu cepat
+            return [
+                'valid' => false,
+                'message' => 'Anda belum bisa absen. Minimal pukul ' . $batasAwalMasuk->format('H:i')
+            ];
+        } elseif ($waktu->greaterThan($batasAkhirMasuk)) {
+            // Telat lebih dari 3 jam
+            $diffMinutes = $waktu->diffInMinutes($batasAkhirMasuk);
+            $hours = intdiv($diffMinutes, 60);
+            $minutes = ($diffMinutes % 60);
+            $keterlambatan = sprintf('%02d:%02d:00', $hours, $minutes);
+            $keterangan = 'Telat (izin 3 Jam)';
+        } else {
+            // Masuk sesuai izin
+            $keterangan = 'Masuk (Izin 3 Jam)';
+            $keterlambatan = '00:00:00';
         }
 
-        $users = User::whereHas('karyawan', function ($query) use ($kodePenerima) {
-            $query->whereIn('kode_karyawan', $kodePenerima);
-        })->get();
-
-
-        $statusMessage = $request->approval == 1 ? "Telah Disetujui Oleh HRD" : "Ditolak Oleh HRD";
-
-        $notificationData = [
-            'tipe'            => 'scheme_work',
-            'nama_lengkap'    => $karyawan->nama_lengkap,
-            'kendala'         => $jenis_PK->kendala,
-            'tanggal'         => $absen->tanggal,
-            'kronologi'       => $jenis_PK->kronologi,
-            'status'          => $statusMessage,
-            'approval'        => $request->approval,
-            'alasan_approval' => $request->alasan_approval ?? null,
-        ];
-
-        $path = '/absensi/karyawan?page=scheme_work';
-
-        foreach ($users as $user) {
-            NotificationFacade::send($user, new schemeWorkExchangeNotification($notificationData, $path));
+        } elseif ($waktu->greaterThan($config['jamMulaiShift'])) {
+            // Telat normal
+            $diffMinutes = $waktu->diffInMinutes($config['jamMulaiShift']);
+            $hours = intdiv($diffMinutes, 60);
+            $minutes = ($diffMinutes % 60);
+            $keterlambatan = sprintf('%02d:%02d:00', $hours, $minutes);
+            $keterangan = 'Telat';
+        } else {
+            // Masuk tepat waktu
+            $keterangan = 'Masuk';
+            $keterlambatan = '00:00:00';
         }
 
-        return redirect('/absensi/karyawan?page=scheme_work')->with('success', 'Berhasil memproses data absensi.');
-    }
-
-    public function createCancelLeave(Request $request)
-    {
-        $this->validate($request, [
-            'id_karyawan'   => 'required|integer',
-            'tanggal_cuti' => 'required|integer',
-            'bukti_gambar'  => 'required|image',
-            'kronologi'     => 'required|string',
-        ]);
-
-        if ($request->kendala === 'Human Error') {
-            $jumlahHE = absensi_noRecord::where('id_karyawan', $request->id_karyawan)
-                ->where('kendala', 'Human Error')
-                ->whereMonth('created_at', now()->month)
-                ->whereYear('created_at', now()->year)
-                ->count();
-
-            if ($jumlahHE >= 3) {
-                return back()->withErrors(['kendala' => 'Pengajuan dengan kendala "Human Error" hanya diperbolehkan maksimal 3 kali dalam sebulan.'])->withInput();
-            }
-        }
-
-        $file = $request->file('bukti_gambar');
-        $ext = $file->getClientOriginalExtension();
-        $filename = 'bukti_' . now()->format('Y_m_d_H_i_s') . '.' . $ext;
-        $destinationPath = public_path('pengajuan_klaim');
-
-        $file->move($destinationPath, $filename);
-
-        $fotoPath = 'pengajuan_klaim/' . $filename;
-
-        if (!$fotoPath) {
-            return back()->withErrors(['bukti_gambar' => 'Tidak dapat melampirkan bukti'])->withInput();
-        }
-
-        $data_cuti = pengajuancuti::where('id', $request->tanggal_cuti)->first();
-
-        pembatalanCuti::create([
-            'id_karyawan'   => $request->id_karyawan,
-            'id_cuti'       => $request->tanggal_cuti,
-            'bukti_gambar'  => $fotoPath,
-            'kronologi'     => $request->kronologi,
-            'approval'      => '0',
-            'tipe'          => $data_cuti->tipe,
-            'tanggal_awal'  => $data_cuti->tanggal_awal,
-            'tanggal_akhir' => $data_cuti->tanggal_akhir,
-            'durasi'        => $data_cuti->durasi,
-            'kontak'        => $data_cuti->kontak,
-            'alasan'        => $data_cuti->alasan,
-            'surat_sakit'   => $data_cuti->surat_sakit,
-        ]);
-
-        $karyawan = karyawan::find($request->id_karyawan);
-        $hrd = karyawan::where('jabatan', 'HRD')->first();
-
-        $kodePenerima = [];
-
-        if ($hrd) {
-            $kodePenerima[] = $hrd->kode_karyawan;
-        }
-
-        if ($karyawan) {
-            $kodePenerima[] = $karyawan->kode_karyawan;
-        }
-
-        $users = User::whereHas('karyawan', function ($query) use ($kodePenerima) {
-            $query->whereIn('kode_karyawan', $kodePenerima);
-        })->get();
-
-        $approval = 0;
-        $statusMessage = "Menunggu Persetujuan HRD";
-
-        if ($approval === 0) {
-            $statusMessage = "Menunggu Persetujuan HRD";
-        }
-
-        $notificationData = [
-            'tipe'            => 'cancel_leave',
-            'nama_lengkap'    => $karyawan->nama_lengkap,
-            'kronologi'       => $request->kronologi,
-            'jenis'           => $data_cuti->tipe,
-            'tanggal_awal'    => $data_cuti->tanggal_awal,
-            'tanggal_akhir'   => $data_cuti->tanggal_akhir,
-            'status'          => $statusMessage,
-            'durasi'          => $data_cuti->durasi,
-            'alasan'          => $data_cuti->alasan,
-            'approval'        => 0,
-            'alasan_approval' => null,
-        ];
-
-        $path = '/absensi/karyawan?page=cancel_leave';
-
-        foreach ($users as $user) {
-            NotificationFacade::send($user, new cancelLeaveExchangeNotification($notificationData, $path));
-        }
-
-        return redirect('/absensi/karyawan?page=cancel_leave')->with('success', 'Berhasil mengajukan');
-    }
-
-    public function approveCancelLeave(Request $request)
-    {
-        $this->validate($request, [
-            'approval'       => 'required|integer|in:1,2',
-            'id_CL'       => 'required|integer',
-            'id_karyawan'    => 'required|integer',
-        ]);
-
-        $jenis_PK = pembatalanCuti::where('id_karyawan', $request->id_karyawan)
-            ->where('id', $request->id_CL)
-            ->first();
-
-        if (!$jenis_PK) {
-            return redirect()->back()->withErrors('Data tidak ditemukan.');
-        }
-
-        $jenis_PK->approval = $request->approval;
-        if ($request->filled('alasan_approval')) {
-            $jenis_PK->alasan_approval = $request->alasan_approval;
-        }
-        $jenis_PK->approval_date = now();
-        $jenis_PK->save();
-
-        if ($request->approval === 1) {
-            $deletingData = pengajuancuti::where('id', $jenis_PK->id_cuti)->first();
-            $deletingData->delete();
-        }
-
-        $absen = AbsensiKaryawan::where('id', $jenis_PK->id_karyawan)->first();
-
-        $karyawan = karyawan::find($request->id_karyawan);
-        $hrd = karyawan::where('jabatan', 'HRD')->first();
-
-        $kodePenerima = [];
-
-        if ($hrd) {
-            $kodePenerima[] = $hrd->kode_karyawan;
-        }
-
-        if ($karyawan) {
-            $kodePenerima[] = $karyawan->kode_karyawan;
-        }
-
-        $users = User::whereHas('karyawan', function ($query) use ($kodePenerima) {
-            $query->whereIn('kode_karyawan', $kodePenerima);
-        })->get();
-
-        $data_cuti = pengajuancuti::where('id', $request->id_CL)->first();
-
-        $statusMessage = $request->approval == 1 ? "Telah Disetujui Oleh HRD" : "Telah Ditolak Oleh HRD";
-
-        $notificationData = [
-            'tipe'            => 'cancel_leave',
-            'nama_lengkap'    => $karyawan->nama_lengkap,
-            'kronologi'       => $request->kronologi,
-            'jenis'           => $data_cuti->tipe,
-            'tanggal_awal'    => $data_cuti->tanggal_awal,
-            'tanggal_akhir'   => $data_cuti->tanggal_akhir,
-            'status'          => $statusMessage,
-            'durasi'          => $data_cuti->durasi,
-            'alasan'          => $data_cuti->alasan,
-            'approval'        => 0,
-            'alasan_approval' => null,
-        ];
-
-        $path = '/absensi/karyawan?page=cancel_leave';
-
-        foreach ($users as $user) {
-            NotificationFacade::send($user, new cancelLeaveExchangeNotification($notificationData, $path));
-        }
-
-        return redirect('/absensi/karyawan?page=cancel_leave')->with('success', 'Berhasil memproses data absensi.');
-    }
-
-    public function deleteCancelLeave(Request $request)
-    {
-        $this->validate($request, [
-            'id_cancel_leave'       => 'required|integer',
-        ]);
-        $cancelLeave = pembatalanCuti::find($request->id_cancel_leave);
-        $cancelLeave->delete();
-
-        return redirect('/absensi/karyawan?page=cancel_leave')->with('success', 'Data Berhasil Dihapus');
-    }
-    public function cancelLeave()
-    {
-        $user = auth()->user()->karyawan_id;
-        $karyawan = karyawan::findOrFail($user);
-
-        $startOfMonth = Carbon::now()->startOfMonth()->toDateString();
-        $endOfMonth = Carbon::now()->endOfMonth()->toDateString();
-
-        $data_cuti = pengajuancuti::where('id_karyawan', $user)
-            ->where('approval_manager', '1')
-            ->whereBetween('tanggal_awal', [$startOfMonth, $endOfMonth])
-            ->get();
-
-        $karyawanall = karyawan::where('divisi', '!=', 'Direksi')
-            ->where('divisi', $karyawan->divisi)
-            ->get();
-
-        return view('absensi.pembatalancuti', compact('karyawan', 'karyawanall', 'data_cuti'));
+            return [
+                'valid' => true,
+                'keterangan' => $keterangan,
+                'keterlambatan' => $keterlambatan
+            ];
     }
 }

@@ -35,6 +35,21 @@
                                     @enderror
                                 </div>
                             </div>
+                            <div class="row">
+                                <div class="col-md-4 col-sm-4 col-xs-4">
+                                    <p>Email</p>
+                                </div>
+                                <div class="col-md-1 col-sm-1 col-xs-1">
+                                    <p>:</p>
+                                </div>
+                                <div class="col-md-7 col-sm-7 col-xs-7"><input id="email" type="text" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email', $users->email ) }}" required autocomplete="email">
+                                    @error('email')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                    @enderror
+                                </div>
+                            </div>
 
                             <div class="row">
                                 <div class="col-md-4 col-sm-4 col-xs-4">

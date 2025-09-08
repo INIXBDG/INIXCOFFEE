@@ -47,6 +47,7 @@ class UserController extends Controller
         $data = $request->validate([
             'nama_lengkap' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255'],
+            'email' => ['nullable','email'],
             'jabatan' => ['required', 'string', 'max:255'],
             'divisi' => ['required', 'string', 'max:255'],
             'status_akun' => ['nullable', 'string', 'max:255'],
@@ -78,6 +79,7 @@ class UserController extends Controller
                 'jabatan' => $request->jabatan,
                 'divisi' => $request->divisi,
                 'kode_karyawan' => $request->kode_karyawan,
+                'email' => $request->email,
             ]);
 
             User::create([

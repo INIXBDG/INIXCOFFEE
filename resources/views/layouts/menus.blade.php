@@ -32,6 +32,8 @@
 
     {{-- <link rel="stylesheet" href="//cdn.datatables.net/2.0.3/css/dataTables.dataTables.min.css"> --}}
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <style>
         /* From Uiverse.io by jamik-dev */
         .cube {
@@ -838,32 +840,36 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
     @endif
-    <div id="app">
-        <div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel"
-            aria-hidden="true">
-            <div class="modal-dialog modal-dialog-scrollable">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="notificationModalLabel">Alert Pemberitahuan</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        @include('partials.notifications')
-                    </div>
-                    <div class="modal-footer">
-                        @if (auth()->user()->unreadNotifications->count() > 0)
-                        <form action="{{ route('notifications.markAllAsRead') }}" method="POST" class="d-inline">
-                            @csrf
-                            @method('PUT')
-                            <button type="submit" class="btn btn-primary btn-sm">Tandai Semua sebagai
-                                Dibaca</button>
-                        </form>
-                        @endif
-                        <button type="button" class="btn btn-custom btn-sm" data-bs-dismiss="modal">Tutup</button>
-                    </div>
+<div id="app">
+    <div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable" style="max-width: 550px;"> {{-- default 500-600px --}}
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="notificationModalLabel">Alert Pemberitahuan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    @include('partials.notifications')
+                </div>
+                <div class="modal-footer">
+                    @if(auth()->user()->unreadNotifications->count() > 0)
+                    <form action="{{ route('notifications.markAllAsRead') }}" method="POST" class="d-inline">
+                        @csrf
+                        @method('PUT')
+                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-4">
+                            Tandai Semua sebagai Dibaca
+                        </button>
+                    </form>
+                    @endif
+                    <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-4" data-bs-dismiss="modal">
+                        Tutup
+                    </button>
                 </div>
             </div>
         </div>
+    </div>
+</div>
+
         <div class="modal fade" id="modalPemberitahuan" tabindex="-1" aria-labelledby="exampleModalLabel"
             aria-hidden="true">
             <div class="modal-dialog">
@@ -1103,22 +1109,21 @@
                         @endcan
                     </div>
                 </div>
-                <div class="col-md-1 col-sm-1 col-xs-1 d-flex justify-content-end" id="navbarpalingkanan">
-                    <ul class="navbar-nav">
-                        <li class="nav-item mx-1">
-                            <a class="nav-link" href="{{ route('logout') }}" data-bs-toggle="tooltip"
-                                data-bs-placement="top" title="Logout"
-                                onclick="event.preventDefault(); if(confirm('Apakah Anda Yakin?')) { document.getElementById('logout-form').submit(); }">
-                                <img src="{{ asset('icon/power.svg') }}" class="img-responsive" width="30px">
-                            </a>
-                            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                                @csrf
-                            </form>
-                        </li>
-                    </ul>
-                </div>
+            <div class="col-md-1 col-sm-1 col-xs-1 d-flex justify-content-end" id="navbarpalingkanan">
+                <ul class="navbar-nav">
+                    <li class="nav-item mx-1">
+                        <a class="nav-link" href="#" id="logout-link" data-bs-toggle="tooltip"
+                            data-bs-placement="top" title="Logout">
+                            <img src="{{ asset('icon/power.svg') }}" class="img-responsive" width="30px">
+                        </a>
+                        <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                            @csrf
+                        </form>
+                    </li>
+                </ul>
             </div>
-        </nav>
+        </div>
+     </nav>
         <main class="container-fluid" style="height: 92vh" id="bgsvg">
             {{-- {{auth()->user()->hashids}} --}}
             <div class="tab-content" id="pills-tabContent">
@@ -1477,7 +1482,16 @@
                                     </div>
                                 </div>
                                 @endcan
-
+                                <div class="col-md-12 mt-1">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h5 class="text-center card-title">IT Service Management</h5>
+                                            <div class="row">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
                             </div>
                         </div>
                         <div class="col-md-12 col-sm-12 col-xs-12 col-lg-6 col-xl-6">
@@ -1743,7 +1757,7 @@
                                                         </div>
                                                     </div>
                                                     @endcan
-                                                    @can('View CC')
+                                                    @can('View PaymentAdvance')
                                                     <div class="col-sm-6 mt-2">
                                                         <div class="card" id="card-hover">
                                                             <div class="card-body d-flex">
@@ -1875,7 +1889,7 @@
                                             <div class="card-body">
                                                 <h5 class="text-center card-title">KPI</h5>
                                                 <div class="row">
-                                                    @can('View Penilaian')
+                                                    @can('View KPI Penilaian')
                                                     <div class="col-sm-6 mt-2">
                                                         <div class="card" id="card-hover">
                                                             <div class="card-body d-flex">
@@ -2121,17 +2135,45 @@
         integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous">
     </script>
     <script src="{{ asset('js/webcam.js') }}"></script>
-    <script src="{{ asset('js/dashboard.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/locale/id.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/timepicker/1.3.5/jquery.timepicker.min.js"></script>
+    {{-- SweetAlert2 --}}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.getElementById('logout-link').addEventListener('click', function (e) {
+    e.preventDefault();
+
+Swal.fire({
+    title: 'Apakah Anda yakin?',
+    text: "Anda akan keluar dari aplikasi",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Ya, keluar',
+    cancelButtonText: 'Batal',
+    showClass: {
+        popup: 'animate__animated animate__fadeInDown animate__faster'
+    },
+    hideClass: {
+        popup: 'animate__animated animate__fadeOutUp animate__faster'
+    }
+}).then((result) => {
+    if (result.isConfirmed) {
+        document.getElementById('logout-form').submit();
+    }
+});
+
+});
+</script>
     <script>
         $(document).ready(function() {
             handleNotificationDismissal();
             // initializeYearlySales();
-
+            
             $('#tahun').change(function() {
                 initializeYearlySales();
             });
@@ -2155,11 +2197,49 @@
 
             // Handle Dashboard button click with fade effect
             $('#pills-dashboard-tab').click(function() {
+                let isLoaded = false;
+                if (isLoaded) return; // Hindari memuat ulang
                 $('#loadingModal').modal('show');
-                initializeYearlySales();
+                // initializeYearlySales();
                 $('.tab-pane.show').fadeOut(100, function() {
                     $(this).removeClass('show active');
+                    const $contentContainer = $('#dashboard-content');
+                    
 
+                        $.ajax({
+                            url: '/partials/dashboard', // Ganti URL sesuai rute Laravel kamu
+                            type: 'GET',
+                            dataType: 'html',
+                            success: function (html) {
+                                // 1. Masukkan konten partial ke container
+                                $contentContainer.html(html);
+
+                                // 2. Muat dan jalankan dashboard.js secara dinamis
+                                $.getScript('{{ asset("js/dashboard.js") }}')
+                                    .done(function () {
+                                        console.log('dashboard.js berhasil dimuat dan dijalankan');
+                                        $('#loadingModal').modal('show');
+
+                                        setTimeout(() => {
+                                            if (typeof initializeYearlySales === 'function') {
+                                                initializeYearlySales();
+                                            }
+                                        }, 100); // Tunggu 0.5 detik
+                                        $('#loadingModal').modal('hide');
+
+                                    })
+                                    .fail(function () {
+                                        console.error('Gagal memuat dashboard.js');
+                                        $contentContainer.append('<p>Terjadi kesalahan saat memuat dashboard.</p>');
+                                    });
+
+                                isLoaded = true;
+                            },
+                            error: function (xhr, status, error) {
+                                console.error('Gagal memuat konten dashboard:', error);
+                                $contentContainer.html('<p>Terjadi kesalahan saat memuat dashboard.</p>');
+                            }
+                        });
                     // After fadeOut, show the dashboard tab with fadeIn
                     $('#pills-dashboard').fadeIn(100).addClass('show active');
                     setTimeout(() => {
@@ -2192,8 +2272,19 @@
                 $('#pills-home-tab').removeClass('active');
                 $('#pills-home').removeClass('show active');
                 $('#loadingModal').modal('show');
-                initializeYearlySales();
+                // initializeYearlySales();
+                $.get('/partials/dashboard', function (data) {
+                    $('#pills-dashboard').html(data);
 
+                    // Muat script dashboard.js secara otomatis
+                    $.getScript('{{ asset("js/dashboard.js") }}', function () {
+                        
+                    }).fail(function () {
+                        console.error('Gagal memuat dashboard.js');
+                    });
+                }).fail(function () {
+                    $('#pills-dashboard').html('<p>Terjadi kesalahan saat memuat dashboard.</p>');
+                });
                 setTimeout(() => {
                     $('#loadingModal').modal('hide');
                 }, 3000);
@@ -2325,7 +2416,7 @@
 
                     // Kirim data absen masuk ke server
                     $.ajax({
-                        url: "{{ route('absensi.store') }}",
+                        url: "{{ route('absensi.masuk') }}",
                         type: 'POST',
                         data: {
                             _token: "{{ csrf_token() }}",
@@ -2368,17 +2459,39 @@
                 alert('Silakan pilih keterangan pulang.');
                 return; // Stop execution if keterangan is not selected
             }
-
+            if (jabatan == 'Office Boy') {
+                if (hariSekarang === 6 || hariSekarang === 0) {
+                    // Shift akhir pekan (Sabtu dan Minggu)
+                    if (jamSekarang >= '14:00:00' && jamSekarang < '23:59:00') {
+                        shift = 1;
+                    } else if (jamSekarang >= '00:00:00' && jamSekarang < '09:00:00') {
+                        shift = 2;
+                    } else {
+                        shift = 'Tidak Sesuai Shift';
+                    }
+                } else {
+                    // Shift hari biasa (Senin hingga Jumat)
+                    if (jamSekarang >= '14:00:00' && jamSekarang < '23:59:59') {
+                        shift = 1;
+                    } else if (jamSekarang >= '00:00:00' && jamSekarang < '09:00:00') {
+                        shift = 2;
+                    } else {
+                        shift = 'Tidak Sesuai Shift';
+                    }
+                }
+            } else {
+                shift = 1; // Default untuk jabatan lainnya
+            }
             // Kirim data absen pulang ke server
             $.ajax({
-                url: "{{ route('absensi.update') }}",
+                url: "{{ route('absensi.keluar') }}",
                 type: 'POST',
                 data: {
                     _token: "{{ csrf_token() }}",
                     id_karyawan: karyawan,
                     tanggal: tanggal,
                     jam_keluar: jam_pulang,
-                    // shift: shift,
+                    shift: shift,
                     keterangan_pulang: keterangan_pulang,
                     jabatan: jabatan, // Tambahkan jabatan ke request
                     client_time: now.toISOString() // Kirim waktu client untuk logging
@@ -2386,7 +2499,7 @@
                 success: function(response) {
                     if (response.success) {
                         // alert(response.success);
-                        $('#modalPemberitahuan').modal('hide');
+                        // $('#modalPemberitahuan').modal('hide');
                         window.location.href = "{{ route('absensi.karyawan') }}";
                     } else {
                         alert('Respons tidak valid dari server. Silakan coba lagi.');
@@ -2429,37 +2542,37 @@
 
         //function switch toggle
 
-        document.addEventListener('DOMContentLoaded', function() {
-            const navOptions = document.querySelectorAll('input[name="nav-options"]');
+        // document.addEventListener('DOMContentLoaded', function() {
+        //     const navOptions = document.querySelectorAll('input[name="nav-options"]');
 
-            navOptions.forEach(option => {
-                option.addEventListener('change', function() {
-                    // Get the ID of the selected option
-                    const selectedId = this.id;
-                    console.log('Selected option:', selectedId); // Ini boleh tetap ada untuk debugging di console browser
+        //     navOptions.forEach(option => {
+        //         option.addEventListener('change', function() {
+        //             // Get the ID of the selected option
+        //             const selectedId = this.id;
+        //             console.log('Selected option:', selectedId); // Ini boleh tetap ada untuk debugging di console browser
 
-                    // --- Di sinilah Anda meletakkan logika aplikasi Anda yang sebenarnya ---
-                    // Contoh:
-                    switch (selectedId) {
-                        case 'pills-home-tab':
-                            // Logika untuk Home (misal: tampilkan bagian Home, muat data home)
-                            // console.log('Mengaktifkan Home...');
-                            break;
-                        case 'pills-dashboard-tab':
-                            // Logika untuk Dashboard (misal: tampilkan bagian Dashboard, muat data dashboard)
-                            // console.log('Mengaktifkan Dashboard...');
-                            break;
-                        case 'pills-admin-tab':
-                            // Logika untuk SuperAdmin (misal: tampilkan bagian SuperAdmin, muat data admin)
-                            // console.log('Mengaktifkan SuperAdmin...');
-                            break;
-                        default:
-                            break;
-                    }
-                    // --- Akhir dari logika aplikasi ---
-                });
-            });
-        });
+        //             // --- Di sinilah Anda meletakkan logika aplikasi Anda yang sebenarnya ---
+        //             // Contoh:
+        //             switch (selectedId) {
+        //                 case 'pills-home-tab':
+        //                     // Logika untuk Home (misal: tampilkan bagian Home, muat data home)
+        //                     // console.log('Mengaktifkan Home...');
+        //                     break;
+        //                 case 'pills-dashboard-tab':
+        //                     // Logika untuk Dashboard (misal: tampilkan bagian Dashboard, muat data dashboard)
+        //                     // console.log('Mengaktifkan Dashboard...');
+        //                     break;
+        //                 case 'pills-admin-tab':
+        //                     // Logika untuk SuperAdmin (misal: tampilkan bagian SuperAdmin, muat data admin)
+        //                     // console.log('Mengaktifkan SuperAdmin...');
+        //                     break;
+        //                 default:
+        //                     break;
+        //             }
+        //             // --- Akhir dari logika aplikasi ---
+        //         });
+        //     });
+        // });
     </script>
 </body>
 

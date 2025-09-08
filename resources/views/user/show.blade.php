@@ -111,6 +111,11 @@
                                     <span class="detail-value">{{ $users->role }}</span>
                                 </div>
                                 <div class="detail-row">
+                                    <span class="detail-label">Email</span>
+                                    <span class="detail-value">{{ $users->karyawan->email ?? '-' }}</span>
+                                </div>
+                                
+                                <div class="detail-row">
                                     <span class="detail-label">Status</span>
                                     <span class="detail-value">
                                         {{ $users->karyawan->status_aktif == '1' ? 'Aktif' : 'Tidak Aktif' }}

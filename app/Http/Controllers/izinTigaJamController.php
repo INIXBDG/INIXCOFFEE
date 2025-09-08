@@ -73,7 +73,7 @@ class izinTigaJamController extends Controller
     // dd($request->all());
     $this->validate($request, [
         'id_karyawan'   => 'required',
-        'tangal'        => 'required|date',
+        'tanggal'        => 'required|date',
         'jam_mulai'     => 'required|date_format:H:i',
         'jam_selesai'   => 'required|date_format:H:i',
         'durasi'        => 'required|string',
@@ -98,7 +98,6 @@ class izinTigaJamController extends Controller
         return redirect()->route('pengajuanizin.index')->with(['error' => 'Anda harus absen terlebih dahulu jika mengajukan izin untuk hari ini.']);
     }
 
-    // 🆕 Tambahan validasi jam_mulai tidak boleh kurang dari waktu saat ini
     $jamMulai = \Carbon\Carbon::createFromFormat('H:i', $request->jam_mulai);
     $sekarang = \Carbon\Carbon::now();
 
