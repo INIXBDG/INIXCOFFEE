@@ -234,7 +234,7 @@
                         <p class="line-text" id="judulTabel">{{ __('Absen Tidak Terekam') }}</p>
                         <div class="mb-3">
                             <div class="d-flex justify-content-end flex-warp gap-2">
-                                <form action="{{ route('pengajuanklaim.excelNoRecord') }}" method="post">
+                                <form action="{{ route('pengajuanklaim.excel') }}" method="post">
                                     @csrf
                                     <input type="hidden" name="jenis_PK" value="No Record">
                                     <button type="submit" class="btn btn-outline-success d-flex align-items-center gap-2 px-3">
@@ -242,7 +242,7 @@
                                     </button>
                                 </form>
 
-                                <form action="{{ route('pengajuanklaim.PDFNoRecord') }}" method="post">
+                                <form action="{{ route('pengajuanklaim.PDF') }}" method="post">
                                     @csrf
                                     <input type="hidden" name="jenis_PK" value="No Record">
                                     <button type="submit" class="btn btn-outline-danger d-flex align-items-center gap-2 px-3">
@@ -355,7 +355,7 @@
                         <p class="line-text" id="judulTabel">{{ __('Skema Jam Kerja') }}</p>
                         <div class="mb-3">
                             <div class="d-flex justify-content-end flex-warp gap-2">
-                                <form action="{{ route('pengajuanklaim.excelNoRecord') }}" method="post">
+                                <form action="{{ route('pengajuanklaim.excel') }}" method="post">
                                     @csrf
                                     <input type="hidden" name="jenis_PK" value="Scheme Work">
                                     <button type="submit" class="btn btn-outline-success d-flex align-items-center gap-2 px-3">
@@ -363,7 +363,7 @@
                                     </button>
                                 </form>
 
-                                <form action="{{ route('pengajuanklaim.PDFNoRecord') }}" method="post">
+                                <form action="{{ route('pengajuanklaim.PDF') }}" method="post">
                                     @csrf
                                     <input type="hidden" name="jenis_PK" value="Scheme Work">
                                     <button type="submit" class="btn btn-outline-danger d-flex align-items-center gap-2 px-3">
@@ -470,7 +470,7 @@
                         <p class="line-text" id="judulTabel">{{ __('Pembatalan Cuti') }}</p>
                         <div class="mb-3">
                             <div class="d-flex justify-content-end flex-warp gap-2">
-                                <form action="{{ route('pengajuanklaim.excelNoRecord') }}" method="post">
+                                <form action="{{ route('pengajuanklaim.excel') }}" method="post">
                                     @csrf
                                     <input type="hidden" name="jenis_PK" value="Cancel Leave">
                                     <button type="submit" class="btn btn-outline-success d-flex align-items-center gap-2 px-3">
@@ -478,7 +478,7 @@
                                     </button>
                                 </form>
 
-                                <form action="{{ route('pengajuanklaim.PDFNoRecord') }}" method="post">
+                                <form action="{{ route('pengajuanklaim.PDF') }}" method="post">
                                     @csrf
                                     <input type="hidden" name="jenis_PK" value="Cancel Leave">
                                     <button type="submit" class="btn btn-outline-danger d-flex align-items-center gap-2 px-3">

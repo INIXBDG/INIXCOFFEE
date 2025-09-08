@@ -267,8 +267,8 @@ Route::get('/getKategorikpi', [App\Http\Controllers\DatabaseKPIController::class
 Route::get('/beranda-KPI', [App\Http\Controllers\DatabaseKPIController::class, 'indexBerandaKpi'])->name('berandaKPI.get');
 Route::get('/createKategorikpi', [App\Http\Controllers\DatabaseKPIController::class, 'createKategori'])->name('ketegori.kpi.create');
 Route::post('/storeKategorikpi', [App\Http\Controllers\DatabaseKPIController::class, 'kategoriStore'])->name('ketegori.kpi.store');
-Route::post('/pengajuan-klaim/excel-download/no-record', [pengajuanKlaimController::class, 'pengajuanKlaimExcel'])->name('pengajuanklaim.excelNoRecord');
-Route::post('/pengajuan-klaim/pdf-download/no-record', [pengajuanKlaimController::class, 'pengajuanKlaimPDF'])->name('pengajuanklaim.PDFNoRecord');
+Route::post('/pengajuan-klaim/excel-download', [pengajuanKlaimController::class, 'pengajuanKlaimExcel'])->name('pengajuanklaim.excel');
+Route::post('/pengajuan-klaim/pdf-download', [pengajuanKlaimController::class, 'pengajuanKlaimPDF'])->name('pengajuanklaim.PDF');
 Route::get('/pengajuan-klaim/create/no-record', [pengajuanKlaimController::class, 'noRecord'])->name('pengajuanklaim.NoRecord');
 Route::get('/pengajuan-klaim/create/scheme-work', [pengajuanKlaimController::class, 'schemeWork'])->name('pengajuanklaim.SchemeWork');
 Route::get('/pengajuan-klaim/create/cancel-leave', [pengajuanKlaimController::class, 'cancelLeave'])->name('pengajuanklaim.CancelLeave');

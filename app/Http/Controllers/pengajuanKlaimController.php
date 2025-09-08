@@ -64,7 +64,6 @@ class pengajuanKlaimController extends Controller
         return view('pengajuanklaim.createNoRecord', compact('karyawan', 'karyawanall', 'data_absen'));
     }
 
-
     public function createNoRecord(Request $request)
     {
         $this->validate($request, [
@@ -449,6 +448,7 @@ class pengajuanKlaimController extends Controller
 
     public function pengajuanKlaimExcel(Request $request)
     {
+        // dd($request->all());
         $jenisPK = $request->input('jenis_PK');
         $filename = 'pengajuan-klaim-' . now()->format('Y_m_d_H_i') . '-' . $jenisPK . '.xlsx';
 
@@ -457,6 +457,8 @@ class pengajuanKlaimController extends Controller
 
     public function pengajuanKlaimPDF(Request $request)
     {
+        // dd($request->all());
+
         $jenisPK = $request->input('jenis_PK');
 
         if ($jenisPK === 'Cancel Leave') {
