@@ -22,7 +22,13 @@ class PengajuanBarangController extends Controller
      */
     public function index()
     {
-        $jabatan = auth()->user()->jabatan;
+        $user = auth()->user();
+
+        if (!$user || !$user->karyawan || !$user->karyawan->jabatan) {
+            return view('auth.login');
+        }
+
+        $jabatan = $user->karyawan->jabatan;
 
         // Daftar jabatan yang otomatis dapat 'buka'
         $jabatanBuka = ['Finance & Accounting', 'GM', 'SPV Sales', 'Koordinator ITSM'];
