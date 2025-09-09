@@ -111,6 +111,11 @@ class RKM extends Model
     {
     return $this->hasOne(Invoice::class, 'id_rkm');
     }
+    public function kwitansi()
+    {
+        return $this->hasMany(Kwitansi::class, 'id_rkm');
+    }
+    
 
 
 }
