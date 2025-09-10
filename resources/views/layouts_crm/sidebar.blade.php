@@ -90,6 +90,13 @@
             </a>
         </li>
 
+        <li class="menu-item {{ request()->routeIs('index.target') ? 'active open' : '' }}">
+            <a href="{{ route('index.target') }}" class="menu-link">
+                <i class='menu-icon tf-icons bx bx-bookmark-alt'></i>
+                <div class="text-truncate" data-i18n="indexTarget">Target Activity</div>
+            </a>
+        </li>
+
         <li class="menu-header small text-uppercase">
             <span class="menu-header-text">Untuk &amp; Anda</span>
         </li>
