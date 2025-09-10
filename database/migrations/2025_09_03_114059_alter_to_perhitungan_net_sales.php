@@ -12,6 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('perhitungan_net_sales', function (Blueprint $table) {
+            $table->integer('id_peserta')->nullable()->after('id_rkm');
+            $table->decimal('cashback', 15)->nullable()->after('fresh_money');
             $table->text('desc')->nullable()->after('tipe_pembayaran');
         });
     }
@@ -22,7 +24,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('perhitungan_net_sales', function (Blueprint $table) {
-            $table->dropColumn('desc');
         });
     }
 };
