@@ -110,6 +110,21 @@
                                     <span class="detail-label">Role</span>
                                     <span class="detail-value">{{ $users->role }}</span>
                                 </div>
+                            @if (Auth::user()->jabatan == 'Sales' || Auth::user()->jabatan == 'SPV Sales')
+                                <div class="detail-row">
+                                    <span class="detail-label">Email</span>
+                                    <span class="detail-value">{{ $karyawan->email }}</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Telepon</span>
+                                    <span class="detail-value">{{ $karyawan->telepon }}</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Whatsapp</span>
+                                    <span class="detail-value">{{ $karyawan->whatsapp }}</span>
+                                </div>
+                            @endif
+
                                 <div class="detail-row">
                                     <span class="detail-label">Status</span>
                                     <span class="detail-value">

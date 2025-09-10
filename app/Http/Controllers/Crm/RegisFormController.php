@@ -5,10 +5,13 @@ namespace App\Http\Controllers\Crm;
 use App\Http\Controllers\Controller;
 use App\Models\karyawan;
 use App\Models\KetentuanForm;
+use App\Models\Materi;
 use App\Models\Peluang;
+use App\Models\Perusahaan;
 use App\Models\RegisForm;
 use App\Models\RKM;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 
@@ -26,6 +29,17 @@ class RegisFormController extends Controller
             'ttd_spv'  => $ttdSPV,
         ];
         return view('crm.regisform.regis', compact('lead', 'ketentuan'));
+    }
+
+    public function indexPenawaran()
+    {
+        $user = Auth::user();
+        $sales = karyawan::where('id', $user->id)->first();
+        $perusahaan = Perusahaan::where('sales_key', $sales->kode_karyawan)->get();
+        $materi = Materi::all();
+        $ketentuan = KetentuanForm::all();
+        // dd($sales, $perusahaan, $materi);
+        return view('crm.regisform.penawaran', compact('sales', 'perusahaan', 'materi', 'ketentuan'));
     }
 
     public function upload(Request $request)

@@ -18,7 +18,7 @@ class PicController extends Controller
     {
         $user = Auth::user();
         $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM'];
-
+        // dd($user);
         if ($user->jabatan === 'Sales') {
             $salesKey = $user->id_sales;
             $perusahaans = Perusahaan::where('sales_key', $salesKey)->get();
@@ -28,7 +28,7 @@ class PicController extends Controller
         } else {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
-
+        
         // dd($perusahaans);
         return view('crm.pic.index', compact('perusahaans'));
     }

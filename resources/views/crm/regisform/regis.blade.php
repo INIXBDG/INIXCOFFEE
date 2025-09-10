@@ -216,7 +216,7 @@
             margin: 10px 0;
             page-break-inside: avoid;
             border: 1px solid #ccc;
-            padding: 8px;
+            padding: 50px;
         }
 
         .description h3 {
@@ -524,12 +524,6 @@
         @php
             use App\Models\Karyawan;
             $sales = Karyawan::where('kode_karyawan', $lead->id_sales)->first();
-            $ttdauth = Karyawan::where('id', auth()->id())->value('ttd');
-            $ttdSPV = Karyawan::where('jabatan', 'SPV Sales')->value('ttd');
-            $ttd = [
-                'ttd_user' => $ttdauth,
-                'ttd_spv' => $ttdSPV,
-            ];
         @endphp
 
         <h3>Tanda Tangan</h3>
@@ -540,8 +534,6 @@
                 <label>Jabatan Penandatangan 1:</label>
                 <input type="text" placeholder="Jabatan Penandatangan 1" class="signature-position" required
                     value="Pendaftar">
-                <label>Upload Tanda Tangan 1:</label>
-                <input type="file" accept="image/*" class="signature-upload" id="signature-upload-1">
             </div>
             <div class="signature-row">
                 <label>Nama Penandatangan 2:</label>
@@ -550,12 +542,6 @@
                 <label>Jabatan Penandatangan 2:</label>
                 <input type="text" placeholder="Jabatan Penandatangan 2" class="signature-position" required
                     value="Account Executive">
-                <label>Tanda Tangan 2 (dari database):</label>
-                <input type="hidden" class="signature-data" value="{{ $ttd['ttd_user'] ?? '' }}">
-                <img src="{{ asset('storage/ttd/' . ($ttd['ttd_user'] ?? '')) }}" class="signature-preview"
-                    style="max-width: 100px; display: {{ $ttd['ttd_user'] ? 'block' : 'none' }};">
-                <label>Upload Cap Perusahaan:</label>
-                <input type="file" accept="image/*" class="cap-upload" id="cap-upload-2">
             </div>
             <div class="signature-row">
                 <label>Nama Penandatangan 3:</label>
@@ -564,10 +550,6 @@
                 <label>Jabatan Penandatangan 3:</label>
                 <input type="text" placeholder="Jabatan Penandatangan 3" class="signature-position" required
                     value="Chief Marketing Manager">
-                <label>Tanda Tangan 3 (dari database):</label>
-                <input type="hidden" class="signature-data" value="{{ $ttd['ttd_spv'] ?? '' }}">
-                <img src="{{ asset('storage/ttd/' . ($ttd['ttd_spv'] ?? '')) }}" class="signature-preview"
-                    style="max-width: 100px; display: {{ $ttd['ttd_spv'] ? 'block' : 'none' }};">
             </div>
         </div>
 
@@ -668,47 +650,38 @@
                 });
             }
 
-            // Proses tanda tangan dan cap
+            // Proses tanda tangan
             const signatureRows = document.querySelectorAll('.signature-row');
             let signatureHTML = '';
             signatureRows.forEach((row, index) => {
                 const name = row.querySelector('.signature-name').value || 'Tidak diisi';
                 const position = row.querySelector('.signature-position').value || 'Tidak diisi';
-                let signatureSrc = '';
-                let capSrc = '';
+                let extraText = '';
+                let style = '';
 
-                // Penandatangan 1: Tanda tangan dari upload
+                // Signature 1: Kosong (untuk tinta basah)
                 if (index === 0) {
-                    const signatureUpload = row.querySelector('#signature-upload-1');
-                    if (signatureUpload && signatureUpload.files[0]) {
-                        signatureSrc = URL.createObjectURL(signatureUpload.files[0]);
-                    }
+                    extraText = '';
+                    style = 'padding-top: 20.4mm;';
                 }
-                // Penandatangan 2: Tanda tangan dari $ttd['ttd_user'] dan cap dari upload
+                // Signature 2: Kosong (untuk tinta basah)
                 else if (index === 1) {
-                    const signatureData = row.querySelector('.signature-data');
-                    if (signatureData && signatureData.value) {
-                        signatureSrc = `{{ asset('storage/ttd') }}/${signatureData.value}`;
-                    }
-                    const capUpload = row.querySelector('#cap-upload-2');
-                    if (capUpload && capUpload.files[0]) {
-                        capSrc = URL.createObjectURL(capUpload.files[0]);
-                    }
+                    extraText = '';
+                    style = 'padding-top: 20.4mm;';
                 }
-                // Penandatangan 3: Tanda tangan dari $ttd['ttd_spv']
+                // Signature 3: Kosong (untuk tinta basah), tambah "Mengetahui"
                 else if (index === 2) {
-                    const signatureData = row.querySelector('.signature-data');
-                    if (signatureData && signatureData.value) {
-                        signatureSrc = `{{ asset('storage/ttd') }}/${signatureData.value}`;
-                    }
+                    extraText = '<p>Mengetahui</p>';
+                    style = ' padding-top: 15mm';
                 }
 
                 signatureHTML += `
                     <div class="signature">
-                        ${capSrc ? `<img src="${capSrc}" class="cap-img" alt="Cap Perusahaan">` : ''}
-                        ${signatureSrc ? `<img src="${signatureSrc}" class="signature-img" alt="Tanda Tangan">` : '<p>Tanda tangan tidak tersedia</p>'}
-                        <p class="name">${name}</p>
-                        <p class="position">${position}</p>
+                        ${extraText}
+                        <div style="${style}">
+                            <p class="name">${name}</p>
+                            <p class="position">${position}</p>
+                        </div>
                     </div>
                 `;
             });
@@ -801,7 +774,7 @@
                 .syarat h3 { font-size: 12pt; margin-bottom: 1mm; }
                 .syarat ol { font-size: 10pt; margin: 1mm 0; padding-left: 15px; }
                 .statement { font-size: 10pt; margin: 2mm 0; text-align: left; page-break-inside: avoid; }
-                .description { font-size: 10pt; margin: 2mm 0; text-align: left; page-break-inside: avoid; border: 1px solid #ccc; padding: 6pt; }
+                .description { font-size: 10pt; margin: 2mm 0; text-align: left; page-break-inside: avoid; border: 1px solid #ccc; padding: 50pt; }
                 .description h3 { font-size: 12pt; margin-bottom: 1mm; }
                 .signature-section { margin-top: 10mm; display: flex; justify-content: flex-end; gap: 10mm; page-break-inside: avoid; align-items: flex-start; }
                 .signature { text-align: center; width: 30%; position: relative; min-height: 80pt; }

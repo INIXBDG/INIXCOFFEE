@@ -43,56 +43,78 @@ class KaryawanController extends Controller
     }
 
 
-    public function updateData(Request $request, $id)
-    {
-        $decoded = Hashids::decode($id);
-        if (empty($decoded)) abort(404);
+public function updateData(Request $request, $id)
+{
+    $decoded = Hashids::decode($id);
+    if (empty($decoded)) abort(404);
 
-        $realId = $decoded[0];
+    $realId = $decoded[0];
 
-        $karyawan = Karyawan::findOrFail($realId);
-        $user = User::where('karyawan_id', $karyawan->id)->firstOrFail();
+    $karyawan = Karyawan::findOrFail($realId);
+    $user = User::where('karyawan_id', $karyawan->id)->firstOrFail();
 
-        // Batasi akses ke user sendiri atau admin
-        if (auth()->id() !== $user->id && auth()->user()->role !== 'Admin') {
-            abort(403);
-        }
-
-        $data = $request->validate([
-            'nama_lengkap' => ['required'],
-            'nip' => ['nullable', 'numeric'],
-            'jabatan' => ['nullable'],
-            'divisi' => ['nullable'],
-            'status_aktif' => ['required'],
-        ]);
-
-        $karyawan->jabatan = $data['jabatan'];
-        $karyawan->update($request->all());
-
-        $id_instruktur = null;
-        $id_sales = null;
-
-        if (in_array($request->jabatan, ['Instruktur', 'Technical Support'])) {
-            $id_instruktur = $request->kode_karyawan;
-        }
-
-        if (in_array($request->jabatan, ['SPV Sales', 'Sales', 'Adm Sales'])) {
-            $id_sales = $request->kode_karyawan;
-        }
-
-        $user->jabatan = $data['jabatan'];
-        $user->status_akun = $data['status_aktif'];
-        $user->id_instruktur = $id_instruktur;
-        $user->id_sales = $id_sales;
-        $user->save();
-
-        if (auth()->user()->role == "Admin") {
-            return redirect('/user')->with('success', 'Data Berhasil Diubah');
-        }
-
-        return redirect()->route('user.show', ['hashid' => $user->hashids])
-            ->with('success', 'Data Berhasil Diubah'); //fixing redirect and command
+    // Batasi akses ke user sendiri atau admin
+    if (auth()->id() !== $user->id && auth()->user()->role !== 'Admin') {
+        abort(403);
     }
+
+    $data = $request->validate([
+        'nama_lengkap' => ['required'],
+        'nip' => ['nullable', 'numeric'],
+        'jabatan' => ['nullable'],
+        'divisi' => ['nullable'],
+        'status_aktif' => ['required'],
+        'email' => ['nullable', 'email'],
+        'telepon' => ['nullable', 'string', 'max:20'],
+        'whatsapp' => ['nullable', 'string', 'max:20'],
+    ]);
+
+    // Update data karyawan
+    $karyawan->nama_lengkap = $data['nama_lengkap'];
+    $karyawan->nip = $data['nip'] ?? $karyawan->nip;
+    $karyawan->jabatan = $data['jabatan'];
+    $karyawan->divisi = $data['divisi'] ?? $karyawan->divisi;
+    $karyawan->status_aktif = $data['status_aktif'];
+
+    // Tambahan update jika ada
+    if (!empty($data['email'])) {
+        $karyawan->email = $data['email'];
+    }
+    if (!empty($data['telepon'])) {
+        $karyawan->telepon = $data['telepon'];
+    }
+    if (!empty($data['whatsapp'])) {
+        $karyawan->whatsapp = $data['whatsapp'];
+    }
+
+    $karyawan->save();
+
+    // Tentukan id_instruktur / id_sales
+    $id_instruktur = null;
+    $id_sales = null;
+
+    if (in_array($request->jabatan, ['Instruktur', 'Technical Support'])) {
+        $id_instruktur = $request->kode_karyawan;
+    }
+
+    if (in_array($request->jabatan, ['SPV Sales', 'Sales', 'Adm Sales'])) {
+        $id_sales = $request->kode_karyawan;
+    }
+
+    // Update data user
+    $user->jabatan = $data['jabatan'];
+    $user->status_akun = $data['status_aktif'];
+    $user->id_instruktur = $id_instruktur;
+    $user->id_sales = $id_sales;
+    $user->save();
+
+    if (auth()->user()->role == "Admin") {
+        return redirect('/user')->with('success', 'Data Berhasil Diubah');
+    }
+
+    return redirect()->route('user.show', ['hashid' => $user->hashids])
+        ->with('success', 'Data Berhasil Diubah');
+}
 
     public function updateFoto(Request $request, $id): RedirectResponse
     {
