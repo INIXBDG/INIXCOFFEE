@@ -9,23 +9,29 @@ class perhitunganNetSales extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['id_rkm', 'transportasi', 'penginapan', 'fresh_money', 'entertaint', 'souvenir', 'desc','harga_penawaran', 'tgl_pa', 'tipe_pembayaran', 'pajak', 'id_tracking'];
+    protected $fillable = ['id_rkm', 'transportasi', 'penginapan','cashback', 'id_peserta', 'fresh_money', 'entertaint', 'souvenir', 'desc','harga_penawaran', 'tgl_pa', 'tipe_pembayaran', 'pajak', 'id_tracking'];
 
     public function rkm()
     {
         return $this->belongsTo(RKM::class, 'id_rkm', 'id');
     }
+
     public function approvedNetSales()
     {
         return $this->hasMany(approvedNetSales::class, 'id_netSales', 'id');
     }
     public function karyawan()
     {
-        return $this->belongsTo(Karyawan::class, 'id_karyawan'); // sesuaikan 'id_karyawan' dengan nama kolom foreign key yang benar
+        return $this->belongsTo(karyawan::class, 'id_karyawan'); // sesuaikan 'id_karyawan' dengan nama kolom foreign key yang benar
     }
 
     public function trackingNetSales()
     {
         return $this->belongsTo(trackingNetSales::class, 'id_tracking', 'id');
+    }
+
+        public function peserta()
+    {
+        return $this->belongsTo(Peserta::class, 'id_peserta');
     }
 }

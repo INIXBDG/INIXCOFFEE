@@ -11,10 +11,8 @@
                 <h4 class="fw-bold mb-0">Detail Lead</h4>
                 <div class="d-flex gap-2">
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#paymentAdvanceModal"
-                        {{ $peluang->tahap === 'merah' ? '' : 'disabled' }}>
-
+                    >
                         <i class="menu-icon bx bx-plus"></i> Payment Advance
-
                     </button>
                     @if ($isLost)
                         <span class="btn btn-sm btn-info" style="pointer-events: none; opacity: 0.5;">Lihat di RKM</span>
@@ -24,7 +22,7 @@
                             di RKM</a>
                     @endif
                     <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#editPeluangModal"
-                        {{ $peluang->merah ? 'disabled' : '' }}>
+                    >
                         Edit Lead
                     </button>
                     <button type="button" class="btn btn-success" data-bs-toggle="modal"
@@ -466,6 +464,19 @@
                         <div class="modal-body">
                             <input type="hidden" name="id_rkm" value='{{ $peluang->id_rkm }}'>
                             <div class="mb-3">
+                                <label for="id_peserta" class="form-label">Pilih Peserta</label>
+                                <select class="form-select" id="id_peserta" name="id_peserta">
+                                    <option selected disabled>Pilih Peserta</option>
+                                    @foreach($regisuser as $registrasi)
+                                        @if(isset($registrasi->peserta->nama))
+                                            <option value="{{ $registrasi->peserta->id }}">
+                                                {{ $registrasi->peserta->nama }}
+                                            </option>
+                                        @endif
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="mb-3">
                                 <label for="hargaPenawaran" class="form-label">Harga Penawaran</label>
                                 <input type="number" step="any" class="form-control" id="hargaPenawaran"
                                     name="hargaPenawaran">
@@ -484,6 +495,11 @@
                                 <label for="freshMoney" class="form-label">Fresh Money</label>
                                 <input type="number" step="any" class="form-control" id="freshMoney"
                                     name="freshMoney">
+                            </div>
+                            <div class="mb-3">
+                                <label for="cashback" class="form-label">Cashback</label>
+                                <input type="number" step="any" class="form-control" id="cashback"
+                                    name="cashback">
                             </div>
                             <div class="mb-3">
                                 <label for="entertaint" class="form-label">Entertaint</label>
@@ -523,68 +539,55 @@
             </div>
         </div>
 
-
         <!-- Modal Detail PA -->
         <div class="modal fade" id="detailPAModal" tabindex="-1" aria-labelledby="detailPAModalLabel"
             aria-hidden="true">
-            <div class="modal-dialog modal-lg">
+            <div class="modal-dialog modal-fullscreen">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="detailPAModalLabel">Detail Payment Advance</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        @if ($netsales)
-                            <h6 class="mb-3">Informasi Payment Advance</h6>
-                            <dl class="row">
-                                <dt class="col-sm-4">Harga Penawaran</dt>
-                                <dd class="col-sm-8">Rp
-                                    {{ $netsales->harga_penawaran ? number_format($netsales->harga_penawaran, 2, ',', '.') : '-' }}
-                                </dd>
-                                <dt class="col-sm-4">Transportasi</dt>
-                                <dd class="col-sm-8">Rp
-                                    {{ $netsales->transportasi ? number_format($netsales->transportasi, 2, ',', '.') : '-' }}
-                                </dd>
-                                <dt class="col-sm-4">Penginapan</dt>
-                                <dd class="col-sm-8">Rp
-                                    {{ $netsales->penginapan ? number_format($netsales->penginapan, 2, ',', '.') : '-' }}
-                                </dd>
-                                <dt class="col-sm-4">Fresh Money</dt>
-                                <dd class="col-sm-8">Rp
-                                    {{ $netsales->fresh_money ? number_format($netsales->fresh_money, 2, ',', '.') : '-' }}
-                                </dd>
-                                <dt class="col-sm-4">Entertaint</dt>
-                                <dd class="col-sm-8">Rp
-                                    {{ $netsales->entertaint ? number_format($netsales->entertaint, 2, ',', '.') : '-' }}
-                                </dd>
-                                <dt class="col-sm-4">Souvenir</dt>
-                                <dd class="col-sm-8">Rp
-                                    {{ $netsales->souvenir ? number_format($netsales->souvenir, 2, ',', '.') : '-' }}
-                                </dd>
-                                <dt class="col-sm-4">Tanggal Payment Advance</dt>
-                                <dd class="col-sm-8">
-                                    {{ $netsales->tgl_pa ? \Carbon\Carbon::parse($netsales->tgl_pa)->translatedFormat('d F Y') : '-' }}
-                                </dd>
-                                <dt class="col-sm-4">Tipe Pembayaran</dt>
-                                <dd class="col-sm-8">
-                                    {{ $netsales->tipe_pembayaran ? ucfirst($netsales->tipe_pembayaran) : '-' }}
-                                </dd>
-                                <dt class="col-sm-4">Pajak</dt>
-                                <dd class="col-sm-8">
-                                    {{ $netsales->pajak ? number_format($netsales->pajak, 2, ',', '.') . '%' : '-' }}
-                                </dd>
-                            </dl>
-
-                            {{-- Tambahan untuk menampilkan deskripsi --}}
-                            <div class="mt-3">
-                                <h6 class="mb-2">Deskripsi</h6>
-                                <p class="border rounded p-2" style="white-space: pre-wrap;">
-                                    {{ $netsales->desc ?? 'Tidak ada deskripsi.' }}
-                                </p>
+                        @if ($netsales->isNotEmpty())
+                            <div class="table-responsive mb-4">
+                                <table class="table table-bordered table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Nama</th>
+                                            <th>Harga Penawaran</th>
+                                            <th>Transportasi</th>
+                                            <th>Penginapan</th>
+                                            <th>Fresh Money</th>
+                                            <th>Entertaint</th>
+                                            <th>Souvenir</th>
+                                            <th>Tanggal PA</th>
+                                            <th>Tipe Pembayaran</th>
+                                            <th>Deskripsi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($netsales as $item)
+                                            <tr>
+                                                <td>{{ $item->peserta->nama }}</td>
+                                                <td>Rp {{ $item->harga_penawaran ? number_format($item->harga_penawaran, 2, ',', '.') : '-' }}</td>
+                                                <td>Rp {{ $item->transportasi ? number_format($item->transportasi, 2, ',', '.') : '-' }}</td>
+                                                <td>Rp {{ $item->penginapan ? number_format($item->penginapan, 2, ',', '.') : '-' }}</td>
+                                                <td>Rp {{ $item->fresh_money ? number_format($item->fresh_money, 2, ',', '.') : '-' }}</td>
+                                                <td>Rp {{ $item->entertaint ? number_format($item->entertaint, 2, ',', '.') : '-' }}</td>
+                                                <td>Rp {{ $item->souvenir ? number_format($item->souvenir, 2, ',', '.') : '-' }}</td>
+                                                <td>{{ $item->tgl_pa ? \Carbon\Carbon::parse($item->tgl_pa)->translatedFormat('d F Y') : '-' }}</td>
+                                                <td>{{ $item->tipe_pembayaran ? ucfirst($item->tipe_pembayaran) : '-' }}</td>
+                                                <td>{{ $item->desc ?? 'Tidak ada deskripsi.' }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
                             </div>
 
+                            {{-- Tracking Information --}}
                             <h6 class="mt-4 mb-3">Tracking Information</h6>
-                            @if ($netsales->trackingNetSales)
+                            @if ($netsales->first()->trackingNetSales)
                                 <div class="table-responsive">
                                     <table class="table table-striped table-hover">
                                         <thead>
@@ -595,8 +598,8 @@
                                         </thead>
                                         <tbody>
                                             <tr>
-                                                <td>{{ $netsales->trackingNetSales->tracking ?? '-' }}</td>
-                                                <td>{{ $netsales->created_at ? \Carbon\Carbon::parse($netsales->created_at)->translatedFormat('d F Y') : '-' }}</td>
+                                                <td>{{ $netsales->first()->trackingNetSales->tracking ?? '-' }}</td>
+                                                <td>{{ $netsales->first()->created_at ? \Carbon\Carbon::parse($netsales->first()->created_at)->translatedFormat('d F Y') : '-' }}</td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -605,8 +608,9 @@
                                 <p class="text-muted">Belum ada data tracking untuk Payment Advance ini.</p>
                             @endif
 
+                            {{-- Approval Information --}}
                             <h6 class="mt-4 mb-3">Approval Information</h6>
-                            @if ($netsales->approvedNetSales->isNotEmpty())
+                            @if ($netsales->first()->approvedNetSales->isNotEmpty())
                                 <div class="table-responsive">
                                     <table class="table table-striped table-hover">
                                         <thead>
@@ -618,7 +622,7 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @foreach ($netsales->approvedNetSales as $approval)
+                                            @foreach ($netsales->first()->approvedNetSales as $approval)
                                                 @php
                                                     $status = match (true) {
                                                         $approval->status === 1 &&

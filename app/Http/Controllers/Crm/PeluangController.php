@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Models\perhitunganNetSales;
 use App\Models\karyawan;
 use App\Models\RegisForm;
+use App\Models\Registrasi;
 use App\Models\trackingNetSales;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -25,15 +26,12 @@ use Illuminate\Support\Facades\Notification;
 
 class PeluangController extends Controller
 {
-
     public function index()
     {
         $user = Auth::user();
         $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM'];
         $materi = Materi::all();
-        $aktivitas = Aktivitas::where('id_sales', $user->id_sales)
-            ->whereNull('id_peluang')
-            ->get();
+        $aktivitas = Aktivitas::where('id_sales', $user->id_sales)->whereNull('id_peluang')->get();
 
         if ($user->jabatan === 'Sales') {
             $idSales = $user->id_sales;
@@ -68,13 +66,15 @@ class PeluangController extends Controller
                         // Append RKM data or null if not found
                         $item->rkm_data = $rkm ? $rkm : null;
                         // Create new rkm_formatted data if rkm exists
-                        $item->rkm_formatted = $rkm ? [
-                            'materi_key' => $rkm->materi_key,
-                            'metode_kelas' => $rkm->metode_kelas === 'Offline' ? 'off' : ($rkm->metode_kelas === 'Inhouse Bandung' ? 'inhb' : ($rkm->metode_kelas === 'Inhouse Luar Bandung' ? 'inhlb' : 'vir')),
-                            'tanggal_awal_day' => $rkm->tanggal_awal ? date('d', strtotime($rkm->tanggal_awal)) : null,
-                            'tanggal_awal_month' => $rkm->tanggal_awal ? date('n', strtotime($rkm->tanggal_awal)) : null,
-                            'tanggal_awal_year' => $rkm->tanggal_awal ? date('Y', strtotime($rkm->tanggal_awal)) : null,
-                        ] : null;
+                        $item->rkm_formatted = $rkm
+                            ? [
+                                'materi_key' => $rkm->materi_key,
+                                'metode_kelas' => $rkm->metode_kelas === 'Offline' ? 'off' : ($rkm->metode_kelas === 'Inhouse Bandung' ? 'inhb' : ($rkm->metode_kelas === 'Inhouse Luar Bandung' ? 'inhlb' : 'vir')),
+                                'tanggal_awal_day' => $rkm->tanggal_awal ? date('d', strtotime($rkm->tanggal_awal)) : null,
+                                'tanggal_awal_month' => $rkm->tanggal_awal ? date('n', strtotime($rkm->tanggal_awal)) : null,
+                                'tanggal_awal_year' => $rkm->tanggal_awal ? date('Y', strtotime($rkm->tanggal_awal)) : null,
+                            ]
+                            : null;
                         return $item;
                     });
             } elseif (in_array($user->jabatan, $allowedJabatan)) {
@@ -88,35 +88,45 @@ class PeluangController extends Controller
                         // Append RKM data or null if not found
                         $item->rkm_data = $rkm ? $rkm : null;
                         // Create new rkm_formatted data if rkm exists
-                        $item->rkm_formatted = $rkm ? [
-                            'materi_key' => $rkm->materi_key,
-                            'metode_kelas' => $rkm->metode_kelas === 'Offline' ? 'off' : ($rkm->metode_kelas === 'Inhouse Bandung' ? 'inhb' : ($rkm->metode_kelas === 'Inhouse Luar Bandung' ? 'inhlb' : 'vir')),
-                            'tanggal_awal_day' => $rkm->tanggal_awal ? date('d', strtotime($rkm->tanggal_awal)) : null,
-                            'tanggal_awal_month' => $rkm->tanggal_awal ? date('n', strtotime($rkm->tanggal_awal)) : null,
-                            'tanggal_awal_year' => $rkm->tanggal_awal ? date('Y', strtotime($rkm->tanggal_awal)) : null,
-                        ] : null;
+                        $item->rkm_formatted = $rkm
+                            ? [
+                                'materi_key' => $rkm->materi_key,
+                                'metode_kelas' => $rkm->metode_kelas === 'Offline' ? 'off' : ($rkm->metode_kelas === 'Inhouse Bandung' ? 'inhb' : ($rkm->metode_kelas === 'Inhouse Luar Bandung' ? 'inhlb' : 'vir')),
+                                'tanggal_awal_day' => $rkm->tanggal_awal ? date('d', strtotime($rkm->tanggal_awal)) : null,
+                                'tanggal_awal_month' => $rkm->tanggal_awal ? date('n', strtotime($rkm->tanggal_awal)) : null,
+                                'tanggal_awal_year' => $rkm->tanggal_awal ? date('Y', strtotime($rkm->tanggal_awal)) : null,
+                            ]
+                            : null;
                         return $item;
                     });
             } else {
-                return response()->json([
-                    'error' => 'Unauthorized access.'
-                ], 403);
+                return response()->json(
+                    [
+                        'error' => 'Unauthorized access.',
+                    ],
+                    403,
+                );
             }
 
             return response()->json([
                 'data' => $data,
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Terjadi kesalahan pada server. Silakan coba lagi nanti.',
-            ], 500);
+            return response()->json(
+                [
+                    'error' => 'Terjadi kesalahan pada server. Silakan coba lagi nanti.',
+                ],
+                500,
+            );
         }
     }
 
     public function detail($id)
     {
         $aktivitas = Aktivitas::where('id_peluang', $id)->get();
-        $peluang = Peluang::with(['materiRelation', 'rkm'])->where('id', $id)->first();
+        $peluang = Peluang::with(['materiRelation', 'rkm'])
+            ->where('id', $id)
+            ->first();
         if ($peluang && $peluang->rkm) {
             $peluang->rkm->metode_kelas = $peluang->rkm->metode_kelas === 'Offline' ? 'off' : ($peluang->rkm->metode_kelas === 'Inhouse Bandung' ? 'inhb' : ($peluang->rkm->metode_kelas === 'Inhouse Luar Bandung' ? 'inhlb' : 'vir'));
             $peluang->rkm->tanggal_awal_day = $peluang->rkm->tanggal_awal ? date('d', strtotime($peluang->rkm->tanggal_awal)) : null;
@@ -124,15 +134,18 @@ class PeluangController extends Controller
             $peluang->rkm->tanggal_awal_year = $peluang->rkm->tanggal_awal ? date('Y', strtotime($peluang->rkm->tanggal_awal)) : null;
         }
         $materi = Materi::all();
-        $netsales = perhitunganNetSales::with('trackingNetSales', 'approvedNetSales')->where('id_rkm', $peluang->id_rkm)->first();
+        $netsales = perhitunganNetSales::with('trackingNetSales', 'approvedNetSales', 'peserta')->where('id_rkm', $peluang->id_rkm)->get();
         $regis = Regisform::where('id_peluang', $id)->first();
+
+        $ids_peserta_yang_sudah_ada = perhitunganNetSales::where('id_rkm', $peluang->rkm->id)->pluck('id_peserta');
+        $regisuser = Registrasi::with('peserta')->where('id_rkm', $peluang->rkm->id)->whereNotIn('id_peserta', $ids_peserta_yang_sudah_ada)->get();
+
         // dd($netsales);
-        return view('crm.peluang.detail', compact('peluang', 'aktivitas', 'materi', 'netsales', 'regis'));
+        return view('crm.peluang.detail', compact('peluang', 'aktivitas', 'materi', 'netsales', 'regis', 'regisuser'));
     }
 
     public function AmbilAktivitas($id)
     {
-        // Ambil semua contact berdasarkan perusahaan
         $contacts = Contact::where('id_perusahaan', $id)
             ->select('id', 'nama', 'email', 'divisi')
             ->get()
@@ -181,12 +194,12 @@ class PeluangController extends Controller
         // Format data untuk response JSON
         $result = $aktivitas->map(function ($a) {
             return [
-                'id'        => $a->id,
-                'kontak'    => $a->contact->nama ?? $a->peserta->nama ?? '-',
+                'id' => $a->id,
+                'kontak' => $a->contact->nama ?? ($a->peserta->nama ?? '-'),
                 'aktivitas' => ucfirst($a->aktivitas),
-                'subject'   => $a->subject,
+                'subject' => $a->subject,
                 'deskripsi' => $a->deskripsi ?? '-',
-                'waktu'     => \Carbon\Carbon::parse($a->waktu_aktivitas)->format('Y-m-d'),
+                'waktu' => \Carbon\Carbon::parse($a->waktu_aktivitas)->format('Y-m-d'),
             ];
         });
 
@@ -242,27 +255,14 @@ class PeluangController extends Controller
             9 => 'September',
             10 => 'Oktober',
             11 => 'November',
-            12 => 'Desember'
+            12 => 'Desember',
         ];
         $bulanInt = (int) $start->format('n');
 
         try {
             Carbon::setLocale('id');
             $bulanNama = $start->translatedFormat('F');
-            if (in_array(strtolower($bulanNama), [
-                'january',
-                'february',
-                'march',
-                'april',
-                'may',
-                'june',
-                'july',
-                'august',
-                'september',
-                'october',
-                'november',
-                'december'
-            ])) {
+            if (in_array(strtolower($bulanNama), ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'])) {
                 $bulanNama = $bulanNamaMap[$bulanInt];
             }
         } catch (\Exception $e) {
@@ -282,7 +282,6 @@ class PeluangController extends Controller
 
         $tahun = $start->format('Y');
 
-
         // Siapkan data RKM, termasuk yang diambil dari request dan user login, plus bulan, kuartal, tahun
         $rkmData = array_merge($validatedRKM, [
             'sales_key' => auth()->user()->id_sales ?? null,
@@ -291,12 +290,8 @@ class PeluangController extends Controller
             'harga_jual' => $request->harga,
             'pax' => $request->pax,
             'isi_pax' => $request->pax,
-            'tanggal_awal'   => $request->filled('periode_mulai')
-                ? $request->periode_mulai
-                : now()->toDateString(),
-            'tanggal_akhir'  => $request->filled('periode_selesai')
-                ? $request->periode_selesai
-                : now()->toDateString(),
+            'tanggal_awal' => $request->filled('periode_mulai') ? $request->periode_mulai : now()->toDateString(),
+            'tanggal_akhir' => $request->filled('periode_selesai') ? $request->periode_selesai : now()->toDateString(),
             'bulan' => $bulanNama,
             'quartal' => $kuartal,
             'tahun' => $tahun,
@@ -448,28 +443,24 @@ class PeluangController extends Controller
                 WHEN MONTH(merah) BETWEEN 7 AND 9 THEN "TR3"
                 WHEN MONTH(merah) BETWEEN 10 AND 12 THEN "TR4"
             END as triwulan'),
-                DB::raw('SUM(final) as total_jumlah')
+                DB::raw('SUM(final) as total_jumlah'),
             )
             ->groupBy('id_sales', 'triwulan')
             ->get()
             ->groupBy('id_sales')
             ->map(function ($grup) {
                 return $grup->pluck('total_jumlah', 'triwulan')->toArray();
-            })->toArray();
+            })
+            ->toArray();
 
         $pengguna = User::select('id_sales', 'username')->get()->keyBy('id_sales')->toArray();
 
         return view('crm.closedwin.index', compact('dataRingkasan', 'pengguna', 'tahunDipilih'));
     }
 
-
     public function detailRingkasan($id)
     {
-        $data = Peluang::where('id_sales', $id)
-            ->where('tahap', 'merah')
-            ->with('aktivitas', 'materiRelation')
-            ->with('perusahaan')
-            ->get();
+        $data = Peluang::where('id_sales', $id)->where('tahap', 'merah')->with('aktivitas', 'materiRelation')->with('perusahaan')->get();
         return view('crm.closedwin.detail', compact('data'));
     }
 
@@ -487,7 +478,7 @@ class PeluangController extends Controller
                     WHEN MONTH(lost) BETWEEN 7 AND 9 THEN "TR3"
                     WHEN MONTH(lost) BETWEEN 10 AND 12 THEN "TR4"
                 END as triwulan'),
-                DB::raw('SUM(harga * pax) as total_jumlah')
+                DB::raw('SUM(harga * pax) as total_jumlah'),
             )
             ->groupBy('id_sales', 'triwulan')
             ->get()
@@ -504,11 +495,7 @@ class PeluangController extends Controller
 
     public function detailRingkasanlost($id)
     {
-        $data = Peluang::where('id_sales', $id)
-            ->where('tahap', 'lost')
-            ->with('aktivitas', 'materiRelation')
-            ->with('perusahaan')
-            ->get();
+        $data = Peluang::where('id_sales', $id)->where('tahap', 'lost')->with('aktivitas', 'materiRelation')->with('perusahaan')->get();
         return view('crm.closedlost.detail', compact('data'));
     }
 
@@ -516,40 +503,53 @@ class PeluangController extends Controller
     {
         $request->validate([
             'id_rkm' => 'required|numeric',
+            'id_peserta' => 'required|numeric',
             'hargaPenawaran' => 'required|numeric',
             'transportasi' => 'nullable|numeric',
             'penginapan' => 'nullable|numeric',
             'freshMoney' => 'nullable|numeric',
+            'cashback' => 'nullable|numeric',
             'entertaint' => 'nullable|numeric',
             'souvenir' => 'nullable|numeric',
-            'desc'     => 'nullable',
+            'desc' => 'nullable',
             'tanggalPayment' => 'required|date',
             'tipePembayaran' => 'required|string',
         ]);
 
-        $data = [
-            'id_rkm' => $request->id_rkm,
-            'harga_penawaran' => $request->hargaPenawaran,
-            'transportasi' => $request->transportasi,
-            'penginapan' => $request->penginapan,
-            'fresh_money' => $request->freshMoney,
-            'entertaint' => $request->entertaint,
-            'souvenir' => $request->souvenir,
-            'desc' => $request->desc,
-            'tgl_pa' => $request->tanggalPayment,
-            'tipe_pembayaran' => $request->tipePembayaran,
-        ];
+        $existingNetSales = perhitunganNetSales::where('id_rkm', $request->id_rkm)->first();
 
-        $netSales = perhitunganNetSales::create($data);
+        $idTracking = null;
 
-        $dataTracking = trackingNetSales::create([
-            'id_netSales' => $netSales->id,
-        ]);
+        if (!$existingNetSales) {
+            // Jika BELUM ada, buat tracking baru
+            $tracking = new trackingNetSales();
+            $tracking->id_rkm = $request->id_rkm;
+            $tracking->save();
 
-        $netSales->update([
-            'id_tracking' => $dataTracking->id,
-        ]);
+            $idTracking = $tracking->id;
+        } else {
+            $tracking = trackingNetSales::where('id_rkm', $existingNetSales->id_rkm)->first();
+            $idTracking = $tracking->id;
+        }
 
+        // Simpan data payment advance baru
+        $netSales = new perhitunganNetSales();
+        $netSales->id_rkm = $request->id_rkm;
+        $netSales->id_peserta = $request->id_peserta;
+        $netSales->harga_penawaran = $request->hargaPenawaran;
+        $netSales->transportasi = $request->transportasi;
+        $netSales->penginapan = $request->penginapan;
+        $netSales->fresh_money = $request->freshMoney;
+        $netSales->cashback = $request->cashback;
+        $netSales->entertaint = $request->entertaint;
+        $netSales->souvenir = $request->souvenir;
+        $netSales->desc = $request->desc;
+        $netSales->tgl_pa = $request->tanggalPayment;
+        $netSales->tipe_pembayaran = $request->tipePembayaran;
+        $netSales->id_tracking = $idTracking;
+        $netSales->save();
+
+        // Kirim notifikasi ke SPV Sales
         $spv = karyawan::where('jabatan', 'SPV Sales')->first();
 
         if ($spv) {
@@ -560,9 +560,9 @@ class PeluangController extends Controller
             if ($user) {
                 $dummyComment = (object) [
                     'karyawan_key' => auth()->user()->karyawan->id ?? null,
-                    'content'      => 'Pengajuan Payment Advance baru oleh Sales, anda dimohon untuk melakukan persetujuan.',
-                    'materi_key'   => null,
-                    'rkm_key'      => $data['id_rkm'],
+                    'content' => 'Pengajuan Payment Advance baru oleh Sales, anda dimohon untuk melakukan persetujuan.',
+                    'materi_key' => null,
+                    'rkm_key' => $request->id_rkm,
                 ];
 
                 $url = url('paymentAdvance.index');
