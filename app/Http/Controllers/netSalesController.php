@@ -92,7 +92,7 @@ class netSalesController extends Controller
 
         return redirect()->route('paymantAdvance.index')->with(['success' => 'Data Berhasil Disimpan!']);
     }
-    
+
     public function create($id)
     {
         $rkm = RKM::with('perusahaan', 'materi')->findOrFail($id);
@@ -253,6 +253,73 @@ class netSalesController extends Controller
     }
 
 
+    // public function dataDetail(Request $request)
+    // {
+    //     $id = $request->input('value');
+
+    //     $dataRKM = RKM::where('id', $id)->first();
+    //     $dataPerusahaan = Perusahaan::where('id', $dataRKM->perusahaan_key)->first();
+    //     $dataSales = karyawan::where('kode_karyawan', $dataRKM->sales_key)->first();
+    //     $dataMateri = Materi::where('id', $dataRKM->materi_key)->first();
+    //     $dataNetSales = perhitunganNetSales::where('id_rkm', $dataRKM->id)->first();
+    //     $dataApproved = approvedNetSales::where('id_NetSales', $dataNetSales->id)->get();
+    //     $dataTracking = trackingNetSales::where('id', $dataNetSales->id_tracking)->first();
+
+    //     $mulai = Carbon::parse($dataRKM->tanggal_awal)->timezone('Asia/Jakarta');
+    //     $akhir = Carbon::parse($dataRKM->tanggal_akhir)->timezone('Asia/Jakarta');
+
+    //     $arrayRKM = [
+    //         'id'              => $dataRKM->id,
+    //         'nama_perusahaan' => $dataPerusahaan->nama_perusahaan,
+    //         'materi'          => $dataMateri->nama_materi,
+    //         'sales'           => $dataSales->nama_lengkap,
+    //         'harga_jual'      => $dataRKM->harga_jual,
+    //         'pax'             => $dataRKM->pax,
+    //         'metode_kelas'    => $dataRKM->metode_kelas,
+    //         'durasi_kelas'    => $mulai->startOfDay()->diffInDays($akhir->startOfDay()) + 1,
+    //     ];
+
+    //     $arrayNetSales = [
+    //         'id_netSales'     => $dataNetSales->id,
+    //         'transportasi'    => $dataNetSales->transportasi,
+    //         'penginapan'      => $dataNetSales->penginapan,
+    //         'fresh_money'     => $dataNetSales->fresh_money,
+    //         'entertaint'      => $dataNetSales->entertaint,
+    //         'souvenir'        => $dataNetSales->souvenir,
+    //         'harga_penawaran' => $dataNetSales->harga_penawaran,
+    //         'tgl_pa'          => $dataNetSales->tgl_pa,
+    //         'tipe_pembayaran' => $dataNetSales->tipe_pembayaran,
+    //         'total'           => $dataNetSales->harga_penawaran -
+    //             $dataNetSales->transportasi -
+    //             $dataNetSales->penginapan -
+    //             $dataNetSales->fresh_money -
+    //             $dataNetSales->entertaint -
+    //             $dataNetSales->souvenir,
+    //     ];
+
+    //     $arrayTracking = [
+    //         'tanggal' => $dataTracking->created_at->format('d M Y H:i'),
+    //         'status'  => $dataTracking->tracking
+    //     ];
+
+    //     $arrayapproved = [];
+    //     foreach ($dataApproved as $item) {
+    //         $arrayapproved[] = [
+    //             'tanggal'      => $item->created_at->format('Y-m-d H:i'),
+    //             'status'       => $item->status,
+    //             'level_status' => $item->level_status,
+    //             'keterangan'   => $item->keterangan,
+    //         ];
+    //     }
+
+    //     return response()->json([
+    //         'dataRKM'      => $arrayRKM,
+    //         'dataNetSales' => $arrayNetSales,
+    //         'dataApproved' => $arrayapproved,
+    //         'dataTracking' => $arrayTracking,
+    //     ]);
+    // }
+
     public function dataDetail(Request $request)
     {
         $id = $request->input('value');
@@ -261,9 +328,8 @@ class netSalesController extends Controller
         $dataPerusahaan = Perusahaan::where('id', $dataRKM->perusahaan_key)->first();
         $dataSales = karyawan::where('kode_karyawan', $dataRKM->sales_key)->first();
         $dataMateri = Materi::where('id', $dataRKM->materi_key)->first();
-        $dataNetSales = perhitunganNetSales::where('id_rkm', $dataRKM->id)->first();
-        $dataApproved = approvedNetSales::where('id_NetSales', $dataNetSales->id)->get();
-        $dataTracking = trackingNetSales::where('id', $dataNetSales->id_tracking)->first();
+        $dataNetSales = perhitunganNetSales::with('peserta')->where('id_rkm', $dataRKM->id)->get();
+        $dataTracking = trackingNetSales::where('id', $dataNetSales->first()->id_tracking)->first();
 
         $mulai = Carbon::parse($dataRKM->tanggal_awal)->timezone('Asia/Jakarta');
         $akhir = Carbon::parse($dataRKM->tanggal_akhir)->timezone('Asia/Jakarta');
@@ -279,43 +345,52 @@ class netSalesController extends Controller
             'durasi_kelas'    => $mulai->startOfDay()->diffInDays($akhir->startOfDay()) + 1,
         ];
 
-        $arrayNetSales = [
-            'id_netSales'     => $dataNetSales->id,
-            'transportasi'    => $dataNetSales->transportasi,
-            'penginapan'      => $dataNetSales->penginapan,
-            'fresh_money'     => $dataNetSales->fresh_money,
-            'entertaint'      => $dataNetSales->entertaint,
-            'souvenir'        => $dataNetSales->souvenir,
-            'harga_penawaran' => $dataNetSales->harga_penawaran,
-            'tgl_pa'          => $dataNetSales->tgl_pa,
-            'tipe_pembayaran' => $dataNetSales->tipe_pembayaran,
-            'total'           => $dataNetSales->harga_penawaran -
-                $dataNetSales->transportasi -
-                $dataNetSales->penginapan -
-                $dataNetSales->fresh_money -
-                $dataNetSales->entertaint -
-                $dataNetSales->souvenir,
-        ];
+        $arrayNetSales = [];
+        $grandtotal = 0;
+        foreach ($dataNetSales as $netSale) {
+            $dataApproved = approvedNetSales::where('id_NetSales', $netSale->id)->get();
+            $total = $netSale->harga_penawaran -
+                $netSale->transportasi -
+                $netSale->penginapan -
+                $netSale->fresh_money -
+                $netSale->entertaint -
+                $netSale->souvenir;
+
+            $netSaleData = [
+                'id_netSales'     => $netSale->id,
+                'transportasi'    => $netSale->transportasi,
+                'penginapan'      => $netSale->penginapan,
+                'fresh_money'     => $netSale->fresh_money,
+                'entertaint'      => $netSale->entertaint,
+                'souvenir'        => $netSale->souvenir,
+                'harga_penawaran' => $netSale->harga_penawaran,
+                'tgl_pa'          => $netSale->tgl_pa,
+                'tipe_pembayaran' => $netSale->tipe_pembayaran,
+                'desc'           => $netSale->desc,
+                'peserta'           => $netSale->peserta->nama,
+                'total'           => $total,
+                'approved'        => $dataApproved->map(function ($item) {
+                    return [
+                        'tanggal'      => $item->created_at->format('Y-m-d H:i'),
+                        'status'       => $item->status,
+                        'level_status' => $item->level_status,
+                        'keterangan'   => $item->keterangan,
+                    ];
+                })->toArray(),
+            ];
+            $grandtotal += $total;
+            $arrayNetSales[] = $netSaleData;
+        }
 
         $arrayTracking = [
             'tanggal' => $dataTracking->created_at->format('d M Y H:i'),
             'status'  => $dataTracking->tracking
         ];
 
-        $arrayapproved = [];
-        foreach ($dataApproved as $item) {
-            $arrayapproved[] = [
-                'tanggal'      => $item->created_at->format('Y-m-d H:i'),
-                'status'       => $item->status,
-                'level_status' => $item->level_status,
-                'keterangan'   => $item->keterangan,
-            ];
-        }
-
         return response()->json([
             'dataRKM'      => $arrayRKM,
             'dataNetSales' => $arrayNetSales,
-            'dataApproved' => $arrayapproved,
+            'grandTotal' => $grandtotal,
             'dataTracking' => $arrayTracking,
         ]);
     }
