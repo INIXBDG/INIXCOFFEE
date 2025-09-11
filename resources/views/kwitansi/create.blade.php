@@ -53,12 +53,6 @@
                         {{-- Tombol Aksi --}}
                         <tr class="no-print">
                             <td colspan="5" class="text-end border-0 pb-2">
-                                <button type="button" class="btn btn-success" onclick="exportToExcel()">
-                                    <i class="bi bi-file-earmark-spreadsheet"></i> Excel
-                                </button>
-                                <button type="button" class="btn btn-danger" onclick="exportToPdf()">
-                                    <i class="bi bi-filetype-pdf"></i> PDF
-                                </button>
                                 <button type="button" class="btn btn-dark" onclick="window.print()">
                                     <i class="bi bi-printer"></i> Print
                                 </button>

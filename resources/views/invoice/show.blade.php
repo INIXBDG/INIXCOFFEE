@@ -274,12 +274,6 @@
         <button onclick="window.print()" class="btn btn-primary">
             <i class="bi bi-printer"></i> Print
         </button>
-        <a href="{{ route('download.pdf', $invoice->id) }}" class="btn btn-danger">
-            <i class="bi bi-filetype-pdf"></i> Download PDF
-        </a>
-        <a href="{{ route('invoices.export-excel', $invoice->id) }}" class="btn btn-success">
-            <i class="bi bi-file-earmark-spreadsheet"></i> Excel
-        </a>
     </div>
 </body>
 

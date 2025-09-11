@@ -445,9 +445,9 @@ public function downloadPdf($id)
         ->setOptions([
             'isHtml5ParserEnabled' => true,
             'isRemoteEnabled' => true,
-            'enable_css_float' => true, // Dukungan float
-            'enable_html5' => true,    // Dukungan HTML5
-            'debugCss' => false,       // Nonaktifkan debug setelah uji
+            'enable_css_float' => true,
+            'enable_html5' => true,    
+            'debugCss' => false,    
         ]);
 
     return $pdf->download('invoice_' . $invoice->invoice_number . '.pdf');
