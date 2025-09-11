@@ -110,7 +110,7 @@
                                     <span class="detail-label">Role</span>
                                     <span class="detail-value">{{ $users->role }}</span>
                                 </div>
-                            @if (Auth::user()->jabatan == 'Sales' || Auth::user()->jabatan == 'SPV Sales')
+                            @if ($karyawan->divisi == 'Sales & Marketing')
                                 <div class="detail-row">
                                     <span class="detail-label">Email</span>
                                     <span class="detail-value">{{ $karyawan->email }}</span>

@@ -203,6 +203,10 @@
                 margin: 0;
                 padding: 0;
                 font-size: 12pt;
+                position: relative;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
             }
 
             .container {
@@ -210,6 +214,9 @@
                 width: 100%;
                 margin: 0;
                 padding: 5mm;
+                background: transparent;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
 
             .header-container {
@@ -334,9 +341,22 @@
                 display: none;
             }
 
+            img.background-image {
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 210mm !important;
+                height: 297mm !important;
+                z-index: -1 !important;
+                opacity: 0.1 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
             @page {
                 size: A4;
                 margin: 5mm;
+                background: white;
             }
 
             @page :not(:first) {
@@ -410,6 +430,7 @@
 
     <script>
         const materiData = @json($materi);
+        const backgroundUrl = "{{ asset('assets/img/backgrounds/kop.png') }}"; // Pastikan URL ini valid
 
         // Fungsi untuk format Rupiah
         function formatRupiah(angka) {
@@ -606,6 +627,7 @@
 
             const previewHTML = `
                 <div class="container">
+                    <img src="${backgroundUrl}" class="background-image" alt="Background">
                     <div class="header-container">
                         <div class="logo"><img src="{{ asset('assets/img/inix.png') }}" alt="Logo Inixindo"></div>
                         <div class="office-info text-sm text-gray-700 text-right">
@@ -676,25 +698,34 @@
                 </div>
             `;
 
-            const modal = document.getElementById('preview-modal');
-            const content = document.getElementById('preview-content');
-            content.innerHTML = previewHTML +
-                '<button onclick="printPreview()">Print to PDF</button><button onclick="closeModal()">Tutup</button>';
-            modal.style.display = 'flex';
+            // Langsung panggil printPreview dengan konten yang dihasilkan
+            printPreview(previewHTML);
         });
 
-        function closeModal() {
-            document.getElementById('preview-modal').style.display = 'none';
-        }
-
-        function printPreview() {
-            const content = document.querySelector('#preview-content .container').outerHTML;
+        function printPreview(content) {
             const printWindow = window.open('', '', 'height=600, width=900');
             printWindow.document.write('<html><head><title>Print Preview</title>');
             printWindow.document.write('<style>');
             printWindow.document.write(`
-                body { margin: 0; padding: 0; font-size: 16pt; font-family: Arial, sans-serif; }
-                .container { max-width: 190mm; width: 100%; margin: 0; padding: 5mm; }
+                body { 
+                    margin: 0; 
+                    padding: 0; 
+                    font-size: 16pt; 
+                    font-family: Arial, sans-serif; 
+                    position: relative; 
+                    -webkit-print-color-adjust: exact !important; 
+                    print-color-adjust: exact !important;
+                    color-adjust: exact !important;
+                }
+                .container { 
+                    max-width: 190mm; 
+                    width: 100%; 
+                    margin: 0; 
+                    padding: 5mm; 
+                    background: transparent; 
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                }
                 .header-container {
                     width: 183mm;
                     margin: 0;
@@ -726,7 +757,18 @@
                 .list-decimal { list-style-type: decimal; padding-left: 30px; }
                 .signature { margin-top: 13mm; page-break-inside: avoid; }
                 button { display: none; }
-                @page { size: A4; margin: 5mm; }
+                img.background-image {
+                    position: fixed !important;
+                    top: 0 !important;
+                    left: 0 !important;
+                    width: 206mm !important;
+                    height: 288mm !important;
+                    z-index: -1 !important;
+                    // opacity: 0.1 !important;
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                }
+                @page { size: A4; margin: 5mm; background: white; }
                 @page :not(:first) {
                     .header-container {
                         display: none;
@@ -738,6 +780,9 @@
             printWindow.document.write('</body></html>');
             printWindow.document.close();
             printWindow.focus();
+            setTimeout(() => {
+                printWindow.print();
+            }, 1000);
         }
     </script>
 </body>
