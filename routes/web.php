@@ -9,6 +9,7 @@ use App\Http\Controllers\RKMController as ControllersRKMController;
 use App\Http\Controllers\netSalesController;
 use App\Http\Controllers\pengajuanKlaimController;
 use App\Http\Controllers\DashboardItsmController;
+use App\Http\Controllers\examController;
 use App\Models\izinTigaJam;
 use App\Http\Controllers\InventarisController;
 use App\Http\Controllers\laporanInsidentController;
@@ -402,3 +403,9 @@ Route::get('/laporan-insiden/detail/{id}', [laporanInsidentController::class, 'd
 Route::get('/laporan-insiden/edit/{id}', [laporanInsidentController::class, 'edit'])->name('edit.laporanInsiden');
 Route::get('/laporan-insiden/hapus/{id}', [laporanInsidentController::class, 'hapus'])->name('hapus.laporanInsiden');
 Route::post('/laporan-insiden/update', [laporanInsidentController::class, 'update'])->name('uodate.laporanInsiden');
+
+//rekapexam
+Route::get('/rekapexam', [examController::class, 'rekapExam'])->name('exam.rekapexam');
+Route::get('/getRekapExamByMonth/{year}/{month}', [examController::class, 'getRekapExam'])->name('exam.getRekapExam');
+Route::get('/rekapExamExportExcel/{year}/{month}', [examController::class, 'rekapExamExportExcel'])->name('exam.rekapExamExportExcel');
+

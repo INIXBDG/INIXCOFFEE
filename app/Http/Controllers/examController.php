@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\rekapExamExport;
 use App\Models\approvalexam;
 use App\Models\changeexam;
 use App\Models\eksam;
@@ -18,7 +19,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
 
 use Barryvdh\DomPDF\Facade\Pdf;
-
+use Maatwebsite\Excel\Facades\Excel;
 
 class examController extends Controller
 {
@@ -64,7 +65,6 @@ class examController extends Controller
             'data' => $rkm,
         ]);
     }
-
 
     /**
      * create
@@ -557,5 +557,69 @@ class examController extends Controller
     }
 
 
+    public function rekapExam()
+    {
+        
+        return view('exam.rekapexam');
+    }
 
+    public function getRekapExam($year, $month)
+    {
+        $rkm = eksam::with(['rkm', 'registexam', 'registexam.peserta', 'registexam.creditcard',  'registexam.hasilexam'])
+        ->whereMonth('tanggal_pengajuan', $month)
+        ->whereYear('tanggal_pengajuan', $year)
+        ->orderBy('created_at', 'desc')
+        ->get();
+        return response()->json([
+            'success' => true,
+            'message' => 'Rekap Exam di ' . $month .'-'. $year,
+            'data' => $rkm,
+        ]);
+    }
+
+    public function rekapExamExportExcel($year, $month)
+    {
+        $rkm = eksam::with(['rkm', 'registexam', 'registexam.peserta', 'registexam.creditcard', 'registexam.hasilexam'])
+        ->whereMonth('tanggal_pengajuan', $month)
+        ->whereYear('tanggal_pengajuan', $year)
+        ->orderBy('created_at', 'desc')
+        ->get();
+        $data = $rkm->flatMap(function ($item) {
+            return $item->registexam->map(function ($reg) use ($item) {
+                return [
+                    'Invoice'               => $item->invoice,
+                    'Tanggal Pengajuan'     => $item->tanggal_pengajuan,
+                    'Nama Materi'           => $item->materi,
+                    'Nama Perusahaan'       => $item->perusahaan,
+                    'Kode Exam'             => $item->kode_exam,
+                    'Pax'                   => $item->pax,
+                    'Nama Peserta'          => $reg->peserta->nama ?? 'Belum Daftar',
+                    'Tanggal Exam'          => $reg->tanggal_exam,
+                    'Waktu Exam'            => $reg->pukul,
+                    'Grade Exam'            => $reg->hasilexam->Hasil ?? 'Tidak Ada',
+                    'Hasil Exam'            => $reg->hasilexam->keterangan ?? 'Tidak Ada',
+                    'Kartu Kredit'          => $reg->creditcard->nama_pemilik ?? 'Belum Daftar',
+                    'Mata Uang'             => $item->mata_uang,
+                    'Harga'                 => $item->harga,
+                    'Kurs Harga'            => $item->kurs,
+                    'Biaya Admin'           => $item->biaya_admin,
+                    'Kurs Biaya Admin'      => $item->kurs_dollar,
+                    'Harga dalam Rupiah'    => $item->harga_rupiah,
+                    'Total Harga dalam Rupiah'=> $item->total,
+
+                ];
+            });
+        });
+
+        return Excel::download(new rekapExamExport($data), 'Rekap Exam '.$year . '-'. $month.'.xlsx');
+    }
+
+        public function exportExcelKhusus(string $id)
+    {
+        // Ambil data menggunakan metode getFeedbackData yang sudah ada
+        $post = $this->getFeedbackData($id);
+
+        // Konfigurasi header Excel
+        
+    }
 }
