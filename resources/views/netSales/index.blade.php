@@ -18,7 +18,7 @@
         <div class="col-md-12">
             <div class="card m-4">
                 <div class="card-body table-responsive">
-                    <h3 class="card-title text-center my-1 mb-5">Payment Advance <h3> 
+                    <h3 class="card-title text-center my-1 mb-5">Payment Advance <h3>
                     <div class="row">
                         <div class="col-12">
                             <div class="card" style="width: 100%">
@@ -52,7 +52,7 @@
                                             @endphp
                                         </select>
                                     </div>
-        
+
                                     <div class="col-md-4 mx-1">
                                         <button type="submit" onclick="getData()" class="btn click-primary" style="margin-top: 37px">Cari Data</button>
                                         @if (auth()->user()->jabatan == 'HRD' || auth()->user()->jabatan == 'Koordinator Office')
@@ -66,7 +66,7 @@
                                 </div>
                             </div>
                         </div>
-                    </div>                    
+                    </div>
             </div>
         </div>
     </div>
@@ -180,7 +180,7 @@
     }
 
     /* Mengatur font size header dan body tabel */
-    table.dataTable thead th, 
+    table.dataTable thead th,
     table.dataTable tbody td {
         font-size: 12px !important;
     }
@@ -234,8 +234,8 @@
             url: "{{ route('netsales.approved') }}",
             method: 'POST',
             data: formData,
-            processData: false, 
-            contentType: false, 
+            processData: false,
+            contentType: false,
             dataType: 'json',
             success: function(response) {
                 let modal = bootstrap.Modal.getInstance(document.getElementById('approveModal'));
@@ -246,7 +246,7 @@
                 console.log(xhr.responseText);
             }
         });
-    });    
+    });
 
     function getData() {
     var tahun = document.getElementById('tahun').value;
@@ -280,12 +280,19 @@
             }, 1000);
         },
         success: function(response) {
+            // 🔍 LOG: Tampilkan seluruh respons dari server
+            console.log('✅ Respons dari server (success):', response);
+
             var html = '';
             var jabatan = "{{ auth()->user()->jabatan}}";
+
+            // 🔍 LOG: Tampilkan struktur data yang akan diproses
+            console.log('📅 Data bulanan yang diterima:', response.data);
 
             response.data.forEach(function(monthData) {
                 var monthName = monthData.month;
                 html += '<h4>' + monthName + '</h4>';
+
                 monthData.weeksData.forEach(function(weekData) {
                     html += '<div class="card my-1">';
                     html += '<div class="card-body table-responsive">';
@@ -294,8 +301,12 @@
                     if (weekData.data === null) {
                         html += '<p class="text-center">Tidak Ada Kelas Mingguan</p>';
                     } else {
-                        // Gunakan tableId yang unik dan konsisten
+                        // ✅ Gunakan tableId yang unik dan konsisten
                         var tableId = `table_${weekData.tahun}_${weekData.bulan}_${weekData.minggu}`;
+
+                        // 🔍 LOG: Data yang akan dimasukkan ke tabel
+                        console.log(`📋 Data minggu ${weekData.minggu} (${tableId}):`, weekData.data);
+
                         html += renderTable(weekData.data, jabatan, tableId);
                     }
 
@@ -309,23 +320,31 @@
 
             var idSales = "{{ auth()->user()->karyawan->kode_karyawan }}";
             var jabatan = "{{ auth()->user()->jabatan }}";
-            console.log('Jabatan:', jabatan);
-            if(jabatan == 'SPV Sales' || jabatan == 'HRD' || jabatan == 'GM' || jabatan == 'Finance & Accounting' || jabatan == 'Koordinator Office') {
-                idSales = '';
-            }
-            console.log('ID Sales:', idSales);
+            console.log('🎯 ID Sales:', idSales);
+            console.log('📌 Jabatan:', jabatan);
 
-            // Inisialisasi DataTables tiap tabel yang sudah dirender
+            // Jika jabatan memerlukan penghapusan ID Sales
+            if (jabatan == 'SPV Sales' || jabatan == 'HRD' || jabatan == 'GM' || jabatan == 'Finance & Accounting' || jabatan == 'Koordinator Office') {
+                idSales = '';
+                console.log('🔄 ID Sales direset ke kosong karena jabatan:', jabatan);
+            }
+
+            // 🔍 LOG: Inisialisasi DataTables
+            console.log('🔧 Memulai inisialisasi DataTables...');
+
             response.data.forEach(function(monthData) {
                 monthData.weeksData.forEach(function(weekData) {
                     if (weekData.data !== null) {
                         var tableId = `table_${weekData.tahun}_${weekData.bulan}_${weekData.minggu}`;
+
                         // Cek dan destroy DataTable lama jika ada
                         if ($.fn.DataTable.isDataTable('#' + tableId)) {
+                            console.log(`🗑️ Menghancurkan DataTable lama untuk: #${tableId}`);
                             $('#' + tableId).DataTable().destroy();
                         }
 
                         // Inisialisasi DataTable baru
+                        console.log(`✅ Inisialisasi DataTable baru untuk: #${tableId}`);
                         $('#' + tableId).DataTable({
                             paging: true,
                             searching: true,
@@ -335,20 +354,26 @@
                             pageLength: 10,
                             initComplete: function() {
                                 this.api().columns(2).search(idSales).draw();
+                                console.log('📊 Filter DataTable (kolom 2) dengan nilai:', idSales);
                             }
-                            // Anda bisa menambahkan pengaturan lain sesuai kebutuhan
                         });
                     }
                 });
             });
 
-            $('#loadingModal').modal('hide');
+            console.log('✅ Semua DataTable berhasil diinisialisasi.');
         },
-        error: function() {
+        error: function(xhr, status, error) {
+            // 🔍 LOG: Tampilkan error jika terjadi
+            console.error('❌ ERROR saat mengambil data:', error);
+            console.error('📡 Detail respons AJAX:', xhr.responseText);
+            console.error('HTTP Status:', xhr.status);
+
             $('#loadingModal').modal('hide');
             alert("Error fetching data. Please try again.");
         }
     });
+
 }
 
     function renderTable(data, jabatan, tableId) {
@@ -364,6 +389,8 @@
         html += '<th style="font-size:14px">Entertaint (Rp.)</th>';
         html += '<th style="font-size:14px">Souvenir (Rp.)</th>';
         html += '<th style="font-size:14px">Penginapan (Rp.)</th>';
+        html += '<th style="font-size:14px">Diskon (Rp.)</th>';
+        html += '<th style="font-size:14px">Cashback (Rp.)</th>';
         html += '<th style="font-size:14px">Tanggal Payment Advance</th>';
         html += '<th style="font-size:14px">Tipe Pembayaran</th>';
         html += '<th style="font-size:14px">Total (Rp.)</th>';
@@ -403,6 +430,8 @@
                 html += `<td style="font-size:14px">${formatWithoutDecimals(sales.entertaint || 0)}</td>`;
                 html += `<td style="font-size:14px">${formatWithoutDecimals(sales.souvenir || 0)}</td>`;
                 html += `<td style="font-size:14px">${formatWithoutDecimals(sales.penginapan || 0)}</td>`;
+                html += `<td style="font-size:14px">${formatWithoutDecimals(sales.diskon || 0)}</td>`;
+                html += `<td style="font-size:14px">${formatWithoutDecimals(sales.cashback || 0)}</td>`;
                 html += `<td style="font-size:14px">${sales.tgl_pa || '0000-00-00'}</td>`;
                 html += `<td style="font-size:14px">${sales.tipe_pembayaran || ''}</td>`;
                 html += `<td style="font-size:14px">${formatWithoutDecimals(sales.total || 0)},00</td>`;
@@ -414,13 +443,13 @@
                     html += '<div class="dropdown-menu">';
                     if (item.status == 'Merah') {
                         if (jabatan === "Sales") {
-                            html += `<a class="dropdown-item" href="/paymantAdvance/${item.id}/create/form-view" data-toggle="tooltip" title="Input Data"><img src="{{ asset('icon/clipboard-primary.svg') }}"> Input Data</a>`;  
+                            html += `<a class="dropdown-item" href="/paymantAdvance/${item.id}/create/form-view" data-toggle="tooltip" title="Input Data"><img src="{{ asset('icon/clipboard-primary.svg') }}"> Input Data</a>`;
                         } else {
-                            html += `<a class="dropdown-item disabled" href="/paymantAdvance/${item.id}/create/form-view" data-toggle="tooltip" title="Input Data" disabled><img src="{{ asset('icon/clipboard-primary.svg') }}"> Input Data</a>`;  
+                            html += `<a class="dropdown-item disabled" href="/paymantAdvance/${item.id}/create/form-view" data-toggle="tooltip" title="Input Data" disabled><img src="{{ asset('icon/clipboard-primary.svg') }}"> Input Data</a>`;
                         }
                     } else {
                         html += `<a class="dropdown-item" href="/paymantAdvance/detail/${item.id}/view" data-toggle="tooltip" title="Detail"><img src="{{ asset('icon/clipboard-primary.svg') }}"> Detail</a>`;
-                        
+
                         if (sales.level_status === null || sales.level_status === 'Belum disetujui') {
                             if (jabatan === "SPV Sales") {
                                 html += `
@@ -455,7 +484,7 @@
                                     <button class="dropdown-item" type="button" onclick="openApproveModal('${sales.id_NetSales}');" title="Detail">
                                         <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
                                     </button>
-                                `;  
+                                `;
                             } else {
                                 html += `
                                     <button class="dropdown-item" type="button" disabled title="approved">
@@ -476,7 +505,7 @@
                                         <button class="dropdown-item" type="button" onclick="openApproveModal('${sales.id_NetSales}');" title="Detail">
                                             <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
                                         </button>
-                                    `;  
+                                    `;
                                 }
                             }
                         }
@@ -500,7 +529,7 @@
     }
 
 
-    
+
     function removeRupiahFormat(angka) {
         return parseFloat(angka.replace(/[^\d,]/g, '').replace(',', '.'));
     }
@@ -529,11 +558,11 @@
 
             $('#approveYes').prop('checked', true);
             $('#approveNo').prop('checked', false);
-            toggleAlasanManager(false); 
+            toggleAlasanManager(false);
 
             setTimeout(() => {
                 if (!approvalSelected) {
-                    toggleAlasanManager(true); 
+                    toggleAlasanManager(true);
                 }
             }, 3000);
         }

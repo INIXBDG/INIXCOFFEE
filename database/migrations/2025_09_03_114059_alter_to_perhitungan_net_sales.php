@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::table('perhitungan_net_sales', function (Blueprint $table) {
             $table->integer('id_peserta')->nullable()->after('id_rkm');
             $table->decimal('cashback', 15)->nullable()->after('fresh_money');
+            $table->decimal('diskon', 15)->nullable()->after('cashback');
             $table->text('desc')->nullable()->after('tipe_pembayaran');
         });
     }

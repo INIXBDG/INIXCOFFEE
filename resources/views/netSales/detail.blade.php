@@ -253,21 +253,23 @@
                                 <div class="accordion-item">
                                     <h2 class="accordion-header" id="heading${data.id_netSales}">
                                         <button class="accordion-button ${index === 0 ? '' : 'collapsed'}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${data.id_netSales}" aria-expanded="${index === 0 ? 'true' : 'false'}" aria-controls="collapse${data.id_netSales}">
-                                            Net Sales ID: ${data.id_netSales}
+                                        ${data.peserta}
                                         </button>
                                     </h2>
                                     <div id="collapse${data.id_netSales}" class="accordion-collapse collapse ${index === 0 ? 'show' : ''}" aria-labelledby="heading${data.id_netSales}" data-bs-parent="#netSalesAccordion">
                                         <div class="accordion-body">
                                             <table class="table table-striped">
                                                 <tbody>
-                                                    <tr><th>Peserta</th><td>${data.peserta || '-'}</td></tr>
                                                     <tr><th>Transportasi</th><td>${formatRupiah(data.transportasi)}</td></tr>
                                                     <tr><th>Penginapan</th><td>${formatRupiah(data.penginapan)}</td></tr>
                                                     <tr><th>Fresh Money</th><td>${formatRupiah(data.fresh_money)}</td></tr>
                                                     <tr><th>Entertaint</th><td>${formatRupiah(data.entertaint)}</td></tr>
                                                     <tr><th>Souvenir</th><td>${formatRupiah(data.souvenir)}</td></tr>
                                                     <tr><th>Harga Penawaran</th><td>${formatRupiah(data.harga_penawaran)}</td></tr>
-                                                    <tr><th>Total Payment Advance</th><td>${formatRupiah(data.total)}</td></tr>
+                                                    <tr><th>Total Payment Advance</th><td>${formatRupiah(data.totalPa)}</td></tr>
+                                                    <tr><th>Diskon</th><td>${formatRupiah(data.diskon)}</td></tr>
+                                                    <tr><th>Cashback</th><td>${formatRupiah(data.cashback)}</td></tr>
+                                                    <tr><th>Total</th><td>${formatRupiah(data.total)}</td></tr>
                                                     <tr><th>Tanggal Payment Advance</th><td>${tglPaFormatted}</td></tr>
                                                     <tr><th>Deskripsi</th><td>${data.desc || '-'}</td></tr>
                                                     <tr><th>Tipe Pembayaran</th><td>${data.tipe_pembayaran}</td></tr>
@@ -281,7 +283,7 @@
 
                         accordion_net_sales.append(`
                         <div class="mt-3">
-                            <p class="text-muted">Grandtotal PA : ${formatRupiah(response.grandTotal)}</p>
+                            <p class="text-muted">NetSales : ${formatRupiah(response.grandTotal)}</p>
                         </div>
                     `);
                     }

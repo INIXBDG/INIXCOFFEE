@@ -9,7 +9,7 @@ class perhitunganNetSales extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['id_rkm', 'transportasi', 'penginapan','cashback', 'id_peserta', 'fresh_money', 'entertaint', 'souvenir', 'desc','harga_penawaran', 'tgl_pa', 'tipe_pembayaran', 'pajak', 'id_tracking'];
+    protected $fillable = ['id_rkm', 'transportasi', 'penginapan','cashback', 'diskon', 'id_peserta', 'fresh_money', 'entertaint', 'souvenir', 'desc','harga_penawaran', 'tgl_pa', 'tipe_pembayaran', 'pajak', 'id_tracking'];
 
     public function rkm()
     {
