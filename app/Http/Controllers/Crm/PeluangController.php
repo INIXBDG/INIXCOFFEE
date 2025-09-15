@@ -509,6 +509,7 @@ class PeluangController extends Controller
             'penginapan' => 'nullable|numeric',
             'freshMoney' => 'nullable|numeric',
             'cashback' => 'nullable|numeric',
+            'diskon' => 'nullable|numeric',
             'entertaint' => 'nullable|numeric',
             'souvenir' => 'nullable|numeric',
             'desc' => 'nullable',
@@ -541,6 +542,7 @@ class PeluangController extends Controller
         $netSales->penginapan = $request->penginapan;
         $netSales->fresh_money = $request->freshMoney;
         $netSales->cashback = $request->cashback;
+        $netSales->diskon = $request->diskon;
         $netSales->entertaint = $request->entertaint;
         $netSales->souvenir = $request->souvenir;
         $netSales->desc = $request->desc;
@@ -548,6 +550,8 @@ class PeluangController extends Controller
         $netSales->tipe_pembayaran = $request->tipePembayaran;
         $netSales->id_tracking = $idTracking;
         $netSales->save();
+
+        Peluang::updateNetSalesFromRkm($request->id_rkm);
 
         // Kirim notifikasi ke SPV Sales
         $spv = karyawan::where('jabatan', 'SPV Sales')->first();

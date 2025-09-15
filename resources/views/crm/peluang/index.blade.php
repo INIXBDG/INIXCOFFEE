@@ -89,11 +89,11 @@
                                     <div class="invalid-feedback">Masukkan harga.</div>
                                 </div>
 
-                                <div class="mb-3">
+                                {{-- <div class="mb-3">
                                     <label class="form-label" for="netsales">Net Sales (Rp)</label>
                                     <input type="text" class="form-control" id="netsales" name="netsales">
                                     <div class="invalid-feedback">Masukkan net sales.</div>
-                                </div>
+                                </div> --}}
 
                                 <div class="mb-3">
                                     <label class="form-label" for="pax">Jumlah Peserta (Pax)</label>

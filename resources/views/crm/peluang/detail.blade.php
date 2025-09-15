@@ -10,8 +10,11 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="fw-bold mb-0">Detail Lead</h4>
                 <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#paymentAdvanceModal"
-                    >
+                    <button type="button"
+                        class="btn btn-primary"
+                        data-bs-toggle="modal"
+                        data-bs-target="#paymentAdvanceModal"
+                        @if($peluang->tahap !== 'merah') disabled @endif>
                         <i class="menu-icon bx bx-plus"></i> Payment Advance
                     </button>
                     @if ($isLost)
@@ -184,7 +187,7 @@
                             @endif
 
                             {{-- Detail Payment Advance --}}
-                            @if ($netsales)
+                            @if ($netsales->isNotEmpty())
                                 <div class="mt-4">
                                     <p class="fw-bold mb-2">Lihat detail Payment Advance :</p>
                                     <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal"
@@ -502,6 +505,11 @@
                                     name="cashback">
                             </div>
                             <div class="mb-3">
+                                <label for="diskon" class="form-label">Diskon</label>
+                                <input type="number" step="any" class="form-control" id="diskon"
+                                    name="diskon">
+                            </div>
+                            <div class="mb-3">
                                 <label for="entertaint" class="form-label">Entertaint</label>
                                 <input type="number" step="any" class="form-control" id="entertaint"
                                     name="entertaint">
@@ -561,6 +569,8 @@
                                             <th>Fresh Money</th>
                                             <th>Entertaint</th>
                                             <th>Souvenir</th>
+                                            <th>Diskon</th>
+                                            <th>Cashback</th>
                                             <th>Tanggal PA</th>
                                             <th>Tipe Pembayaran</th>
                                             <th>Deskripsi</th>
@@ -576,6 +586,8 @@
                                                 <td>Rp {{ $item->fresh_money ? number_format($item->fresh_money, 2, ',', '.') : '-' }}</td>
                                                 <td>Rp {{ $item->entertaint ? number_format($item->entertaint, 2, ',', '.') : '-' }}</td>
                                                 <td>Rp {{ $item->souvenir ? number_format($item->souvenir, 2, ',', '.') : '-' }}</td>
+                                                <td>Rp {{ $item->diskon ? number_format($item->diskon, 2, ',', '.') : '-' }}</td>
+                                                <td>Rp {{ $item->cashback ? number_format($item->cashback, 2, ',', '.') : '-' }}</td>
                                                 <td>{{ $item->tgl_pa ? \Carbon\Carbon::parse($item->tgl_pa)->translatedFormat('d F Y') : '-' }}</td>
                                                 <td>{{ $item->tipe_pembayaran ? ucfirst($item->tipe_pembayaran) : '-' }}</td>
                                                 <td>{{ $item->desc ?? 'Tidak ada deskripsi.' }}</td>

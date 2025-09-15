@@ -35,7 +35,7 @@ class RKM extends Model
 
     public function perhitunganNetSales()
     {
-        return $this->hasOne(perhitunganNetSales::class, 'id_rkm', 'id');
+        return $this->hasMany(perhitunganNetSales::class, 'id_rkm', 'id');
     }
 
     public function sales()

@@ -160,60 +160,68 @@ class netSalesController extends Controller
                 $end = $endOfWeek->format('Y-m-d');
 
                 $rkm = RKM::with([
-                    'materi',
-                    'analisisrkm',
-                    'perhitunganNetSales.approvedNetSales',
-                    'analisisrkm.analisisrkmmingguan'
-                ])
+                        'materi',
+                        'analisisrkm',
+                        'perhitunganNetSales.approvedNetSales',
+                        'analisisrkm.analisisrkmmingguan'
+                    ])
                     ->where('status', '0')
                     ->whereYear('tanggal_awal', $year)
                     ->whereBetween('tanggal_awal', [$start, $end])
                     ->get();
 
                 $formattedItems = $rkm->map(function ($item) {
-                    $status = optional($item->perhitunganNetSales)->harga_penawaran !== null ? 'Hijau' : 'Merah';
+                    $status = $item->perhitunganNetSales->isNotEmpty() ? 'Hijau' : 'Merah';
                     $tanggalAwal = Carbon::parse($item->tanggal_awal);
                     $tanggalAkhir = Carbon::parse($item->tanggal_akhir);
                     $total_harga_jual = floatval($item->harga_jual) * intval($item->pax);
 
-                    $netSales = $item->perhitunganNetSales;
-                    $approvedNetSales = $netSales
-                        ? $netSales->approvedNetSales()->latest('created_at')->first()
-                        : null;
+                    // NetSales khusus untuk id_rkm ini
+                    $netSalesList = $item->perhitunganNetSales;
+
+                    // Sum hanya untuk id_rkm ini (karena sudah otomatis difilter oleh relasi)
+                    $harga_penawaran = $netSalesList->sum('harga_penawaran');
+                    $transportasi    = $netSalesList->sum('transportasi');
+                    $fresh_money     = $netSalesList->sum('fresh_money');
+                    $entertaint      = $netSalesList->sum('entertaint');
+                    $souvenir        = $netSalesList->sum('souvenir');
+                    $penginapan      = $netSalesList->sum('penginapan');
+                    $cashback        = $netSalesList->sum('cashback');
+                    $diskon          = $netSalesList->sum('diskon');
 
                     $totalPerhitunganNetSales = floatval(
-                        floatval(optional($netSales)->harga_penawaran) -
-                            floatval(optional($netSales)->transportasi) -
-                            floatval(optional($netSales)->fresh_money) -
-                            floatval(optional($netSales)->souvenir) -
-                            floatval(optional($netSales)->entertaint) -
-                            floatval(optional($netSales)->penginapan)
+                        $harga_penawaran - $transportasi - $fresh_money - $souvenir - $entertaint - $penginapan - $diskon - $cashback
                     );
+
+                    // Ambil approved terakhir di semua NetSales RKM ini
+                    $latestApproved = $netSalesList
+                        ->flatMap->approvedNetSales
+                        ->sortByDesc('created_at')
+                        ->first();
 
                     return [
                         'id'              => $item->id,
                         'nama_materi'     => $item->materi->nama_materi,
                         'pax'             => $item->pax,
-                        'sales_key'             => $item->sales_key,
+                        'sales_key'       => $item->sales_key,
                         'harga_jual'      => $item->harga_jual,
-                        'total_harga_jual' => $total_harga_jual,
+                        'total_harga_jual'=> $total_harga_jual,
                         'tanggal_awal'    => $tanggalAwal->translatedFormat('d F Y'),
                         'tanggal_akhir'   => $tanggalAkhir->translatedFormat('d F Y'),
                         'durasi'          => $tanggalAwal->diffInDays($tanggalAkhir) + 1,
                         'status'          => $status,
-                        'analisisRkm'     => $netSales ? $netSales->toArray() : null,
-                        'id_NetSales'     => optional($netSales)->id,
-                        'harga_penawaran' => optional($netSales)->harga_penawaran,
-                        'transportasi'    => optional($netSales)->transportasi,
-                        'fresh_money'     => optional($netSales)->fresh_money,
-                        'entertaint'      => optional($netSales)->entertaint,
-                        'souvenir'        => optional($netSales)->souvenir,
-                        'penginapan'      => optional($netSales)->penginapan,
-                        'tgl_pa'          => optional($netSales)->tgl_pa,
-                        'tipe_pembayaran' => optional($netSales)->tipe_pembayaran,
+                        'analisisRkm'     => $netSalesList->toArray(),
+                        'harga_penawaran' => $harga_penawaran,
+                        'transportasi'    => $transportasi,
+                        'fresh_money'     => $fresh_money,
+                        'entertaint'      => $entertaint,
+                        'souvenir'        => $souvenir,
+                        'penginapan'      => $penginapan,
+                        'cashback'        => $cashback,
+                        'diskon'          => $diskon,
                         'total'           => $totalPerhitunganNetSales,
-                        'level_status'    => optional($approvedNetSales)->level_status ?? 'Belum disetujui',
-                        'keterangan'      => optional($approvedNetSales)->keterangan ?? '-',
+                        'level_status'    => optional($latestApproved)->level_status ?? 'Belum disetujui',
+                        'keterangan'      => optional($latestApproved)->keterangan ?? '-',
                     ];
                 });
 
@@ -347,6 +355,8 @@ class netSalesController extends Controller
 
         $arrayNetSales = [];
         $grandtotal = 0;
+        $diskon = 0;
+        $cashback = 0;
         foreach ($dataNetSales as $netSale) {
             $dataApproved = approvedNetSales::where('id_NetSales', $netSale->id)->get();
             $total = $netSale->harga_penawaran -
@@ -354,21 +364,32 @@ class netSalesController extends Controller
                 $netSale->penginapan -
                 $netSale->fresh_money -
                 $netSale->entertaint -
+                $netSale->cashback -
+                $netSale->diskon -
+                $netSale->souvenir;
+
+            $totalPA =  $netSale->transportasi +
+                $netSale->penginapan +
+                $netSale->fresh_money +
+                $netSale->entertaint +
                 $netSale->souvenir;
 
             $netSaleData = [
                 'id_netSales'     => $netSale->id,
+                'diskon'     => $netSale->diskon,
                 'transportasi'    => $netSale->transportasi,
                 'penginapan'      => $netSale->penginapan,
                 'fresh_money'     => $netSale->fresh_money,
                 'entertaint'      => $netSale->entertaint,
+                'cashback'        => $netSale->cashback,
                 'souvenir'        => $netSale->souvenir,
                 'harga_penawaran' => $netSale->harga_penawaran,
                 'tgl_pa'          => $netSale->tgl_pa,
                 'tipe_pembayaran' => $netSale->tipe_pembayaran,
-                'desc'           => $netSale->desc,
-                'peserta'           => $netSale->peserta->nama,
+                'desc'            => $netSale->desc,
+                'peserta'         => $netSale->peserta->nama,
                 'total'           => $total,
+                'totalPa'             => $totalPA,
                 'approved'        => $dataApproved->map(function ($item) {
                     return [
                         'tanggal'      => $item->created_at->format('Y-m-d H:i'),
