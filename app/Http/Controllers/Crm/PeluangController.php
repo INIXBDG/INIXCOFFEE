@@ -58,6 +58,7 @@ class PeluangController extends Controller
                 $data = Peluang::where('id_sales', $idSales)
                     ->with('materiRelation')
                     ->select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap', 'created_at', 'id_rkm')
+                    ->orderBy('created_at','desc')
                     ->get()
                     ->map(function ($item) {
                         $item->periode = $item->periode_mulai . ' s/d ' . $item->periode_selesai;
@@ -80,6 +81,7 @@ class PeluangController extends Controller
             } elseif (in_array($user->jabatan, $allowedJabatan)) {
                 $data = Peluang::select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap', 'created_at', 'id_rkm')
                     ->with('materiRelation')
+                    ->orderBy('created_at', 'desc')
                     ->get()
                     ->map(function ($item) {
                         $item->periode = $item->periode_mulai . ' s/d ' . $item->periode_selesai;

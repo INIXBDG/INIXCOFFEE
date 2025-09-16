@@ -274,7 +274,10 @@
                     {
                         data: 'created_at',
                         render: function(data, type, row) {
-                            return moment(data).format('DD-MM-YYYY');
+                            if (type === 'display' || type === 'filter') {
+                                return moment(data).format('DD-MM-YYYY'); // tampilkan rapi
+                            }
+                            return data; // sorting tetap pakai nilai asli dari DB
                         }
                     },
                     {
@@ -296,7 +299,8 @@
                             `;
                         }
                     }
-                ]
+                ],
+                order: [[7, 'desc']]
             });
         });
 
