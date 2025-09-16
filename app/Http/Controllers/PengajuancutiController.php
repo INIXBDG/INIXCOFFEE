@@ -17,6 +17,8 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class PengajuancutiController extends Controller
 {
+    private $pengajuanCutiGM = [4, 14, 29];
+
     public function __construct()
     {
         $this->middleware('auth');
@@ -25,8 +27,8 @@ class PengajuancutiController extends Controller
     {
         return view('pengajuancuti.index');
     }
- 
-    public function getPengajuanCuti() 
+
+    public function getPengajuanCuti()
     {
         $user = auth()->user()->karyawan_id;
         $karyawan = karyawan::findOrfail($user);
@@ -34,13 +36,18 @@ class PengajuancutiController extends Controller
         $jabatan = $karyawan->jabatan;
         $divisi = $karyawan->divisi;
         if ($jabatan == 'Office Manager' || $jabatan == 'Education Manager' || $jabatan == 'SPV Sales' || $jabatan == 'Koordinator ITSM') {
-            $pengajuancuti = PengajuanCuti::with('karyawan')->whereHas('karyawan', function($query) use ($divisi) {
+            $pengajuancuti = PengajuanCuti::with('karyawan')->whereHas('karyawan', function ($query) use ($divisi) {
                 $query->where('divisi', $divisi);
             })->latest()->get();
-        }elseif($jabatan == 'HRD' || $jabatan == 'GM' || $jabatan == 'Koordinator Office'){
+        } elseif ($jabatan == 'GM') {
+            $pengajuancuti = pengajuancuti::with('karyawan')->whereHas('karyawan', function ($query) {
+                $query->where('divisi', 'Office')
+                    ->orWhereIn('id', $this->pengajuanCutiGM);
+            })->latest()->get();
+        } elseif ($jabatan == 'HRD' || $jabatan == 'Koordinator Office') {
             $pengajuancuti = pengajuancuti::with('karyawan')->latest()->get();
-        }else{
-            $pengajuancuti = PengajuanCuti::with('karyawan')->whereHas('karyawan', function($query) use ($user) {
+        } else {
+            $pengajuancuti = PengajuanCuti::with('karyawan')->whereHas('karyawan', function ($query) use ($user) {
                 $query->where('id', $user);
             })->latest()->get();
         }
@@ -51,13 +58,13 @@ class PengajuancutiController extends Controller
         ]);
     }
 
-    public function getPengajuanCutiBulanTahun($month, $year) 
+    public function getPengajuanCutiBulanTahun($month, $year)
     {
         $pengajuancuti = pengajuancuti::with('karyawan')->whereMonth('tanggal_awal', $month)->whereYear('tanggal_awal', $year)->get();
 
         return response()->json([
             'success' => true,
-            'message' => 'List pengajuancuti bulan '.$month.'-'.$year,
+            'message' => 'List pengajuancuti bulan ' . $month . '-' . $year,
             'data' => $pengajuancuti,
         ]);
     }
@@ -104,7 +111,7 @@ class PengajuancutiController extends Controller
             'surat_sakit.mimes' => 'Surat sakit harus berupa file dengan format: jpg, jpeg, png, pdf.',
             'surat_sakit.max' => 'Surat sakit tidak boleh lebih dari 2MB.',
         ]);
-        
+
         $karyawan = karyawan::where('id', $request->id_karyawan)->first();
         // Assuming $karyawan contains the data of the karyawan retrieved from the database
         $awal_kontrak = $karyawan->awal_kontrak;
@@ -115,7 +122,7 @@ class PengajuancutiController extends Controller
         // Calculate the difference in months from 'awal_kontrak' to now
         $hitungbulan = $awal_kontrak_date->diffInMonths(now());
         // dd($hitungbulan);
-        if($hitungbulan <= 5 && $request->tipe == 'Cuti'){
+        if ($hitungbulan <= 5 && $request->tipe == 'Cuti') {
             return redirect()->back()->withInput()->withErrors(['error' => 'Anda belum bisa mengajukan cuti!']);
         }
 
@@ -149,12 +156,12 @@ class PengajuancutiController extends Controller
             'surat_sakit'      => $suratSakitPath, // Store the file path in the database
             'approval_manager' => '0',
         ]);
-    
+
         // Retrieve users based on the filtered list of kode_karyawan
         $karyawan = karyawan::findOrFail($request->id_karyawan);
         $divisi = $karyawan->divisi;
         $jabatan = $karyawan->jabatan;
-    
+
         $Offman = karyawan::where('jabatan', 'Office Manager')->first();
         $kooroff = karyawan::where('jabatan', 'Koordinator Office')->first();
         $koorSO = karyawan::where('jabatan', 'Koordinator ITSM')->first();
@@ -162,7 +169,7 @@ class PengajuancutiController extends Controller
         $SPVSales = karyawan::where('jabatan', 'SPV Sales')->first();
         $GM = karyawan::where('jabatan', 'GM')->first();
         $users = []; // Start with the current karyawan's kode_karyawan
-    
+
         switch ($jabatan) {
             case 'SPV Sales':
             case 'Office Manager':
@@ -170,18 +177,18 @@ class PengajuancutiController extends Controller
             case 'Koordinator Office':
             case 'Koordinator ITSM':
                 $users[] = $GM->kode_karyawan; // GM
-        break;
-        
+                break;
+
             default:
                 switch ($divisi) {
                     case 'Education':
                         $users[] = $Eduman->kode_karyawan; // Eduman
                         break;
-        
+
                     case 'Sales & Marketing':
                         $users[] = $SPVSales->kode_karyawan; // SPVSales
                         break;
-        
+
                     case 'Office':
                         // $users[] = $Offman->kode_karyawan; // Offman
                         $users[] = $kooroff->kode_karyawan; // Offman
@@ -193,21 +200,21 @@ class PengajuancutiController extends Controller
                 }
                 break;
         }
-        
+
         // Retrieve users based on the filtered list of kode_karyawan
         $users = User::whereHas('karyawan', function ($query) use ($users) {
             $query->whereIn('kode_karyawan', $users);
         })->get();
-    
+
         // Send notifications
         $data = $request->except('surat_sakit');
         $type = 'Mengajukan Cuti';
         $path = '/pengajuancuti';
-    
+
         foreach ($users as $user) {
             NotificationFacade::send($user, new PengajuanCutiNotification($data, $path, $type));
         }
-        
+
         $people = [];
         // Add the backup karyawan values from the request, excluding '-' values
         if ($request->backup_karyawan1 !== '-') {
@@ -232,7 +239,7 @@ class PengajuancutiController extends Controller
             NotificationFacade::send($user, new CutiExchangeNotification($data, $path, $type));
         }
 
-    
+
         return redirect()->route('pengajuancuti.index')->with(['success' => 'Data Berhasil Disimpan!']);
     }
 
@@ -242,15 +249,15 @@ class PengajuancutiController extends Controller
         // return $suratperjalanan;
         $divisi = $suratperjalanan->karyawan->divisi;
         $jabatan = $suratperjalanan->karyawan->jabatan;
-        if($jabatan === 'SPV Sales' || $jabatan === 'Office Manager' || $jabatan === 'Education Manager' || $jabatan === 'Koordinator Office'){
+        if ($jabatan === 'SPV Sales' || $jabatan === 'Office Manager' || $jabatan === 'Education Manager' || $jabatan === 'Koordinator Office') {
             $manager = karyawan::where('jabatan', 'GM')->first();
-        } elseif($divisi == 'Office'){
+        } elseif ($divisi == 'Office') {
             $manager = karyawan::where('jabatan', 'Koordinator Office')->first();
-        } elseif($divisi == 'IT Service Management'){
+        } elseif ($divisi == 'IT Service Management') {
             $manager = karyawan::where('jabatan', 'Koordinator ITSM')->first();
-        } elseif($divisi == 'Sales & Marketing'){
+        } elseif ($divisi == 'Sales & Marketing') {
             $manager = karyawan::where('jabatan', 'SPV Sales')->first();
-        } elseif($divisi == 'Education' ){
+        } elseif ($divisi == 'Education') {
             $manager = karyawan::where('jabatan', 'Education Manager')->first();
         }
         $hrd = karyawan::where('jabatan', 'HRD')->first();
@@ -263,7 +270,7 @@ class PengajuancutiController extends Controller
 
         return view('pengajuancuti.form', compact('suratperjalanan', 'manager', 'hrd', 'office_manager', 'orang1', 'orang2'));
     }
-    
+
 
     /**
      * update
@@ -272,59 +279,71 @@ class PengajuancutiController extends Controller
      * @param  mixed $id
      * @return RedirectResponse
      */
-    public function update(Request $request, $id)
-    {
-        // Validate the incoming request
-        $this->validate($request, [
-            'approval' => 'nullable',
-            'alasan' => 'nullable',
-        ]);
+public function update(Request $request, $id)
+{
+    $this->validate($request, [
+        'approval' => 'nullable',
+        'alasan' => 'nullable',
+    ]);
 
-        // Retrieve the specific 'pengajuancuti' record
-        $post = pengajuancuti::findOrFail($id);
+    $post = pengajuancuti::findOrFail($id);
+    $jabatan = auth()->user()->jabatan;
 
-        // Get the user's role
-        $jabatan = auth()->user()->jabatan;
+    $bolehApprove = false;
 
-        // Update the record based on the user's role
-        if (in_array($jabatan, ['Office Manager', 'Koordinator Office', 'Education Manager', 'SPV Sales', 'GM', 'Koordinator ITSM'])) {
-            $post->update([
-                'approval_manager' => $request->approval,
-                'alasan_manager' => $request->alasan,
-            ]);
-            
-        } else {
-            return redirect()->route('pengajuancuti.index')->with(['error' => 'Tidak Bisa mengubah Approval!']);
+    if (in_array($jabatan, ['Office Manager', 'Koordinator Office', 'Education Manager', 'SPV Sales', 'Koordinator ITSM'])) {
+        $bolehApprove = true;
+    } elseif ($jabatan == 'GM') {
+        $karyawanYangMengajukan = karyawan::findOrFail($post->id_karyawan);
+        // - divisi = Office, atau
+        // - termasuk dalam list ID khusus
+        if (
+            $karyawanYangMengajukan->divisi === 'Office' ||
+            in_array($karyawanYangMengajukan->id, $this->pengajuanCutiGM)
+        ) {
+            $bolehApprove = true;
         }
-        // dd($request->all());
-        $karyawan = karyawan::findOrFail($post->id_karyawan);
-        $HRD = karyawan::where('jabatan' , 'HRD')->first();
-        if($post->tipe === 'Cuti' && $post->approval_manager === '1'){
-            $durasi = $post->durasi;  
-            $karyawan->decrement('cuti', $durasi);    
-        }
-        $users = [
-            $karyawan->kode_karyawan,
-            $HRD->kode_karyawan
-        ];
-        // return $users;
-        // Retrieve the first matching user based on the 'kode_karyawan'
-        $users = User::whereHas('karyawan', function ($query) use ($users) {
-            $query->whereIn('kode_karyawan', array_filter($users));
-        })->get();
-
-        $data = $post;
-
-        $to = $karyawan->nama_lengkap;
-
-        $path = '/pengajuancuti';
-        
-        foreach ($users as $user) {
-           NotificationFacade::send($user, new ApprovalCutiNotification($data, $path, $to));
-        }
-
-        return redirect()->route('pengajuancuti.index')->with(['success' => 'Data Berhasil Diubah!']);
     }
+
+    if (!$bolehApprove) {
+        return redirect()->route('pengajuancuti.index')->with(['error' => 'Tidak Bisa mengubah Approval!']);
+    }
+
+    // Lanjut update approval
+    $post->update([
+        'approval_manager' => $request->approval,
+        'alasan_manager' => $request->alasan,
+    ]);
+
+    // 🔁 Notifikasi seperti biasa
+    $karyawan = karyawan::findOrFail($post->id_karyawan);
+    $HRD = karyawan::where('jabatan', 'HRD')->first();
+
+    if ($post->tipe === 'Cuti' && $post->approval_manager === '1') {
+        $durasi = $post->durasi;
+        $karyawan->decrement('cuti', $durasi);
+    }
+
+    $users = User::whereHas('karyawan', function ($query) use ($karyawan, $HRD) {
+        $query->whereIn('kode_karyawan', [$karyawan->kode_karyawan, $HRD->kode_karyawan]);
+    })->get();
+
+    $data = $post;
+    $to = $karyawan->nama_lengkap;
+    $path = '/pengajuancuti';
+
+    foreach ($users as $user) {
+        NotificationFacade::send($user, new ApprovalCutiNotification($data, $path, $to));
+    }
+
+    // return redirect()->route('pengajuancuti.index')->with(['success' => 'Data Berhasil Diubah!']);
+      $lastPage = $request->input('last_page', 0); // default ke 0 jika kosong
+    return redirect()->route('pengajuancuti.index') . '?page=' . ($lastPage + 1); // karena DataTables 0-based
+
+
+
+}
+
 
     /**
      * destroy
@@ -354,18 +373,18 @@ class PengajuancutiController extends Controller
         return view('pengajuancuti.show');
     }
 
-     public function exportexcel($month, $year)
+    public function exportexcel($month, $year)
     {
-         $posts = pengajuancuti::with('karyawan')->whereMonth('tanggal_awal', $month)->whereYear('tanggal_awal', $year)->get();
+        $posts = pengajuancuti::with('karyawan')->whereMonth('tanggal_awal', $month)->whereYear('tanggal_awal', $year)->get();
         // dd($posts);
 
         // Mengubah data menjadi array sesuai kebutuhan export
         $exportData = $posts->map(function ($item) {
-            if($item->approval_manager == '0'){
+            if ($item->approval_manager == '0') {
                 $approval_manager = 'Belum Disetujui';
-            } elseif($item->approval_manager == '1'){
+            } elseif ($item->approval_manager == '1') {
                 $approval_manager = 'Disetujui';
-            }else{
+            } else {
                 $approval_manager = 'Ditolak';
             }
             return [

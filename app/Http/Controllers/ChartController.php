@@ -345,31 +345,55 @@ class ChartController extends Controller
             })->values(); // Reset keys on the filtered collection
             // return $leaderboard;
 
-        return response()->json([
-            'success' => true,
-            'message' => "Data Inixindo dalam angka Tahun $year",
-            'data' => [
-                'tahun' => $year,
-                'total_kelas' => $total_kelas,
-                'jumlah_peserta' => $jumlah_peserta,
-                'offline' => $offline,
-                'virtual' => $virtual,  
-                'ratarata_kelas_perbulan' => round($ratarata_kelas_perbulan, 1),
-                'jumlah_peserta_perbulan' => round($jumlah_peserta_perbulan, 1),
-                'ratarata_feedback' => $ratarata_feedback,
-                'sales_terbaik' => $sales_terbaik ?: ['sales_key' => 'Tidak tersedia', 'total_penjualan' => 0],
-                'instruktur_terbaik' => [
-                    'instruktur_key' => $instruktur_key,
-                    'total_mengajar' => $total_mengajar,
-                    'feedback' => round($feedback, 1),
-                    'instruktur' => [
-                        'nama_lengkap' => $nama_lengkap,
-                        'foto' => $foto,
-                    ],
+                $itsm_nama   = 'Static ITSM';
+    $itsm_foto   = 'itsm.jpg'; // simpan di storage/posts
+    $office_nama = 'Static Office';
+    $office_foto = 'office.jpg'; // simpan di storage/posts
+
+
+    return response()->json([
+        'success' => true,
+        'message' => "Data Inixindo dalam angka Tahun $year",
+        'data' => [
+            'tahun' => $year,
+            'total_kelas' => $total_kelas,
+            'jumlah_peserta' => $jumlah_peserta,
+            'offline' => $offline,
+            'virtual' => $virtual,
+            'ratarata_kelas_perbulan' => round($ratarata_kelas_perbulan, 1),
+            'jumlah_peserta_perbulan' => round($jumlah_peserta_perbulan, 1),
+            'ratarata_feedback' => $ratarata_feedback,
+            'sales_terbaik' => $sales_terbaik ?: ['sales_key' => 'Tidak tersedia', 'total_penjualan' => 0],
+            'instruktur_terbaik' => [
+                'instruktur_key' => $instruktur_key,
+                'total_mengajar' => $total_mengajar,
+                'feedback' => round($feedback, 1),
+                'instruktur' => [
+                    'nama_lengkap' => $nama_lengkap,
+                    'foto' => $foto,
                 ],
-                'keterlambatan' => $leaderboard,
-            ]
-        ]);
+            ],
+            'itsm_terbaik' => [
+                'itsm_key' => 'static',
+                'total_mengajar' => 99,
+                'feedback' => 4.9,
+                'itsm' => [
+                    'nama_lengkap' => $itsm_nama,
+                    'foto' => $itsm_foto,
+                ],
+            ],
+            'office_terbaik' => [
+                'office_key' => 'static',
+                'total_mengajar' => 88,
+                'feedback' => 4.8,
+                'office' => [
+                    'nama_lengkap' => $office_nama,
+                    'foto' => $office_foto,
+                ],
+            ],
+            'keterlambatan' => $leaderboard,
+        ]
+    ]);
     }
 
     public function getSouvenirYearly($year) 

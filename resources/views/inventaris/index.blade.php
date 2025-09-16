@@ -14,6 +14,37 @@
             </div>
         </div>
 
+        <!-- Modal Buat Kode Barnag -->
+        <div class="modal fade" id="createKodeBarang" tabindex="-1" aria-labelledby="createKodeBarangLabel"
+            aria-hidden="true">
+            <div class="modal-dialog">
+                <form method="POST" action="{{ route('CreateKodeIinvetaris') }}">
+                    @csrf
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="createKodeBarangLabel">Tambah Kode Barang</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="nama_barang" class="form-label">Nama Barang</label>
+                                <input type="text" name="nama_barang" id="nama_barang" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="kode_barang" class="form-label">Kode Barang</label>
+                                <input type="text" name="kode_barang" id="kode_barang" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-primary">Simpan</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+
         <!-- Modal Tambah Data -->
         <div class="modal fade" id="addInventarisModal" tabindex="-1" aria-labelledby="addInventarisModalLabel"
             aria-hidden="true">
@@ -32,7 +63,12 @@
                             </div>
                             <div class="mb-3">
                                 <label for="kodebarang" class="form-label">Kode Barang</label>
-                                <input type="text" class="form-control" id="kodebarang" name="kodebarang">
+                                <select class="form-control" id="kodebarang" name="kodebarang">
+                                    <option value="">-- Pilih Kode Barang --</option>
+                                    @foreach ($kodeBarang as $kodeBarang)
+                                        <option value="{{ $kodeBarang }}">{{ $kodeBarang }}</option>
+                                    @endforeach
+                                </select>
                             </div>
                             <div class="mb-3">
                                 <label for="merk_kode_seri_hardware" class="form-label">Merk / Kode Seri / Kode
@@ -58,8 +94,8 @@
                             </div>
                             <div class="mb-3">
                                 <label for="harga_beli" class="form-label">Harga Beli (Rp)</label>
-                                <input type="number" class="form-control" id="harga_beli" name="harga_beli" min="0"
-                                    step="0.01" required>
+                                <input type="number" class="form-control" id="harga_beli" name="harga_beli"
+                                    min="0" step="0.01" required>
                             </div>
                             <div class="mb-3">
                                 <label for="waktu_pembelian" class="form-label">Tanggal Pembelian</label>
@@ -75,7 +111,6 @@
                                     @endforeach
                                 </select>
                             </div>
-
                             <div class="mb-3">
                                 <label for="ruangan" class="form-label">Ruangan</label>
                                 <input type="text" class="form-control" id="ruangan" name="ruangan">
@@ -84,8 +119,8 @@
                                 <label for="kondisi" class="form-label">Kondisi</label>
                                 <select class="form-control" id="kondisi" name="kondisi" required>
                                     <option value="baik">Baik</option>
-                                    <option value="rusak/bermasalah">Rusak/Bermasalah</option>
-                                    <option value="sedang diperbaiki">Sedang Diperbaiki</option>
+                                    <option value="rusak">Rusak</option>
+                                    <option value="kurang layak">Kurang Layak</option>
                                 </select>
                             </div>
                             <div class="mb-3">
@@ -142,6 +177,11 @@
                         data-bs-target="#addInventarisModal" data-toggle="tooltip" data-placement="top"
                         title="Tambah Inventaris">
                         <img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> Data Inventaris
+                    </a>
+                    <a href="#" class="btn btn-md click-primary mx-2" data-bs-toggle="modal"
+                        data-bs-target="#createKodeBarang" data-toggle="tooltip" data-placement="top"
+                        title="Tambah Inventaris">
+                        <img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> Kode Barang
                     </a>
                 </div>
                 <div class="card m-4">

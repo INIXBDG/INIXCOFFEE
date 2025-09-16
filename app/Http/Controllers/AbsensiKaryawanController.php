@@ -71,7 +71,7 @@ class AbsensiKaryawanController extends Controller
         $jabatan = $request->input('jabatan') ?? auth()->user()->jabatan;
 
         // Validasi duplikasi absen
-        if ($this->checkDuplicateAbsen($request->id_karyawan, $sekarang->toDateString())) {
+        if ($jabatan !== 'Office Boy' && $this->checkDuplicateAbsen($request->id_karyawan, $sekarang->toDateString())) {
             return response()->json(['error' => 'Anda sudah melakukan absen masuk hari ini'], 400);
         }
 
@@ -148,6 +148,15 @@ class AbsensiKaryawanController extends Controller
     private function validateShiftWaktu($waktu, $shift, $jabatan)
     {
         $config = $this->getShiftConfig($waktu->dayOfWeek, $jabatan, $shift);
+        $isWeekend = ($waktu->dayOfWeek == Carbon::SATURDAY || $waktu->dayOfWeek == Carbon::SUNDAY);
+
+
+        $id_karyawan = auth()->user()->karyawan_id;
+
+        $izinHariIni = izinTigaJam::where('id_karyawan', $id_karyawan)
+            ->whereDate('tanggal_pengajuan', $waktu->toDateString())
+            ->where('approval', 2)
+            ->first();
 
         if (!$waktu->between($config['jamAwal'], $config['jamAkhir'])) {
             return [
@@ -158,24 +167,63 @@ class AbsensiKaryawanController extends Controller
             ];
         }
 
-        // Hitung keterlambatan
-        $keterlambatan = '00:00:00';
-        $keterangan = 'Masuk';
-
-        if ($waktu->greaterThan($config['jamMulaiShift'])) {
-            $diffMinutes = $waktu->diffInMinutes($config['jamMulaiShift']);
-            $hours = intdiv($diffMinutes, 60);
-            $minutes = ($diffMinutes % 60);
-            $keterlambatan = sprintf('%02d:%02d:00', $hours, $minutes);
-            $keterangan = 'Telat';
-        }
-
+    if ($isWeekend && !in_array($jabatan, ['Office Boy', 'Technical Support'])) {
         return [
             'valid' => true,
-            'keterangan' => $keterangan,
-            'keterlambatan' => $keterlambatan
+            'keterangan' => 'Masuk',
+            'keterlambatan' => '00:00:00'
         ];
     }
+
+        // Hitung keterlambatan untuk jabatan lain dan hari selain weekend
+        $keterlambatan = '00:00:00';
+        $keterangan = 'Masuk';
+      if ($izinHariIni) {
+    // Jam mulai izin dari database
+    $izinMulai = Carbon::parse($izinHariIni->jam_mulai);
+    $batasAwalMasuk = $izinMulai->copy()->addHour(); // 1 jam setelah izin
+    $batasAkhirMasuk = $izinMulai->copy()->addHours(3); // 3 jam setelah izin
+
+    if ($waktu->lessThan($batasAwalMasuk)) {
+        // Terlalu cepat
+        return [
+            'valid' => false,
+            'message' => 'Anda belum bisa absen. Minimal pukul ' . $batasAwalMasuk->format('H:i')
+        ];
+    } elseif ($waktu->greaterThan($batasAkhirMasuk)) {
+        // Telat lebih dari 3 jam
+        $diffMinutes = $waktu->diffInMinutes($batasAkhirMasuk);
+        $hours = intdiv($diffMinutes, 60);
+        $minutes = ($diffMinutes % 60);
+        $keterlambatan = sprintf('%02d:%02d:00', $hours, $minutes);
+        $keterangan = 'Telat (izin 3 Jam)';
+    } else {
+        // Masuk sesuai izin
+        $keterangan = 'Masuk (Izin 3 Jam)';
+        $keterlambatan = '00:00:00';
+    }
+
+} elseif ($waktu->greaterThan($config['jamMulaiShift'])) {
+    // Telat normal
+    $diffMinutes = $waktu->diffInMinutes($config['jamMulaiShift']);
+    $hours = intdiv($diffMinutes, 60);
+    $minutes = ($diffMinutes % 60);
+    $keterlambatan = sprintf('%02d:%02d:00', $hours, $minutes);
+    $keterangan = 'Telat';
+} else {
+    // Masuk tepat waktu
+    $keterangan = 'Masuk';
+    $keterlambatan = '00:00:00';
+}
+
+    return [
+        'valid' => true,
+        'keterangan' => $keterangan,
+        'keterlambatan' => $keterlambatan
+    ];
+}
+
+
 
     private function getShiftConfig($dayOfWeek, $jabatan, $shift)
     {
@@ -294,19 +342,18 @@ class AbsensiKaryawanController extends Controller
     public function absensiKaryawan()
     {
         $id_karyawan = auth()->user()->karyawan_id;
-        $month = now()->month; // Mendapatkan bulan saat ini
+        $month = now()->month;
         $absen = AbsensiKaryawan::where('id_karyawan', $id_karyawan)
             ->whereMonth('tanggal', $month)
             ->orderBy('tanggal', 'asc') // Urutkan berdasarkan tanggal secara ascending (terkecil ke terbesar)
             ->get();
 
         $karyawan = karyawan::where('id', $id_karyawan)->first();
-
-        $noRecord = absensi_noRecord::where('id_karyawan', $id_karyawan)
+        $noRecord = absensi_noRecord::where('id_karyawan', auth()->user()->karyawan_id)
             ->where('jenis_PK', 'No Record')
-            ->whereHas('absensiKaryawan')
-            ->with('absensiKaryawan')
+            // ->where('approval', 1)
             ->get();
+
 
         $schemeWork = absensi_noRecord::where('id_karyawan', $id_karyawan)
             ->where('jenis_PK', 'Scheme Work')
@@ -402,7 +449,23 @@ class AbsensiKaryawanController extends Controller
         // return $totalketerlambatan;
         // return $leaderboard;
 
-        return view('absensi.absensi', compact('absen', 'leaderboard', 'totalketerlambatan', 'topKaryawan', 'remainingLeaderboard', 'noRecord', 'schemeWork', 'cancelLeave'));
+        // Tambahkan query izin tiga jam
+        $izinTigaJam = izinTigaJam::where('id_karyawan', $id_karyawan)
+            ->whereMonth('tanggal_pengajuan', $month)
+            ->orderBy('tanggal_pengajuan', 'desc')
+            ->get();
+
+        return view('absensi.absensi', compact(
+            'absen',
+            'leaderboard',
+            'totalketerlambatan',
+            'topKaryawan',
+            'remainingLeaderboard',
+            'noRecord',
+            'schemeWork',
+            'cancelLeave',
+            'izinTigaJam' // <-- tambahkan ini
+        ));
     }
 
     public function update(Request $request)
@@ -425,8 +488,8 @@ class AbsensiKaryawanController extends Controller
         // Ambil absensi berdasarkan tanggal yang dihitung
         $absensi = AbsensiKaryawan::where('id_karyawan', $request->input('id_karyawan'))
             ->where('tanggal', $tanggal)
+            ->latest()
             ->first();
-
 
         if (!$absensi) {
             return response()->json(['error' => 'Absen masuk tidak ditemukan untuk tanggal: ' . $tanggal], 404);
@@ -473,7 +536,7 @@ class AbsensiKaryawanController extends Controller
             ->whereYear('tanggal_awal', $tahun)
             ->whereMonth('tanggal_awal', $bulan)
             ->get();
-            // dd($absensiKaryawan);
+        // dd($absensiKaryawan);
 
         // Inisialisasi jumlahAbsensi
         if ($karyawanId == '2') {
@@ -483,7 +546,6 @@ class AbsensiKaryawanController extends Controller
                 ->whereRaw('DAYOFWEEK(tanggal) NOT IN (1, 7)') // Mengecualikan Minggu (1) dan Sabtu (7)
                 ->distinct('tanggal')
                 ->count();
-
         } else {
             $jumlahAbsensi = $absensiKaryawan->count();
             $jumlahAbsensiPulang = $absen_pulang->count();
@@ -572,7 +634,7 @@ class AbsensiKaryawanController extends Controller
         $this->validate($request, [
             'id_karyawan'   => 'required|integer',
             'kendala'       => 'required|string|in:Human Error,System Error',
-            'tanggal_absen' => 'required|integer',
+            'tanggal_absen' => 'required|date',
             'bukti_gambar'  => 'required|image',
             'kronologi'     => 'required|string',
         ]);
@@ -609,7 +671,7 @@ class AbsensiKaryawanController extends Controller
             'id_karyawan'   => $request->id_karyawan,
             'jenis_PK'      => 'No Record',
             'kendala'       => $request->kendala,
-            'id_absen'      => $request->tanggal_absen,
+            'id_absen'      => '0',
             'bukti_gambar'  => $fotoPath,
             'kronologi'     => $request->kronologi,
             'approval'      => '0',

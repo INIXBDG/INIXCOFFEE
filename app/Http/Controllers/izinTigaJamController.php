@@ -25,34 +25,40 @@ class izinTigaJamController extends Controller
         return view('pengajuanizin.index');
     }
 
-    public function getPengajuanIzin()
-    {
-        $user = auth()->user()->karyawan_id;
-        $karyawan = karyawan::findOrFail($user);
-        $jabatan = $karyawan->jabatan;
-        $divisi = $karyawan->divisi;
+   public function getPengajuanIzin()
+{
+    $user = auth()->user()->karyawan_id;
+    $karyawan = karyawan::findOrFail($user);
+    $jabatan = $karyawan->jabatan;
+    $divisi = $karyawan->divisi;
 
-        if (in_array($jabatan, ['Office Manager', 'Education Manager', 'SPV Sales', 'Koordinator ITSM'])) {
-            $pengajuanizin = izinTigaJam::with('karyawan')->whereHas('karyawan', function ($query) use ($divisi) {
-                $query->where('divisi', $divisi);
-            })->latest()->get();
-        } elseif (in_array($jabatan, ['HRD', 'GM', 'Koordinator Office'])) {
-            $pengajuanizin = izinTigaJam::with('karyawan')->latest()->get();
-        } else {
-            $pengajuanizin = izinTigaJam::with('karyawan')->whereHas('karyawan', function ($query) use ($user) {
-                $query->where('id', $user);
-            })->latest()->get();
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'List pengajuanizin',
-            'data' => [
-                'pengajuanizin' => $pengajuanizin,
-                'divisi' => $divisi,
-            ],
-        ]);
+    if (in_array($jabatan, ['Office Manager', 'Education Manager', 'SPV Sales', 'Koordinator ITSM'])) {
+        $pengajuanizin = izinTigaJam::with('karyawan')->whereHas('karyawan', function ($query) use ($divisi) {
+            $query->where('divisi', $divisi);
+        })->latest()->get();
+    } elseif (in_array($jabatan, ['HRD', 'GM', 'Koordinator Office'])) {
+        $pengajuanizin = izinTigaJam::with('karyawan')->latest()->get();
+    } else {
+        $pengajuanizin = izinTigaJam::with('karyawan')->whereHas('karyawan', function ($query) use ($user) {
+            $query->where('id', $user);
+        })->latest()->get();
     }
+
+    // Tambahkan tanggal_pengajuan_terformat ke setiap item
+    $pengajuanizin->transform(function ($item) {
+        $item->tanggal_pengajuan_terformat = \Carbon\Carbon::parse($item->tanggal_pengajuan)->format('d M Y');
+        return $item;
+    });
+
+    return response()->json([
+        'success' => true,
+        'message' => 'List pengajuanizin',
+        'data' => [
+            'pengajuanizin' => $pengajuanizin,
+            'divisi' => $divisi,
+        ],
+    ]);
+}
 
     public function create()
     {
@@ -63,33 +69,55 @@ class izinTigaJamController extends Controller
     }
 
     public function store(Request $request)
-    {
-        $this->validate($request, [
-            'id_karyawan'   => 'required',
-            'jam_mulai'     => 'required|date_format:H:i',
-            'jam_selesai'   => 'required|date_format:H:i',
-            'durasi'        => 'required|string',
-            'alasan'        => 'required|string',
-        ]);
+{
+    // dd($request->all());
+    $this->validate($request, [
+        'id_karyawan'   => 'required',
+        'tanggal'        => 'required|date',
+        'jam_mulai'     => 'required|date_format:H:i',
+        'jam_selesai'   => 'required|date_format:H:i',
+        'durasi'        => 'required|string',
+        'alasan'        => 'required|string',
+        'tanggal_pengajuan' => 'required|date',
+    ]);
 
-        $karyawan = karyawan::findOrFail($request->id_karyawan);
+    $karyawan = karyawan::findOrFail($request->id_karyawan);
 
-        $absensiKaryawan = AbsensiKaryawan::where('id_karyawan', $karyawan->id)
-            ->whereDate('tanggal', now()->toDateString())
-            ->first();
+    $tanggalPengajuan = $request->input('tanggal_pengajuan');
+    $hariIni = now()->toDateString();
+    $besok   = now()->copy()->addDay()->toDateString();
 
-        if (!$absensiKaryawan) {
-            return redirect()->route('pengajuanizin.index')->with(['error' => 'Anda diharapkan absen terlebih dahulu!']);
-        } else {
-            izinTigaJam::create([
-                'id_karyawan'   => $request->id_karyawan,
-                'jam_mulai'     => $request->jam_mulai,
-                'jam_selesai'   => $request->jam_selesai,
-                'durasi'        => $request->durasi,
-                'alasan'        => $request->alasan,
-                'approval'      => '0',
-            ]);
-        }
+    // Logika aturan Pak Bos
+   if ($tanggalPengajuan === $hariIni) {
+    // Jika izin untuk hari ini, wajib sudah absen
+    $absensiKaryawan = AbsensiKaryawan::where('id_karyawan', $karyawan->id)
+        ->whereDate('tanggal', $hariIni)
+        ->first();
+
+    if (!$absensiKaryawan) {
+        return redirect()->route('pengajuanizin.index')->with(['error' => 'Anda harus absen terlebih dahulu jika mengajukan izin untuk hari ini.']);
+    }
+
+    $jamMulai = \Carbon\Carbon::createFromFormat('H:i', $request->jam_mulai);
+    $sekarang = \Carbon\Carbon::now();
+
+    if ($jamMulai->lt(\Carbon\Carbon::createFromTime($sekarang->hour, $sekarang->minute))) {
+        return redirect()->route('pengajuanizin.index')->with(['error' => 'Jam mulai tidak boleh kurang dari waktu saat ini.']);
+    }
+}
+
+
+    // Simpan izin
+    izinTigaJam::create([
+        'id_karyawan'        => $request->id_karyawan,
+        'tanggal'            => $request->tanggal,
+        'jam_mulai'          => $request->jam_mulai,
+        'jam_selesai'        => $request->jam_selesai,
+        'durasi'             => $request->durasi,
+        'alasan'             => $request->alasan,
+        'tanggal_pengajuan'  => $tanggalPengajuan,
+        'approval'           => '0',
+    ]);
 
 
         // Ambil divisi dan jabatan karyawan

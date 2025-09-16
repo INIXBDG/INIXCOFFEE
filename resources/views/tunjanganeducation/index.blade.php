@@ -368,6 +368,7 @@
                                             <thead>
                                                 <tr>
                                                     <th scope="col">Nama Materi</th>
+                                                    <th scope="col">Tanggal</th>
                                                     <th scope="col">Instruktur</th>
                                                     <th scope="col">Kode Karyawan</th>
                                                     <th scope="col">Durasi</th>
@@ -673,7 +674,12 @@
             },
             "columns": [
                 {"data": "rkm.materi.nama_materi"},
-                // {"data": "id"},
+                {
+                    "data": null,
+                    "render" : function(data, type, row) {
+                        return data.tanggal_awal + ' s/d ' + data.tanggal_akhir;
+                    }
+                },
                 {"data": "instruktur.nama_lengkap"},
                 {
                     "data": "instruktur.kode_karyawan",
@@ -735,22 +741,24 @@
                         var actions = '';
                             actions += '@can('Hitung TunjanganEducation')';
                             if(data.status == 'Belum Dihitung'){
-                                actions += '<button type="button" class="btn btn-md btn-primary" onclick="ajukanModal('+data.id +', \''+ data.level +'\', \''+ data.durasi +'\', \''+ data.pax +'\', \''+ data.feedback +'\', \''+ data.rkm.metode_kelas +'\')" > Hitung Tunjangan</button>';
+                                actions += '<button type="button" class="btn btn-sm btn-primary" onclick="ajukanModal('+data.id +', \''+ data.level +'\', \''+ data.durasi +'\', \''+ data.pax +'\', \''+ data.feedback +'\', \''+ data.rkm.metode_kelas +'\')" > Hitung Tunjangan</button>';
                             }else if(data.status == 'Revisi'){
-                                actions += '<button type="button" class="btn btn-md btn-primary" onclick="ajukanModal('+data.id +', \''+ data.level +'\', \''+ data.durasi +'\', \''+ data.pax +'\', \''+ data.feedback +'\', \''+ data.rkm.metode_kelas +'\')" > Hitung Tunjangan</button>';
+                                actions += '<button type="button" class="btn btn-sm btn-primary" onclick="ajukanModal('+data.id +', \''+ data.level +'\', \''+ data.durasi +'\', \''+ data.pax +'\', \''+ data.feedback +'\', \''+ data.rkm.metode_kelas +'\')" > Hitung Tunjangan</button>';
                             }else{
-                                actions += '<button type="button" class="btn btn-md btn-primary disabled" onclick="ajukanModal('+data.id +', \''+ data.level +'\', \''+ data.durasi +'\', \''+ data.pax +'\', \''+ data.feedback +'\', \''+ data.rkm.metode_kelas +'\')" > Hitung Tunjangan</button>';
+                                actions += '<button type="button" class="btn btn-sm btn-primary disabled" onclick="ajukanModal('+data.id +', \''+ data.level +'\', \''+ data.durasi +'\', \''+ data.pax +'\', \''+ data.feedback +'\', \''+ data.rkm.metode_kelas +'\')" > Hitung Tunjangan</button>';
                             }
                             
                             actions += '@endcan';
                             actions += '@can('Approval TunjanganEducation')';
-                            // if(data.status == 'Diajukan'){
-                            //     actions += '<button type="button" class="btn btn-md btn-primary" onclick="approvalModal('+data.id+')" > Approve</button>';
-                            // }else{
-                            //     actions += '<button type="button" class="btn btn-md btn-primary disabled" onclick="approvalModal('+data.id+')" > Approve</button>';
-                            // }
-                            actions += '<button type="button" class="btn btn-md btn-primary" onclick="approvalModal('+data.id+')" > Approve</button>';
+                            actions += '<button type="button" class="btn btn-sm btn-primary" onclick="approvalModal('+data.id+')" > Approve</button>';
                             actions += '@endcan';
+                            var destroyUrlTemplate = "{{ route('rekapmengajarinstruktur.destroy', ':id') }}";
+                            var url = destroyUrlTemplate.replace(':id', data.id);
+                            actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="' + url + '" method="POST">';
+                            actions += '@csrf';
+                            actions += '@method('DELETE')';
+                            actions += '<button type="submit" class="btn btn-sm btn-danger mt-2"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
+                            actions += '</form>';
 
                         return actions;
                     }

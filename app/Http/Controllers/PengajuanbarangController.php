@@ -22,7 +22,13 @@ class PengajuanBarangController extends Controller
      */
     public function index()
     {
-        $jabatan = auth()->user()->jabatan;
+        $user = auth()->user();
+
+        if (!$user || !$user->karyawan || !$user->karyawan->jabatan) {
+            return view('auth.login');
+        }
+
+        $jabatan = $user->karyawan->jabatan;
 
         // Daftar jabatan yang otomatis dapat 'buka'
         $jabatanBuka = ['Finance & Accounting', 'GM', 'SPV Sales', 'Koordinator ITSM'];
@@ -517,18 +523,22 @@ class PengajuanBarangController extends Controller
     public function updateInvoice(Request $request, $id)
     {
         $post = PengajuanBarang::with('tracking')->findOrFail($id);
-        // dd($post->tracking->tracking);
+
         if ($request->hasFile('invoice')) {
+            // hapus file lama kalau ada
+            if ($post->invoice) {
+                Storage::delete('public/' . $post->invoice);
+            }
 
-            Storage::delete('public/storage/pengajuanbarang/' . $post->invoice);
-
+            // simpan file baru
             $file = $request->file('invoice');
             $filename = time() . '.' . $file->getClientOriginalExtension();
             $directory = 'pengajuanbarang';
             $path = $file->storeAs($directory, $filename, 'public');
+
+            // kalau tracking terakhir "Pencairan Sudah Selesai" → set status selesai
             if ($post->tracking->tracking == 'Pencairan Sudah Selesai') {
                 $status = 'Selesai';
-
                 $e = tracking_pengajuan_barang::create([
                     'id_pengajuan_barang' => $id,
                     'tracking' => $status,
@@ -539,27 +549,20 @@ class PengajuanBarangController extends Controller
                     'invoice' => $path,
                 ]);
             } else {
+                // kalau belum selesai, cukup update invoice saja
                 $post->update([
-                    // 'id_tracking' => $e->id,
                     'invoice' => $path,
                 ]);
             }
-            // $status = 'Selesai';
-
-            // $e = tracking_pengajuan_barang::create([
-            //     'id_pengajuan_barang' => $id,
-            //     'tracking' => $status,
-            //     'tanggal' => now()
-            // ]);
-            $post->update([
-                // 'id_tracking' => $e->id,
-                'invoice' => $path,
-            ]);
         } else {
-            return redirect()->route('pengajuanbarang.index')->with('error', 'Invoice gagal diupload.');
+            return redirect()->route('pengajuanbarang.index')
+                ->with('error', 'Invoice gagal diupload.');
         }
-        return redirect()->route('pengajuanbarang.index')->with('success', 'Invoice berhasil disimpan.');
+
+        return redirect()->route('pengajuanbarang.index')
+            ->with('success', 'Invoice berhasil disimpan.');
     }
+
 
     public function updateBarang(Request $request, $id)
     {
@@ -637,4 +640,24 @@ class PengajuanBarangController extends Controller
 
         // return $pdf->download('Data_pengajuan_barang.pdf');
     }
+    public function getHold()
+{
+    $data = PengajuanBarang::with(['karyawan', 'tracking'])
+        ->whereNull('invoice')
+        ->get();
+
+    return response()->json($data);
+}
+
+public function getHasInvoice()
+{
+    $data = PengajuanBarang::with(['karyawan', 'tracking'])
+        ->whereNotNull('invoice')
+        ->get();
+
+    return response()->json($data);
+}
+
+
+    
 }

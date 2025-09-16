@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class RKM extends Model
 {
     use HasFactory;
-
+    protected $primaryKey = 'id';
     protected $fillable = [
         'sales_key',
         'materi_key',
@@ -30,7 +30,8 @@ class RKM extends Model
         'quartal',
         'bulan',
         'tahun',
-        'isi_pax'
+        'isi_pax',
+        'makanan'
     ];
 
     public function perhitunganNetSales()
@@ -105,6 +106,11 @@ class RKM extends Model
     public function absensiPDF(){
         return $this->hasOne(absensiPDF::class, 'id_rkm', 'id');
     }
-    
+
+    public function invoice()
+    {
+    return $this->hasOne(Invoice::class, 'id_rkm');
+    }
+
 
 }

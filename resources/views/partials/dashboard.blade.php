@@ -1,3 +1,4 @@
+
 <div class="card" style="margin-bottom: 8px">
     <div class="card-body d-flex justify-content-start">
         <div class="col-md-12 mx-1">
@@ -20,9 +21,9 @@
        <div class="row">
         <div class="col-6 d-flex justify-content-start">
             <p style="margin: 0">Total Saat ini adalah: <span id="totalSalesDisplay">Rp 0</span></p>
-        </div>                                                              
+        </div>
         <div class="col-6 d-flex justify-content-end">
-            
+
         </div>
        </div>
         <div id="progress-container" style="position: relative;">
@@ -48,22 +49,32 @@
                 $salesDisabled = true;
                 $officeDisabled = true;
                 $instrukturDisabled = true;
+                $itsmDisable = true;
             } elseif ($divisi == 'Office') {
                 $salesDisabled = false;
                 $officeDisabled = true;
                 $instrukturDisabled = false;
+                $itsmDisable = false;
             } elseif ($divisi == 'Education') {
                 $salesDisabled = false;
                 $officeDisabled = false;
                 $instrukturDisabled = true;
+                $itsmDisable = false;
             } elseif ($divisi == 'Sales & Marketing') {
                 $salesDisabled = true;
                 $officeDisabled = false;
                 $instrukturDisabled = false;
+                $itsmDisable = false;
+            } elseif ($divisi == 'IT Service Management') {
+                $officeDisabled = false;
+                $instrukturDisabled = false;
+                $itsmDisable = true;
+                $salesDisabled = false;
             } else {
                 $salesDisabled = true;
                 $officeDisabled = true;
                 $instrukturDisabled = true;
+                $itsmDisable = true;
             }
         @endphp
         <ul class="nav nav-tabs" id="chart" role="tablist">
@@ -82,8 +93,11 @@
                 <button class="nav-link" id="instruktur-tab" data-bs-toggle="tab" data-bs-target="#instruktur-tab-pane" type="button" role="tab" aria-controls="instruktur-tab-pane" aria-selected="false"
                     {{ $instrukturDisabled ? '' : 'disabled' }}>Instruktur</button>
             </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="itsm-tab" data-bs-toggle="tab" data-bs-target="#itsm-tab-pane" type="button" role="tab" aria-controls="itsm-tab-pane" aria-selected="false"
+                {{ $itsmDisable ? '' : 'disabled' }}>ITSM</button>
+            </li>
         </ul>
-       
         <div class="tab-content" id="chartContent" style="">
             <div class="tab-pane fade" id="inix-tab-pane" role="tabpanel" aria-labelledby="inix-tab" tabindex="0">
                 <div class="container-fluid">
@@ -92,29 +106,42 @@
                             <div class="card" style="height: auto">
                                 <div class="card-body">
                                     <div class="row justify-content-center text-center">
-                                        <h5>Keterlambatan</h5>
+                                        <h5 class="position-header">Keterlambatan</h5>  
                                     </div>
-                                    <div class="row">
-                                        <div class="col-4 col-sm-4 col-md-4 col-lg-4 text-center">
-                                            <div class="circle second-position">
-                                                <img src="{{asset('css/b2.png')}}" alt="" class="position-badge">
-                                                <img src="" alt="Keterlambatan ke2" class="present-photo" id="present-photo">
+                                    <div class="row justify-content-center align-items-end modern-ranking">
+                                        <!-- Second Place -->
+                                        <div class="col-4 text-center podium-card">
+                                            <div class="card-podium rank-2">
+                                            <div class="circle second-position shadow-sm">
+                                                <!-- <img src="{{ asset('css/b2.png') }}" alt="Second Place" class="position-badge"> -->
+                                                <img src="{{ asset('storage/photos/pemain2.jpg') }}" alt="Keterlambatan ke-2" class="present-photo rounded-circle border border-white" id="present-photo">
+                                            </div>
+                                            <p class="position-label">Peringkat 2</p>
+                                            <img src="{{ asset('images/medal-2.png') }}" alt="Medali Perak" class="medal-bawah">
                                             </div>
                                         </div>
-                                        
-                                        <!-- First position in the center -->
-                                        <div class="col-4 col-sm-4 col-md-4 col-lg-4 text-center" style="">
-                                            <div class="circle-satu first-position">
-                                                <img src="{{asset('css/b1.png')}}" alt="" class="position-badge">
-                                                <img src="" alt="Keterlambatan ke1" class="present-photo-satu" id="present-photo-satu">
+
+                                        <!-- First Place -->
+                                        <div class="col-4 text-center podium-card">
+                                            <div class="card-podium rank-1">
+                                            <div class="circle-satu first-position shadow">
+                                                <!-- <img src="{{ asset('css/b1.png') }}" alt="First Place" class="position-badge"> -->
+                                                <img src="{{ asset('css/b1.png') }}" alt="Keterlambatan ke-1" class="present-photo-satu rounded-circle border border-white" id="present-photo-satu">
+                                            </div>
+                                            <p class="position-label">Peringkat 1</p>
+                                            <img src="{{ asset('images/medal-1.png') }}" class="medal-bawah" alt="Medal">
                                             </div>
                                         </div>
-                                        
-                                        <!-- Third position on the right -->
-                                        <div class="col-4 col-sm-4 col-md-4 col-lg-4 text-center">
-                                            <div class="circle third-position">
-                                                <img src="{{asset('css/b3.png')}}" alt="" class="position-badge">
-                                                <img src="" alt="Keterlambatan ke" class="present-photo" id="present-photo">
+
+                                        <!-- Third Place -->
+                                        <div class="col-4 text-center podium-card">
+                                            <div class="card-podium rank-3">
+                                            <div class="circle third-position shadow-sm">
+                                                <!-- <img src="{{ asset('css/b3.png') }}" alt="Third Place" class="position-badge"> -->
+                                                <img src="{{ asset('storage/photos/pemain3.jpg') }}" alt="Keterlambatan ke-3" class="present-photo rounded-circle border border-white" id="present-photo">
+                                            </div>
+                                            <p class="position-label">Peringkat 3</p>
+                                            <img src="{{ asset('images/medal-3.png') }}" alt="Medali Perunggu" class="medal-bawah">
                                             </div>
                                         </div>
                                     </div>
@@ -127,44 +154,63 @@
                             <div class="card">
                                 <div class="card-body">
                                     <div class="row text-center">
-                                        <h5>Terbaik</h5> 
+                                        <h5>Terbaik</h5>
                                     </div>
-                                    <div class="row">
-                                        <div class="col-4 col-sm-4 col-md-4 col-lg-4 text-center d-flex justify-content-center">
-                                            <div class="card_foto">
-                                                <div class="imgbox">
-                                                    <img src="" alt="Sales Image" class="dynamic-image" id="foto_sales">
-                                                </div>
-                                                <div class="details">
-                                                    <h4 class="title" id="nama_sales">John Doe</h4>
-                                                    <span class="caption">Sales Terbaik</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-4 col-sm-4 col-md-4 col-lg-4 text-center d-flex justify-content-center">
-                                            <div class="card_foto">
-                                                <div class="imgbox">
-                                                    <img src="" alt="Instruktur Image" class="dynamic-image" id="foto_instruktur">
-                                                </div>
-                                                <div class="details">
-                                                    <h4 class="title" id="nama_instruktur">John Doe</h4>
-                                                    <span class="caption">Instruktur Terbaik</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-4 col-sm-4 col-md-4 col-lg-4 text-center d-flex justify-content-center">
-                                            <div class="card_foto">
-                                                <div class="imgbox">
-                                                    <img src="" alt="Office Image" class="dynamic-image" id="foto_office">
-                                                </div>
-                                                <div class="details">
-                                                    <h4 class="title" id="nama_office">John Doe</h4>
-                                                    <span class="caption">Office Terbaik</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        
-                                    </div>
+<div class="row">
+    <!-- SALES TERBAIK -->
+    <div class="col-6 col-sm-6 col-md-3 col-lg-3 text-center d-flex justify-content-center">
+        <div class="card_foto">
+            <div class="imgbox">
+                <img src="{{ asset('images/download.png') }}" alt="Sales Image" class="dynamic-image" id="foto_sales">
+            </div>
+            <div class="details">
+                <span class="caption">Sales Terbaik</span>
+                <h4 class="title" id="nama_sales">John doe</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- INSTRUKTUR TERBAIK -->
+    <div class="col-6 col-sm-6 col-md-3 col-lg-3 text-center d-flex justify-content-center">
+        <div class="card_foto">
+            <div class="imgbox">
+                <img src="{{ asset('images/download.png') }}" alt="Instruktur Image" class="dynamic-image" id="foto_instruktur">
+            </div>
+            <div class="details">
+                <span class="caption mb-30">Instruktur Terbaik</span>
+                <h4 class="title" id="nama_instruktur">John doe</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- OFFICE TERBAIK -->
+    <div class="col-6 col-sm-6 col-md-3 col-lg-3 text-center d-flex justify-content-center">
+        <div class="card_foto">
+            <div class="imgbox">
+                <img src="{{ asset('images/download.png') }}" alt="Office Image" class="dynamic-image" id="foto_office">
+            </div>
+            <div class="details">
+                <span class="caption">Office Terbaik</span>
+                <h4 class="title" id="nama_office">John doe</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- ITSM TERBAIK -->
+    <div class="col-6 col-sm-6 col-md-3 col-lg-3 text-center d-flex justify-content-center">
+        <div class="card_foto">
+            <div class="imgbox">
+                <img src="{{ asset('images/download.png') }}" alt="ITSM Image" class="dynamic-image" id="foto_itsm">
+            </div>
+            <div class="details">
+                <span class="caption">ITSM Terbaik</span>
+                <h4 class="title" id="nama_itsm">John doe</h4> 
+            </div>
+        </div>
+    </div>
+</div>
+                            
+
                                 </div>
                             </div>
                         </div>
@@ -184,7 +230,7 @@
                                                     <h2>Total Kelas</h2>
                                                     <p id="total_kelas"></p>
                                                 </div>
-                                            </div>                                            
+                                            </div>
                                         </div>
                                         <div class="col-12 col-md-4 text-center d-flex justify-content-center mb-2">
                                             <div class="card-uiverse" style="width: 100%;">
@@ -192,7 +238,7 @@
                                                     <h2>Jumlah Peserta</h2>
                                                     <p id="jumlah_peserta"></p>
                                                 </div>
-                                            </div> 
+                                            </div>
                                         </div>
                                         <div class="col-12 col-md-4 text-center d-flex justify-content-center mb-2">
                                             <div class="card-uiverse" style="width: 100%;">
@@ -205,7 +251,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    
+
                                     <!-- Baris kedua dengan 2 kolom -->
                                     <div class="row justify-content-center">
                                         <div class="col-12 col-md-6 text-center d-flex justify-content-center mb-2">
@@ -214,7 +260,7 @@
                                                     <h2>Rata-rata Kelas Per Bulan</h2>
                                                     <p id="ratarata_kelas_perbulan"></p>
                                                 </div>
-                                            </div> 
+                                            </div>
                                         </div>
                                         <div class="col-12 col-md-6 text-center d-flex justify-content-center mb-2">
                                             <div class="card-uiverse" style="width: 100%;">
@@ -222,11 +268,11 @@
                                                     <h2>Rata-rata Peserta Per Bulan</h2>
                                                     <p id="jumlah_peserta_perbulan"></p>
                                                 </div>
-                                            </div> 
+                                            </div>
                                         </div>
                                     </div>
-                                    
-                
+
+
                                     <div class="row mt-2">
                                         <div class="col">
                                             <div class="card-uiverse-feedback" style="width: 100%;">
@@ -255,10 +301,10 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div> 
+                                            </div>
                                         </div>
                                     </div>
-                                    
+
                                 </div>
                             </div>
                         </div>
@@ -268,10 +314,10 @@
             <div class="tab-pane fade show " id="sales-tab-pane" role="tabpanel" aria-labelledby="sales-tab" tabindex="0" style="height: auto">
                 <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
                     <li class="nav-item mx-1" role="presentation">
-                      <button class="nav-link" id="pills-perquartal-tab" data-bs-toggle="pill" data-bs-target="#pills-perquartal" type="button" role="tab" aria-controls="pills-perquartal" aria-selected="true">Penjualan Per Sales Per Triwulan</button>
+                        <button class="nav-link" id="pills-perquartal-tab" data-bs-toggle="pill" data-bs-target="#pills-perquartal" type="button" role="tab" aria-controls="pills-perquartal" aria-selected="true">Penjualan Per Sales Per Triwulan</button>
                     </li>
                     <li class="nav-item mx-1" role="presentation">
-                      <button class="nav-link" id="pills-bulan-tab" data-bs-toggle="pill" data-bs-target="#pills-bulan" type="button" role="tab" aria-controls="pills-bulan" aria-selected="false">Penjualan Per Sales Per Tahun</button>
+                        <button class="nav-link" id="pills-bulan-tab" data-bs-toggle="pill" data-bs-target="#pills-bulan" type="button" role="tab" aria-controls="pills-bulan" aria-selected="false">Penjualan Per Sales Per Tahun</button>
                     </li>
                 </ul>
                 <div class="tab-content" id="pills-tabContent">
@@ -295,17 +341,17 @@
             <div class="tab-pane fade" id="office-tab-pane" role="tabpanel" aria-labelledby="office-tab" tabindex="0">
                 <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
                     <li class="nav-item mx-1" role="presentation">
-                      <button class="nav-link" id="pills-analisiskelas-tab" data-bs-toggle="pill" data-bs-target="#pills-analisiskelas" type="button" role="tab" aria-controls="pills-analisiskelas" aria-selected="true">Rekap Analisa Margin</button>
+                        <button class="nav-link" id="pills-analisiskelas-tab" data-bs-toggle="pill" data-bs-target="#pills-analisiskelas" type="button" role="tab" aria-controls="pills-analisiskelas" aria-selected="true">Rekap Analisa Margin</button>
                     </li>
                     <li class="nav-item mx-1" role="presentation">
-                      <button class="nav-link" id="pills-absen-tab" data-bs-toggle="pill" data-bs-target="#pills-absen" type="button" role="tab" aria-controls="pills-absen" aria-selected="false">Rekap Absen</button>
+                        <button class="nav-link" id="pills-absen-tab" data-bs-toggle="pill" data-bs-target="#pills-absen" type="button" role="tab" aria-controls="pills-absen" aria-selected="false">Rekap Absen</button>
                     </li>
                     <li class="nav-item mx-1" role="presentation">
                         <button class="nav-link" id="pills-absenperbulan-tab" data-bs-toggle="pill" data-bs-target="#pills-absenperbulan" type="button" role="tab" aria-controls="pills-absenperbulan" aria-selected="false">Rekap Absen Per Bulan</button>
-                      </li>
+                    </li>
                     <li class="nav-item mx-1" role="presentation">
                         <button class="nav-link" id="pills-souvenir-tab" data-bs-toggle="pill" data-bs-target="#pills-souvenir" type="button" role="tab" aria-controls="pills-souvenir" aria-selected="false">Rekap Souvenir</button>
-                      </li>
+                    </li>
                 </ul>
                 <div class="tab-content" id="pills-tabContent">
                     <div class="tab-pane fade show" style="height:auto;" id="pills-analisiskelas" role="tabpanel" aria-labelledby="pills-analisiskelas-tab" tabindex="0">
@@ -320,30 +366,30 @@
                             <div class="col-12" id="containerCanvasAbsenChart">
                                 <canvas id="AbsenChart"></canvas>
                             </div>
-                        </div>  
+                        </div>
                     </div>
                     <div class="tab-pane fade show" style="height:auto;" id="pills-absenperbulan" role="tabpanel" aria-labelledby="pills-absenperbulan-tab" tabindex="0">
                         <div class="row justify-content-center">
                             <div class="col-12" id="ContainerCanvasAbsenPerBulan">
                                 <label for="monthSelect_absenperbulan" class="form-label">Pilih Bulan:</label>
-                                    <select class="form-select" id="monthSelect_absenperbulan" onchange="updateChartAbsenPerbulan(this.value)">
-                                            <option value="All">Semua</option>
-                                            <option value="1">Januari</option>
-                                            <option value="2">Februari</option>
-                                            <option value="3">Maret</option>
-                                            <option value="4">April</option>
-                                            <option value="5">Mei</option>
-                                            <option value="6">Juni</option>
-                                            <option value="7">Juli</option>
-                                            <option value="8">Agustus</option>
-                                            <option value="9">September</option>
-                                            <option value="10">Oktober</option>
-                                            <option value="11">November</option>
-                                            <option value="12">Desember</option>
-                                    </select>
-                                    <canvas id="AbsenPerBulanChart" width="400" height="200"></canvas>
+                                <select class="form-select" id="monthSelect_absenperbulan" onchange="updateChartAbsenPerbulan(this.value)">
+                                    <option value="All">Semua</option>
+                                    <option value="1">Januari</option>
+                                    <option value="2">Februari</option>
+                                    <option value="3">Maret</option>
+                                    <option value="4">April</option>
+                                    <option value="5">Mei</option>
+                                    <option value="6">Juni</option>
+                                    <option value="7">Juli</option>
+                                    <option value="8">Agustus</option>
+                                    <option value="9">September</option>
+                                    <option value="10">Oktober</option>
+                                    <option value="11">November</option>
+                                    <option value="12">Desember</option>
+                                </select>
+                                <canvas id="AbsenPerBulanChart" width="400" height="200"></canvas>
                             </div>
-                        </div>  
+                        </div>
                     </div>
                     <div class="tab-pane fade show" style="height:auto;" id="pills-souvenir" role="tabpanel" aria-labelledby="pills-souvenir-tab" tabindex="0">
                         <div class="row justify-content-center">
@@ -357,10 +403,10 @@
             <div class="tab-pane fade" id="instruktur-tab-pane" role="tabpanel" aria-labelledby="instruktur-tab" tabindex="0">
                 <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
                     <li class="nav-item mx-1" role="presentation">
-                      <button class="nav-link" id="pills-nilaifeedbackperbulan-tab" data-bs-toggle="pill" data-bs-target="#pills-nilaifeedbackperbulan" type="button" role="tab" aria-controls="pills-nilaifeedbackperbulan" aria-selected="true">Nilai Feedback Per Bulan</button>
+                        <button class="nav-link" id="pills-nilaifeedbackperbulan-tab" data-bs-toggle="pill" data-bs-target="#pills-nilaifeedbackperbulan" type="button" role="tab" aria-controls="pills-nilaifeedbackperbulan" aria-selected="true">Nilai Feedback Per Bulan</button>
                     </li>
                     <li class="nav-item mx-1" role="presentation">
-                      <button class="nav-link" id="pills-totalmengajar-tab" data-bs-toggle="pill" data-bs-target="#pills-totalmengajar" type="button" role="tab" aria-controls="pills-totalmengajar" aria-selected="false">Total Mengajar Per Bulan</button>
+                        <button class="nav-link" id="pills-totalmengajar-tab" data-bs-toggle="pill" data-bs-target="#pills-totalmengajar" type="button" role="tab" aria-controls="pills-totalmengajar" aria-selected="false">Total Mengajar Per Bulan</button>
                     </li>
                     <li class="nav-item mx-1" role="presentation">
                         <button class="nav-link" id="pills-totalMateri-tab" data-bs-toggle="pill" data-bs-target="#pills-totalMateri" type="button" role="tab" aria-controls="pills-totalMateri" aria-selected="false">Total Materi Per Bulan</button>
@@ -373,133 +419,214 @@
                     </li> --}}
                 </ul>
                 <div class="tab-content" id="pills-tabContent">
-                        <div class="tab-pane fade show" style="height:auto;" id="pills-nilaifeedbackperbulan" role="tabpanel" aria-labelledby="pills-nilaifeedbackperbulan-tab" tabindex="0">
-                            <div class="row justify-content-center">
-                                <div class="col-12" id="containerCanvasNilaiFeedback">
-                                    <label for="bulan" class="form-label">Pilih Bulan:</label>
-                                    <select class="form-select" id="bulan" onchange="updateChartNilaiFeedback(this.value)">
-                                        <option value="1">Januari</option>
-                                        <option value="2">Februari</option>
-                                        <option value="3">Maret</option>
-                                        <option value="4">April</option>
-                                        <option value="5">Mei</option>
-                                        <option value="6">Juni</option>
-                                        <option value="7">Juli</option>
-                                        <option value="8">Agustus</option>
-                                        <option value="9">September</option>
-                                        <option value="10">Oktober</option>
-                                        <option value="11">November</option>
-                                        <option value="12">Desember</option>
-                                    </select>
-                                    <canvas id="NilaiFeedbackChart" width="400" height="200"></canvas>
-                                
-                                </div>
+                    <div class="tab-pane fade show" style="height:auto;" id="pills-nilaifeedbackperbulan" role="tabpanel" aria-labelledby="pills-nilaifeedbackperbulan-tab" tabindex="0">
+                        <div class="row justify-content-center">
+                            <div class="col-12" id="containerCanvasNilaiFeedback">
+                                <label for="bulan" class="form-label">Pilih Bulan:</label>
+                                <select class="form-select" id="bulan" onchange="updateChartNilaiFeedback(this.value)">
+                                    <option value="1">Januari</option>
+                                    <option value="2">Februari</option>
+                                    <option value="3">Maret</option>
+                                    <option value="4">April</option>
+                                    <option value="5">Mei</option>
+                                    <option value="6">Juni</option>
+                                    <option value="7">Juli</option>
+                                    <option value="8">Agustus</option>
+                                    <option value="9">September</option>
+                                    <option value="10">Oktober</option>
+                                    <option value="11">November</option>
+                                    <option value="12">Desember</option>
+                                </select>
+                                <canvas id="NilaiFeedbackChart" width="400" height="200"></canvas>
+
                             </div>
-                        </div>
-                        <div class="tab-pane fade show" style="height:auto;" id="pills-totalmengajar" role="tabpanel" aria-labelledby="pills-totalmengajar-tab" tabindex="0">
-                            <div class="row justify-content-center">
-                                <div class="col-12" id="containerCanvasTotalMengajarChart">
-                                    <label for="monthSelect" class="form-label">Pilih Bulan:</label>
-                                    <select class="form-select" id="monthSelect_totalmengajar" onchange="updateChartTotalMengajar(this.value)">
-                                            <option value="1">Januari</option>
-                                            <option value="2">Februari</option>
-                                            <option value="3">Maret</option>
-                                            <option value="4">April</option>
-                                            <option value="5">Mei</option>
-                                            <option value="6">Juni</option>
-                                            <option value="7">Juli</option>
-                                            <option value="8">Agustus</option>
-                                            <option value="9">September</option>
-                                            <option value="10">Oktober</option>
-                                            <option value="11">November</option>
-                                            <option value="12">Desember</option>
-                                    </select>
-                                    <canvas id="totalMengajarChart" width="400" height="200"></canvas>
-        
-                                </div>
-                            </div>
-                        </div>
-                        <div class="tab-pane fade show" style="height:auto;" id="pills-totalMateri" role="tabpanel" aria-labelledby="pills-totalMateri-tab" tabindex="0">
-                            <div class="row justify-content-center">
-                                <div class="col-12" id="containerCanvasTotalMateri">
-                                    <label for="monthSelect" class="form-label">Pilih Bulan:</label>
-                                    <select class="form-select" id="monthSelect_totalMateri" onchange="updateChartTotalMateri(this.value)">
-                                            <option value="All">Semua</option>
-                                            <option value="1">Januari</option>
-                                            <option value="2">Februari</option>
-                                            <option value="3">Maret</option>
-                                            <option value="4">April</option>
-                                            <option value="5">Mei</option>
-                                            <option value="6">Juni</option>
-                                            <option value="7">Juli</option>
-                                            <option value="8">Agustus</option>
-                                            <option value="9">September</option>
-                                            <option value="10">Oktober</option>
-                                            <option value="11">November</option>
-                                            <option value="12">Desember</option>
-                                    </select>
-                                    <canvas id="totalMateriChart" width="400" height="200"></canvas>
-        
-                                </div>
-                            </div>
-    
-                        </div>
-                        <div class="tab-pane fade show" style="height:auto;" id="pills-totalMateri" role="tabpanel" aria-labelledby="pills-totalMateri-tab" tabindex="0">
-                            <div class="row justify-content-center">
-                                <div class="col-12" id="containerCanvasTotalMateri">
-                                    <label for="monthSelect" class="form-label">Pilih Bulan:</label>
-                                    <select class="form-select" id="monthSelect_totalMateri" onchange="updateChartTotalMateri(this.value)">
-                                            <option value="All">Semua</option>
-                                            <option value="1">Januari</option>
-                                            <option value="2">Februari</option>
-                                            <option value="3">Maret</option>
-                                            <option value="4">April</option>
-                                            <option value="5">Mei</option>
-                                            <option value="6">Juni</option>
-                                            <option value="7">Juli</option>
-                                            <option value="8">Agustus</option>
-                                            <option value="9">September</option>
-                                            <option value="10">Oktober</option>
-                                            <option value="11">November</option>
-                                            <option value="12">Desember</option>
-                                    </select>
-                                    <canvas id="totalMateriChart" width="400" height="200"></canvas>
-        
-                                </div>
-                            </div>
-    
-                        </div>
-                        <div class="tab-pane fade show" style="height:auto;" id="pills-totalMengajarPerMateri" role="tabpanel" aria-labelledby="pills-totalMengajarPerMateri-tab" tabindex="0">
-                            <div class="row justify-content-center">
-                                <div class="col-12" id="containerCanvasTotalMengajarPerMateri">
-                                    <label for="monthSelect" class="form-label">Pilih Bulan:</label>
-                                    <select class="form-select" id="monthSelect_totalMengajarPerMateri" onchange="updateChartTotalMengajarPerMateri(this.value)">
-                                            <option value="All">Semua</option>
-                                            <option value="1">Januari</option>
-                                            <option value="2">Februari</option>
-                                            <option value="3">Maret</option>
-                                            <option value="4">April</option>
-                                            <option value="5">Mei</option>
-                                            <option value="6">Juni</option>
-                                            <option value="7">Juli</option>
-                                            <option value="8">Agustus</option>
-                                            <option value="9">September</option>
-                                            <option value="10">Oktober</option>
-                                            <option value="11">November</option>
-                                            <option value="12">Desember</option>
-                                    </select>
-                                    <canvas id="totalMengajarPerMateriChart" width="400" height="200"></canvas>
-        
-                                </div>
-                            </div>
-    
                         </div>
                     </div>
-                    {{-- <div class="tab-pane fade show" style="height:auto;" id="pills-souvenir" role="tabpanel" aria-labelledby="pills-souvenir-tab" tabindex="0">
+                    <div class="tab-pane fade show" style="height:auto;" id="pills-totalmengajar" role="tabpanel" aria-labelledby="pills-totalmengajar-tab" tabindex="0">
+                        <div class="row justify-content-center">
+                            <div class="col-12" id="containerCanvasTotalMengajarChart">
+                                <label for="monthSelect" class="form-label">Pilih Bulan:</label>
+                                <select class="form-select" id="monthSelect_totalmengajar" onchange="updateChartTotalMengajar(this.value)">
+                                    <option value="1">Januari</option>
+                                    <option value="2">Februari</option>
+                                    <option value="3">Maret</option>
+                                    <option value="4">April</option>
+                                    <option value="5">Mei</option>
+                                    <option value="6">Juni</option>
+                                    <option value="7">Juli</option>
+                                    <option value="8">Agustus</option>
+                                    <option value="9">September</option>
+                                    <option value="10">Oktober</option>
+                                    <option value="11">November</option>
+                                    <option value="12">Desember</option>
+                                </select>
+                                <canvas id="totalMengajarChart" width="400" height="200"></canvas>
+
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade show" style="height:auto;" id="pills-totalMateri" role="tabpanel" aria-labelledby="pills-totalMateri-tab" tabindex="0">
+                        <div class="row justify-content-center">
+                            <div class="col-12" id="containerCanvasTotalMateri">
+                                <label for="monthSelect" class="form-label">Pilih Bulan:</label>
+                                <select class="form-select" id="monthSelect_totalMateri" onchange="updateChartTotalMateri(this.value)">
+                                    <option value="All">Semua</option>
+                                    <option value="1">Januari</option>
+                                    <option value="2">Februari</option>
+                                    <option value="3">Maret</option>
+                                    <option value="4">April</option>
+                                    <option value="5">Mei</option>
+                                    <option value="6">Juni</option>
+                                    <option value="7">Juli</option>
+                                    <option value="8">Agustus</option>
+                                    <option value="9">September</option>
+                                    <option value="10">Oktober</option>
+                                    <option value="11">November</option>
+                                    <option value="12">Desember</option>
+                                </select>
+                                <canvas id="totalMateriChart" width="400" height="200"></canvas>
+
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade show" style="height:auto;" id="pills-totalMateri" role="tabpanel" aria-labelledby="pills-totalMateri-tab" tabindex="0">
+                        <div class="row justify-content-center">
+                            <div class="col-12" id="containerCanvasTotalMateri">
+                                <label for="monthSelect" class="form-label">Pilih Bulan:</label>
+                                <select class="form-select" id="monthSelect_totalMateri" onchange="updateChartTotalMateri(this.value)">
+                                    <option value="All">Semua</option>
+                                    <option value="1">Januari</option>
+                                    <option value="2">Februari</option>
+                                    <option value="3">Maret</option>
+                                    <option value="4">April</option>
+                                    <option value="5">Mei</option>
+                                    <option value="6">Juni</option>
+                                    <option value="7">Juli</option>
+                                    <option value="8">Agustus</option>
+                                    <option value="9">September</option>
+                                    <option value="10">Oktober</option>
+                                    <option value="11">November</option>
+                                    <option value="12">Desember</option>
+                                </select>
+                                <canvas id="totalMateriChart" width="400" height="200"></canvas>
+
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade show" style="height:auto;" id="pills-totalMengajarPerMateri" role="tabpanel" aria-labelledby="pills-totalMengajarPerMateri-tab" tabindex="0">
+                        <div class="row justify-content-center">
+                            <div class="col-12" id="containerCanvasTotalMengajarPerMateri">
+                                <label for="monthSelect" class="form-label">Pilih Bulan:</label>
+                                <select class="form-select" id="monthSelect_totalMengajarPerMateri" onchange="updateChartTotalMengajarPerMateri(this.value)">
+                                    <option value="All">Semua</option>
+                                    <option value="1">Januari</option>
+                                    <option value="2">Februari</option>
+                                    <option value="3">Maret</option>
+                                    <option value="4">April</option>
+                                    <option value="5">Mei</option>
+                                    <option value="6">Juni</option>
+                                    <option value="7">Juli</option>
+                                    <option value="8">Agustus</option>
+                                    <option value="9">September</option>
+                                    <option value="10">Oktober</option>
+                                    <option value="11">November</option>
+                                    <option value="12">Desember</option>
+                                </select>
+                                <canvas id="totalMengajarPerMateriChart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {{-- <div class="tab-pane fade show" style="height:auto;" id="pills-souvenir" role="tabpanel" aria-labelledby="pills-souvenir-tab" tabindex="0">
                         <div class="col-12" style="height:auto; width:100%; display: flex; flex-direction: column; justify-content: center; align-items: center; ">
                             <canvas id="SouvenirChart"></canvas>
-                        </div>
+                        </div>q
                     </div> --}}
+            </div>
+            <div class="tab-pane fade" id="itsm-tab-pane" role="tabpanel" aria-labelledby="itsm-tab" tabindex="0">
+                <ul class="nav nav-pills mb-3" id="itsm-pills-tab" role="tablist">
+
+                    <li class="nav-item mx-1" role="presentation">
+                        <button class="nav-link" id="pills-jumlah-pic-tab" data-bs-toggle="pill" data-bs-target="#pills-jumlah-pic" type="button" role="tab" aria-controls="pills-jumlah-pic" aria-selected="false">Jumlah PIC</button>
+                    </li>
+                    <li class="nav-item mx-1" role="presentation">
+                        <button class="nav-link" id="pills-jumlah-ticketing-tab" data-bs-toggle="pill" data-bs-target="#pills-jumlah-ticketing" type="button" role="tab" aria-controls="pills-jumlah-ticketing" aria-selected="true">Jumlah Ticketing</button>
+                    </li>
+                    <li class="nav-item mx-1" role="presentation">
+                        <button class="nav-link" id="pills-rerata-durasi-tab" data-bs-toggle="pill" data-bs-target="#pills-rerata-durasi" type="button" role="tab" aria-controls="pills-rerata-durasi" aria-selected="false">Rata-rata Durasi Pengerjaan</button>
+                    </li>
+                    <li class="nav-item mx-1" role="presentation">
+                        <button class="nav-link" id="pills-rerata-ketepatan-response-tab" data-bs-toggle="pill" data-bs-target="#pills-rerata-ketepatan-response" type="button" role="tab" aria-controls="pills-rerata-ketepatan-response" aria-selected="false">Rata-rata Kecepatan Respon</button>
+                    </li>
+                    <li class="nav-item mx-1" role="presentation">
+                        <button class="nav-link" id="pills-jumlah-permintaan-tab" data-bs-toggle="pill" data-bs-target="#pills-jumlah-permintaan" type="button" role="tab" aria-controls="pills-jumlah-permintaan" aria-selected="false">Jumlah Permintaan Per Bulan</button>
+                    </li>
+                    <li class="nav-item mx-1" role="presentation">
+                        <button class="nav-link" id="pills-permintaan-sering-diajukan-tab" data-bs-toggle="pill" data-bs-target="#pills-permintaan-sering-diajukan" type="button" role="tab" aria-controls="pills-permintaan-sering-diajukan" aria-selected="false">Permintaan Sering Diajukan</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="pills-tabContent">
+                    <div class="tab-pane fade show" style="height:auto;" id="pills-jumlah-pic" role="tabpanel" aria-labelledby="pills-jumlah-pic-tab" tabindex="0">
+                        <div class="row justify-content-center">
+                            <div class="col-12" id="containerCanvasPicChart">
+                                <label for="filterMonthPIC" class="form-label">Pilih Bulan:</label>
+                                <select id="filterMonthPIC" name="filterMonthPIC">
+                                    <option value="all">Semua Bulan</option>
+                                </select>
+                                <canvas id="jumlahPICChart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade show" style="height:auto;" id="pills-jumlah-ticketing" role="tabpanel" aria-labelledby="pills-jumlah-ticketing-tab" tabindex="0">
+                        <div class="row justify-content-center">
+                            <div class="col-12" id="containerCanvasjumlahTicketing">
+                                <label for="filterBulan" class="form-label">Pilih Bulan:</label>
+                                <select id="filterBulan" name="filterBulan">
+                                    <option value="all">Semua Bulan</option>
+                                </select>
+                                <canvas id="jumlahTicketingChart" width="1000" height="800"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade show" style="height:auto;" id="pills-rerata-durasi" role="tabpanel" aria-labelledby="pills-rerata-durasi-tab" tabindex="0">
+                        <div class="row justify-content-center">
+                            <div class="col-12" id="containerCanvasRerataDurasi">
+                                <label for="filterMonth" class="form-label">Pilih Bulan:</label>
+                                <select id="filterMonth" name="filterMonth">
+                                    <option value="all">Semua Bulan</option>
+                                </select>
+                                <canvas id="rerataDurasiChart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade show" style="height:auto;" id="pills-rerata-ketepatan-response" role="tabpanel" aria-labelledby="pills-rerata-ketepatan-response-tab" tabindex="0">
+                        <div class="row justify-content-center">
+                            <div class="col-12" id="containerCanvasKetepatanRespond">
+                                <label for="filterMonthKetepatan" class="form-label">Pilih Bulan:</label>
+                                <select id="filterMonthKetepatan" name="filterMonthKetepatan">
+                                    <option value="all">Semua Bulan</option>
+                                </select>
+                                <canvas id="rerataKetepatanResponseChart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade show" style="height:auto;" id="pills-jumlah-permintaan" role="tabpanel" aria-labelledby="pills-jumlah-permintaan" tabindex="0">
+                        <div class="row justify-content-center">
+                            <div class="col-12" id="containerCanvasPermintaanPerbulan">
+                                <h3>Jumlah Permintaan Per Bulan</h3>
+                                <canvas id="jumlahPermintaanPerBulanChart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade show" style="height:auto;" id="pills-permintaan-sering-diajukan" role="tabpanel" aria-labelledby="pills-permintaan-sering-tab" tabindex="0">
+                        <div class="row justify-content-center">
+                            <div class="col-12" id="containerCanvasPermintaanSering">
+                                <h3>Permintaan Yang Sering Diajukan</h3>
+                                <canvas id="permintaanSeringDiajukanChart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -513,201 +640,316 @@
         }
 
         #SouvenirChartContainerCanvas {
-            height:auto; 
-            width:70vw;
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            position:relative;
+            height: auto;
+            width: 70vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
         }
 
         #ContainerCanvasAbsenPerBulan {
-            height:auto; 
-            width:70vw; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            position:relative;
+            height: auto;
+            width: 70vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
         }
 
-        #containerCanvasAbsenChart{
-            height:auto; 
-            width:70vw; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            position:relative;
+        #containerCanvasAbsenChart {
+            height: auto;
+            width: 70vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
         }
+
         #containerCanvasKelasAnalisisChart {
-            height:auto; 
-            width:70vw; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            position:relative; 
+            height: auto;
+            width: 70vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
         }
+
         #containerCanvasNilaiFeedback {
-            height:auto; 
-            width:70vw; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            position:relative;
+            height: auto;
+            width: 70vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
         }
 
         #containerCanvasTotalMengajarChart {
-            height:auto; 
-            width:70vw; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            position:relative;
-        }
-
-        #containerCanvasTotalMateri {
-            height:auto; 
-            width:70vw; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            position:relative;
+            height: auto;
+            width: 70vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
         }
 
         #containerCanvasTotalMengajarPerMateri {
-            height:auto; 
-            width:70vw; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            position:relative;
+            height: auto;
+            width: 70vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
         }
 
         #containerCanvasTotalMateri {
-            height:auto; 
-            width:70vw; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            position:relative;
+            height: auto;
+            width: 70vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #containerCanvasPicChart {
+            height: auto;
+            width: 70vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #containerCanvasjumlahTicketing {
+            height: auto;
+            width: 70vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #containerCanvasRerataDurasi {
+            height: auto;
+            width: 70vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #containerCanvasKetepatanRespond {
+            height: auto;
+            width: 70vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #containerCanvasPermintaanPerbulan {
+            height: auto;
+            width: 70vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #containerCanvasPermintaanSering {
+            height: auto;
+            width: 70vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
         }
     }
+
     @media only screen and (max-width:500px) {
         #containerCanvasPenjualanPerSalesPerTahun {
             width: 100%;
             height: auto;
         }
+
         #PenjualanPerSalesPerTahunChart {
             height: 200vw;
         }
+
         #SouvenirChartContainerCanvas {
-            height:auto; 
+            height: auto;
             width: 100%;
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            position:relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
             font-size: 20px;
         }
+
         #ContainerCanvasAbsenPerBulan {
-            height:auto; 
-            width:100%; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            position:relative;
+            height: auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
         }
 
-        #containerCanvasAbsenChart{
-            height:auto; 
-            width:100%; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            position:relative;
+        #containerCanvasAbsenChart {
+            height: auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
         }
+
         #containerCanvasKelasAnalisisChart {
-            height:auto; 
-            width:100%; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            position:relative; 
+            height: auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
         }
+
         #containerCanvasNilaiFeedback {
-            height:auto; 
-            width:100%; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            position:relative;
+            height: auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
         }
 
         #containerCanvasTotalMengajarChart {
-            height:auto; 
-            width:100%; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            position:relative;
-        }
-
-        #containerCanvasTotalMateri {
-            height:auto; 
-            width:100%; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            position:relative;
+            height: auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
         }
 
         #containerCanvasTotalMengajarPerMateri {
-            height:auto; 
-            width:100%; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            position:relative;
+            height: auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
         }
 
         #containerCanvasTotalMateri {
-            height:auto; 
-            width:100%; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            position:relative;
+            height: auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #containerCanvasPicChart {
+            height: auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #containerCanvasjumlahTicketing {
+            height: auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #containerCanvasRerataDurasi {
+            height: auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #containerCanvasKetepatanRespond {
+            height: auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #containerCanvasPermintaanPerbulan {
+            height: auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #containerCanvasPermintaanSering {
+            height: auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
         }
     }
+
     .nav-tabs {
         display: flex;
-        flex-wrap: nowrap; /* Mencegah tab terbungkus ke bawah */
-        overflow-x: auto; /* Menambahkan scroll horizontal jika diperlukan */
+        flex-wrap: nowrap;
+        /* Mencegah tab terbungkus ke bawah */
+        overflow-x: auto;
+        /* Menambahkan scroll horizontal jika diperlukan */
     }
+
     .nav-item {
-        white-space: nowrap; /* Menjaga teks tetap dalam satu baris */
+        white-space: nowrap;
+        /* Menjaga teks tetap dalam satu baris */
     }
+
     .tab-pane {
         position: relative;
         transition: opacity 0.5s ease-in-out;
     }
+
     .container {
         padding: 0;
     }
@@ -718,22 +960,40 @@
         height: 500px;
         background-size: cover;
         background-position: center;
-        background-image: url('/css/podiumkorea.png'); 
-        background-color: #f0f0f0; /* Optional background for visual aid */
+        background-image: url('/css/podiumkorea.png');
+        background-color: #f0f0f0;
+        /* Optional background for visual aid */
         margin: 0 auto;
         position: relative;
-        overflow-x: auto; /* Allow horizontal scrolling when screen is too small */
+        overflow-x: auto;
+        /* Allow horizontal scrolling when screen is too small */
     }
 
     /* Circle styles */
-    .circle, .circle-satu {
-        background-color: #6b52cc;
-        border-radius: 50%;
+    .circle,
+    .circle-satu {
         position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        width: 130px;
+        height: 130px;
         margin: 0 auto;
+        border-radius: 50%;
+        overflow: hidden;
+        background: linear-gradient(145deg, #1c1b2f, #282740);
+        border: 4px solid #fff;
+        box-shadow:
+            0 0 0 4px rgba(255, 255, 255, 0.05),
+            0 10px 20px rgba(0, 0, 0, 0.3),
+            inset 0 0 8px rgba(255, 255, 255, 0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .circle:hover,
+    .circle-satu:hover {
+        transform: scale(1.05);
+        box-shadow:
+            0 0 0 4px rgba(255, 255, 255, 0.1),
+            0 20px 25px rgba(0, 0, 0, 0.5),
+            inset 0 0 12px rgba(255, 255, 255, 0.2);
     }
 
     /* Default sizes */
@@ -741,6 +1001,7 @@
         width: 180px;
         height: 180px;
     }
+
 
     .circle-satu {
         width: 200px;
@@ -770,30 +1031,145 @@
         transform: translate(-50%, -50%);
     }
 
-    .second-position {
-        margin-top:50px;
+    .modern-ranking .col-4 {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
     }
 
-    .first-position {
-        
-    }
+.first-position {
+    margin-top: 60px;
+}
+.second-position {
+    margin-top: 40px;
+}
+.third-position {
+    margin-top: 0px;
+}
 
-    .third-position {
-        margin-top:90px;    
+    .medal-bawah {
+        margin-top: 5px;
+        width: 70px;
+        height: auto;
     }
+/* ANIMASI MUNCUL */
+@keyframes slideFadeUp {
+  0% {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ANIMASI MELAYANG */
+@keyframes floatCard {
+  0%   { transform: translateY(0); }
+  50%  { transform: translateY(-8px); }
+  100% { transform: translateY(0); }
+}
+
+
+/* PODIUM CARD */
+.podium-card {
+    /* background: linear-gradient(to bottom right, #f5f7fa, #b7cceeff); */
+  background-image: url('/images/pixel1.jpg');
+  background-size: cover;
+  background-repeat: repeat;
+  border-radius: 15px;
+  padding: 15px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+  backdrop-filter: blur(6px);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  /* Tambahkan ini: */
+  animation: slideFadeUp 1s ease-out forwards, floatCard 6s ease-in-out infinite;
+}
+
+
+
+ /* GLOW HOVER EFFECT */
+.podium-card:hover {
+  box-shadow: 0 0 25px rgba(255, 255, 255, 0.3);
+  transform: scale(1.03);
+} 
+
+/* OPTIONAL: BACKGROUND BINTANG */
+.podium-section {
+  background: radial-gradient(ellipse at center, #0d1a2d 0%, #0b0f20 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+
+/* Peringkat label warna */
+.rank-1 .position-label { color: #FFD93D; }
+.rank-2 .position-label { color: #b3aaff; }
+.rank-3 .position-label { color: #ff914d; }
+
+
+
 
     /* Position badge */
     .position-badge {
         position: absolute;
-        top: -20px;
-        right: -58px;
-        padding: 5px;
-        border-radius: 10px;
-        font-size: 0.8rem;
-        z-index: 1;
+        top: -10px;
+        right: -10px;
+        width: 40px;
+        height: 40px;
     }
 
-    /* From Uiverse.io by bhaveshxrawat */ 
+    /* Label Peringkat di Bawah */
+    .position-label {
+        font-size: 1.4rem;
+        font-weight: bold;
+        margin-top: 12px;
+        letter-spacing: 1px;
+        text-shadow: 0 0 8px rgba(255, 255, 255, 0.1);
+    }
+    .position-header {
+        font-size: 1.4rem;
+        font-weight: bold;
+        margin-top: 12px;
+        letter-spacing: 1px;
+        text-shadow: 0 0 8px rgba(255, 255, 255, 0.1);
+    }
+
+    /* Warna Spesifik Tiap Peringkat */
+    /* .first-position+.position-label {
+        color: #ffd700;
+    }
+
+    .second-position+.position-label {
+        color: #c0aaff;
+    }
+
+    .third-position+.position-label {
+        color: #ff914d;
+    } */
+
+    /* Responsive Optimization */
+    @media (max-width: 768px) {
+
+        .circle,
+        .circle-satu {
+            width: 100px;
+            height: 100px;
+        }
+
+        .position-badge {
+            width: 30px;
+            height: 30px;
+        }
+
+        .position-label {
+            font-size: 1.1rem;
+        }
+    }
+
+
+    /* From Uiverse.io by bhaveshxrawat */
     .card-uiverse {
         width: auto;
         height: 254px;
@@ -806,7 +1182,7 @@
         border-radius: 20px;
     }
 
-    
+
     .card-uiverse-feedback span {
         z-index: 1;
         color: white;
@@ -824,6 +1200,7 @@
         color: white;
         font-size: 2em;
     }
+
     .card-uiverse p {
         z-index: 1;
         color: white;
@@ -834,18 +1211,19 @@
         content: '';
         position: absolute;
         width: 100px;
-        background: linear-gradient(180deg, rgb(0, 136, 255) 50%, rgba(255,0,0,1) 50%);
+        background: linear-gradient(180deg, rgb(0, 136, 255) 50%, rgba(255, 0, 0, 1) 50%);
         height: 400%;
         animation: rotBGimg 3s linear infinite;
         transition: all 0.2s linear;
     }
+
     .card-uiverse::after {
         content: '';
         position: absolute;
         background: #182f51;
         inset: 5px;
         border-radius: 15px;
-    }  
+    }
 
     .card-uiverse-feedback {
         position: relative;
@@ -857,19 +1235,21 @@
         align-items: center;
         overflow: hidden;
         border-radius: 20px;
-        z-index: 99; /* Set higher z-index for the text content */
+        z-index: 99;
+        /* Set higher z-index for the text content */
     }
 
     .card-uiverse-feedback::before {
         content: '';
         position: absolute;
         width: 100px;
-        background: linear-gradient(180deg, rgb(0, 136, 255) 50%, rgba(255,0,0,1) 50%);
+        background: linear-gradient(180deg, rgb(0, 136, 255) 50%, rgba(255, 0, 0, 1) 50%);
         height: 700%;
         animation: rotBGimg 3s linear infinite;
         transition: all 0.2s linear;
         /* opacity: 0.3; Lower opacity for better text contrast */
-        z-index: -2; /* Lower z-index for the background effect */
+        z-index: -2;
+        /* Lower z-index for the background effect */
     }
 
     .card-uiverse-feedback::after {
@@ -890,14 +1270,23 @@
             transform: rotate(360deg);
         }
     }
+
     .card_foto {
+        /* background-image: url('/images/pixel1.jpg');
+        background-size: cover;
+        background-repeat: repeat; */
         overflow: hidden;
         position: relative;
-        width: 190px;
-        height: 254px;
+        width: 100%;
+        max-width: 330px;
+        height: 325px;
         background: #fff;
+        border-radius: 15px;
+        padding:0 4px 12px rgba(0,0,0,0.08);
+        transition: transform 0.3 ease;
         box-shadow: 0 2px 10px rgba(0, 0, 0, .2);
         text-align: center;
+          /* animation: floatCard 6s ease-in-out infinite; */
     }
 
     .card_foto:before,
@@ -926,8 +1315,9 @@
 
     /* Bagian details hanya untuk title */
     .details {
+        margin-top: 10px;
         position: absolute;
-        bottom: 10px;
+        bottom: 20px;
         left: 0;
         right: 0;
         height: 60px;
@@ -941,7 +1331,8 @@
         font-weight: 500;
         font-size: 18px;
         color: #777;
-        opacity: 0; /* Sembunyikan title awalnya */
+        opacity: 0;
+        /* Sembunyikan title awalnya */
         transition: opacity 0.3s ease-in-out;
     }
 
@@ -951,17 +1342,24 @@
     }
 
     .caption {
+        font-style: italic;
         font-weight: 500;
-        font-size: 16px;
+        font-size: 0.9rem;
         color: #4158D0;
         display: block;
-        margin-top: 5px;
+        margin-top: 0px;
         /* Pastikan caption selalu terlihat tanpa efek hover */
         opacity: 1;
     }
 
     /* Bagian imgbox dan dynamic-image */
     .imgbox {
+        /* background:linear-gradient(to bottom right, #f5f7fa, #a0bbe7ff); */
+        background-image: url('/images/pixel1.jpg');
+        background-size: cover;
+        background-repeat: repeat;
+        padding: 8px;
+        border-radius: 12px;
         width: 100%;
         height: 100%;
         display: flex;
@@ -971,17 +1369,19 @@
         position: relative;
         transition: 0.3s ease-in-out;
         bottom: 30px;
+        animation: slideFadeUp 1s ease-out forwards, floatCard 6s ease-in-out infinite;
     }
 
     .dynamic-image {
         width: 100%;
-        height: 100%;
+        height: auto;
+        border-radius: 10px;
         object-fit: cover;
-        transition: transform 0.3s ease-in-out;
+        transition: transform 0.3s ease;
     }
 
     .card_foto:hover .dynamic-image {
-        transform: scale(0.95);
+        transform: scale(1.05);
     }
 
     /* Hover pada imgbox */
@@ -991,89 +1391,104 @@
 
     /* Responsive adjustments for mobile screens */
     @media (max-width: 576px) {
-    .card {
-        padding: 8px !important;
-    }
-    .card-body {
-        padding: 8px !important;
-    }
-    .card-uiverse-feedback {
-        padding: 15px;
-        background-color: #182F51; /* Sesuaikan warna latar belakang sesuai keinginan */
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        color: #ffffff;
-    }
+        .card {
+            padding: 8px !important;
+        }
 
-    .card-uiverse-feedback h2 {
-        font-size: 1.5rem;
-        margin-bottom: 20px;
-    }
+        .card-body {
+            padding: 8px !important;
+        }
 
-    .card-uiverse-feedback h4 {
-        font-size: 1rem;
-        margin-bottom: 5px;
-        font-weight: 600;
-    }
+        .card-uiverse-feedback {
+            padding: 15px;
+            background-color: #182F51;
+            /* Sesuaikan warna latar belakang sesuai keinginan */
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            color: #ffffff;
+        }
 
-    .card-uiverse-feedback span {
-        font-size: 1rem;
-        font-weight: bold;
-    }
+        .card-uiverse-feedback h2 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+
+        .card-uiverse-feedback h4 {
+            font-size: 1rem;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .card-uiverse-feedback span {
+            font-size: 1rem;
+            font-weight: bold;
+        }
 
 
-    .card-uiverse h2, .card-uiverse p {
-        z-index: 1;
-        color: white;
-        font-size: 1em;
-    }
-    .card-uiverse {
-        background-color: #182F51; /* Sesuaikan dengan tema Anda */
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-    }
-    .title {
-        font-weight: 200;
-        font-size: 14px;
-        color: #777;
-        opacity: 0; /* Sembunyikan title awalnya */
-        transition: opacity 0.3s ease-in-out;
-    }
-    .caption {
-        font-weight: 200;
-        font-size: 13px;
-        color: #4158D0;
-        display: block;
-        margin-top: 5px;
-        /* Pastikan caption selalu terlihat tanpa efek hover */
-        opacity: 1;
-    }
-    .second-position {
-        position: relative;
-        bottom: 5%;
-        left: -13%;
-    }
+        .card-uiverse h2,
+        .card-uiverse p {
+            z-index: 1;
+            color: white;
+            font-size: 1em;
+        }
 
-    .first-position {
-        position: relative;
-        bottom: 3%;
-        left: 51%;
-        transform: translateX(-50%);
-    }
+        .card-uiverse {
+            /* background: linear-gradient(to bottom right, #182F51, #c3cfe2); */
+            background-color: #182F51;
+            /* Sesuaikan dengan tema Anda */
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
 
-    .third-position {
-        position: relative;
-        bottom: 14%;
-        right: 23%;
-    }
-       .card {
+        .title {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #222;
+            opacity: 0;
+            margin-top: 5px;
+            /* Sembunyikan title awalnya */
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .caption {
+
+            font-weight: 200;
+            font-size: 13px;
+            color: #4158D0;
+            display: block;
+            margin-top: 5px;
+            /* Pastikan caption selalu terlihat tanpa efek hover */
+            opacity: 1;
+        }
+
+        .second-position {
+            position: relative;
+            bottom: 5%;
+            left: -13%;
+        }
+
+        .first-position {
+            position: relative;
+            bottom: 3%;
+            left: 51%;
+            transform: translateX(-50%);
+        }
+
+        .third-position {
+            position: relative;
+            bottom: 14%;
+            right: 23%;
+        }
+
+        .card {
             width: auto;
             height: auto;
-       }
+        }
 
         /* Resize circles for mobile */
-        .circle, .circle-satu {
+        .circle,
+        .circle-satu {
             width: 100px;
             height: 100px;
         }
@@ -1097,4 +1512,18 @@
             font-size: 0.7rem;
         }
     }
+    
+</style>
+<style>
+@media (max-width: 576px) {
+    .feedback-card .dekorasi {
+        transform: none !important;
+        position: static !important;
+        max-width: 100% !important;
+        height: auto !important;
+    }
+    .feedback-card {
+        overflow: hidden !important;
+    }
+}
 </style>

@@ -229,7 +229,11 @@
                 {
                     "data": "latest_registrasi.created_at",
                     "visible": false,
+                    "render": function(data, type, row) {
+                        return data === null || data === undefined ? '-' : data;
+                    }
                 },
+
                 {
                     "data": null,
                     "render": function(data, type, row) {

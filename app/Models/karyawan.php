@@ -6,16 +6,19 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Notifications\Notifiable;
+use Vinkla\Hashids\Facades\Hashids;
 
 class karyawan extends Model
 {
     use HasFactory;
     use Notifiable;
+    protected $appends = ['hashids'];
 
     protected $fillable = [
         'foto',
         'nip',
         'nama_lengkap',
+        'email',
         'divisi',
         'jabatan',
         'rekening_maybank',
@@ -86,5 +89,10 @@ class karyawan extends Model
     public function lembur()
     {
         return $this->hasMany(lembur::class);
+    }
+
+    public function getHashidsAttribute()
+    {
+        return Hashids::encode($this->id);
     }
 }

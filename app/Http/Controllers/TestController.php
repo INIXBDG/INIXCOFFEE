@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AbsensiKaryawan;
 use Illuminate\Http\Request;
 use Carbon\CarbonImmutable;
 use App\Models\RKM;
@@ -13,6 +14,92 @@ use App\Models\Perusahaan;
 class TestController extends Controller
 {
     public function index()
+    {
+        $month = now()->month;
+        $leaderboard = AbsensiKaryawan::select(
+            'id_karyawan',
+            DB::raw('SUM(TIME_TO_SEC(waktu_keterlambatan)) as total_keterlambatan'),
+            DB::raw('MAX(TIME_TO_SEC(waktu_keterlambatan)) as highest_keterlambatan'), // Fetch max lateness
+            DB::raw('MIN(foto) as foto')
+        )
+            ->with('karyawan') // Load karyawan relationship to get employee details like name if needed
+            ->whereMonth('tanggal', $month)
+            ->whereHas('karyawan', function ($query) {
+                $query->whereNotIn('jabatan', ['Office boy', 'Driver']);
+            })
+            ->groupBy('id_karyawan') // Group by id_karyawan only, to aggregate multiple records per employee
+            ->orderBy('total_keterlambatan', 'desc')
+            ->limit(10) // Limit results to top 10 employees
+            ->get();
+
+        $leaderboard->each(function ($item) {
+            // Ambil record yang memiliki highest_keterlambatan untuk karyawan ini
+            $recordWithHighestLateness = AbsensiKaryawan::where('id_karyawan', $item->id_karyawan)
+                ->where(DB::raw('TIME_TO_SEC(waktu_keterlambatan)'), $item->highest_keterlambatan)
+                ->orderBy('tanggal', 'asc') // Jika ada beberapa record dengan highest keterlambatan, ambil yang paling awal
+                ->first();
+
+            // Set foto dari record tersebut ke dalam item leaderboard
+            $item->foto = $recordWithHighestLateness->foto ?? null;
+        });
+
+        // Convert total and highest lateness times to HH:MM:SS format and filter out employees with zero lateness
+        $leaderboard = $leaderboard->filter(function ($item) {
+            // Convert total_keterlambatan to HH:MM:SS
+            $hoursketerlambatan = floor($item->total_keterlambatan / 3600);
+            $minutesketerlambatan = floor(($item->total_keterlambatan % 3600) / 60);
+            $secondsketerlambatan = $item->total_keterlambatan % 60;
+            $item->total_keterlambatan = sprintf('%02d:%02d:%02d', $hoursketerlambatan, $minutesketerlambatan, $secondsketerlambatan);
+
+            // Convert highest_keterlambatan to HH:MM:SS
+            $hourstinggi = floor($item->highest_keterlambatan / 3600);
+            $minutestinggi = floor(($item->highest_keterlambatan % 3600) / 60);
+            $secondstinggi = $item->highest_keterlambatan % 60;
+            $item->highest_keterlambatan = sprintf('%02d:%02d:%02d', $hourstinggi, $minutestinggi, $secondstinggi);
+
+            // Only include if either total_keterlambatan or highest_keterlambatan is not 00:00:00
+            return $item->total_keterlambatan !== '00:00:00' || $item->highest_keterlambatan !== '00:00:00';
+        })->values(); // Reset keys on the filtered collection
+
+
+        $topKaryawan = $leaderboard->take(3);
+        $remainingLeaderboard = $leaderboard->slice(3)->values();
+
+
+        $totalketerlambatan = AbsensiKaryawan::select('id_karyawan', DB::raw('SUM(TIME_TO_SEC(waktu_keterlambatan)) as total_keterlambatan'))
+            ->whereMonth('tanggal', $month)
+            ->where('id_karyawan', auth()->user()->karyawan_id)
+            ->groupBy('id_karyawan')
+            ->orderBy('total_keterlambatan', 'desc')
+            ->with('karyawan')
+            ->first();
+        if ($totalketerlambatan) {
+            $totalSeconds = $totalketerlambatan->total_keterlambatan;
+
+            // Menghitung jam, menit, dan detik
+            $hours = floor($totalSeconds / 3600);
+            $minutes = floor(($totalSeconds % 3600) / 60);
+            $seconds = $totalSeconds % 60;
+
+            // Format ke dalam string manusiawi
+            $formattedTime = '';
+            if ($hours > 0) {
+                $formattedTime .= $hours . ' jam ';
+            }
+            if ($minutes > 0) {
+                $formattedTime .= $minutes . ' menit ';
+            }
+            if ($seconds > 0) {
+                $formattedTime .= $seconds . ' detik';
+            }
+
+            // Set formatted time ke dalam objek
+            $totalketerlambatan->total_keterlambatan = $formattedTime;
+        }
+        return view('layouts.test', compact('leaderboard', 'totalketerlambatan', 'topKaryawan', 'remainingLeaderboard',));
+    }
+
+    public function exerkaemlama()
     {
         $start = '2024-03-04';
         $end = '2024-03-08';

@@ -46,6 +46,24 @@
                             </div>
                         </div>
 
+                        <div class="row mb-3" id="tanggal_pengajuan-row">
+                            <label for="tanggal_pengajuan" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Pengajuan Izin') }}</label>
+                            <div class="col-md-6">
+                                <input id="tanggal_pengajuan" type="date" name="tanggal_pengajuan"
+                                    class="form-control @error('tanggal_pengajuan') is-invalid @enderror"
+                                    value="{{ \Carbon\Carbon::now()->toDateString() }}"
+                                    min="{{ \Carbon\Carbon::now()->toDateString() }}"
+                                    max="{{ \Carbon\Carbon::now()->addDay()->toDateString() }}" required>
+
+                                @error('tanggal_pengajuan')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                                @enderror
+                            </div>
+                        </div>
+
+
                         <div class="row mb-3" id="jam_mulai-row">
                             <label for="jam_mulai" class="col-md-4 col-form-label text-md-start">{{ __('Jam Mulai') }}</label>
                             <div class="col-md-6">
@@ -114,38 +132,64 @@
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-    
-    document.addEventListener('DOMContentLoaded', function() {
-        const jamMulaiInput = document.getElementById('jam_mulai');
-        const errorMessage = document.getElementById('jam_mulai-error');
 
-        function setMinTime() {
-            const now = new Date();
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            const currentTime = `${hours}:${minutes}`;
+document.addEventListener('DOMContentLoaded', function () {
+    const jamMulaiInput = document.getElementById('jam_mulai');
+    const errorMessage = document.getElementById('jam_mulai-error');
+    const tanggalInput = document.getElementById('tanggal_pengajuan_izin');
+
+    function getCurrentTime() {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        return `${hours}:${minutes}`;
+    }
+
+    function isTodaySelected() {
+        const selectedDate = tanggalInput.value; // format: YYYY-MM-DD
+        const today = new Date().toISOString().split('T')[0]; // format: YYYY-MM-DD
+        return selectedDate === today;
+    }
+
+    function updateJamMulaiConstraint() {
+        const selectedTime = jamMulaiInput.value;
+        const currentTime = getCurrentTime();
+
+        if (isTodaySelected()) {
             jamMulaiInput.setAttribute('min', currentTime);
-            return currentTime;
-        }
 
-        setMinTime();
-
-        jamMulaiInput.addEventListener('change', function() {
-            const selectedTime = jamMulaiInput.value;
-            const currentTime = setMinTime();
-
-            if (selectedTime < currentTime) {
+            if (selectedTime && selectedTime < currentTime) {
                 jamMulaiInput.classList.add('is-invalid');
                 errorMessage.classList.remove('d-none');
-                jamMulaiInput.value = currentTime; 
+                jamMulaiInput.value = currentTime;
             } else {
                 jamMulaiInput.classList.remove('is-invalid');
                 errorMessage.classList.add('d-none');
             }
-        });
+        } else {
+            jamMulaiInput.removeAttribute('min');
+            jamMulaiInput.classList.remove('is-invalid');
+            errorMessage.classList.add('d-none');
+        }
+    }
 
-        setInterval(setMinTime, 60000); 
-    });
+    // Event listeners
+    jamMulaiInput.addEventListener('change', updateJamMulaiConstraint);
+    tanggalInput.addEventListener('change', updateJamMulaiConstraint);
+
+    // Jalankan saat load awal
+    setTimeout(updateJamMulaiConstraint, 500);
+
+    // Update min time tiap menit jika hari ini
+    setInterval(() => {
+        if (isTodaySelected()) {
+            updateJamMulaiConstraint();
+        }
+    }, 60000);
+});
+
+
+
 
     document.getElementById('jam_mulai').addEventListener('change', function() {
         const jamMulaiInput = this.value;

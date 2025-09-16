@@ -2,177 +2,213 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid mb-5">
     <div class="row justify-content-center">
         <div class="col-md-12">
+
             <a href="{{ url()->previous() }}" class="btn click-primary my-2"><img src="{{ asset('icon/arrow-left.svg') }}" class="img-responsive" width="20px"> Back</a>
-            
+
+
+
             @if (auth()->user()->jabatan == "HRD" || auth()->user()->jabatan == "Koordinator Office" || auth()->user()->username == $users->username)
-                <div class="d-flex justify-content-end">
-                    <a href="/karyawan/{{ $users->id }}/edit" class="btn btn-md click-primary mx-1">
-                        <img src="{{ asset('icon/edit.svg') }}" class="mr-1" width="25px">
-                        Edit Profile
-                    </a>
-                    <a href="/user/{{ $users->id }}/password" class="btn btn-md click-warning mx-1">
-                        <img src="{{ asset('icon/lock.svg') }}" class="mr-1" width="25px">
-                        Ganti Password
-                    </a>
-                </div>
+            <div class="d-flex justify-content-end mb-3">
+                <a href="{{ route('karyawan.edit', ['hashid' => $users->hashids]) }}"
+                    class="btn btn-md click-primary mx-1">
+                    <img src="{{ asset('icon/edit.svg') }}" class="mr-1" width="25px">
+                    Edit Profile
+                </a>
+
+                <a href="{{ route('user.editPassword', ['hashid' => $users->hashids]) }}" class="btn btn-md click-warning mx-1">
+                    <img src="{{ asset('icon/lock.svg') }}" class="mr-1" width="25px">
+                    Ganti Password
+                </a>
+
+            </div>
             @endif
 
             {{-- {{ $users }} --}}
-            <div class="card-group m-1">
+            <div class="row m-1">
+                {{-- Kolom Kiri --}}
                 <div class="col-md-4">
-                    <div class="card">
-                        <div class="card m-2 align-self-center">
-                            <div class="card-body text-center" id="card">
-                                <div class="" style="max-width: 500px; max-height:500px">
+                    {{-- Card Profil --}}
+                    <div class="card profile-card mb-3">
+                        <div class="card-body text-center profile-card-body">
+                            <div class="d-flex flex-wrap gap-3 align-items-center justify-content-center mb-3" style="max-width: 100%;">
                                 @if ($users->karyawan && $users->karyawan->foto)
-                                    <img src="{{ asset('storage/posts/'.$users->karyawan->foto) }}" class="rounded" style="width:200px;height:auto;">
+                                <div class="text-center">
+                                    <img src="{{ asset('storage/posts/'.$users->karyawan->foto) }}" class="rounded shadow-sm" style="width:160px; height:auto; object-fit:cover;">
+                                    <div class="mt-2 text-muted small">Foto Profil</div>
+                                </div>
                                 @endif
+                            </div>
+                            <div class="d-flex flex-wrap gap-3 align-items-center justify-content-center mb-3" style="max-width: 100%;">
+
                                 @if ($users->karyawan && $users->karyawan->ttd)
-                                    <img src="{{ asset('storage/ttd/'.$users->karyawan->ttd) }}" class="rounded" style="width:200px;height:auto;">
+                                <div class="text-center">
+                                    <img src="{{ asset('storage/ttd/'.$users->karyawan->ttd) }}" class="rounded shadow-sm" style="width: 140px; height:auto; object-fit:contain;">
+                                    <div class="mt-2 text-muted small">Tanda Tangan</div>
+                                </div>
                                 @endif
-                                </div>
-                                <div class="m-4 row cardname text-center">
-                                    <p style="text-transform: capitalize;">{{ $users->karyawan->nama_lengkap }}</p>
-                                    <p>{{ $users->karyawan->jabatan }}</p>
-                                        @if ($users->karyawan->foto)
-                                        <a href="/gantifoto/{{ $users->id }}" class="btn btn-md click-secondary-icon" data-toggle="tooltip" data-placement="top" title="Ganti Foto Profil"><img src="{{ asset('icon/image.svg') }}" class="" width="30px"></i>
-                                        @else
-                                        <a href="/gantifoto/{{ $users->id }}" class="btn btn-md click-secondary-icon" data-toggle="tooltip" data-placement="top" title="Tambahkan Foto Profil"><img src="{{ asset('icon/image.svg') }}" class="" width="30px"></i>
-                                        @endif
-                                    </a>
-                                </div>
+                            </div>
+                            <div class="profile-details">
+                                <p class="profile-name">{{ Str::title($users->karyawan->nama_lengkap) }}</p>
+                                <p class="profile-role">{{ $users->karyawan->jabatan }}</p>
+                                <a href="/gantifoto/{{ $users->id }}" class="btn btn-change-photo" data-toggle="tooltip" data-placement="top" title="{{ $users->karyawan && $users->karyawan->foto ? 'Ganti Foto Profil' : 'Tambahkan Foto Profil' }}">
+                                    <img src="{{ asset('icon/image.svg') }}" alt="Ganti Foto" width="20px">
+                                    <span>{{ $users->karyawan && $users->karyawan->foto ? 'Ganti Foto' : 'Tambah Foto' }}</span>
+                                </a>
                             </div>
                         </div>
-                        <div class="card m-2">
-                            <div class="card-body" id="card">
-                                <h5 class="card-title">Posisi</h5>
-                                <div class="row">
-                                    <div class="col-md-5 col-sm-5 col-xs-5"><p>Nomor Induk Pegawai</p></div>
-                                    <div class="col-md-6 col-sm-6 col-xs-6"><p>{{ $users->karyawan->nip }}</p></div>
+                    </div>
+
+                    {{-- Card Posisi --}}
+                    <div class="card position-card mb-5">
+                        <div class="card-body">
+                            <h5 class="card-title">Posisi</h5>
+                            <div class="detail-list">
+                                <div class="detail-row">
+                                    <span class="detail-label">Nomor Induk Pegawai</span>
+                                    <span class="detail-value">{{ $users->karyawan->nip }}</span>
                                 </div>
-                                <div class="row">
-                                    <div class="col-md-5 col-sm-5 col-xs-5"><p>Jabatan</p></div>
-                                    <div class="col-md-6 col-sm-6 col-xs-6"><p>{{ $users->karyawan->jabatan }}</p></div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Jabatan</span>
+                                    <span class="detail-value">{{ $users->karyawan->jabatan }}</span>
                                 </div>
-                                <div class="row">
-                                    <div class="col-md-5 col-sm-5 col-xs-5"><p>Divisi</p></div>
-                                    <div class="col-md-6 col-sm-6 col-xs-6"><p>{{ $users->karyawan->divisi }}</p></div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Divisi</span>
+                                    <span class="detail-value">{{ $users->karyawan->divisi }}</span>
                                 </div>
-                                <div class="row">
-                                    <div class="col-md-5 col-sm-5 col-xs-5"><p>Kode Karyawan</p></div>
-                                    <div class="col-md-6 col-sm-6 col-xs-6"><p>{{ $users->karyawan->kode_karyawan }}</p></div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Kode Karyawan</span>
+                                    <span class="detail-value">{{ $users->karyawan->kode_karyawan }}</span>
                                 </div>
-                                <div class="row">
-                                    <div class="col-md-5 col-sm-5 col-xs-5"><p>Jatah Cuti</p></div>
-                                    <div class="col-md-6 col-sm-6 col-xs-6"><p>{{ $users->karyawan->cuti }} Hari</p></div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Jatah Cuti</span>
+                                    <span class="detail-value">{{ $users->karyawan->cuti }} Hari</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-7 mx-4">
-                    <div class="card shadow-sm" id="card">
-                        <div class="card-body " id="card">
-                            <div class="card my-1">
-                                <div class="card-body" id="card">
-                                    <h5 class="card-title">Personal Detail</h5>
-                                        <div class="row">
-                                            <div class="col-md-5 col-sm-5 col-xs-5"><p>Nama Lengkap</p></div>
-                                            <div class="col-md-6 col-sm-6 col-xs-6"><p>{{ $users->karyawan->nama_lengkap }}</p></div>
-                                        </div>
-                                        <div class="row">
-                                            <div class="col-md-5 col-sm-5 col-xs-5"><p>Username</p></div>
-                                            <div class="col-md-6 col-sm-6 col-xs-6"><p>{{ $users->username }}</p></div>
-                                        </div>
-                                        <div class="row">
-                                            <div class="col-md-5 col-sm-5 col-xs-5"><p>Role</p></div>
-                                            <div class="col-md-6 col-sm-6 col-xs-6"><p>{{ $users->jabatan }}</p></div>
-                                        </div>
-                                        <div class="row">
-                                            <div class="col-md-5 col-sm-5 col-xs-5"><p>Status</p></div>
-                                            <div class="col-md-6 col-sm-6 col-xs-6">
-                                                @if ($users->karyawan->status_aktif == '1')
-                                                   <p>Aktif</p>
-                                                @else
-                                                    <p>Tidak Aktif</p>
-                                                @endif
-                                            </div>
-                                        </div>
-                                        {{-- <div class="row">
-                                            <div class="col-md-5 col-sm-5 col-xs-5"><p>Nomor HP</p></div>
-                                            <div class="col-md-6 col-sm-6 col-xs-6"><p>{{ $users->karyawan->notelp }}</p></div>
-                                        </div> --}}
+
+                {{-- Kolom Kanan --}}
+                <div class="col-md-8">
+                    {{-- Card Personal Detail --}}
+                    <div class="card personal-detail-card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Personal Detail</h5>
+                            <div class="detail-list">
+                                <div class="detail-row">
+                                    <span class="detail-label">Nama Lengkap</span>
+                                    <span class="detail-value">{{ $users->karyawan->nama_lengkap }}</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Username</span>
+                                    <span class="detail-value">{{ $users->username }}</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Role</span>
+                                    <span class="detail-value">{{ $users->role }}</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Email</span>
+                                    <span class="detail-value">{{ $users->karyawan->email ?? '-' }}</span>
+                                </div>
+                                
+                                <div class="detail-row">
+                                    <span class="detail-label">Status</span>
+                                    <span class="detail-value">
+                                        {{ $users->karyawan->status_aktif == '1' ? 'Aktif' : 'Tidak Aktif' }}
+                                    </span>
                                 </div>
                             </div>
-                            @if ($users->karyawan->rekening_bca || $users->karyawan->rekening_maybank)
-                            <div class="card my-1">
-                                <div class="card-body" id="card">
-                                    <h5 class="card-title">Rekening</h5>
-                                    <div class="row">
-                                        <div class="col-md-5 col-sm-5 col-xs-5"><p>Maybank</p></div>
-                                        <div class="col-md-6 col-sm-6 col-xs-6"><p>{{ $users->karyawan->rekening_maybank }}</p></div>
-                                    </div>
-                                    @if ($users->karyawan->rekening_bca)
-                                    <div class="row">
-                                        <div class="col-md-5 col-sm-5 col-xs-5"><p>BCA</p></div>
-                                        <div class="col-md-6 col-sm-6 col-xs-6"><p>{{ $users->karyawan->rekening_bca }}</p></div>
-                                    </div>
-                                    @endif
+                        </div>
+                    </div>
 
+                    {{-- Card Rekening --}}
+                    @if ($users->karyawan->rekening_bca || $users->karyawan->rekening_maybank)
+                    <div class="card account-card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Rekening</h5>
+                            <div class="detail-list">
+                                <div class="detail-row">
+                                    <span class="detail-label">Maybank</span>
+                                    <span class="detail-value">{{ $users->karyawan->rekening_maybank ?? '-' }}</span>
+                                </div>
+                                @if ($users->karyawan->rekening_bca)
+                                <div class="detail-row">
+                                    <span class="detail-label">BCA</span>
+                                    <span class="detail-value">{{ $users->karyawan->rekening_bca }}</span>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                    @endif
 
+                    {{-- Card Status Karyawan --}}
+                    @if ($users->karyawan->awal_probation || $users->karyawan->awal_kontrak || $users->karyawan->awal_tetap)
+                    <div class="card employee-status-card mb-3">
+                        <div class="card-body">
+                            @if ($users->karyawan->awal_probation)
+                            <h5 class="card-title">Probation</h5>
+                            <div class="detail-list">
+                                <div class="detail-row">
+                                    <span class="detail-label">Mulai Tanggal</span>
+                                    <span class="detail-value">{{ \Carbon\Carbon::parse($users->karyawan->awal_probation)->translatedFormat('d F Y') }}</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Sampai Tanggal</span>
+                                    <span class="detail-value">{{ \Carbon\Carbon::parse($users->karyawan->akhir_probation)->translatedFormat('d F Y') }}</span>
                                 </div>
                             </div>
                             @endif
-                            @if ($users->karyawan->awal_probation || $users->karyawan->awal_kontrak || $users->karyawan->awal_tetap)
-                            <div class="card my-1">
-                                <div class="card-body" id="card">
-                                    @if ($users->karyawan->awal_probation)
-                                    <h5 class="card-title">Probation</h5>
-                                    <div class="row">
-                                        <div class="col-md-5 col-sm-5 col-xs-5"><p>Mulai Tanggal</p></div>
-                                        <div class="col-md-6 col-sm-6 col-xs-6"><p>{{ \Carbon\Carbon::parse($users->karyawan->awal_probation)->translatedFormat('d F Y') }}</p></div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-5 col-sm-5 col-xs-5"><p>Sampai Tanggal</p></div>
-                                        <div class="col-md-6 col-sm-6 col-xs-6"><p>{{ \Carbon\Carbon::parse($users->karyawan->akhir_probation)->translatedFormat('d F Y') }}</p></div>
-                                    </div>
-                                    @endif
-                                    @if ($users->karyawan->awal_kontrak)
-                                    <h5 class="card-title">Kontrak</h5>
-                                    <div class="row">
-                                        <div class="col-md-5 col-sm-5 col-xs-5"><p>Mulai Tanggal</p></div>
-                                        <div class="col-md-6 col-sm-6 col-xs-6"><p>{{ \Carbon\Carbon::parse($users->karyawan->awal_kontrak)->translatedFormat('d F Y') }}</p></div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-5 col-sm-5 col-xs-5"><p>Sampai Tanggal</p></div>
-                                        <div class="col-md-6 col-sm-6 col-xs-6"><p>{{ \Carbon\Carbon::parse($users->karyawan->akhir_kontrak)->translatedFormat('d F Y') }}</p></div>
-                                    </div>
-                                    @endif
-                                    @if ($users->karyawan->awal_tetap)
-                                    <h5 class="card-title">Tetap</h5>
-                                    <div class="row">
-                                        <div class="col-md-5 col-sm-5 col-xs-5"><p>Mulai Tanggal</p></div>
-                                        <div class="col-md-6 col-sm-6 col-xs-6"><p>{{ \Carbon\Carbon::parse($users->karyawan->awal_tetap)->translatedFormat('d F Y') }}</p></div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-5 col-sm-5 col-xs-5"><p>Sampai Tanggal</p></div>
-                                        @if ($users->karyawan->akhir_tetap)
-                                        <div class="col-md-6 col-sm-6 col-xs-6"><p>{{ \Carbon\Carbon::parse($users->karyawan->akhir_tetap)->translatedFormat('d F Y') }}</p></div>
-                                        @endif
-                                    </div>
-                                    @endif
+
+                            @if ($users->karyawan->awal_kontrak)
+                            @if ($users->karyawan->awal_probation)
+                            <hr class="section-separator">
+                            @endif
+                            <h5 class="card-title">Kontrak</h5>
+                            <div class="detail-list">
+                                <div class="detail-row">
+                                    <span class="detail-label">Mulai Tanggal</span>
+                                    <span class="detail-value">{{ \Carbon\Carbon::parse($users->karyawan->awal_kontrak)->translatedFormat('d F Y') }}</span>
                                 </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Sampai Tanggal</span>
+                                    <span class="detail-value">{{ \Carbon\Carbon::parse($users->karyawan->akhir_kontrak)->translatedFormat('d F Y') }}</span>
+                                </div>
+                            </div>
+                            @endif
+
+                            @if ($users->karyawan->awal_tetap)
+                            @if ($users->karyawan->awal_probation || $users->karyawan->awal_kontrak)
+                            <hr class="section-separator">
+                            @endif
+                            <h5 class="card-title">Tetap</h5>
+                            <div class="detail-list">
+                                <div class="detail-row">
+                                    <span class="detail-label">Mulai Tanggal</span>
+                                    <span class="detail-value">{{ \Carbon\Carbon::parse($users->karyawan->awal_tetap)->translatedFormat('d F Y') }}</span>
+                                </div>
+                                @if ($users->karyawan->akhir_tetap)
+                                <div class="detail-row">
+                                    <span class="detail-label">Sampai Tanggal</span>
+                                    <span class="detail-value">{{ \Carbon\Carbon::parse($users->karyawan->akhir_tetap)->translatedFormat('d F Y') }}</span>
+                                </div>
+                                @endif
                             </div>
                             @endif
                         </div>
                     </div>
+                    @endif
                 </div>
             </div>
         </div>
     </div>
+</div>
+</div>
+</div>
 </div>
 <style>
     /* Atur tata letak kolom untuk layar kecil */
@@ -182,7 +218,7 @@
             max-width: 100%;
         }
 
-        .card-body  .row {
+        .card-body .row {
             margin-bottom: 10px;
         }
 
@@ -196,7 +232,8 @@
             text-align: left;
         }
     }
-        /* body.light-theme #card {
+
+    /* body.light-theme #card {
             background-color: #fff;
             color: #000
         }
@@ -206,72 +243,283 @@
             color: #fff;
             #
         } */
-        .cardname {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
+    .cardname {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
 
-        .click-secondary-icon {
-            background:    #355C7C;
-            border-radius: 1000px;
-            width:         45px;
-            height:        45px;
-            color:         #ffffff;
-            display:       flex;
-            justify-content: center;
-            align-items:   center;
-            text-align:    center;
-            text-decoration: none;
-        }
-        .click-secondary-icon i {
-            line-height: 45px;
-        }
+    .click-secondary-icon {
+        background: #355C7C;
+        border-radius: 1000px;
+        width: 45px;
+        height: 45px;
+        color: #ffffff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        text-decoration: none;
+    }
 
-        .click-secondary {
-            background:    #355C7C;
-            border-radius: 5px;
-            padding:       5px 10px;
-            color:         #ffffff;
-            display:       inline-block;
-            font:          normal bold 14px/1 "Open Sans", sans-serif;
-            text-align:    center;
-            transition:    color 0.1s linear, background-color 0.2s linear;
-        }
+    .click-secondary-icon i {
+        line-height: 45px;
+    }
 
-        .click-secondary:hover {
-            color:         #A5C7EF;
-            transition:    color 0.1s linear, background-color 0.2s linear;
-        }
-        .click-warning {
-            background:    #f8be00;
-            border-radius: 5px;
-            padding:       5px 10px;
-            color:         #000000;
-            display:       inline-block;
-            font:          normal bold 14px/1 "Open Sans", sans-serif;
-            text-align:    center;
-            transition:    color 0.1s linear, background-color 0.2s linear; /
-        }
+    .click-secondary {
+        background: #355C7C;
+        border-radius: 5px;
+        padding: 5px 10px;
+        color: #ffffff;
+        display: inline-block;
+        font: normal bold 14px/1 "Open Sans", sans-serif;
+        text-align: center;
+        transition: color 0.1s linear, background-color 0.2s linear;
+    }
 
-        .click-warning:hover {
-            background:         #A5C7EF;
-            transition:    color 0.1s linear, background-color 0.2s linear;
-        }
-        .card {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            width: auto;
-            height: auto;
-            border: 1px solid rgba(255, 255, 255, .25);
-            border-radius: 20px;
-            background-color: rgba(255, 255, 255, 0.45);
-            box-shadow: 0 0 10px 1px rgba(0, 0, 0, 0.25);
-            backdrop-filter: blur(2px);
-            }
+    .click-secondary:hover {
+        color: #A5C7EF;
+        transition: color 0.1s linear, background-color 0.2s linear;
+    }
 
+    .click-warning {
+        background: #f8be00;
+        border-radius: 5px;
+        padding: 5px 10px;
+        color: #000000;
+        display: inline-block;
+        font: normal bold 14px/1 "Open Sans", sans-serif;
+        text-align: center;
+        transition: color 0.1s linear, background-color 0.2s linear;/
+    }
+
+    .click-warning:hover {
+        background: #A5C7EF;
+        transition: color 0.1s linear, background-color 0.2s linear;
+    }
+
+    .card {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        width: auto;
+        height: auto;
+        border: qpx solid rgba(255, 255, 255, .25);
+        border-radius: 20px;
+        background-color: rgba(255, 255, 255, 0.45);
+        box-shadow: 0 0 10px 1px rgba(0, 0, 0, 0.25);
+        backdrop-filter: blur(2px);
+        box-shadow: #555 10;
+        margin-left: 5%;
+        margin-bottom: 10px;
+    }
+
+    /* Styling Umum untuk Semua Card */
+    .card {
+        border-radius: 12px;
+        /* Lebih membulat */
+        box-shadow: 0 7px 16px rgba(0, 0, 0, 0.45);
+        /* Bayangan lebih jelas tapi tetap halus */
+        border: none;
+        /* Hilangkan border default Bootstrap jika ada */
+        overflow: hidden;
+        /* Penting untuk border-radius */
+        background-color: #fff;
+        /* Pastikan background putih */
+    }
+
+    .card-body {
+        padding: 25px;
+        /* Padding yang cukup di dalam card */
+    }
+
+    .card-title {
+        font-size: 1.25rem;
+        /* Ukuran judul card */
+        font-weight: 600;
+        /* Sedikit lebih tebal */
+        color: #333;
+        /* Warna teks judul */
+        margin-bottom: 20px;
+        /* Jarak bawah judul */
+    }
+
+    /* Styling untuk Card Profil (kiri atas) */
+    .profile-card {
+        /* Spesifik jika perlu, tapi sebagian besar sudah di .card */
+    }
+
+    .profile-card-body {
+        padding-top: 30px;
+        /* Lebih banyak padding atas untuk foto */
+        padding-bottom: 30px;
+    }
+
+    .profile-image-wrapper {
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .profile-pic {
+        width: 100px;
+        /* Ukuran gambar profil */
+        height: 100px;
+        border-radius: 50%;
+        /* Bulat sempurna */
+        object-fit: cover;
+        /* Pastikan gambar mengisi tanpa distorsi */
+        border: 4px solid #f8f9fa;
+        /* Border putih halus di sekeliling foto */
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        /* Bayangan untuk foto */
+    }
+
+    .profile-details {
+        margin-top: 15px;
+        /* Jarak dari foto ke nama */
+    }
+
+    .profile-name {
+        font-size: 1.4rem;
+        /* Ukuran nama */
+        font-weight: 700;
+        /* Nama lebih tebal */
+        color: #212529;
+        /* Warna teks nama */
+        margin-bottom: 5px;
+        /* Jarak antara nama dan jabatan */
+        text-transform: capitalize;
+        /* Pastikan kapitalisasi setiap kata */
+    }
+
+    .profile-role {
+        font-size: 1rem;
+        /* Ukuran jabatan */
+        color: #6c757d;
+        /* Warna abu-abu untuk jabatan */
+        margin-bottom: 20px;
+        /* Jarak dari jabatan ke tombol */
+    }
+
+    .btn-change-photo {
+        display: inline-flex;
+        /* Agar ikon dan teks sejajar */
+        align-items: center;
+        gap: 8px;
+        /* Jarak antara ikon dan teks */
+        background-color: #393E46;
+        /* Warna latar belakang tombol yang netral */
+        color: #FFFCFB;
+        /* Warna teks tombol */
+        border: 1px solid #ced4da;
+        padding: 8px 15px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        transition: all 0.2s ease-in-out;
+        text-decoration: none;
+        /* Hilangkan underline default link */
+    }
+
+    .btn-change-photo:hover {
+        background-color: #dee2e6;
+        color: #212529;
+        border-color: #adb5bd;
+        text-decoration: none;
+    }
+
+    /* Styling untuk Card Posisi (kiri bawah) */
+    .position-card {
+        margin-top: 20px;
+        /* Memberi jarak dari card profil di atasnya */
+    }
+
+    /* Styling untuk list detail (seperti Posisi, Personal Detail, Rekening) */
+    .detail-list {
+        margin-top: 0;
+        /* Pastikan tidak ada margin atas default */
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        /* Untuk menyelaraskan label kiri, value kanan */
+        align-items: baseline;
+        /* Menyelaraskan teks secara vertikal */
+        margin-bottom: 12px;
+        /* Jarak antar baris detail */
+        padding-bottom: 5px;
+        /* Sedikit padding bawah */
+        border-bottom: 1px dashed #e9ecef;
+        /* Garis putus-putus untuk pemisah visual */
+    }
+
+    .detail-row:last-child {
+        margin-bottom: 0;
+        /* Hilangkan margin bawah pada baris terakhir */
+        border-bottom: none;
+        /* Hilangkan garis pada baris terakhir */
+    }
+
+    .detail-label {
+        font-weight: 500;
+        /* Sedikit bold */
+        color: #555;
+        /* Warna abu-abu untuk label */
+        flex-basis: 45%;
+        /* Memberi lebar dasar untuk label */
+        text-align: left;
+        margin-left: 1;
+    }
+
+    .detail-value {
+        color: #333;
+        /* Warna teks value */
+        text-align: right;
+        flex-basis: 55%;
+        /* Memberi lebar dasar untuk value */
+        word-wrap: break-word;
+        /* Memastikan teks panjang tidak meluber */
+    }
+
+    /* Placeholder untuk ikon default jika tidak ada foto */
+    .profile-pic[alt="Default Foto Profil"] {
+        background-color: #f0f0f0;
+        /* Warna background placeholder */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 3rem;
+        /* Ukuran ikon */
+        color: #bbb;
+        /* Kamu bisa mengganti ini dengan ikon SVG atau font awesome jika ada */
+        /* Contoh: content: '👤'; untuk ikon default */
+    }
+
+    .background-blur-card {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.2);
+        /* transparan putih */
+        backdrop-filter: blur(12px);
+        /* efek blur halus */
+        -webkit-backdrop-filter: blur(12px);
+        z-index: 0;
+        /* pastikan di belakang card utama */
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        /* bayangan tipis */
+    }
+
+    .position-relative .card {
+        position: relative;
+        z-index: 1;
+    }
 </style>
 
 @endsection

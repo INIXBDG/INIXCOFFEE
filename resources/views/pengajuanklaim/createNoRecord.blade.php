@@ -62,6 +62,7 @@
                                     <option selected disabled>Pilih Kendala</option>
                                     <option value="Human Error">Human Error</option>
                                     <option value="System Error">System Error</option>
+                                    <option value="Absen Pulang">Absen Pulang Tidak Terekap</option>
                                 </select>
                                 @error('kendala')
                                 <span class="invalid-feedback" role="alert">
@@ -72,19 +73,20 @@
                         </div>
 
                         <div class="row mb-3" id="tanggal_absen-row">
-                            <label for="tanggal_absen" class="col-md-4 col-form-label text-md-start">{{ __('Pilih Tanggal') }}</label>
+                            <label for="tanggal_absen" class="col-md-4 col-form-label text-md-start">
+                                {{ __('Tanggal Absen') }}
+                            </label>
                             <div class="col-md-6">
-                                <select name="tanggal_absen" class="form-select @error('tanggal_absen') is-invalid @enderror" required id="tanggal_absen">
-                                    <option selected disabled>Pilih Tanggal Absen</option>
-                                    @foreach ($data_absen as $data)
-                                    <option value="{{ $data->id }}">
-                                        {{ \Carbon\Carbon::parse($data->tanggal)->translatedFormat('d F Y') }}
-                                    </option>
-                                    @endforeach
-                                </select>
-
+                                <input type="date" name="tanggal_absen" class="form-control @error('tanggal_absen') is-invalid @enderror" id="tanggal_absen" required>
+                                @error('tanggal_absen')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                                @enderror
                             </div>
                         </div>
+
+
 
                         <div class="row mb-3" id="bukti_gambar-row">
                             <label for="bukti_gambar" class="col-md-4 col-form-label text-md-start">{{ __('Upload Bukti Gambar') }}</label>
@@ -184,6 +186,8 @@
         });
     });
 </script>
+{{-- Hapus atau komentar ini --}}
+{{-- 
 <script>
     $(document).ready(function() {
         $('#tanggal_absen').select2({
@@ -191,6 +195,8 @@
             allowClear: true
         });
     });
-</script>
+</script> 
+--}}
+
 
 @endsection

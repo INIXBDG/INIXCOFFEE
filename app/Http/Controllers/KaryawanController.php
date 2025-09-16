@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Models\jabatan;
+use Vinkla\Hashids\Facades\Hashids;
 use Carbon\Carbon;
 
 class KaryawanController extends Controller
@@ -25,16 +26,37 @@ class KaryawanController extends Controller
 
     public function edit($id)
     {
-        $users = karyawan::findOrFail($id);
-        $jabatan = jabatan::all();
+        $decoded = Hashids::decode($id);
+        if (empty($decoded)) abort(404);
+
+        $realId = $decoded[0];
+        $users = Karyawan::findOrFail($realId);
+        $user = User::where('karyawan_id', $users->id)->firstOrFail();
+
+        // Batasi akses ke user sendiri atau admin
+        if (auth()->id() !== $user->id && auth()->user()->role !== 'Admin' && auth()->user()->jabatan !== 'HRD') {
+            abort(403);
+        }
+
+        $jabatan = Jabatan::all();
         return view('user.edit', compact('users', 'jabatan'));
     }
 
+
     public function updateData(Request $request, $id)
     {
-        // dd($request->all());
-        $karyawan = Karyawan::findOrFail($id);
-        $user = User::findOrFail($id);
+        $decoded = Hashids::decode($id);
+        if (empty($decoded[0])) abort(404);
+
+        $realId = $decoded[0];
+
+        $karyawan = Karyawan::findOrFail($realId);
+        $user = User::where('karyawan_id', $karyawan->id)->firstOrFail();
+
+        // Batasi akses ke user sendiri atau admin
+        if (auth()->id() !== $user->id && auth()->user()->role !== 'Admin' && auth()->user()->jabatan !== 'HRD') {
+            abort(403);
+        }
 
         $data = $request->validate([
             'nama_lengkap' => ['required'],
@@ -46,73 +68,72 @@ class KaryawanController extends Controller
 
         $karyawan->jabatan = $data['jabatan'];
         $karyawan->update($request->all());
+
         $id_instruktur = null;
         $id_sales = null;
 
-        if ($request->jabatan == 'Instruktur' || $request->jabatan == 'Technical Support') {
+        if (in_array($request->jabatan, ['Instruktur', 'Technical Support'])) {
             $id_instruktur = $request->kode_karyawan;
         }
 
-        if ($request->jabatan == 'SPV Sales' || $request->jabatan == 'Sales' || $request->jabatan == 'Adm Sales') {
+        if (in_array($request->jabatan, ['SPV Sales', 'Sales', 'Adm Sales'])) {
             $id_sales = $request->kode_karyawan;
         }
+
         $user->jabatan = $data['jabatan'];
         $user->status_akun = $data['status_aktif'];
         $user->id_instruktur = $id_instruktur;
         $user->id_sales = $id_sales;
         $user->save();
 
-        if (Auth::user()->role == "Admin") {
-            return redirect('/user')->with('success', 'Data Berhasil Diubah');
-        } elseif (Auth::user()->role == "Admin" && Auth::user()->id == $user->id) {
-            return redirect('/profile/' . $id)->with('success', 'Data Berhasil Diubah');
-        } else {
-            return redirect('/profile/' . $id)->with('success', 'Data Berhasil Diubah');
-        }
-    }
+        if (auth()->user()->jabatan == "HRD") {
+			return redirect('/user')->with('success', 'Data Berhasil Diubah');
+		}
 
+		// Always redirect to the previous page, regardless of role
+		return back()->with('success', 'Data Berhasil Diubah');
+
+    }
 
     public function updateFoto(Request $request, $id): RedirectResponse
     {
-        //validate form
-        // dd($request->all());
-
         $this->validate($request, [
-            'foto'     => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
-            'ttd'     => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+            'foto' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
+            'ttd'  => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
         ]);
-        $post = karyawan::findOrFail($id);
 
+        $post = Karyawan::findOrFail($id);
+
+        // Proses foto
         if ($request->hasFile('foto')) {
+            $foto = $request->file('foto');
+            $foto->storeAs('public/posts', $foto->hashName());
 
-            //upload new image
-            $image = $request->file('foto');
-            $image->storeAs('public/posts', $image->hashName());
+            // Hapus foto lama jika ada
+            if ($post->foto) {
+                Storage::delete('public/posts/' . $post->foto);
+            }
 
-            //delete old image
-            Storage::delete('public/posts/'.$post->image);
-
-            //update post with new image
-            $post->update([
-                'foto'     => $image->hashName(),
-            ]);
-
-        } elseif ($request->hasFile('ttd')) {
-            $image = $request->file('ttd');
-            $image->storeAs('public/ttd', $image->hashName());
-
-            //delete old image
-            Storage::delete('public/ttd/'.$post->image);
-
-            //update post with new image
-            $post->update([
-                'ttd'     => $image->hashName(),
-            ]);
-        }else{
-            return redirect()->route('user.show', $id)->with(['error' => 'Foto Tidak Disimpan!']);
+            $post->foto = $foto->hashName();
         }
 
-        //redirect to index
-        return redirect()->route('user.show', $id)->with(['success' => 'Foto Berhasil Disimpan!']);
+        // Proses ttd
+        if ($request->hasFile('ttd')) {
+            $ttd = $request->file('ttd');
+            $ttd->storeAs('public/ttd', $ttd->hashName());
+
+            // Hapus ttd lama jika ada
+            if ($post->ttd) {
+                Storage::delete('public/ttd/' . $post->ttd);
+            }
+
+            $post->ttd = $ttd->hashName();
+        }
+
+        $post->save();
+        //Encode hashing untuk update foto
+        return redirect()->route('user.show', Hashids::encode($post->id))->with([
+            'success' => 'Foto dan/atau TTD berhasil diperbarui!'
+        ]);
     }
 }

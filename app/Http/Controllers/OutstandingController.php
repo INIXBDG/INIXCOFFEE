@@ -40,7 +40,7 @@ class OutstandingController extends Controller
 
         $rkms = RKM::whereBetween('tanggal_awal', [$startOfWeek, $endOfWeek])
             ->where('status', '0')
-            ->whereNotIn('id', $existing) 
+            ->whereNotIn('id', $existing)
             ->get();
 
 
@@ -121,7 +121,6 @@ class OutstandingController extends Controller
                     [$sales]
                 );
 
-                // Filter user dan kirim notifikasi
                 $users = array_filter($users);
                 $notifiedUsers = User::whereHas('karyawan', function ($q) use ($users) {
                     $q->whereIn('kode_karyawan', $users);
@@ -141,7 +140,6 @@ class OutstandingController extends Controller
             $user = '';
         }
         if ($user) {
-            // Ambil data RKM yang belum ada di tabel outstanding
             $outstanding = outstanding::with('rkm', 'rkm.perusahaan', 'rkm.materi', 'tracking_outstanding')
                 ->where('status_pembayaran', '1')
                 ->whereHas('rkm', function ($query) use ($user) {
@@ -149,7 +147,6 @@ class OutstandingController extends Controller
                 })
                 ->get();
         } else {
-            // Ambil data RKM yang belum ada di tabel outstanding
             $outstanding = outstanding::with('rkm', 'rkm.perusahaan', 'rkm.materi', 'tracking_outstanding')->where('status_pembayaran', '1')->get();
         }
         return response()->json([
@@ -363,14 +360,30 @@ class OutstandingController extends Controller
                 'konfir_cs' => 0,
                 'tracking_dokumen' => 0,
                 'no_resi' => 0,
+                'net_sales' => 0,
                 'konfir_pic' => 0,
                 'pembayaran' => 0,
                 'status_resi' => '',
                 'status_pic' => '',
             ];
         } else {
-            // Jika tracking_outstanding bukan null, ubah menjadi array  
-            $tracking_outstanding = $tracking_outstanding->toArray();
+            $tracking_outstanding = [
+                "id" => $tracking_outstanding->id,
+                "id_outstanding" => $tracking_outstanding->id_outstanding,
+                "invoice" => $tracking_outstanding->invoice,
+                "faktur_pajak" => $tracking_outstanding->faktur_pajak,
+                "dokumen_tambahan" => $tracking_outstanding->dokumen_tambahan,
+                "konfir_cs" => $tracking_outstanding->konfir_cs,
+                "tracking_dokumen" => $tracking_outstanding->tracking_dokumen,
+                "no_resi" => $tracking_outstanding->no_resi,
+                "konfir_pic" => $tracking_outstanding->konfir_pic,
+                "pembayaran" => $tracking_outstanding->pembayaran,
+                "status_resi" => $tracking_outstanding->status_resi,
+                "status_pic" => $tracking_outstanding->status_pic,
+                'net_sales' => $outstanding->net_sales,
+                "created_at" => $tracking_outstanding->created_at,
+                "updated_at" => $tracking_outstanding->updated_at
+            ];
         }
 
         return view('outstanding.edit', compact('outstanding', 'tracking_outstanding'));
