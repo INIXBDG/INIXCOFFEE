@@ -55,8 +55,9 @@
                                                 @endif
                                             </td>
                                             <td>
-                                                <button class="btn btn-sm btn-info" data-bs-toggle="modal"
-                                                    data-bs-target="#detailModal">Detail</button>
+                                                <a href="{{ route('detail.peluang', $peluang->id) }}" class="btn btn-sm btn-warning w-100">
+                                                    Detail
+                                                </a>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -68,7 +69,7 @@
             </div>
 
             <!-- Modal Detail Peluang -->
-            <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
+            {{-- <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-lg modal-dialog-scrollable">
                     <div class="modal-content">
                         <div class="modal-header">
@@ -82,8 +83,6 @@
                                     <div class="card mb-3">
                                         <div class="card-header d-flex justify-content-between align-items-center">
                                             <h5 class="card-title mb-0">Informasi Lead</h5>
-                                            {{-- <button class="btn btn-primary btn-sm" data-bs-toggle="modal"
-                                                data-bs-target="#tambahAktivitasModal">Tambah Aktivitas</button> --}}   
                                         </div>
                                         <div class="card-body">
                                             <dl class="row">
@@ -162,7 +161,8 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> --}}
+
         </div>
     </div>
 

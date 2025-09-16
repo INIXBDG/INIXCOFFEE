@@ -85,7 +85,7 @@
                                             <td>{{ number_format(array_sum($triwulan), 2, ',', '.') }}</td>
                                             <td>
                                                 <a class="btn btn-sm btn-danger"
-                                                    href="{{ route('detail.ringkasanPeluang', $pengguna[$idSales]['id_sales'] ?? '') }}">
+                                                    href="{{ route('detail.Ringkasanlost', $pengguna[$idSales]['id_sales'] ?? '') }}">
                                                     Detail
                                                 </a>
                                             </td>
