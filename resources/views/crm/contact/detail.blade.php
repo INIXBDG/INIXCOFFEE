@@ -402,20 +402,20 @@
                                         <input type="number" class="form-control" id="pax" name="pax"
                                             min="1" required>
                                     </div>
-                                    <div class="mb-3">
+                                    {{-- <div class="mb-3">
                                         <label for="netsales" class="form-label">Net Sales</label>
                                         <input type="number" class="form-control" id="netsales" name="netsales"
                                             step="0.01" required>
-                                    </div>
+                                    </div> --}}
                                     <div class="mb-3">
                                         <label for="periode_mulai" class="form-label">Periode Mulai</label>
                                         <input type="date" class="form-control" id="periode_mulai"
-                                            name="periode_mulai" required>
+                                            name="periode_mulai">
                                     </div>
                                     <div class="mb-3">
                                         <label for="periode_selesai" class="form-label">Periode Selesai</label>
                                         <input type="date" class="form-control" id="periode_selesai"
-                                            name="periode_selesai" required>
+                                            name="periode_selesai">
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label" for="metode_kelas">Metode Kelas</label>
@@ -459,6 +459,16 @@
                                         </div>
                                         <input type="hidden" id="authorize" name="authorize" value="0">
                                         <div class="invalid-feedback">Pilih status authorize.</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Tentatif</label>
+                                        <input type="hidden" name="tentatif" value="0">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" role="switch"
+                                                id="tentatifSwitch" name="tentatif" value="1"
+                                                {{ old('tentatif', $model->tentatif ?? false) ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="tentatifSwitch">Tentatif</label>
+                                        </div>
                                     </div>
                                     <div class="mb-3">
                                         <label for="id_aktivitas" class="form-label">Aktivitas</label>

@@ -12,6 +12,7 @@ use App\Http\Controllers\Crm\PeluangController;
 use App\Http\Controllers\Crm\RegisFormController;
 use App\Http\Controllers\Crm\salesPribadiController;
 use App\Http\Controllers\Crm\TargetAktivitas;
+use App\Http\Controllers\Crm\LaporanPenjualanController;
 use App\Http\Controllers\databasekpiContoller;
 use App\Http\Controllers\izinTigaJamController;
 use App\Http\Controllers\KelasAnalisisController;
@@ -425,5 +426,8 @@ Route::prefix('crm')->group(function () {
     Route::post('lokasi/store', [MapController::class, 'store'])->name('crm.lokasi.store');
     Route::put('lokasi/update', [MapController::class, 'update'])->name('crm.lokasi.update');
     Route::delete('lokasi/delete/{id}', [MapController::class, 'delete'])->name('crm.lokasi.delete');
+
+    // Laporan Penjualan
+    Route::get('laporanPenjualan', [LaporanPenjualanController::class, 'index'])->name('crm.laporanPenjualan');
 
 });
