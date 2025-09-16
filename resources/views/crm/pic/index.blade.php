@@ -1,13 +1,17 @@
 @extends('layouts_crm.app')
 
 @section('crm_contents')
-<div class="content-wrapper">
-    <div class="container-xxl flex-grow-1 container-p-y">
+    @php
+        $allowedUser = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur'];
+    @endphp
+
+    <div class="content-wrapper">
+        <div class="container-xxl flex-grow-1 container-p-y">
 
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="fw-bold">Contact Client</h4>
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#clientModal"
-                    onclick="resetForm()">
+                    onclick="resetForm()" @if (in_array(Auth::user()->jabatan, $allowedUser)) disabled @endif>
                     Tambah Client
                 </button>
             </div>
@@ -106,7 +110,7 @@
                                     <label for="id_perusahaan" class="form-label">Perusahaan</label>
                                     <select name="id_perusahaan" id="id_perusahaan" class="form-select" required>
                                         <option value="">Pilih Perusahaan</option>
-                                        @foreach($perusahaans as $perusahaan)
+                                        @foreach ($perusahaans as $perusahaan)
                                             <option value="{{ $perusahaan->id }}" {{ $contact->id_perusahaan == $perusahaan->id ? 'selected' : '' }}>
                                                 {{ $perusahaan->nama }}
                                             </option>
@@ -147,32 +151,53 @@
                 </div>
             </div> --}}
 
+        </div>
     </div>
-</div>
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-<script>
-    $(document).ready(function() {
-    $('#picTable').DataTable({
-        processing: true,
-        serverSide: true,
-        ajax: {
-            url: "{{ route('index.json.pic') }}",
-            type: 'GET'
-        },
-        columns: [
-            { data: 'nama', name: 'nama' },
-            { data: 'perusahaan', name: 'perusahaan' },
-            { data: 'sales_key', name: 'sales_key' },
-            { data: 'status', name: 'status' },
-            { data: 'email', name: 'email' },
-            { data: 'cp', name: 'cp' },
-            { data: 'divisi', name: 'divisi' },
-        ],
-        order: [[0, 'asc']],
-    });
-});
-</script>
-
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#picTable').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: "{{ route('index.json.pic') }}",
+                    type: 'GET'
+                },
+                columns: [{
+                        data: 'nama',
+                        name: 'nama'
+                    },
+                    {
+                        data: 'perusahaan',
+                        name: 'perusahaan'
+                    },
+                    {
+                        data: 'sales_key',
+                        name: 'sales_key'
+                    },
+                    {
+                        data: 'status',
+                        name: 'status'
+                    },
+                    {
+                        data: 'email',
+                        name: 'email'
+                    },
+                    {
+                        data: 'cp',
+                        name: 'cp'
+                    },
+                    {
+                        data: 'divisi',
+                        name: 'divisi'
+                    },
+                ],
+                order: [
+                    [0, 'asc']
+                ],
+            });
+        });
+    </script>
 @endsection

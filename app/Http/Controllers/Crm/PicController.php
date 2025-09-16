@@ -17,18 +17,17 @@ class PicController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM'];
+        $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur'];
         // dd($user);
         if ($user->jabatan === 'Sales') {
             $salesKey = $user->id_sales;
             $perusahaans = Perusahaan::where('sales_key', $salesKey)->get();
         } elseif (in_array($user->jabatan, $allowedJabatan)) {
             $perusahaans = Perusahaan::all();
-
         } else {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
-        
+
         // dd($perusahaans);
         return view('crm.pic.index', compact('perusahaans'));
     }
@@ -37,7 +36,7 @@ class PicController extends Controller
     {
         try {
             $user = Auth::user();
-            $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM'];
+            $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur'];
 
             Log::debug('User Jabatan: ' . ($user->jabatan ?? 'unknown'));
 
@@ -119,7 +118,15 @@ class PicController extends Controller
             $orderDirection = $request->get('order')[0]['dir'] ?? 'desc';
 
             $orderColumns = [
-                'nama', 'email', 'cp', 'perusahaan_key', 'divisi', 'contact_status', 'nama_perusahaan', 'sales_key', 'created_at'
+                'nama',
+                'email',
+                'cp',
+                'perusahaan_key',
+                'divisi',
+                'contact_status',
+                'nama_perusahaan',
+                'sales_key',
+                'created_at'
             ];
             $orderColumn = $orderColumns[$orderColumnIndex] ?? 'created_at';
 
@@ -129,10 +136,10 @@ class PicController extends Controller
 
                     // Cek pencarian berdasarkan nama, email, cp, dan perusahaan
                     $q->whereRaw('LOWER(nama) LIKE ?', ["%{$searchValueLower}%"])
-                    ->orWhereRaw('LOWER(email) LIKE ?', ["%{$searchValueLower}%"])
-                    ->orWhereRaw('LOWER(cp) LIKE ?', ["%{$searchValueLower}%"])
-                    ->orWhereRaw('LOWER(nama_perusahaan) LIKE ?', ["%{$searchValueLower}%"])
-                    ->orWhereRaw('LOWER(status_text) LIKE ?', ["%{$searchValueLower}%"]);
+                        ->orWhereRaw('LOWER(email) LIKE ?', ["%{$searchValueLower}%"])
+                        ->orWhereRaw('LOWER(cp) LIKE ?', ["%{$searchValueLower}%"])
+                        ->orWhereRaw('LOWER(nama_perusahaan) LIKE ?', ["%{$searchValueLower}%"])
+                        ->orWhereRaw('LOWER(status_text) LIKE ?', ["%{$searchValueLower}%"]);
                 });
             }
 
@@ -176,7 +183,6 @@ class PicController extends Controller
                 'recordsFiltered' => $totalFiltered,
                 'data' => $data,
             ]);
-
         } catch (\Exception $e) {
             Log::error('PesertaController@indexJson Error: ' . $e->getMessage(), [
                 'user_id' => Auth::id() ?? 'unknown',
@@ -209,7 +215,7 @@ class PicController extends Controller
         $validated['sales_key'] = $request->input('sales_key', auth()->user()->id_sales ?? null);
         Contact::create($validated);
 
-    return redirect()->route('index.pic')->with('success', 'Contact berhasil ditambahkan.');
+        return redirect()->route('index.pic')->with('success', 'Contact berhasil ditambahkan.');
     }
 
     // public function update($id, Request $request) {

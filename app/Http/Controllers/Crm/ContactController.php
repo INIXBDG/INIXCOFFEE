@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Crm;
 use App\Http\Controllers\Controller;
 use App\Models\Aktivitas;
 use App\Models\Contact;
+use App\Models\lokasi;
 use App\Models\Materi;
 use App\Models\Peluang;
 use App\Models\Perusahaan;
@@ -52,13 +53,14 @@ class ContactController extends Controller
 
     public function index()
     {
-        return view('crm.contact.index');
+        $lokasi = lokasi::all();
+        return view('crm.contact.index', compact('lokasi'));
     }
 
     public function getPerusahaan(Request $request)
     {
         $user = Auth::user();
-        $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'SPV Sales'];
+        $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur'];
 
         if ($user->jabatan === 'Sales') {
             $idSales = $user->id_sales;

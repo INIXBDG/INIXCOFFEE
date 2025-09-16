@@ -635,7 +635,7 @@
                             <p>Jl Cipaganti No 95 Bandung</p>
                             <p>Telepon / Fax: 022 2032 831</p>
                             <p>Whatsapp: ${waSales}</p>
-                            <p><a href="http://www.inixindobdg.co.id">www.inixindobdg.co.id</a></p>
+                            <p><a href="http://www.inixindobdg.co.id" style="text-decoration:none; color: black;">www.inixindobdg.co.id</a></p>
                         </div>
                     </div>
                     <div class="content-container">
@@ -687,7 +687,7 @@
                             <p style="margin-bottom:6mm;"><strong>Untuk informasi lebih lanjut dan penyesuaian harga maupun fasilitas, mohon hubungi:</strong></p>
                             <p class="contact-info"><span class="label">Whatsapp</span><span class="value">: ${waSales}</span></p>
                             <p class="contact-info"><span class="label">Telepon</span><span class="value">: ${telpSales}</span></p>
-                            <p class="contact-info"><span class="label">Email</span><span class="value"><a href="mailto:${emailSales}">: ${emailSales}</a></span></p>
+                            <p class="contact-info"><span class="label">Email</span><span class="value"><a href="mailto:${emailSales}" style="text-decoration:none; color: black;">: ${emailSales}</a></span></p>
                             <br />
                             <p class="mt-2">Hormat kami,</p>
                             <p class="font-bold" style="padding-bottom:4%;">INIXINDO BANDUNG</p>

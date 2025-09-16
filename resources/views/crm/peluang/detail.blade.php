@@ -3,6 +3,7 @@
 @section('crm_contents')
     @php
         $isLost = strtolower($peluang->tahap) === 'lost';
+        $allowedUser = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur'];
     @endphp
     <div class="content-wrapper">
         <div class="container-xxl flex-grow-1 container-p-y">
@@ -44,7 +45,7 @@
 
                             <div class="d-flex gap-2">
                                 <button class="btn btn-primary btn-sm" data-bs-toggle="modal"
-                                    data-bs-target="#tambahAktivitasModal" {{ $peluang->merah ? 'disabled' : '' }}>
+                                    data-bs-target="#tambahAktivitasModal" {{ $peluang->merah ? 'disabled' : '' }} @if (in_array(Auth::user()->jabatan, $allowedUser)) disabled @endif>
                                     Tambah Aktivitas
                                 </button>
 

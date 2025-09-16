@@ -17,7 +17,7 @@ class AktivitasController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM'];
+        $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur'];
 
         if ($user->jabatan === 'Sales') {
             $idSales = $user->id_sales;
