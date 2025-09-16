@@ -462,8 +462,18 @@ class PeluangController extends Controller
 
     public function detailRingkasan($id)
     {
-        $data = Peluang::where('id_sales', $id)->where('tahap', 'merah')->with('aktivitas', 'materiRelation')->with('perusahaan')->get();
+        $data = Peluang::where('id_sales', $id)
+            ->where('tahap', 'merah')
+            ->with([
+                'aktivitas',
+                'materiRelation',
+                'perusahaan',
+                'rkm'
+            ])
+            ->get();
+
         return view('crm.closedwin.detail', compact('data'));
+
     }
 
     public function ringkasanPeluanglost(Request $request)

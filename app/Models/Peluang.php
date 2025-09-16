@@ -12,7 +12,7 @@ class Peluang extends Model
         'id_contact',
         'id_sales',
         'id_rkm',
-        'materi', // This is assumed to be the foreign key for Materi
+        'materi',
         'catatan',
         'harga',
         'netsales',

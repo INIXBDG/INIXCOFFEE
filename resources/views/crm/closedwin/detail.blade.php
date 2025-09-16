@@ -69,7 +69,7 @@
 
             <!-- Modal Detail Peluang -->
             <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
-                <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                <div class="modal-dialog modal-lg modal-dialog-scrollable">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title" id="detailModalLabel">Detail Peluang</h5>
@@ -83,7 +83,7 @@
                                         <div class="card-header d-flex justify-content-between align-items-center">
                                             <h5 class="card-title mb-0">Informasi Lead</h5>
                                             {{-- <button class="btn btn-primary btn-sm" data-bs-toggle="modal"
-                                                data-bs-target="#tambahAktivitasModal">Tambah Aktivitas</button> --}}
+                                                data-bs-target="#tambahAktivitasModal">Tambah Aktivitas</button> --}}   
                                         </div>
                                         <div class="card-body">
                                             <dl class="row">
