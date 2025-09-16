@@ -47,8 +47,9 @@
                                                 @endif
                                             </td>
                                             <td>
-                                                <button class="btn btn-sm btn-info" data-bs-toggle="modal"
-                                                    data-bs-target="#detailModal">Detail</button>
+                                                <a href="{{ route('detail.peluang', $peluang->id) }}" class="btn btn-sm btn-warning w-100">
+                                                    Detail
+                                                </a>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -60,7 +61,7 @@
             </div>
 
             <!-- Modal Detail Peluang -->
-            <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
+            {{-- <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-xl modal-dialog-scrollable">
                     <div class="modal-content">
                         <div class="modal-header">
@@ -163,7 +164,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> --}}
         </div>
     </div>
 
