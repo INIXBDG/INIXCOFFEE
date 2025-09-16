@@ -11,11 +11,8 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="fw-bold mb-0">Detail Lead</h4>
                 <div class="d-flex gap-2">
-                    <button type="button"
-                        class="btn btn-primary"
-                        data-bs-toggle="modal"
-                        data-bs-target="#paymentAdvanceModal"
-                        @if($peluang->tahap !== 'merah') disabled @endif>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#paymentAdvanceModal"
+                        @if ($peluang->tahap !== 'merah') disabled @endif>
                         <i class="menu-icon bx bx-plus"></i> Payment Advance
                     </button>
                     @if ($isLost)
@@ -25,8 +22,8 @@
                             href="/rkm/{{ $peluang->rkm->materi_key }}ixb{{ $peluang->rkm->tanggal_awal_day }}ie{{ $peluang->rkm->tanggal_awal_year }}ie{{ $peluang->rkm->tanggal_awal_month }}ixb{{ $peluang->rkm->metode_kelas }}">Lihat
                             di RKM</a>
                     @endif
-                    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#editPeluangModal"
-                    >
+                    <button type="button" class="btn btn-warning" data-bs-toggle="modal"
+                        data-bs-target="#editPeluangModal" @disabled($peluang->tahap === 'merah')>
                         Edit Lead
                     </button>
                     <button type="button" class="btn btn-success" data-bs-toggle="modal"
@@ -45,7 +42,8 @@
 
                             <div class="d-flex gap-2">
                                 <button class="btn btn-primary btn-sm" data-bs-toggle="modal"
-                                    data-bs-target="#tambahAktivitasModal" {{ $peluang->merah ? 'disabled' : '' }} @if (in_array(Auth::user()->jabatan, $allowedUser)) disabled @endif>
+                                    data-bs-target="#tambahAktivitasModal" {{ $peluang->merah ? 'disabled' : '' }}
+                                    @if (in_array(Auth::user()->jabatan, $allowedUser)) disabled @endif>
                                     Tambah Aktivitas
                                 </button>
 
@@ -76,8 +74,8 @@
                                 <dd class="col-sm-8">{{ $peluang->pax }}</dd>
 
                                 @if ($peluang->tentatif == true)
-                                        <dt class="col-sm-4">Status</dt>
-                                        <dd class="col-sm-8"><strong>Tentatif</strong></dd>
+                                    <dt class="col-sm-4">Status</dt>
+                                    <dd class="col-sm-8"><strong>Tentatif</strong></dd>
                                 @endif
 
                                 <dt class="col-sm-4">Periode Mulai</dt>
@@ -231,7 +229,7 @@
                                             <tr>
                                                 <td>{{ $no++ }}</td>
                                                 <td>
-                                                    @if($item->aktivitas === 'Incharge')
+                                                    @if ($item->aktivitas === 'Incharge')
                                                         Incharge Inhouse
                                                     @else
                                                         {{ $item->aktivitas }}
@@ -313,7 +311,7 @@
         <div class="modal fade" id="editPeluangModal" tabindex="-1" aria-labelledby="editPeluangModalLabel"
             aria-hidden="true">
             <div class="modal-dialog">
-                <form action="{{ route('edit.peluang', $peluang->id) }}" method="POST">
+                <form action="{{ route('edit.peluang', $peluang->id) }}" method="POST" id="editLeads">
                     @method('PUT')
                     @csrf
                     <div class="modal-content">
@@ -344,14 +342,14 @@
 
                             <div class="mb-3">
                                 <label for="harga" class="form-label">Harga</label>
-                                <input type="number" class="form-control" id="harga" name="harga" step="0.01"
-                                    value="{{ intval($peluang->harga) }}" required>
+                                <input type="text" class="form-control editLead" id="harga" name="harga"
+                                    value="{{ 'Rp ' . number_format($peluang->harga, 0, ',', '.') }}" required>
                             </div>
 
                             <div class="mb-3">
                                 <label for="netsales" class="form-label">Net Sales</label>
-                                <input type="number" class="form-control" id="netsales" name="netsales"
-                                    step="0.01" value="{{ intval($peluang->netsales) }}" required>
+                                <input type="text" class="form-control editLead" id="netsales" name="netsales"
+                                    value="{{ 'Rp ' . number_format($peluang->netsales, 0, ',', '.') }}" required>
                             </div>
 
                             <div class="mb-3">
@@ -394,7 +392,7 @@
         <div class="modal fade" id="updateProbabilitasModal" tabindex="-1" aria-labelledby="updateProbabilitasLabel"
             aria-hidden="true">
             <div class="modal-dialog">
-                <form method="POST" action="{{ route('update.tahap', $peluang->id) }}">
+                <form method="POST" action="{{ route('update.tahap', $peluang->id) }}" id="updates">
                     @csrf
                     @method('PUT')
                     <div class="modal-content">
@@ -431,11 +429,14 @@
 
                             <!-- Input Harga Final hanya muncul jika tahap = Merah -->
                             <div class="mb-3 d-none" id="input-close-win">
-                                <label for="close_win" class="form-label">Harga Final (Menang)</label>
+                                <label for="close_win_display" class="form-label">Harga Final (Menang)</label>
                                 <div class="input-group">
                                     <span class="input-group-text">Rp</span>
-                                    <input type="number" step="0.01" min="0" class="form-control"
-                                        name="final" id="close_win" placeholder="Masukkan harga final">
+                                    <!-- Input tampilan -->
+                                    <input type="text" class="form-control" id="close_win_display"
+                                        placeholder="Masukkan harga final">
+                                    <!-- Input hidden untuk dikirim -->
+                                    <input type="hidden" name="final" id="close_win">
                                 </div>
                             </div>
 
@@ -457,7 +458,7 @@
         <div class="modal fade" id="paymentAdvanceModal" tabindex="-1" aria-labelledby="paymentAdvanceModalLabel"
             aria-hidden="true">
             <div class="modal-dialog">
-                <form action="{{ route('store.payment.advance') }}" method="POST">
+                <form action="{{ route('store.payment.advance') }}" method="POST" id="StorePA">
                     @csrf
                     <div class="modal-content">
                         <div class="modal-header">
@@ -471,8 +472,8 @@
                                 <label for="id_peserta" class="form-label">Pilih Peserta</label>
                                 <select class="form-select" id="id_peserta" name="id_peserta">
                                     <option selected disabled>Pilih Peserta</option>
-                                    @foreach($regisuser as $registrasi)
-                                        @if(isset($registrasi->peserta->nama))
+                                    @foreach ($regisuser as $registrasi)
+                                        @if (isset($registrasi->peserta->nama))
                                             <option value="{{ $registrasi->peserta->id }}">
                                                 {{ $registrasi->peserta->nama }}
                                             </option>
@@ -480,49 +481,43 @@
                                     @endforeach
                                 </select>
                             </div>
+
                             <div class="mb-3">
                                 <label for="hargaPenawaran" class="form-label">Harga Penawaran</label>
-                                <input type="number" step="any" class="form-control" id="hargaPenawaran"
+                                <input type="text" class="form-control rupiah" id="hargaPenawaran"
                                     name="hargaPenawaran">
                             </div>
                             <div class="mb-3">
                                 <label for="transportasi" class="form-label">Transportasi</label>
-                                <input type="number" step="any" class="form-control" id="transportasi"
-                                    name="transportasi">
+                                <input type="text" class="form-control rupiah" id="transportasi" name="transportasi">
                             </div>
                             <div class="mb-3">
                                 <label for="penginapan" class="form-label">Penginapan</label>
-                                <input type="number" step="any" class="form-control" id="penginapan"
-                                    name="penginapan">
+                                <input type="text" class="form-control rupiah" id="penginapan" name="penginapan">
                             </div>
                             <div class="mb-3">
                                 <label for="freshMoney" class="form-label">Fresh Money</label>
-                                <input type="number" step="any" class="form-control" id="freshMoney"
-                                    name="freshMoney">
+                                <input type="text" class="form-control rupiah" id="freshMoney" name="freshMoney">
                             </div>
                             <div class="mb-3">
                                 <label for="cashback" class="form-label">Cashback</label>
-                                <input type="number" step="any" class="form-control" id="cashback"
-                                    name="cashback">
+                                <input type="text" class="form-control rupiah" id="cashback" name="cashback">
                             </div>
                             <div class="mb-3">
                                 <label for="diskon" class="form-label">Diskon</label>
-                                <input type="number" step="any" class="form-control" id="diskon"
-                                    name="diskon">
+                                <input type="text" class="form-control rupiah" id="diskon" name="diskon">
                             </div>
                             <div class="mb-3">
                                 <label for="entertaint" class="form-label">Entertaint</label>
-                                <input type="number" step="any" class="form-control" id="entertaint"
-                                    name="entertaint">
+                                <input type="text" class="form-control rupiah" id="entertaint" name="entertaint">
                             </div>
                             <div class="mb-3">
                                 <label for="souvenir" class="form-label">Souvenir</label>
-                                <input type="number" step="any" class="form-control" id="souvenir"
-                                    name="souvenir">
+                                <input type="text" class="form-control rupiah" id="souvenir" name="souvenir">
                             </div>
                             <div class="mb-3">
                                 <label for="desc" class="form-label">Description</label>
-                                <textarea name="desc" id="desc"  rows="4" class="form-control"></textarea>
+                                <textarea name="desc" id="desc" rows="4" class="form-control"></textarea>
                             </div>
                             <div class="mb-3">
                                 <label for="tanggalPayment" class="form-label">Tanggal Payment Advance</label>
@@ -581,16 +576,34 @@
                                         @foreach ($netsales as $item)
                                             <tr>
                                                 <td>{{ $item->peserta->nama }}</td>
-                                                <td>Rp {{ $item->harga_penawaran ? number_format($item->harga_penawaran, 2, ',', '.') : '-' }}</td>
-                                                <td>Rp {{ $item->transportasi ? number_format($item->transportasi, 2, ',', '.') : '-' }}</td>
-                                                <td>Rp {{ $item->penginapan ? number_format($item->penginapan, 2, ',', '.') : '-' }}</td>
-                                                <td>Rp {{ $item->fresh_money ? number_format($item->fresh_money, 2, ',', '.') : '-' }}</td>
-                                                <td>Rp {{ $item->entertaint ? number_format($item->entertaint, 2, ',', '.') : '-' }}</td>
-                                                <td>Rp {{ $item->souvenir ? number_format($item->souvenir, 2, ',', '.') : '-' }}</td>
-                                                <td>Rp {{ $item->diskon ? number_format($item->diskon, 2, ',', '.') : '-' }}</td>
-                                                <td>Rp {{ $item->cashback ? number_format($item->cashback, 2, ',', '.') : '-' }}</td>
-                                                <td>{{ $item->tgl_pa ? \Carbon\Carbon::parse($item->tgl_pa)->translatedFormat('d F Y') : '-' }}</td>
-                                                <td>{{ $item->tipe_pembayaran ? ucfirst($item->tipe_pembayaran) : '-' }}</td>
+                                                <td>Rp
+                                                    {{ $item->harga_penawaran ? number_format($item->harga_penawaran, 2, ',', '.') : '-' }}
+                                                </td>
+                                                <td>Rp
+                                                    {{ $item->transportasi ? number_format($item->transportasi, 2, ',', '.') : '-' }}
+                                                </td>
+                                                <td>Rp
+                                                    {{ $item->penginapan ? number_format($item->penginapan, 2, ',', '.') : '-' }}
+                                                </td>
+                                                <td>Rp
+                                                    {{ $item->fresh_money ? number_format($item->fresh_money, 2, ',', '.') : '-' }}
+                                                </td>
+                                                <td>Rp
+                                                    {{ $item->entertaint ? number_format($item->entertaint, 2, ',', '.') : '-' }}
+                                                </td>
+                                                <td>Rp
+                                                    {{ $item->souvenir ? number_format($item->souvenir, 2, ',', '.') : '-' }}
+                                                </td>
+                                                <td>Rp
+                                                    {{ $item->diskon ? number_format($item->diskon, 2, ',', '.') : '-' }}
+                                                </td>
+                                                <td>Rp
+                                                    {{ $item->cashback ? number_format($item->cashback, 2, ',', '.') : '-' }}
+                                                </td>
+                                                <td>{{ $item->tgl_pa ? \Carbon\Carbon::parse($item->tgl_pa)->translatedFormat('d F Y') : '-' }}
+                                                </td>
+                                                <td>{{ $item->tipe_pembayaran ? ucfirst($item->tipe_pembayaran) : '-' }}
+                                                </td>
                                                 <td>{{ $item->desc ?? 'Tidak ada deskripsi.' }}</td>
                                             </tr>
                                         @endforeach
@@ -612,7 +625,8 @@
                                         <tbody>
                                             <tr>
                                                 <td>{{ $netsales->first()->trackingNetSales->tracking ?? '-' }}</td>
-                                                <td>{{ $netsales->first()->created_at ? \Carbon\Carbon::parse($netsales->first()->created_at)->translatedFormat('d F Y') : '-' }}</td>
+                                                <td>{{ $netsales->first()->created_at ? \Carbon\Carbon::parse($netsales->first()->created_at)->translatedFormat('d F Y') : '-' }}
+                                                </td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -657,7 +671,8 @@
                                                     <td>{{ $status }}</td>
                                                     <td>{{ $approver }}</td>
                                                     <td>{{ $approval->keterangan ?? '-' }}</td>
-                                                    <td>{{ $approval->created_at ? \Carbon\Carbon::parse($approval->created_at)->translatedFormat('d F Y H:i') : '-' }}</td>
+                                                    <td>{{ $approval->created_at ? \Carbon\Carbon::parse($approval->created_at)->translatedFormat('d F Y H:i') : '-' }}
+                                                    </td>
                                                 </tr>
                                             @endforeach
                                         </tbody>
@@ -715,31 +730,41 @@
 
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-
                 let peluang = @json($peluang);
                 console.log(peluang)
                 console.log(peluang.materi.nama_materi);
 
+                const editLead = document.querySelectorAll(".editLead");
+                const rupiahInputs = document.querySelectorAll(".rupiah");
                 const tahapSelect = document.getElementById('tahap');
                 const closeWinInput = document.getElementById('input-close-win');
-                const closeWinField = document.getElementById('close_win');
+                const paInput = document.getElementById('HargaPA');
+                const displayInput = document.getElementById('close_win_display');
+                const hiddenInput = document.getElementById('close_win');
                 const descLostInput = document.getElementById('input-desc-lost');
                 const descLostField = document.getElementById('desc_lost');
 
+                // toggle input sesuai tahap
                 function toggleInputs() {
                     if (tahapSelect.value.toLowerCase() === 'merah') {
                         closeWinInput.classList.remove('d-none');
-                        closeWinField.setAttribute('required', 'required');
+                        displayInput.setAttribute('required', 'required');
+                        hiddenInput.setAttribute('required', 'required');
+
                         descLostInput.classList.add('d-none');
                         descLostField.removeAttribute('required');
                     } else if (tahapSelect.value.toLowerCase() === 'lost') {
                         descLostInput.classList.remove('d-none');
                         descLostField.setAttribute('required', 'required');
+
                         closeWinInput.classList.add('d-none');
-                        closeWinField.removeAttribute('required');
+                        displayInput.removeAttribute('required');
+                        hiddenInput.removeAttribute('required');
                     } else {
                         closeWinInput.classList.add('d-none');
-                        closeWinField.removeAttribute('required');
+                        displayInput.removeAttribute('required');
+                        hiddenInput.removeAttribute('required');
+
                         descLostInput.classList.add('d-none');
                         descLostField.removeAttribute('required');
                     }
@@ -747,8 +772,82 @@
 
                 if (tahapSelect) {
                     tahapSelect.addEventListener('change', toggleInputs);
-                    toggleInputs(); // Trigger saat pertama kali modal muncul
+                    toggleInputs(); // trigger awal
                 }
+
+                // format rupiah saat user ketik
+                displayInput.addEventListener('input', function() {
+                    let value = this.value.replace(/\D/g, ''); // angka murni
+                    if (!value) {
+                        this.value = "";
+                        hiddenInput.value = "";
+                        return;
+                    }
+
+                    // update tampilan
+                    this.value = new Intl.NumberFormat('id-ID', {
+                        style: 'currency',
+                        currency: 'IDR',
+                        minimumFractionDigits: 0
+                    }).format(value);
+
+                    // update hidden untuk backend
+                    hiddenInput.value = value;
+                });
+
+                // sebelum submit pastikan hiddenInput aman
+                document.getElementById('updates').addEventListener('submit', function() {
+                    hiddenInput.value = displayInput.value.replace(/\D/g, '');
+                });
+
+                rupiahInputs.forEach(input => {
+                    input.addEventListener("input", function() {
+                        let value = this.value.replace(/\D/g, ""); // angka murni
+                        if (!value) {
+                            this.value = "";
+                            return;
+                        }
+
+                        // format tampilan Rp
+                        this.value = new Intl.NumberFormat("id-ID", {
+                            style: "currency",
+                            currency: "IDR",
+                            minimumFractionDigits: 0
+                        }).format(value);
+                    });
+                });
+
+                // sebelum submit, reset ke angka murni
+                document.getElementById("StorePA").addEventListener("submit", function() {
+                    rupiahInputs.forEach(input => {
+                        input.value = input.value.replace(/\D/g, ""); // kirim angka murni
+                    });
+                });
+
+                editLead.forEach(input => {
+                    input.addEventListener("input", function() {
+                        let value = this.value.replace(/\D/g, ""); // angka murni
+                        if (!value) {
+                            this.value = "";
+                            return;
+                        }
+
+                        // format tampilan Rp
+                        this.value = new Intl.NumberFormat("id-ID", {
+                            style: "currency",
+                            currency: "IDR",
+                            minimumFractionDigits: 0
+                        }).format(value);
+                    });
+                });
+
+                // sebelum submit, reset ke angka murni
+                document.getElementById("editLeads").addEventListener("submit", function() {
+                    editLead.forEach(input => {
+                        input.value = input.value.replace(/\D/g, ""); // kirim angka murni
+                    });
+                });
+
             });
         </script>
     @endsection

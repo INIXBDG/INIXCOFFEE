@@ -564,7 +564,6 @@ class PeluangController extends Controller
         $netSales->save();
 
         Peluang::updateNetSalesFromRkm($request->id_rkm);
-
         // Kirim notifikasi ke SPV Sales
         $spv = karyawan::where('jabatan', 'SPV Sales')->first();
 
