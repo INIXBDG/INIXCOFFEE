@@ -60,6 +60,12 @@
     <div class="menu-inner-shadow"></div>
 
     <ul class="menu-inner py-1">
+
+        @php
+            $user = Auth::user();
+            $allowedUser = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur'];
+        @endphp
+
         <!-- Dashboards -->
         <li class="menu-item {{ request()->routeIs('CRM.index') ? 'active open' : '' }}">
             <a href="{{ route('CRM.index') }}" class="menu-link">
@@ -90,12 +96,14 @@
             </a>
         </li>
 
-        <li class="menu-item {{ request()->routeIs('index.target') ? 'active open' : '' }}">
-            <a href="{{ route('index.target') }}" class="menu-link">
-                <i class='menu-icon tf-icons bx bx-bookmark-alt'></i>
-                <div class="text-truncate" data-i18n="indexTarget">Target Activity</div>
-            </a>
-        </li>
+        @if ($user->jabatan == 'GM')
+            <li class="menu-item {{ request()->routeIs('index.target') ? 'active open' : '' }}">
+                <a href="{{ route('index.target') }}" class="menu-link">
+                    <i class='menu-icon tf-icons bx bx-bookmark-alt'></i>
+                    <div class="text-truncate" data-i18n="indexTarget">Target Activity</div>
+                </a>
+            </li>
+        @endif
 
         <li class="menu-header small text-uppercase">
             <span class="menu-header-text">Untuk &amp; Anda</span>
@@ -132,10 +140,12 @@
             </a>
         </li>
 
-        <li class="menu-item {{ request()->routeIs('CRM.myDasboard') ? 'active open' : '' }}">
-            <a href="{{ route('CRM.myDasboard') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-home"></i>
-                <div class="text-truncate" data-i18n="Dashboards">My Dashboard</div>
-            </a>
-        </li>
+        @if ($user->jabatan == 'Sales')
+            <li class="menu-item {{ request()->routeIs('CRM.myDasboard') ? 'active open' : '' }}">
+                <a href="{{ route('CRM.myDasboard') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-home"></i>
+                    <div class="text-truncate" data-i18n="Dashboards">My Dashboard</div>
+                </a>
+            </li>
+        @endif
 </aside>

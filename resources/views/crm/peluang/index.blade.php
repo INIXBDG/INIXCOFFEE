@@ -1,13 +1,17 @@
 @extends('layouts_crm.app')
 
 @section('crm_contents')
+    @php
+        $allowedUser = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur'];
+    @endphp
+
     <div class="content-wrapper">
         <div class="container-xxl flex-grow-1 container-p-y">
             <!-- Header -->
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="fw-bold">Prospect Management</h4>
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#opportunityModal"
-                    onclick="resetForm()">
+                    onclick="resetForm()" @if (in_array(Auth::user()->jabatan, $allowedUser)) disabled @endif>
                     Tambah Lead
                 </button>
             </div>
@@ -296,29 +300,29 @@
             });
         });
 
-    document.addEventListener('DOMContentLoaded', function() {
-        const contactSelect = document.getElementById('id_contact');
-        const tableWrapper = document.getElementById('aktivitasTableWrapper');
+        document.addEventListener('DOMContentLoaded', function() {
+            const contactSelect = document.getElementById('id_contact');
+            const tableWrapper = document.getElementById('aktivitasTableWrapper');
 
-        contactSelect.addEventListener('change', function() {
-            const perusahaanId = this.value; // sekarang ini ID perusahaan
+            contactSelect.addEventListener('change', function() {
+                const perusahaanId = this.value; // sekarang ini ID perusahaan
 
                 if (!perusahaanId) {
-                tableWrapper.innerHTML =
+                    tableWrapper.innerHTML =
                         `<p class="text-muted">Silakan pilih contact client terlebih dahulu.</p>`;
-                return;
-            }
+                    return;
+                }
 
                 fetch(`/crm/ambil/aktivitas/${perusahaanId}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.length === 0) {
-                        tableWrapper.innerHTML =
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.length === 0) {
+                            tableWrapper.innerHTML =
                                 `<p class="text-muted">Tidak ada aktivitas yang tersedia untuk contact ini.</p>`;
-                        return;
-                    }
+                            return;
+                        }
 
-                    let table = `
+                        let table = `
                     <div class="table-responsive">
                         <table class="table table-bordered table-hover">
                             <thead class="table-light">
@@ -334,13 +338,13 @@
                             <tbody>
                     `;
 
-                    data.forEach(a => {
-                        const waktu = new Date(a.waktu).toLocaleDateString('id-ID', {
-                            day: '2-digit',
-                            month: 'long',
-                            year: 'numeric'
-                        });
-                        table += `
+                        data.forEach(a => {
+                            const waktu = new Date(a.waktu).toLocaleDateString('id-ID', {
+                                day: '2-digit',
+                                month: 'long',
+                                year: 'numeric'
+                            });
+                            table += `
                         <tr>
                             <td><input type="checkbox" name="id_aktivitas[]" value="${a.id}"></td>
                             <td>${a.kontak}</td>
@@ -350,18 +354,18 @@
                             <td>${waktu}</td>
                         </tr>
                     `;
-                    });
+                        });
 
-                    table += `</tbody></table></div>`;
-                    tableWrapper.innerHTML = table;
-                })
-                .catch(err => {
-                    console.error('Gagal memuat aktivitas:', err);
-                    tableWrapper.innerHTML =
-                        `<p class="text-danger">Terjadi kesalahan saat memuat aktivitas.</p>`;
-                });
+                        table += `</tbody></table></div>`;
+                        tableWrapper.innerHTML = table;
+                    })
+                    .catch(err => {
+                        console.error('Gagal memuat aktivitas:', err);
+                        tableWrapper.innerHTML =
+                            `<p class="text-danger">Terjadi kesalahan saat memuat aktivitas.</p>`;
+                    });
+            });
         });
-    });
 
         function resetForm() {
             const form = document.getElementById('form-data');

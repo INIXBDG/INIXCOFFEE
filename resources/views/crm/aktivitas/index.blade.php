@@ -1,13 +1,16 @@
 @extends('layouts_crm.app')
 
 @section('crm_contents')
+    @php
+        $allowedUser = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur'];
+    @endphp
     <div class="content-wrapper">
         <div class="container-xxl flex-grow-1 container-p-y">
             <!-- Header -->
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="fw-bold">Activity Management</h4>
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#activityModal"
-                    onclick="resetForm()">
+                    onclick="resetForm()" @if (in_array(Auth::user()->jabatan, $allowedUser)) disabled @endif>
                     Tambah Aktivitas
                 </button>
             </div>
@@ -67,22 +70,26 @@
                                 </div>
 
                                 {{-- Input Manual untuk Kontak Baru --}}
-                                <div id="newContactFields" style="display: none; border: 1px solid #ddd; border-radius: 8px; padding: 15px; background-color: #f8f9fa;">
+                                <div id="newContactFields"
+                                    style="display: none; border: 1px solid #ddd; border-radius: 8px; padding: 15px; background-color: #f8f9fa;">
                                     <h6 class="mb-3">Tambah Kontak Baru</h6>
 
                                     <div class="mb-3">
                                         <label class="form-label" for="nama_perusahaan">Nama</label>
-                                        <input type="text" class="form-control" id="nama_perusahaan" name="nama_perusahaan">
+                                        <input type="text" class="form-control" id="nama_perusahaan"
+                                            name="nama_perusahaan">
                                     </div>
 
                                     <div class="mb-3">
                                         <label class="form-label" for="email_perusahaan">Email</label>
-                                        <input type="email" class="form-control" id="email_perusahaan" name="email_perusahaan">
+                                        <input type="email" class="form-control" id="email_perusahaan"
+                                            name="email_perusahaan">
                                     </div>
 
                                     <div class="mb-3">
                                         <label class="form-label" for="divisi_perusahaan">Divisi</label>
-                                        <input type="text" class="form-control" id="divisi_perusahaan" name="divisi_perusahaan">
+                                        <input type="text" class="form-control" id="divisi_perusahaan"
+                                            name="divisi_perusahaan">
                                     </div>
 
                                     <div class="mb-3">
@@ -119,7 +126,8 @@
                                 {{-- Waktu Aktivitas --}}
                                 <div class="mb-3">
                                     <label class="form-label" for="waktu_aktivitas">Waktu Aktivitas</label>
-                                    <input type="date" class="form-control" id="waktu_aktivitas" name="waktu_aktivitas" required>
+                                    <input type="date" class="form-control" id="waktu_aktivitas"
+                                        name="waktu_aktivitas" required>
                                 </div>
 
                                 <button type="submit" class="btn btn-primary">Simpan</button>
@@ -224,8 +232,8 @@
                         render: function(id, type, row) {
                             return `
                             <div class="d-flex gap-2">
-                                <button class="btn btn-sm btn-warning" onclick='editAktivitas(${JSON.stringify(row)})'>Edit</button>
-                                <button class="btn btn-sm btn-danger" onclick="hapusAktivitas(${id})">Hapus</button>
+                                <button class="btn btn-sm btn-warning" @if (in_array(Auth::user()->jabatan, $allowedUser)) disabled @endif onclick='editAktivitas(${JSON.stringify(row)})'>Edit</button>
+                                <button class="btn btn-sm btn-danger" @if (in_array(Auth::user()->jabatan, $allowedUser)) disabled @endif onclick="hapusAktivitas(${id})">Hapus</button>
                             </div>
                         `;
                         }
@@ -331,7 +339,7 @@
             document.getElementById('activityForm').reset();
         }
 
-        document.addEventListener("DOMContentLoaded", function () {
+        document.addEventListener("DOMContentLoaded", function() {
             const perusahaanSelect = document.getElementById("id_perusahaan");
             const contactSelect = document.getElementById("id_contact");
             const contactTypeInput = document.getElementById("contact_type");
@@ -342,7 +350,7 @@
                 return;
             }
 
-            perusahaanSelect.addEventListener("change", function () {
+            perusahaanSelect.addEventListener("change", function() {
                 const perusahaanId = this.value;
 
                 contactSelect.innerHTML = `
@@ -372,7 +380,8 @@
 
                                 const nama = item.nama || "Tidak ada nama";
                                 const email = item.email || "Tidak ada email";
-                                const divisi = item.type === 'peserta' ? 'C-Peserta' : (item.divisi || 'tidak ada divisi');
+                                const divisi = item.type === 'peserta' ? 'C-Peserta' : (item
+                                    .divisi || 'tidak ada divisi');
 
                                 option.textContent = `${nama} (${divisi}) - ${email}`;
                                 contactSelect.appendChild(option);
@@ -389,7 +398,7 @@
                     });
             });
 
-            contactSelect.addEventListener("change", function () {
+            contactSelect.addEventListener("change", function() {
                 const selectedOption = this.options[this.selectedIndex];
                 const type = selectedOption.dataset.type || "contact";
                 contactTypeInput.value = type;

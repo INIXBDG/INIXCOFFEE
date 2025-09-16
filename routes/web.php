@@ -7,6 +7,7 @@ use App\Http\Controllers\Crm\ContactController;
 use App\Http\Controllers\Crm\CRMController;
 use App\Http\Controllers\Crm\PicController;
 use App\Http\Controllers\Crm\AktivitasController;
+use App\Http\Controllers\Crm\MapController;
 use App\Http\Controllers\Crm\PeluangController;
 use App\Http\Controllers\Crm\RegisFormController;
 use App\Http\Controllers\Crm\salesPribadiController;
@@ -406,8 +407,7 @@ Route::prefix('crm')->group(function () {
     Route::get('/closed/lost', [PeluangController::class, 'ringkasanPeluanglost'])->name('index.ringkasanlost');
     Route::get('/detail/closed/lost/{id}', [PeluangController::class, 'detailRingkasanlost'])->name('detail.Ringkasanlost');
 
-
-
+    // Surat Penawaran dan Registrasi
     Route::get('/ketentuan', [RegisFormController::class, 'ketentuan'])->name('crm.ketentuan');
     Route::post('/add/ketentuan', [RegisFormController::class, 'storeKetentuan'])->name('crm.store.ketentuan');
     Route::post('/upload/regisform', [RegisFormController::class, 'upload'])->name('crm.upload.regis');
@@ -419,4 +419,11 @@ Route::prefix('crm')->group(function () {
     Route::get('/pic', [PicController::class, 'index'])->name('index.pic');
     Route::get('/index/pic', [PicController::class, 'indexJson'])->name('index.json.pic');
     Route::post('/pic/store', [PicController::class, 'store'])->name('store.pic');
+
+    // Lokasi
+    Route::get('lokasi', [MapController::class, 'index'])->name('crm.lokasi');
+    Route::post('lokasi/store', [MapController::class, 'store'])->name('crm.lokasi.store');
+    Route::put('lokasi/update', [MapController::class, 'update'])->name('crm.lokasi.update');
+    Route::delete('lokasi/delete/{id}', [MapController::class, 'delete'])->name('crm.lokasi.delete');
+
 });

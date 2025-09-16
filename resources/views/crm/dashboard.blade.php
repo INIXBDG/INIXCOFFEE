@@ -219,69 +219,71 @@
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Prospek Terbuat Minggu Ini -->
-            <div class="row g-3 mb-4">
-                <div class="col-12">
-                    <div class="card h-100 shadow-sm border-0 rounded-3">
-                        <div class="card-header bg-transparent border-0 pb-0">
-                            <h5 class="card-title mb-0 text-primary">Prospek Terbuat Minggu Ini</h5>
-                        </div>
-                        <div class="card-body p-3">
-                            <div class="table-responsive" style="max-height: 280px; overflow-y: auto;">
-                                <table class="table table-hover table-striped table-bordered align-middle">
-                                    <thead>
+        <!-- Prospek Terbuat Minggu Ini -->
+        <div class="row g-3 mb-4">
+            <div class="col-12">
+                <div class="card h-100 shadow-sm border-0 rounded-3">
+                    <div class="card-header bg-transparent border-0 pb-0">
+                        <h5 class="card-title mb-0 text-primary">Prospek Terbuat Minggu Ini</h5>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="table-responsive" style="max-height: 280px; overflow-y: auto;">
+                            <table class="table table-hover table-striped table-bordered align-middle">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Sales</th>
+                                        <th scope="col">Materi</th>
+                                        <th scope="col">Harga</th>
+                                        <th scope="col">Periode</th>
+                                        <th scope="col">Pax</th>
+                                        <th scope="col">Tahap</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($prospek as $item)
                                         <tr>
-                                            <th scope="col">Sales</th>
-                                            <th scope="col">Materi</th>
-                                            <th scope="col">Harga</th>
-                                            <th scope="col">Periode</th>
-                                            <th scope="col">Pax</th>
-                                            <th scope="col">Tahap</th>
+                                            <td class="text-truncate" style="max-width: 250px;">
+                                                {{ $item->id_sales }}
+                                            </td>
+                                            <td class="text-truncate" style="max-width: 250px;">
+                                                {{ $item->materiRelation->nama_materi }}
+                                            </td>
+                                            <td>Rp {{ number_format($item->harga, 0, ',', '.') }}</td>
+                                            <td>
+                                                @if ($item->tentatif == 1)
+                                                    <span class="badge bg-warning-subtle text-warning">Tentatif</span>
+                                                @else
+                                                    {{ \Carbon\Carbon::parse($item->periode_mulai)->format('d-m-Y') }}
+                                                    s/d
+                                                    {{ \Carbon\Carbon::parse($item->periode_selesai)->format('d-m-Y') }}
+                                                @endif
+                                            </td>
+                                            <td>{{ number_format($item->pax, 0, ',', '.') }}</td>
+                                            <td>
+                                                <span class="badge bg-info-subtle text-info">
+                                                    {{ strtoupper($item->tahap) }}
+                                                </span>
+                                            </td>
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        @forelse($prospek as $item)
-                                            <tr>
-                                                <td class="text-truncate" style="max-width: 250px;">
-                                                    {{ $item->id_sales }}
-                                                </td>
-                                                <td class="text-truncate" style="max-width: 250px;">
-                                                    {{ $item->materiRelation->nama_materi }}
-                                                </td>
-                                                <td>Rp {{ number_format($item->harga, 0, ',', '.') }}</td>
-                                                <td>
-                                                    @if ($item->tentatif == 1)
-                                                        <span class="badge bg-warning-subtle text-warning">Tentatif</span>
-                                                    @else
-                                                        {{ \Carbon\Carbon::parse($item->periode_mulai)->format('d-m-Y') }}
-                                                        s/d
-                                                        {{ \Carbon\Carbon::parse($item->periode_selesai)->format('d-m-Y') }}
-                                                    @endif
-                                                </td>
-                                                <td>{{ number_format($item->pax, 0, ',', '.') }}</td>
-                                                <td>
-                                                    <span class="badge bg-info-subtle text-info">
-                                                        {{ strtoupper($item->tahap) }}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="6" class="text-center text-muted">
-                                                    Tidak ada data prospek minggu ini
-                                                </td>
-                                            </tr>
-                                        @endforelse
-                                    </tbody>
-                                </table>
-                            </div>
+                                    @empty
+                                        <tr>
+                                            <td colspan="6" class="text-center text-muted">
+                                                Tidak ada data prospek minggu ini
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Total Status Perusahaan per Sales -->
+        <!-- Total Status Perusahaan per Sales -->
+        <div class="row g-3 mb-4">
             <div class="col-12">
                 <div class="card h-100 shadow-sm border-0 rounded-3">
                     <div class="card-header bg-transparent border-0 pb-0">
@@ -328,37 +330,29 @@
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Distribusi Perusahaan per Lokasi -->
+        <!-- Distribusi Perusahaan per Lokasi -->
+        <div class="row g-3">
             <div class="col-12">
                 <div class="card h-100 shadow-sm border-0 rounded-3">
                     <div
                         class="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0 text-primary">Distribusi Perusahaan per Lokasi</h5>
-                        <select class="form-select form-select-sm lokasi-sales-filter" style="max-width: 150px;">
-                            <option value="all" selected>Semua Sales</option>
-                            <option value="AN">AN</option>
-                            <option value="HW">HW</option>
-                            <option value="ZN">ZN</option>
-                            <option value="VN">VN</option>
-                            <option value="RR">RR</option>
-                            <option value="NA">NA</option>
-                        </select>
                     </div>
                     <div class="card-body p-3">
-                        <div class="chart-container" style="position: relative; height: 280px;">
-                            <canvas id="lokasiPieChart"></canvas>
-                        </div>
+                        <div id="map"></div>
                     </div>
                 </div>
             </div>
-
-
         </div>
     </div>
 
-    <!-- Chart.js -->
+    <!-- Leaflet.js and Chart.js -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // Initialize all charts with responsive container
@@ -446,10 +440,10 @@
                 options: {
                     scales: {
                         x: {
-                            stacked: true
+                            stacked: false
                         },
                         y: {
-                            stacked: true,
+                            stacked: false,
                             ticks: {
                                 callback: function(value) {
                                     return new Intl.NumberFormat('id-ID').format(value);
@@ -496,10 +490,10 @@
                 options: {
                     scales: {
                         x: {
-                            stacked: true
+                            stacked: false
                         },
                         y: {
-                            stacked: true,
+                            stacked: false,
                             ticks: {
                                 callback: function(value) {
                                     return new Intl.NumberFormat('id-ID').format(value);
@@ -518,90 +512,100 @@
                 }
             });
 
-            // Lokasi Pie Chart
-            const lokasiData = @json($totalDaerah);
-            let lokasiPieChart;
+            // Initialize the map
+            var map = L.map('map').setView([-2.548926, 118.0148634], 5); // Centered on Indonesia
 
-            const updateLokasiPieChart = (salesKey) => {
-                let chartData;
+            // Add OpenStreetMap tile layer
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            // Layer group to manage markers
+            var markerLayer = L.layerGroup().addTo(map);
+
+            // Function to update map markers
+            function updateMapMarkers(salesKey) {
+                // Clear existing markers
+                markerLayer.clearLayers();
+
+                // Filter locations based on sales key
+                let filteredLocations = [];
                 if (salesKey === 'all') {
-                    const aggregated = {};
-                    Object.values(lokasiData).flat().forEach(item => {
-                        aggregated[item.lokasi] = (aggregated[item.lokasi] || 0) + item.total;
-                    });
-                    chartData = {
-                        labels: Object.keys(aggregated),
-                        datasets: [{
-                            label: 'Jumlah Perusahaan',
-                            data: Object.values(aggregated),
-                            backgroundColor: [
-                                'rgba(75, 192, 192, 0.8)',
-                                'rgba(255, 99, 132, 0.8)',
-                                'rgba(54, 162, 235, 0.8)',
-                                'rgba(255, 206, 86, 0.8)',
-                                'rgba(153, 102, 255, 0.8)',
-                                'rgba(255, 159, 64, 0.8)',
-                                'rgba(199, 199, 199, 0.8)',
-                            ],
-                            borderWidth: 1
-                        }]
-                    };
+                    filteredLocations = @json($map); // All locations
                 } else {
-                    const data = lokasiData[salesKey] || [];
-                    chartData = {
-                        labels: data.map(item => item.lokasi),
-                        datasets: [{
-                            label: 'Jumlah Perusahaan',
-                            data: data.map(item => item.total),
-                            backgroundColor: [
-                                'rgba(75, 192, 192, 0.8)',
-                                'rgba(255, 99, 132, 0.8)',
-                                'rgba(54, 162, 235, 0.8)',
-                                'rgba(255, 206, 86, 0.8)',
-                                'rgba(153, 102, 255, 0.8)',
-                                'rgba(255, 159, 64, 0.8)',
-                                'rgba(199, 199, 199, 0.8)',
-                            ],
-                            borderWidth: 1
-                        }]
-                    };
+                    filteredLocations = @json($map).filter(loc => loc.sales_key === salesKey);
                 }
 
-                if (lokasiPieChart) {
-                    lokasiPieChart.destroy();
-                }
+                // Filter out locations with no companies
+                filteredLocations = filteredLocations.filter(loc => loc.company_count > 0);
 
-                lokasiPieChart = initChart('lokasiPieChart', {
-                    type: 'pie',
-                    data: chartData,
-                    options: {
-                        plugins: {
-                            tooltip: {
-                                callbacks: {
-                                    label: context => {
-                                        const label = context.label || '';
-                                        const value = context.raw;
-                                        const total = context.dataset.data.reduce((sum, val) =>
-                                            sum + val, 0);
-                                        const percentage = total > 0 ? ((value / total) * 100)
-                                            .toFixed(2) : 0;
-                                        return `${label}: ${value} (${percentage}%)`;
-                                    }
-                                }
-                            }
-                        }
+                // Total number of companies for percentage calculation
+                var totalCompanies = filteredLocations.reduce((sum, loc) => sum + (loc.company_count || 0), 0);
+
+                // Add markers for each location with valid data
+                filteredLocations.forEach(function(loc) {
+                    if (loc.latitude && loc.longitude && loc.company_count > 0) {
+                        // Calculate percentage
+                        var percentage = totalCompanies > 0 ? ((loc.company_count / totalCompanies) * 100)
+                            .toFixed(2) : 0;
+
+                        // Create marker
+                        var marker = L.marker([loc.latitude, loc.longitude]);
+
+                        // Popup content
+                        var popupContent = `
+                            <b>Location:</b> ${loc.lokasi}<br>
+                            <b>Companies:</b> ${loc.company_count}<br>
+                            <b>Percentage:</b> ${percentage}% | ${loc.company_count}
+                        `;
+                        marker.bindPopup(popupContent);
+
+                        // Tooltip for quick view
+                        marker.bindTooltip(`${loc.lokasi}: ${percentage}%`, {
+                            permanent: false
+                        });
+
+                        // Add marker to layer
+                        markerLayer.addLayer(marker);
                     }
                 });
-            };
 
-            updateLokasiPieChart('all');
-
-            const lokasiSalesFilter = document.querySelector('.lokasi-sales-filter');
-            if (lokasiSalesFilter) {
-                lokasiSalesFilter.addEventListener('change', () => {
-                    updateLokasiPieChart(lokasiSalesFilter.value);
-                });
+                // Display message if no markers are present
+                const mapContainer = document.getElementById('map');
+                if (filteredLocations.length === 0) {
+                    mapContainer.innerHTML =
+                        '<div class="text-center text-muted p-3">Tidak ada data lokasi tersedia</div>';
+                } else {
+                    // Reinitialize map if it was cleared
+                    if (!map._container) {
+                        map = L.map('map').setView([-2.548926, 118.0148634], 5);
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        }).addTo(map);
+                        markerLayer = L.layerGroup().addTo(map);
+                        filteredLocations.forEach(function(loc) {
+                            if (loc.latitude && loc.longitude && loc.company_count > 0) {
+                                var marker = L.marker([loc.latitude, loc.longitude]);
+                                var percentage = totalCompanies > 0 ? ((loc.company_count /
+                                    totalCompanies) * 100).toFixed(2) : 0;
+                                var popupContent = `
+                                    <b>Location:</b> ${loc.lokasi}<br>
+                                    <b>Companies:</b> ${loc.company_count}<br>
+                                    <b>Percentage:</b> ${percentage}%
+                                `;
+                                marker.bindPopup(popupContent);
+                                marker.bindTooltip(`${loc.lokasi}: ${percentage}% | ${loc.company_count}`, {
+                                    permanent: false
+                                });
+                                markerLayer.addLayer(marker);
+                            }
+                        });
+                    }
+                }
             }
+
+            // Initial map render
+            updateMapMarkers('all');
 
             // Filter functionality for activities
             const filterButtons = document.querySelectorAll('.filter-btn');
@@ -656,8 +660,29 @@
     </script>
 
     <style>
-        /* Improved responsive behavior */
+        /* Map container styling */
+        #map {
+            height: 400px;
+            /* Increased height since chart is removed */
+            width: 100%;
+            /* Full width of card-body */
+            border-radius: 0.5rem;
+            /* Match card's rounded-3 style */
+            border: 1px solid #e3e6f0;
+            /* Subtle border */
+            background-color: #f8f9fa;
+            /* Light background */
+            z-index: 1;
+            /* Ensure below Leaflet controls */
+        }
+
+        /* Responsive map height */
         @media (max-width: 767.98px) {
+            #map {
+                height: 300px;
+                /* Smaller height for mobile */
+            }
+
             .card-body {
                 padding: 1rem !important;
             }
@@ -678,7 +703,38 @@
             }
         }
 
-        /* Better scrollbars */
+        /* Ensure Leaflet container inherits dimensions */
+        .leaflet-container {
+            width: 100%;
+            height: 100%;
+            border-radius: 0.5rem;
+        }
+
+        /* Prevent overflow in card */
+        .card.h-100 {
+            overflow: hidden;
+        }
+
+        /* Ensure card-body has proper spacing */
+        .card-body {
+            padding: 1.5rem !important;
+        }
+
+        /* Style Leaflet controls */
+        .leaflet-control {
+            border-radius: 0.25rem;
+            background-color: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.1);
+        }
+
+        /* Chart and activity container styling */
+        .chart-container,
+        .activity-container {
+            max-height: 280px;
+            overflow: hidden;
+        }
+
+        /* Scrollbar styling */
         .activity-container::-webkit-scrollbar,
         .card-body::-webkit-scrollbar,
         .table-responsive::-webkit-scrollbar {
@@ -700,7 +756,7 @@
             border-radius: 3px;
         }
 
-        /* Improved progress bars */
+        /* Progress bars */
         .progress {
             background-color: #f0f0f0;
             border-radius: 3px;
