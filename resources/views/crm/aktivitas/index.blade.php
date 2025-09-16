@@ -2,7 +2,7 @@
 
 @section('crm_contents')
     @php
-        $allowedUser = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur'];
+        $allowedUser = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
     @endphp
     <div class="content-wrapper">
         <div class="container-xxl flex-grow-1 container-p-y">
