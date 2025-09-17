@@ -392,8 +392,8 @@
         html += '<th style="font-size:14px">Diskon (Rp.)</th>';
         html += '<th style="font-size:14px">Cashback (Rp.)</th>';
         html += '<th style="font-size:14px">Tanggal Payment Advance</th>';
-        html += '<th style="font-size:14px">Tipe Pembayaran</th>';
-        html += '<th style="font-size:14px">Total (Rp.)</th>';
+        // html += '<th style="font-size:14px">Tipe Pembayaran</th>';
+        html += '<th style="font-size:14px">NetSales (Rp.)</th>';
         if (jabatan === 'SPV Sales' || jabatan === 'Sales' || jabatan === 'GM' || jabatan === 'Finance & Accounting' || jabatan == 'Koordinator Office') {
             html += '<th style="font-size:14px">Aksi</th>';
         }
@@ -433,7 +433,7 @@
                 html += `<td style="font-size:14px">${formatWithoutDecimals(sales.diskon || 0)}</td>`;
                 html += `<td style="font-size:14px">${formatWithoutDecimals(sales.cashback || 0)}</td>`;
                 html += `<td style="font-size:14px">${sales.tgl_pa || '0000-00-00'}</td>`;
-                html += `<td style="font-size:14px">${sales.tipe_pembayaran || ''}</td>`;
+                // html += `<td style="font-size:14px">${sales.tipe_pembayaran || ''}</td>`;
                 html += `<td style="font-size:14px">${formatWithoutDecimals(sales.total || 0)},00</td>`;
 
                 if (jabatan === 'SPV Sales' || jabatan === 'Sales' || jabatan === 'GM' || jabatan === 'Finance &amp; Accounting' || jabatan == 'Koordinator Office') {

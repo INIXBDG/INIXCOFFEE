@@ -88,16 +88,10 @@
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label" for="harga">Harga (Rp)</label>
+                                    <label class="form-label" for="harga">Harga Penawaran (Rp)</label>
                                     <input type="text" class="form-control" id="harga" name="harga" required>
                                     <div class="invalid-feedback">Masukkan harga.</div>
                                 </div>
-
-                                {{-- <div class="mb-3">
-                                    <label class="form-label" for="netsales">Net Sales (Rp)</label>
-                                    <input type="text" class="form-control" id="netsales" name="netsales">
-                                    <div class="invalid-feedback">Masukkan net sales.</div>
-                                </div> --}}
 
                                 <div class="mb-3">
                                     <label class="form-label" for="pax">Jumlah Peserta (Pax)</label>
