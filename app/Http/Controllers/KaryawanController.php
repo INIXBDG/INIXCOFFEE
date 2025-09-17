@@ -34,7 +34,7 @@ class KaryawanController extends Controller
         $user = User::where('karyawan_id', $users->id)->firstOrFail();
 
         // Batasi akses ke user sendiri atau admin
-        if (auth()->id() !== $user->id && auth()->user()->role !== 'Admin') {
+        if (auth()->id() !== $user->id && auth()->user()->role !== 'Admin' && auth()->user()->jabatan !== 'HRD') {
             abort(403);
         }
 
@@ -43,20 +43,20 @@ class KaryawanController extends Controller
     }
 
 
-public function updateData(Request $request, $id)
-{
-    $decoded = Hashids::decode($id);
-    if (empty($decoded)) abort(404);
 
-    $realId = $decoded[0];
+    public function updateData(Request $request, $id)
+    {
+        $decoded = Hashids::decode($id);
+        if (empty($decoded[0])) abort(404);
 
-    $karyawan = Karyawan::findOrFail($realId);
-    $user = User::where('karyawan_id', $karyawan->id)->firstOrFail();
+        $realId = $decoded[0];
 
-    // Batasi akses ke user sendiri atau admin
-    if (auth()->id() !== $user->id && auth()->user()->role !== 'Admin') {
-        abort(403);
-    }
+        $karyawan = Karyawan::findOrFail($realId);
+        $user = User::where('karyawan_id', $karyawan->id)->firstOrFail();
+            // Batasi akses ke user sendiri atau admin
+            if (auth()->id() !== $user->id && auth()->user()->role !== 'Admin' && auth()->user()->jabatan !== 'HRD') {
+                abort(403);
+            }
 
     $data = $request->validate([
         'nama_lengkap' => ['required'],
@@ -100,7 +100,6 @@ public function updateData(Request $request, $id)
     if (in_array($request->jabatan, ['SPV Sales', 'Sales', 'Adm Sales'])) {
         $id_sales = $request->kode_karyawan;
     }
-
     // Update data user
     $user->jabatan = $data['jabatan'];
     $user->status_akun = $data['status_aktif'];
@@ -108,13 +107,13 @@ public function updateData(Request $request, $id)
     $user->id_sales = $id_sales;
     $user->save();
 
-    if (auth()->user()->role == "Admin") {
-        return redirect('/user')->with('success', 'Data Berhasil Diubah');
-    }
+        if (auth()->user()->jabatan == "HRD") {
+			return redirect('/user')->with('success', 'Data Berhasil Diubah');
+		}
 
-    return redirect()->route('user.show', ['hashid' => $user->hashids])
-        ->with('success', 'Data Berhasil Diubah');
-}
+		// Always redirect to the previous page, regardless of role
+		return back()->with('success', 'Data Berhasil Diubah');
+    }
 
     public function updateFoto(Request $request, $id): RedirectResponse
     {

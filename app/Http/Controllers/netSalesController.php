@@ -84,6 +84,7 @@ class netSalesController extends Controller
                 ];
 
                 $url = url('paymentAdvance.index');
+
                 $path = request()->path();
 
                 Notification::send($user, new CommentNotification($dummyComment, $url, $path));

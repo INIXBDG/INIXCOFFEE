@@ -25,7 +25,7 @@ class CommentNotification extends Notification
 
     public function via($notifiable)
     {
-        return ['database', 'broadcast']; // Menggunakan 'database' dan 'broadcast'
+        return ['database', 'broadcast']; 
     }
 
     public function toArray($notifiable)

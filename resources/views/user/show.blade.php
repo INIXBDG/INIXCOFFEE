@@ -73,6 +73,7 @@
                                 <div class="detail-row">
                                     <span class="detail-label">Jabatan</span>
                                     <span class="detail-value">{{ $users->karyawan->jabatan }}</span>
+
                                 </div>
                                 <div class="detail-row">
                                     <span class="detail-label">Divisi</span>
@@ -146,10 +147,10 @@
                                     <span class="detail-value">{{ $users->karyawan->rekening_maybank ?? '-' }}</span>
                                 </div>
                                 @if ($users->karyawan->rekening_bca)
-                                <div class="detail-row">
-                                    <span class="detail-label">BCA</span>
-                                    <span class="detail-value">{{ $users->karyawan->rekening_bca }}</span>
-                                </div>
+                                  <div class="detail-row">
+                                      <span class="detail-label">BCA</span>
+                                      <span class="detail-value">{{ $users->karyawan->rekening_bca }}</span>
+                                  </div>
                                 @endif
                             </div>
                         </div>
@@ -200,12 +201,13 @@
                                 <div class="detail-row">
                                     <span class="detail-label">Mulai Tanggal</span>
                                     <span class="detail-value">{{ \Carbon\Carbon::parse($users->karyawan->awal_tetap)->translatedFormat('d F Y') }}</span>
+
                                 </div>
                                 @if ($users->karyawan->akhir_tetap)
-                                <div class="detail-row">
-                                    <span class="detail-label">Sampai Tanggal</span>
-                                    <span class="detail-value">{{ \Carbon\Carbon::parse($users->karyawan->akhir_tetap)->translatedFormat('d F Y') }}</span>
-                                </div>
+                                  <div class="detail-row">
+                                      <span class="detail-label">Sampai Tanggal</span>
+                                      <span class="detail-value">{{ \Carbon\Carbon::parse($users->karyawan->akhir_tetap)->translatedFormat('d F Y') }}</span>
+                                  </div>
                                 @endif
                             </div>
                             @endif
@@ -420,9 +422,9 @@
         align-items: center;
         gap: 8px;
         /* Jarak antara ikon dan teks */
-        background-color: #e9ecef;
+        background-color: #393E46;
         /* Warna latar belakang tombol yang netral */
-        color: #495057;
+        color: #FFFCFB;
         /* Warna teks tombol */
         border: 1px solid #ced4da;
         padding: 8px 15px;

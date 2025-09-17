@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
 @section('content')
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 <div class="container-fluid">
@@ -192,33 +194,56 @@
                         return moment(data.tanggal_berangkat).format('DD MMMM YYYY')+ ' s/d ' + moment(data.tanggal_pulang).format('DD MMMM YYYY');
                     }
                 },
-                {
-                    "data": null,
-                    "render": function(data) {
-                        if (data.approval_manager == '0' && data.approval_hrd == '0') {
-                            return '<span class="badge bg-warning" style="color:black;"> Menunggu Persetujuan Manager Divisi </span>';
-                        } 
-                        
-                        if (data.approval_manager == '1' && data.approval_hrd == '0') {
-                            return '<span class="badge bg-warning"> Menunggu Rate dan Persetujuan HRD </span>';
-                        } 
-                        
-                        if (data.approval_manager == '1' && data.approval_hrd == '1') {
-                            if (data.tipe == "Internasional" && data.approval_direksi == '0') {
-                                return '<span class="badge bg-warning"> Menunggu Persetujuan Direksi </span>';
-                            }else if(data.tipe == "Internasional" && data.approval_direksi == '2') {
-                                return '<span class="badge bg-danger"> Ditolak </span>';
-                            }else{
-                                return '<span class="badge bg-success"> Disetujui </span>';
-                            }
-                        }
-                        if (data.approval_manager == '2') {
-                            return '<span class="badge bg-danger"> Ditolak </span>';
-                        }
-                        
-                        return '<span class="badge bg-secondary"> Status Tidak Diketahui </span>';
-                    },
-                },
+{
+    "data": null,
+    "render": function(data) {
+        if (data.approval_manager == '0' && data.approval_hrd == '0') {
+            return `
+                <span class="badge rounded-pill bg-warning text-dark">
+                    <i class="bi bi-hourglass-split me-1"></i> Menunggu Persetujuan Manager Divisi
+                </span>`;
+        } 
+        
+        if (data.approval_manager == '1' && data.approval_hrd == '0') {
+            return `
+                <span class="badge rounded-pill bg-warning text-dark">
+                    <i class="bi bi-hourglass-split me-1"></i> Menunggu Rate & Persetujuan HRD
+                </span>`;
+        } 
+        
+        if (data.approval_manager == '1' && data.approval_hrd == '1') {
+            if (data.tipe == "Internasional" && data.approval_direksi == '0') {
+                return `
+                    <span class="badge rounded-pill bg-warning text-dark">
+                        <i class="bi bi-hourglass-split me-1"></i> Menunggu Persetujuan Direksi
+                    </span>`;
+            } else if (data.tipe == "Internasional" && data.approval_direksi == '2') {
+                return `
+                    <span class="badge rounded-pill bg-danger">
+                        <i class="bi bi-x-circle me-1"></i> Ditolak
+                    </span>`;
+            } else {
+                return `
+                    <span class="badge rounded-pill bg-success">
+                        <i class="bi bi-check-circle me-1"></i> Disetujui
+                    </span>`;
+            }
+        }
+
+        if (data.approval_manager == '2') {
+            return `
+                <span class="badge rounded-pill bg-danger">
+                    <i class="bi bi-x-circle me-1"></i> Ditolak
+                </span>`;
+        }
+
+        return `
+            <span class="badge rounded-pill bg-secondary">
+                <i class="bi bi-question-circle me-1"></i> Status Tidak Diketahui
+            </span>`;
+    }
+}
+,
                 {
                     "data": null,
                     "render": function(data, type, row) {
@@ -233,17 +258,18 @@
                             actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
 
                             if (userRole == 'GM') {
-                                // GM can only approve if the requester is Office Manager, Education Manager, or SPV Sales
-                                if (['Office Manager', 'Education Manager', 'SPV Sales', 'Koordinator ITSM'].includes(requesterRole)) {
-                                    if (data.approval_manager === '1') {
-                                        actions += '<button type="button" class="dropdown-item disabled"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
-                                    } else {
-                                        actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
-                                    }
-                                } else {
-                                    actions += '<button type="button" class="dropdown-item disabled"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
-                                }
-                            } else if (userRole !== requesterRole) {
+    // GM hanya bisa approve jika divisi Office atau id = 4,14,29
+    if (data.karyawan.divisi === 'Office' || [4, 14, 29].includes(Number(data.karyawan.id))) {
+        if (data.approval_manager === '1') {
+            actions += '<button type="button" class="dropdown-item disabled"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
+        } else {
+            actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
+        }
+    } else {
+        actions += '<button type="button" class="dropdown-item disabled"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
+    }
+}
+ else if (userRole !== requesterRole) {
                                 // Other allowed roles can approve subordinate's requests, but not their own
                                 if (data.approval_manager === '1') {
                                     actions += '<button type="button" class="dropdown-item disabled"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Approve</button>';
@@ -378,6 +404,27 @@
             "order": [[0, 'desc']], // Ubah urutan menjadi descending untuk kolom ke-6
                 "columnDefs" : [{"targets":[0], "type":"date"}],
         });
+        $('#approveForm').on('submit', function (e) {
+    e.preventDefault();
+    const form = $(this);
+    const url = form.attr('action');
+    const data = form.serialize();
+
+    $.ajax({
+        url: url,
+        method: 'POST',
+        data: data + '&_method=PUT',
+        success: function (res) {
+            $('#approveModal').modal('hide');
+            $('#jabatantable').DataTable().ajax.reload(null, false); // reload data tanpa reset halaman
+            // tampilkan alert Bootstrap kalau mau
+        },
+        error: function (err) {
+            alert("Gagal menyimpan data!");
+        }
+    });
+});
+
     });
         function openApproveModal(id, jabatan) {
             // Set the action URL for the approval form

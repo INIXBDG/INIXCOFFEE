@@ -47,6 +47,7 @@ class UserController extends Controller
         $data = $request->validate([
             'nama_lengkap' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255'],
+            'email' => ['nullable','email'],
             'jabatan' => ['required', 'string', 'max:255'],
             'divisi' => ['required', 'string', 'max:255'],
             'status_akun' => ['nullable', 'string', 'max:255'],
@@ -78,6 +79,7 @@ class UserController extends Controller
                 'jabatan' => $request->jabatan,
                 'divisi' => $request->divisi,
                 'kode_karyawan' => $request->kode_karyawan,
+                'email' => $request->email,
             ]);
 
             User::create([
@@ -158,7 +160,8 @@ class UserController extends Controller
             unset($data['expassword']);
             $users->update($data);
 
-            return redirect('/profile/' . $users->hashid)->with('success', 'Password Berhasil Diubah');
+            return redirect()->route('user.show', ['hashid' => $users->hashids])
+                ->with('success', 'Password berhasil diperbarui.'); //fixing redirect route and message 
         } else {
             return back()->with('error', 'Password Lama Anda Salah');
         }
@@ -214,9 +217,8 @@ class UserController extends Controller
         $users = auth()->user();
         $jabatan = $users->jabatan;
 
-            $users= User::get();
-            return view('user.changeuser', compact('users'));
-
+        $users = User::get();
+        return view('user.changeuser', compact('users'));
     }
 
     public function indexUser()
@@ -228,8 +230,8 @@ class UserController extends Controller
     public function editUser($id)
     {
         $data = User::findOrFail($id);
-        $roles = Role::pluck('name','name')->all();
-        $userRoles = $data->roles->pluck('name','name')->all();
+        $roles = Role::pluck('name', 'name')->all();
+        $userRoles = $data->roles->pluck('name', 'name')->all();
         return view('role_permission.users.edit', [
             'data' => $data,
             'roles' => $roles,
@@ -247,6 +249,6 @@ class UserController extends Controller
 
         $user->syncRoles($request->roles);
 
-        return redirect('/userRolePermissions')->with('success','User Updated Successfully with roles');
+        return redirect('/userRolePermissions')->with('success', 'User Updated Successfully with roles');
     }
 }

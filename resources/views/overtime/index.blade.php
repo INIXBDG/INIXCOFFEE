@@ -480,7 +480,6 @@
                         `);
                         table.append(thead);
 
-                        // Populate table rows with data
                         data.data.forEach(function (item, index) {
                         var nilaiLembur = item.hitunglembur?.nilai_lembur ?? 0;
                         var approvalGm = item.hitunglembur?.approval_gm ?? '0';
@@ -493,7 +492,8 @@
                         var hours = Math.floor(diffInMinutes / 60);
                         var minutes = diffInMinutes % 60;
 
-                        var jamLemburFormatted = hours + '.' + (minutes < 10 ? '0' + minutes : minutes);
+                        // var jamLemburFormatted = hours + '.' + (minutes < 10 ? '0' + minutes : minutes);
+                        var jamLemburFormatted = hours + (minutes / 60);
                         var jamLemburDisplay = hours + ' Jam ' + minutes + ' Menit';
 
                         console.log("Jam Lembur:", jamLemburDisplay);

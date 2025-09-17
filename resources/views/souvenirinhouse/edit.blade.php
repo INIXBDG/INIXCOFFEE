@@ -19,6 +19,7 @@
                                 <input type="hidden" name="id_rkm" value="{{ $id }}">
                                 <select name="nama_souvenir" id="nama_souvenir" class="form-select">
                                     <option value="">-- Pilih Souvenir --</option>
+                                    <option value="All Item" {{ $souvenir->nama_souvenir == 'All Item' ? 'selected' : '' }}>All Item</option>
                                     <option value="Jaket" {{ $souvenir->nama_souvenir == 'Jaket' ? 'selected' : '' }}>Jaket</option>
                                     <option value="Diffuser" {{ $souvenir->nama_souvenir == 'Diffuser' ? 'selected' : '' }}>Diffuser</option>
                                     <option value="Pouch" {{ $souvenir->nama_souvenir == 'Pouch' ? 'selected' : '' }}>Pouch</option>

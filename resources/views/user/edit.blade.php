@@ -17,85 +17,120 @@
                     <h3 class="card-title text-center">{{ __('Profil Saya') }}</h3>
                     <div class="row">
                         {{-- foto --}}
-                        <form action="{{ route('karyawan.update', $users->hashids) }}" method="post">
+                        <form action="{{ route('karyawan.update', ['hashid' => $users->hashids]) }}" method="POST"> <!-- fixing action to route -->
                             @csrf
                             @method('PUT')
-                        <div class="row">
-                            <div class="col-md-4 col-sm-4 col-xs-4"><p>Nama Lengkap</p></div>
-                            <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
-                            <div class="col-md-7 col-sm-7 col-xs-7"><input id="nama_lengkap" type="text" class="form-control @error('nama_lengkap') is-invalid @enderror" name="nama_lengkap" value="{{ old('nama_lengkap', $users->nama_lengkap ) }}" required autocomplete="nama_lengkap">
-                                @error('nama_lengkap')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                                @enderror
+                            <div class="row">
+                                <div class="col-md-4 col-sm-4 col-xs-4">
+                                    <p>Nama Lengkap</p>
+                                </div>
+                                <div class="col-md-1 col-sm-1 col-xs-1">
+                                    <p>:</p>
+                                </div>
+                                <div class="col-md-7 col-sm-7 col-xs-7"><input id="nama_lengkap" type="text" class="form-control @error('nama_lengkap') is-invalid @enderror" name="nama_lengkap" value="{{ old('nama_lengkap', $users->nama_lengkap ) }}" required autocomplete="nama_lengkap">
+                                    @error('nama_lengkap')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                    @enderror
+                                </div>
                             </div>
-                        </div>
+                            <div class="row">
+                                <div class="col-md-4 col-sm-4 col-xs-4">
+                                    <p>Email</p>
+                                </div>
+                                <div class="col-md-1 col-sm-1 col-xs-1">
+                                    <p>:</p>
+                                </div>
+                                <div class="col-md-7 col-sm-7 col-xs-7"><input id="email" type="text" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email', $users->email ) }}" required autocomplete="email">
+                                    @error('email')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                    @enderror
+                                </div>
+                            </div>
 
-                        <div class="row">
-                            <div class="col-md-4 col-sm-4 col-xs-4"><p>Nomor Induk Pegawai</p></div>
-                            <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
-                            <div class="col-md-7 col-sm-7 col-xs-7">
-                                @if (auth()->user()->can('Edit DataKaryawan'))
+                            <div class="row">
+                                <div class="col-md-4 col-sm-4 col-xs-4">
+                                    <p>Nomor Induk Pegawai</p>
+                                </div>
+                                <div class="col-md-1 col-sm-1 col-xs-1">
+                                    <p>:</p>
+                                </div>
+                                <div class="col-md-7 col-sm-7 col-xs-7">
+                                    @if (auth()->user()->can('Edit DataKaryawan'))
                                     <input id="nip" type="text" placeholder="Masukan Nomor Induk Pegawai Anda" class="form-control @error('nip') is-invalid @enderror" name="nip" value="{{ old('nip', $users->nip ) }}" autocomplete="nip">
-                                @else
+                                    @else
                                     <input readonly id="nip" type="text" placeholder="Masukan Nomor Induk Pegawai Anda" class="form-control @error('nip') is-invalid @enderror" name="nip" value="{{ old('nip', $users->nip ) }}" autocomplete="nip">
-                                @endif
-                                @error('nip')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                                @enderror
+                                    @endif
+                                    @error('nip')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                    @enderror
+                                </div>
                             </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-4 col-sm-4 col-xs-4"><p>Kode Karyawan</p></div>
-                            <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
-                            <div class="col-md-7 col-sm-7 col-xs-7">
-                                @if (auth()->user()->can('Edit DataKaryawan'))
+                            <div class="row">
+                                <div class="col-md-4 col-sm-4 col-xs-4">
+                                    <p>Kode Karyawan</p>
+                                </div>
+                                <div class="col-md-1 col-sm-1 col-xs-1">
+                                    <p>:</p>
+                                </div>
+                                <div class="col-md-7 col-sm-7 col-xs-7">
+                                    @if (auth()->user()->can('Edit DataKaryawan'))
                                     <input id="kode_karyawan" type="text" placeholder="Masukan Kode Karyawan Anda" class="form-control @error('kode_karyawan') is-invalid @enderror" name="kode_karyawan" value="{{ old('kode_karyawan', $users->kode_karyawan ) }}" autocomplete="kode_karyawan">
-                                @else
+                                    @else
                                     <input readonly id="kode_karyawan" type="text" placeholder="Masukan Kode Karyawan Anda" class="form-control @error('kode_karyawan') is-invalid @enderror" name="kode_karyawan" value="{{ old('kode_karyawan', $users->kode_karyawan ) }}" autocomplete="kode_karyawan">
-                                @endif
-                                @error('kode_karyawan')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                                @enderror
+                                    @endif
+                                    @error('kode_karyawan')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                    @enderror
+                                </div>
                             </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-4 col-sm-4 col-xs-4"><p>Jabatan</p></div>
-                            <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
-                            <div class="col-md-7 col-sm-7 col-xs-7">
-                                @if (auth()->user()->can('Edit DataKaryawan'))
+                            <div class="row">
+                                <div class="col-md-4 col-sm-4 col-xs-4">
+                                    <p>Jabatan</p>
+                                </div>
+                                <div class="col-md-1 col-sm-1 col-xs-1">
+                                    <p>:</p>
+                                </div>
+                                <div class="col-md-7 col-sm-7 col-xs-7">
+                                    @if (auth()->user()->can('Edit DataKaryawan'))
                                     <select class="form-select @error('jabatan') is-invalid @enderror" name="jabatan" value="{{ old('jabatan', $users->jabatan ) }}" required autocomplete="jabatan">
                                         <option selected>Pilih Jabatan</option>
                                         @foreach ($jabatan as $jabatans)
-                                            <option value="{{ $jabatans->nama_jabatan }}" @if ($users->jabatan == $jabatans->nama_jabatan) selected @endif>{{ $jabatans->nama_jabatan }}</option>
+                                        <option value="{{ $jabatans->nama_jabatan }}" @if ($users->jabatan == $jabatans->nama_jabatan) selected @endif>{{ $jabatans->nama_jabatan }}</option>
                                         @endforeach
                                     </select>
-                                @else
-                                <input type="hidden" name="jabatan" value="{{ old('jabatan', $users->jabatan ) }}">
+                                    @else
+                                    <input type="hidden" name="jabatan" value="{{ old('jabatan', $users->jabatan ) }}">
                                     <select disabled class="form-select @error('jabatan') is-invalid @enderror" name="jabatan" value="{{ old('jabatan', $users->jabatan ) }}" required autocomplete="jabatan">
                                         <option selected>Pilih Jabatan</option>
                                         @foreach ($jabatan as $jabatans)
-                                            <option value="{{ $jabatans->nama_jabatan }}" @if ($users->jabatan == $jabatans->nama_jabatan) selected @endif>{{ $jabatans->nama_jabatan }}</option>
+                                        <option value="{{ $jabatans->nama_jabatan }}" @if ($users->jabatan == $jabatans->nama_jabatan) selected @endif>{{ $jabatans->nama_jabatan }}</option>
                                         @endforeach
                                     </select>
-                                @endif
-                                @error('jabatan')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
+                                    @endif
+                                    @error('jabatan')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                    @enderror
+                                </div>
                             </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-4 col-sm-4 col-xs-4"><p>Divisi</p></div>
-                            <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
-                            <div class="col-md-7 col-sm-7 col-xs-7">
-                                @if (auth()->user()->can('Edit DataKaryawan'))
+                            <div class="row">
+                                <div class="col-md-4 col-sm-4 col-xs-4">
+                                    <p>Divisi</p>
+                                </div>
+                                <div class="col-md-1 col-sm-1 col-xs-1">
+                                    <p>:</p>
+                                </div>
+                                <div class="col-md-7 col-sm-7 col-xs-7">
+                                    @if (auth()->user()->can('Edit DataKaryawan'))
                                     <select class="form-select @error('divisi') is-invalid @enderror" name="divisi" value="{{ old('divisi', $users->divisi ) }}" required autocomplete="divisi">
                                         <option selected>Pilih Divisi</option>
                                         <option value="Direksi" @if ($users->divisi == "Direksi") selected @endif>Direksi</option>
@@ -104,8 +139,8 @@
                                         <option value="Office" @if ($users->divisi == "Office") selected @endif>Office</option>
                                         <option value="IT Service Management" @if ($users->divisi == "IT Service Management") selected @endif>IT Service Management</option>
                                     </select>
-                                @else
-                                <input type="hidden" name="jabatan" value="{{ old('divisi', $users->divisi ) }}">
+                                    @else
+                                    <input type="hidden" name="jabatan" value="{{ old('divisi', $users->divisi ) }}">
                                     <select disabled class="form-select @error('divisi') is-invalid @enderror" name="divisi" value="{{ old('divisi', $users->divisi ) }}" required autocomplete="divisi">
                                         <option selected>Pilih Divisi</option>
                                         <option value="Direksi" @if ($users->divisi == "Direksi") selected @endif>Direksi</option>
@@ -114,40 +149,48 @@
                                         <option value="Office" @if ($users->divisi == "Office") selected @endif>Office</option>
                                         <option value="IT Service Management" @if ($users->divisi == "IT Service Management") selected @endif>IT Service Management</option>
                                     </select>
-                                @endif
+                                    @endif
 
-                                @error('divisi')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
+                                    @error('divisi')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                    @enderror
+                                </div>
                             </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-4 col-sm-4 col-xs-4"><p>Rekening Maybank</p></div>
-                            <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
-                            <div class="col-md-7 col-sm-7 col-xs-7">
-                                <input id="rekening_maybank" placeholder="Masukan Rekening Maybank Anda" type="text" class="form-control @error('rekening_maybank') is-invalid @enderror" name="rekening_maybank" value="{{ old('rekening_maybank', $users->rekening_maybank ) }}" autocomplete="rekening_maybank">
-                            @error('rekening_maybank')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
+                            <div class="row">
+                                <div class="col-md-4 col-sm-4 col-xs-4">
+                                    <p>Rekening Maybank</p>
+                                </div>
+                                <div class="col-md-1 col-sm-1 col-xs-1">
+                                    <p>:</p>
+                                </div>
+                                <div class="col-md-7 col-sm-7 col-xs-7">
+                                    <input id="rekening_maybank" placeholder="Masukan Rekening Maybank Anda" type="text" class="form-control @error('rekening_maybank') is-invalid @enderror" name="rekening_maybank" value="{{ old('rekening_maybank', $users->rekening_maybank ) }}" autocomplete="rekening_maybank">
+                                    @error('rekening_maybank')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                    @enderror
+                                </div>
                             </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-4 col-sm-4 col-xs-4"><p>Rekening BCA</p></div>
-                            <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
-                            <div class="col-md-7 col-sm-7 col-xs-7">
-                                <input id="rekening_bca" placeholder="Masukan Rekening BCA Anda" type="text" class="form-control @error('rekening_bca') is-invalid @enderror" name="rekening_bca" value="{{ old('rekening_bca', $users->rekening_bca ) }}" autocomplete="rekening_bca">
-                            @error('rekening_bca')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
+                            <div class="row">
+                                <div class="col-md-4 col-sm-4 col-xs-4">
+                                    <p>Rekening BCA</p>
+                                </div>
+                                <div class="col-md-1 col-sm-1 col-xs-1">
+                                    <p>:</p>
+                                </div>
+                                <div class="col-md-7 col-sm-7 col-xs-7">
+                                    <input id="rekening_bca" placeholder="Masukan Rekening BCA Anda" type="text" class="form-control @error('rekening_bca') is-invalid @enderror" name="rekening_bca" value="{{ old('rekening_bca', $users->rekening_bca ) }}" autocomplete="rekening_bca">
+                                    @error('rekening_bca')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                    @enderror
+                                </div>
                             </div>
-                        </div>
-                        {{-- <div class="row">
+                            {{-- <div class="row">
                             <div class="col-md-4 col-sm-4 col-xs-4"><p>Nomor Handphone</p></div>
                             <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
                             <div class="col-md-7 col-sm-7 col-xs-7">
@@ -340,11 +383,11 @@
                             <button type="submit" class="btn click-primary">Simpan</button>
                         </div>
                     </form>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
+</div>
+</div>
 </div>
 <style>
     @media screen and (max-width: 768px) {
@@ -367,6 +410,5 @@
             text-align: left;
         }
     }
-
 </style>
 @endsection

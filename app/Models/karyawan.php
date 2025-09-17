@@ -18,6 +18,7 @@ class karyawan extends Model
         'foto',
         'nip',
         'nama_lengkap',
+        'email',
         'divisi',
         'jabatan',
         'rekening_maybank',
@@ -41,6 +42,10 @@ class karyawan extends Model
     public function user()
     {
         return $this->hasOne(User::class, 'karyawan_id');
+    }
+    public function formPenilaian()
+    {
+        return $this->hasMany(formPenilaian::class, 'id_karyawan', 'id');
     }
 
     public function perusahaan()
@@ -75,7 +80,7 @@ class karyawan extends Model
     protected function image(): Attribute
     {
         return Attribute::make(
-            get: fn ($foto) => url('/storage/posts/' . $foto),
+            get: fn($foto) => url('/storage/posts/' . $foto),
         );
     }
 
@@ -93,5 +98,4 @@ class karyawan extends Model
     {
         return Hashids::encode($this->id);
     }
-
 }
