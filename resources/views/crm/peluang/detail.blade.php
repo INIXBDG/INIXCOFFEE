@@ -11,8 +11,11 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="fw-bold mb-0">Detail Lead</h4>
                 <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#paymentAdvanceModal"
-                        @if ($peluang->tahap !== 'merah') disabled @endif>
+                    <button type="button"
+                            class="btn btn-primary"
+                            data-bs-toggle="modal"
+                            data-bs-target="#paymentAdvanceModal"
+                            @if ($peluang->tahap !== 'merah' || !empty($peluang->netsales)) disabled @endif>
                         <i class="menu-icon bx bx-plus"></i> Payment Advance
                     </button>
                     @if ($isLost)
@@ -23,7 +26,7 @@
                             di RKM</a>
                     @endif
                     <button type="button" class="btn btn-warning" data-bs-toggle="modal"
-                        data-bs-target="#editPeluangModal" @disabled($peluang->tahap === 'merah')>
+                        data-bs-target="#editPeluangModal">
                         Edit Lead
                     </button>
                     <button type="button" class="btn btn-success" data-bs-toggle="modal"
