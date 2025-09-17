@@ -36,12 +36,12 @@ class RKM extends Model
 
     public function perhitunganNetSales()
     {
-        return $this->hasOne(perhitunganNetSales::class, 'id_rkm', 'id');
-    }    
+        return $this->hasMany(perhitunganNetSales::class, 'id_rkm', 'id');
+    }
 
     public function sales()
     {
-        return $this->belongsTo(Karyawan::class, 'sales_key', 'kode_karyawan');
+        return $this->belongsTo(karyawan::class, 'sales_key', 'kode_karyawan');
     }
 
     public function materi()
@@ -71,7 +71,7 @@ class RKM extends Model
 
     public function comments()
     {
-        return $this->hasMany(Comment::class, 'rkm_key', 'id');
+        return $this->hasMany(comment::class, 'rkm_key', 'id');
     }
 
     public function exam()
@@ -107,9 +107,14 @@ class RKM extends Model
         return $this->hasOne(absensiPDF::class, 'id_rkm', 'id');
     }
 
+    public function peluang()
+    {
+        return $this->hasOne(Peluang::class, 'id_rkm', 'id'); // Relasi dengan Peluang
+    }
+  
     public function invoice()
     {
-    return $this->hasOne(Invoice::class, 'id_rkm');
+        return $this->hasOne(Invoice::class, 'id_rkm');
     }
 
 

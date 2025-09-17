@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Controllers\AktivitasController;
+use App\Http\Controllers\CatatanSalesController;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\PeluangController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 

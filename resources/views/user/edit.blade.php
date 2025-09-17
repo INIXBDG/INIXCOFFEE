@@ -200,188 +200,189 @@
                                 <strong>{{ $message }}</strong>
                             </span>
                             @enderror
-                    </div>
-                </div> --}}
-                <div class="row">
-                    <div class="col-md-4 col-sm-4 col-xs-4">
-                        <p>Status Kerja</p>
-                    </div>
-                    <div class="col-md-1 col-sm-1 col-xs-1">
-                        <p>:</p>
-                    </div>
-                    <div class="col-md-7 col-sm-7 col-xs-7">
-                        <select class="form-select @error('status_aktif') is-invalid @enderror" name="status_aktif" value="{{ old('status_aktif', $users->status_aktif ) }}" required autocomplete="status_aktif">
-                            <option selected>Pilih status</option>
-                            <option @if ($users->status_aktif == "1") selected @endif value="1">Aktif</option>
-                            <option @if ($users->status_aktif == "0") selected @endif value="0">Tidak Aktif</option>
-                            {{-- <option value="3">Three</option> --}}
-                        </select>
-                        @error('status_aktif')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-4 col-sm-4 col-xs-4">
-                        <p>Awal Probation</p>
-                    </div>
-                    <div class="col-md-1 col-sm-1 col-xs-1">
-                        <p>:</p>
-                    </div>
-                    <div class="col-md-7 col-sm-7 col-xs-7">
-                        @if (auth()->user()->can('Edit DataKaryawan'))
-                        <input id="awal_probation" type="date" class="form-control @error('awal_probation') is-invalid @enderror" name="awal_probation" value="{{ old('awal_probation', $users->awal_probation ) }}" autocomplete="awal_probation">
-                        @else
-                        <input readonly id="awal_probation" type="date" class="form-control @error('awal_probation') is-invalid @enderror" name="awal_probation" value="{{ old('awal_probation', $users->awal_probation ) }}" autocomplete="awal_probation">
-                        @endif
-                        @error('awal_probation')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-4 col-sm-4 col-xs-4">
-                        <p>Akhir Probation</p>
-                    </div>
-                    <div class="col-md-1 col-sm-1 col-xs-1">
-                        <p>:</p>
-                    </div>
-                    <div class="col-md-7 col-sm-7 col-xs-7">
-                        @if (auth()->user()->can('Edit DataKaryawan'))
-                        <input id="akhir_probation" type="date" class="form-control @error('akhir_probation') is-invalid @enderror" name="akhir_probation" value="{{ old('akhir_probation', $users->akhir_probation ) }}" autocomplete="akhir_probation">
-                        @else
-                        <input readonly="akhir_probation" type="date" class="form-control @error('akhir_probation') is-invalid @enderror" name="akhir_probation" value="{{ old('akhir_probation', $users->akhir_probation ) }}" autocomplete="akhir_probation">
-                        @endif
-                        @error('akhir_probation')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-4 col-sm-4 col-xs-4">
-                        <p>Awal Kontrak</p>
-                    </div>
-                    <div class="col-md-1 col-sm-1 col-xs-1">
-                        <p>:</p>
-                    </div>
-                    <div class="col-md-7 col-sm-7 col-xs-7">
-                        @if (auth()->user()->can('Edit DataKaryawan'))
-                        <input id="awal_kontrak" type="date" class="form-control @error('awal_kontrak') is-invalid @enderror" name="awal_kontrak" value="{{ old('awal_kontrak', $users->awal_kontrak ) }}" autocomplete="awal_kontrak">
-                        @else
-                        <input readonly id="awal_kontrak" type="date" class="form-control @error('awal_kontrak') is-invalid @enderror" name="awal_kontrak" value="{{ old('awal_kontrak', $users->awal_kontrak ) }}" autocomplete="awal_kontrak">
-                        @endif
-                        @error('awal_kontrak')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-4 col-sm-4 col-xs-4">
-                        <p>Akhir Kontrak</p>
-                    </div>
-                    <div class="col-md-1 col-sm-1 col-xs-1">
-                        <p>:</p>
-                    </div>
-                    <div class="col-md-7 col-sm-7 col-xs-7">
-                        @if (auth()->user()->can('Edit DataKaryawan'))
-                        <input id="akhir_kontrak" type="date" class="form-control @error('akhir_kontrak') is-invalid @enderror" name="akhir_kontrak" value="{{ old('akhir_kontrak', $users->akhir_kontrak ) }}" autocomplete="akhir_kontrak">
-                        @else
-                        <input readonly id="akhir_kontrak" type="date" class="form-control @error('akhir_kontrak') is-invalid @enderror" name="akhir_kontrak" value="{{ old('akhir_kontrak', $users->akhir_kontrak ) }}" autocomplete="akhir_kontrak">
-                        @endif
-                        @error('akhir_kontrak')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-4 col-sm-4 col-xs-4">
-                        <p>Awal Tetap</p>
-                    </div>
-                    <div class="col-md-1 col-sm-1 col-xs-1">
-                        <p>:</p>
-                    </div>
-                    <div class="col-md-7 col-sm-7 col-xs-7">
-                        @if (auth()->user()->can('Edit DataKaryawan'))
-                        <input id="awal_tetap" type="date" class="form-control @error('awal_tetap') is-invalid @enderror" name="awal_tetap" value="{{ old('awal_tetap', $users->awal_tetap ) }}" autocomplete="awal_tetap">
-                        @else
-                        <input readonly id="awal_tetap" type="date" class="form-control @error('awal_tetap') is-invalid @enderror" name="awal_tetap" value="{{ old('awal_tetap', $users->awal_tetap ) }}" autocomplete="awal_tetap">
-                        @endif
-                        @error('awal_tetap')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-4 col-sm-4 col-xs-4">
-                        <p>Akhir Tetap</p>
-                    </div>
-                    <div class="col-md-1 col-sm-1 col-xs-1">
-                        <p>:</p>
-                    </div>
-                    <div class="col-md-7 col-sm-7 col-xs-7">
-                        @if (auth()->user()->can('Edit DataKaryawan'))
-                        <input id="akhir_tetap" type="date" class="form-control @error('akhir_tetap') is-invalid @enderror" name="akhir_tetap" value="{{ old('akhir_tetap', $users->akhir_tetap ) }}" autocomplete="akhir_tetap">
-                        @else
-                        <input readonly id="akhir_tetap" type="date" class="form-control @error('akhir_tetap') is-invalid @enderror" name="akhir_tetap" value="{{ old('akhir_tetap', $users->akhir_tetap ) }}" autocomplete="akhir_tetap">
-                        @endif
-                        @error('akhir_tetap')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-4 col-sm-4 col-xs-4">
-                        <p>Keterangan</p>
-                    </div>
-                    <div class="col-md-1 col-sm-1 col-xs-1">
-                        <p>:</p>
-                    </div>
-                    <div class="col-md-7 col-sm-7 col-xs-7">
-                        <input id="keterangan" placeholder="Keterangan" type="text" class="form-control @error('keterangan') is-invalid @enderror" name="keterangan" value="{{ old('keterangan', $users->keterangan ) }}" autocomplete="keterangan">
-                        @error('keterangan')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                    </div>
-                </div>
-                @can('Edit DataKaryawan')
-                <div class="row">
-                    <div class="col-md-4 col-sm-4 col-xs-4">
-                        <p>Cuti</p>
-                    </div>
-                    <div class="col-md-1 col-sm-1 col-xs-1">
-                        <p>:</p>
-                    </div>
-                    <div class="col-md-7 col-sm-7 col-xs-7">
-                        <input id="cuti" placeholder="Jatah Cuti" type="text" class="form-control @error('cuti') is-invalid @enderror" name="cuti" value="{{ old('cuti', $users->cuti ) }}" autocomplete="cuti">
-                        @error('cuti')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                        @enderror
-                    </div>
-                </div>
-                @endcan
-                <div class="d-flex justify-content-center my-3">
-                    <button type="submit" class="btn click-primary">Simpan</button>
-                </div>
-                </form>
-
+                            </div>
+                        </div> --}}
+                        <div class="row">
+                            <div class="col-md-4 col-sm-4 col-xs-4"><p>Status Kerja</p></div>
+                            <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
+                            <div class="col-md-7 col-sm-7 col-xs-7">
+                                <select class="form-select @error('status_aktif') is-invalid @enderror" name="status_aktif" value="{{ old('status_aktif', $users->status_aktif ) }}" required autocomplete="status_aktif">
+                                    <option selected>Pilih status</option>
+                                    <option @if ($users->status_aktif == "1") selected @endif value="1">Aktif</option>
+                                    <option @if ($users->status_aktif == "0") selected @endif value="0">Tidak Aktif</option>
+                                    {{-- <option value="3">Three</option> --}}
+                                  </select>
+                                @error('status_aktif')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 col-sm-4 col-xs-4"><p>Awal Probation</p></div>
+                            <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
+                            <div class="col-md-7 col-sm-7 col-xs-7">
+                                @if (auth()->user()->can('Edit DataKaryawan'))
+                                    <input id="awal_probation" type="date" class="form-control @error('awal_probation') is-invalid @enderror" name="awal_probation" value="{{ old('awal_probation', $users->awal_probation ) }}"  autocomplete="awal_probation">
+                                @else
+                                    <input readonly id="awal_probation" type="date" class="form-control @error('awal_probation') is-invalid @enderror" name="awal_probation" value="{{ old('awal_probation', $users->awal_probation ) }}"  autocomplete="awal_probation">
+                                @endif
+                                @error('awal_probation')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 col-sm-4 col-xs-4"><p>Akhir Probation</p></div>
+                            <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
+                            <div class="col-md-7 col-sm-7 col-xs-7">
+                                @if (auth()->user()->can('Edit DataKaryawan'))
+                                    <input id="akhir_probation" type="date" class="form-control @error('akhir_probation') is-invalid @enderror" name="akhir_probation" value="{{ old('akhir_probation', $users->akhir_probation ) }}"  autocomplete="akhir_probation">
+                                @else
+                                    <input readonly ="akhir_probation" type="date" class="form-control @error('akhir_probation') is-invalid @enderror" name="akhir_probation" value="{{ old('akhir_probation', $users->akhir_probation ) }}"  autocomplete="akhir_probation">
+                                @endif
+                                @error('akhir_probation')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 col-sm-4 col-xs-4"><p>Awal Kontrak</p></div>
+                            <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
+                            <div class="col-md-7 col-sm-7 col-xs-7">
+                                @if (auth()->user()->can('Edit DataKaryawan'))
+                                    <input id="awal_kontrak" type="date" class="form-control @error('awal_kontrak') is-invalid @enderror" name="awal_kontrak" value="{{ old('awal_kontrak', $users->awal_kontrak ) }}"  autocomplete="awal_kontrak">
+                                @else
+                                    <input readonly id="awal_kontrak" type="date" class="form-control @error('awal_kontrak') is-invalid @enderror" name="awal_kontrak" value="{{ old('awal_kontrak', $users->awal_kontrak ) }}"  autocomplete="awal_kontrak">
+                                @endif
+                                @error('awal_kontrak')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 col-sm-4 col-xs-4"><p>Akhir Kontrak</p></div>
+                            <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
+                            <div class="col-md-7 col-sm-7 col-xs-7">
+                                @if (auth()->user()->can('Edit DataKaryawan'))
+                                    <input id="akhir_kontrak" type="date" class="form-control @error('akhir_kontrak') is-invalid @enderror" name="akhir_kontrak" value="{{ old('akhir_kontrak', $users->akhir_kontrak ) }}"  autocomplete="akhir_kontrak">
+                                @else
+                                    <input readonly id="akhir_kontrak" type="date" class="form-control @error('akhir_kontrak') is-invalid @enderror" name="akhir_kontrak" value="{{ old('akhir_kontrak', $users->akhir_kontrak ) }}"  autocomplete="akhir_kontrak">
+                                @endif
+                                @error('akhir_kontrak')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 col-sm-4 col-xs-4"><p>Awal Tetap</p></div>
+                            <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
+                            <div class="col-md-7 col-sm-7 col-xs-7">
+                                @if (auth()->user()->can('Edit DataKaryawan'))
+                                    <input id="awal_tetap" type="date" class="form-control @error('awal_tetap') is-invalid @enderror" name="awal_tetap" value="{{ old('awal_tetap', $users->awal_tetap ) }}"  autocomplete="awal_tetap">
+                                @else
+                                    <input readonly id="awal_tetap" type="date" class="form-control @error('awal_tetap') is-invalid @enderror" name="awal_tetap" value="{{ old('awal_tetap', $users->awal_tetap ) }}"  autocomplete="awal_tetap">
+                                @endif
+                                @error('awal_tetap')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 col-sm-4 col-xs-4"><p>Akhir Tetap</p></div>
+                            <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
+                            <div class="col-md-7 col-sm-7 col-xs-7">
+                                @if (auth()->user()->can('Edit DataKaryawan'))
+                                    <input id="akhir_tetap" type="date" class="form-control @error('akhir_tetap') is-invalid @enderror" name="akhir_tetap" value="{{ old('akhir_tetap', $users->akhir_tetap ) }}"  autocomplete="akhir_tetap">
+                                @else
+                                    <input readonly id="akhir_tetap" type="date" class="form-control @error('akhir_tetap') is-invalid @enderror" name="akhir_tetap" value="{{ old('akhir_tetap', $users->akhir_tetap ) }}"  autocomplete="akhir_tetap">
+                                @endif
+                                @error('akhir_tetap')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                                @enderror
+                            </div>
+                        </div>
+                            <div class="row">
+                                <div class="col-md-4 col-sm-4 col-xs-4"><p>Keterangan</p></div>
+                                <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
+                                <div class="col-md-7 col-sm-7 col-xs-7">
+                                    <input id="keterangan" placeholder="Keterangan" type="text" class="form-control @error('keterangan') is-invalid @enderror" name="keterangan" value="{{ old('keterangan', $users->keterangan ) }}" autocomplete="keterangan">
+                                    @error('keterangan')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                    @enderror
+                                </div>
+                            </div>
+                            @if (Auth::user()->jabatan == 'Sales' || Auth::user()->jabatan == 'SPV Sales')
+                                <div class="row">
+                                    <div class="col-md-4 col-sm-4 col-xs-4"><p>Email</p></div>
+                                    <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
+                                    <div class="col-md-7 col-sm-7 col-xs-7">
+                                        <input id="Email" placeholder="Email" type="text" class="form-control @error('Email') is-invalid @enderror" name="email" value="{{ old('Email', $users->Email ) }}" autocomplete="Email">
+                                        @error('Email')
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4 col-sm-4 col-xs-4"><p>No Whatsapp</p></div>
+                                    <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
+                                    <div class="col-md-7 col-sm-7 col-xs-7">
+                                        <input id="whatsapp" placeholder="Whatsapp" type="text" class="form-control @error('whatsapp') is-invalid @enderror" name="whatsapp" value="{{ old('whatsapp', $users->whatsapp ) }}" autocomplete="whatsapp">
+                                        @error('whatsapp')
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4 col-sm-4 col-xs-4"><p>No Telepon</p></div>
+                                    <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
+                                    <div class="col-md-7 col-sm-7 col-xs-7">
+                                        <input id="telepon" placeholder="No Telepon" type="text" class="form-control @error('telepon') is-invalid @enderror" name="telepon" value="{{ old('telepon', $users->telepon ) }}" autocomplete="telepon">
+                                        @error('telepon')
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                        @enderror
+                                    </div>
+                                </div>
+                            @endif
+                        @can('Edit DataKaryawan')
+                            <div class="row">
+                                <div class="col-md-4 col-sm-4 col-xs-4"><p>Cuti</p></div>
+                                <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
+                                <div class="col-md-7 col-sm-7 col-xs-7">
+                                    <input id="cuti" placeholder="Jatah Cuti" type="text" class="form-control @error('cuti') is-invalid @enderror" name="cuti" value="{{ old('cuti', $users->cuti ) }}" autocomplete="cuti">
+                                    @error('cuti')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                    @enderror
+                                </div>
+                            </div>
+                        @endcan
+                        <div class="d-flex justify-content-center my-3">
+                            <button type="submit" class="btn click-primary">Simpan</button>
+                        </div>
+                    </form>
             </div>
         </div>
     </div>
