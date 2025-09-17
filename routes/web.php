@@ -2,6 +2,17 @@
 
 use App\Http\Controllers\Api\RKMController;
 use App\Http\Controllers\approvedNetSalesController;
+use App\Http\Controllers\Crm\CatatanSalesController;
+use App\Http\Controllers\Crm\ContactController;
+use App\Http\Controllers\Crm\CRMController;
+use App\Http\Controllers\Crm\PicController;
+use App\Http\Controllers\Crm\AktivitasController;
+use App\Http\Controllers\Crm\MapController;
+use App\Http\Controllers\Crm\PeluangController;
+use App\Http\Controllers\Crm\RegisFormController;
+use App\Http\Controllers\Crm\salesPribadiController;
+use App\Http\Controllers\Crm\TargetAktivitas;
+use App\Http\Controllers\Crm\LaporanPenjualanController;
 use App\Http\Controllers\databasekpiContoller;
 use App\Http\Controllers\izinTigaJamController;
 use App\Http\Controllers\KelasAnalisisController;
@@ -11,6 +22,7 @@ use App\Http\Controllers\pengajuanKlaimController;
 use App\Http\Controllers\DashboardItsmController;
 use App\Models\izinTigaJam;
 use App\Http\Controllers\InventarisController;
+use App\Models\Contact;
 use App\Http\Controllers\laporanInsidentController;
 use App\Models\Inventaris;
 use Illuminate\Support\Facades\Route;
@@ -382,6 +394,81 @@ Route::get('/jumlah-permintaan-per-bulan', [DashboardItsmController::class, 'get
 Route::get('/permintaan-sering-diajukan', [DashboardItsmController::class, 'getPermintaanSeringDiajukan']);
 Route::get('/list-bulan', [DashboardItsmController::class, 'getListBulan']);
 
+Route::prefix('crm')->group(function () {
+    Route::get('/', [CRMController::class, 'index'])->name('CRM.index');
+    Route::get('/my-dashboard', [salesPribadiController::class, 'index'])->name('CRM.myDasboard');
+    Route::get('/profile', [CRMController::class, 'getProfile'])->middleware('auth')->name('crm.profile');
+
+    // Contact CRM
+    Route::get('/contact/index', [ContactController::class, 'index'])->name('index.contact');
+    Route::get('/contact/{id}/detail', [ContactController::class, 'detail'])->name('detail.contact');
+    Route::post('/contact/store', [ContactController::class, 'store'])->name('store.contact');
+    Route::delete('/contact/delete/{id}', [ContactController::class, 'delete'])->name('delete.contact');
+    Route::put('/contact/update/{id}', [ContactController::class, 'update'])->name('update.contact');
+    Route::get('/contact/data', [ContactController::class, 'getPerusahaan'])->name('contact.data');
+
+    // Peluang CRM
+    Route::get('/peluang/index', [PeluangController::class, 'index'])->name('index.peluang');
+    Route::get('/index/peluang', [PeluangController::class, 'indexJson'])->name('index.peluang.json');
+    Route::get('/peluang/detail/{id}', [PeluangController::class, 'detail'])->name('detail.peluang');
+    Route::post('/peluang/store', [PeluangController::class, 'store'])->name('store.peluang');
+    Route::delete('/peluang/delete/{id}', [PeluangController::class, 'delete'])->name('delete.peluang');
+    Route::put('/peluang/edit/{id}', [PeluangController::class, 'update'])->name('edit.peluang');
+    Route::put('/peluang/update/{id}', [PeluangController::class, 'updateTahap'])->name('update.tahap');
+    Route::get('/ambil/aktivitas/{id}', [PeluangController::class, 'AmbilAktivitas']);
+    Route::post('/peluang/paymentAdvance', [PeluangController::class, 'storePaymentAdvance'])->name('store.payment.advance');
+
+
+    // Aktivitas CRM
+    Route::get('/aktivitas', [AktivitasController::class, 'index'])->name('index.aktivitas');
+    Route::get('/index/aktivitas', [AktivitasController::class, 'indexJson'])->name('index.aktivitas.json');
+    Route::post('/aktivitas/store/new', [AktivitasController::class, 'storeNew'])->name('store.aktivitas.new');
+    Route::post('/aktivitas/store', [AktivitasController::class, 'store'])->name('store.aktivitas');
+    Route::delete('/aktivitas/delete/{id}', [AktivitasController::class, 'delete'])->name('delete.aktivitas');
+    Route::put('/aktivitas/update/{id}', [AktivitasController::class, 'update'])->name('update.aktivitas');
+    Route::get('/get-contacts-peserta/{id}', [AktivitasController::class, 'getContactsAndPeserta'])->name('get.contacts');
+
+
+    Route::get('/target/activity', [TargetAktivitas::class, 'index'])->name('index.target');
+    Route::post('/target/activity/store', [TargetAktivitas::class, 'store'])->name('index.target.store');
+    Route::put('/target/activity/{id}/update', [TargetAktivitas::class, 'update'])->name('index.target.update');
+    Route::delete('/target/activity/{id}/delete', [TargetAktivitas::class, 'delete'])->name('index.target.delete');
+
+    // Catatan Sales CRM
+    Route::post('/catatan/sales/store', [CatatanSalesController::class, 'store'])->name('store.catatan.sales');
+    Route::delete('/catatan/sales/delete/{id}', [CatatanSalesController::class, 'delete'])->name('delete.catatan.sales');
+    Route::put('/catatan/sales/update/{id}', [CatatanSalesController::class, 'update'])->name('update.catatan.sales');
+
+    // Closed Win
+    Route::get('/closed/win', [PeluangController::class, 'ringkasanPeluang'])->name('index.ringkasanPeluang');
+    Route::get('/detail/closed/win/{id}', [PeluangController::class, 'detailRingkasan'])->name('detail.ringkasanPeluang');
+    Route::get('/closed/lost', [PeluangController::class, 'ringkasanPeluanglost'])->name('index.ringkasanlost');
+    Route::get('/detail/closed/lost/{id}', [PeluangController::class, 'detailRingkasanlost'])->name('detail.Ringkasanlost');
+
+    // Surat Penawaran dan Registrasi
+    Route::get('/ketentuan', [RegisFormController::class, 'ketentuan'])->name('crm.ketentuan');
+    Route::post('/add/ketentuan', [RegisFormController::class, 'storeKetentuan'])->name('crm.store.ketentuan');
+    Route::post('/upload/regisform', [RegisFormController::class, 'upload'])->name('crm.upload.regis');
+    Route::put('/update/ketentuan/{id}', [RegisFormController::class, 'updateKetentuan'])->name('crm.update.ketentuan');
+    Route::delete('/delete/ketentuan/{id}', [RegisFormController::class, 'deleteKetentuan'])->name('crm.delete.ketentuan');
+    Route::get('/generate/regis/form/{id}', [RegisFormController::class, 'index'])->name('crm.index.regis');
+    Route::get('/generate/penawaran/form', [RegisFormController::class, 'indexPenawaran'])->name('crm.index.penawaran');
+
+    Route::get('/pic', [PicController::class, 'index'])->name('index.pic');
+    Route::get('/index/pic', [PicController::class, 'indexJson'])->name('index.json.pic');
+    Route::post('/pic/store', [PicController::class, 'store'])->name('store.pic');
+
+    // Lokasi
+    Route::get('lokasi', [MapController::class, 'index'])->name('crm.lokasi');
+    Route::post('lokasi/store', [MapController::class, 'store'])->name('crm.lokasi.store');
+    Route::put('lokasi/update', [MapController::class, 'update'])->name('crm.lokasi.update');
+    Route::delete('lokasi/delete/{id}', [MapController::class, 'delete'])->name('crm.lokasi.delete');
+
+    // Laporan Penjualan
+    Route::get('laporanPenjualan', [LaporanPenjualanController::class, 'index'])->name('crm.laporanPenjualan');
+
+});
+
 //INVOICE
 Route::get('/invoice', [InvoiceRKMController::class, 'index'])->name('invoice.index');
 Route::get('/invoice/create/{id}', [InvoiceRKMController::class, 'create'])->name('invoice.create');
@@ -402,3 +489,4 @@ Route::get('/laporan-insiden/detail/{id}', [laporanInsidentController::class, 'd
 Route::get('/laporan-insiden/edit/{id}', [laporanInsidentController::class, 'edit'])->name('edit.laporanInsiden');
 Route::get('/laporan-insiden/hapus/{id}', [laporanInsidentController::class, 'hapus'])->name('hapus.laporanInsiden');
 Route::post('/laporan-insiden/update', [laporanInsidentController::class, 'update'])->name('uodate.laporanInsiden');
+
