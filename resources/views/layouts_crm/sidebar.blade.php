@@ -47,7 +47,7 @@
                     </svg>
                 </span>
             </span>
-            <span class="app-brand-text demo menu-text fw-bold ms-2">INX - CRM</span>
+            <span class="app-brand-text demo menu-text fw-bold ms-2">INIX - CRM</span>
         </a>
 
         <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">

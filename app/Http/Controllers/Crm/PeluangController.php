@@ -460,21 +460,28 @@ class PeluangController extends Controller
         return view('crm.closedwin.index', compact('dataRingkasan', 'pengguna', 'tahunDipilih'));
     }
 
-    public function detailRingkasan($id)
+    public function detailRingkasan(Request $request, $id)
     {
-        $data = Peluang::where('id_sales', $id)
-            ->where('tahap', 'merah')
-            ->with([
-                'aktivitas',
-                'materiRelation',
-                'perusahaan',
-                'rkm'
-            ])
-            ->get();
+        $tahun = $request->input('tahun');   // ex: 2025
+        $bulan = $request->input('bulan');   // ex: 9 (September)
 
-        return view('crm.closedwin.detail', compact('data'));
+        $query = Peluang::where('id_sales', $id)
+            ->where('tahap', 'merah');
 
+        if ($tahun) {
+            $query->whereYear('periode_mulai', $tahun);
+        }
+
+        if ($bulan) {
+            $query->whereMonth('periode_mulai', $bulan);
+        }
+
+        // urutkan dari tanggal terkecil ke terbesar
+        $data = $query->orderBy('periode_mulai', 'asc')->get();
+
+        return view('crm.closedwin.detail', compact('data', 'tahun', 'bulan', 'id'));
     }
+
 
     public function ringkasanPeluanglost(Request $request)
     {

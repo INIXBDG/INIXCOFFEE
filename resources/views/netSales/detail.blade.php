@@ -260,12 +260,12 @@
                                         <div class="accordion-body">
                                             <table class="table table-striped">
                                                 <tbody>
+                                                    <tr><th>Harga Penawaran</th><td>${formatRupiah(data.harga_penawaran)}</td></tr>
                                                     <tr><th>Transportasi</th><td>${formatRupiah(data.transportasi)}</td></tr>
                                                     <tr><th>Penginapan</th><td>${formatRupiah(data.penginapan)}</td></tr>
                                                     <tr><th>Fresh Money</th><td>${formatRupiah(data.fresh_money)}</td></tr>
                                                     <tr><th>Entertaint</th><td>${formatRupiah(data.entertaint)}</td></tr>
                                                     <tr><th>Souvenir</th><td>${formatRupiah(data.souvenir)}</td></tr>
-                                                    <tr><th>Harga Penawaran</th><td>${formatRupiah(data.harga_penawaran)}</td></tr>
                                                     <tr><th>Total Payment Advance</th><td>${formatRupiah(data.totalPa)}</td></tr>
                                                     <tr><th>Diskon</th><td>${formatRupiah(data.diskon)}</td></tr>
                                                     <tr><th>Cashback</th><td>${formatRupiah(data.cashback)}</td></tr>
