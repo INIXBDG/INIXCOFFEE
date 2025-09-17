@@ -45,11 +45,11 @@
                                 <thead class="table-primary text-center">
                                     <tr>
                                         <th>Materi</th>
-                                        <th>Harga</th>
+                                        <th>Harga Penawaran</th>
                                         <th>Netsales</th>
                                         <th>Periode</th>
                                         <th>Pax</th>
-                                        <th>Final</th>
+                                        <th>Total</th>
                                         <th>Sales</th>
                                         <th>Perusahaan / PIC</th>
                                         <th>Aksi</th>
@@ -68,8 +68,8 @@
                                             </td>
                                             <td>{{ $peluang->pax }}</td>
                                             <td>
-                                                @if (!is_null($peluang->final))
-                                                    Rp {{ number_format($peluang->final, 0, ',', '.') }}
+                                                @if (!is_null($peluang->netsales) && !is_null($peluang->pax))
+                                                    Rp {{ number_format($peluang->netsales * $peluang->pax, 0, ',', '.') }}
                                                 @else
                                                     -
                                                 @endif

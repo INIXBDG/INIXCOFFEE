@@ -15,7 +15,7 @@
                             class="btn btn-primary"
                             data-bs-toggle="modal"
                             data-bs-target="#paymentAdvanceModal"
-                            @if ($peluang->tahap !== 'merah' || !empty($peluang->netsales)) disabled @endif>
+                            @if ($peluang->tahap !== 'merah' || $regisuser->isEmpty()) disabled @endif>
                         <i class="menu-icon bx bx-plus"></i> Payment Advance
                     </button>
                     @if ($isLost)
@@ -67,7 +67,7 @@
                                 <dt class="col-sm-4">Catatan</dt>
                                 <dd class="col-sm-8">{{ $peluang->catatan ?? '-' }}</dd>
 
-                                <dt class="col-sm-4">Harga</dt>
+                                <dt class="col-sm-4">Harga Penawaran</dt>
                                 <dd class="col-sm-8">Rp {{ number_format($peluang->harga, 2, ',', '.') }}</dd>
 
                                 <dt class="col-sm-4">Net Sales</dt>
@@ -432,13 +432,11 @@
 
                             <!-- Input Harga Final hanya muncul jika tahap = Merah -->
                             <div class="mb-3 d-none" id="input-close-win">
-                                <label for="close_win_display" class="form-label">Harga Final (Menang)</label>
+                                <label for="close_win_display" class="form-label">Harga Final per orang</label>
                                 <div class="input-group">
                                     <span class="input-group-text">Rp</span>
-                                    <!-- Input tampilan -->
                                     <input type="text" class="form-control" id="close_win_display"
                                         placeholder="Masukkan harga final">
-                                    <!-- Input hidden untuk dikirim -->
                                     <input type="hidden" name="final" id="close_win">
                                 </div>
                             </div>
@@ -484,11 +482,10 @@
                                     @endforeach
                                 </select>
                             </div>
-
                             <div class="mb-3">
                                 <label for="hargaPenawaran" class="form-label">Harga Penawaran</label>
-                                <input type="text" class="form-control rupiah" id="hargaPenawaran"
-                                    name="hargaPenawaran">
+                                <input type="text" class="form-control rupiah" id="hargaPenawaran" name="hargaPenawaran"
+                                    value="Rp {{ number_format($peluang->harga, 0, ',', '.') }}" readonly>
                             </div>
                             <div class="mb-3">
                                 <label for="transportasi" class="form-label">Transportasi</label>
@@ -503,20 +500,20 @@
                                 <input type="text" class="form-control rupiah" id="freshMoney" name="freshMoney">
                             </div>
                             <div class="mb-3">
-                                <label for="cashback" class="form-label">Cashback</label>
-                                <input type="text" class="form-control rupiah" id="cashback" name="cashback">
-                            </div>
-                            <div class="mb-3">
-                                <label for="diskon" class="form-label">Diskon</label>
-                                <input type="text" class="form-control rupiah" id="diskon" name="diskon">
-                            </div>
-                            <div class="mb-3">
                                 <label for="entertaint" class="form-label">Entertaint</label>
                                 <input type="text" class="form-control rupiah" id="entertaint" name="entertaint">
                             </div>
                             <div class="mb-3">
                                 <label for="souvenir" class="form-label">Souvenir</label>
                                 <input type="text" class="form-control rupiah" id="souvenir" name="souvenir">
+                            </div>
+                            <div class="mb-3">
+                                <label for="cashback" class="form-label">Cashback</label>
+                                <input type="text" class="form-control rupiah" id="cashback" name="cashback">
+                            </div>
+                            <div class="mb-3">
+                                <label for="diskon" class="form-label">Diskon</label>
+                                <input type="text" class="form-control rupiah" id="diskon" name="diskon">
                             </div>
                             <div class="mb-3">
                                 <label for="desc" class="form-label">Description</label>

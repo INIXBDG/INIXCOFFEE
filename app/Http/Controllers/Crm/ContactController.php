@@ -17,40 +17,6 @@ use Illuminate\Support\Facades\Auth;
 
 class ContactController extends Controller
 {
-
-    // public function index()
-    // {
-    //     $user = Auth::user();
-    //     $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'SPV Sales'];
-
-    //     if ($user->jabatan === 'Sales') {
-    //         $idSales = $user->id_sales;
-    //         $data = Perusahaan::where('sales_key', $idSales)->get();
-    //         $perusahaan = Perusahaan::where('sales_key', $user->id_sales)->get();
-    //     } elseif (in_array($user->jabatan, $allowedJabatan)) {
-    //         $data = Perusahaan::all();
-    //         $perusahaan = Perusahaan::all();
-    //     } else {
-    //         abort(403, 'Anda tidak memiliki akses ke halaman ini.');
-    //     }
-
-    //     $kelasTerakhir = [];
-    //     $aktivitasTerakhir = [];
-
-    //     foreach ($data as $item) {
-    //         $kelasTerakhir[$item->id] = RKM::where('perusahaan_key', $item->id)
-    //             ->latest()
-    //             ->with('materi')
-    //             ->first();
-
-    //         $aktivitasTerakhir[$item->id] = Aktivitas::where('id_contact', $item->id)
-    //             ->latest()
-    //             ->first();
-    //     }
-
-    //     return view('crm.contact.index', compact('data', 'perusahaan', 'kelasTerakhir', 'aktivitasTerakhir'));
-    // }
-
     public function index()
     {
         $lokasi = lokasi::all();
