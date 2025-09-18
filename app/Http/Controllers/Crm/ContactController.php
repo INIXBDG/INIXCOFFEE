@@ -26,7 +26,7 @@ class ContactController extends Controller
     public function getPerusahaan(Request $request)
     {
         $user = Auth::user();
-        $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur'];
+        $allowedJabatan = ['Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur'];
 
         if ($user->jabatan === 'Sales') {
             $idSales = $user->id_sales;

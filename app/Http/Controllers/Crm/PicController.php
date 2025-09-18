@@ -17,7 +17,7 @@ class PicController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur'];
+        $allowedJabatan = ['Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur'];
         // dd($user);
         if ($user->jabatan === 'Sales') {
             $salesKey = $user->id_sales;
@@ -36,7 +36,7 @@ class PicController extends Controller
     {
         try {
             $user = Auth::user();
-            $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur'];
+            $allowedJabatan = ['Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur'];
 
             Log::debug('User Jabatan: ' . ($user->jabatan ?? 'unknown'));
 
@@ -139,6 +139,7 @@ class PicController extends Controller
                         ->orWhereRaw('LOWER(email) LIKE ?', ["%{$searchValueLower}%"])
                         ->orWhereRaw('LOWER(cp) LIKE ?', ["%{$searchValueLower}%"])
                         ->orWhereRaw('LOWER(nama_perusahaan) LIKE ?', ["%{$searchValueLower}%"])
+                        ->orWhereRaw('LOWER(sales_key) LIKE ?', ["%{$searchValueLower}%"])
                         ->orWhereRaw('LOWER(status_text) LIKE ?', ["%{$searchValueLower}%"]);
                 });
             }

@@ -21,7 +21,6 @@ class salesPribadiController extends Controller
     {
 
         $user = Auth::user();
-        $allowedUser = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur'];
 
         if ($user->jabatan === 'Sales') {
 

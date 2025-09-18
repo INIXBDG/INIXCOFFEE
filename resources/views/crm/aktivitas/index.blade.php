@@ -2,7 +2,7 @@
 
 @section('crm_contents')
     @php
-        $allowedUser = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
+        $allowedUser = ['Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
     @endphp
     <div class="content-wrapper">
         <div class="container-xxl flex-grow-1 container-p-y">
@@ -23,6 +23,7 @@
                             <thead class="table-primary">
                                 <tr>
                                     <th>Client</th>
+                                    <th>Sales</th>
                                     <th style="text-align: center;">Jenis Aktivitas</th>
                                     <th style="text-align: center;">Subjek</th>
                                     <th>Deskripsi</th>
@@ -214,6 +215,9 @@
                 },
                 columns: [{
                         data: 'kontak'
+                    },
+                    {
+                        data: 'id_sales'
                     },
                     {
                         data: 'aktivitas'
