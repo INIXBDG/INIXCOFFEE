@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Log;
 use App\Notifications\NetSalesNotification;
 use Illuminate\Support\Facades\Notification;
 
-class approvedNetSalesController extends Controller
+class ApprovedNetSalesController extends Controller
 {
     public function approve(Request $request)
     {

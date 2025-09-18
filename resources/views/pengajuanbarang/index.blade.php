@@ -328,7 +328,6 @@
     }
 });
 
-<<<<<<< HEAD
 function tableKaryawan() {
     var tahun = $('#tahun').val();
 
@@ -414,74 +413,10 @@ function tableKaryawan() {
                 render: function (data) {
                     if (data && Array.isArray(data)) {
                         const total = data.reduce((sum, item) => sum + (item.harga * item.qty), 0);
-=======
-function tableKaryawan(){
-    var tahun = $('#tahun').val();
-
-    $('#barangTable').DataTable({
-    autoWidth: false,
-    "ajax": {
-        url: "{{ route('getPengajuanBarang', ['month' => ':month', 'year' => ':year'] ) }}".replace(':month', 'All').replace(':year', tahun),
-        "type": "GET",
-        "beforeSend": function () {
-            $('#loadingModal').modal('show');
-            $('#loadingModal').on('show.bs.modal', function () {
-                $('#loadingModal').removeAttr('inert');
-            });
-        },
-        "complete": function () {
-            setTimeout(() => {
-                $('#loadingModal').modal('hide');
-                $('#loadingModal').on('hidden.bs.modal', function () {
-                    $('#loadingModal').attr('inert', true);
-                });
-            }, 1000);
-        }
-    },
-    "columns": [
-        {
-            "data": "created_at",
-            "visible": false,
-            "render": function(data, type, row) {
-                    var tanggalAwal = moment(data).format('YYYY-MM-DD');
-                    return tanggalAwal;
-                }
-        },
-        {
-            "data": "created_at",
-            "render": function(data, type, row) {
-                    moment.locale('id');
-                    var tanggalAwal = moment(data).format('dddd, DD MMMM YYYY');
-                    return tanggalAwal;
-                }
-        },
-        {"data": "karyawan.nama_lengkap"},
-        {"data": "karyawan.divisi"},
-        {"data": "karyawan.jabatan", "visible": false},
-        {"data": "tipe"},
-        {"data": "tracking.tracking"},
-        {
-            "data": "detail",
-            "render": function (data, type, row) {
-                if (data && Array.isArray(data)) {
-                    return data.map(item => item.nama_barang).join('<hr style="margin: 4px 0; border: 1px solid black">');
-                }
-                return '-';
-            }
-        },
-
-        {
-            "data": "detail",
-            "render": function (data, type, row) {
-                if (data && Array.isArray(data)) {
-                    return data.map(item => {
-                        let total = item.harga * item.qty;
->>>>>>> 1b16b0915417b914bb03ff291c20d9b95894c711
                         return new Intl.NumberFormat('id-ID', {
                             style: 'currency',
                             currency: 'IDR'
                         }).format(total);
-<<<<<<< HEAD
                     }
                     return '-';
                 }
@@ -580,107 +515,6 @@ function tableKaryawan(){
     });
 }
 
-=======
-                    }).join('<hr style="margin: 4px 0; border: 1px solid black">');
-                }
-                return '-';
-            }
-        },
-
-        {
-            "data": "detail",
-            "render": function (data) {
-                if (data && Array.isArray(data)) {
-                    const total = data.reduce((sum, item) => sum + (item.harga * item.qty), 0);
-                    return new Intl.NumberFormat('id-ID', {
-                        style: 'currency',
-                        currency: 'IDR'
-                    }).format(total);
-                }
-                return '-';
-            }
-        },
-
-        {
-            "data": null,
-            "render": function(data, type, row) {
-                var actions = "";
-                var allowedRoles = ['Office Manager', 'Education Manager', 'SPV Sales', 'GM', 'Koordinator Office', 'Finance & Accounting', 'Koordinator ITSM'];
-                var userRole = '{{ auth()->user()->jabatan}}';
-                var requesterRole = data.karyawan.jabatan;
-                var userKaryawanId = {{ auth()->user()->karyawan_id }};
-                var trackingStatus = data.tracking.tracking;
-                var karyawanId = data.karyawan.id;
-
-                // Fungsi untuk menambahkan tombol dengan kondisi
-                function addButton(label, url, condition, icon) {
-                    if (condition) {
-                        actions += `<a href="${url}" class="dropdown-item"><img src="{{ asset('${icon}') }}" class=""> ${label}</a>`;
-                    } else {
-                        actions += `<button type="button" class="dropdown-item disabled"><img src="{{ asset('${icon}') }}" class=""> ${label}</button>`;
-                    }
-                }
-
-                // Tambahkan dropdown actions
-                actions += '<div class="dropdown">';
-                actions += '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
-                actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
-
-                // Tambahkan tombol Approve jika peran pengguna diizinkan
-                if (allowedRoles.includes(userRole)) {
-                    if (userRole == 'GM' && ['Sudah Disetujui dan Sedang Ditinjau oleh General Manager', 'Telah Disetujui oleh SPV Sales dan Sedang Ditinjau oleh General Manager', 'Diajukan dan Sedang Ditinjau oleh General Manager'].includes(trackingStatus)) {
-                        actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Approve</button>';
-                    } else if (userRole == 'Education Manager' && trackingStatus == 'Diajukan dan Sedang Ditinjau oleh Education Manager') {
-                        actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Approve</button>';
-                    } else if (userRole == 'Koordinator ITSM' && trackingStatus == 'Diajukan dan Sedang Ditinjau oleh Koordinator IT Service Management') {
-                        actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Approve</button>';
-                    } else if (userRole == 'SPV Sales' && trackingStatus == 'Diajukan dan Sedang Ditinjau oleh SPV Sales') {
-                        actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Approve</button>';
-                    } else if (userRole == 'Finance & Accounting' && (trackingStatus.includes('Finance') || trackingStatus.includes('Permintaan') || trackingStatus.includes('proses'))) {
-                        actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Approve</button>';
-                    } else {
-                        actions += '<button type="button" class="dropdown-item disabled"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Approve</button>';
-                    }
-                }
-
-                // Tambahkan tombol Upload Invoice dengan kondisi
-                if (trackingStatus) {
-                    var uploadInvoiceUrl = "{{ url('/pengajuanbarang/uploadinvoice') }}/" + row.id;
-                    var uploadInvoiceIcon = 'icon/clipboard-primary.svg';
-                    var uploadInvoiceLabel = 'Upload Invoice';
-                    var uploadInvoiceCondition = userKaryawanId === karyawanId;
-
-                    addButton(uploadInvoiceLabel, uploadInvoiceUrl, uploadInvoiceCondition, uploadInvoiceIcon);
-                }
-
-                // Tambahkan tombol Detail
-                var detailUrl = "{{ url('/pengajuanbarang') }}/" + row.id;
-                var detailIcon = 'icon/clipboard-primary.svg';
-                var detailLabel = 'Detail';
-                var detailCondition = true; // Selalu enabled
-
-                addButton(detailLabel, detailUrl, detailCondition, detailIcon);
-                if(!trackingStatus.includes('Finance')){
-                    actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/pengajuanbarang') }}/' + row.id + '" method="POST">';
-                    actions += '@csrf';
-                    actions += '@method('DELETE')';
-                    actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
-                    actions += '</form>';
-                    actions += '</div>';
-                    actions += '</div>';
-                }
-                actions += '</div>';
-                actions += '</div>';
-
-                return actions;
-            }
-        }
-    ],
-    "order": [[0, 'desc']], // Ubah urutan menjadi descending untuk kolom ke-6
-    "columnDefs" : [{"targets":[0], "type":"date"}],
-});
-};
->>>>>>> 1b16b0915417b914bb03ff291c20d9b95894c711
 function tableFinance(){
     // Get current page for both tables before destroying
     var currentPageBelum = 0;
@@ -752,21 +586,6 @@ var dataBelum = data.data.filter(item =>
                                 moment.locale('id');
                                 var tanggalAwal = moment(data).format('dddd, DD MMMM YYYY');
                                 return tanggalAwal;
-<<<<<<< HEAD
-                            }
-                    },
-                    {"data": "karyawan.nama_lengkap"},
-                    {"data": "karyawan.divisi"},
-                    {"data": "karyawan.jabatan", "visible": false},
-                    {"data": "tipe"},
-                    {"data": "tracking.tracking"},
-                    {
-                        "data": "detail",
-                        "render": function (data, type, row) {
-                            if (data && Array.isArray(data)) {
-                                return data.map(item => item.nama_barang).join('<hr style="margin: 4px 0; border: 1px solid black">');
-                            }
-=======
                             }
                     },
                     {"data": "karyawan.nama_lengkap"},
@@ -878,106 +697,6 @@ var dataBelum = data.data.filter(item =>
                             if (data && Array.isArray(data)) {
                                 return data.map(item => item.nama_barang).join('<hr style="margin: 4px 0; border: 1px solid black">');
                             }
->>>>>>> 1b16b0915417b914bb03ff291c20d9b95894c711
-                            return '-';
-                        }
-                    },
-
-                    {
-                        "data": "detail",
-                        "render": function (data, type, row) {
-                            if (data && Array.isArray(data)) {
-                                return data.map(item => {
-                                    let total = item.harga * item.qty;
-                                    return new Intl.NumberFormat('id-ID', {
-                                        style: 'currency',
-                                        currency: 'IDR'
-                                    }).format(total);
-                                }).join('<hr style="margin: 4px 0; border: 1px solid black">');
-                            }
-                            return '-';
-                        }
-                    },
-
-                    {
-                        "data": "detail",
-                        "render": function (data) {
-                            if (data && Array.isArray(data)) {
-                                const total = data.reduce((sum, item) => sum + (item.harga * item.qty), 0);
-                                return new Intl.NumberFormat('id-ID', {
-                                    style: 'currency',
-                                    currency: 'IDR'
-                                }).format(total);
-                            }
-                            return '-';
-                        }
-                    },
-                    {
-                        "data": null,
-                        "render": function(data, type, row) {
-                            var actions = "";
-<<<<<<< HEAD
-                            actions += '<div class="dropdown">';
-                            actions += '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
-                            actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
-                            actions += '<a class="dropdown-item" disabled href="{{ url('/pengajuanbarang') }}/' + row.id + '" data-toggle="tooltip" data-placement="top" title="Detail User"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Detail</a>';
-                            actions += '<a class="dropdown-item" disabled href="{{ url('/pengajuanbarang/uploadinvoice') }}/' + row.id + '" data-toggle="tooltip" data-placement="top" title="Detail User"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Upload Invoice</a>';
-                            actions += '</div>'
-                            actions += '</div>'
-                            return actions;
-                        },
-                    },
-                ],
-                "order": [[0, 'desc']],
-                "columnDefs" : [{"targets":[0], "type":"date"}],
-                "drawCallback": function(settings) {
-                    var api = this.api();
-                    var formattedHarga = new Intl.NumberFormat('id-ID', {
-                        style: 'currency',
-                        currency: 'IDR'
-                    }).format(totalHargaSelesai);
-                    var footerHtml = `
-                        <tr>
-                            <th colspan="6" style="text-align: left;">
-                                Total Pengajuan: ${totalItemsSelesai}
-                            </th>
-                            <th colspan="4" style="text-align: left;">
-                                Total Harga Pengajuan: ${formattedHarga}
-                            </th>
-                        </tr>
-                    `;
-                    $('#datasudah tfoot').html(footerHtml);
-                }
-            });
-
-            // Set page for datasudah table
-            if (currentPageSudah > 0) {
-                datasudahTable.page(currentPageSudah).draw('page');
-            }
-
-            // Initialize databelum table
-            var databelumTable = $('#databelum').DataTable({
-                data: dataBelum,
-                "columns": [
-                    {
-                        "data": "created_at",
-                        "render": function(data, type, row) {
-                                moment.locale('id');
-                                var tanggalAwal = moment(data).format('dddd, DD MMMM YYYY');
-                                return tanggalAwal;
-                            }
-                    },
-                    {"data": "karyawan.nama_lengkap"},
-                    {"data": "karyawan.divisi"},
-                    {"data": "karyawan.jabatan", "visible": false},
-                    {"data": "tipe"},
-                    {"data": "tracking.tracking"},
-                    {
-                        "data": "detail",
-                        "render": function (data, type, row) {
-                            if (data && Array.isArray(data)) {
-                                return data.map(item => item.nama_barang).join('<hr style="margin: 4px 0; border: 1px solid black">');
-                            }
                             return '-';
                         }
                     },
@@ -1022,15 +741,6 @@ var dataBelum = data.data.filter(item =>
                             var trackingStatus = data.tracking.tracking;
                             var karyawanId = data.karyawan.id;
 
-=======
-                            var allowedRoles = ['Office Manager', 'Education Manager', 'SPV Sales', 'GM', 'Koordinator Office', 'Finance & Accounting', 'Koordinator ITSM'];
-                            var userRole = '{{ auth()->user()->jabatan}}';
-                            var requesterRole = data.karyawan.jabatan;
-                            var userKaryawanId = {{ auth()->user()->karyawan_id }};
-                            var trackingStatus = data.tracking.tracking;
-                            var karyawanId = data.karyawan.id;
-
->>>>>>> 1b16b0915417b914bb03ff291c20d9b95894c711
                             function addButton(label, url, condition, icon) {
                                 if (condition) {
                                     actions += `<a href="${url}" class="dropdown-item"><img src="{{ asset('${icon}') }}" class=""> ${label}</a>`;
@@ -1203,18 +913,13 @@ $('#approveForm').on('submit', function(e) {
     e.preventDefault();
     let form = $(this);
     let actionUrl = form.attr('action');
-<<<<<<< HEAD
     $('#loadingModal').modal('show'); // tampilkan loading modal
-=======
-    $('#loadingModal').modal('show'); // Tampilkan loading modal
->>>>>>> 1b16b0915417b914bb03ff291c20d9b95894c711
 
     $.ajax({
         url: actionUrl,
         type: 'POST',
         data: form.serialize(),
         success: function(res) {
-<<<<<<< HEAD
             $('#loadingModal').modal('hide'); 
             $('#approveModal').modal('hide'); 
 
@@ -1238,35 +943,6 @@ $('#approveForm').on('submit', function(e) {
         error: function(err) {
             $('#loadingModal').modal('hide'); 
             alert('Gagal menyimpan data, silakan coba lagi.');
-=======
-            $('#loadingModal').modal('hide'); // Sembunyikan loading modal
-            $('#approveModal').modal('hide'); // Sembunyikan modal approve
-
-  
-            var currentPageBelum = $('#databelum').DataTable().page();
-            var currentPageSudah = $('#datasudah').DataTable().page();
-
-            // Refresh tabel
-            tableFinance().then(function() {
-                // Kembalikan ke halaman sebelumnya
-                $('#databelum').DataTable().page(currentPageBelum).draw('page');
-                $('#datasudah').DataTable().page(currentPageSudah).draw('page');
-            });
-
-            Swal.fire({
-                icon: 'success',
-                title: 'Success',
-                text: res.message || 'Pengajuan berhasil disetujui'
-            });
-        },
-        error: function(err) {
-            $('#loadingModal').modal('hide'); 
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: err.responseJSON?.message || 'Gagal menyimpan'
-            });
->>>>>>> 1b16b0915417b914bb03ff291c20d9b95894c711
         }
     });
 });

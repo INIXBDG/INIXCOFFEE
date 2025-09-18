@@ -1162,7 +1162,6 @@ class RKMController extends Controller
         'message' => 'Makanan berhasil diperbarui'
     ]);
 }
-
 public function getRKM($tahun, $bulan)
 {
     $query = RKM::with(['materi', 'perusahaan', 'sales']) // relasi yang dipake di blade
@@ -1181,8 +1180,6 @@ public function getRKM($tahun, $bulan)
         'data' => $data
     ]);
 }
-
-
 
 
 

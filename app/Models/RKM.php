@@ -115,5 +115,7 @@ class RKM extends Model
     {
         return $this->hasMany(Kwitansi::class, 'id_rkm');
     }
+    
+
 
 }

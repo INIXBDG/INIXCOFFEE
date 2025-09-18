@@ -62,49 +62,6 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-12">
-            <div class="card" style="width: 100%">
-                <div class="card-body d-flex justify-content-center">
-                    <div class="col-md-4 mx-1">
-                        <label for="tahun" class="form-label">Tahun</label>
-                        <select id="tahun" class="form-select" aria-label="tahun">
-                            <option disabled>Pilih Tahun</option>
-                            @php
-                            $tahun_sekarang = now()->year;
-                            for ($tahun = 2020; $tahun <= $tahun_sekarang + 2; $tahun++) {
-                                $selected = $tahun == $tahun_sekarang ? 'selected' : '';
-                                echo "<option value=\"$tahun\" $selected>$tahun</option>";
-                            }
-                            @endphp
-                        </select>
-                    </div>
-                    <div class="col-md-4 mx-1">
-                        <label for="bulan" class="form-label">Bulan</label>
-                        <select id="bulan" class="form-select" aria-label="bulan">
-                            <option disabled>Pilih Bulan</option>
-                            @php
-                            $bulan_sekarang = now()->month;
-                            $nama_bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-                            for ($bulan = 1; $bulan <= 12; $bulan++) {
-                                $bulan_awal = $nama_bulan[$bulan - 1];
-                                $bulan_akhir = $nama_bulan[$bulan % 12];
-                                $selected = $bulan == $bulan_sekarang ? 'selected' : '';
-                                echo "<option value=\"$bulan\" $selected>$bulan_awal - $bulan_akhir</option>";
-                            }
-                            @endphp
-                        </select>
-                    </div>
-                    <div class="col-md-4 mx-1">
-                        <button type="submit" onclick="getDataRKM()" class="btn click-primary" style="margin-top: 30px; height: 37px;">Cari Data</button>
-                        <button type="submit" onclick="excelDownload()" class="btn btn-success" style="margin-top: 30px">Download excel</button>
-                    </div>
-                </div>
-            </div>
-            <div class="row my-2">
-                <div class="col-md-12" id="content">
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 <style>
@@ -124,23 +81,8 @@
         border-top-color: #000;
         animation: spin 1s ease-in-out infinite;
         -webkit-animation: spin 1s ease-in-out infinite;
-        position: relative;
-        text-align: center;
-        margin: 15px auto 35px auto;
-        z-index: 9999;
-        display: block;
-        width: 80px;
-        height: 80px;
-        border: 10px solid rgba(0, 0, 0, .3);
-        border-radius: 50%;
-        border-top-color: #000;
-        animation: spin 1s ease-in-out infinite;
-        -webkit-animation: spin 1s ease-in-out infinite;
     }
     @keyframes spin {
-        to {
-            -webkit-transform: rotate(360deg);
-        }
         to {
             -webkit-transform: rotate(360deg);
         }
@@ -149,49 +91,15 @@
         to {
             -webkit-transform: rotate(360deg);
         }
-        to {
-            -webkit-transform: rotate(360deg);
-        }
     }
     .modal-content {
-        border-radius: 0px;
-        box-shadow: 0 0 20px 8px rgba(0, 0, 0, 0.7);
         border-radius: 0px;
         box-shadow: 0 0 20px 8px rgba(0, 0, 0, 0.7);
     }
     .modal-backdrop.show {
         opacity: 0.75;
-        opacity: 0.75;
     }
     .loader-txt {
-        p {
-            font-size: 13px;
-            color: #666;
-            small {
-                font-size: 11.5px;
-                color: #999;
-            }
-        }
-    }
-.dropdown-submenu {
-    position: relative;
-}
-.dropdown-submenu .dropdown-menu {
-    top: 100%; /* Muncul di bawah */
-    left: 0; /* Align dengan induk */
-    margin-top: 1px; /* Jarak kecil dari induk */
-    display: none;
-}
-.dropdown-submenu:hover > .dropdown-menu {
-    display: block;
-}
-
-/* Opsional: Kalau mau di pinggir kiri */
-.dropdown-submenu.left .dropdown-menu {
-    top: 100%; /* Tetap di bawah */
-    right: 0; /* Muncul ke kiri */
-    left: auto; /* Override left */
-}
         p {
             font-size: 13px;
             color: #666;
@@ -293,22 +201,16 @@
             },
             success: function(response) {
                 var html = '';
-                var html = '';
                 var count = 1;
-                var jabatan = `{!! auth()->user()->jabatan !!}`.replace(/&amp;/g, "&").trim();
-
                 var jabatan = `{!! auth()->user()->jabatan !!}`.replace(/&amp;/g, "&").trim();
 
                 response.data.forEach(function(monthData) {
                     monthData.weeksData.forEach(function(weekData) {
                         var bulanKosong = moment(weekData.start).format('M');
-                        var bulanKosong = moment(weekData.start).format('M');
                         html += '<div class="card my-1">';
                         html += '<div class="card-body table-responsive">';
                         html += '<h3 class="card-title my-1">Rencana Kelas Mingguan</h3>';
                         moment.locale('id');
-                        var startOfWeek = moment(weekData.start);
-                        var endOfWeek = startOfWeek.clone().add(4, 'days');
                         var startOfWeek = moment(weekData.start);
                         var endOfWeek = startOfWeek.clone().add(4, 'days');
                         html += '<p class="card-title my-1">Periode : ' + moment(startOfWeek).format('DD MMMM YYYY') + ' - ' + moment(endOfWeek).format('DD MMMM YYYY') + '</p>';
@@ -322,23 +224,10 @@
                         html += '<th scope="col">Kode Sales</th>';
                         html += '<th scope="col">Instruktur</th>';
                         html += '<th scope="col">Exam</th>';
-                        html += '<th scope="col">Exam</th>';
                         html += '<th scope="col">Metode Kelas</th>';
                         html += '<th scope="col">Event</th>';
                         html += '<th scope="col">Ruang</th>';
                         html += '<th scope="col">Pax</th>';
-                        if(jabatan == 'Customer Care'){
-                        html += '<th scope="col">Makanan</th>';
-                        } // Tambah kolom Makanan di sini
-                        if (
-                            jabatan == 'SPV Sales' || jabatan == 'GM' || jabatan == 'Sales' ||
-                            jabatan == 'Adm Sales' || jabatan == 'Education Manager' || jabatan == 'Instruktur' ||
-                            jabatan == 'Direktur' || jabatan == 'Office Manager' || jabatan == 'Customer Care' ||
-                            jabatan == 'Tim Digital' || jabatan == 'Admin Holding' || jabatan == 'Technical Support' ||
-                            jabatan === 'Direktur Utama' || jabatan === 'Direktur' || jabatan === 'HRD' ||
-                            jabatan === 'Koordinator Office' || jabatan === 'Koordinator ITSM' ||
-                            jabatan == 'Finance & Accounting'
-                        ) {
                         if(jabatan == 'Customer Care'){
                         html += '<th scope="col">Makanan</th>';
                         } // Tambah kolom Makanan di sini
@@ -358,7 +247,6 @@
                         html += '<tbody>';
                         if (weekData.data.length === 0) {
                             html += '<tr>';
-                            html += '<td colspan="12" class="text-center">Tidak Ada Kelas Mingguan</td>';
                             html += '<td colspan="12" class="text-center">Tidak Ada Kelas Mingguan</td>';
                             html += '</tr>';
                         } else {
@@ -383,9 +271,6 @@
 
                                 html += '<td>' + (index + 1) + '</td>';
                                 html += '<td>' + rkm.materi.nama_materi + '</td>';
-                                if (rkm.tanggal_awal == rkm.tanggal_akhir) {
-                                    html += '<td>' + moment(rkm.tanggal_awal).format('DD MMMM YYYY') + '</td>';
-                                } else {
                                 if (rkm.tanggal_awal == rkm.tanggal_akhir) {
                                     html += '<td>' + moment(rkm.tanggal_awal).format('DD MMMM YYYY') + '</td>';
                                 } else {
@@ -416,19 +301,10 @@
                                     html += 'Ya';
                                 }
                                 html += '</td>';
-                                html += '<td>';
-                                if (rkm.exam == 0 || rkm.exam == '0') {
-                                    html += 'Tidak';
-                                } else {
-                                    html += 'Ya';
-                                }
-                                html += '</td>';
                                 html += '<td>' + rkm.metode_kelas + '</td>';
                                 html += '<td>' + rkm.event + '</td>';
                                 if (rkm.ruang == null || rkm.ruang == "-") {
-                                if (rkm.ruang == null || rkm.ruang == "-") {
                                     html += '<td>Belum Ditentukan</td>';
-                                } else {
                                 } else {
                                     html += '<td>' + rkm.ruang + '</td>';
                                 }
@@ -496,14 +372,7 @@
                 setTimeout(() => {
                     $('#loadingModal').modal('hide');
                     $('#content').html(html);
-                    $('#loadingModal').modal('hide');
-                    $('#content').html(html);
                 }, 1000);
-            },
-            error: function(xhr) {
-                console.error("Error fetching data:", xhr);
-                alert("Gagal memuat data. Silakan coba lagi.");
-                $('#loadingModal').modal('hide');
             },
             error: function(xhr) {
                 console.error("Error fetching data:", xhr);
@@ -513,29 +382,6 @@
         });
     }
 
-    $(document).on('click', '.js-update-makanan', function(e) {
-        e.preventDefault();
-        const id = $(this).data('id');
-        const val = $(this).data('val');
-        if (!confirm('Ubah pilihan makanan?')) return;
-
-        $.ajax({
-            url: '/rkm/update-makanan/' + id,
-            method: 'POST',
-            data: {
-                _token: $('meta[name="csrf-token"]').attr('content'),
-                makanan: val
-            },
-            success: function(res) {
-                alert(res.message || 'Makanan berhasil diperbarui!');
-                getDataRKM(); // Refresh data setelah update
-            },
-            error: function(xhr) {
-                console.error(xhr);
-                alert((xhr.responseJSON && xhr.responseJSON.message) || 'Gagal update makanan');
-            }
-        });
-    });
     $(document).on('click', '.js-update-makanan', function(e) {
         e.preventDefault();
         const id = $(this).data('id');
