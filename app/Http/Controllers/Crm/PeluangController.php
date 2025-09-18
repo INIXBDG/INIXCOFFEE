@@ -322,25 +322,27 @@ class PeluangController extends Controller
     {
         try {
             $peluang = Peluang::findOrFail($id);
+
             $rkm = RKM::where('id', $peluang->id_rkm)->first();
             if ($rkm) {
                 $rkm->delete();
             }
 
-            // hapus peluang
             $peluang->delete();
 
-            // hapus aktivitas terkait
             Aktivitas::where('id_peluang', $id)->delete();
 
-            return redirect()->route('index.peluang')
-                ->with('success', 'Peluang dan aktivitas terkait berhasil dihapus.');
+            return response()->json([
+                'success' => true,
+                'message' => 'Peluang dan aktivitas terkait berhasil dihapus.'
+            ]);
         } catch (\Exception $e) {
-            return redirect()->route('index.peluang')
-                ->with('error', 'Gagal menghapus peluang atau aktivitas terkait.');
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus peluang atau aktivitas terkait.'
+            ], 500);
         }
     }
-
 
     public function update(Request $request, $id)
     {
@@ -448,7 +450,7 @@ class PeluangController extends Controller
                 WHEN MONTH(merah) BETWEEN 7 AND 9 THEN "TR3"
                 WHEN MONTH(merah) BETWEEN 10 AND 12 THEN "TR4"
             END as triwulan'),
-                DB::raw('SUM(final) as total_jumlah'),
+                DB::raw('SUM(netsales * pax) as total_jumlah'),
             )
             ->groupBy('id_sales', 'triwulan')
             ->get()

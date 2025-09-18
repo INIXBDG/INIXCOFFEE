@@ -344,16 +344,16 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="harga" class="form-label">Harga</label>
+                                <label for="harga" class="form-label">Harga Penawaran</label>
                                 <input type="text" class="form-control editLead" id="harga" name="harga"
                                     value="{{ 'Rp ' . number_format($peluang->harga, 0, ',', '.') }}" required>
                             </div>
 
-                            <div class="mb-3">
+                            {{-- <div class="mb-3">
                                 <label for="netsales" class="form-label">Net Sales</label>
                                 <input type="text" class="form-control editLead" id="netsales" name="netsales"
                                     value="{{ 'Rp ' . number_format($peluang->netsales, 0, ',', '.') }}" required>
-                            </div>
+                            </div> --}}
 
                             <div class="mb-3">
                                 <label for="pax" class="form-label">Jumlah Peserta (Pax)</label>
@@ -432,9 +432,8 @@
 
                             <!-- Input Harga Final hanya muncul jika tahap = Merah -->
                             <div class="mb-3 d-none" id="input-close-win">
-                                <label for="close_win_display" class="form-label">Harga Final per orang</label>
+                                <label for="close_win_display" class="form-label">Harga Final (PAX)</label>
                                 <div class="input-group">
-                                    <span class="input-group-text">Rp</span>
                                     <input type="text" class="form-control" id="close_win_display"
                                         placeholder="Masukkan harga final">
                                     <input type="hidden" name="final" id="close_win">
@@ -546,7 +545,7 @@
         <!-- Modal Detail PA -->
         <div class="modal fade" id="detailPAModal" tabindex="-1" aria-labelledby="detailPAModalLabel"
             aria-hidden="true">
-            <div class="modal-dialog modal-fullscreen">
+            <div class="modal-dialog modal-xl">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="detailPAModalLabel">Detail Payment Advance</h5>
