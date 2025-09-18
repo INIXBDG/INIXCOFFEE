@@ -13,6 +13,7 @@ use App\Http\Controllers\Crm\RegisFormController;
 use App\Http\Controllers\Crm\salesPribadiController;
 use App\Http\Controllers\Crm\TargetAktivitas;
 use App\Http\Controllers\Crm\LaporanPenjualanController;
+use App\Http\Controllers\Crm\ImportPerusahaanAndContactController;
 use App\Http\Controllers\databasekpiContoller;
 use App\Http\Controllers\izinTigaJamController;
 use App\Http\Controllers\KelasAnalisisController;
@@ -466,6 +467,10 @@ Route::prefix('crm')->group(function () {
 
     // Laporan Penjualan
     Route::get('laporanPenjualan', [LaporanPenjualanController::class, 'index'])->name('crm.laporanPenjualan');
+
+    // Import Contact / Perusahaan
+    Route::post('/perusahaan/import/perusahaan', [ImportPerusahaanAndContactController::class, 'importPerusahaan'])->name('perusahaan.import');
+    Route::post('/perusahaan/import/contacts', [ImportPerusahaanAndContactController::class, 'importContacts'])->name('contact.import');
 
 });
 
