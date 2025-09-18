@@ -21,7 +21,7 @@ class CRMController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $allowedUser = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur'];
+        $allowedUser = ['Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur', 'Programmer'];
 
         if (in_array($user->jabatan, $allowedUser)) {
 
@@ -244,7 +244,7 @@ class CRMController extends Controller
                 'prospek',
                 'map',
             ));
-            
+
         } else {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }

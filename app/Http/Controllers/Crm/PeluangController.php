@@ -29,7 +29,7 @@ class PeluangController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur'];
+        $allowedJabatan = ['Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
         $materi = Materi::all();
         $aktivitas = Aktivitas::where('id_sales', $user->id_sales)->whereNull('id_peluang')->get();
 
@@ -51,13 +51,13 @@ class PeluangController extends Controller
     {
         try {
             $user = Auth::user();
-            $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM'];
+            $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'SPV Sales'];
 
             if ($user->jabatan === 'Sales') {
                 $idSales = $user->id_sales;
                 $data = Peluang::where('id_sales', $idSales)
                     ->with('materiRelation')
-                    ->select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap', 'created_at', 'id_rkm')
+                    ->select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap', 'created_at', 'id_rkm', 'id_sales')
                     ->orderBy('created_at','desc')
                     ->get()
                     ->map(function ($item) {
@@ -76,7 +76,7 @@ class PeluangController extends Controller
                         return $item;
                     });
             } elseif (in_array($user->jabatan, $allowedJabatan)) {
-                $data = Peluang::select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap', 'created_at', 'id_rkm')
+                $data = Peluang::select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap', 'created_at', 'id_rkm', 'id_sales')
                     ->with('materiRelation')
                     ->orderBy('created_at', 'desc')
                     ->get()
@@ -415,7 +415,7 @@ class PeluangController extends Controller
 
                 $peluang->final = $inputFinal;
 
-                $peluang->netsales = $inputFinal * $pax;
+                $peluang->netsales = $inputFinal;
 
                 $peluang->merah = $now;
                 $peluang->desc_lost = null;
