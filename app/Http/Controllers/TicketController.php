@@ -246,7 +246,21 @@ class TicketController extends Controller
                 $ticket->status,
             ]
         ];
-        $message = $this->updatedValues($spreadsheetId, $range, $values);
+        $data = $this->updatedValues($spreadsheetId, $range, $values);
+
+        $message = "Ticket Sedang Ditangani Oleh:\n"
+            . "Nama Karyawan: {$request->pic}\n"
+            . "Divisi: IT Service Management\n"
+            . "Penanganan: Sedang Diperbaiki/Dicek\n"
+            . "Waktu Response: {$tanggal_response} {$jam_response}\n"
+            . "Mohon tunggu. Terimakasih!";
+
+        $response = Http::withHeaders([
+            'Authorization' => 'eGKWto6VRxd93cPSf9JZ',
+        ])->post('https://api.fonnte.com/send', [
+            'target'  => '120363418574215044@g.us', // pakai Group ID
+            'message' => $message,
+        ]);
 
         return redirect()->route('tickets.index')->with('success', 'Tiket diterima.');
     }
@@ -279,8 +293,20 @@ class TicketController extends Controller
                 $ticket->tingkat_kesulitan,
             ]
         ];
-        $message = $this->updatedValues($spreadsheetId, $range, $values);
+        $data = $this->updatedValues($spreadsheetId, $range, $values);
+        $message = "Ticket Sudah Selesai:\n"
+            . "Nama Karyawan: {$ticket->nama_karyawan}\n"
+            . "Divisi: {$ticket->divisi}\n"
+            . "Detail Kendala: {$ticket->detail_kendala}\n"
+            . "Waktu Selesai: {$tanggal_selesai} {$jam_selesai}\n"
+            . "Terimakasih!";
 
+        $response = Http::withHeaders([
+            'Authorization' => 'eGKWto6VRxd93cPSf9JZ',
+        ])->post('https://api.fonnte.com/send', [
+            'target'  => '120363418574215044@g.us', // pakai Group ID
+            'message' => $message,
+        ]);
         return redirect()->route('tickets.index')->with('success', 'Tiket selesai.');
     }
 
@@ -312,11 +338,23 @@ class TicketController extends Controller
                 $ticket->kesulitan,
             ]
         ];
-        $message = $this->updatedValues($spreadsheetId, $range, $values);
+        $data = $this->updatedValues($spreadsheetId, $range, $values);
+        $message = "Ticket Terkendala:\n"
+            . "Nama Karyawan: {$ticket->nama_karyawan}\n"
+            . "Divisi: {$ticket->divisi}\n"
+            . "Detail Kendala: {$ticket->detail_kendala}\n"
+            . "Keterangan: {$request->keterangan}\n"
+            . "Waktu Selesai: {$tanggal_selesai} {$jam_selesai}\n"
+            . "Terimakasih!";
 
+        $response = Http::withHeaders([
+            'Authorization' => 'eGKWto6VRxd93cPSf9JZ',
+        ])->post('https://api.fonnte.com/send', [
+            'target'  => '120363418574215044@g.us', // pakai Group ID
+            'message' => $message,
+        ]);
         return redirect()->route('tickets.index')->with('success', 'Tiket ditandai sebagai terkendala.');
     }
-
     public function show(Tickets $ticket)
     {
         return view('ticket.detail', compact('ticket'));

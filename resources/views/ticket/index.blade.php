@@ -239,6 +239,7 @@
                     "data": null,
                     "render": function(data, type, row) {
                         var pic = "{{ auth()->user()->username }}";
+                        var divisi = "{{ auth()->user()->divisi }}";
                         switch(pic.toLowerCase()) {
                             case 'ardhan':
                                 pic = 'Ardhan';
@@ -275,11 +276,11 @@
                             actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
                             
                             // console.log(data);
-                            if(data.status == 'Di Proses'){
+                            if(data.status == 'Di Proses' && divisi == 'IT Service Management'){
                                 actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(\'' + data.id + '\', \'' + pic + '\', \'' + data.row + '\')"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Kelola Tiket</button>';
-                            }else if(data.status == 'Selesai' || data.status == 'Terkendala'){
+                            }else if(data.status == 'Selesai' && divisi == 'IT Service Management' || data.status == 'Terkendala' && divisi == 'IT Service Management'){
                                 actions += '<button type="submit" disabled class="dropdown-item"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Terima</button>';
-                            }else{
+                            }else if(divisi == 'IT Service Management'){
                                 actions += '<form onsubmit="return confirm(\'Anda akan menerima tiket ini ?\');" action="{{ url('/tickets') }}/' + row.id + '/accept" method="POST">';
                                 actions += '@csrf';
                                 actions += '<input type="hidden" name="pic" value="'+pic+'">';
