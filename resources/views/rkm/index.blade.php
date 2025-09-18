@@ -256,15 +256,19 @@
                                 var hunta = moment(rkm.tanggal_awal).format('Y');
                                 var kelas = (rkm.metode_kelas == 'Offline') ? 'off' :
                                             (rkm.metode_kelas == 'Inhouse Bandung') ? 'inhb' :
-                                            (rkm.metode_kelas == 'Inhouse Luar Bandung') ? 'inhlb' : 'vir';
+                                            (rkm.metode_kelas == 'Inhouse Luar Bandung') ? 'inhlb' :
+                                            (rkm.metode_kelas == 'Exam Only') ? 'exam' : 'vir';  // ✅ Fixed syntax
 
                                 if (rkm.status_all == '0') {
                                     html += '<tr style="background-color: rgba(255, 0, 0, 0.5); color: #fff">';
                                 } else if (rkm.status_all == '1') {
                                     html += '<tr style="background-color: rgba(0, 0, 255, 0.5); color: #fff">';
-                                } else {
+                                } else if (rkm.status_all == '2') {
                                     html += '<tr style="background-color: rgba(0, 0, 0, 0.5); color: #fff">';
+                                } else if (rkm.status_all == '3') {
+                                    html += '<tr style="background-color: rgba(0, 128, 0, 0.5); color: #fff">';
                                 }
+
                                 html += '<td>' + (index + 1) + '</td>';
                                 html += '<td>' + rkm.materi.nama_materi + '</td>';
                                 if (rkm.tanggal_awal == rkm.tanggal_akhir) {
@@ -306,6 +310,7 @@
                                 }
                                 html += '<td>' + rkm.total_pax + '</td>';
                                 html += '<td>';
+
                                 if (jabatan == 'Customer Care') {
                                 const makananValue = String(rkm.makanan).trim();
                                 if (makananValue === '0') {
@@ -321,40 +326,40 @@
 
                                 html += '</td>';
                                 
-if (
-    jabatan == 'SPV Sales' || jabatan == 'GM' || jabatan == 'Sales' ||
-    jabatan == 'Adm Sales' || jabatan == 'Education Manager' || jabatan == 'Instruktur' ||
-    jabatan == 'Office Manager' || jabatan == 'Customer Care' || jabatan == 'Tim Digital' ||
-    jabatan == 'Admin Holding' || jabatan == 'Technical Support' ||
-    jabatan === 'Direktur Utama' || jabatan === 'Direktur' || jabatan === 'HRD' ||
-    jabatan === 'Koordinator Office' || jabatan === 'Koordinator ITSM' ||
-    jabatan == 'Finance & Accounting'
-) {
-    html += '<td>';
-    html += '<div class="btn-group dropup">';
-    html += '<button type="button" class="btn dropdown-toggle text-white" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
-    html += 'Actions';
-    html += '</button>';
-    html += '<div class="dropdown-menu">';
-    html += '<a class="dropdown-item" href="/rkm/' + rkm.materi_key + 'ixb' + tanggal + 'ie' + hunta + 'ie' + lanbu + 'ixb' + kelas + '" data-toggle="tooltip" data-placement="top" title="Detail RKM">';
-    html += '<img src="{{ asset('icon/clipboard-primary.svg') }}" class="me-1"> Detail RKM</a>';
-    
-if (jabatan == 'Customer Care') {
-    html += '<div class="dropdown-divider"></div>';
-    html += '<div class="dropdown-item dropdown-submenu left">';  // Tambah class "left" di sini
-    html += '<a class="dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Makanan</a>';
-    html += '<div class="dropdown-menu">';
-    html += '<a class="dropdown-item js-update-makanan" href="#" data-id="' + rkm.id + '" data-val="0">' + (String(rkm.makanan).trim() === '0' ? '✔ ' : '') + 'Tidak Ada</a>';
-    html += '<a class="dropdown-item js-update-makanan" href="#" data-id="' + rkm.id + '" data-val="1">' + (String(rkm.makanan).trim() === '1' ? '✔ ' : '') + 'Nasi Box</a>';
-    html += '<a class="dropdown-item js-update-makanan" href="#" data-id="' + rkm.id + '" data-val="2">' + (String(rkm.makanan).trim() === '2' ? '✔ ' : '') + 'Prasmanan</a>';
-    html += '</div>';
-    html += '</div>';
-}
-    
-    html += '</div>';
-    html += '</div>';
-    html += '</td>';
-}
+                                if (
+                                    jabatan == 'SPV Sales' || jabatan == 'GM' || jabatan == 'Sales' ||
+                                    jabatan == 'Adm Sales' || jabatan == 'Education Manager' || jabatan == 'Instruktur' ||
+                                    jabatan == 'Office Manager' || jabatan == 'Customer Care' || jabatan == 'Tim Digital' ||
+                                    jabatan == 'Admin Holding' || jabatan == 'Technical Support' ||
+                                    jabatan === 'Direktur Utama' || jabatan === 'Direktur' || jabatan === 'HRD' ||
+                                    jabatan === 'Koordinator Office' || jabatan === 'Koordinator ITSM' ||
+                                    jabatan == 'Finance & Accounting'
+                                ) {
+                                    html += '<td>';
+                                    html += '<div class="btn-group dropup">';
+                                    html += '<button type="button" class="btn dropdown-toggle text-white" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
+                                    html += 'Actions';
+                                    html += '</button>';
+                                    html += '<div class="dropdown-menu">';
+                                    html += '<a class="dropdown-item" href="/rkm/' + rkm.materi_key + 'ixb' + tanggal + 'ie' + hunta + 'ie' + lanbu + 'ixb' + kelas + '" data-toggle="tooltip" data-placement="top" title="Detail RKM">';
+                                    html += '<img src="{{ asset('icon/clipboard-primary.svg') }}" class="me-1"> Detail RKM</a>';
+                                    
+                                if (jabatan == 'Customer Care') {
+                                    html += '<div class="dropdown-divider"></div>';
+                                    html += '<div class="dropdown-item dropdown-submenu left">';  // Tambah class "left" di sini
+                                    html += '<a class="dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Makanan</a>';
+                                    html += '<div class="dropdown-menu">';
+                                    html += '<a class="dropdown-item js-update-makanan" href="#" data-id="' + rkm.id + '" data-val="0">' + (String(rkm.makanan).trim() === '0' ? '✔ ' : '') + 'Tidak Ada</a>';
+                                    html += '<a class="dropdown-item js-update-makanan" href="#" data-id="' + rkm.id + '" data-val="1">' + (String(rkm.makanan).trim() === '1' ? '✔ ' : '') + 'Nasi Box</a>';
+                                    html += '<a class="dropdown-item js-update-makanan" href="#" data-id="' + rkm.id + '" data-val="2">' + (String(rkm.makanan).trim() === '2' ? '✔ ' : '') + 'Prasmanan</a>';
+                                    html += '</div>';
+                                    html += '</div>';
+                                }
+                                    
+                                    html += '</div>';
+                                    html += '</div>';
+                                    html += '</td>';
+                                }
                                 html += '</tr>';
                             });
                         }
