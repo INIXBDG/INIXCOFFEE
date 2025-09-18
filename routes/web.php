@@ -404,3 +404,4 @@ Route::post('/laporan-insiden/update', [laporanInsidentController::class, 'updat
 
 //management-kelas-offline
 Route::get('/management-kelas/get', [managementKelasController::class, 'get'])->name('managementKelas.get');
+Route::post('/management-kelas/store', [managementKelasController::class, 'store'])->name('managementKelas.store');
