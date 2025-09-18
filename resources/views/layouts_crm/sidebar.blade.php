@@ -155,4 +155,23 @@
                 </a>
             </li>
         @endif
+
+        <li class="menu-header small text-uppercase">
+            <span class="menu-header-text">Import &amp; Excel</span>
+        </li>
+
+        <li class="menu-item">
+            <a href="javascript:void(0)" class="menu-link" data-bs-toggle="modal" data-bs-target="#importExcelModal">
+                <i class="menu-icon tf-icons bx bx-upload"></i>
+                <div class="text-truncate">Import Perusahaan</div>
+            </a>
+        </li>
+
+        <li class="menu-item">
+            <a href="javascript:void(0)" class="menu-link" data-bs-toggle="modal" data-bs-target="#importExcelModalContact">
+                <i class="menu-icon tf-icons bx bx-upload"></i>
+                <div class="text-truncate">Import Contact</div>
+            </a>
+        </li>
+
 </aside>
