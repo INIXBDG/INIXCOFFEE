@@ -31,29 +31,29 @@
                                 @enderror
                             </div>
                         </div>
-<!-- Bagian select sales yang perlu diperbaiki -->
-@if($isSPVSales)
-<div class="row mb-3">
-    <label for="selected_sales" class="col-md-4 col-form-label text-md-start">Pilih Sales</label>
-    <div class="col-md-6">
-        <select name="selected_sales" id="selected_sales" class="form-control @error('selected_sales') is-invalid @enderror" required>
-            <option value="">-- Pilih Sales --</option>
-            @foreach($salesEmployees as $sales)
-                <!-- GANTI: Gunakan id sebagai value, bukan nama_lengkap -->
-                <option value="{{ $sales->id }}" {{ old('selected_sales') == $sales->id ? 'selected' : '' }}>
-                    {{ $sales->nama_lengkap }} ({{ $sales->kode_karyawan }})
-                </option>
-            @endforeach
-        </select>
-        @error('selected_sales')
-        <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
-        @enderror
-        <small class="form-text text-muted">
-            Sebagai SPV Sales, Anda dapat memilih karyawan sales untuk exam ini.
-        </small>
-    </div>
-</div>
-@endif
+                            <!-- Bagian select sales yang perlu diperbaiki -->
+                            @if($isSPVSales)
+                            <div class="row mb-3">
+                                <label for="selected_sales" class="col-md-4 col-form-label text-md-start">Pilih Sales</label>
+                                <div class="col-md-6">
+                                    <select name="selected_sales" id="selected_sales" class="form-control @error('selected_sales') is-invalid @enderror" required>
+                                        <option value="">-- Pilih Sales --</option>
+                                        @foreach($salesEmployees as $sales)
+                                            <!-- GANTI: Gunakan id sebagai value, bukan nama_lengkap -->
+                                            <option value="{{ $sales->id }}" {{ old('selected_sales') == $sales->id ? 'selected' : '' }}>
+                                                {{ $sales->nama_lengkap }} ({{ $sales->kode_karyawan }})
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('selected_sales')
+                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                    @enderror
+                                    <small class="form-text text-muted">
+                                        Sebagai SPV Sales, Anda dapat memilih karyawan sales untuk exam ini.
+                                    </small>
+                                </div>
+                            </div>
+                            @endif
 
 
                         <div class="row mb-3">

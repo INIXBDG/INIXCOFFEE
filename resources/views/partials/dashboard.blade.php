@@ -109,6 +109,7 @@
                                         <h5 class="position-header">Keterlambatan</h5>  
                                     </div>
                                     <div class="row justify-content-center align-items-end modern-ranking">
+<<<<<<< HEAD
 
                                         <!-- First Place -->
 
@@ -134,10 +135,34 @@
                                                 </div>
                                                 <p class="position-label">Peringkat 2</p>
                                                 <img src="{{ asset('images/medal-2.png') }}" alt="Medali Perak" class="medal-bawah">
+=======
+                                        <!-- Second Place -->
+                                        <div class="col-4 text-center podium-card">
+                                            <div class="card-podium rank-2">
+                                            <div class="circle second-position shadow-sm">
+                                                <!-- <img src="{{ asset('css/b2.png') }}" alt="Second Place" class="position-badge"> -->
+                                                <img src="{{ asset('storage/photos/pemain2.jpg') }}" alt="Keterlambatan ke-2" class="present-photo rounded-circle border border-white" id="present-photo">
+                                            </div>
+                                            <p class="position-label">Peringkat 2</p>
+                                            <img src="{{ asset('images/medal-2.png') }}" alt="Medali Perak" class="medal-bawah">
+                                            </div>
+                                        </div>
+
+                                        <!-- First Place -->
+                                        <div class="col-4 text-center podium-card">
+                                            <div class="card-podium rank-1">
+                                            <div class="circle-satu first-position shadow">
+                                                <!-- <img src="{{ asset('css/b1.png') }}" alt="First Place" class="position-badge"> -->
+                                                <img src="{{ asset('css/b1.png') }}" alt="Keterlambatan ke-1" class="present-photo-satu rounded-circle border border-white" id="present-photo-satu">
+                                            </div>
+                                            <p class="position-label">Peringkat 1</p>
+                                            <img src="{{ asset('images/medal-1.png') }}" class="medal-bawah" alt="Medal">
+>>>>>>> 1b16b0915417b914bb03ff291c20d9b95894c711
                                             </div>
                                         </div>
 
                                         <!-- Third Place -->
+<<<<<<< HEAD
                                         <div class="col-12 col-md-4 d-flex flex-column align-items-center justify-content-center text-center podium-card mb-3 order-3 order-md-3">
                                             <div class="card-podium rank-3">
                                                 <div class="circle third-position shadow-sm">
@@ -147,6 +172,16 @@
                                                 </div>
                                                 <p class="position-label">Peringkat 3</p>
                                                 <img src="{{ asset('images/medal-3.png') }}" alt="Medali Perunggu" class="medal-bawah">
+=======
+                                        <div class="col-4 text-center podium-card">
+                                            <div class="card-podium rank-3">
+                                            <div class="circle third-position shadow-sm">
+                                                <!-- <img src="{{ asset('css/b3.png') }}" alt="Third Place" class="position-badge"> -->
+                                                <img src="{{ asset('storage/photos/pemain3.jpg') }}" alt="Keterlambatan ke-3" class="present-photo rounded-circle border border-white" id="present-photo">
+                                            </div>
+                                            <p class="position-label">Peringkat 3</p>
+                                            <img src="{{ asset('images/medal-3.png') }}" alt="Medali Perunggu" class="medal-bawah">
+>>>>>>> 1b16b0915417b914bb03ff291c20d9b95894c711
                                             </div>
                                         </div>
                                     </div>
@@ -160,6 +195,7 @@
                                 <div class="card-body">
                                     <div class="row text-center">
                                         <h5>Terbaik</h5>
+<<<<<<< HEAD
                                     </div>
                                     <div class="row">
                                         <!-- SALES TERBAIK -->
@@ -213,7 +249,64 @@
                                                 </div>
                                             </div>
                                         </div>
+=======
+>>>>>>> 1b16b0915417b914bb03ff291c20d9b95894c711
                                     </div>
+<div class="row">
+    <!-- SALES TERBAIK -->
+    <div class="col-6 col-sm-6 col-md-3 col-lg-3 text-center d-flex justify-content-center">
+        <div class="card_foto">
+            <div class="imgbox">
+                <img src="{{ asset('images/download.png') }}" alt="Sales Image" class="dynamic-image" id="foto_sales">
+            </div>
+            <div class="details">
+                <span class="caption">Sales Terbaik</span>
+                <h4 class="title" id="nama_sales">John doe</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- INSTRUKTUR TERBAIK -->
+    <div class="col-6 col-sm-6 col-md-3 col-lg-3 text-center d-flex justify-content-center">
+        <div class="card_foto">
+            <div class="imgbox">
+                <img src="{{ asset('images/download.png') }}" alt="Instruktur Image" class="dynamic-image" id="foto_instruktur">
+            </div>
+            <div class="details">
+                <span class="caption mb-30">Instruktur Terbaik</span>
+                <h4 class="title" id="nama_instruktur">John doe</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- OFFICE TERBAIK -->
+    <div class="col-6 col-sm-6 col-md-3 col-lg-3 text-center d-flex justify-content-center">
+        <div class="card_foto">
+            <div class="imgbox">
+                <img src="{{ asset('images/download.png') }}" alt="Office Image" class="dynamic-image" id="foto_office">
+            </div>
+            <div class="details">
+                <span class="caption">Office Terbaik</span>
+                <h4 class="title" id="nama_office">John doe</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- ITSM TERBAIK -->
+    <div class="col-6 col-sm-6 col-md-3 col-lg-3 text-center d-flex justify-content-center">
+        <div class="card_foto">
+            <div class="imgbox">
+                <img src="{{ asset('images/download.png') }}" alt="ITSM Image" class="dynamic-image" id="foto_itsm">
+            </div>
+            <div class="details">
+                <span class="caption">ITSM Terbaik</span>
+                <h4 class="title" id="nama_itsm">John doe</h4> 
+            </div>
+        </div>
+    </div>
+</div>
+                            
+
                                 </div>
                             </div>
                         </div>
