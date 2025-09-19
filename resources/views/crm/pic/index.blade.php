@@ -2,7 +2,7 @@
 
 @section('crm_contents')
     @php
-        $allowedUser = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
+        $allowedUser = ['Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
     @endphp
 
     <div class="content-wrapper">
@@ -24,7 +24,7 @@
                                 <tr>
                                     <th>Nama</th>
                                     <th>Perusahaan</th>
-                                    <th>Sales Key</th>
+                                    <th>Sales</th>
                                     <th>Status</th>
                                     <th>Email</th>
                                     <th>CP (no)</th>

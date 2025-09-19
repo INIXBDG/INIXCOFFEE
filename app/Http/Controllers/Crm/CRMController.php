@@ -21,7 +21,7 @@ class CRMController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $allowedUser = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur'];
+        $allowedUser = ['Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur', 'Programmer'];
 
         if (in_array($user->jabatan, $allowedUser)) {
 
@@ -116,7 +116,7 @@ class CRMController extends Controller
                 WHEN MONTH(merah) BETWEEN 7 AND 9 THEN "TR3"
                 WHEN MONTH(merah) BETWEEN 10 AND 12 THEN "TR4"
             END as triwulan'),
-                    DB::raw('SUM(final) as total_jumlah')
+                    DB::raw('SUM(netsales * pax) as total_jumlah')
                 )
                 ->groupBy('id_sales', 'triwulan')
                 ->get()
@@ -244,7 +244,7 @@ class CRMController extends Controller
                 'prospek',
                 'map',
             ));
-            
+
         } else {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }

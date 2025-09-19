@@ -17,7 +17,7 @@ class AktivitasController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur'];
+        $allowedJabatan = ['Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur'];
 
         if ($user->jabatan === 'Sales') {
             $idSales = $user->id_sales;
@@ -71,7 +71,7 @@ class AktivitasController extends Controller
     {
         try {
             $user = Auth::user();
-            $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM'];
+            $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'SPV Sales'];
 
             $query = Aktivitas::with(['contact', 'peserta'])
                 ->select('id', 'id_sales', 'id_contact', 'id_peserta', 'aktivitas', 'subject', 'deskripsi', 'waktu_aktivitas');
@@ -126,6 +126,7 @@ class AktivitasController extends Controller
                     return [
                         'id' => $item->id,
                         'kontak' => $kontak,
+                        'id_sales' => $item->id_sales,
                         'aktivitas' => ($item->aktivitas === 'Incharge') ? 'Incharge Inhouse' : ucfirst($item->aktivitas),
                         'subject' => $item->subject,
                         'deskripsi' => $item->deskripsi ?? '-',

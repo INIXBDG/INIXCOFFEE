@@ -2,7 +2,7 @@
 
 @section('crm_contents')
     @php
-        $allowedUser = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
+        $allowedUser = ['Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
     @endphp
 
     <div class="content-wrapper">
@@ -30,6 +30,7 @@
                                     <th style="text-align: center;">Pax</th>
                                     <th style="text-align: center;">Periode</th>
                                     <th style="text-align: center;">Tahap</th>
+                                    <th style="text-align: center;">Sales</th>
                                     <th style="text-align: center;">Prospek Terbuat</th>
                                     <th style="text-align: center;">Aksi</th>
                                 </tr>
@@ -88,16 +89,10 @@
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label" for="harga">Harga (Rp)</label>
+                                    <label class="form-label" for="harga">Harga Penawaran (Rp)</label>
                                     <input type="text" class="form-control" id="harga" name="harga" required>
                                     <div class="invalid-feedback">Masukkan harga.</div>
                                 </div>
-
-                                {{-- <div class="mb-3">
-                                    <label class="form-label" for="netsales">Net Sales (Rp)</label>
-                                    <input type="text" class="form-control" id="netsales" name="netsales">
-                                    <div class="invalid-feedback">Masukkan net sales.</div>
-                                </div> --}}
 
                                 <div class="mb-3">
                                     <label class="form-label" for="pax">Jumlah Peserta (Pax)</label>
@@ -270,6 +265,9 @@
                         render: function(data) {
                             return data.charAt(0).toUpperCase() + data.slice(1);
                         }
+                    },
+                    {
+                        data: 'id_sales'
                     },
                     {
                         data: 'created_at',

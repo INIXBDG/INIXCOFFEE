@@ -61,11 +61,32 @@
 
     <ul class="menu-inner py-1">
 
-        @php
-            $user = Auth::user();
-            $allowedUser = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur'];
-        @endphp
+    @php
+        $user = Auth::user();
+        $allowedUser = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur', 'SPV Sales'];
+    @endphp
 
+    @if(in_array($user->jabatan, ['Programmer', 'Koordinator ITSM']))
+        <!-- Khusus Programmer: hanya Import & Excel -->
+        <li class="menu-header small text-uppercase">
+            <span class="menu-header-text">Import &amp; Excel</span>
+        </li>
+
+        <li class="menu-item">
+            <a href="javascript:void(0)" class="menu-link" data-bs-toggle="modal" data-bs-target="#importExcelModal">
+                <i class="menu-icon tf-icons bx bx-upload"></i>
+                <div class="text-truncate">Import Perusahaan</div>
+            </a>
+        </li>
+
+        <li class="menu-item">
+            <a href="javascript:void(0)" class="menu-link" data-bs-toggle="modal" data-bs-target="#importExcelModalContact">
+                <i class="menu-icon tf-icons bx bx-upload"></i>
+                <div class="text-truncate">Import Contact</div>
+            </a>
+        </li>
+    @else
+        <!-- Untuk user lain: menu default -->
         <!-- Dashboards -->
         <li class="menu-item {{ request()->routeIs('CRM.index') ? 'active open' : '' }}">
             <a href="{{ route('CRM.index') }}" class="menu-link">
@@ -103,7 +124,7 @@
             </a>
         </li>
 
-        @if ($user->jabatan == 'GM')
+        @if(in_array($user->jabatan, ['GM', 'SPV Sales']))
             <li class="menu-item {{ request()->routeIs('index.target') ? 'active open' : '' }}">
                 <a href="{{ route('index.target') }}" class="menu-link">
                     <i class='menu-icon tf-icons bx bx-bullseye'></i>
@@ -155,4 +176,6 @@
                 </a>
             </li>
         @endif
+    @endif
+
 </aside>

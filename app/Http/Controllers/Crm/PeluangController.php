@@ -29,7 +29,7 @@ class PeluangController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur'];
+        $allowedJabatan = ['Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
         $materi = Materi::all();
         $aktivitas = Aktivitas::where('id_sales', $user->id_sales)->whereNull('id_peluang')->get();
 
@@ -51,22 +51,19 @@ class PeluangController extends Controller
     {
         try {
             $user = Auth::user();
-            $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM'];
+            $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'SPV Sales'];
 
             if ($user->jabatan === 'Sales') {
                 $idSales = $user->id_sales;
                 $data = Peluang::where('id_sales', $idSales)
                     ->with('materiRelation')
-                    ->select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap', 'created_at', 'id_rkm')
+                    ->select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap', 'created_at', 'id_rkm', 'id_sales')
                     ->orderBy('created_at','desc')
                     ->get()
                     ->map(function ($item) {
                         $item->periode = $item->periode_mulai . ' s/d ' . $item->periode_selesai;
-                        // Fetch RKM data based on id_rkm
                         $rkm = RKM::with('perusahaan')->where('id', $item->id_rkm)->first();
-                        // Append RKM data or null if not found
                         $item->rkm_data = $rkm ? $rkm : null;
-                        // Create new rkm_formatted data if rkm exists
                         $item->rkm_formatted = $rkm
                             ? [
                                 'materi_key' => $rkm->materi_key,
@@ -79,17 +76,14 @@ class PeluangController extends Controller
                         return $item;
                     });
             } elseif (in_array($user->jabatan, $allowedJabatan)) {
-                $data = Peluang::select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap', 'created_at', 'id_rkm')
+                $data = Peluang::select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap', 'created_at', 'id_rkm', 'id_sales')
                     ->with('materiRelation')
                     ->orderBy('created_at', 'desc')
                     ->get()
                     ->map(function ($item) {
                         $item->periode = $item->periode_mulai . ' s/d ' . $item->periode_selesai;
-                        // Fetch RKM data based on id_rkm
                         $rkm = RKM::with('perusahaan')->where('id', $item->id_rkm)->first();
-                        // Append RKM data or null if not found
                         $item->rkm_data = $rkm ? $rkm : null;
-                        // Create new rkm_formatted data if rkm exists
                         $item->rkm_formatted = $rkm
                             ? [
                                 'materi_key' => $rkm->materi_key,
@@ -142,7 +136,7 @@ class PeluangController extends Controller
         $ids_peserta_yang_sudah_ada = perhitunganNetSales::where('id_rkm', $peluang->rkm->id)->pluck('id_peserta');
         $regisuser = Registrasi::with('peserta')->where('id_rkm', $peluang->rkm->id)->whereNotIn('id_peserta', $ids_peserta_yang_sudah_ada)->get();
 
-        // dd($netsales);
+        // dd($ids_peserta_yang_sudah_ada);
         return view('crm.peluang.detail', compact('peluang', 'aktivitas', 'materi', 'netsales', 'regis', 'regisuser'));
     }
 
@@ -175,11 +169,9 @@ class PeluangController extends Controller
                 ];
             });
 
-        // Ambil semua ID contact dan peserta
         $contactIds = $contacts->pluck('id')->toArray();
         $pesertaIds = $peserta->pluck('id')->toArray();
 
-        // Ambil semua aktivitas berdasarkan id_contact atau id_peserta
         $aktivitas = Aktivitas::with(['contact', 'peserta'])
             ->where(function ($query) use ($contactIds, $pesertaIds) {
                 if (!empty($contactIds)) {
@@ -193,7 +185,6 @@ class PeluangController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        // Format data untuk response JSON
         $result = $aktivitas->map(function ($a) {
             return [
                 'id' => $a->id,
@@ -331,18 +322,25 @@ class PeluangController extends Controller
     {
         try {
             $peluang = Peluang::findOrFail($id);
-            $rkm = RKM::where('id', $peluang->id_rkm)->first();
-            $rkm->delete();
-            $peluang->delete();
 
-            $aktivitas = Aktivitas::where('id_peluang', $id)->get();
-            foreach ($aktivitas as $item) {
-                $item->delete();
+            $rkm = RKM::where('id', $peluang->id_rkm)->first();
+            if ($rkm) {
+                $rkm->delete();
             }
 
-            return response()->json(['message' => 'Peluang dan aktivitas terkait berhasil dihapus.'], 200);
+            $peluang->delete();
+
+            Aktivitas::where('id_peluang', $id)->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Peluang dan aktivitas terkait berhasil dihapus.'
+            ]);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Gagal menghapus peluang atau aktivitas terkait.'], 500);
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus peluang atau aktivitas terkait.'
+            ], 500);
         }
     }
 
@@ -413,12 +411,19 @@ class PeluangController extends Controller
 
             if ($request->tahap === 'merah') {
                 $peluang->tahap = 'merah';
-                $peluang->final = $request->input('final');
+
+                $inputFinal = $request->input('final');
+                $pax = $peluang->pax ?? 1;
+
+                $peluang->final = $inputFinal;
+
+                $peluang->netsales = $inputFinal;
+
                 $peluang->merah = $now;
                 $peluang->desc_lost = null;
 
                 if ($peluang->rkm) {
-                    $peluang->rkm->status = '0'; // merah -> status '0'
+                    $peluang->rkm->status = '0';
                     $peluang->rkm->save();
                 }
             }
@@ -445,7 +450,7 @@ class PeluangController extends Controller
                 WHEN MONTH(merah) BETWEEN 7 AND 9 THEN "TR3"
                 WHEN MONTH(merah) BETWEEN 10 AND 12 THEN "TR4"
             END as triwulan'),
-                DB::raw('SUM(final) as total_jumlah'),
+                DB::raw('SUM(netsales * pax) as total_jumlah'),
             )
             ->groupBy('id_sales', 'triwulan')
             ->get()
@@ -462,8 +467,8 @@ class PeluangController extends Controller
 
     public function detailRingkasan(Request $request, $id)
     {
-        $tahun = $request->input('tahun');   // ex: 2025
-        $bulan = $request->input('bulan');   // ex: 9 (September)
+        $tahun = $request->input('tahun');
+        $bulan = $request->input('bulan');
 
         $query = Peluang::where('id_sales', $id)
             ->where('tahap', 'merah');
@@ -476,7 +481,6 @@ class PeluangController extends Controller
             $query->whereMonth('periode_mulai', $bulan);
         }
 
-        // urutkan dari tanggal terkecil ke terbesar
         $data = $query->orderBy('periode_mulai', 'asc')->get();
 
         return view('crm.closedwin.detail', compact('data', 'tahun', 'bulan', 'id'));
@@ -570,7 +574,8 @@ class PeluangController extends Controller
         $netSales->id_tracking = $idTracking;
         $netSales->save();
 
-        Peluang::updateNetSalesFromRkm($request->id_rkm);
+        // Peluang::updateNetSalesFromRkm($request->id_rkm);
+
         // Kirim notifikasi ke SPV Sales
         $spv = karyawan::where('jabatan', 'SPV Sales')->first();
 

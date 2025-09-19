@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Imports\InventarisImport;
 use App\Models\checkbarang;
-use App\Models\inventaris;
+use App\Models\Inventaris;
 use App\Models\KodeBarangInventaris;
 use App\Models\service;
 use App\Models\User;
@@ -62,7 +62,7 @@ class InventarisController extends Controller
 
     public function editview($id)
     {
-        $data = inventaris::where('id', $id)->first();
+        $data = Inventaris::where('id', $id)->first();
         $usernames = DB::table('users')->pluck('username')->toArray();
         return view('inventaris.edit', compact('data', 'usernames'));
     }
@@ -130,7 +130,7 @@ class InventarisController extends Controller
 
     public function user($id, Request $request)
     {
-        $inventaris = inventaris::where('id', $id)->update([
+        $inventaris = Inventaris::where('id', $id)->update([
             'pengguna' => $request->pengguna,
             'ruangan' => $request->ruangan
         ]);

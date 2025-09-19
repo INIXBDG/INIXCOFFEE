@@ -25,7 +25,7 @@ class LaporanPenjualanController extends Controller
                     WHEN MONTH(merah) BETWEEN 7 AND 9 THEN "TR3"
                     WHEN MONTH(merah) BETWEEN 10 AND 12 THEN "TR4"
                 END as triwulan'),
-                DB::raw('SUM(final) as total_jumlah')
+                DB::raw('SUM(netsales * pax) as total_jumlah')
             )
             ->groupBy('id_sales', 'triwulan')
             ->get()
