@@ -495,11 +495,11 @@
         <label>Alamat:</label>
         <input type="text" id="alamat" class="readonly" value="{{ $lead->perusahaan->alamat ?? '-' }}" readonly>
         <label>PIC Penagihan:</label>
-        <input type="text" id="pic" class="readonly" value="{{ $lead->perusahaan->cp ?? '-' }}" readonly>
+        <input type="text" id="pic">
         <label>Telepon:</label>
-        <input type="text" id="telepon" class="readonly" value="{{ $lead->perusahaan->no_telp ?? '-' }}" readonly>
+        <input type="text" id="telepon">
         <label>Email:</label>
-        <input type="text" id="email" class="readonly" value="{{ $lead->perusahaan->email ?? '-' }}" readonly>
+        <input type="text" id="email">
         <label>NPWP:</label>
         <input type="text" id="npwp" class="readonly" value="{{ $lead->perusahaan->npwp ?? '-' }}" readonly>
 

@@ -35,11 +35,11 @@
             margin: 10px 0;
         }
 
-        #pelatihan-list {
+        #pelatihan-list, #fasilitas-list, #keuntungan-list {
             margin-top: 10px;
         }
 
-        .pelatihan-row {
+        .pelatihan-row, .fasilitas-row, .keuntungan-row {
             display: flex;
             flex-direction: column;
             gap: 5px;
@@ -47,7 +47,9 @@
         }
 
         .pelatihan-row input,
-        .pelatihan-row select {
+        .pelatihan-row select,
+        .fasilitas-row input,
+        .keuntungan-row input {
             flex: 1;
         }
 
@@ -394,12 +396,24 @@
         <label>Nama Pimpinan/Perusahaan:</label>
         <input type="text" id="penerima" class="readonly" readonly>
 
+        <h3>Deskripsi</h3>
+        <label>Deskripsi Penawaran:</label>
+        <textarea id="deskripsi" placeholder="Masukkan deskripsi penawaran"></textarea>
+
         <h3>Data Pelatihan</h3>
         <label>PPN (%):</label>
         <input type="number" id="ppn-rate" value="11" min="0" max="100" step="0.1" required>
         <label><input type="checkbox" id="include-ppn" checked> Termasuk PPN</label>
         <div id="pelatihan-list"></div>
         <button type="button" id="add-pelatihan">Tambah Pelatihan</button>
+
+        <h3>Fasilitas dan Perlengkapan</h3>
+        <div id="fasilitas-list"></div>
+        <button type="button" id="add-fasilitas">Tambah Fasilitas</button>
+
+        <h3>Keuntungan</h3>
+        <div id="keuntungan-list"></div>
+        <button type="button" id="add-keuntungan">Tambah Keuntungan</button>
 
         <h3>Syarat dan Ketentuan</h3>
         <label>Pilih Syarat (bisa lebih dari satu):</label>
@@ -430,7 +444,30 @@
 
     <script>
         const materiData = @json($materi);
-        const backgroundUrl = "{{ asset('assets/img/backgrounds/kop.png') }}"; // Pastikan URL ini valid
+        const deskripsiData = @json($deskripsi->deskripsi);
+        const backgroundUrl = "{{ asset('assets/img/backgrounds/kop.png') }}";
+
+        // Set default deskripsi from controller
+        document.getElementById('deskripsi').value = deskripsiData || '';
+
+        // Data konstan untuk fasilitas dan keuntungan
+        const fasilitasKonstan = [
+            "Instruktur",
+            "PC / Laptop",
+            "Ruang Meeting",
+            "Perlengkapan Alat Tulis",
+            "E-Modul",
+            "E-Lab",
+            "Makan Siang",
+            "Antar-jemput dari Kantor Inixindo ke hotel atau penginapan (maksimal 5 km)"
+        ];
+        const keuntunganKonstan = [
+            "E-Sertifikat dari Inixindo",
+            "Souvenir",
+            "Hasil pre-test dan post-test (sesuai kebutuhan)",
+            "Konsultasi dan diskusi gratis dengan instruktur",
+            "Pembahasan studi kasus"
+        ];
 
         // Fungsi untuk format Rupiah
         function formatRupiah(angka) {
@@ -536,18 +573,52 @@
             });
         });
 
-        // Tambahkan satu row default
+        // Fungsi untuk menambahkan baris fasilitas
+        function addFasilitasRow(value = '') {
+            const row = document.createElement('div');
+            row.className = 'fasilitas-row';
+            row.innerHTML = `
+                <input type="text" class="fasilitas-item" placeholder="Masukkan fasilitas" value="${value}" required>
+                <button type="button" onclick="this.parentElement.remove()">Hapus</button>
+            `;
+            document.getElementById('fasilitas-list').appendChild(row);
+        }
+
+        // Fungsi untuk menambahkan baris keuntungan
+        function addKeuntunganRow(value = '') {
+            const row = document.createElement('div');
+            row.className = 'keuntungan-row';
+            row.innerHTML = `
+                <input type="text" class="keuntungan-item" placeholder="Masukkan keuntungan" value="${value}" required>
+                <button type="button" onclick="this.parentElement.remove()">Hapus</button>
+            `;
+            document.getElementById('keuntungan-list').appendChild(row);
+        }
+
+        // Event listener untuk tombol tambah fasilitas
+        document.getElementById('add-fasilitas').addEventListener('click', () => {
+            addFasilitasRow();
+        });
+
+        // Event listener untuk tombol tambah keuntungan
+        document.getElementById('add-keuntungan').addEventListener('click', () => {
+            addKeuntunganRow();
+        });
+
+        // Pre-populate fasilitas dan keuntungan dengan data konstan
+        fasilitasKonstan.forEach(item => addFasilitasRow(item));
+        keuntunganKonstan.forEach(item => addKeuntunganRow(item));
+
+        // Tambahkan satu row default untuk pelatihan
         document.getElementById('add-pelatihan').click();
 
-        // Deskripsi, fasilitas, dan keuntungan konstan
+        // Deskripsi konstan
         function getDeskripsi() {
             const penerima = document.getElementById('penerima').value || '';
-            return `Inixindo Bandung adalah lembaga pelatihan dan konsultasi di bidang Teknologi Informasi. Sebagai lembaga profesional, kami bekerja sama dengan vendor terkemuka seperti <em>Cisco Learning Partner</em>, <em>Oracle Sun Java Approved Education Centre</em>, <em>Microsoft Certified Partner</em>, <em>CompTIA Security Certified</em>, <em>Authorized Pearson VUE and Prometric Testing Centre</em>, <em>Ec-Council Training Partner</em>, dan <em>Data Centre by EPI</em>.<br><br>Kami hadir untuk mendukung pengembangan sumber daya manusia di bidang teknologi informasi. Untuk mendukung program peningkatan pengetahuan, kompetensi, dan keahlian sumber daya manusia di ${penerima}, kami menawarkan pelatihan berikut:`;
+            const deskripsi = document.getElementById('deskripsi').value || '';
+            const constantPart = `<br><br>Kami hadir untuk mendukung pengembangan sumber daya manusia di bidang teknologi informasi. Untuk mendukung program peningkatan pengetahuan, kompetensi, dan keahlian sumber daya manusia di ${penerima}, kami menawarkan pelatihan berikut:`;
+            return deskripsi + constantPart;
         }
-        const fasilitasKonstan =
-            `<li>Instruktur</li><li>PC / Laptop</li><li>Ruang Meeting</li><li>Perlengkapan Alat Tulis</li><li>E-Modul</li><li>E-Lab</li><li>Makan Siang</li><li>Antar-jemput dari Kantor Inixindo ke hotel atau penginapan (maksimal 5 km)</li>`;
-        const keuntunganKonstan =
-            `<li>E-Sertifikat dari Inixindo</li><li>Souvenir</li><li>Hasil pre-test dan post-test (sesuai kebutuhan)</li><li>Konsultasi dan diskusi gratis dengan instruktur</li><li>Pembahasan studi kasus</li>`;
 
         document.getElementById('preview-btn').addEventListener('click', () => {
             const noSurat = document.getElementById('no-surat').value || '';
@@ -596,6 +667,42 @@
 
             if (!isPelatihanValid) {
                 alert('Harap lengkapi semua data pelatihan.');
+                return;
+            }
+
+            // Proses fasilitas
+            const fasilitasRows = document.querySelectorAll('.fasilitas-row');
+            let fasilitasHTML = '';
+            let isFasilitasValid = true;
+            fasilitasRows.forEach(row => {
+                const fasilitas = row.querySelector('.fasilitas-item').value || '';
+                if (!fasilitas) {
+                    isFasilitasValid = false;
+                    return;
+                }
+                fasilitasHTML += `<li>${fasilitas}</li>`;
+            });
+
+            if (!isFasilitasValid) {
+                alert('Harap lengkapi semua data fasilitas.');
+                return;
+            }
+
+            // Proses keuntungan
+            const keuntunganRows = document.querySelectorAll('.keuntungan-row');
+            let keuntunganHTML = '';
+            let isKeuntunganValid = true;
+            keuntunganRows.forEach(row => {
+                const keuntungan = row.querySelector('.keuntungan-item').value || '';
+                if (!keuntungan) {
+                    isKeuntunganValid = false;
+                    return;
+                }
+                keuntunganHTML += `<li>${keuntungan}</li>`;
+            });
+
+            if (!isKeuntunganValid) {
+                alert('Harap lengkapi semua data keuntungan.');
                 return;
             }
 
@@ -677,9 +784,9 @@
                             <p class="font-semibold" style="font-weight:bold;">Syarat dan Ketentuan:</p>
                             <ul class="list-disc pl-6">${syaratList}</ul>
                             <p class="font-semibold mt-2" style="font-weight:bold;">Fasilitas dan Perlengkapan yang Kami Sediakan:</p>
-                            <ol class="list-decimal pl-6">${fasilitasKonstan}</ol>
+                            <ol class="list-decimal pl-6">${fasilitasHTML}</ol>
                             <p class="font-semibold mt-2" style="font-weight:bold;">Keuntungan yang Akan Anda Dapatkan:</p>
-                            <ul class="list-disc pl-6">${keuntunganKonstan}</ul>
+                            <ul class="list-disc pl-6">${keuntunganHTML}</ul>
                         </div>
 
                         <div class="closing text-sm text-gray-700">
@@ -692,7 +799,8 @@
                             <p class="mt-2">Hormat kami,</p>
                             <p class="font-bold" style="padding-bottom:4%;">INIXINDO BANDUNG</p>
                             <p class="signature"><strong>${namaSales}</strong></p>
-                            <p>${jabatanSales}, Pt Inixindo Amiete Mandiri</p>
+                            <p>${jabatanSales},</p> 
+                            <p>Pt Inixindo Amiete Mandiri</p>
                         </div>
                     </div>
                 </div>

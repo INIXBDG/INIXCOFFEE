@@ -120,7 +120,7 @@
         <li class="menu-item {{ request()->routeIs('crm.ketentuan') ? 'active open' : '' }}">
             <a href="{{ route('crm.ketentuan') }}" class="menu-link">
                 <i class='menu-icon tf-icons bx bx-bookmark-alt'></i>
-                <div class="text-truncate" data-i18n="crmKetentuan">Ketentuan Regis</div>
+                <div class="text-truncate" data-i18n="crmKetentuan">Ketentuan</div>
             </a>
         </li>
 

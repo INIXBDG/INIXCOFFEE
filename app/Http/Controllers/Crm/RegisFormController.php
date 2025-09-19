@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Crm;
 
 use App\Http\Controllers\Controller;
+use App\Models\Deskripsi;
 use App\Models\karyawan;
 use App\Models\KetentuanForm;
 use App\Models\Materi;
@@ -14,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class RegisFormController extends Controller
 {
@@ -38,8 +40,9 @@ class RegisFormController extends Controller
         $perusahaan = Perusahaan::where('sales_key', $sales->kode_karyawan)->get();
         $materi = Materi::all();
         $ketentuan = KetentuanForm::all();
-        // dd($sales, $perusahaan, $materi);
-        return view('crm.regisform.penawaran', compact('sales', 'perusahaan', 'materi', 'ketentuan'));
+        $deskripsi = Deskripsi::first();
+        // dd($deskripsi);
+        return view('crm.regisform.penawaran', compact('sales', 'perusahaan', 'materi', 'ketentuan', 'deskripsi'));
     }
 
     public function upload(Request $request)
@@ -102,9 +105,10 @@ class RegisFormController extends Controller
     public function ketentuan()
     {
         $data = KetentuanForm::all();
-        return view('crm.regisform.ketentuan', compact('data'));
+        $deskripsiData = Deskripsi::first();
+        return view('crm.regisform.ketentuan', compact('data', 'deskripsiData'));
     }
-
+    
     public function storeKetentuan(Request $request)
     {
         $data = new KetentuanForm();
@@ -125,6 +129,71 @@ class RegisFormController extends Controller
     {
         $data = KetentuanForm::where('id', $id)->first();
         $data->delete();
+        return back();
+    }
+
+    public function storeDeskripsi(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'deskripsi' => 'required|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $deskripsi = Deskripsi::create([
+            'deskripsi' => $request->deskripsi
+        ]);
+
+        return back();
+    }
+
+    public function updateDeskripsi(Request $request, $id)
+    {
+        $deskripsi = Deskripsi::find($id);
+
+        if (!$deskripsi) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Deskripsi not found'
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'deskripsi' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $deskripsi->update([
+            'deskripsi' => $request->deskripsi
+        ]);
+
+        return back();
+    }
+
+    public function deleteDeskripsi($id)
+    {
+        $deskripsi = Deskripsi::find($id);
+
+        if (!$deskripsi) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Deskripsi not found'
+            ], 404);
+        }
+
+        $deskripsi->delete();
+
         return back();
     }
 }
