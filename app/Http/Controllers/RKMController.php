@@ -1144,40 +1144,149 @@ class RKMController extends Controller
         return view('rkm.show', compact('rkm', 'comments', 'ids', 'params', 'materi_key', 'souvenir'));
     }
 
-    public function updateMakanan(Request $request, $id)
+public function updateMakanan(Request $request, $id)
 {
-    $rkm = RKM::find($id); // jangan langsung OrFail biar bisa handle error sendiri
-    if (!$rkm) {
+    try {
+        // Validasi input
+        $request->validate([
+            'makanan' => 'required|in:0,1,2'
+        ]);
+
+        // Cari RKM berdasarkan ID dengan validasi keberadaan
+        $rkm = RKM::find($id);
+        
+        if (!$rkm) {
+            return response()->json([
+                'status' => false,
+                'message' => 'RKM tidak ditemukan dengan ID: ' . $id
+            ], 404);
+        }
+
+        // Update makanan
+        $rkm->makanan = $request->makanan;
+        $saved = $rkm->save();
+
+        if (!$saved) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal menyimpan perubahan makanan'
+            ], 500);
+        }
+
+        // Log untuk debugging
+        \Log::info('Makanan updated successfully', [
+            'rkm_id' => $id,
+            'old_makanan' => $rkm->getOriginal('makanan'),
+            'new_makanan' => $request->makanan,
+            'user' => auth()->user()->username ?? 'unknown'
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Makanan berhasil diperbarui',
+            'data' => [
+                'id' => $rkm->id,
+                'makanan' => $rkm->makanan,
+                'makanan_text' => $this->getMakananText($rkm->makanan)
+            ]
+        ]);
+
+    } catch (\Illuminate\Validation\ValidationException $e) {
         return response()->json([
             'status' => false,
-            'message' => 'RKM tidak ditemukan'
-        ], 404);
+            'message' => 'Data tidak valid: ' . implode(', ', $e->validator->errors()->all())
+        ], 422);
+    } catch (\Exception $e) {
+        // Log error untuk debugging
+        \Log::error('Error updating makanan', [
+            'rkm_id' => $id,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+
+        return response()->json([
+            'status' => false,
+            'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage()
+        ], 500);
     }
+}
 
-    $rkm->makanan = $request->makanan;
-    $rkm->save();
-
-    return response()->json([
-        'status' => true,
-        'message' => 'Makanan berhasil diperbarui'
-    ]);
+private function getMakananText($makanan)
+{
+    switch (strval($makanan)) {
+        case '0':
+            return 'Tidak Ada';
+        case '1':
+            return 'Nasi Box';
+        case '2':
+            return 'Prasmanan';
+        default:
+            return '-';
+    }
 }
 public function getRKM($tahun, $bulan)
 {
     $query = RKM::with(['materi', 'perusahaan', 'sales']) // relasi yang dipake di blade
         ->whereYear('tanggal_awal', $tahun)
-        ->whereMonth('tanggal_awal', $bulan);
+        ->whereMonth('tanggal_awal', $bulan)
+        ->orderBy('tanggal_awal', 'asc') // Urutkan berdasarkan tanggal
+        ->orderBy('id', 'asc'); // Sebagai fallback, urutkan berdasarkan ID
 
     // kalau mau khusus exam_only, tinggal tambahin
     if (request()->has('exam_only') && request()->exam_only == 1) {
         $query->where('tipe', 'exam_only');
     }
 
-    $data = $query->get();
+    $rawData = $query->get();
+    
+    // Filter data yang valid (memiliki ID dan data lengkap)
+    $validData = $rawData->filter(function($rkm) {
+        return $rkm->id && 
+               $rkm->materi_key && 
+               $rkm->tanggal_awal &&
+               $rkm->materi &&
+               $rkm->perusahaan;
+    });
+
+    // Group data by weeks
+    $groupedData = [];
+    
+    foreach ($validData as $rkm) {
+        $tanggalAwal = Carbon::parse($rkm->tanggal_awal);
+        $startOfWeek = $tanggalAwal->startOfWeek(Carbon::MONDAY);
+        $weekKey = $startOfWeek->format('Y-m-d');
+        
+        if (!isset($groupedData[$weekKey])) {
+            $groupedData[$weekKey] = [
+                'start' => $weekKey,
+                'data' => []
+            ];
+        }
+        
+        $groupedData[$weekKey]['data'][] = $rkm;
+    }
+    
+    // Sort weeks by date
+    ksort($groupedData);
+    
+    // Group by month
+    $monthlyData = [];
+    foreach ($groupedData as $weekData) {
+        $monthKey = Carbon::parse($weekData['start'])->format('Y-m');
+        
+        if (!isset($monthlyData[$monthKey])) {
+            $monthlyData[$monthKey] = [
+                'month' => $monthKey,
+                'weeksData' => []
+            ];
+        }
+        
+        $monthlyData[$monthKey]['weeksData'][] = $weekData;
+    }
 
     return response()->json([
         'status' => true,
-        'data' => $data
+        'data' => array_values($monthlyData)
     ]);
 }
 
