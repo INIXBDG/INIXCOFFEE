@@ -176,6 +176,21 @@
                 </a>
             </li>
         @endif
+
+        <li class="menu-item {{ request()->routeIs('crm.index.penawaran') ? 'active open' : '' }}">
+            <a href="{{ route('crm.index.penawaran') }}"
+            class="menu-link"
+            target="blank_">
+                <i class='menu-icon tf-icons bx bx-file-blank'></i>
+                <div class="text-truncate">Generate Penawaran</div>
+            </a>
+        </li>
     @endif
 
+    <div style="position: absolute; bottom: 0; left: 0; width: 100%; padding: 12px;">
+        <a href="{{ route('home') }}"
+           class="btn btn-primary d-flex align-items-center justify-content-center w-100">
+            <i class="bx bx-home me-2"></i>BACK TO INIXCOFFE
+        </a>
+    </div>
 </aside>
