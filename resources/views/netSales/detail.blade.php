@@ -302,7 +302,7 @@
                             netSale.approved.forEach(function(data) {
                                 let status;
                                 if (data.status === 1) {
-                                    if (data.level_status === 'III' && data.keterangan !==
+                                    if (data.level_status === '3' && data.keterangan !==
                                         'Selesai') {
                                         status = "Diproses";
                                     } else {
@@ -332,11 +332,11 @@
                                     `${namaHari}, ${tanggal} ${namaBulan} ${tahun} ${jam}:${menit}`;
 
                                 let approver = '-';
-                                if (data.level_status === 'I') {
+                                if (data.level_status === '1') {
                                     approver = 'SPV Sales';
-                                } else if (data.level_status === 'II') {
+                                } else if (data.level_status === '2') {
                                     approver = 'GM';
-                                } else if (data.level_status === 'III') {
+                                } else if (data.level_status === '3') {
                                     approver = 'Finance & Accounting';
                                 }
 
