@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\RekapitulasiAbsenperKaryawanExport;
 use App\Exports\RekapitulasiWaktuKeterlambatanExport;
+use App\Models\izinTigaJam;
 use App\Models\pengajuancuti;
 use App\Models\SuratPerjalanan;
 use Illuminate\Support\Collection;
@@ -35,49 +36,62 @@ class RekapitulasiAbsenController extends Controller
         
     }
 
-    public function getAbsen(Request $request)
-    {
-        $id_karyawan = $request->input('id_karyawan');
-        $tahun = $request->input('tahun');
-        $bulan = $request->input('bulan');
+public function getAbsen(Request $request)
+{
+    $id_karyawan = $request->input('id_karyawan');
+    $tahun = $request->input('tahun');
+    $bulan = $request->input('bulan');
 
-        // Get the absences sorted by 'tanggal' in descending order
-        $absensi = AbsensiKaryawan::where('id_karyawan', $id_karyawan)
-                                ->whereYear('tanggal', $tahun)
-                                ->whereMonth('tanggal', $bulan)
-                                ->orderBy('tanggal', 'asc') // Sort by date (tanggal) in descending order
-                                ->get();
+    $absensi = AbsensiKaryawan::where('id_karyawan', $id_karyawan)
+        ->whereYear('tanggal', $tahun)
+        ->whereMonth('tanggal', $bulan)
+        ->orderBy('tanggal', 'asc')
+        ->get();
 
-        // Sum all the waktu_keterlambatan in seconds
-        $totalSeconds = $absensi->sum(function ($item) {
-            list($hours, $minutes, $seconds) = explode(':', $item->waktu_keterlambatan);
-            return $hours * 3600 + $minutes * 60 + $seconds;
-        });
+    // Tambahkan data izin untuk tiap absensi
+    foreach ($absensi as $item) {
+        $izin = izinTigaJam::where('id_karyawan', $item->id_karyawan)
+            ->whereDate('tanggal_pengajuan', $item->tanggal)
+            ->where('approval', 2)
+            ->first();
 
-        // Convert the total seconds back to HH:MM:SS format
-        $hours = floor($totalSeconds / 3600);
-        $minutes = floor(($totalSeconds % 3600) / 60);
-        $seconds = $totalSeconds % 60;
-
-        // Format the time in HH:MM:SS
-        $formattedTime = '';
-        if ($hours > 0) {
-            $formattedTime .= $hours . ' jam ';
-        }
-        if ($minutes > 0) {
-            $formattedTime .= $minutes . ' menit ';
-        }
-        if ($seconds > 0) {
-            $formattedTime .= $seconds . ' detik';
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Data Absensi Karyawan',
-            'data' => $absensi,
-            'total_keterlambatan' => $formattedTime,
-        ]);
+        $item->izin = $izin
+            ? [
+                'jam_mulai' => Carbon::parse($izin->jam_mulai)->format('H:i'),
+                'jam_selesai' => Carbon::parse($izin->jam_selesai)->format('H:i'),
+            ]
+            : null;
     }
+
+    // Hitung total keterlambatan
+    $totalSeconds = $absensi->sum(function ($item) {
+        list($hours, $minutes, $seconds) = explode(':', $item->waktu_keterlambatan ?? '00:00:00');
+        return $hours * 3600 + $minutes * 60 + $seconds;
+    });
+
+    $hours = floor($totalSeconds / 3600);
+    $minutes = floor(($totalSeconds % 3600) / 60);
+    $seconds = $totalSeconds % 60;
+
+    $formattedTime = '';
+    if ($hours > 0) {
+        $formattedTime .= $hours . ' jam ';
+    }
+    if ($minutes > 0) {
+        $formattedTime .= $minutes . ' menit ';
+    }
+    if ($seconds > 0) {
+        $formattedTime .= $seconds . ' detik';
+    }
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Data Absensi Karyawan',
+        'data' => $absensi,
+        'total_keterlambatan' => $formattedTime,
+    ]);
+}
+
 
 
     public function exportperKaryawan(Request $request, $year, $month)

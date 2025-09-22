@@ -303,18 +303,30 @@ class SouvenirController extends Controller
         }
         // $rkm = RKM::where('id', $id)->first();
     }
-    public function storeSouvenirInhouse(Request $request): RedirectResponse
-    {
-        // dd($request->all());
+public function storeSouvenirInhouse(Request $request): RedirectResponse
+{
+    // dd($request->all());
 
-        souvenirinhouse::create([
-            'nama_souvenir'     => $request->nama_souvenir,
-            'id_rkm'     => $request->id_rkm,
+    $idRkm = $request->id_rkm;
 
+    if ($request->nama_souvenir === 'All Item') {
+		souvenirinhouse::create([
+            'nama_souvenir' => $request->nama_souvenir,
+            'id_rkm'        => $idRkm,
         ]);
-
-        return redirect()->route('rkm.index')->with(['success' => 'Data Berhasil Disimpan!']);
+        //souvenirinhouse::insert($data);
+    } else {
+        // Simpan satu souvenir biasa
+        souvenirinhouse::create([
+            'nama_souvenir' => $request->nama_souvenir,
+            'id_rkm'        => $idRkm,
+        ]);
     }
+
+    return redirect()->route('rkm.index')->with(['success' => 'Data Berhasil Disimpan!']);
+}
+
+
     public function updateSouvenirInhouse($id, Request $request)
     {
         $post = souvenirinhouse::findOrFail($id);

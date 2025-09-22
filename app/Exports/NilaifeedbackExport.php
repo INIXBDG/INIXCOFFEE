@@ -80,15 +80,4 @@ class NilaifeedbackExport implements FromArray, WithHeadings
     public function array(): array{
         return $this->data;
     }
-
-    // public function query()
-    // {
-    //     return Nilaifeedback::whereHas('rkm', function ($query) {
-    //         $query->whereYear('tanggal_awal', $this->year)
-    //               ->whereMonth('tanggal_awal', $this->month);
-    //     })->with('rkm');
-    // }
-
-
-
 }

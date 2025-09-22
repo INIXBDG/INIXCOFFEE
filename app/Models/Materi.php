@@ -24,4 +24,10 @@ class Materi extends Model
     {
         return $this->hasMany(Rkm::class, 'materi_key', 'id');
     }
+
+    // Add the relationship to Peluang
+    public function peluangs()
+    {
+        return $this->hasMany(Peluang::class, 'materi', 'id');
+    }
 }

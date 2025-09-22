@@ -34,7 +34,7 @@ class KaryawanController extends Controller
         $user = User::where('karyawan_id', $users->id)->firstOrFail();
 
         // Batasi akses ke user sendiri atau admin
-        if (auth()->id() !== $user->id && auth()->user()->role !== 'Admin') {
+        if (auth()->id() !== $user->id && auth()->user()->role !== 'Admin' && auth()->user()->jabatan !== 'HRD') {
             abort(403);
         }
 
@@ -43,55 +43,76 @@ class KaryawanController extends Controller
     }
 
 
+
     public function updateData(Request $request, $id)
     {
         $decoded = Hashids::decode($id);
-        if (empty($decoded)) abort(404);
+        if (empty($decoded[0])) abort(404);
 
         $realId = $decoded[0];
 
         $karyawan = Karyawan::findOrFail($realId);
         $user = User::where('karyawan_id', $karyawan->id)->firstOrFail();
+            // Batasi akses ke user sendiri atau admin
+            if (auth()->id() !== $user->id && auth()->user()->role !== 'Admin' && auth()->user()->jabatan !== 'HRD') {
+                abort(403);
+            }
 
-        // Batasi akses ke user sendiri atau admin
-        if (auth()->id() !== $user->id && auth()->user()->role !== 'Admin') {
-            abort(403);
-        }
+    $data = $request->validate([
+        'nama_lengkap' => ['required'],
+        'nip' => ['nullable', 'numeric'],
+        'jabatan' => ['nullable'],
+        'divisi' => ['nullable'],
+        'status_aktif' => ['required'],
+        'email' => ['nullable', 'email'],
+        'telepon' => ['nullable', 'string', 'max:20'],
+        'whatsapp' => ['nullable', 'string', 'max:20'],
+    ]);
 
-        $data = $request->validate([
-            'nama_lengkap' => ['required'],
-            'nip' => ['nullable', 'numeric'],
-            'jabatan' => ['nullable'],
-            'divisi' => ['nullable'],
-            'status_aktif' => ['required'],
-        ]);
+    // Update data karyawan
+    $karyawan->nama_lengkap = $data['nama_lengkap'];
+    $karyawan->nip = $data['nip'] ?? $karyawan->nip;
+    $karyawan->jabatan = $data['jabatan'];
+    $karyawan->divisi = $data['divisi'] ?? $karyawan->divisi;
+    $karyawan->status_aktif = $data['status_aktif'];
 
-        $karyawan->jabatan = $data['jabatan'];
-        $karyawan->update($request->all());
+    // Tambahan update jika ada
+    if (!empty($data['email'])) {
+        $karyawan->email = $data['email'];
+    }
+    if (!empty($data['telepon'])) {
+        $karyawan->telepon = $data['telepon'];
+    }
+    if (!empty($data['whatsapp'])) {
+        $karyawan->whatsapp = $data['whatsapp'];
+    }
 
-        $id_instruktur = null;
-        $id_sales = null;
+    $karyawan->save();
 
-        if (in_array($request->jabatan, ['Instruktur', 'Technical Support'])) {
-            $id_instruktur = $request->kode_karyawan;
-        }
+    // Tentukan id_instruktur / id_sales
+    $id_instruktur = null;
+    $id_sales = null;
 
-        if (in_array($request->jabatan, ['SPV Sales', 'Sales', 'Adm Sales'])) {
-            $id_sales = $request->kode_karyawan;
-        }
+    if (in_array($request->jabatan, ['Instruktur', 'Technical Support'])) {
+        $id_instruktur = $request->kode_karyawan;
+    }
 
-        $user->jabatan = $data['jabatan'];
-        $user->status_akun = $data['status_aktif'];
-        $user->id_instruktur = $id_instruktur;
-        $user->id_sales = $id_sales;
-        $user->save();
+    if (in_array($request->jabatan, ['SPV Sales', 'Sales', 'Adm Sales'])) {
+        $id_sales = $request->kode_karyawan;
+    }
+    // Update data user
+    $user->jabatan = $data['jabatan'];
+    $user->status_akun = $data['status_aktif'];
+    $user->id_instruktur = $id_instruktur;
+    $user->id_sales = $id_sales;
+    $user->save();
 
-        if (auth()->user()->role == "Admin") {
-            return redirect('/user')->with('success', 'Data Berhasil Diubah');
-        }
+        if (auth()->user()->jabatan == "HRD") {
+			return redirect('/user')->with('success', 'Data Berhasil Diubah');
+		}
 
-        return redirect()->route('user.show', ['hashid' => $user->hashids])
-            ->with('success', 'Data Berhasil Diubah'); //fixing redirect and command
+		// Always redirect to the previous page, regardless of role
+		return back()->with('success', 'Data Berhasil Diubah');
     }
 
     public function updateFoto(Request $request, $id): RedirectResponse

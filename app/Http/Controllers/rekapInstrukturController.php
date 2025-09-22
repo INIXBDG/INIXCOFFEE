@@ -32,6 +32,16 @@ class rekapInstrukturController extends Controller
         // return $karyawan;
         return view('rekapinstruktur.index', compact('month', 'year', 'karyawan'));
     }
+
+    public function destroy($id)
+    {
+        $data = rekapMengajarInstruktur::findOrFail($id);
+        // dd($data);
+        $data->delete();
+
+        return redirect()->route('rekapmengajarinstruktur.index')->with(['success' => 'Data Berhasil Dihapus!']);
+    }
+    
     public function getListMengajar($bulan, $tahun)
     {
         // Mengambil id_rkm yang ada dari database
@@ -45,12 +55,19 @@ class rekapInstrukturController extends Controller
 
         $uniqueRKMs = array_unique($id_rkm);
         $id_rkm = array_values($uniqueRKMs);
-        // return $id_rkm;
+
+        // Tentukan awal dan akhir bulan target (string)
+        $startOfMonth = Carbon::createFromDate($tahun, $bulan, 1)->startOfDay()->toDateString();
+        $endOfMonth = Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth()->endOfDay()->toDateString();
+
         $data = RKM::with('materi')
                 ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
-                ->whereMonth('r_k_m_s.tanggal_awal', $bulan)
-                ->whereYear('r_k_m_s.tanggal_awal', $tahun)
-                ->whereNotIn('r_k_m_s.id', $id_rkm) // Menambahkan kondisi untuk mengecualikan id_rkm
+                // Ambil RKM yang overlapping dengan bulan target:
+                ->where(function ($q) use ($startOfMonth, $endOfMonth) {
+                    $q->where('r_k_m_s.tanggal_awal', '<=', $endOfMonth)
+                    ->where('r_k_m_s.tanggal_akhir', '>=', $startOfMonth);
+                })
+                ->whereNotIn('r_k_m_s.id', $id_rkm)
                 ->select(
                     'r_k_m_s.materi_key',
                     'r_k_m_s.ruang',
@@ -61,8 +78,8 @@ class rekapInstrukturController extends Controller
                     DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id_all'),
                     DB::raw('CASE WHEN SUM(r_k_m_s.status = 0) > 0 THEN 0 ELSE MIN(r_k_m_s.status) END AS status_all'),
                     DB::raw('SUM(r_k_m_s.pax) AS total_pax'),
-                    DB::raw('MIN(r_k_m_s.tanggal_awal) AS tanggal_awal'), // Adding tanggal_awal
-                    DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir') // Adding tanggal_akhir
+                    DB::raw('MIN(r_k_m_s.tanggal_awal) AS tanggal_awal'),
+                    DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir')
                 )
                 ->groupBy(
                     'r_k_m_s.materi_key',
@@ -75,16 +92,15 @@ class rekapInstrukturController extends Controller
                 ->orderBy('r_k_m_s.tanggal_akhir', 'asc')
                 ->get();
 
-
+        // Ambil relasi instruktur/sales/perusahaan seperti sebelumnya
         foreach ($data as $row) {
+            $sales_ids = $row->sales_all ? explode(', ', $row->sales_all) : [];
+            $perusahaan_ids = $row->perusahaan_all ? explode(', ', $row->perusahaan_all) : [];
+
             if ($row->instruktur_all == null) {
-                $sales_ids = explode(', ', $row->sales_all);
-                $perusahaan_ids = explode(', ', $row->perusahaan_all);
                 $row->sales = Karyawan::whereIn('kode_karyawan', $sales_ids)->get();
                 $row->perusahaan = Perusahaan::whereIn('id', $perusahaan_ids)->get();
-                    } else {
-                $sales_ids = explode(', ', $row->sales_all);
-                $perusahaan_ids = explode(', ', $row->perusahaan_all);
+            } else {
                 $instruktur_ids = explode(', ', $row->instruktur_all);
                 $row->instruktur = Karyawan::whereIn('kode_karyawan', $instruktur_ids)->first();
                 $row->sales = Karyawan::whereIn('kode_karyawan', $sales_ids)->get();
@@ -92,42 +108,76 @@ class rekapInstrukturController extends Controller
             }
         }
 
-        $datas = $data->map(function ($data) {
+        // Filter dan bentuk response berdasarkan mayoritas hari di bulan target
+        $result = [];
+        foreach ($data as $dataRow) {
+            $awal = Carbon::parse($dataRow->tanggal_awal);
+            $akhir = Carbon::parse($dataRow->tanggal_akhir);
 
-            $awal = \Carbon\Carbon::parse($data->tanggal_awal);
-            $akhir = \Carbon\Carbon::parse($data->tanggal_akhir);
-            $hari = $akhir->diffInDays($awal) + 1; // Menghitung jumlah hari
-            $id_rkms = explode(',', $data->id_all)[0];
-            $rkm = RKM::with('materi')->findOrFail($id_rkms);
-            return [
-                'id' => $data->id_all,
-                'nama_materi' => $rkm->materi->nama_materi,
-                'instruktur' => $data->instruktur ?? '-',
-                'tanggal_awal' => $data->tanggal_awal,
-                'tanggal_akhir' => $data->tanggal_akhir,
-                'durasi_rkm' => $hari, // Durasi hari yang dihitung
-                'durasi_materi' => $data->materi->durasi,
-                'rkm' => $rkm,
-            ];
-        });
+            // Total durasi RKM (inklusif)
+            $totalDays = $akhir->diffInDays($awal) + 1;
+
+            // Hitung overlap dengan bulan target
+            $monthStart = Carbon::createFromDate($tahun, $bulan, 1)->startOfDay();
+            $monthEnd = Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth()->endOfDay();
+
+            $overlapStart = $awal->greaterThan($monthStart) ? $awal->copy() : $monthStart->copy();
+            $overlapEnd = $akhir->lessThan($monthEnd) ? $akhir->copy() : $monthEnd->copy();
+
+            $daysInTarget = 0;
+            if ($overlapStart->lte($overlapEnd)) {
+                $daysInTarget = $overlapEnd->diffInDays($overlapStart) + 1;
+            }
+
+            $daysOther = $totalDays - $daysInTarget;
+
+            // Aturan penempatan:
+            // - jika jumlah hari di bulan target > jumlah hari di bulan lain -> masukkan
+            // - jika sama (tie) -> tie-break: masukkan ke bulan tanggal_awal (bisa diubah sesuai preferensi)
+            $isInThisMonth = false;
+            if ($daysInTarget > $daysOther) {
+                $isInThisMonth = true;
+            } elseif ($daysInTarget == $daysOther) {
+                // tie-break: masukkan jika tanggal_awal berada di bulan target
+                if ($awal->month == $bulan && $awal->year == $tahun) {
+                    $isInThisMonth = true;
+                }
+            }
+
+            if ($isInThisMonth) {
+                $id_rkms = explode(',', $dataRow->id_all)[0];
+                $rkm = RKM::with('materi')->findOrFail($id_rkms);
+
+                $result[] = [
+                    'id' => $dataRow->id_all,
+                    'nama_materi' => $rkm->materi->nama_materi,
+                    'instruktur' => $dataRow->instruktur ?? '-',
+                    'tanggal_awal' => $dataRow->tanggal_awal,
+                    'tanggal_akhir' => $dataRow->tanggal_akhir,
+                    'durasi_rkm' => $totalDays,
+                    'durasi_materi' => $dataRow->materi->durasi,
+                    'rkm' => $rkm,
+                ];
+            }
+        }
 
         return response()->json([
             'success' => true,
             'message' => 'List data',
-            'data' => $datas,
+            'data' => collect($result),
         ]);
-    }
+    }	
 
     public function store(Request $request)
     {
         // dd($request->all());
         $rkm = RKM::findOrFail($request->id_rkm);
         $materi_key = $rkm->materi_key;
-        $tanggal_awal = $rkm->tanggal_awal; // Misalnya, formatnya 'YYYY-MM-DD'
-        $date = Carbon::parse($tanggal_awal);
+        $tanggal_akhir = $rkm->tanggal_akhir; // Misalnya, formatnya 'YYYY-MM-DD'
+        $date = Carbon::parse($tanggal_akhir);
         $tahun = $date->year;
         $bulan = $date->month;
-        $tanggal_akhir = $rkm->tanggal_akhir;
+        $tanggal_awal = $rkm->tanggal_awal;
         $datarkm = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan', 'instruktur2', 'asisten'])
             ->where('materi_key', $materi_key)
             ->whereBetween('tanggal_awal', [$tanggal_awal, $tanggal_akhir])

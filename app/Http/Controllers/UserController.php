@@ -47,6 +47,7 @@ class UserController extends Controller
         $data = $request->validate([
             'nama_lengkap' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255'],
+            'email' => ['nullable','email'],
             'jabatan' => ['required', 'string', 'max:255'],
             'divisi' => ['required', 'string', 'max:255'],
             'status_akun' => ['nullable', 'string', 'max:255'],
@@ -78,6 +79,7 @@ class UserController extends Controller
                 'jabatan' => $request->jabatan,
                 'divisi' => $request->divisi,
                 'kode_karyawan' => $request->kode_karyawan,
+                'email' => $request->email,
             ]);
 
             User::create([
@@ -106,13 +108,14 @@ class UserController extends Controller
 
         $userId = $decoded[0];
         $users = User::findOrFail($userId);
+        $karyawan = karyawan::findOrFail($userId);
 
         // Batasi akses: hanya user itu sendiri atau admin
         if (auth()->id() !== $users->id && auth()->user()->jabatan !== 'HRD') {
             abort(403, 'Kamu tidak diizinkan mengakses data ini.');
         }
 
-        return view('user.show', compact('users'));
+        return view('user.show', compact('users', 'karyawan'));
     }
 
     public function editPassword($id)
