@@ -13,6 +13,7 @@ use App\Http\Controllers\Crm\RegisFormController;
 use App\Http\Controllers\Crm\salesPribadiController;
 use App\Http\Controllers\Crm\TargetAktivitas;
 use App\Http\Controllers\Crm\LaporanPenjualanController;
+use App\Http\Controllers\Crm\ImportPerusahaanAndContactController;
 use App\Http\Controllers\databasekpiContoller;
 use App\Http\Controllers\izinTigaJamController;
 use App\Http\Controllers\KelasAnalisisController;
@@ -211,6 +212,9 @@ Route::get('getTotalMateriPerbulan/{year}/{month}', [App\Http\Controllers\ChartC
 Route::get('getTotalMengajarPerJenisMateriPerTahun/{year}/{month}', [App\Http\Controllers\ChartController::class, 'getTotalMengajarPerJenisMateriPerTahun'])->name('getTotalMengajarPerJenisMateriPerTahun');
 Route::get('getAbsenPerbulan/{year}/{month}', [App\Http\Controllers\ChartController::class, 'getAbsenPerbulan'])->name('getAbsenPerbulan');
 
+Route::get('/create-only', [App\Http\Controllers\examController::class, 'createOnly'])->name('exam.createOnly');
+Route::post('/store-only', [App\Http\Controllers\examController::class, 'storeOnly'])->name('exam.storeOnly');
+
 Route::get('/pengajuanExam/{id}', [App\Http\Controllers\examController::class, 'create'])->name('pengajuanExam');
 Route::get('/approvalexam/{id}', [App\Http\Controllers\examController::class, 'approvalexam'])->name('approvalexam');
 Route::put('/sendapprovalexam/{id}', [App\Http\Controllers\examController::class, 'sendapprovalexam'])->name('exam.approval');
@@ -270,7 +274,7 @@ Route::post('/kirimPenilaian', [App\Http\Controllers\DatabaseKPIController::clas
 Route::get('/penilaian/detail/data-penilaian/{kodeForm}/{id_karyawan}', [App\Http\Controllers\DatabaseKPIController::class, 'detailPenilaian'])->name('penilaian.detail');
 Route::post('/penilaian/get/detail/data-penilaian', [App\Http\Controllers\DatabaseKPIController::class, 'GetDetailPenilaian'])->name('penilaian.detail.get');
 Route::post('penilaian/reviewPenilaian', [App\Http\Controllers\DatabaseKPIController::class, 'penilaianReview'])->name('penilaianReview');
-Route::get('reviewPenilaian/{kodeForm}/{evaluatorId}/{jenis_penilaian}/{idKaryawan}',[App\Http\Controllers\DatabaseKPIController::class, 'reviewPenilaian']);
+Route::get('reviewPenilaian/{kodeForm}/{evaluatorId}/{jenis_penilaian}/{idKaryawan}', [App\Http\Controllers\DatabaseKPIController::class, 'reviewPenilaian']);
 Route::post('penilaianEvaluator/kirim', [App\Http\Controllers\DatabaseKPIController::class, 'penilaianEvaluator'])->name('penilaianEvaluator');
 Route::get('/getFormPenilaian/{kode_form}/{id_karyawan}', [App\Http\Controllers\DatabaseKPIController::class, 'getFromPenilaian'])->name('penilaian.share');
 Route::get('/getFormPenilaianUser/{id_evaluator}', [App\Http\Controllers\DatabaseKPIController::class, 'getFromPenilaianUser'])->name('penilaian.shareUser');
@@ -407,6 +411,8 @@ Route::prefix('crm')->group(function () {
     Route::delete('/contact/delete/{id}', [ContactController::class, 'delete'])->name('delete.contact');
     Route::put('/contact/update/{id}', [ContactController::class, 'update'])->name('update.contact');
     Route::get('/contact/data', [ContactController::class, 'getPerusahaan'])->name('contact.data');
+    Route::put('/update/pic', [PicController::class, 'updatePIC'])->name('pic.update');
+    Route::delete('/delete/pic/{id}', [PicController::class, 'deletePIC'])->name('pic.delete');
 
     // Peluang CRM
     Route::get('/peluang/index', [PeluangController::class, 'index'])->name('index.peluang');
@@ -454,6 +460,9 @@ Route::prefix('crm')->group(function () {
     Route::delete('/delete/ketentuan/{id}', [RegisFormController::class, 'deleteKetentuan'])->name('crm.delete.ketentuan');
     Route::get('/generate/regis/form/{id}', [RegisFormController::class, 'index'])->name('crm.index.regis');
     Route::get('/generate/penawaran/form', [RegisFormController::class, 'indexPenawaran'])->name('crm.index.penawaran');
+    Route::post('/store/deskripsi', [RegisFormController::class, 'storeDeskripsi'])->name('crm.store.deskripsi');
+    Route::put('/update/deskripsi/{id}', [RegisFormController::class, 'updateDeskripsi'])->name('crm.update.deskripsi');
+    Route::delete('/delete/deskripsi/{id}', [RegisFormController::class, 'deleteDeskripsi'])->name('crm.delete.deskripsi');
 
     Route::get('/pic', [PicController::class, 'index'])->name('index.pic');
     Route::get('/index/pic', [PicController::class, 'indexJson'])->name('index.json.pic');
@@ -468,6 +477,10 @@ Route::prefix('crm')->group(function () {
     // Laporan Penjualan
     Route::get('laporanPenjualan', [LaporanPenjualanController::class, 'index'])->name('crm.laporanPenjualan');
 
+    // Import Contact / Perusahaan
+    Route::post('/perusahaan/import/perusahaan', [ImportPerusahaanAndContactController::class, 'importPerusahaan'])->name('perusahaan.import');
+    Route::post('/perusahaan/import/contacts', [ImportPerusahaanAndContactController::class, 'importContacts'])->name('contact.import');
+
 });
 
 //INVOICE
@@ -478,7 +491,21 @@ Route::get('/invoice/{id}', [InvoiceRKMController::class, 'show'])->name('invoic
 Route::get('/invoice/{id}/edit', [InvoiceRKMController::class, 'edit'])->name('invoice.edit');
 Route::put('/invoice/{id}', [InvoiceRKMController::class, 'update'])->name('invoice.update');
 Route::delete('/invoice/{id}', [InvoiceRKMController::class, 'destroy'])->name('invoice.destroy');
+Route::get('/invoices/{id}/export-pdf', [InvoiceRKMController::class, 'exportPdf'])
+     ->name('invoices.export-pdf');
+Route::get('/invoices/{id}/export-excel', [InvoiceRKMController::class, 'exportExcel'])
+     ->name('invoices.export-excel');
+Route::get('/invoice/download/{id}', [InvoiceRKMController::class, 'downloadPDF'])->name('download.pdf');
 
+//Kwitansi
+
+Route::get('/invoice/{id}/kwitansi', [InvoiceRKMController::class, 'kwitansi'])->name('invoice.kwitansi');
+Route::get('/invoice/{invoiceId}/kwitansi/create', [InvoiceRKMController::class, 'createKwitansi'])
+    ->name('kwitansi.create');
+Route::post('/kwitansi/store', [InvoiceRKMController::class, 'storeKwitansi'])
+    ->name('kwitansi.store');
+    // Contoh rute untuk menampilkan detail kwitansi
+Route::get('/kwitansi/{id}', [InvoiceRKMController::class, 'showKwitansi'])->name('kwitansi.show');
 
 //laporan-insiden-route
 Route::get('/laporan-insiden', [laporanInsidentController::class, 'index'])->name('index.laporanInsiden');

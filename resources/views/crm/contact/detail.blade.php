@@ -74,7 +74,7 @@
                             </button>
                         </div>
                         <p class="mb-3"><strong>Total Final:</strong> Rp
-                            {{ number_format($peluang->sum('final'), 2, ',', '.') }}</p>
+                            {{ number_format($peluang->sum('final * pax'), 2, ',', '.') }}</p>
                         <div class="table-responsive">
                             <table class="table table-bordered table-hover">
                                 <thead class="table-primary">
@@ -393,9 +393,8 @@
                                         <textarea class="form-control" id="catatan" name="catatan"></textarea>
                                     </div>
                                     <div class="mb-3">
-                                        <label for="harga" class="form-label">Harga</label>
-                                        <input type="number" class="form-control" id="harga" name="harga"
-                                            step="0.01" required>
+                                        <label for="harga" class="form-label">Harga Penawaran</label>
+                                        <input type="text" class="form-control" id="harga" name="harga" required>
                                     </div>
                                     <div class="mb-3">
                                         <label for="pax" class="form-label">Jumlah Peserta (Pax)</label>
@@ -722,6 +721,31 @@
                 const selectedOption = this.options[this.selectedIndex];
                 const type = selectedOption.getAttribute('data-type');
                 document.getElementById('contact_type').value = type || '';
+            });
+
+            document.addEventListener("DOMContentLoaded", function () {
+                const hargaInput = document.getElementById("harga");
+
+                hargaInput.addEventListener("input", function (e) {
+                    // ambil angka aja
+                    let value = this.value.replace(/\D/g, "");
+
+                    if (value) {
+                        // format ke Rupiah
+                        this.value = new Intl.NumberFormat("id-ID", {
+                            style: "currency",
+                            currency: "IDR",
+                            minimumFractionDigits: 0
+                        }).format(value);
+                    } else {
+                        this.value = "";
+                    }
+                });
+
+                // sebelum form submit, ubah ke angka murni
+                hargaInput.form.addEventListener("submit", function () {
+                    hargaInput.value = hargaInput.value.replace(/\D/g, "");
+                });
             });
         </script>
     </div>

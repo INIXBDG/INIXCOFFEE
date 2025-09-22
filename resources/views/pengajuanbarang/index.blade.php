@@ -277,6 +277,23 @@
         color: #999;
         }
     }
+    .dataTables_processing {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.dataTables_processing:before {
+    content: "Mohon tunggu...";
+    font-weight: bold;
+    display: block;
+}
+.dataTables_processing {
+    visibility: hidden;
+}
+.dataTables_processing:before {
+    visibility: visible;
+}
+
     }
 </style>
 @push('js')
@@ -311,170 +328,193 @@
     }
 });
 
-function tableKaryawan(){
+function tableKaryawan() {
     var tahun = $('#tahun').val();
 
+    // Jika DataTable sudah ada → destroy dulu
+    if ($.fn.DataTable.isDataTable('#barangTable')) {
+        $('#barangTable').DataTable().destroy();
+    }
+
     $('#barangTable').DataTable({
-    autoWidth: false,
-    "ajax": {
-        url: "{{ route('getPengajuanBarang', ['month' => ':month', 'year' => ':year'] ) }}".replace(':month', 'All').replace(':year', tahun),
-        "type": "GET",
-        "beforeSend": function () {
-            $('#loadingModal').modal('show');
-            $('#loadingModal').on('show.bs.modal', function () {
-                $('#loadingModal').removeAttr('inert');
-            });
+        destroy: true,
+        processing: true,
+        language:{
+            processing: "Mohon Menungu ...."
         },
-        "complete": function () {
-            setTimeout(() => {
-                $('#loadingModal').modal('hide');
-                $('#loadingModal').on('hidden.bs.modal', function () {
-                    $('#loadingModal').attr('inert', true);
+        autoWidth: false,
+        ajax: {
+            url: "{{ route('getPengajuanBarang', ['month' => ':month', 'year' => ':year'] ) }}"
+                .replace(':month', 'All')
+                .replace(':year', tahun),
+            type: "GET",
+            beforeSend: function () {
+                $('#loadingModal').modal('show');
+                $('#loadingModal').on('show.bs.modal', function () {
+                    $('#loadingModal').removeAttr('inert');
                 });
-            }, 1000);
-        }
-    },
-    "columns": [
-        {
-            "data": "created_at",
-            "visible": false,
-            "render": function(data, type, row) {
-                    var tanggalAwal = moment(data).format('YYYY-MM-DD');
-                    return tanggalAwal;
-                }
-        },
-        {
-            "data": "created_at",
-            "render": function(data, type, row) {
-                    moment.locale('id');
-                    var tanggalAwal = moment(data).format('dddd, DD MMMM YYYY');
-                    return tanggalAwal;
-                }
-        },
-        {"data": "karyawan.nama_lengkap"},
-        {"data": "karyawan.divisi"},
-        {"data": "karyawan.jabatan", "visible": false},
-        {"data": "tipe"},
-        {"data": "tracking.tracking"},
-        {
-            "data": "detail",
-            "render": function (data, type, row) {
-                if (data && Array.isArray(data)) {
-                    return data.map(item => item.nama_barang).join('<hr style="margin: 4px 0; border: 1px solid black">');
-                }
-                return '-';
+            },
+            complete: function () {
+                setTimeout(() => {
+                    $('#loadingModal').modal('hide');
+                    $('#loadingModal').on('hidden.bs.modal', function () {
+                        $('#loadingModal').attr('inert', true);
+                    });
+                }, 1000);
             }
         },
-
-        {
-            "data": "detail",
-            "render": function (data, type, row) {
-                if (data && Array.isArray(data)) {
-                    return data.map(item => {
-                        let total = item.harga * item.qty;
+        columns: [
+            {
+                data: "created_at",
+                visible: false,
+                render: function (data) {
+                    return moment(data).format('YYYY-MM-DD');
+                }
+            },
+            {
+                data: "created_at",
+                render: function (data) {
+                    moment.locale('id');
+                    return moment(data).format('dddd, DD MMMM YYYY');
+                }
+            },
+            { data: "karyawan.nama_lengkap" },
+            { data: "karyawan.divisi" },
+            { data: "karyawan.jabatan", visible: false },
+            { data: "tipe" },
+            { data: "tracking.tracking" },
+            {
+                data: "detail",
+                render: function (data) {
+                    if (data && Array.isArray(data)) {
+                        return data.map(item => item.nama_barang)
+                                   .join('<hr style="margin:4px 0; border:1px solid black">');
+                    }
+                    return '-';
+                }
+            },
+            {
+                data: "detail",
+                render: function (data) {
+                    if (data && Array.isArray(data)) {
+                        return data.map(item => {
+                            let total = item.harga * item.qty;
+                            return new Intl.NumberFormat('id-ID', {
+                                style: 'currency',
+                                currency: 'IDR'
+                            }).format(total);
+                        }).join('<hr style="margin:4px 0; border:1px solid black">');
+                    }
+                    return '-';
+                }
+            },
+            {
+                data: "detail",
+                render: function (data) {
+                    if (data && Array.isArray(data)) {
+                        const total = data.reduce((sum, item) => sum + (item.harga * item.qty), 0);
                         return new Intl.NumberFormat('id-ID', {
                             style: 'currency',
                             currency: 'IDR'
                         }).format(total);
-                    }).join('<hr style="margin: 4px 0; border: 1px solid black">');
-                }
-                return '-';
-            }
-        },
-
-        {
-            "data": "detail",
-            "render": function (data) {
-                if (data && Array.isArray(data)) {
-                    const total = data.reduce((sum, item) => sum + (item.harga * item.qty), 0);
-                    return new Intl.NumberFormat('id-ID', {
-                        style: 'currency',
-                        currency: 'IDR'
-                    }).format(total);
-                }
-                return '-';
-            }
-        },
-
-        {
-            "data": null,
-            "render": function(data, type, row) {
-                var actions = "";
-                var allowedRoles = ['Office Manager', 'Education Manager', 'SPV Sales', 'GM', 'Koordinator Office', 'Finance & Accounting', 'Koordinator ITSM'];
-                var userRole = '{{ auth()->user()->jabatan}}';
-                var requesterRole = data.karyawan.jabatan;
-                var userKaryawanId = {{ auth()->user()->karyawan_id }};
-                var trackingStatus = data.tracking.tracking;
-                var karyawanId = data.karyawan.id;
-
-                // Fungsi untuk menambahkan tombol dengan kondisi
-                function addButton(label, url, condition, icon) {
-                    if (condition) {
-                        actions += `<a href="${url}" class="dropdown-item"><img src="{{ asset('${icon}') }}" class=""> ${label}</a>`;
-                    } else {
-                        actions += `<button type="button" class="dropdown-item disabled"><img src="{{ asset('${icon}') }}" class=""> ${label}</button>`;
                     }
+                    return '-';
                 }
+            },
+            {
+                data: null,
+                render: function (data, type, row) {
+                    var actions = "";
+                    var allowedRoles = [
+                        'Office Manager', 'Education Manager', 'SPV Sales', 'GM',
+                        'Koordinator Office', 'Finance & Accounting', 'Koordinator ITSM'
+                    ];
+                    var userRole = '{{ auth()->user()->jabatan }}';
+                    var requesterRole = data.karyawan.jabatan;
+                    var userKaryawanId = {{ auth()->user()->karyawan_id }};
+                    var trackingStatus = data.tracking.tracking;
+                    var karyawanId = data.karyawan.id;
 
-                // Tambahkan dropdown actions
-                actions += '<div class="dropdown">';
-                actions += '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
-                actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
-
-                // Tambahkan tombol Approve jika peran pengguna diizinkan
-                if (allowedRoles.includes(userRole)) {
-                    if (userRole == 'GM' && ['Sudah Disetujui dan Sedang Ditinjau oleh General Manager', 'Telah Disetujui oleh SPV Sales dan Sedang Ditinjau oleh General Manager', 'Diajukan dan Sedang Ditinjau oleh General Manager'].includes(trackingStatus)) {
-                        actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Approve</button>';
-                    } else if (userRole == 'Education Manager' && trackingStatus == 'Diajukan dan Sedang Ditinjau oleh Education Manager') {
-                        actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Approve</button>';
-                    } else if (userRole == 'Koordinator ITSM' && trackingStatus == 'Diajukan dan Sedang Ditinjau oleh Koordinator IT Service Management') {
-                        actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Approve</button>';
-                    } else if (userRole == 'SPV Sales' && trackingStatus == 'Diajukan dan Sedang Ditinjau oleh SPV Sales') {
-                        actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Approve</button>';
-                    } else if (userRole == 'Finance & Accounting' && (trackingStatus.includes('Finance') || trackingStatus.includes('Permintaan') || trackingStatus.includes('proses'))) {
-                        actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Approve</button>';
-                    } else {
-                        actions += '<button type="button" class="dropdown-item disabled"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Approve</button>';
+                    function addButton(label, url, condition, icon) {
+                        if (condition) {
+                            actions += `<a href="${url}" class="dropdown-item">
+                                <img src="{{ asset('${icon}') }}"> ${label}</a>`;
+                        } else {
+                            actions += `<button type="button" class="dropdown-item disabled">
+                                <img src="{{ asset('${icon}') }}"> ${label}</button>`;
+                        }
                     }
+
+                    actions += '<div class="dropdown">';
+                    actions += '<button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>';
+                    actions += '<div class="dropdown-menu">';
+
+                    // Approve button
+                    if (allowedRoles.includes(userRole)) {
+                        if (userRole == 'GM' && [
+                            'Sudah Disetujui dan Sedang Ditinjau oleh General Manager',
+                            'Telah Disetujui oleh SPV Sales dan Sedang Ditinjau oleh General Manager',
+                            'Diajukan dan Sedang Ditinjau oleh General Manager'
+                        ].includes(trackingStatus)) {
+                            actions += `<button type="button" class="dropdown-item"
+                                onclick="openApproveModal(${row.id}, 'Manager')">
+                                <img src="{{ asset('icon/check-circle.svg') }}"> Approve</button>`;
+                        } else if (userRole == 'Education Manager' &&
+                            trackingStatus == 'Diajukan dan Sedang Ditinjau oleh Education Manager') {
+                            actions += `<button type="button" class="dropdown-item"
+                                onclick="openApproveModal(${row.id}, 'Manager')">
+                                <img src="{{ asset('icon/check-circle.svg') }}"> Approve</button>`;
+                        } else if (userRole == 'Koordinator ITSM' &&
+                            trackingStatus == 'Diajukan dan Sedang Ditinjau oleh Koordinator IT Service Management') {
+                            actions += `<button type="button" class="dropdown-item"
+                                onclick="openApproveModal(${row.id}, 'Manager')">
+                                <img src="{{ asset('icon/check-circle.svg') }}"> Approve</button>`;
+                        } else if (userRole == 'SPV Sales' &&
+                            trackingStatus == 'Diajukan dan Sedang Ditinjau oleh SPV Sales') {
+                            actions += `<button type="button" class="dropdown-item"
+                                onclick="openApproveModal(${row.id}, 'Manager')">
+                                <img src="{{ asset('icon/check-circle.svg') }}"> Approve</button>`;
+                        } else if (userRole == 'Finance & Accounting' &&
+                            (trackingStatus.includes('Finance') || trackingStatus.includes('Permintaan') || trackingStatus.includes('proses'))) {
+                            actions += `<button type="button" class="dropdown-item"
+                                onclick="openApproveModal(${row.id}, 'Manager')">
+                                <img src="{{ asset('icon/check-circle.svg') }}"> Approve</button>`;
+                        } else {
+                            actions += `<button type="button" class="dropdown-item disabled">
+                                <img src="{{ asset('icon/check-circle.svg') }}"> Approve</button>`;
+                        }
+                    }
+
+                    // Upload Invoice
+                    if (trackingStatus) {
+                        var uploadInvoiceUrl = "{{ url('/pengajuanbarang/uploadinvoice') }}/" + row.id;
+                        addButton('Upload Invoice', uploadInvoiceUrl, userKaryawanId === karyawanId, 'icon/clipboard-primary.svg');
+                    }
+
+                    // Detail
+                    var detailUrl = "{{ url('/pengajuanbarang') }}/" + row.id;
+                    addButton('Detail', detailUrl, true, 'icon/clipboard-primary.svg');
+
+                    if (!trackingStatus.includes('Finance')) {
+                        actions += `<form onsubmit="return confirm('Apakah Anda Yakin ?');"
+                            action="{{ url('/pengajuanbarang') }}/${row.id}" method="POST">
+                            <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="_method" value="DELETE">
+                            <button type="submit" class="dropdown-item">
+                                <img src="{{ asset('icon/trash-danger.svg') }}"> Hapus</button>
+                        </form>`;
+                    }
+
+                    actions += '</div></div>';
+                    return actions;
                 }
-
-                // Tambahkan tombol Upload Invoice dengan kondisi
-                if (trackingStatus) {
-                    var uploadInvoiceUrl = "{{ url('/pengajuanbarang/uploadinvoice') }}/" + row.id;
-                    var uploadInvoiceIcon = 'icon/clipboard-primary.svg';
-                    var uploadInvoiceLabel = 'Upload Invoice';
-                    var uploadInvoiceCondition = userKaryawanId === karyawanId;
-
-                    addButton(uploadInvoiceLabel, uploadInvoiceUrl, uploadInvoiceCondition, uploadInvoiceIcon);
-                }
-
-                // Tambahkan tombol Detail
-                var detailUrl = "{{ url('/pengajuanbarang') }}/" + row.id;
-                var detailIcon = 'icon/clipboard-primary.svg';
-                var detailLabel = 'Detail';
-                var detailCondition = true; // Selalu enabled
-
-                addButton(detailLabel, detailUrl, detailCondition, detailIcon);
-                if(!trackingStatus.includes('Finance')){
-                    actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/pengajuanbarang') }}/' + row.id + '" method="POST">';
-                    actions += '@csrf';
-                    actions += '@method('DELETE')';
-                    actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
-                    actions += '</form>';
-                    actions += '</div>';
-                    actions += '</div>';
-                }
-                actions += '</div>';
-                actions += '</div>';
-
-                return actions;
             }
-        }
-    ],
-    "order": [[0, 'desc']], // Ubah urutan menjadi descending untuk kolom ke-6
-    "columnDefs" : [{"targets":[0], "type":"date"}],
-});
-};
+        ],
+        order: [[0, 'desc']],
+        columnDefs: [{ targets: [0], type: "date" }]
+    });
+}
+
 function tableFinance(){
     // Get current page for both tables before destroying
     var currentPageBelum = 0;
@@ -878,40 +918,36 @@ $('#approveForm').on('submit', function(e) {
     e.preventDefault();
     let form = $(this);
     let actionUrl = form.attr('action');
-    $('#loadingModal').modal('show'); // Tampilkan loading modal
+    $('#loadingModal').modal('show'); // tampilkan loading modal
 
     $.ajax({
         url: actionUrl,
         type: 'POST',
         data: form.serialize(),
         success: function(res) {
-            $('#loadingModal').modal('hide'); // Sembunyikan loading modal
-            $('#approveModal').modal('hide'); // Sembunyikan modal approve
+            $('#loadingModal').modal('hide'); 
+            $('#approveModal').modal('hide'); 
 
-  
-            var currentPageBelum = $('#databelum').DataTable().page();
-            var currentPageSudah = $('#datasudah').DataTable().page();
+            if ($.fn.DataTable.isDataTable('#barangTable')) {
+                $('#barangTable').DataTable().ajax.reload(null, false);
+            }
 
-            // Refresh tabel
-            tableFinance().then(function() {
-                // Kembalikan ke halaman sebelumnya
-                $('#databelum').DataTable().page(currentPageBelum).draw('page');
-                $('#datasudah').DataTable().page(currentPageSudah).draw('page');
-            });
-
-            Swal.fire({
-                icon: 'success',
-                title: 'Success',
-                text: res.message || 'Pengajuan berhasil disetujui'
-            });
+            if ($.fn.DataTable.isDataTable('#databelum')) {
+                var currentPageBelum = $('#databelum').DataTable().page();
+                $('#databelum').DataTable().ajax.reload(function(){
+                    $('#databelum').DataTable().page(currentPageBelum).draw('page');
+                }, false);
+            }
+            if ($.fn.DataTable.isDataTable('#datasudah')) {
+                var currentPageSudah = $('#datasudah').DataTable().page();
+                $('#datasudah').DataTable().ajax.reload(function(){
+                    $('#datasudah').DataTable().page(currentPageSudah).draw('page');
+                }, false);
+            }
         },
         error: function(err) {
             $('#loadingModal').modal('hide'); 
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: err.responseJSON?.message || 'Gagal menyimpan'
-            });
+            alert('Gagal menyimpan data, silakan coba lagi.');
         }
     });
 });

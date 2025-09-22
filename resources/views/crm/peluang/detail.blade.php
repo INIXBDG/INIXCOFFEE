@@ -3,7 +3,7 @@
 @section('crm_contents')
     @php
         $isLost = strtolower($peluang->tahap) === 'lost';
-        $allowedUser = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur'];
+        $allowedUser = ['Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur'];
     @endphp
     <div class="content-wrapper">
         <div class="container-xxl flex-grow-1 container-p-y">
@@ -15,7 +15,7 @@
                             class="btn btn-primary"
                             data-bs-toggle="modal"
                             data-bs-target="#paymentAdvanceModal"
-                            @if ($peluang->tahap !== 'merah' || !empty($peluang->netsales)) disabled @endif>
+                            @if ($peluang->tahap !== 'merah' || $regisuser->isEmpty()) disabled @endif>
                         <i class="menu-icon bx bx-plus"></i> Payment Advance
                     </button>
                     @if ($isLost)
@@ -67,7 +67,7 @@
                                 <dt class="col-sm-4">Catatan</dt>
                                 <dd class="col-sm-8">{{ $peluang->catatan ?? '-' }}</dd>
 
-                                <dt class="col-sm-4">Harga</dt>
+                                <dt class="col-sm-4">Harga Penawaran</dt>
                                 <dd class="col-sm-8">Rp {{ number_format($peluang->harga, 2, ',', '.') }}</dd>
 
                                 <dt class="col-sm-4">Net Sales</dt>
@@ -344,16 +344,16 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="harga" class="form-label">Harga</label>
+                                <label for="harga" class="form-label">Harga Penawaran</label>
                                 <input type="text" class="form-control editLead" id="harga" name="harga"
                                     value="{{ 'Rp ' . number_format($peluang->harga, 0, ',', '.') }}" required>
                             </div>
 
-                            <div class="mb-3">
+                            {{-- <div class="mb-3">
                                 <label for="netsales" class="form-label">Net Sales</label>
                                 <input type="text" class="form-control editLead" id="netsales" name="netsales"
                                     value="{{ 'Rp ' . number_format($peluang->netsales, 0, ',', '.') }}" required>
-                            </div>
+                            </div> --}}
 
                             <div class="mb-3">
                                 <label for="pax" class="form-label">Jumlah Peserta (Pax)</label>
@@ -432,13 +432,10 @@
 
                             <!-- Input Harga Final hanya muncul jika tahap = Merah -->
                             <div class="mb-3 d-none" id="input-close-win">
-                                <label for="close_win_display" class="form-label">Harga Final (Menang)</label>
+                                <label for="close_win_display" class="form-label">Harga Final (PAX)</label>
                                 <div class="input-group">
-                                    <span class="input-group-text">Rp</span>
-                                    <!-- Input tampilan -->
                                     <input type="text" class="form-control" id="close_win_display"
                                         placeholder="Masukkan harga final">
-                                    <!-- Input hidden untuk dikirim -->
                                     <input type="hidden" name="final" id="close_win">
                                 </div>
                             </div>
@@ -484,11 +481,10 @@
                                     @endforeach
                                 </select>
                             </div>
-
                             <div class="mb-3">
                                 <label for="hargaPenawaran" class="form-label">Harga Penawaran</label>
-                                <input type="text" class="form-control rupiah" id="hargaPenawaran"
-                                    name="hargaPenawaran">
+                                <input type="text" class="form-control rupiah" id="hargaPenawaran" name="hargaPenawaran"
+                                    value="Rp {{ number_format($peluang->harga, 0, ',', '.') }}" readonly>
                             </div>
                             <div class="mb-3">
                                 <label for="transportasi" class="form-label">Transportasi</label>
@@ -503,20 +499,20 @@
                                 <input type="text" class="form-control rupiah" id="freshMoney" name="freshMoney">
                             </div>
                             <div class="mb-3">
-                                <label for="cashback" class="form-label">Cashback</label>
-                                <input type="text" class="form-control rupiah" id="cashback" name="cashback">
-                            </div>
-                            <div class="mb-3">
-                                <label for="diskon" class="form-label">Diskon</label>
-                                <input type="text" class="form-control rupiah" id="diskon" name="diskon">
-                            </div>
-                            <div class="mb-3">
                                 <label for="entertaint" class="form-label">Entertaint</label>
                                 <input type="text" class="form-control rupiah" id="entertaint" name="entertaint">
                             </div>
                             <div class="mb-3">
                                 <label for="souvenir" class="form-label">Souvenir</label>
                                 <input type="text" class="form-control rupiah" id="souvenir" name="souvenir">
+                            </div>
+                            <div class="mb-3">
+                                <label for="cashback" class="form-label">Cashback</label>
+                                <input type="text" class="form-control rupiah" id="cashback" name="cashback">
+                            </div>
+                            <div class="mb-3">
+                                <label for="diskon" class="form-label">Diskon</label>
+                                <input type="text" class="form-control rupiah" id="diskon" name="diskon">
                             </div>
                             <div class="mb-3">
                                 <label for="desc" class="form-label">Description</label>
@@ -549,7 +545,7 @@
         <!-- Modal Detail PA -->
         <div class="modal fade" id="detailPAModal" tabindex="-1" aria-labelledby="detailPAModalLabel"
             aria-hidden="true">
-            <div class="modal-dialog modal-fullscreen">
+            <div class="modal-dialog modal-xl">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="detailPAModalLabel">Detail Payment Advance</h5>
@@ -656,7 +652,7 @@
                                                 @php
                                                     $status = match (true) {
                                                         $approval->status === 1 &&
-                                                            $approval->level_status === 'III' &&
+                                                            $approval->level_status === '3' &&
                                                             $approval->keterangan !== 'Selesai'
                                                             => 'Diproses',
                                                         $approval->status === 1 => 'Disetujui',
@@ -664,9 +660,9 @@
                                                         default => 'Belum diketahui',
                                                     };
                                                     $approver = match ($approval->level_status) {
-                                                        'I' => 'SPV Sales',
-                                                        'II' => 'GM',
-                                                        'III' => 'Finance & Accounting',
+                                                        '1' => 'SPV Sales',
+                                                        '2' => 'GM',
+                                                        '3' => 'Finance & Accounting',
                                                         default => $approval->level_status ?? '-',
                                                     };
                                                 @endphp

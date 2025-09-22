@@ -18,7 +18,7 @@ class perhitunganNetSales extends Model
 
     public function approvedNetSales()
     {
-        return $this->hasMany(approvedNetSales::class, 'id_netSales', 'id');
+        return $this->hasMany(approvedNetSales::class, 'id_rkm', 'id_rkm');
     }
     public function karyawan()
     {
@@ -30,7 +30,7 @@ class perhitunganNetSales extends Model
         return $this->belongsTo(trackingNetSales::class, 'id_tracking', 'id');
     }
 
-        public function peserta()
+    public function peserta()
     {
         return $this->belongsTo(Peserta::class, 'id_peserta');
     }

@@ -90,6 +90,63 @@
     </div>
     <!-- / Layout wrapper -->
 
+    <!-- Modal Import Excel -->
+    <div class="modal fade" id="importExcelModal" tabindex="-1" aria-labelledby="importExcelModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="importExcelModalLabel">Import Data Perusahaan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <form action="{{ route('perusahaan.import') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-body">
+                <div class="mb-3">
+                    <label for="fileExcel" class="form-label">Pilih File Excel</label>
+                    <input type="file" class="form-control" id="fileExcel" name="file" accept=".xlsx,.xls,.csv" required>
+                </div>
+                </div>
+
+                <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" class="btn btn-primary">Import</button>
+                </div>
+            </form>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="importExcelModalContact" tabindex="-1" aria-labelledby="importExcelModalContactLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="importExcelModalContactLabel">Import Data Contact</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <form action="{{ route('contact.import') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-body">
+                <div class="mb-3">
+                    <label for="fileExcel" class="form-label">Pilih File Excel</label>
+                    <input type="file" class="form-control" id="fileExcel" name="file" accept=".xlsx,.xls,.csv" required>
+                </div>
+                </div>
+
+                <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" class="btn btn-primary">Import</button>
+                </div>
+            </form>
+
+            </div>
+        </div>
+    </div>
+
     <!-- Core JS -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 

@@ -61,11 +61,32 @@
 
     <ul class="menu-inner py-1">
 
-        @php
-            $user = Auth::user();
-            $allowedUser = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur'];
-        @endphp
+    @php
+        $user = Auth::user();
+        $allowedUser = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur', 'SPV Sales'];
+    @endphp
 
+    @if(in_array($user->jabatan, ['Programmer', 'Koordinator ITSM']))
+        <!-- Khusus Programmer: hanya Import & Excel -->
+        <li class="menu-header small text-uppercase">
+            <span class="menu-header-text">Import &amp; Excel</span>
+        </li>
+
+        <li class="menu-item">
+            <a href="javascript:void(0)" class="menu-link" data-bs-toggle="modal" data-bs-target="#importExcelModal">
+                <i class="menu-icon tf-icons bx bx-upload"></i>
+                <div class="text-truncate">Import Perusahaan</div>
+            </a>
+        </li>
+
+        <li class="menu-item">
+            <a href="javascript:void(0)" class="menu-link" data-bs-toggle="modal" data-bs-target="#importExcelModalContact">
+                <i class="menu-icon tf-icons bx bx-upload"></i>
+                <div class="text-truncate">Import Contact</div>
+            </a>
+        </li>
+    @else
+        <!-- Untuk user lain: menu default -->
         <!-- Dashboards -->
         <li class="menu-item {{ request()->routeIs('CRM.index') ? 'active open' : '' }}">
             <a href="{{ route('CRM.index') }}" class="menu-link">
@@ -99,11 +120,11 @@
         <li class="menu-item {{ request()->routeIs('crm.ketentuan') ? 'active open' : '' }}">
             <a href="{{ route('crm.ketentuan') }}" class="menu-link">
                 <i class='menu-icon tf-icons bx bx-bookmark-alt'></i>
-                <div class="text-truncate" data-i18n="crmKetentuan">Ketentuan Regis</div>
+                <div class="text-truncate" data-i18n="crmKetentuan">Ketentuan</div>
             </a>
         </li>
 
-        @if ($user->jabatan == 'GM')
+        @if(in_array($user->jabatan, ['GM', 'SPV Sales']))
             <li class="menu-item {{ request()->routeIs('index.target') ? 'active open' : '' }}">
                 <a href="{{ route('index.target') }}" class="menu-link">
                     <i class='menu-icon tf-icons bx bx-bullseye'></i>
@@ -155,4 +176,21 @@
                 </a>
             </li>
         @endif
+
+        <li class="menu-item {{ request()->routeIs('crm.index.penawaran') ? 'active open' : '' }}">
+            <a href="{{ route('crm.index.penawaran') }}"
+            class="menu-link"
+            target="blank_">
+                <i class='menu-icon tf-icons bx bx-file-blank'></i>
+                <div class="text-truncate">Generate Penawaran</div>
+            </a>
+        </li>
+    @endif
+
+    <div style="position: absolute; bottom: 0; left: 0; width: 100%; padding: 12px;">
+        <a href="{{ route('home') }}"
+           class="btn btn-primary d-flex align-items-center justify-content-center w-100">
+            <i class="bx bx-home me-2"></i>BACK TO INIXCOFFE
+        </a>
+    </div>
 </aside>
