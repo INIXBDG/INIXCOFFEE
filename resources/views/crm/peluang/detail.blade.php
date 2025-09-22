@@ -652,7 +652,7 @@
                                                 @php
                                                     $status = match (true) {
                                                         $approval->status === 1 &&
-                                                            $approval->level_status === 'III' &&
+                                                            $approval->level_status === '3' &&
                                                             $approval->keterangan !== 'Selesai'
                                                             => 'Diproses',
                                                         $approval->status === 1 => 'Disetujui',
@@ -660,9 +660,9 @@
                                                         default => 'Belum diketahui',
                                                     };
                                                     $approver = match ($approval->level_status) {
-                                                        'I' => 'SPV Sales',
-                                                        'II' => 'GM',
-                                                        'III' => 'Finance & Accounting',
+                                                        '1' => 'SPV Sales',
+                                                        '2' => 'GM',
+                                                        '3' => 'Finance & Accounting',
                                                         default => $approval->level_status ?? '-',
                                                     };
                                                 @endphp
