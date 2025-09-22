@@ -79,6 +79,7 @@
                             <option value="RR">Rara</option>
                             <option value="NA">Nabila</option>
                             <option value="AN">Alfasyiani</option>
+                            <option value="RN">Reni</option>
                         </select>
                     </div>
                 </div>
@@ -341,7 +342,7 @@
 
                                 <div class="mb-3">
                                     <label class="form-label" for="alamat">Alamat</label>
-                                    <textarea class="form-control" id="alamat" name="alamat" rows="2"></textarea>   
+                                    <textarea class="form-control" id="alamat" name="alamat" rows="2"></textarea>
                                 </div>
 
                                 <div class="mb-3">
