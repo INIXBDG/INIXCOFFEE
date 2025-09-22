@@ -9,6 +9,7 @@ use App\Http\Controllers\RKMController as ControllersRKMController;
 use App\Http\Controllers\netSalesController;
 use App\Http\Controllers\pengajuanKlaimController;
 use App\Http\Controllers\DashboardItsmController;
+use App\Http\Controllers\examController;
 use App\Models\izinTigaJam;
 use App\Http\Controllers\InventarisController;
 use App\Http\Controllers\laporanInsidentController;
@@ -18,9 +19,7 @@ use Illuminate\Support\Facades\Auth;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 use App\Http\Controllers\InvoiceRKMController;
 use App\Http\Controllers\MakananRkmController;
-
-
-
+use App\Http\Controllers\managementKelasController;
 
 /*
 |--------------------------------------------------------------------------
@@ -428,3 +427,21 @@ Route::get('/laporan-insiden/detail/{id}', [laporanInsidentController::class, 'd
 Route::get('/laporan-insiden/edit/{id}', [laporanInsidentController::class, 'edit'])->name('edit.laporanInsiden');
 Route::get('/laporan-insiden/hapus/{id}', [laporanInsidentController::class, 'hapus'])->name('hapus.laporanInsiden');
 Route::post('/laporan-insiden/update', [laporanInsidentController::class, 'update'])->name('uodate.laporanInsiden');
+//management-kelas-offline
+Route::get('/management-kelas/get', [managementKelasController::class, 'get'])->name('managementKelas.get');
+Route::post('/management-kelas/store', [managementKelasController::class, 'store'])->name('managementKelas.store');
+Route::resource('managemetkelas', \App\Http\Controllers\managementKelasController::class);
+
+Route::get('/exam/assign-room/{id}', [examController::class, 'assignRoom'])
+    ->name('exam.assignRoom')
+    ->middleware('can:Edit Exam');
+
+// Routes management kelas yang sudah ada
+Route::get('/management-kelas', [managementKelasController::class, 'index'])
+    ->name('managementKelas.index');
+Route::get('/management-kelas/get', [managementKelasController::class, 'get'])
+    ->name('managementKelas.get');
+Route::post('/management-kelas/store', [managementKelasController::class, 'store'])
+    ->name('managementKelas.store');
+    // di web.php atau routes file
+Route::post('/exam/process-room-assignment', [examController::class, 'processRoomAssignment'])->name('exam.processRoomAssignment');
