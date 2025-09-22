@@ -868,7 +868,12 @@ var datasudahinvTable = $('#datasudahinv').DataTable({
                 <a class="dropdown-item" href="/storage/${row.invoice}" target="_blank">
                     <img src="{{ asset('icon/file-text.svg') }}"> Lihat Invoice
                 </a>` : ``}
-            </div>
+				<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/pengajuanbarang') }}/' + row.id + '" method="POST">
+					@csrf
+					@method('DELETE')
+					<button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>
+					</form>
+			</div>
         </div>
     `;
     return actions;
