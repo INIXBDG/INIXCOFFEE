@@ -32,6 +32,7 @@ use Illuminate\Support\Facades\Auth;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 use App\Http\Controllers\InvoiceRKMController;
 use App\Http\Controllers\MakananRkmController;
+use App\Http\Controllers\TicketController;
 
 
 
@@ -523,4 +524,19 @@ Route::get('/rekapexam', [examController::class, 'rekapExam'])->name('exam.rekap
 Route::get('/getRekapExamByMonth/{year}/{month}', [examController::class, 'getRekapExam'])->name('exam.getRekapExam');
 Route::get('/rekapExamExportExcel/{year}/{month}', [examController::class, 'rekapExamExportExcel'])->name('exam.rekapExamExportExcel');
 
-
+Route::get('/ticketing-data', [DashboardItsmController::class, 'getJumlahPermintaan']);
+Route::get('/jumlah-pic', [DashboardItsmController::class, 'getJumlahPIC']);
+Route::get('/rerata-durasi-data', [DashboardItsmController::class, 'getRerataDurasi']);
+Route::get('/rerata-ketepatan-response-data', [DashboardItsmController::class, 'getRerataKetepatanResponse']);
+Route::get('/jumlah-permintaan-per-bulan', [DashboardItsmController::class, 'getJumlahPermintaanPerBulan']);
+Route::get('/permintaan-sering-diajukan', [DashboardItsmController::class, 'getPermintaanSeringDiajukan']);
+Route::get('/list-bulan', [DashboardItsmController::class, 'getListBulan']);
+Route::get('/tickets', [TicketController::class, 'index'])->name('tickets.index');
+Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
+Route::get('/tickets/create', [TicketController::class, 'create'])->name('tickets.create');
+Route::get('/tickets/create', [TicketController::class, 'create'])->name('tickets.create');
+Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
+Route::post('/tickets/{ticket}/accept', [TicketController::class, 'accept'])->name('tickets.accept');
+Route::post('/tickets/{ticket}/finish', [TicketController::class, 'finish'])->name('tickets.finish');
+Route::post('/tickets/{ticket}/block', [TicketController::class, 'block'])->name('tickets.block');
+Route::get('/getTickets', [TicketController::class, 'getTickets'])->name('getTickets');

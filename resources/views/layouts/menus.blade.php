@@ -1371,24 +1371,6 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                @if (Auth::user()->karyawan && Auth::user()->karyawan->divisi === 'IT Service Management')
-                                                <div class="col-sm-6 mt-2">
-                                                    <div class="card" id="card-hover">
-                                                        <div class="card-body d-flex">
-                                                            <div class="col-md-2">
-                                                                <i class="fa-regular fa-file" style="font-size: 30px;"></i>
-                                                            </div>
-                                                            <div class="col-md-10" style="margin-left: 10px">
-                                                                <a href="{{ route('index.laporanInsiden') }}"
-                                                                    class="link stretched-link text-decoration-none">
-                                                                    <h5 class="card-title">Laporan Insiden</h5>
-                                                                </a>
-                                                                <p class="card-text">Laporkan Insiden dan Risiko disekitar anda.</p>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                @endif
                                             </div>
                                         </div>
                                     </div>
@@ -1487,6 +1469,40 @@
                                         <div class="card-body">
                                             <h5 class="text-center card-title">IT Service Management</h5>
                                             <div class="row">
+                                                @if (Auth::user()->karyawan && Auth::user()->karyawan->divisi === 'IT Service Management')
+                                                <div class="col-sm-6 mt-2">
+                                                    <div class="card" id="card-hover">
+                                                        <div class="card-body d-flex">
+                                                            <div class="col-md-2">
+                                                                <i class="fa-regular fa-file" style="font-size: 30px;"></i>
+                                                            </div>
+                                                            <div class="col-md-10" style="margin-left: 10px">
+                                                                <a href="{{ route('index.laporanInsiden') }}"
+                                                                    class="link stretched-link text-decoration-none">
+                                                                    <h5 class="card-title">Laporan Insiden</h5>
+                                                                </a>
+                                                                <p class="card-text">Laporkan Insiden dan Risiko disekitar anda.</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                @endif
+                                                <div class="col-sm-6 mt-2">
+                                                    <div class="card" id="card-hover">
+                                                        <div class="card-body d-flex">
+                                                            <div class="col-md-2">
+                                                                <i class="fa-regular fa-file" style="font-size: 30px;"></i>
+                                                            </div>
+                                                            <div class="col-md-10" style="margin-left: 10px">
+                                                                <a href="{{ route('index.laporanInsiden') }}"
+                                                                    class="link stretched-link text-decoration-none">
+                                                                    <h5 class="card-title">IT Helpdesk (Ticketing)</h5>
+                                                                </a>
+                                                                <p class="card-text">Laporkan Insiden dan Risiko yang anda alami.</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
