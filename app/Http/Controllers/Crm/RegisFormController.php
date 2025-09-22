@@ -135,7 +135,7 @@ class RegisFormController extends Controller
     public function storeDeskripsi(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'deskripsi' => 'required|string|max:255',
+            'deskripsi' => 'required|string',
         ]);
 
         if ($validator->fails()) {
