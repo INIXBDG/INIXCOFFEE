@@ -410,6 +410,8 @@ Route::prefix('crm')->group(function () {
     Route::delete('/contact/delete/{id}', [ContactController::class, 'delete'])->name('delete.contact');
     Route::put('/contact/update/{id}', [ContactController::class, 'update'])->name('update.contact');
     Route::get('/contact/data', [ContactController::class, 'getPerusahaan'])->name('contact.data');
+    Route::put('/update/pic', [PicController::class, 'updatePIC'])->name('pic.update');
+    Route::delete('/delete/pic/{id}', [PicController::class, 'deletePIC'])->name('pic.delete');
 
     // Peluang CRM
     Route::get('/peluang/index', [PeluangController::class, 'index'])->name('index.peluang');
