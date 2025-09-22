@@ -459,14 +459,15 @@
             "E-Modul",
             "E-Lab",
             "Makan Siang",
-            "Antar-jemput dari Kantor Inixindo ke hotel atau penginapan (maksimal 5 km)"
+            "Antar-jemput dari Kantor Inixindo ke hotel atau penginapan (radius 5 km)"
         ];
         const keuntunganKonstan = [
             "E-Sertifikat dari Inixindo",
             "Souvenir",
             "Hasil pre-test dan post-test (sesuai kebutuhan)",
             "Konsultasi dan diskusi gratis dengan instruktur",
-            "Pembahasan studi kasus"
+            "Pembahasan studi kasus",
+            "Akses Webinar Gratis"
         ];
 
         // Fungsi untuk format Rupiah
@@ -740,8 +741,8 @@
                         <div class="office-info text-sm text-gray-700 text-right">
                             <p class="font-bold">INIXINDO BANDUNG</p>
                             <p>Jl Cipaganti No 95 Bandung</p>
-                            <p>Telepon / Fax: 022 2032 831</p>
-                            <p>Whatsapp: ${waSales}</p>
+                            <p>Telepon : 022 2032 831</p>
+                            <p>Whatsapp : ${waSales}</p>
                             <p><a href="http://www.inixindobdg.co.id" style="text-decoration:none; color: black;">www.inixindobdg.co.id</a></p>
                         </div>
                     </div>
@@ -800,7 +801,7 @@
                             <p class="font-bold" style="padding-bottom:4%;">INIXINDO BANDUNG</p>
                             <p class="signature"><strong>${namaSales}</strong></p>
                             <p>${jabatanSales},</p> 
-                            <p>Pt Inixindo Amiete Mandiri</p>
+                            <p>Inixindo Bandung</p>
                         </div>
                     </div>
                 </div>
