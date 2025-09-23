@@ -68,7 +68,7 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="detailModalLabel">Detail Tiket</h5>
+                    <h5 class="modal-title" id="detailModalLabel">Detail Ticketing</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -85,7 +85,7 @@
             </div>
             <div class="card m-4">
                 <div class="card-body table-responsive">
-                    <h3 class="card-title text-center my-1">{{ __('Data Target') }}</h3>
+                    <h3 class="card-title text-center my-1">{{ __('Ticketing') }}</h3>
                     <table class="table table-striped" id="jabatantable">
                         <thead>
                             <tr>
@@ -239,7 +239,8 @@
                     "data": null,
                     "render": function(data, type, row) {
                         var pic = "{{ auth()->user()->username }}";
-                        var divisi = "{{ auth()->user()->divisi }}";
+                        var divisi = "{{ auth()->user()->karyawan->divisi }}";
+                        console.log(divisi);
                         switch(pic.toLowerCase()) {
                             case 'ardhan':
                                 pic = 'Ardhan';

@@ -1495,7 +1495,7 @@
                                                                 <i class="fa-regular fa-file" style="font-size: 30px;"></i>
                                                             </div>
                                                             <div class="col-md-10" style="margin-left: 10px">
-                                                                <a href="{{ route('index.laporanInsiden') }}"
+                                                                <a href="{{ route('tickets.index') }}"
                                                                     class="link stretched-link text-decoration-none">
                                                                     <h5 class="card-title">IT Helpdesk (Ticketing)</h5>
                                                                 </a>
