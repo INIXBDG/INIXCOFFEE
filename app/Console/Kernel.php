@@ -23,10 +23,10 @@ class Kernel extends ConsoleKernel
             $outstandings = Outstanding::where('status_pembayaran', '0')
                 ->whereDate('due_date', '>=', now())
                 ->get();
-    
+
             $financeUsers = User::where('jabatan', 'Finance & Accounting')->get();
             $path = '/outstanding';
-    
+
             try {
                 foreach ($outstandings as $outstanding) {
                     Notification::send($financeUsers, new OutstandingNotification($outstanding, $path));
@@ -34,15 +34,15 @@ class Kernel extends ConsoleKernel
             } catch (\Exception $e) {
                     Log::error('Failed to send notifications: ' . $e->getMessage());
             }
-            
+
         })->weeklyOn(1, '8:00');
 
         $schedule->call(function () {
             $outstandings = Outstanding::where('status_pembayaran', '1')->get();
-        
+
             foreach ($outstandings as $outstanding) {
                 $rkm = RKM::where('id', $outstanding->id_rkm)->with('perusahaan', 'materi')->first();
-        
+
                 if ($rkm && $rkm->perusahaan && $rkm->materi) {
                     // Tandai notifikasi terkait sebagai dibaca (set read_at)
                     DB::table('notifications')
@@ -54,8 +54,9 @@ class Kernel extends ConsoleKernel
                 }
             }
         })->dailyAt('23:00');
-        
-        
+
+
+        $schedule->command('app:update-status')->dailyAt('23:00');
     }
 
     /**

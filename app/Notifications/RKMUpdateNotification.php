@@ -3,8 +3,6 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class RKMUpdateNotification extends Notification
@@ -22,17 +20,41 @@ class RKMUpdateNotification extends Notification
 
     public function via($notifiable)
     {
-        return ['database', 'broadcast']; // Menggunakan 'database' dan 'broadcast'
+        return ['database', 'broadcast'];
     }
 
     public function toArray($notifiable)
     {
+        $user = $this->data['user_update'];
+
+        $statusMap = [
+            1 => 'Biru',
+            2 => 'Hitam',
+            0 => 'Merah',
+        ];
+
+        $perubahanText = [];
+        foreach ($this->data['perubahan'] as $field => $values) {
+            $old = $values['old'] ?? '-';
+            $new = $values['new'] ?? '-';
+
+            if ($field === 'status') {
+                $old = $statusMap[$old] ?? $old;
+                $new = $statusMap[$new] ?? $new;
+            }
+
+            $perubahanText[] = "{$field}: {$old} → {$new}";
+        }
+
+        $pesan = $user . ' telah mengubah ' . implode(', ', $perubahanText);
+
         return [
-            'user' => auth()->user()->username,
+            'user' => $user,
             'message' => [
                 'tipe' => 'RKM Update',
                 'nama_materi' => $this->data['nama_materi'],
                 'nama_perusahaan' => $this->data['nama_perusahaan'],
+                'detail' => $pesan,
             ],
             'path' => $this->path,
             'status' => 'unread',

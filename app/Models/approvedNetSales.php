@@ -9,10 +9,10 @@ class approvedNetSales extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['id_netSales', 'status', 'level_status', 'keterangan', 'tanggal'];
+    protected $fillable = ['id_rkm', 'status', 'level_status', 'keterangan', 'tanggal'];
 
     public function perhitunganNetSales()
     {
-        return $this->hasOne(perhitunganNetSales::class, 'id', 'id_netSales');
+        return $this->hasOne(perhitunganNetSales::class, 'id_rkm', 'id_rkm');
     }
 }

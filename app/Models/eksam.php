@@ -27,6 +27,8 @@ class eksam extends Model
         'keterangan',
         'status',
         'kode_karyawan',
+        'mata_uang',
+        
     ];
 
     public function rkm()
@@ -37,6 +39,10 @@ class eksam extends Model
     public function karyawan()
     {
         return $this->belongsTo(karyawan::class, 'kode_karyawan', 'kode_karyawan');
+    }
+    public function sales()
+    {
+        return $this->belongsTo(karyawan::class, 'sales_key', 'kode_karyawan');
     }
     public function kodeeksam()
     {
@@ -50,4 +56,14 @@ class eksam extends Model
     {
         return $this->belongsTo(approvalexam::class, 'id', 'id_exam');
     }
+    public function materi()
+{
+    return $this->belongsTo(Materi::class, 'materi', 'id');
+}
+
+public function perusahaan()
+{
+    return $this->belongsTo(Perusahaan::class, 'perusahaan', 'id');
+}
+
 }

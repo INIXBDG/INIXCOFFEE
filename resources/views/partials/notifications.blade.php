@@ -110,6 +110,23 @@
             </div>
         </div>
     @endif
+    @if ($notification->data['message']['tipe'] == 'Penilaian 360')
+        <div class="notification mb-3">
+            <p>Mohon untuk <strong style="text-transform: capitalize;">{{ $notification->data['message']['content'] }}</strong>. terima kasih
+            <p>Dibuat Pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
+            <div class="d-flex">
+                <a href="{{ $notification->data['path'] }}" class="btn btn-primary btn-sm"
+                    style="margin-right:8px;">Nilai Sekarang</a>
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
+                    class="d-inline">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai
+                        Dibaca</button>
+                </form>
+            </div>
+        </div>
+    @endif
     @if ($notification->data['message']['tipe'] == 'RKM Baru')
         <div class="notification mb-3">
             <p><strong style="text-transform: capitalize;">{{ $notification->data['user'] }}</strong> telah menambahkan
@@ -133,21 +150,27 @@
     @endif
     @if ($notification->data['message']['tipe'] == 'RKM Update')
         <div class="notification mb-3">
-            <p><strong style="text-transform: capitalize;">{{ $notification->data['user'] }}</strong> telah mengubah
-                {{ $notification->data['message']['tipe'] }} dengan judul
+            <p>
+                <strong style="text-transform: capitalize;">{{ $notification->data['user'] }}</strong>
+                telah mengubah RKM dengan judul
                 "{{ $notification->data['message']['nama_materi'] }}" dengan peserta dari
-                {{ $notification->data['message']['nama_perusahaan'] }}</p>
+                {{ $notification->data['message']['nama_perusahaan'] }}
+            </p>
+
+            @if (!empty($notification->data['message']['detail']))
+                <p><strong>Perubahan:</strong> {{ $notification->data['message']['detail'] }}</p>
+            @endif
             <p>Pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
-            {{-- <p><strong>Status:</strong> {{ $notification->data['status'] }}</p> --}}
             <div class="d-flex">
-                <a href="{{ $notification->data['path'] }}" class="btn btn-primary btn-sm"
-                    style="margin-right:8px;">Lihat RKM</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
-                    class="d-inline">
+                <a href="{{ $notification->data['path'] }}" class="btn btn-primary btn-sm" style="margin-right:8px;">
+                    Lihat RKM
+                </a>
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                     @csrf
                     @method('PUT')
-                    <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai
-                        Dibaca</button>
+                    <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">
+                        Tandai sebagai Dibaca
+                    </button>
                 </form>
             </div>
         </div>

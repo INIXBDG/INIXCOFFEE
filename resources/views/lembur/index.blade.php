@@ -63,6 +63,7 @@
                                     <th scope="col">Tanggal SPL</th>
                                     <th scope="col">Uraian Tugas</th>
                                     <th scope="col">Waktu Lembur</th>
+									<th scope="col">Waktu Lembur</th>
                                     <th scope="col">Tanggal Lembur</th>
                                     <th scope="col">Aksi</th>
                                 </tr>
@@ -195,6 +196,10 @@
                 },
                 {"data": "uraian_tugas"},
                 {"data": "waktu_lembur"},
+				{
+					"data": "tanggal_lembur",
+					"visible" : false
+				},
                 {
                     "data": null,
                     "render": function (data, type, row) {
@@ -358,7 +363,7 @@
                     }
                 }
             ],
-            "order": [[7, 'desc']],
+            "order": [[9, 'asc']],
             "columnDefs": [{"targets": [7], "type": "date"}],
         });
         $('#lemburkaryawan').on('click', '.approve-btn', function() {

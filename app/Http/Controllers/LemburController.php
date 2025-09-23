@@ -64,7 +64,15 @@ public function getLemburKaryawan()
             })
             ->latest()
             ->get();
-    } elseif (in_array($jabatan, ['Office Manager', 'Koordinator Office', 'Education Manager', 'SPV Sales', 'Koordinator ITSM'])) {
+    } elseif ($jabatan == 'HRD') {
+        // GM hanya melihat semua lembur dari divisi Office (tanpa peduli jabatannya)
+        $lembur = Lembur::with('karyawan')
+            ->whereHas('karyawan', function ($query) {
+                $query->whereIn('jabatan', ['Office Boy', 'Driver']);
+            })
+            ->latest()
+            ->get();
+    }elseif (in_array($jabatan, ['Office Manager', 'Koordinator Office', 'Education Manager', 'SPV Sales', 'Koordinator ITSM'])) {
         $lembur = Lembur::with('karyawan')->whereHas('karyawan', function($query) use ($divisi) {
             $query->where('divisi', $divisi);
         })->latest()->get();

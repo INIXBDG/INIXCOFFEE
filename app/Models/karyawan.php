@@ -18,6 +18,7 @@ class karyawan extends Model
         'foto',
         'nip',
         'nama_lengkap',
+        'email',
         'divisi',
         'jabatan',
         'rekening_maybank',
@@ -33,11 +34,18 @@ class karyawan extends Model
         'kode_karyawan',
         'ttd',
         'cuti',
+        'email',
+        'whatsapp',
+        'telepon',
     ];
 
     public function user()
     {
         return $this->hasOne(User::class, 'karyawan_id');
+    }
+    public function formPenilaian()
+    {
+        return $this->hasMany(formPenilaian::class, 'id_karyawan', 'id');
     }
 
     public function perusahaan()
