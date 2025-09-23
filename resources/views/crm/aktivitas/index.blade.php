@@ -54,7 +54,7 @@
                                 {{-- Dropdown perusahaan Klien --}}
                                 <div class="mb-3">
                                     <label class="form-label" for="id_perusahaan">Nama Perusahaan</label>
-                                    <select class="form-select select2" id="id_perusahaan" name="id_perusahaan" required>
+                                    <select class="form-select" id="id_perusahaan" name="id_perusahaan" required>
                                         <option value="">Pilih Perusahaan</option>
                                         @foreach ($perusahaan as $p)
                                             <option value="{{ $p->id }}">{{ $p->nama_perusahaan }}</option>
@@ -260,8 +260,8 @@
             var $closestModal = $select.closest('.modal');
 
             $select.select2({
-                placeholder: "Cari atau pilih perusahaan...",
                 width: '100%',
+                theme: 'bootstrap-5',
                 // pastikan dropdown di-append ke modal (atau body jika tidak ada modal)
                 dropdownParent: $closestModal.length ? $closestModal : $(document.body)
             });

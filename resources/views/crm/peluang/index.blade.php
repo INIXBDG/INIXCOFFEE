@@ -58,16 +58,16 @@
 
                                 <!-- Form Kontak -->
                                 <div class="mb-3">
-                                    <label class="form-label" for="id_contact">Contact Client</label>
-                                    <select class="form-select" id="id_contact" name="id_contact" required>
-                                        <option value="" disabled selected>Pilih Contact</option>
-                                        @foreach ($contact as $c)
-                                            <option value="{{ $c->id }}">{{ $c->nama_perusahaan }}
-                                                ({{ $c->cp ?? '-' }})
+                                    <label class="form-label" for="id_perusahaan">Perusahaan</label>
+                                    <select class="form-select" id="id_perusahaan" name="id_perusahaan" required>
+                                        <option value="" disabled selected>Pilih Perusahaan</option>
+                                        @foreach ($Perusahaan as $p)
+                                            <option value="{{ $p->id }}">{{ $p->nama_perusahaan }}
+                                                ({{ $p->cp ?? '-' }})
                                             </option>
                                         @endforeach
                                     </select>
-                                    <div class="invalid-feedback">Pilih contact client.</div>
+                                    <div class="invalid-feedback">Pilih Perusahaan.</div>
                                 </div>
 
                                 <!-- Form Materi -->
@@ -196,6 +196,7 @@
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         // Global CSRF token setup for AJAX
         $.ajaxSetup({
@@ -300,10 +301,53 @@
                 ],
                 order: [[7, 'desc']]
             });
+
+            initPerusahaanSelect2();
+            initMateriSelect2();
         });
 
+        function initPerusahaanSelect2() {
+            var $select = $('#id_perusahaan');
+
+            // safety: pastikan select2 tersedia
+            if (typeof $.fn.select2 !== 'function') {
+                console.error('Select2 belum ter-load!');
+                return;
+            }
+
+            // cari modal parent (jika ada)
+            var $closestModal = $select.closest('.modal');
+
+            $select.select2({
+                width: '100%',
+                theme: 'bootstrap-5',
+                // pastikan dropdown di-append ke modal (atau body jika tidak ada modal)
+                dropdownParent: $closestModal.length ? $closestModal : $(document.body)
+            });
+        }
+
+        function initMateriSelect2() {
+            var $select = $('#materi');
+
+            // safety: pastikan select2 tersedia
+            if (typeof $.fn.select2 !== 'function') {
+                console.error('Select2 belum ter-load!');
+                return;
+            }
+
+            // cari modal parent (jika ada)
+            var $closestModal = $select.closest('.modal');
+
+            $select.select2({
+                width: '100%',
+                theme: 'bootstrap-5',
+                // pastikan dropdown di-append ke modal (atau body jika tidak ada modal)
+                dropdownParent: $closestModal.length ? $closestModal : $(document.body)
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
-            const contactSelect = document.getElementById('id_contact');
+            const contactSelect = document.getElementById('id_perusahaan');
             const tableWrapper = document.getElementById('aktivitasTableWrapper');
 
             contactSelect.addEventListener('change', function() {
