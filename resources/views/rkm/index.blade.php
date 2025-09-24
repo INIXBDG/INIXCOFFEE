@@ -245,42 +245,67 @@
                         html += '</tr>';
                         html += '</thead>';
                         html += '<tbody>';
+                        // Bagian JavaScript yang diperbaiki untuk dropdown makanan
                         if (weekData.data.length === 0) {
                             html += '<tr>';
                             html += '<td colspan="12" class="text-center">Tidak Ada Kelas Mingguan</td>';
                             html += '</tr>';
                         } else {
+                            // Sort data berdasarkan tanggal dan ID sebelum foreach
+                            weekData.data.sort(function(a, b) {
+                                // Sort by tanggal_awal first
+                                if (a.tanggal_awal !== b.tanggal_awal) {
+                                    return new Date(a.tanggal_awal) - new Date(b.tanggal_awal);
+                                }
+                                // Then by ID as fallback
+                                return a.id - b.id;
+                            });
+
                             weekData.data.forEach(function(rkm, index) {
+                                // Validasi data RKM sebelum diproses
+                                if (!rkm.id || !rkm.materi_key || !rkm.tanggal_awal) {
+                                    console.warn('Data RKM tidak valid:', rkm);
+                                    return; // Skip data yang tidak valid
+                                }
+
                                 var tanggal = moment(rkm.tanggal_awal).format('D');
                                 var lanbu = moment(rkm.tanggal_awal).format('M');
                                 var hunta = moment(rkm.tanggal_awal).format('Y');
                                 var kelas = (rkm.metode_kelas == 'Offline') ? 'off' :
                                             (rkm.metode_kelas == 'Inhouse Bandung') ? 'inhb' :
-                                            (rkm.metode_kelas == 'Inhouse Luar Bandung') ? 'inhlb' : 'vir';
+                                            (rkm.metode_kelas == 'Inhouse Luar Bandung') ? 'inhlb' :
+                                            (rkm.metode_kelas == 'Exam Only') ? 'exam' : 'vir';
 
                                 if (rkm.status_all == '0') {
                                     html += '<tr style="background-color: rgba(255, 0, 0, 0.5); color: #fff">';
                                 } else if (rkm.status_all == '1') {
                                     html += '<tr style="background-color: rgba(0, 0, 255, 0.5); color: #fff">';
-                                } else {
+                                } else if (rkm.status_all == '2') {
                                     html += '<tr style="background-color: rgba(0, 0, 0, 0.5); color: #fff">';
+                                } else if (rkm.status_all == '3') {
+                                    html += '<tr style="background-color: rgba(0, 128, 0, 0.5); color: #fff">';
                                 }
+
                                 html += '<td>' + (index + 1) + '</td>';
-                                html += '<td>' + rkm.materi.nama_materi + '</td>';
+                                html += '<td>' + (rkm.materi ? rkm.materi.nama_materi : 'N/A') + '</td>';
                                 if (rkm.tanggal_awal == rkm.tanggal_akhir) {
                                     html += '<td>' + moment(rkm.tanggal_awal).format('DD MMMM YYYY') + '</td>';
                                 } else {
                                     html += '<td>' + moment(rkm.tanggal_awal).format('DD MMMM YYYY') + ' s/d ' + moment(rkm.tanggal_akhir).format('DD MMMM YYYY') + '</td>';
                                 }
                                 html += '<td>';
-                                rkm.perusahaan.forEach(function(perusahaan) {
-                                    html += perusahaan.nama_perusahaan + ', ';
-                                });
+                                if (rkm.perusahaan && rkm.perusahaan.length > 0) {
+                                    rkm.perusahaan.forEach(function(perusahaan) {
+                                        html += perusahaan.nama_perusahaan + ', ';
+                                    });
+                                }
                                 html += '</td>';
                                 html += '<td>';
-                                rkm.sales.forEach(function(sales) {
-                                    html += sales.kode_karyawan + ', ';
-                                });
+                                if (rkm.sales && rkm.sales.length > 0) {
+                                    rkm.sales.forEach(function(sales) {
+                                        html += sales.kode_karyawan + ', ';
+                                    });
+                                }
                                 html += '</td>';
                                 html += '<td>';
                                 if (rkm.instruktur_all && rkm.instruktur_all.trim() !== '') {
@@ -297,64 +322,72 @@
                                     html += 'Ya';
                                 }
                                 html += '</td>';
-                                html += '<td>' + rkm.metode_kelas + '</td>';
-                                html += '<td>' + rkm.event + '</td>';
+                                html += '<td>' + (rkm.metode_kelas || 'N/A') + '</td>';
+                                html += '<td>' + (rkm.event || 'N/A') + '</td>';
                                 if (rkm.ruang == null || rkm.ruang == "-") {
                                     html += '<td>Belum Ditentukan</td>';
                                 } else {
                                     html += '<td>' + rkm.ruang + '</td>';
                                 }
-                                html += '<td>' + rkm.total_pax + '</td>';
-                                html += '<td>';
-                                if (jabatan == 'Customer Care') {
-                                const makananValue = String(rkm.makanan).trim();
-                                if (makananValue === '0') {
-                                    html += 'Tidak Ada';
-                                } else if (makananValue === '1') {
-                                    html += 'Nasi Box';
-                                } else if (makananValue === '2') {
-                                    html += 'Prasmanan';
-                                } else {
-                                    html += '-';
-                                }
-                                }
+                                html += '<td>' + (rkm.total_pax || '0') + '</td>';
 
-                                html += '</td>';
+                                if (jabatan == 'Customer Care') {
+                                    html += '<td>';
+                                    const makananValue = String(rkm.makanan || '').trim();
+                                    if (makananValue === '0') {
+                                        html += 'Tidak Ada';
+                                    } else if (makananValue === '1') {
+                                        html += 'Nasi Box';
+                                    } else if (makananValue === '2') {
+                                        html += 'Prasmanan';
+                                    } else {
+                                        html += '-';
+                                    }
+                                    html += '</td>';
+                                }
                                 
-if (
-    jabatan == 'SPV Sales' || jabatan == 'GM' || jabatan == 'Sales' ||
-    jabatan == 'Adm Sales' || jabatan == 'Education Manager' || jabatan == 'Instruktur' ||
-    jabatan == 'Office Manager' || jabatan == 'Customer Care' || jabatan == 'Tim Digital' ||
-    jabatan == 'Admin Holding' || jabatan == 'Technical Support' ||
-    jabatan === 'Direktur Utama' || jabatan === 'Direktur' || jabatan === 'HRD' ||
-    jabatan === 'Koordinator Office' || jabatan === 'Koordinator ITSM' ||
-    jabatan == 'Finance & Accounting'
-) {
-    html += '<td>';
-    html += '<div class="btn-group dropup">';
-    html += '<button type="button" class="btn dropdown-toggle text-white" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
-    html += 'Actions';
-    html += '</button>';
-    html += '<div class="dropdown-menu">';
-    html += '<a class="dropdown-item" href="/rkm/' + rkm.materi_key + 'ixb' + tanggal + 'ie' + hunta + 'ie' + lanbu + 'ixb' + kelas + '" data-toggle="tooltip" data-placement="top" title="Detail RKM">';
-    html += '<img src="{{ asset('icon/clipboard-primary.svg') }}" class="me-1"> Detail RKM</a>';
-    
-if (jabatan == 'Customer Care') {
-    html += '<div class="dropdown-divider"></div>';
-    html += '<div class="dropdown-item dropdown-submenu left">';  // Tambah class "left" di sini
-    html += '<a class="dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Makanan</a>';
-    html += '<div class="dropdown-menu">';
-    html += '<a class="dropdown-item js-update-makanan" href="#" data-id="' + rkm.id + '" data-val="0">' + (String(rkm.makanan).trim() === '0' ? '✔ ' : '') + 'Tidak Ada</a>';
-    html += '<a class="dropdown-item js-update-makanan" href="#" data-id="' + rkm.id + '" data-val="1">' + (String(rkm.makanan).trim() === '1' ? '✔ ' : '') + 'Nasi Box</a>';
-    html += '<a class="dropdown-item js-update-makanan" href="#" data-id="' + rkm.id + '" data-val="2">' + (String(rkm.makanan).trim() === '2' ? '✔ ' : '') + 'Prasmanan</a>';
-    html += '</div>';
-    html += '</div>';
-}
-    
-    html += '</div>';
-    html += '</div>';
-    html += '</td>';
-}
+                                if (
+                                    jabatan == 'SPV Sales' || jabatan == 'GM' || jabatan == 'Sales' ||
+                                    jabatan == 'Adm Sales' || jabatan == 'Education Manager' || jabatan == 'Instruktur' ||
+                                    jabatan == 'Office Manager' || jabatan == 'Customer Care' || jabatan == 'Tim Digital' ||
+                                    jabatan == 'Admin Holding' || jabatan == 'Technical Support' ||
+                                    jabatan === 'Direktur Utama' || jabatan === 'Direktur' || jabatan === 'HRD' ||
+                                    jabatan === 'Koordinator Office' || jabatan === 'Koordinator ITSM' ||
+                                    jabatan == 'Finance & Accounting'
+                                ) {
+                                    html += '<td>';
+                                    html += '<div class="btn-group dropup">';
+                                    html += '<button type="button" class="btn dropdown-toggle text-white" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
+                                    html += 'Actions';
+                                    html += '</button>';
+                                    html += '<div class="dropdown-menu">';
+                                    
+                                    // Validasi ulang sebelum membuat link detail
+                                    if (rkm.id && rkm.materi_key && tanggal && hunta && lanbu && kelas) {
+                                        html += '<a class="dropdown-item" href="/rkm/' + rkm.materi_key + 'ixb' + tanggal + 'ie' + hunta + 'ie' + lanbu + 'ixb' + kelas + '" data-toggle="tooltip" data-placement="top" title="Detail RKM">';
+                                        html += '<img src="{{ asset('icon/clipboard-primary.svg') }}" class="me-1"> Detail RKM</a>';
+                                    } else {
+                                        html += '<a class="dropdown-item disabled" href="#" title="Data tidak lengkap">';
+                                        html += '<img src="{{ asset('icon/clipboard-primary.svg') }}" class="me-1"> Detail RKM (Error)</a>';
+                                    }
+                                    
+                                    // Menu makanan hanya untuk Customer Care dan jika ID valid
+                                    if (jabatan == 'Customer Care' && rkm.id) {
+                                        html += '<div class="dropdown-divider"></div>';
+                                        html += '<div class="dropdown-item dropdown-submenu left">';
+                                        html += '<a class="dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Makanan</a>';
+                                        html += '<div class="dropdown-menu">';
+                                        html += '<a class="dropdown-item js-update-makanan" href="#" data-id="' + rkm.id + '" data-val="0">' + (String(rkm.makanan || '').trim() === '0' ? '✓ ' : '') + 'Tidak Ada</a>';
+                                        html += '<a class="dropdown-item js-update-makanan" href="#" data-id="' + rkm.id + '" data-val="1">' + (String(rkm.makanan || '').trim() === '1' ? '✓ ' : '') + 'Nasi Box</a>';
+                                        html += '<a class="dropdown-item js-update-makanan" href="#" data-id="' + rkm.id + '" data-val="2">' + (String(rkm.makanan || '').trim() === '2' ? '✓ ' : '') + 'Prasmanan</a>';
+                                        html += '</div>';
+                                        html += '</div>';
+                                    }
+                                        
+                                    html += '</div>';
+                                    html += '</div>';
+                                    html += '</td>';
+                                }
                                 html += '</tr>';
                             });
                         }

@@ -14,6 +14,9 @@ class Invoice extends Model
         'tanggal_invoice',
         'id_rkm',
         'amount',
+        'catatan_pembayaran',
+        'bank_name',
+        'account_number'
     ];
 
     /**
@@ -23,4 +26,11 @@ class Invoice extends Model
     {
         return $this->belongsTo(RKM::class, 'id_rkm');
     }
+        // relasi ke Kuitansi
+// app/Models/Invoice.php
+public function kwitansi()
+{
+    return $this->hasOne(Kwitansi::class);
+}
+
 }
