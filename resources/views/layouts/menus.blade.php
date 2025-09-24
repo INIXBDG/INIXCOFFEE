@@ -1080,7 +1080,7 @@
                             style="text-transform: capitalize; color:#fff; margin:0px; padding:8px;">
                             <p class="p-0 m-0"> Selamat Datang {{ auth()->user()->username }}, Anda Login Sebagai
                             </p>
-                            <p class="p-0 m-0">{{ auth()->user()->jabatan }} test</p>
+                            <p class="p-0 m-0">{{ auth()->user()->jabatan }}</p>
                         </h6>
                     </li>
                 </ul>
@@ -2613,39 +2613,60 @@
         //     });
         // });
     </script>
-    <script>
+    <!-- <script>
         let lastNotifCount = 0;
 
         function playNotif() {
-            let audio = document.getElementById("notifSound");
+            const audio = document.getElementById("notifSound");
             audio.play();
         }
 
         function fetchNotifications() {
-            fetch("{{ route('notifications.fetch') }}").then(res => res.json()).then(data => {
-                let badge = document.querySelector('.nav-link.position-relative .badge');
-                let count = data.length;
-                if (count > 0) {
-                    if (!badge) {
-                        const newBadge = document.createElement('span');
-                        newBadge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger';
-                        newBadge.innerHTML = count + '<span class="visually-hidden">unread notifications</span>';
-                        document.querySelector('.nav-link.position-relative').appendChild(newBadge);
-                    } else {
+            fetch("{{ route('notifications.fetch') }}")
+                .then(res => res.json())
+                .then(data => {
+                    const badgeContainer = document.querySelector('.nav-link.position-relative');
+                    let badge = badgeContainer.querySelector('.badge');
+
+                    const count = data.length;
+
+                    // Hapus hasil fetch lama tapi tetap pertahankan badgeContainer
+                    const existingItems = document.querySelectorAll('.notif-item'); // class ini untuk setiap item notif
+                    existingItems.forEach(item => item.remove());
+
+                    // Tambahkan data baru
+                    data.forEach(notif => {
+                        const notifElem = document.createElement('div');
+                        notifElem.className = 'notif-item'; // pastikan class ini khusus untuk hasil fetch
+                        notifElem.textContent = notif.message; // sesuaikan dengan property data
+                        badgeContainer.appendChild(notifElem);
+                    });
+
+                    // Update badge
+                    if (!badge && count > 0) {
+                        badge = document.createElement('span');
+                        badge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger';
+                        badgeContainer.appendChild(badge);
+                    }
+
+                    if (badge) {
                         badge.innerHTML = count + '<span class="visually-hidden">unread notifications</span>';
                     }
-                    if (count !== lastNotifCount) {
+
+                    // Play audio jika ada notifikasi baru
+                    if (count > lastNotifCount) {
                         playNotif();
                     }
-                } else {
-                    if (badge) badge.remove();
-                }
-                lastNotifCount = count;
-            }).catch(err => console.error("Error fetch notifications:", err));
+
+                    lastNotifCount = count;
+                })
+                .catch(err => console.error("Error fetch notifications:", err));
         }
-        fetchNotifications();
-        setInterval(fetchNotifications, 1);
-    </script>
+
+        // Fetch setiap 5 detik
+        setInterval(fetchNotifications, 3000);
+    </script> -->
+
 </body>
 
 </html>

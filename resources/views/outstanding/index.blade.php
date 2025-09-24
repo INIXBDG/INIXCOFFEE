@@ -16,9 +16,59 @@
         <div class="col-md-12">
             <div class="d-flex justify-content-end">
                 @can('Create Outstanding')
-                    <a href="{{ route('outstanding.create') }}" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Tambah User"><img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> List Outstanding</a>
-                    <a href="{{ route('outstanding.singkronDataOutstanding') }}" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Tambah User"><img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> Singkron Data Minggu Ini</a>
+                <a href="{{ route('outstanding.create') }}" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Tambah User"><img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> List Outstanding</a>
+                <button type="button" class="btn click-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <span class="sr-only">Singkron Data</span>
+                </button>
+                <div class="dropdown-menu">
+                    <a class="dropdown-item" href="{{ route('outstanding.singkronDataOutstanding') }}">Singkron Data Minggu Ini</a>
+                    <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#modalSinkron">Singkron Data</a>
+                </div>
                 @endcan
+            </div>
+            <div class="modal fade" id="modalSinkron" tabindex="-1" role="dialog" aria-labelledby="modalSinkronLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <form action="{{ route('outstanding.singkronDataOutstanding') }}" method="GET">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="modalSinkronLabel">Pilih Tanggal Untuk Singkron Outstanding</h5>
+                                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="form-group mb-3">
+                                    <label for="tanggal_awal">Tanggal Awal Minggu</label>
+                                    <input type="date" class="form-control" id="tanggal_awal" name="tanggal_awal">
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label for="tanggal_akhir">Tanggal Akhir Minggu</label>
+                                    <input type="date" class="form-control" id="tanggal_akhir" name="tanggal_akhir" readonly>
+                                </div>
+
+                                <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+                                <script>
+                                    const tanggalAwal = document.getElementById('tanggal_awal');
+                                    const tanggalAkhir = document.getElementById('tanggal_akhir');
+
+                                    tanggalAwal.addEventListener('change', function() {
+                                        if (this.value) {
+                                            let startDate = moment(this.value, 'YYYY-MM-DD');
+                                            let endDate = startDate.clone().endOf('week'); 
+                                            tanggalAkhir.value = endDate.format('YYYY-MM-DD');
+                                        } else {
+                                            tanggalAkhir.value = '';
+                                        }
+                                    });
+                                </script>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                                <button type="submit" class="btn btn-primary">Sinkron</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
             </div>
             <div class="card m-4">
                 <div class="card-body table-responsive">
@@ -182,7 +232,7 @@
     $(document).ready(function() {
         var userRole = '{{ auth()->user()->jabatan}}';
         console.log(userRole);
-        
+
         $('#outstandinglunasTable').DataTable({
             "ajax": {
                 "url": "{{ route('getOutstandingLunas') }}", // URL API untuk mengambil data
@@ -284,18 +334,25 @@
                     "data": null,
                     "render": function(data, type, row) {
                         var actions = "";
-                        actions += '@if (auth()->user()->can('Edit Outstanding') || auth()->user()->can('Delete Outstanding'))'
+                        actions += '@if (auth()->user()->can('
+                        Edit Outstanding ') || auth()->user()->can('
+                        Delete Outstanding '))'
                         actions += '<div class="dropdown">';
                         actions += '<button class="btn dropdown-toggle text-white" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
                         actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
-                        actions += '@can('Edit Outstanding')';
-                        actions += '<a class="dropdown-item" href="{{ url('/outstanding') }}/' + row.id + '/edit"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Edit</a>';
+                        actions += '@can('
+                        Edit Outstanding ')';
+                        actions += '<a class="dropdown-item" href="{{ url(' / outstanding ') }}/' + row.id + '/edit"><img src="{{ asset('
+                        icon / edit - warning.svg ') }}" class=""> Edit</a>';
                         actions += '@endcan';
-                        actions += '@can('Delete Outstanding')';
-                        actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/outstanding') }}/' + row.id + '" method="POST">';
+                        actions += '@can('
+                        Delete Outstanding ')';
+                        actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url(' / outstanding ') }}/' + row.id + '" method="POST">';
                         actions += '@csrf';
-                        actions += '@method('DELETE')';
-                        actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
+                        actions += '@method('
+                        DELETE ')';
+                        actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('
+                        icon / trash - danger.svg ') }}" class=""> Hapus</button>';
                         actions += '</form>';
                         actions += '@endcan';
                         actions += '</div>';
@@ -487,18 +544,25 @@
                     "render": function(data, type, row) {
 
                         var actions = "";
-                        actions += '@if (auth()->user()->can('Edit Outstanding') || auth()->user()->can('Delete Outstanding'))'
+                        actions += '@if (auth()->user()->can('
+                        Edit Outstanding ') || auth()->user()->can('
+                        Delete Outstanding '))'
                         actions += '<div class="dropdown">';
                         actions += '<button class="btn dropdown-toggle text-white" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
                         actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
-                        actions += '@can('Edit Outstanding')';
-                        actions += '<a class="dropdown-item" href="{{ url('/outstanding') }}/' + row.id + '/edit"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Edit</a>';
+                        actions += '@can('
+                        Edit Outstanding ')';
+                        actions += '<a class="dropdown-item" href="{{ url(' / outstanding ') }}/' + row.id + '/edit"><img src="{{ asset('
+                        icon / edit - warning.svg ') }}" class=""> Edit</a>';
                         actions += '@endcan';
-                        actions += '@can('Delete Outstanding')';
-                        actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/outstanding') }}/' + row.id + '" method="POST">';
+                        actions += '@can('
+                        Delete Outstanding ')';
+                        actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url(' / outstanding ') }}/' + row.id + '" method="POST">';
                         actions += '@csrf';
-                        actions += '@method('DELETE')';
-                        actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
+                        actions += '@method('
+                        DELETE ')';
+                        actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('
+                        icon / trash - danger.svg ') }}" class=""> Hapus</button>';
                         actions += '</form>';
                         actions += '@endcan';
                         actions += '</div>';
