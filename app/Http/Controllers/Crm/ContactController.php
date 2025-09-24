@@ -26,38 +26,76 @@ class ContactController extends Controller
     public function getPerusahaan(Request $request)
     {
         $user = Auth::user();
-        $allowedJabatan = ['Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur'];
+        $allowedJabatan = [
+            'Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting',
+            'GM', 'Sales', 'Direktur Utama', 'Direktur'
+        ];
 
+        // 🔹 Base query sesuai jabatan
         if ($user->jabatan === 'Sales') {
             $idSales = $user->id_sales;
-            $query = Perusahaan::where('sales_key', $idSales);
+            $baseQuery = Perusahaan::where('sales_key', $idSales);
         } elseif (in_array($user->jabatan, $allowedJabatan)) {
-            $query = Perusahaan::query();
+            $baseQuery = Perusahaan::query();
         } else {
             return response()->json(['error' => 'Anda tidak memiliki akses ke data ini.'], 403);
         }
 
-        // Ambil parameter filter dari request
-        $nama = $request->input('nama_perusahaan');
-        $lokasi = $request->input('lokasi');
-        $status = $request->input('status');
-        $sales = $request->input('sales_key');
+        // 🔹 Total sebelum filter
+        $recordsTotal = $baseQuery->count();
 
-        if ($nama) {
-            $query->where('nama_perusahaan', 'like', '%' . $nama . '%');
-        }
-        if ($lokasi) {
-            $query->where('lokasi', $lokasi);
-        }
-        if ($status) {
-            $query->where('status', $status);
-        }
-        if ($sales) {
-            $query->where('sales_key', $sales);
+        // 🔹 Clone query untuk filter
+        $query = clone $baseQuery;
+
+        // 🔹 Filter tambahan berdasarkan sales_key (dropdown)
+        if ($request->filled('sales_key')) {
+            $query->where('sales_key', $request->sales_key);
         }
 
+        // 🔹 Global search (bawaan DataTables)
+        if ($request->has('search') && $request->search['value'] != '') {
+            $search = $request->search['value'];
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_perusahaan', 'like', "%$search%")
+                    ->orWhere('lokasi', 'like', "%$search%")
+                    ->orWhere('sales_key', 'like', "%$search%")
+                    ->orWhere('status', 'like', "%$search%");
+            });
+        }
+
+        // 🔹 Hitung setelah filter
+        $recordsFiltered = $query->count();
+
+        // 🔹 Sorting
+        if ($request->has('order')) {
+            $columns = [
+                'id',
+                'nama_perusahaan',
+                'lokasi',
+                'status',
+                'sales_key',
+                'kelas_terakhir',
+                'aktivitas_terakhir_date',
+            ];
+            $order = $request->order[0];
+            $colIndex = $order['column'] ?? 0;
+            $dir = $order['dir'] ?? 'asc';
+            if (isset($columns[$colIndex])) {
+                $query->orderBy($columns[$colIndex], $dir);
+            }
+        } else {
+            $query->orderBy('id', 'desc'); // default
+        }
+
+        // 🔹 Paging
+        $start = $request->input('start', 0);
+        $length = $request->input('length', 10);
+        $query->skip($start)->take($length);
+
+        // 🔹 Ambil data utama
         $data = $query->get();
 
+        // 🔹 Ambil relasi tambahan
         $kelasTerakhir = [];
         $aktivitasTerakhir = [];
 
@@ -69,12 +107,13 @@ class ContactController extends Controller
 
             $contactIds = $item->contacts->pluck('id');
 
-            $aktivitasTerakhir[$item->id] = Aktivitas::whereIn('id_contact',$contactIds)
+            $aktivitasTerakhir[$item->id] = Aktivitas::whereIn('id_contact', $contactIds)
                 ->latest()
                 ->first();
         }
 
-        $response = $data->map(function ($contact) use ($kelasTerakhir, $aktivitasTerakhir) {
+        // 🔹 Format response data
+        $responseData = $data->map(function ($contact) use ($kelasTerakhir, $aktivitasTerakhir) {
             return [
                 'id' => $contact->id,
                 'nama_perusahaan' => $contact->nama_perusahaan,
@@ -82,18 +121,28 @@ class ContactController extends Controller
                 'alamat' => $contact->alamat,
                 'kategori_perusahaan' => $contact->kategori_perusahaan,
                 'lokasi' => $contact->lokasi ?? '-',
-                'cp' => $contact->cp ?? '-',
-                'no_telp' => $contact->no_telp ?? '-',
                 'email' => $contact->email ?? '-',
                 'status' => $contact->status ?? '-',
                 'sales_key' => $contact->sales_key,
-                'kelas_terakhir' => isset($kelasTerakhir[$contact->id]) ? $kelasTerakhir[$contact->id]->materi->nama_materi ?? '-' : 'Belum ada kelas',
-                'kelas_terakhir_date' => isset($kelasTerakhir[$contact->id]) ? $kelasTerakhir[$contact->id]->created_at->translatedFormat('d F Y') : null,
-                'aktivitas_terakhir_date' => isset($aktivitasTerakhir[$contact->id]) ? $aktivitasTerakhir[$contact->id]->created_at->format('d-m-Y') : 'Belum ada aktivitas',
+                'kelas_terakhir' => isset($kelasTerakhir[$contact->id])
+                    ? ($kelasTerakhir[$contact->id]->materi->nama_materi ?? '-')
+                    : 'Belum ada kelas',
+                'kelas_terakhir_date' => isset($kelasTerakhir[$contact->id])
+                    ? $kelasTerakhir[$contact->id]->created_at->translatedFormat('d F Y')
+                    : null,
+                'aktivitas_terakhir_date' => isset($aktivitasTerakhir[$contact->id])
+                    ? $aktivitasTerakhir[$contact->id]->created_at->format('d-m-Y')
+                    : 'Belum ada aktivitas',
             ];
         });
 
-        return response()->json($response);
+        // 🔹 Response sesuai format DataTables
+        return response()->json([
+            'draw' => intval($request->input('draw')),
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered,
+            'data' => $responseData,
+        ]);
     }
 
     public function detail($id)
