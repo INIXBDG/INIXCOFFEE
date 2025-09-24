@@ -1,116 +1,57 @@
 @extends('layouts_crm.app')
 
 @section('crm_contents')
+    @php
+        $allowedUser = ['Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
+    @endphp
     <div class="content-wrapper">
         <div class="container-xxl flex-grow-1 container-p-y">
             <!-- Header -->
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="fw-bold">Database Client</h4>
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#opportunityModal"
-                    onclick="resetForm()">
+                    onclick="resetForm()" @if (in_array(Auth::user()->jabatan, $allowedUser)) disabled @endif>
                     Tambah Perusahaan
                 </button>
             </div>
 
-            <form id="filterForm" class="mb-4 ">
-                <div class="row g-3 align-items-center">
-                    <div class="col-md-3">
-                        <input type="text" id="filter_nama_perusahaan" class="form-control"
-                            placeholder="Cari Nama Perusahaan...">
-                    </div>
-                    <div class="col-md-3">
-                        <select id="filter_lokasi" class="form-select">
-                            <option value="">Cari Lokasi</option>
-                            <option value="Aceh">Aceh</option>
-                            <option value="Sumatera Utara">Sumatera Utara</option>
-                            <option value="Sumatera Barat">Sumatera Barat</option>
-                            <option value="Riau">Riau</option>
-                            <option value="Kepulauan Riau">Kepulauan Riau</option>
-                            <option value="Jambi">Jambi</option>
-                            <option value="Bengkulu">Bengkulu</option>
-                            <option value="Sumatera Selatan">Sumatera Selatan</option>
-                            <option value="Bangka Belitung">Bangka Belitung</option>
-                            <option value="Lampung">Lampung</option>
-                            <option value="DKI Jakarta">DKI Jakarta</option>
-                            <option value="Banten">Banten</option>
-                            <option value="Jawa Barat">Jawa Barat</option>
-                            <option value="Jawa Tengah">Jawa Tengah</option>
-                            <option value="DI Yogyakarta">DI Yogyakarta</option>
-                            <option value="Jawa Timur">Jawa Timur</option>
-                            <option value="Bali">Bali</option>
-                            <option value="Nusa Tenggara Barat">Nusa Tenggara Barat</option>
-                            <option value="Nusa Tenggara Timur">Nusa Tenggara Timur</option>
-                            <option value="Kalimantan Barat">Kalimantan Barat</option>
-                            <option value="Kalimantan Tengah">Kalimantan Tengah</option>
-                            <option value="Kalimantan Selatan">Kalimantan Selatan</option>
-                            <option value="Kalimantan Timur">Kalimantan Timur</option>
-                            <option value="Kalimantan Utara">Kalimantan Utara</option>
-                            <option value="Sulawesi Utara">Sulawesi Utara</option>
-                            <option value="Gorontalo">Gorontalo</option>
-                            <option value="Sulawesi Tengah">Sulawesi Tengah</option>
-                            <option value="Sulawesi Barat">Sulawesi Barat</option>
-                            <option value="Sulawesi Selatan">Sulawesi Selatan</option>
-                            <option value="Sulawesi Tenggara">Sulawesi Tenggara</option>
-                            <option value="Maluku">Maluku</option>
-                            <option value="Maluku Utara">Maluku Utara</option>
-                            <option value="Papua">Papua</option>
-                            <option value="Papua Barat">Papua Barat</option>
-                            <option value="Papua Selatan">Papua Selatan</option>
-                            <option value="Papua Tengah">Papua Tengah</option>
-                            <option value="Papua Pegunungan">Papua Pegunungan</option>
-                            <option value="Papua Barat Daya">Papua Barat Daya</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <select id="filter_status" class="form-select">
-                            <option value="">Cari Status</option>
-                            <option value="Q1">Q1</option>
-                            <option value="Q2">Q2</option>
-                            <option value="Q3">Q3</option>
-                            <option value="Q4">Q4</option>
-                            <option value="Database Baru">Database Baru</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <select id="filter_sales" class="form-select">
-                            <option value="">Cari Sales</option>
-                            <option value="HW">Hera</option>
-                            <option value="VN">Savana</option>
-                            <option value="RR">Rara</option>
-                            <option value="NA">Nabila</option>
-                            <option value="AN">Alfasyiani</option>
-                            <option value="RN">Reni</option>
-                        </select>
-                    </div>
-                </div>
-            </form>
-
             <!-- Tabel Contact -->
-            <div class="card card-rounded shadow-sm">
+            <div class="card">
                 <div class="card-body">
-                    <!-- Wrapper untuk scroll horizontal -->
-                    <div class="table-responsive" style="overflow-x: auto;">
-                        <div class="rounded border" style="display: inline-block;">
-                            <table class="table table-bordered table-hover mb-0" id="perusahaanTable">
-                                <thead class="table-primary">
-                                    <tr>
-                                        <th style="text-align: center;">No</th>
-                                        <th style="text-align: center;">Perusahaan</th>
-                                        <th style="text-align: center;">Lokasi</th>
-                                        <th style="text-align: center;">PIC</th>
-                                        <th style="text-align: center;">No Telepon</th>
-                                        <th style="text-align: center;">Status</th>
-                                        <th style="text-align: center;">Sales</th>
-                                        <th style="text-align: center;">Kelas Terakhir</th>
-                                        <th style="text-align: center;">Aktivitas Terakhir</th>
-                                        <th style="text-align: center;">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Data rows akan diisi di sini -->
-                                </tbody>
-                            </table>
+                    @if(in_array(Auth::user()->jabatan, $allowedUser))
+                        <div class="row mb-3">
+                            <div class="col-md-2">
+                                <label for="filterSales" class="form-label">Filter Sales</label>
+                                <select id="filterSales" class="form-select">
+                                    <option value="">Cari Sales</option>
+                                    <option value="HW">Hera</option>
+                                    <option value="VN">Savana</option>
+                                    <option value="RR">Rara</option>
+                                    <option value="NA">Nabila</option>
+                                    <option value="AN">Alfasyiani</option>
+                                    <option value="RN">Reni</option>
+                                </select>
+                            </div>
                         </div>
+                    @endif
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover" id="perusahaanTable">
+                            <thead class="table-primary">
+                                <tr>
+                                    <th style="text-align: center;">No</th>
+                                    <th style="text-align: center;">Perusahaan</th>
+                                    <th style="text-align: center;">Lokasi</th>
+                                    <th style="text-align: center;">Status</th>
+                                    <th style="text-align: center;">Sales</th>
+                                    <th style="text-align: center;">Kelas Terakhir</th>
+                                    <th style="text-align: center;">Aktivitas Terakhir</th>
+                                    <th style="text-align: center;">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -156,12 +97,6 @@
                                         <option value="Rumah Sakit">Rumah Sakit</option>
                                         <option value="Personal">Personal</option>
                                     </select>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label" for="edit_cp">PIC</label>
-                                    <input type="text" class="form-control" id="edit_cp" name="cp"
-                                        maxlength="100">
                                 </div>
 
                                 <div class="mb-3">
@@ -240,12 +175,6 @@
                                 <div class="mb-3">
                                     <label class="form-label" for="edit_alamat">Alamat</label>
                                     <textarea class="form-control" id="edit_alamat" name="alamat" maxlength="500"></textarea>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label" for="edit_no_telp">No Telepon</label>
-                                    <input type="text" class="form-control" id="edit_no_telp" name="no_telp"
-                                        maxlength="20">
                                 </div>
 
                                 <div class="mb-3">
@@ -377,109 +306,65 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const filterForm = document.getElementById('filterForm');
-            const tbodyElement = document.querySelector('#perusahaanTable tbody');
-
-            async function fetchData(filters = {}) {
-                const params = new URLSearchParams();
-
-                if (filters.nama_perusahaan) params.append('nama_perusahaan', filters.nama_perusahaan);
-                if (filters.lokasi) params.append('lokasi', filters.lokasi);
-                if (filters.status) params.append('status', filters.status);
-                if (filters.sales_key) params.append('sales_key', filters.sales_key);
-
-                try {
-                    const response = await fetch("{{ route('contact.data') }}?" + params.toString());
-                    const data = await response.json();
-
-                    if (!data.length) {
-                        tbodyElement.innerHTML =
-                            `<tr><td colspan="10" class="text-center">Data tidak ditemukan</td></tr>`;
-                        return;
+            let table = $('#perusahaanTable').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: "{{ route('contact.data') }}",
+                    type: "GET",
+                    data: function(d) {
+                        d.sales_key = $('#filterSales').val();
                     }
-
-                    let tbody = '';
-                    data.forEach((contact, i) => {
-                        console.log('Data contact saat ini (index:', i, '):', contact);
-                        const contactData = JSON.stringify(contact).replace(/'/g, "&apos;").replace(
-                            /"/g, "&quot;");
-                        tbody += `
-                <tr>
-                    <td>${i + 1}</td>
-                    <td>${contact.nama_perusahaan}</td>
-                    <td>${contact.lokasi}</td>
-                    <td>${contact.cp}</td>
-                    <td>${contact.no_telp}</td>
-                    <td>${contact.status}</td>
-                    <td>${contact.sales_key}</td>
-                    <td>${contact.kelas_terakhir} ${contact.kelas_terakhir_date ? ' | <span style="color:red;">(' + contact.kelas_terakhir_date + ')</span>' : ''}</td>
-                    <td>${contact.aktivitas_terakhir_date || ''}</td>
-                    <td>
-                        <div class="d-flex flex-column gap-2">
-                            <button class="btn btn-sm btn-warning"
-                                data-contact="${contactData}"
-                                data-bs-toggle="modal"
-                                data-bs-target="#editContactModal"
-                                onclick="editContactFromButton(this)">
-                                Edit
-                            </button>
-
-                            <form action="/crm/contact/delete/${contact.id}"
-                                method="POST"
-                                onsubmit="return confirm('Yakin ingin menghapus?')"
-                                style="display:inline;">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-sm btn-danger">Hapus</button>
-                            </form>
-
-                            <a href="/crm/contact/${contact.id}/detail" class="btn btn-sm btn-info">
-                                Detail
-                            </a>
-                        </div>
-                    </td>
-                </tr>`;
-                    });
-                    tbodyElement.innerHTML = tbody;
-                } catch (e) {
-                    console.error(e);
-                    tbodyElement.innerHTML =
-                        `<tr><td colspan="10" class="text-center text-danger">Gagal memuat data</td></tr>`;
-                }
-            }
-
-            // Ambil elemen filter
-            const filterNama = document.getElementById('filter_nama_perusahaan');
-            const filterLokasi = document.getElementById('filter_lokasi');
-            const filterStatus = document.getElementById('filter_status');
-            const filterSales = document.getElementById('filter_sales');
-
-            // Fungsi untuk mengumpulkan nilai filter dan panggil fetchData
-            function applyFilters() {
-                const filters = {
-                    nama_perusahaan: filterNama.value.trim(),
-                    lokasi: filterLokasi.value,
-                    status: filterStatus.value,
-                    sales_key: filterSales.value,
-                };
-                fetchData(filters);
-            }
-
-            // Event listener realtime:
-            filterNama.addEventListener('input', applyFilters);
-            filterLokasi.addEventListener('change', applyFilters);
-            filterStatus.addEventListener('change', applyFilters);
-            filterSales.addEventListener('change', applyFilters);
-
-            // Inisialisasi data pertama kali saat halaman load
-            fetchData();
-
-            // Nonaktifkan form submit agar tombol filter tidak reload
-            filterForm.addEventListener('submit', function(e) {
-                e.preventDefault();
+                },
+                columns: [
+                    { data: 'id', name: 'id', render: (data, type, row, meta) => meta.row + 1 },
+                    { data: 'nama_perusahaan', name: 'nama_perusahaan' },
+                    { data: 'lokasi', name: 'lokasi' },
+                    { data: 'status', name: 'status' },
+                    { data: 'sales_key', name: 'sales_key' },
+                    {
+                        data: 'kelas_terakhir',
+                        name: 'kelas_terakhir',
+                        render: function (data, type, row) {
+                            if (!data) return 'Belum ada kelas';
+                            return `${data} ${row.kelas_terakhir_date ? '| <span style="color:red;">(' + row.kelas_terakhir_date + ')</span>' : ''}`;
+                        }
+                    },
+                    { data: 'aktivitas_terakhir_date', name: 'aktivitas_terakhir_date' },
+                    {
+                        data: null,
+                        orderable: false,
+                        searchable: false,
+                        render: function (data, type, row) {
+                            const contactData = JSON.stringify(row)
+                                .replace(/'/g, "&apos;")
+                                .replace(/"/g, "&quot;");
+                            return `
+                                <div class="d-flex flex-column gap-2">
+                                    <a href="/crm/contact/${row.id}/detail" class="btn btn-sm btn-info">Detail</a>
+                                    <button class="btn btn-sm btn-warning"
+                                        data-contact="${contactData}"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#editContactModal"
+                                        onclick="editContactFromButton(this)">Edit</button>
+                                    <form action="/crm/contact/delete/${row.id}" method="POST"
+                                        onsubmit="return confirm('Yakin ingin menghapus?')" style="display:inline;">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-danger">Hapus</button>
+                                    </form>
+                                </div>`;
+                        }
+                    }
+                ],
             });
 
-            // Fungsi untuk edit contact dari tombol
+            // 🔹 Trigger reload kalau filter diganti
+            $('#filterSales').on('change', function() {
+                table.ajax.reload();
+            });
+
+            // 🔹 Fungsi edit contact dari tombol
             window.editContactFromButton = function(button) {
                 let contactStr = button.getAttribute('data-contact');
                 let contactJson = contactStr.replace(/&quot;/g, '"').replace(/&apos;/g, "'");
@@ -487,11 +372,10 @@
                 editContact(contact);
             };
 
-            // Fungsi editContact
+            // 🔹 Fungsi editContact
             window.editContact = function(contact) {
                 document.getElementById('edit_nama_perusahaan').value = contact.nama_perusahaan || '';
                 document.getElementById('edit_email').value = contact.email || '';
-                document.getElementById('edit_cp').value = contact.cp || '';
 
                 const kategoriSelect = document.getElementById('edit_kategori_perusahaan');
                 if (kategoriSelect) kategoriSelect.value = contact.kategori_perusahaan || '';
@@ -504,7 +388,6 @@
 
                 document.getElementById('edit_npwp').value = contact.npwp || '';
                 document.getElementById('edit_alamat').value = contact.alamat || '';
-                document.getElementById('edit_no_telp').value = contact.no_telp || '';
 
                 document.getElementById('edit_contact_id').value = contact.id || '';
                 const editForm = document.getElementById('editContactForm');
@@ -512,4 +395,5 @@
             };
         });
     </script>
+
 @endsection

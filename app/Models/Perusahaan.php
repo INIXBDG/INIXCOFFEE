@@ -29,7 +29,7 @@ class Perusahaan extends Model
 
     public function rkms()
     {
-        return $this->hasMany(Rkm::class, 'perusahaan_key', 'id');
+        return $this->hasMany(RKM::class, 'perusahaan_key', 'id');
     }
 
     public function peserta()
