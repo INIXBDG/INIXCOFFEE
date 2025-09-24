@@ -370,13 +370,7 @@ function tableKaryawan(){
             "data": "detail",
             "render": function (data, type, row) {
                 if (data && Array.isArray(data)) {
-                    return data.map(item => {
-                        let total = item.harga * item.qty;
-                        return new Intl.NumberFormat('id-ID', {
-                            style: 'currency',
-                            currency: 'IDR'
-                        }).format(total);
-                    }).join('<hr style="margin: 4px 0; border: 1px solid black">');
+                    return data.map(item => item.qty).join('<hr style="margin: 4px 0; border: 1px solid black">');
                 }
                 return '-';
             }

@@ -6,6 +6,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 
 class PengajuanbarangNotification extends Notification
 {
@@ -36,7 +37,6 @@ class PengajuanbarangNotification extends Notification
                 'tipe_barang' => $this->data['tipe'],
                 'id_karyawan' => $this->data['id_karyawan'],
                 'tanggal_pengajuan' => $this->data['tanggal_pengajuan'],
-                
             ],
             'path' => $this->path,
             'status' => 'unread',

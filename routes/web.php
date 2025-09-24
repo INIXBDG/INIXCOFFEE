@@ -64,6 +64,18 @@ Route::get('/datarkm/{tahun}/{bulan}', [App\Http\Controllers\PerusahaanControlle
 // Route::post('/change-year', 'HomeController@changeYear')->name('changeYear');
 // test
 
+// routes/web.php
+// Route::get('/notifications/fetch', function () {
+//     return auth()->user()->unreadNotifications;
+//     // return auth()->user()->unreadNotifications->take(5);
+// })->name('notifications.fetch');
+Route::get('/notifications/fetch', function () {
+    return response()->json(
+        auth()->user()->unreadNotifications
+    );
+})->name('notifications.fetch');
+
+
 Route::get('paymantAdvance/{year}/{month}', [App\Http\Controllers\netSalesController::class, 'getRkmDataPerBulanPerMinggu']);
 Route::resource('/comment', \App\Http\Controllers\CommentController::class);
 
