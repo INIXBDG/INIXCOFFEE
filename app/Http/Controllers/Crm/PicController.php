@@ -51,18 +51,19 @@ class PicController extends Controller
 
             $pesertaQuery = DB::table('pesertas as p')
                 ->selectRaw('
-                    p.id AS peserta_id,
-                    p.nama,
-                    p.email,
-                    p.no_hp AS cp,
-                    p.perusahaan_key,
-                    NULL AS divisi,
-                    pr.nama_perusahaan,
-                    pr.sales_key,
-                    p.updated_at AS created_at,
-                    NULL AS contact_status,
-                    "Peserta Regist" AS status_text
-                ')
+                p.id AS peserta_id,
+                NULL AS contact_id,
+                p.nama,
+                p.email,
+                p.no_hp AS cp,
+                p.perusahaan_key,
+                NULL AS divisi,
+                pr.nama_perusahaan,
+                pr.sales_key,
+                p.updated_at AS created_at,
+                NULL AS contact_status,
+                "Peserta Regist" AS status_text
+            ')
                 ->join('perusahaans as pr', 'p.perusahaan_key', '=', 'pr.id');
 
             if ($user->jabatan === 'Sales') {
@@ -71,22 +72,23 @@ class PicController extends Controller
 
             $contactQuery = DB::table('contacts as c')
                 ->selectRaw('
-                    c.id AS contact_id,
-                    c.nama,
-                    c.email,
-                    c.cp,
-                    c.id_perusahaan AS perusahaan_key,
-                    c.divisi,
-                    pr.nama_perusahaan,
-                    pr.sales_key,
-                    c.updated_at AS created_at,
-                    c.status AS contact_status,
-                    CASE
-                        WHEN c.status = "1" THEN "Contact Baru"
-                        WHEN c.status = "0" THEN "Contact"
-                        ELSE "Unknown"
-                    END AS status_text
-                ')
+                NULL AS peserta_id,
+                c.id AS contact_id,
+                c.nama,
+                c.email,
+                c.cp,
+                c.id_perusahaan AS perusahaan_key,
+                c.divisi,
+                pr.nama_perusahaan,
+                pr.sales_key,
+                c.updated_at AS created_at,
+                c.status AS contact_status,
+                CASE
+                    WHEN c.status = "1" THEN "Contact Baru"
+                    WHEN c.status = "0" THEN "Contact"
+                    ELSE "Unknown"
+                END AS status_text
+            ')
                 ->join('perusahaans as pr', 'c.id_perusahaan', '=', 'pr.id');
 
             if ($user->jabatan === 'Sales') {
@@ -126,7 +128,9 @@ class PicController extends Controller
                 'contact_status',
                 'nama_perusahaan',
                 'sales_key',
-                'created_at'
+                'created_at',
+                'peserta_id',
+                'contact_id'
             ];
             $orderColumn = $orderColumns[$orderColumnIndex] ?? 'created_at';
 
@@ -143,7 +147,6 @@ class PicController extends Controller
                         ->orWhereRaw('LOWER(status_text) LIKE ?', ["%{$searchValueLower}%"]);
                 });
             }
-
 
             $totalFiltered = $masterQuery->count();
             Log::debug('TotalFiltered: ' . $totalFiltered);
@@ -168,6 +171,8 @@ class PicController extends Controller
                 }
 
                 return [
+                    'peserta_id' => $item->peserta_id ?? '-',
+                    'contact_id' => $item->contact_id ?? '-',
                     'nama' => $item->nama ?? '-',
                     'perusahaan' => $item->nama_perusahaan ?? '-',
                     'sales_key' => $item->sales_key ?? '-',
@@ -175,6 +180,7 @@ class PicController extends Controller
                     'email' => $item->email ?? '-',
                     'cp' => $item->cp ?? '-',
                     'divisi' => $item->divisi ?? '-',
+                    'id_perusahaan' => $item->perusahaan_key ?? '-',
                 ];
             });
 
@@ -200,7 +206,6 @@ class PicController extends Controller
         }
     }
 
-
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -219,18 +224,20 @@ class PicController extends Controller
         return redirect()->route('index.pic')->with('success', 'Contact berhasil ditambahkan.');
     }
 
-    // public function update($id, Request $request) {
+    public function updatePIC(Request $request){
+        $contact = Contact::where('id', $request->contact_id)->first();
+        $contact->id_perusahaan = $request->id_perusahaan;
+        $contact->nama = $request->nama;
+        $contact->email = $request->email;
+        $contact->cp = $request->cp;
+        $contact->divisi = $request->divisi;
+        $contact->save();
+        return back();
+    }
 
-    //     $validated = $request->validate([
-    //         'id_perusahaan' => 'required|exists:perusahaans,id',
-    //         'nama'          => 'required|string',
-    //         'email'         => 'nullable|email|unique:contacts,email',
-    //         'cp'            => 'nullable|string',
-    //         'divisi'        => 'nullable|string',
-    //     ]);
-
-    //     $contact = Contact::findOrFail($id);
-    // }
-
+    public function deletePIC($id){
+        $contact = Contact::findOrFail($id);
+        $contact->delete();
+    }
 
 }

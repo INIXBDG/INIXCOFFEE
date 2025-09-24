@@ -458,15 +458,16 @@
             "Perlengkapan Alat Tulis",
             "E-Modul",
             "E-Lab",
-            "Makan Siang",
-            "Antar-jemput dari Kantor Inixindo ke hotel atau penginapan (maksimal 5 km)"
+            "Makan Siang dan Coffee Break",
+            "Antar-jemput dari Kantor Inixindo ke hotel atau penginapan (radius 5 km)"
         ];
         const keuntunganKonstan = [
             "E-Sertifikat dari Inixindo",
             "Souvenir",
             "Hasil pre-test dan post-test (sesuai kebutuhan)",
-            "Konsultasi dan diskusi gratis dengan instruktur",
-            "Pembahasan studi kasus"
+            "Konsultasi pasca pelatihan",
+            "Pembahasan studi kasus",
+            "Akses Webinar Gratis"
         ];
 
         // Fungsi untuk format Rupiah
@@ -616,7 +617,7 @@
         function getDeskripsi() {
             const penerima = document.getElementById('penerima').value || '';
             const deskripsi = document.getElementById('deskripsi').value || '';
-            const constantPart = `<br><br>Kami hadir untuk mendukung pengembangan sumber daya manusia di bidang teknologi informasi. Untuk mendukung program peningkatan pengetahuan, kompetensi, dan keahlian sumber daya manusia di ${penerima}, kami menawarkan pelatihan berikut:`;
+            const constantPart = `<br><br>Kami mengundang Bapak/Ibu ${penerima},  untuk memperbarui pengetahuan dan keterampilan dalam bidang teknologi informasi, digitalisasi, serta  pengembangan soft skill lainnya , melalui program-program pelatihan yang diselenggarakan oleh Inixindo Bandung. Kami menawarkan pelatihan sebagai berikut:`;
             return deskripsi + constantPart;
         }
 
@@ -740,8 +741,8 @@
                         <div class="office-info text-sm text-gray-700 text-right">
                             <p class="font-bold">INIXINDO BANDUNG</p>
                             <p>Jl Cipaganti No 95 Bandung</p>
-                            <p>Telepon / Fax: 022 2032 831</p>
-                            <p>Whatsapp: ${waSales}</p>
+                            <p>Telepon : 022 2032 831</p>
+                            <p>Whatsapp : ${waSales}</p>
                             <p><a href="http://www.inixindobdg.co.id" style="text-decoration:none; color: black;">www.inixindobdg.co.id</a></p>
                         </div>
                     </div>
@@ -758,6 +759,7 @@
 
                         <div class="penerima text-sm text-gray-700">
                             <p>Kepada Yth.</p>
+                            <p>Bapak/Ibu</p>
                             <p>Pimpinan ${penerima}</p>
                             <p>Di Tempat</p>
                         </div>
@@ -800,7 +802,7 @@
                             <p class="font-bold" style="padding-bottom:4%;">INIXINDO BANDUNG</p>
                             <p class="signature"><strong>${namaSales}</strong></p>
                             <p>${jabatanSales},</p> 
-                            <p>Pt Inixindo Amiete Mandiri</p>
+                            <p>Inixindo Bandung</p>
                         </div>
                     </div>
                 </div>

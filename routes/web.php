@@ -33,6 +33,8 @@ use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 use App\Http\Controllers\InvoiceRKMController;
 use App\Http\Controllers\MakananRkmController;
 use App\Http\Controllers\managementKelasController;
+use App\Http\Controllers\TicketController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -77,6 +79,18 @@ Route::get('/datas', [App\Http\Controllers\UserController::class, 'datas'])->nam
 Route::get('/datarkm/{tahun}/{bulan}', [App\Http\Controllers\PerusahaanController::class, 'datas'])->name('datarkm');
 // Route::post('/change-year', 'HomeController@changeYear')->name('changeYear');
 // test
+
+// routes/web.php
+// Route::get('/notifications/fetch', function () {
+//     return auth()->user()->unreadNotifications;
+//     // return auth()->user()->unreadNotifications->take(5);
+// })->name('notifications.fetch');
+Route::get('/notifications/fetch', function () {
+    return response()->json(
+        auth()->user()->unreadNotifications
+    );
+})->name('notifications.fetch');
+
 
 Route::get('paymantAdvance/{year}/{month}', [App\Http\Controllers\netSalesController::class, 'getRkmDataPerBulanPerMinggu']);
 Route::resource('/comment', \App\Http\Controllers\CommentController::class);
@@ -409,6 +423,8 @@ Route::prefix('crm')->group(function () {
     Route::delete('/contact/delete/{id}', [ContactController::class, 'delete'])->name('delete.contact');
     Route::put('/contact/update/{id}', [ContactController::class, 'update'])->name('update.contact');
     Route::get('/contact/data', [ContactController::class, 'getPerusahaan'])->name('contact.data');
+    Route::put('/update/pic', [PicController::class, 'updatePIC'])->name('pic.update');
+    Route::delete('/delete/pic/{id}', [PicController::class, 'deletePIC'])->name('pic.delete');
 
     // Peluang CRM
     Route::get('/peluang/index', [PeluangController::class, 'index'])->name('index.peluang');
@@ -503,15 +519,6 @@ Route::post('/kwitansi/store', [InvoiceRKMController::class, 'storeKwitansi'])
     // Contoh rute untuk menampilkan detail kwitansi
 Route::get('/kwitansi/{id}', [InvoiceRKMController::class, 'showKwitansi'])->name('kwitansi.show');
 
-
-
-
-
-
-
-
-
-
 //laporan-insiden-route
 Route::get('/laporan-insiden', [laporanInsidentController::class, 'index'])->name('index.laporanInsiden');
 Route::get('/laporan-insiden/get', [laporanInsidentController::class, 'get'])->name('get.laporanInsiden');
@@ -540,3 +547,26 @@ Route::post('/management-kelas/store', [managementKelasController::class, 'store
     ->name('managementKelas.store');
     // di web.php atau routes file
 Route::post('/exam/process-room-assignment', [examController::class, 'processRoomAssignment'])->name('exam.processRoomAssignment');
+
+//rekapexam
+Route::get('/rekapexam', [examController::class, 'rekapExam'])->name('exam.rekapexam');
+Route::get('/getRekapExamByMonth/{year}/{month}', [examController::class, 'getRekapExam'])->name('exam.getRekapExam');
+Route::get('/rekapExamExportExcel/{year}/{month}', [examController::class, 'rekapExamExportExcel'])->name('exam.rekapExamExportExcel');
+
+Route::get('/ticketing-data', [DashboardItsmController::class, 'getJumlahPermintaan']);
+Route::get('/jumlah-pic', [DashboardItsmController::class, 'getJumlahPIC']);
+Route::get('/rerata-durasi-data', [DashboardItsmController::class, 'getRerataDurasi']);
+Route::get('/rerata-ketepatan-response-data', [DashboardItsmController::class, 'getRerataKetepatanResponse']);
+Route::get('/jumlah-permintaan-per-bulan', [DashboardItsmController::class, 'getJumlahPermintaanPerBulan']);
+Route::get('/permintaan-sering-diajukan', [DashboardItsmController::class, 'getPermintaanSeringDiajukan']);
+Route::get('/list-bulan', [DashboardItsmController::class, 'getListBulan']);
+Route::get('/tickets', [TicketController::class, 'index'])->name('tickets.index');
+Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
+Route::get('/tickets/create', [TicketController::class, 'create'])->name('tickets.create');
+Route::get('/tickets/create', [TicketController::class, 'create'])->name('tickets.create');
+Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
+Route::post('/tickets/{ticket}/accept', [TicketController::class, 'accept'])->name('tickets.accept');
+Route::post('/tickets/{ticket}/finish', [TicketController::class, 'finish'])->name('tickets.finish');
+Route::post('/tickets/{ticket}/block', [TicketController::class, 'block'])->name('tickets.block');
+Route::get('/getTickets', [TicketController::class, 'getTickets'])->name('getTickets');
+

@@ -36,15 +36,15 @@ class PeluangController extends Controller
         if ($user->jabatan === 'Sales') {
             $idSales = $user->id_sales;
             $data = Peluang::where('id_sales', $idSales)->get();
-            $contact = Perusahaan::where('sales_key', $idSales)->get();
+            $Perusahaan = Perusahaan::where('sales_key', $idSales)->get();
         } elseif (in_array($user->jabatan, $allowedJabatan)) {
             $data = Peluang::all();
-            $contact = Perusahaan::all();
+            $Perusahaan = Perusahaan::all();
         } else {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 
-        return view('crm.peluang.index', compact('data', 'contact', 'materi', 'aktivitas'));
+        return view('crm.peluang.index', compact('data', 'Perusahaan', 'materi', 'aktivitas')); 
     }
 
     public function indexJson()

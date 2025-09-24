@@ -542,6 +542,9 @@
                 <label>Jabatan Penandatangan 2:</label>
                 <input type="text" placeholder="Jabatan Penandatangan 2" class="signature-position" required
                     value="Account Executive">
+                <label>Upload Tanda Tangan 2:</label>
+                <input type="file" accept="image/*" class="signature-image" onchange="previewSignature(this, 'signature-preview-2')">
+                <img id="signature-preview-2" class="signature-preview" style="display: none;">
             </div>
             <div class="signature-row">
                 <label>Nama Penandatangan 3:</label>
@@ -563,7 +566,7 @@
         <button type="button" id="preview-btn">Generate Preview</button>
     </form>
 
-    <div id="preview-modal">
+    <div id="preview-modal" style="display: none;">
         <div id="preview-content"></div>
     </div>
 
@@ -591,6 +594,40 @@
             `;
             document.getElementById('peserta-list').appendChild(row);
         });
+
+        // Function to preview signature image and adjust alignment
+        function previewSignature(input, previewId) {
+            const file = input.files[0];
+            const preview = document.getElementById(previewId);
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                    // Dynamically adjust alignment based on image height
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = function() {
+                        const height = img.height;
+                        const nameElement = input.parentElement.querySelector('.signature-name');
+                        const positionElement = input.parentElement.querySelector('.signature-position');
+                        // Adjust padding to align with other signatures
+                        const basePadding = 20.4; // Default padding in mm for signatures without images
+                        const adjustedPadding = Math.max(basePadding - (height / 10), 5); // Convert px to mm, ensure minimum padding
+                        nameElement.style.paddingTop = `${adjustedPadding}mm`;
+                        positionElement.style.paddingTop = '2px';
+                    };
+                };
+                reader.readAsDataURL(file);
+            } else {
+                preview.style.display = 'none';
+                // Reset padding if no image
+                const nameElement = input.parentElement.querySelector('.signature-name');
+                const positionElement = input.parentElement.querySelector('.signature-position');
+                nameElement.style.paddingTop = '20.4mm';
+                positionElement.style.paddingTop = '2px';
+            }
+        }
 
         document.getElementById('preview-btn').addEventListener('click', () => {
             const namaPerusahaan = document.getElementById('nama-perusahaan').value;
@@ -658,27 +695,44 @@
                 const position = row.querySelector('.signature-position').value || 'Tidak diisi';
                 let extraText = '';
                 let style = '';
+                let signatureImg = '';
 
                 // Signature 1: Kosong (untuk tinta basah)
                 if (index === 0) {
                     extraText = '';
                     style = 'padding-top: 20.4mm;';
                 }
-                // Signature 2: Kosong (untuk tinta basah)
+                // Signature 2: Include uploaded signature image with dynamic alignment
                 else if (index === 1) {
-                    extraText = '';
-                    style = 'padding-top: 20.4mm;';
+                    const signaturePreview = document.getElementById('signature-preview-2');
+                    if (signaturePreview.src && signaturePreview.style.display !== 'none') {
+                        signatureImg = `<img class="signature-img" src="${signaturePreview.src}" alt="Signature 2">`;
+                        // Dynamically calculate padding based on image height
+                        const img = new Image();
+                        img.src = signaturePreview.src;
+                        img.onload = function() {
+                            const height = img.height;
+                            const adjustedPadding = Math.max(20.4 - (height / 10), 5); // Convert px to mm, ensure minimum padding
+                            const signatureDiv = document.querySelector(`#preview-content .signature:nth-child(${index + 1}) div`);
+                            if (signatureDiv) {
+                                signatureDiv.style.paddingTop = `${adjustedPadding}mm`;
+                            }
+                        };
+                    } else {
+                        style = 'padding-top: 20.4mm;';
+                    }
                 }
                 // Signature 3: Kosong (untuk tinta basah), tambah "Mengetahui"
                 else if (index === 2) {
                     extraText = '<p>Mengetahui</p>';
-                    style = ' padding-top: 15mm';
+                    style = 'padding-top: 15mm';
                 }
 
                 signatureHTML += `
                     <div class="signature">
                         ${extraText}
                         <div style="${style}">
+                            ${signatureImg}
                             <p class="name">${name}</p>
                             <p class="position">${position}</p>
                         </div>
@@ -738,19 +792,7 @@
                 </div>
             `;
 
-            const modal = document.getElementById('preview-modal');
-            const content = document.getElementById('preview-content');
-            content.innerHTML = previewHTML +
-                '<button onclick="printPreview()">Print to PDF</button><button onclick="closeModal()">Tutup</button>';
-            modal.style.display = 'flex';
-        });
-
-        function closeModal() {
-            document.getElementById('preview-modal').style.display = 'none';
-        }
-
-        function printPreview() {
-            const content = document.querySelector('#preview-content .container').outerHTML;
+            // Directly open print window instead of modal
             const printWindow = window.open('', '', 'height=600, width=900');
             printWindow.document.write('<html><head><title>Print Preview</title>');
             printWindow.document.write('<style>');
@@ -778,7 +820,7 @@
                 .description h3 { font-size: 12pt; margin-bottom: 1mm; }
                 .signature-section { margin-top: 10mm; display: flex; justify-content: flex-end; gap: 10mm; page-break-inside: avoid; align-items: flex-start; }
                 .signature { text-align: center; width: 30%; position: relative; min-height: 80pt; }
-                .signature img.signature-img { width: 90pt; height: 80pt; margin-top: 5mm; }
+                .signature img.signature-img { width: auto; height: 44pt; margin-top: 5mm; }
                 .signature img.cap-img { width: 60pt; height: auto; position: absolute; right: 0; top: 50%; transform: translateY(-50%); opacity: 0.4; }
                 .approval-text { font-size: 10pt; font-weight: bold; margin-bottom: 3mm; text-align: center; }
                 .signature p { font-size: 10pt; margin: 2pt 0; }
@@ -788,9 +830,18 @@
                 @page { size: A4; margin: 5mm; }
             `);
             printWindow.document.write('</style></head><body>');
-            printWindow.document.write(content);
+            printWindow.document.write(previewHTML);
             printWindow.document.write('</body></html>');
             printWindow.document.close();
+            printWindow.focus();
+            // Trigger print with 1000ms delay
+            setTimeout(() => {
+                printWindow.print();
+            }, 1000);
+        });
+
+        function closeModal() {
+            document.getElementById('preview-modal').style.display = 'none';
         }
     </script>
 </body>

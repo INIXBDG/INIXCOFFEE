@@ -13,10 +13,12 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
 use Vinkla\Hashids\Facades\Hashids;
-
+use Illuminate\Notifications\Notifiable;
 
 class UserController extends Controller
 {
+    use Notifiable; 
+
     public function __construct()
     {
         $this->middleware('auth');
@@ -47,7 +49,7 @@ class UserController extends Controller
         $data = $request->validate([
             'nama_lengkap' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255'],
-            'email' => ['nullable','email'],
+            'email' => ['nullable', 'email'],
             'jabatan' => ['required', 'string', 'max:255'],
             'divisi' => ['required', 'string', 'max:255'],
             'status_akun' => ['nullable', 'string', 'max:255'],

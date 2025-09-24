@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\rekapExamExport;
 use App\Models\approvalexam;
 use App\Models\changeexam;
 use App\Models\eksam;
@@ -18,8 +19,8 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
-
 use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -282,7 +283,6 @@ public function getHistoriExam()
         'data' => $rkm,
     ]);
 }
-
 
     /**
      * create
@@ -798,94 +798,150 @@ public function assignRoom($id)
                    ->with('info', 'Pilih ruangan dan tanggal untuk exam: ' . ($exam->materi->nama_materi ?? 'N/A'));
 }
 
-/**
- * Process room assignment from management kelas
- */
-public function processRoomAssignment(Request $request)
-{
-    $examId = session('exam_assign_id');
-    
-    if (!$examId) {
-        return redirect()->route('exam.index')->with('error', 'Session expired. Silakan coba lagi.');
-    }
-    
-    $request->validate([
-        'ruang' => 'required|string',
-        'tanggal' => 'required|date',
-        'jam_mulai' => 'required',
-        'jam_selesai' => 'required|after:jam_mulai',
-        'kebutuhan' => 'nullable|string',
-        'keterangan' => 'nullable|string',
-    ]);
-    
-    $exam = eksam::with(['rkm', 'materi', 'perusahaan'])->findOrFail($examId);
-    
-    if ($exam->status != '3') {
-        return redirect()->route('exam.index')->with('error', 'Hanya Exam Only yang dapat di-assign ruangan.');
-    }
-    
-    try {
-        DB::transaction(function () use ($request, $exam) {
-            // 1. Update RKM dengan data ruangan
-            $exam->rkm->update([
-                'ruang' => $request->ruang,
-                'tanggal_awal' => $request->tanggal,
-                'tanggal_akhir' => $request->tanggal,
-                'metode_kelas' => 'Offline' // Change from Exam Only to Offline
-            ]);
-            
-            // 2. PERBAIKAN: Buat entry di manajemen_ruangans
-            // Ini yang menyebabkan warna tidak muncul - data harus ada di kedua tabel
-            \App\Models\manajemenRuangan::create([
-                'ruangan' => $request->ruang,
-                'tanggal' => $request->tanggal,
-                'jam_mulai' => $request->jam_mulai,
-                'jam_selesai' => $request->jam_selesai,
-                'kebutuhan' => $request->filled('kebutuhan') ? $request->kebutuhan : 
-                              'Exam - ' . ($exam->materi->nama_materi ?? 'Unknown'),
-                'keterangan' => $request->filled('keterangan') ? $request->keterangan : 
-                               'Exam untuk ' . ($exam->perusahaan->nama_perusahaan ?? 'Unknown') . 
-                               ' (Pax: ' . $exam->pax . ', Invoice: ' . $exam->invoice . ')',
-                'created_at' => now(),
-                'updated_at' => now()
-            ]);
-        });
-        
-        // Clear session
-        session()->forget(['exam_assign_id', 'exam_assign_data']);
-        
-        return redirect()->route('exam.index')->with('success', 'Ruangan berhasil di-assign untuk exam.');
-        
-    } catch (\Exception $e) {
-        \Log::error('Exam room assignment failed: ' . $e->getMessage());
-        return redirect()->route('exam.index')->with('error', 'Gagal assign ruangan: ' . $e->getMessage());
-    }
-}
+    /**
+     * Process room assignment from management kelas
+     */
+    public function processRoomAssignment(Request $request)
+    {
+        $examId = session('exam_assign_id');
 
-// TAMBAHAN: Method untuk menghapus assignment jika diperlukan
-public function removeRoomAssignment($id)
-{
-    try {
-        $exam = eksam::with('rkm')->findOrFail($id);
-        
-        DB::transaction(function () use ($exam) {
-            // Hapus dari manajemen_ruangans
-            \App\Models\manajemenRuangan::where('ruangan', $exam->rkm->ruang)
-                ->where('kebutuhan', 'LIKE', 'Exam - %')
-                ->delete();
-            
-            // Reset RKM
-            $exam->rkm->update([
-                'ruang' => null,
-                'metode_kelas' => 'Exam Only'
-            ]);
-        });
-        
-        return redirect()->back()->with('success', 'Assignment ruangan berhasil dihapus.');
-        
-    } catch (\Exception $e) {
-        return redirect()->back()->with('error', 'Gagal menghapus assignment: ' . $e->getMessage());
-    }
-}
+        if (!$examId) {
+            return redirect()->route('exam.index')->with('error', 'Session expired. Silakan coba lagi.');
+        }
 
+        $request->validate([
+            'ruang' => 'required|string',
+            'tanggal' => 'required|date',
+            'jam_mulai' => 'required',
+            'jam_selesai' => 'required|after:jam_mulai',
+            'kebutuhan' => 'nullable|string',
+            'keterangan' => 'nullable|string',
+        ]);
+
+        $exam = eksam::with(['rkm', 'materi', 'perusahaan'])->findOrFail($examId);
+
+        if ($exam->status != '3') {
+            return redirect()->route('exam.index')->with('error', 'Hanya Exam Only yang dapat di-assign ruangan.');
+        }
+
+        try {
+            DB::transaction(function () use ($request, $exam) {
+                // 1. Update RKM dengan data ruangan
+                $exam->rkm->update([
+                    'ruang' => $request->ruang,
+                    'tanggal_awal' => $request->tanggal,
+                    'tanggal_akhir' => $request->tanggal,
+                    'metode_kelas' => 'Offline' // Change from Exam Only to Offline
+                ]);
+
+                // 2. PERBAIKAN: Buat entry di manajemen_ruangans
+                // Ini yang menyebabkan warna tidak muncul - data harus ada di kedua tabel
+                \App\Models\manajemenRuangan::create([
+                    'ruangan' => $request->ruang,
+                    'tanggal' => $request->tanggal,
+                    'jam_mulai' => $request->jam_mulai,
+                    'jam_selesai' => $request->jam_selesai,
+                    'kebutuhan' => $request->filled('kebutuhan') ? $request->kebutuhan : 
+                                  'Exam - ' . ($exam->materi->nama_materi ?? 'Unknown'),
+                    'keterangan' => $request->filled('keterangan') ? $request->keterangan : 
+                                   'Exam untuk ' . ($exam->perusahaan->nama_perusahaan ?? 'Unknown') . 
+                                   ' (Pax: ' . $exam->pax . ', Invoice: ' . $exam->invoice . ')',
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+            });
+
+            // Clear session
+            session()->forget(['exam_assign_id', 'exam_assign_data']);
+
+            return redirect()->route('exam.index')->with('success', 'Ruangan berhasil di-assign untuk exam.');
+
+        } catch (\Exception $e) {
+            \Log::error('Exam room assignment failed: ' . $e->getMessage());
+            return redirect()->route('exam.index')->with('error', 'Gagal assign ruangan: ' . $e->getMessage());
+        }
+    }
+
+    // TAMBAHAN: Method untuk menghapus assignment jika diperlukan
+    public function removeRoomAssignment($id)
+    {
+        try {
+            $exam = eksam::with('rkm')->findOrFail($id);
+
+            DB::transaction(function () use ($exam) {
+                // Hapus dari manajemen_ruangans
+                \App\Models\manajemenRuangan::where('ruangan', $exam->rkm->ruang)
+                    ->where('kebutuhan', 'LIKE', 'Exam - %')
+                    ->delete();
+
+                // Reset RKM
+                $exam->rkm->update([
+                    'ruang' => null,
+                    'metode_kelas' => 'Exam Only'
+                ]);
+            });
+
+            return redirect()->back()->with('success', 'Assignment ruangan berhasil dihapus.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal menghapus assignment: ' . $e->getMessage());
+        }
+    }
+
+    public function rekapExam()
+    {
+        
+        return view('exam.rekapexam');
+    }
+
+    public function getRekapExam($year, $month)
+    {
+        $rkm = eksam::with(['rkm', 'registexam', 'registexam.peserta', 'registexam.creditcard',  'registexam.hasilexam'])
+        ->whereMonth('tanggal_pengajuan', $month)
+        ->whereYear('tanggal_pengajuan', $year)
+        ->orderBy('created_at', 'desc')
+        ->get();
+        return response()->json([
+            'success' => true,
+            'message' => 'Rekap Exam di ' . $month .'-'. $year,
+            'data' => $rkm,
+        ]);
+    }
+
+    public function rekapExamExportExcel($year, $month)
+    {
+        $rkm = eksam::with(['rkm', 'registexam', 'registexam.peserta', 'registexam.creditcard', 'registexam.hasilexam'])
+        ->whereMonth('tanggal_pengajuan', $month)
+        ->whereYear('tanggal_pengajuan', $year)
+        ->orderBy('created_at', 'desc')
+        ->get();
+        $data = $rkm->flatMap(function ($item) {
+            return $item->registexam->map(function ($reg) use ($item) {
+                return [
+                    'Invoice'               => $item->invoice,
+                    'Tanggal Pengajuan'     => $item->tanggal_pengajuan,
+                    'Nama Materi'           => $item->materi,
+                    'Nama Perusahaan'       => $item->perusahaan,
+                    'Kode Exam'             => $item->kode_exam,
+                    'Pax'                   => $item->pax,
+                    'Nama Peserta'          => $reg->peserta->nama ?? 'Belum Daftar',
+                    'Tanggal Exam'          => $reg->tanggal_exam,
+                    'Waktu Exam'            => $reg->pukul,
+                    'Grade Exam'            => $reg->hasilexam->Hasil ?? 'Tidak Ada',
+                    'Hasil Exam'            => $reg->hasilexam->keterangan ?? 'Tidak Ada',
+                    'Kartu Kredit'          => $reg->creditcard->nama_pemilik ?? 'Belum Daftar',
+                    'Mata Uang'             => $item->mata_uang,
+                    'Harga'                 => $item->harga,
+                    'Kurs Harga'            => $item->kurs,
+                    'Biaya Admin'           => $item->biaya_admin,
+                    'Kurs Biaya Admin'      => $item->kurs_dollar,
+                    'Harga dalam Rupiah'    => $item->harga_rupiah,
+                    'Total Harga dalam Rupiah'=> $item->total,
+
+                ];
+            });
+        });
+
+        return Excel::download(new rekapExamExport($data), 'Rekap Exam '.$year . '-'. $month.'.xlsx');
+    }
 }

@@ -55,12 +55,10 @@
                                 <div class="mb-3">
                                     <label class="form-label" for="id_perusahaan">Nama Perusahaan</label>
                                     <select class="form-select" id="id_perusahaan" name="id_perusahaan" required>
-                                        <option value="" disabled selected>Pilih Perusahaan</option>
-                                        @forelse ($perusahaan as $p)
+                                        <option value="">Pilih Perusahaan</option>
+                                        @foreach ($perusahaan as $p)
                                             <option value="{{ $p->id }}">{{ $p->nama_perusahaan }}</option>
-                                        @empty
-                                            <option disabled>Tidak ada kontak tersedia</option>
-                                        @endforelse
+                                        @endforeach
                                     </select>
                                 </div>
 
@@ -163,7 +161,7 @@
                                         <option value="Email">Email</option>
                                         <option value="Visit">Visit</option>
                                     </select>
-                                </div>
+                                </div>         var $closestModal = $select.closest('.modal');
 
                                 <div class="mb-3">
                                     <label class="form-label" for="edit_subject">Subjek</label>
@@ -198,7 +196,8 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-
+    <!-- JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         $(document).ready(function() {
             $('#aktivitasTable').DataTable({
@@ -245,8 +244,28 @@
                 ]
             });
 
-
+            initPerusahaanSelect2();
         });
+
+        function initPerusahaanSelect2() {
+            var $select = $('#id_perusahaan');
+
+            // safety: pastikan select2 tersedia
+            if (typeof $.fn.select2 !== 'function') {
+                console.error('Select2 belum ter-load!');
+                return;
+            }
+
+            // cari modal parent (jika ada)
+            var $closestModal = $select.closest('.modal');
+
+            $select.select2({
+                width: '100%',
+                theme: 'bootstrap-5',
+                // pastikan dropdown di-append ke modal (atau body jika tidak ada modal)
+                dropdownParent: $closestModal.length ? $closestModal : $(document.body)
+            });
+        }
 
         function editAktivitas(row) {
             $('#edit_id').val(row.id);
@@ -343,20 +362,20 @@
             document.getElementById('activityForm').reset();
         }
 
+
         document.addEventListener("DOMContentLoaded", function() {
-            const perusahaanSelect = document.getElementById("id_perusahaan");
+        // 🔍 Aktifkan Select2 untuk perusahaan
+
+
             const contactSelect = document.getElementById("id_contact");
             const contactTypeInput = document.getElementById("contact_type");
             const newContactFields = document.getElementById("newContactFields");
 
-            if (!perusahaanSelect || !contactSelect) {
-                console.error("Dropdown perusahaan atau kontak tidak ditemukan!");
-                return;
-            }
+            // 🔄 Ambil kontak saat perusahaan dipilih
+            $('#id_perusahaan').on('change', function() {
+                const perusahaanId = $(this).val();
 
-            perusahaanSelect.addEventListener("change", function() {
-                const perusahaanId = this.value;
-
+                // Reset dropdown kontak
                 contactSelect.innerHTML = `
                     <option value="" disabled selected>Pilih Kontak</option>
                     <option value="new" data-type="contact">+ Tambahkan Kontak Baru</option>
@@ -384,8 +403,9 @@
 
                                 const nama = item.nama || "Tidak ada nama";
                                 const email = item.email || "Tidak ada email";
-                                const divisi = item.type === 'peserta' ? 'C-Peserta' : (item
-                                    .divisi || 'tidak ada divisi');
+                                const divisi = item.type === 'peserta'
+                                    ? 'C-Peserta'
+                                    : (item.divisi || 'tidak ada divisi');
 
                                 option.textContent = `${nama} (${divisi}) - ${email}`;
                                 contactSelect.appendChild(option);
@@ -402,9 +422,10 @@
                     });
             });
 
-            contactSelect.addEventListener("change", function() {
+            // 🎯 Tampilkan form kontak baru jika pilih "new"
+            $('#id_contact').on('change', function() {
                 const selectedOption = this.options[this.selectedIndex];
-                const type = selectedOption.dataset.type || "contact";
+                const type = selectedOption ? (selectedOption.dataset.type || "contact") : "contact";
                 contactTypeInput.value = type;
 
                 if (this.value === "new") {
@@ -414,5 +435,6 @@
                 }
             });
         });
+
     </script>
 @endsection

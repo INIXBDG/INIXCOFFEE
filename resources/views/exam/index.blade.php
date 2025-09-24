@@ -19,6 +19,9 @@
             @endcan
         </div>
         <div class="col-md-12">
+             {{-- @can('Rekap Exam') --}}
+                    <a href="{{ route('exam.rekapexam') }}" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Tambah Perusahaan"><img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> Rekap Exam</a>
+                {{-- @endcan --}}
             <div class="card m-4">
                 <div class="card-body table-responsive">
                     <h3 class="card-title text-center my-1">{{ __('Data Pengajuan Exam') }}</h3>

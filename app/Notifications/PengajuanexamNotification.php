@@ -22,7 +22,7 @@ class PengajuanexamNotification extends Notification
 
     public function via($notifiable)
     {
-        return ['database']; // Menggunakan 'database' dan 'broadcast'
+        return ['database', 'broadcast']; // Menggunakan 'database' dan 'broadcast'
     }
 
     public function toArray($notifiable)
