@@ -215,6 +215,7 @@
                         return data + ' Jam';
                     }
                 },
+                //fix
                 {
                     "data": "created_at",
                     "render": function(data, type, row) {
