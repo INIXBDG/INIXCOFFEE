@@ -160,8 +160,10 @@
                                         <option value="Call">Call</option>
                                         <option value="Email">Email</option>
                                         <option value="Visit">Visit</option>
+                                        <option value="Meet">Meeting</option>
+                                        <option value="Incharge">Incharge Inhouse</option>
                                     </select>
-                                </div>         var $closestModal = $select.closest('.modal');
+                                </div>
 
                                 <div class="mb-3">
                                     <label class="form-label" for="edit_subject">Subjek</label>
@@ -273,27 +275,23 @@
             $('#edit_subject').val(row.subject);
             $('#edit_deskripsi').val(row.deskripsi);
 
+            // ✅ perbaikan ambil tanggal langsung
             if (row.waktu_aktivitas) {
-                const dateObj = new Date(row.waktu_aktivitas);
-                if (!isNaN(dateObj)) {
-                    const tanggal = dateObj.toISOString().split('T')[0];
-                    $('#edit_waktu_aktivitas').val(tanggal);
-                } else {
-                    console.error("Nilai waktu_aktivitas tidak valid:", row.waktu_aktivitas);
-                    $('#edit_waktu_aktivitas').val('');
-                }
+                // kalau format lengkap "2025-09-24 00:00:00", ambil 10 karakter pertama
+                const tanggal = row.waktu_aktivitas.substring(0, 10);
+                $('#edit_waktu_aktivitas').val(tanggal);
             } else {
                 $('#edit_waktu_aktivitas').val('');
             }
+
             console.log('buka');
 
             const modal = new bootstrap.Modal(document.getElementById('editActivityModal'));
-
             modal.show();
         }
 
 
-        $('#editActivityForm').submit(function(e) {
+        $('#editActivityForm').off('submit').on('submit', function (e) {
             e.preventDefault();
 
             const id = $('#edit_id').val();
@@ -302,35 +300,35 @@
                 aktivitas: $('#edit_aktivitas').val(),
                 subject: $('#edit_subject').val(),
                 deskripsi: $('#edit_deskripsi').val(),
-                waktu_aktivitas: $('#edit_waktu_aktivitas').val()
+                waktu_aktivitas: $('#edit_waktu_aktivitas').val() // sudah format YYYY-MM-DD
             };
 
             fetch(url, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    },
-                    body: JSON.stringify(data)
-                })
-                .then(async (res) => {
-                    if (!res.ok) {
-                        const text = await res.text();
-                        throw new Error('Gagal update: ' + text);
-                    }
-                    return res.json();
-                })
-                .then(res => {
-                    alert(res.message || 'Aktivitas berhasil diperbarui.');
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('editActivityModal'));
-                    modal.hide();
-                    $('#aktivitasTable').DataTable().ajax.reload();
-                })
-                .catch(err => {
-                    console.error(err);
-                    alert('Terjadi kesalahan saat memperbarui aktivitas.');
-                });
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(async (res) => {
+                if (!res.ok) {
+                    const text = await res.text();
+                    throw new Error('Gagal update: ' + text);
+                }
+                return res.json();
+            })
+            .then(res => {
+                alert(res.message || 'Aktivitas berhasil diperbarui.');
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editActivityModal'));
+                modal.hide();
+                $('#aktivitasTable').DataTable().ajax.reload();
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Terjadi kesalahan saat memperbarui aktivitas.');
+            });
         });
 
         function hapusAktivitas(id) {

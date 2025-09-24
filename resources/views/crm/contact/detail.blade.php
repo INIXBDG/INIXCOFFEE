@@ -553,9 +553,6 @@
                                         </div>
                                     </td>
                                 </tr>
-                                <script>
-                                    console.log($item)
-                                </script>
                             @endforeach
                         </tbody>
                     </table>
@@ -577,9 +574,9 @@
                             @csrf
                             <input type="hidden" name="id_perusahaan" value="{{ $data->id }}">
                             <div class="mb-3">
-                                <label for="id_contact" class="form-label">Pilih Contact atau Peserta</label>
+                                <label for="id_contact" class="form-label">Pilih Contact</label>
                                 <select name="id_contact" class="form-control" id="id_contact" required>
-                                    <option value="">-- Pilih Kategori --</option>
+                                    <option value="">-- Pilih Contact --</option>
                                     @foreach($items as $contact)
                                         <option value="{{ $contact['id'] }}" data-type="{{ $contact['type'] }}">
                                             {{ $contact['label'] }}
@@ -587,7 +584,6 @@
                                     @endforeach
                                     </option>
                                 </select>
-                                <!-- Input tersembunyi untuk melacak tipe -->
                                 <input type="hidden" name="contact_type" id="contact_type" value="">
                             </div>
 
@@ -599,6 +595,7 @@
                                     <option value="Email">Email</option>
                                     <option value="Visit">Visit</option>
                                     <option value="Meet">Meeting</option>
+                                    <option value="Incharge">Incharge Inhouse</option>
                                 </select>
                             </div>
                             <div class="mb-3">
@@ -647,6 +644,8 @@
                                     <option value="Call">Call</option>
                                     <option value="Email">Email</option>
                                     <option value="Visit">Visit</option>
+                                    <option value="Meet">Meeting</option>
+                                    <option value="Incharge">Incharge Inhouse</option>
                                 </select>
                             </div>
                             <div class="mb-3">

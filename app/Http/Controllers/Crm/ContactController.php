@@ -31,7 +31,6 @@ class ContactController extends Controller
             'GM', 'Sales', 'Direktur Utama', 'Direktur'
         ];
 
-        // 🔹 Base query sesuai jabatan
         if ($user->jabatan === 'Sales') {
             $idSales = $user->id_sales;
             $baseQuery = Perusahaan::where('sales_key', $idSales);
@@ -41,18 +40,14 @@ class ContactController extends Controller
             return response()->json(['error' => 'Anda tidak memiliki akses ke data ini.'], 403);
         }
 
-        // 🔹 Total sebelum filter
         $recordsTotal = $baseQuery->count();
 
-        // 🔹 Clone query untuk filter
         $query = clone $baseQuery;
 
-        // 🔹 Filter tambahan berdasarkan sales_key (dropdown)
         if ($request->filled('sales_key')) {
             $query->where('sales_key', $request->sales_key);
         }
 
-        // 🔹 Global search (bawaan DataTables)
         if ($request->has('search') && $request->search['value'] != '') {
             $search = $request->search['value'];
             $query->where(function ($q) use ($search) {
@@ -63,10 +58,8 @@ class ContactController extends Controller
             });
         }
 
-        // 🔹 Hitung setelah filter
         $recordsFiltered = $query->count();
 
-        // 🔹 Sorting
         if ($request->has('order')) {
             $columns = [
                 'id',
@@ -84,18 +77,15 @@ class ContactController extends Controller
                 $query->orderBy($columns[$colIndex], $dir);
             }
         } else {
-            $query->orderBy('id', 'desc'); // default
+            $query->orderBy('id', 'desc');
         }
 
-        // 🔹 Paging
         $start = $request->input('start', 0);
         $length = $request->input('length', 10);
         $query->skip($start)->take($length);
 
-        // 🔹 Ambil data utama
         $data = $query->get();
 
-        // 🔹 Ambil relasi tambahan
         $kelasTerakhir = [];
         $aktivitasTerakhir = [];
 
@@ -112,7 +102,6 @@ class ContactController extends Controller
                 ->first();
         }
 
-        // 🔹 Format response data
         $responseData = $data->map(function ($contact) use ($kelasTerakhir, $aktivitasTerakhir) {
             return [
                 'id' => $contact->id,
@@ -120,12 +109,12 @@ class ContactController extends Controller
                 'npwp' => $contact->npwp,
                 'alamat' => $contact->alamat,
                 'kategori_perusahaan' => $contact->kategori_perusahaan,
-                'lokasi' => $contact->lokasi ?? '-',
-                'email' => $contact->email ?? '-',
-                'status' => $contact->status ?? '-',
+                'lokasi' => $contact->lokasi,
+                'email' => $contact->email,
+                'status' => $contact->status,
                 'sales_key' => $contact->sales_key,
                 'kelas_terakhir' => isset($kelasTerakhir[$contact->id])
-                    ? ($kelasTerakhir[$contact->id]->materi->nama_materi ?? '-')
+                    ? ($kelasTerakhir[$contact->id]->materi->nama_materi)
                     : 'Belum ada kelas',
                 'kelas_terakhir_date' => isset($kelasTerakhir[$contact->id])
                     ? $kelasTerakhir[$contact->id]->created_at->translatedFormat('d F Y')
@@ -136,7 +125,6 @@ class ContactController extends Controller
             ];
         });
 
-        // 🔹 Response sesuai format DataTables
         return response()->json([
             'draw' => intval($request->input('draw')),
             'recordsTotal' => $recordsTotal,
