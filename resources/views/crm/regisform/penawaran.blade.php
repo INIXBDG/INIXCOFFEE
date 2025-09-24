@@ -458,14 +458,14 @@
             "Perlengkapan Alat Tulis",
             "E-Modul",
             "E-Lab",
-            "Makan Siang",
+            "Makan Siang dan Coffee Break",
             "Antar-jemput dari Kantor Inixindo ke hotel atau penginapan (radius 5 km)"
         ];
         const keuntunganKonstan = [
             "E-Sertifikat dari Inixindo",
             "Souvenir",
             "Hasil pre-test dan post-test (sesuai kebutuhan)",
-            "Konsultasi dan diskusi gratis dengan instruktur",
+            "Konsultasi pasca pelatihan",
             "Pembahasan studi kasus",
             "Akses Webinar Gratis"
         ];
@@ -617,7 +617,7 @@
         function getDeskripsi() {
             const penerima = document.getElementById('penerima').value || '';
             const deskripsi = document.getElementById('deskripsi').value || '';
-            const constantPart = `<br><br>Kami hadir untuk mendukung pengembangan sumber daya manusia di bidang teknologi informasi. Untuk mendukung program peningkatan pengetahuan, kompetensi, dan keahlian sumber daya manusia di ${penerima}, kami menawarkan pelatihan berikut:`;
+            const constantPart = `<br><br>Kami mengundang Bapak/Ibu ${penerima},  untuk memperbarui pengetahuan dan keterampilan dalam bidang teknologi informasi, digitalisasi, serta  pengembangan soft skill lainnya , melalui program-program pelatihan yang diselenggarakan oleh Inixindo Bandung. Kami menawarkan pelatihan sebagai berikut:`;
             return deskripsi + constantPart;
         }
 
@@ -759,6 +759,7 @@
 
                         <div class="penerima text-sm text-gray-700">
                             <p>Kepada Yth.</p>
+                            <p>Bapak/Ibu</p>
                             <p>Pimpinan ${penerima}</p>
                             <p>Di Tempat</p>
                         </div>
