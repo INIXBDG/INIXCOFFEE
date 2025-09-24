@@ -793,7 +793,7 @@ class DatabaseKPIController extends Controller
                     ->where('name_variabel', $kategori->judul_kategori)
                     ->first();
 
-                $statusPenilaian = is_null($nilai?->pesan);
+                $statusPenilaian = is_null($nilai?->finished_at);
                 $statusForm = $nilai !== null ? true : false;
 
                 $result[$form->nama_penilaian]['kriteria'] = $form->nama_penilaian;
