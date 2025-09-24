@@ -56,6 +56,7 @@
                                 <th scope="col">Tanggal Pengajuan</th>
                                 <th scope="col">Nama Perusahaan</th>
                                 <th scope="col">Pax</th>
+                                <th scope="col">Status</th>
                                 <th scope="col">sales</th>
                                 <th scope="col">instruktur</th>
                                 <th scope="col">Aksi</th>
@@ -270,6 +271,22 @@
         }
     },
     { "data": "pax" },
+    {   // Status dengan badge
+        "data": null,
+        "render": function (data) {
+            var statusBadge = '';
+            if (data.status == '3') {
+                statusBadge = '<span class="badge bg-info">Exam Only</span>';
+                // Check if room assigned
+                if (data.rkm && data.rkm.ruang && data.rkm.ruang !== 'Exam') {
+                    statusBadge += ' <span class="badge bg-success">Room Assigned</span>';
+                }
+            } else {
+                statusBadge = '<span class="badge bg-primary">Regular Exam</span>';
+            }
+            return statusBadge;
+        }
+    },
     { "data": "rkm.sales_key", "visible": false },
     { "data": "rkm.instruktur_key", "visible": false },
     {
@@ -279,7 +296,18 @@
             actions += '<div class="dropdown">';
             actions += '<button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>';
             actions += '<div class="dropdown-menu">';
-            actions += '<a class="dropdown-item" disabled href="{{ url('/exam') }}/' + row.id + '">Detail</a>';
+            actions += '<a class="dropdown-item" href="{{ url('/exam') }}/' + row.id + '">Detail</a>';
+            
+            // Add Assign Room option for Exam Only (status = 3) and if room not yet assigned
+            if (row.status == '3') {
+                var roomAssigned = row.rkm && row.rkm.ruang && row.rkm.ruang !== 'Exam';
+                if (!roomAssigned) {
+                    actions += '@can("Edit Exam")<a class="dropdown-item" href="{{ route('exam.assignRoom', '') }}/' + row.id + '"><i class="fas fa-home"></i> Assign Ruangan</a>@endcan';
+                } else {
+                    actions += '<a class="dropdown-item text-success" href="#"><i class="fas fa-check"></i> Ruangan: ' + (row.rkm.ruang || '-') + '</a>';
+                }
+            }
+            
             actions += '@can("Edit Exam")<a class="dropdown-item" href="{{ url('/exam') }}/' + row.id + '/edit">Edit</a>@endcan';
             actions += '@can("Delete Exam")<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/exam') }}/' + row.id + '" method="POST">@csrf @method("DELETE")<button type="submit" class="dropdown-item">Hapus</button></form>@endcan';
             actions += '</div></div>';
@@ -291,8 +319,8 @@
             // "order": [[2, 'desc']], // Ubah urutan menjadi descending untuk kolom ke-6
             // "columnDefs" : [{"targets":[2], "type":"date"}],
             "initComplete": function() {
-                this.api().columns(6).search(idInstruktur).draw();
-                this.api().columns(5).search(idSales).draw();
+                this.api().columns(7).search(idInstruktur).draw();
+                this.api().columns(6).search(idSales).draw();
             }
         });
     });

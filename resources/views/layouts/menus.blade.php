@@ -1494,7 +1494,7 @@
                                                                 <i class="fa-regular fa-file" style="font-size: 30px;"></i>
                                                             </div>
                                                             <div class="col-md-10" style="margin-left: 10px">
-                                                                <a href="{{ route('index.laporanInsiden') }}"
+                                                                <a href="{{ route('tickets.index') }}"
                                                                     class="link stretched-link text-decoration-none">
                                                                     <h5 class="card-title">IT Helpdesk (Ticketing)</h5>
                                                                 </a>
@@ -1878,67 +1878,121 @@
 										</div>
 									</div>
 									{{-- @endcan --}}
-									                                @can('Fitur Menu Education')
-                                <div class="row">
-                                    <div class="col-md-12 mt-1">
-                                        <div class="card">
-                                            <div class="card-body">
-                                                <h5 class="text-center card-title">Education</h5>
-                                                <div class="row">
-                                                    @can('View TunjanganEducation')
-                                                    <div class="col-sm-6 mt-2">
-                                                        <div class="card" id="card-hover">
-                                                            <div class="card-body d-flex">
-                                                                <div class="col-md-2">
-                                                                    <img src="{{ asset('icon/table.svg') }}"
-                                                                        class="img-responsive" width="30px">
-                                                                </div>
-                                                                <div class="col-md-10"
-                                                                    style="margin-left: 10px">
-                                                                    <a href="/tunjanganEducation"
-                                                                        class="link stretched-link text-decoration-none">
-                                                                        <h5 class="card-title">Tunjangan
-                                                                            Education
-                                                                        </h5>
-                                                                    </a>
-                                                                    <p class="card-text">Data Tunjangan
-                                                                        Education.
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    @endcan
-                                                    @can('View RekapInstruktur')
-                                                    <div class="col-sm-6 mt-2">
-                                                        <div class="card" id="card-hover">
-                                                            <div class="card-body d-flex">
-                                                                <div class="col-md-2">
-                                                                    <img src="{{ asset('icon/target.svg') }}"
-                                                                        class="img-responsive" width="30px">
-                                                                </div>
-                                                                <div class="col-md-10"
-                                                                    style="margin-left: 10px">
-                                                                    <a href="/rekapmengajarinstruktur"
-                                                                        class="link stretched-link text-decoration-none">
-                                                                        <h5 class="card-title">Rekap Mengajar
-                                                                            Instruktur
-                                                                        </h5>
-                                                                    </a>
-                                                                    <p class="card-text">Data rekapan mengajar
-                                                                        instruktur.
-                                                                    </p>
+                                    @can('Fitur Menu Education')
+                                        <div class="row">
+                                            <div class="col-md-12 mt-1">
+                                                <div class="card">
+                                                    <div class="card-body">
+                                                        <h5 class="text-center card-title">Education</h5>
+                                                        <div class="row">
+                                                            @can('View TunjanganEducation')
+                                                            <div class="col-sm-6 mt-2">
+                                                                <div class="card" id="card-hover">
+                                                                    <div class="card-body d-flex">
+                                                                        <div class="col-md-2">
+                                                                            <img src="{{ asset('icon/table.svg') }}"
+                                                                                class="img-responsive" width="30px">
+                                                                        </div>
+                                                                        <div class="col-md-10"
+                                                                            style="margin-left: 10px">
+                                                                            <a href="/tunjanganEducation"
+                                                                                class="link stretched-link text-decoration-none">
+                                                                                <h5 class="card-title">Tunjangan
+                                                                                    Education
+                                                                                </h5>
+                                                                            </a>
+                                                                            <p class="card-text">Data Tunjangan
+                                                                                Education.
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
                                                             </div>
+                                                            @endcan
+                                                            @can('View RekapInstruktur')
+                                                            <div class="col-sm-6 mt-2">
+                                                                <div class="card" id="card-hover">
+                                                                    <div class="card-body d-flex">
+                                                                        <div class="col-md-2">
+                                                                            <img src="{{ asset('icon/target.svg') }}"
+                                                                                class="img-responsive" width="30px">
+                                                                        </div>
+                                                                        <div class="col-md-10"
+                                                                            style="margin-left: 10px">
+                                                                            <a href="/rekapmengajarinstruktur"
+                                                                                class="link stretched-link text-decoration-none">
+                                                                                <h5 class="card-title">Rekap Mengajar
+                                                                                    Instruktur
+                                                                                </h5>
+                                                                            </a>
+                                                                            <p class="card-text">Data rekapan mengajar
+                                                                                instruktur.
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            @endcan
                                                         </div>
                                                     </div>
-                                                    @endcan
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-                                @endcan
+                                    @endcan
+                                    @can('Fitur Menu Office')
+                                        <div class="row">
+                                                <div class="col-md-12 mt-1">
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <h5 class="text-center card-title">Office</h5>
+                                                            <div class="row">
+                                                                @can('View Inventaris')
+                                                                <div class="col-sm-6 mt-2">
+                                                                    <div class="card" id="card-hover">
+                                                                        <div class="card-body d-flex">
+                                                                            <div class="col-md-2">
+                                                                                <img src="{{ asset('icon/file-text.svg') }}"
+                                                                                    class="img-responsive" width="30px">
+                                                                            </div>
+                                                                            <div class="col-md-10"
+                                                                                style="margin-left: 10px">
+                                                                                <a href="{{ route('IndexInventaris') }}"
+                                                                                    class="link stretched-link text-decoration-none">
+                                                                                    <h5 class="card-title">Inventaris</h5>
+                                                                                </a>
+                                                                                <p class="card-text">Data Inventaris
+                                                                                    Inixindo.
+                                                                                </p>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                @endcan
+                                                                @can('View Klaim')
+                                                                    <div class="col-sm-6 mt-2">
+                                                                        <div class="card" id="card-hover">
+                                                                            <div class="card-body d-flex">
+                                                                                <div class="col-md-2">
+                                                                                    <img src="{{ asset('icon/paperclip.svg') }}"
+                                                                                        class="img-responsive" width="30px">
+                                                                                </div>
+                                                                                <div class="col-md-10" style="margin-left: 10px">
+                                                                                    <a href="/pengajuan-klaim"
+                                                                                        class="link stretched-link text-decoration-none">
+                                                                                        <h5 class="card-title">Pengajuan Klaim</h5>
+                                                                                    </a>
+                                                                                    <p class="card-text">Pengajuan Absen, Jam Kerja, & Cuti</p>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                @endcan
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                        </div>
+                                    @endcan
                                     @can('Fitur CRM')
                                             <div class="row">
                                                 <div class="col-md-12 mt-1">
@@ -2118,13 +2172,7 @@
                     @include('partials.dashboard')
                 </div>
             </div>
-        </div>
-        <div class="tab-pane fade" id="pills-dashboard" role="tabpanel" aria-labelledby="pills-dashboard-tab">
-            @include('partials.dashboard')
-        </div>
-        </div>
-    </main>
-    <audio id="notifSound" src="{{ asset('bell.mp3') }}" preload="auto"></audio>
+        </main>
     </div>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
@@ -2572,39 +2620,6 @@ Swal.fire({
         //         });
         //     });
         // });
-    </script>
-    <script>
-        let lastNotifCount = 0;
-
-        function playNotif() {
-            let audio = document.getElementById("notifSound");
-            audio.play();
-        }
-
-        function fetchNotifications() {
-            fetch("{{ route('notifications.fetch') }}").then(res => res.json()).then(data => {
-                let badge = document.querySelector('.nav-link.position-relative .badge');
-                let count = data.length;
-                if (count > 0) {
-                    if (!badge) {
-                        const newBadge = document.createElement('span');
-                        newBadge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger';
-                        newBadge.innerHTML = count + '<span class="visually-hidden">unread notifications</span>';
-                        document.querySelector('.nav-link.position-relative').appendChild(newBadge);
-                    } else {
-                        badge.innerHTML = count + '<span class="visually-hidden">unread notifications</span>';
-                    }
-                    if (count !== lastNotifCount) {
-                        playNotif();
-                    }
-                } else {
-                    if (badge) badge.remove();
-                }
-                lastNotifCount = count;
-            }).catch(err => console.error("Error fetch notifications:", err));
-        }
-        fetchNotifications();
-        setInterval(fetchNotifications, 1);
     </script>
 </body>
 
