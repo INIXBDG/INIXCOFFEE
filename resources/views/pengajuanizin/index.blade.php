@@ -222,20 +222,38 @@
                     }
                 },
                 {
-                    "data": "tanggal_pengajuan_terformat"
+                    "data": "tanggal_pengajuan_terformat",
+                        "render": function(data, type, row) {
+                        return moment(data).locale('id').format('DD MMMM YYYY');
+                    }   
                 },
-
-
-
                 {
                     "data": "approval",
                     "render": function(data, type, row) {
+                        let requesterRole = row.karyawan.jabatan;
+                        let requesterDivisi = row.karyawan.divisi;
+                        
+                        // Jabatan tinggi yang langsung ke GM
+                        const jabatanTinggi = ['SPV Sales', 'Koordinator ITSM'];
+                        
+                        // Divisi Office dengan jabatan tertentu yang langsung ke GM
+                        const jabatansepesial = ['HRD', 'Finance & Accounting ', 'Office Boy', 'Driver'];
+                        
                         switch (parseInt(row.approval)) {
                             case 0:
-                                return `
-                                    <span class="badge rounded-pill bg-warning text-dark">
-                                        <i class="bi bi-hourglass-split me-1"></i> Menunggu Koordinator
-                                    </span>`;
+                                // Cek apakah pemohon masuk kategori yang diapprove GM
+                                if (jabatanTinggi.includes(requesterRole) || 
+                                    (requesterDivisi === 'Office' && jabatansepesial.includes(requesterRole))) {
+                                    return `
+                                        <span class="badge rounded-pill bg-warning text-dark">
+                                            <i class="bi bi-hourglass-split me-1"></i> Menunggu GM
+                                        </span>`;
+                                } else {
+                                    return `
+                                        <span class="badge rounded-pill bg-warning text-dark">
+                                            <i class="bi bi-hourglass-split me-1"></i> Menunggu Koordinator
+                                        </span>`;
+                                }
                             case 1:
                                 return `
                                     <span class="badge rounded-pill bg-warning text-dark">
@@ -266,10 +284,10 @@
                         return data ?? '-';
                     }
                 },
+
                 {
                     "data": null,
                     "render": function(data, type, row) {
-
                         let approval = row.approval;
                         let userRole = '{{ auth()->user()->jabatan }}';
                         let requesterDivisi = row.karyawan.divisi;
@@ -277,6 +295,12 @@
                         let actions = "";
 
                         let iconBase = "{{ asset('icon') }}";
+                        
+                        // Jabatan tinggi yang langsung ke GM
+                        const jabatanTinggi = ['SPV Sales', 'Koordinator ITSM'];
+
+                        // Divisi Office dengan jabatan tertentu yang langsung ke GM
+                        const jabatansepesial = ['HRD', 'Finance & Accounting', 'Office Boy', 'Driver'];
 
                         actions += '<div class="dropdown">';
                         actions += '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
@@ -292,12 +316,29 @@
                         let approveDisabled = true;
                         let approveColor = '';
 
-                        if (approval === 0 && userRole.includes('Koordinator')) approveDisabled = false;
-                        else if (approval === 0 && userRole === 'Education Manager' && requesterDivisi === 'Education') approveDisabled = false;
-                        else if (approval === 0 && userRole === 'SPV Sales' && requesterDivisi === 'Sales & Marketing') approveDisabled = false;
-                        else if (approval === 0 && userRole === 'Koordinator ITSM' && requesterDivisi === 'IT Service Management') approveDisabled = false;
-                        else if (approval === 1 && userRole === 'HRD') approveDisabled = false;
-                        else if (approval === 4) {
+                        // ===== LOGIC APPROVAL UNTUK YANG BISA DIAPPROVE GM =====
+                        if (jabatanTinggi.includes(requesterRole) || 
+                            (requesterDivisi === 'Office' && jabatansepesial.includes(requesterRole))) {
+                            // Untuk kategori ini: GM bisa approve di status 0
+                            if (approval === 0 && userRole === 'GM') {
+                                approveDisabled = false;
+                            }
+                            // HRD bisa approve final di status 1
+                            else if (approval === 1 && userRole === 'HRD') {
+                                approveDisabled = false;
+                            }
+                        }
+                        // ===== LOGIC APPROVAL UNTUK KARYAWAN BIASA =====
+                        else {
+                            if (approval === 0 && userRole.includes('Koordinator')) approveDisabled = false;
+                            else if (approval === 0 && userRole === 'Education Manager' && requesterDivisi === 'Education') approveDisabled = false;
+                            else if (approval === 0 && userRole === 'SPV Sales' && requesterDivisi === 'Sales & Marketing') approveDisabled = false;
+                            else if (approval === 0 && userRole === 'Office Manager' && requesterDivisi === 'Office') approveDisabled = false;
+                            else if (approval === 0 && userRole === 'Koordinator ITSM' && requesterDivisi === 'IT Service Management') approveDisabled = false;
+                            else if (approval === 1 && userRole === 'HRD') approveDisabled = false;
+                        }
+
+                        if (approval === 4) {
                             approveDisabled = true;
                             approveColor = ' style="color: red;"';
                         }
@@ -313,7 +354,7 @@
                             actions += `<img src="${iconBase}/clipboard-primary.svg" class=""> Ditolak</button>`;
                         }
 
-                        // Tombol Hapus untuk HRD jika approval = 0, 2, atau 4
+                        // Tombol Hapus untuk HRD
                         if (userRole === 'HRD' && [0, 2, 4].includes(approval)) {
                             actions += `<form onsubmit="return confirm('Apakah Anda Yakin ?');" action="/pengajuanizin/${row.id}" method="POST">`;
                             actions += `<input type="hidden" name="_token" value="{{ csrf_token() }}">`;
