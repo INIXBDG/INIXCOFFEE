@@ -45,8 +45,7 @@
 
                             <div class="d-flex gap-2">
                                 <button class="btn btn-primary btn-sm" data-bs-toggle="modal"
-                                    data-bs-target="#tambahAktivitasModal" {{ $peluang->merah ? 'disabled' : '' }}
-                                    @if (in_array(Auth::user()->jabatan, $allowedUser)) disabled @endif>
+                                    data-bs-target="#tambahAktivitasModal">
                                     Tambah Aktivitas
                                 </button>
 
@@ -210,41 +209,56 @@
                     <h5 class="card-title mb-0">Aktivitas Terkait</h5>
                 </div>
                 <div class="card-body">
-                    @if ($peluang->aktivitas->isEmpty())
+                    @if ($aktivitass->isEmpty())
                         <p class="text-muted">Belum ada aktivitas yang tercatat.</p>
                     @else
                         <div class="table-responsive">
-                            <table class="table table-striped table-hover">
-                                <thead>
+                            <table class="table table-bordered table-hover">
+                                <thead class="table-primary">
                                     <tr>
-                                        <th>No</th>
-                                        <th>Jenis</th>
-                                        <th>Subjek</th>
-                                        <th>Deskripsi</th>
-                                        <th>Waktu</th>
-                                        <th>Sales</th>
+                                        <th scope="col" class="px-3 py-2 text-center">ID Sales</th>
+                                        <th scope="col" class="px-3 py-2">Contact (PIC)</th>
+                                        <th scope="col" class="px-3 py-2">Aktivitas</th>
+                                        <th scope="col" class="px-3 py-2">Subject</th>
+                                        <th scope="col" class="px-3 py-2">Deskripsi</th>
+                                        <th scope="col" class="px-3 py-2">Waktu Aktivitas</th>
+                                        <th scope="col" class="px-3 py-2 text-center">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @php $no = 1; @endphp
-                                    @foreach ($peluang->aktivitas as $item)
-                                        @if ($item->id_sales == $peluang->id_sales)
-                                            <tr>
-                                                <td>{{ $no++ }}</td>
-                                                <td>
-                                                    @if ($item->aktivitas === 'Incharge')
-                                                        Incharge Inhouse
-                                                    @else
-                                                        {{ $item->aktivitas }}
-                                                    @endif
-                                                </td>
-                                                <td>{{ $item->subject }}</td>
-                                                <td>{{ $item->deskripsi }}</td>
-                                                <td>{{ \Carbon\Carbon::parse($item->waktu_aktivitas)->translatedFormat('d F Y') }}
-                                                </td>
-                                                <td>{{ $item->id_sales ?? '-' }}</td>
-                                            </tr>
-                                        @endif
+                                    @foreach ($aktivitass as $item)
+                                        <tr>
+                                            <td class="px-3 py-2 text-center">{{ $item->id_sales }}</td>
+                                            <td class="px-3 py-2">{{ $item->contact->nama ?? $item->peserta->nama ?? '-' }}</td>
+                                            <td class="px-3 py-2">
+                                                @if($item->aktivitas === 'Incharge')
+                                                    Incharge Inhouse
+                                                @else
+                                                    {{ $item->aktivitas }}
+                                                @endif
+                                            </td>
+                                            <td class="px-3 py-2">{{ $item->subject }}</td>
+                                            <td class="px-3 py-2">{{ $item->deskripsi ?? '-' }}</td>
+                                            <td class="px-3 py-2">
+                                                {{ \Carbon\Carbon::parse($item->waktu_aktivitas)->translatedFormat('d F Y') }}
+                                            </td>
+                                            <td class="px-3 py-2 text-center">
+                                                <div class="d-flex gap-2 justify-content-center">
+                                                    <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal"
+                                                        data-bs-target="#editAktivitasModal"
+                                                        onclick='editAktivitas(@json($item))'>
+                                                        Edit
+                                                    </button>
+                                                    <form action="{{ route('delete.aktivitas', $item->id) }}" method="POST"
+                                                        onsubmit="return confirm('Yakin ingin menghapus?')"
+                                                        style="display: inline;">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-sm btn-danger">Hapus</button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
                                     @endforeach
                                 </tbody>
                             </table>
@@ -252,18 +266,17 @@
                     @endif
                 </div>
             </div>
-
         </div>
 
         <!-- Modal Tambah Aktivitas -->
         <div class="modal fade" id="tambahAktivitasModal" tabindex="-1" aria-labelledby="tambahAktivitasModalLabel"
             aria-hidden="true">
             <div class="modal-dialog">
-                <form action="{{ route('store.aktivitas') }}" method="POST">
+                <form action="{{ route('store.aktivitas.new') }}" method="POST">
                     @csrf
                     @method('POST')
                     <input type="hidden" name="id_sales" value="{{ auth()->user()->id_sales }}">
-                    <input type="hidden" name="id_contact" value="{{ $peluang->id_contact }}">
+                    <input type="hidden" name="id_perusahaan" value="{{ $peluang->id_contact }}">
                     <input type="hidden" name="id_peluang" value="{{ $peluang->id }}">
 
                     <div class="modal-content">
@@ -273,6 +286,20 @@
                                 aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="id_contact" class="form-label">Pilih Contact</label>
+                                <select name="id_contact" class="form-control" id="id_contact">
+                                    <option value="">-- Pilih Contact </option>
+                                    @foreach($items as $contact)
+                                        <option value="{{ $contact['id'] }}" data-type="{{ $contact['type'] }}">
+                                            {{ $contact['label'] }}
+                                        </option>
+                                    @endforeach
+                                    </option>
+                                </select>
+                                <input type="hidden" name="contact_type" id="contact_type" value="">
+                            </div>
+
                             <div class="mb-3">
                                 <label for="aktivitas" class="form-label">Jenis Aktivitas</label>
                                 <select class="form-select" name="aktivitas" id="aktivitas" required>

@@ -111,11 +111,11 @@ class AktivitasController extends Controller
                 ->get()
                 ->map(function ($item) {
                     if ($item->id_peserta) {
-                        $namaKontak = $item->peserta?->nama ?? '-';
-                        $namaPerusahaan = $item->peserta?->perusahaan?->nama_perusahaan ?? '-';
+                        $namaKontak = $item->peserta?->nama;
+                        $namaPerusahaan = $item->peserta?->perusahaan?->nama_perusahaan;
                     } else {
-                        $namaKontak = $item->contact?->nama ?? '-';
-                        $namaPerusahaan = $item->contact?->perusahaan?->nama_perusahaan ?? '-';
+                        $namaKontak = $item->contact?->nama;
+                        $namaPerusahaan = $item->contact?->perusahaan?->nama_perusahaan;
                     }
 
                     $kontak = $namaKontak;
@@ -129,7 +129,7 @@ class AktivitasController extends Controller
                         'id_sales' => $item->id_sales,
                         'aktivitas' => ($item->aktivitas === 'Incharge') ? 'Incharge Inhouse' : ucfirst($item->aktivitas),
                         'subject' => $item->subject,
-                        'deskripsi' => $item->deskripsi ?? '-',
+                        'deskripsi' => $item->deskripsi,
                         'waktu_aktivitas' => \Carbon\Carbon::parse($item->waktu_aktivitas)->format('d/m/Y'),
                     ];
                 });
@@ -172,8 +172,9 @@ class AktivitasController extends Controller
     {
         $validated = $request->validate([
             'id_perusahaan'   => 'required|integer',
-            'id_contact'      => 'required|string', // ID dari dropdown
-            'contact_type'    => 'nullable|string|in:contact,peserta', // Tipe: contact atau peserta
+            'id_contact'      => 'required|string',
+            'id_peluang'      => 'nullable',
+            'contact_type'    => 'nullable|string|in:contact,peserta',
             'aktivitas'       => 'required|in:Call,Email,Visit,Meet,Incharge',
             'subject'         => 'required|string|max:255',
             'deskripsi'       => 'nullable|string',

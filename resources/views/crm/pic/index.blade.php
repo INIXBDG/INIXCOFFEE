@@ -208,6 +208,7 @@
                         render: function(data, type, row) {
                             if (row.status === 'Contact' || row.status === 'Contact Baru') {
                                 return `
+                                <div class="d-flex flex-column gap-2">
                                     <button class="btn btn-sm btn-warning edit-btn"
                                         data-id="${row.contact_id}"
                                         data-nama="${row.nama}"
@@ -222,6 +223,7 @@
                                         data-id="${row.contact_id}">
                                         Delete
                                     </button>
+                                </div>
                                 `;
                             }
                             return '';
