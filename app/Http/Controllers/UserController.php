@@ -108,13 +108,14 @@ class UserController extends Controller
 
         $userId = $decoded[0];
         $users = User::findOrFail($userId);
+        $karyawan = karyawan::findOrFail($userId);
 
         // Batasi akses: hanya user itu sendiri atau admin
         if (auth()->id() !== $users->id && auth()->user()->jabatan !== 'HRD') {
             abort(403, 'Kamu tidak diizinkan mengakses data ini.');
         }
 
-        return view('user.show', compact('users'));
+        return view('user.show', compact('users', 'karyawan'));
     }
 
     public function editPassword($id)

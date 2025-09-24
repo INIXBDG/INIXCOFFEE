@@ -12,6 +12,7 @@ use App\Models\Peserta;
 use App\Models\comment;
 use App\Models\eksam;
 use App\Models\exam;
+use App\Models\lokasi;
 use App\Models\Registrasi;
 use App\Models\nilaifeedback;
 
@@ -65,8 +66,9 @@ class PerusahaanController extends Controller
      */
     public function create(): View
     {
+        $lokasi = lokasi::all();
         $sales = karyawan::where('jabatan', 'sales')->get();
-        return view('perusahaan.create', compact('sales'));
+        return view('perusahaan.create', compact('sales', 'lokasi'));
     }
 
     /**
