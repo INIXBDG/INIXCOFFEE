@@ -43,6 +43,8 @@ class OutstandingController extends Controller
             ->whereNotIn('id', $existing)
             ->get();
 
+        return $rkms;
+
 
         if ($rkms->isEmpty()) {
             return redirect()->route('outstanding.index')->with(['info' => 'Tidak ada data baru untuk disinkronkan.']);

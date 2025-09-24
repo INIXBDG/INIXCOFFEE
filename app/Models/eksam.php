@@ -57,13 +57,13 @@ class eksam extends Model
         return $this->belongsTo(approvalexam::class, 'id', 'id_exam');
     }
     public function materi()
-{
-    return $this->belongsTo(Materi::class, 'materi', 'id');
-}
+    {
+        return $this->belongsTo(Materi::class, 'materi', 'id');
+    }
 
-public function perusahaan()
-{
-    return $this->belongsTo(Perusahaan::class, 'perusahaan', 'id');
-}
+    public function perusahaan()
+    {
+        return $this->belongsTo(Perusahaan::class, 'perusahaan', 'id');
+    }
 
 }

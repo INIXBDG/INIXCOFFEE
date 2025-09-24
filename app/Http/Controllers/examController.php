@@ -268,21 +268,21 @@ public function storeOnly(Request $request)
     }
 
 
-public function getHistoriExam()
-{
-    $rkm = eksam::with([
-        'materi', 
-        'perusahaan', 
-        'rkm.materi',
-        'rkm.perusahaan'
-    ])->orderBy('created_at', 'desc')->get();
+    public function getHistoriExam()
+    {
+        $rkm = eksam::with([
+            'materi', 
+            'perusahaan', 
+            'rkm.materi',
+            'rkm.perusahaan'
+        ])->orderBy('created_at', 'desc')->get();
 
-    return response()->json([
-        'success' => true,
-        'message' => 'List Registrasi',
-        'data' => $rkm,
-    ]);
-}
+        return response()->json([
+            'success' => true,
+            'message' => 'List Registrasi',
+            'data' => $rkm,
+        ]);
+    }
 
     /**
      * create
