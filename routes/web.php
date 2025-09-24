@@ -81,6 +81,18 @@ Route::get('/datarkm/{tahun}/{bulan}', [App\Http\Controllers\PerusahaanControlle
 // Route::post('/change-year', 'HomeController@changeYear')->name('changeYear');
 // test
 
+// routes/web.php
+// Route::get('/notifications/fetch', function () {
+//     return auth()->user()->unreadNotifications;
+//     // return auth()->user()->unreadNotifications->take(5);
+// })->name('notifications.fetch');
+Route::get('/notifications/fetch', function () {
+    return response()->json(
+        auth()->user()->unreadNotifications
+    );
+})->name('notifications.fetch');
+
+
 Route::get('paymantAdvance/{year}/{month}', [App\Http\Controllers\netSalesController::class, 'getRkmDataPerBulanPerMinggu']);
 Route::resource('/comment', \App\Http\Controllers\CommentController::class);
 
@@ -519,6 +531,10 @@ Route::get('/laporan-insiden/edit/{id}', [laporanInsidentController::class, 'edi
 Route::get('/laporan-insiden/hapus/{id}', [laporanInsidentController::class, 'hapus'])->name('hapus.laporanInsiden');
 Route::post('/laporan-insiden/update', [laporanInsidentController::class, 'update'])->name('uodate.laporanInsiden');
 
+//management-kelas-offline
+Route::get('/management-kelas/get', [managementKelasController::class, 'get'])->name('managementKelas.get');
+Route::post('/management-kelas/store', [managementKelasController::class, 'store'])->name('managementKelas.store');
+
 //rekapexam
 Route::get('/rekapexam', [examController::class, 'rekapExam'])->name('exam.rekapexam');
 Route::get('/getRekapExamByMonth/{year}/{month}', [examController::class, 'getRekapExam'])->name('exam.getRekapExam');
@@ -540,3 +556,4 @@ Route::post('/tickets/{ticket}/accept', [TicketController::class, 'accept'])->na
 Route::post('/tickets/{ticket}/finish', [TicketController::class, 'finish'])->name('tickets.finish');
 Route::post('/tickets/{ticket}/block', [TicketController::class, 'block'])->name('tickets.block');
 Route::get('/getTickets', [TicketController::class, 'getTickets'])->name('getTickets');
+

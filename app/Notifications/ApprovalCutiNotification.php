@@ -24,7 +24,7 @@ class ApprovalCutiNotification extends Notification
 
     public function via($notifiable)
     {
-        return ['database']; // Menggunakan 'database' dan 'broadcast'
+        return ['database', 'broadcast']; // Menggunakan 'database' dan 'broadcast'
     }
 
     /**
