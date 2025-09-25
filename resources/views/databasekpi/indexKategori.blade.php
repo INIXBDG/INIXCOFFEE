@@ -256,6 +256,24 @@
 </div>
 
 <style>
+    select.form-select,
+    select.form-control {
+        background-color: var(--bs-body-bg) !important;
+        color: var(--bs-body-color) !important;
+        border: 1px solid var(--bs-border-color, #444) !important;
+    }
+
+    select.form-select option,
+    select.form-control option {
+        background-color: var(--bs-body-bg);
+        color: var(--bs-body-color);
+    }
+
+    select[multiple].form-select option:checked {
+        background-color: var(--bs-primary) !important;
+        color: #fff !important;
+    }
+
     .select2-container {
         z-index: 9999 !important;
     }
@@ -694,22 +712,22 @@
                 const gmList = karyawan.filter(item => item.jabatan === 'GM' && item.divisi === 'Sales & Marketing');
 
                 const html = `
-                <label class="mt-4">Jenis Penilaian</label>
-                <select name="jenis_penilaian" class="form-control" required>
-                    <option disabled selected>Pilih Jenis Penilaian</option>
-                    <option value="General Manager">General Manager</option>
-                    <option value="Manager/SPV/Team Leader (Atasan Langsung)">Manager/SPV/Team Leader (Atasan Langsung)</option>
-                    <option value="Rekan Kerja (Satu Divisi)">Rekan Kerja (Satu Divisi)</option>
-                    <option value="Pekerja (Beda Divisi)">Pekerja (Beda Divisi)</option>
-                    <option value="Self Apprisial">Self Apprisial</option>
-                </select>
+                    <label class="mt-4">Jenis Penilaian</label>
+                    <select name="jenis_penilaian" class="form-control" required>
+                        <option disabled selected>Pilih Jenis Penilaian</option>
+                        <option value="General Manager">General Manager</option>
+                        <option value="Manager/SPV/Team Leader (Atasan Langsung)">Manager/SPV/Team Leader (Atasan Langsung)</option>
+                        <option value="Rekan Kerja (Satu Divisi)">Rekan Kerja (Satu Divisi)</option>
+                        <option value="Pekerja (Beda Divisi)">Pekerja (Beda Divisi)</option>
+                        <option value="Self Apprisial">Self Apprisial</option>
+                    </select>
 
-                <label class="mt-3">Pilih Divisi</label>
-                <select id="multiple-select-field-divisi" name="divisi[]" multiple class="form-select"></select>
+                    <label class="mt-3">Pilih Divisi</label>
+                    <select id="multiple-select-field-divisi" name="divisi[]" multiple class="form-select"></select>
 
-                <label class="mt-3">Pilih Evaluator</label>
-                <select id="multiple-select-field-karyawan" name="id_karyawan[]" multiple class="form-select"></select>
-            `;
+                    <label class="mt-3">Pilih Evaluator</label>
+                    <select id="multiple-select-field-karyawan" name="id_karyawan[]" multiple class="form-select"></select>
+                `;
 
                 contentSelect.append(html);
 

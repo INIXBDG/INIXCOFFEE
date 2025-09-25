@@ -326,6 +326,14 @@
         loadData();
     });
 
+    function pengubahFormat(angka) {
+        return angka.toLocaleString('id-ID', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+
+
     $('#jenis-penilaian-tab').on('click', '.list-group-item', function() {
         $('#jenis-penilaian-tab .list-group-item').removeClass('active');
         $(this).addClass('active');
@@ -353,6 +361,7 @@
                 globalEvaluators = data.data.evaluator;
                 globalKriteria = data.data.dataKriteria;
                 globalEvaluated = data.evaluated;
+                globalChart = data.chart;
                 globalAbsensi = data.dataAbsen;
                 globalTahun = data.evaluated.tahun;
 
@@ -469,9 +478,7 @@
 
                         <div class="form-group mb-3 text-start">
                             <label class="mb-2">Catatan</label>
-                            <textarea class="list-group ms-2 form-control stylish-textarea bg-theme border-none" placeholder="berikan catatan..." rows="4" name="catatan">
-                                ${globalEvaluated.catatan === 'null' || globalEvaluated.catatan === null ? '' : globalEvaluated.catatan}
-                            </textarea>
+                            <textarea class="list-group ms-2 form-control stylish-textarea bg-theme border-none" placeholder="berikan catatan..." rows="4" name="catatan">${globalEvaluated.catatan === 'null' || globalEvaluated.catatan === null ? '' : globalEvaluated.catatan}</textarea>
                         </div>
                         <div class="form-group mb-3 text-end">
                             <button type="submit" class="btn cl-blue text-white">Kirim</button>
@@ -548,7 +555,7 @@
                         <td style="text-align: left;">${sub.sub_kriteria}</td>
                         <td>${bobot} %</td>
                         <td>${nilai}</td>
-                        <td>${skor.toFixed(2)}</td>
+                        <td>${pengubahFormat(skor)}</td>
                     </tr>
                 `);
                 });
@@ -563,7 +570,7 @@
                 <td colspan="4" class="text-center mb-3">
                 Total (${evaluator.nama})
                 </td>
-                <td>${totalSkorEvaluator.toFixed(2)}</td>
+                <td>${pengubahFormat(totalSkorEvaluator)}</td>
             </tr>
         `);
         });
@@ -604,7 +611,7 @@
         content.append(`
             <tr class="fw-bold text-white" style="background: #546E7A">
                 <td colspan="4" class="text-end">Total Semua Nilai</td>
-                <td>${totalSemuaSkor.toFixed(2)}</td>
+                <td>${pengubahFormat(totalSemuaSkor)}</td>
             </tr>
             <tr class="fw-bold text-white" style="background: #546E7A">
                 <td colspan="4" class="text-end">Kriteria</td>
@@ -616,10 +623,8 @@
             </tr>
         `);
 
-        dataTotalPerTahun[globalTahun] = totalSemuaSkor;
-
-        tampilkanChartTahunIni(globalTahun, totalSemuaSkor);
-        tampilkanChartSemuaTahun(dataTotalPerTahun);
+        tampilkanChartTahunIni(globalChart.quartal);
+        tampilkanChartSemuaTahun(globalChart.all);
     }
 
     $(document).on('click', '#kirimEmail', function(e) {
@@ -670,68 +675,68 @@
         loadData();
     });
 
-    function tampilkanChartTahunIni(tahun, total) {
+    function tampilkanChartTahunIni(quartalData) {
         const ctx = document.querySelector(".chart-bar").getContext("2d");
 
-        if (chartTahunIni) {
-            chartTahunIni.destroy();
-        }
+        if (chartTahunIni) chartTahunIni.destroy();
 
         chartTahunIni = new Chart(ctx, {
             type: "bar",
             data: {
-                labels: [tahun],
+                labels: Object.keys(quartalData).map(q => "Q" + q),
                 datasets: [{
-                    label: "Total Skor Tahun Ini",
-                    data: [total],
+                    label: "Total Skor per Quartal (Tahun Ini)",
+                    data: Object.values(quartalData).map(v => parseFloat(v).toFixed(2)),
                     backgroundColor: "rgba(54, 162, 235, 0.6)",
                     borderColor: "rgba(54, 162, 235, 1)",
                     borderWidth: 1
                 }]
             },
             options: {
+                responsive: true,
                 scales: {
-                    yAxes: [{
+                    y: {
+                        beginAtZero: true,
                         ticks: {
-                            beginAtZero: true,
-                            stepSize: 10
+                            callback: function(value) {
+                                return value.toFixed(2);
+                            }
                         }
-                    }]
+                    }
                 }
             }
         });
     }
 
-    function tampilkanChartSemuaTahun(dataTotalPerTahun) {
+    function tampilkanChartSemuaTahun(allData) {
         const ctx = document.querySelector(".chart-line").getContext("2d");
 
-        const labels = Object.keys(dataTotalPerTahun);
-        const data = Object.values(dataTotalPerTahun);
-
-        if (chartAllYears) {
-            chartAllYears.destroy();
-        }
+        if (chartAllYears) chartAllYears.destroy();
 
         chartAllYears = new Chart(ctx, {
             type: "line",
             data: {
-                labels: labels,
+                labels: Object.keys(allData).map(q => "Q" + q),
                 datasets: [{
-                    label: "Total Nilai per Tahun",
-                    data: data,
-                    backgroundColor: "rgba(153, 102, 255, 0.4)",
+                    label: "Rata-rata Skor Semua Tahun (Per Quartal)",
+                    data: Object.values(allData).map(v => parseFloat(v).toFixed(2)),
                     borderColor: "rgba(153, 102, 255, 1)",
+                    backgroundColor: "rgba(153, 102, 255, 0.4)",
+                    borderWidth: 2,
                     fill: false
                 }]
             },
             options: {
+                responsive: true,
                 scales: {
-                    yAxes: [{
+                    y: {
+                        beginAtZero: true,
                         ticks: {
-                            beginAtZero: true,
-                            stepSize: 10
+                            callback: function(value) {
+                                return value.toFixed(2);
+                            }
                         }
-                    }]
+                    }
                 }
             }
         });

@@ -34,12 +34,12 @@
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-bordered table-striped text-center align-middle" id="table_penilaian">
-                    <thead class="table-light">
+                <table class="table table-bordered table-striped text-center align-middle bg-theme" id="table_penilaian">
+                    <thead class="text-center bg-theme">
                         <tr>
                             <th>No</th>
                             <th>Kode Form</th>
-                            <th>Evaluated</th>
+                            <th class="text-center">Evaluated</th>
                             <th>Quartal</th>
                             <th>Tahun</th>
                             <th>Aksi</th>

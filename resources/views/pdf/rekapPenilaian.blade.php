@@ -112,14 +112,14 @@
                     <td>{{ $detail['bobot'] }}%</td>
                     <td>{{ $nilai }}</td>
                     <td>{{ $pesan }}</td>
-                    <td>{{ number_format($total, 2) }}</td>
+                    <td>{{ number_format($total, 2, ',', '.') }}</td>
                 </tr>
                 @endforeach
                 @endforeach
 
                 <tr style="background-color: #d9edf7; font-weight: bold;">
                     <td colspan="5" class="text-right"><em>Jumlah (Evaluator {{ $nomor }} - Penilaian {{ $jenis }})</em></td>
-                    <td>{{ number_format($totalPerEvaluator, 2) }}</td>
+                    <td>{{ number_format($totalPerEvaluator, 2, ',', '.') }}</td>
                 </tr>
             </tbody>
         </table>
@@ -182,8 +182,8 @@
                 @foreach ($rekapGlobal as $row)
                 <tr>
                     <td class="text-center">{{ $row['jenis'] }}</td>
-                    <td class="text-center">{{ number_format($row['rata'], 2) }}</td>
-                    <td class="text-center">{{ number_format($row['final'], 2) }}</td>
+                    <td class="text-center">{{ number_format($row['rata'], 2, ',', '.') }}</td>
+                    <td class="text-center">{{ number_format($row['final'], 2, ',', '.') }}</td>
                 </tr>
                 @endforeach
                 <tr>

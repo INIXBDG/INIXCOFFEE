@@ -121,14 +121,14 @@
                     <td>{{ $detail['bobot'] }}%</td>
                     <td>{{ $nilai }}</td>
                     <td>{{ $pesan }}</td>
-                    <td>{{ number_format($total, 2) }}</td>
+                    <td>{{ number_format($total, 2, ',', '.') }}</td>
                 </tr>
                 @endforeach
                 @endforeach
 
                 <tr style="font-weight:bold;background:#fefefe;">
                     <td colspan="5" class="text-right"><em>Jumlah (Evaluator {{ $nomor }} - Penilaian {{ $jenis }})</em></td>
-                    <td>{{ number_format($totalPerEvaluator, 2) }}</td>
+                    <td>{{ number_format($totalPerEvaluator, 2, ',', '.') }}</td>
                 </tr>
             </tbody>
         </table>
@@ -191,16 +191,16 @@
                 @endphp
                 <tr>
                     <td>{{ $jenis }}</td>
-                    <td class="text-center">{{ number_format($rataRataJenis, 2) }}</td>
+                    <td class="text-center">{{ number_format($rataRataJenis, 2, ',', '.') }}</td>
                     <td class="text-center">{{ $bobotJenis }}%</td>
-                    <td class="text-center">{{ number_format($finalJenis, 2) }}</td>
+                    <td class="text-center">{{ number_format($finalJenis, 2, ',', '.') }}</td>
                 </tr>
                 @endforeach
             </tbody>
             <tfoot>
                 <tr style="font-weight:bold;background:#f9f9f9;">
                     <td colspan="3" class="text-right">Total Semua Skor</td>
-                    <td class="text-center">{{ number_format($totalSemuaSkor, 2) }}</td>
+                    <td class="text-center">{{ number_format($totalSemuaSkor, 2, ',', '.') }}</td>
                 </tr>
                 <tr style="font-weight:bold;background:#f9f9f9;">
                     <td colspan="3" class="text-right">Keterangan</td>
