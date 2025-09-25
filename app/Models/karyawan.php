@@ -34,6 +34,9 @@ class karyawan extends Model
         'kode_karyawan',
         'ttd',
         'cuti',
+        'email',
+        'whatsapp',
+        'telepon',
     ];
 
     public function user()

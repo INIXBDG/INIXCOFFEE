@@ -263,57 +263,180 @@ class RKMController extends Controller
      */
     public function show(string $id)
     {
+        // Parse the encoded ID
         $array = explode('ixb', $id);
+        if (count($array) < 3) {
+            \Log::error('Invalid ID format', ['id' => $id, 'array' => $array]);
+            return back()->with('error', 'Format ID tidak valid.');
+        }
+
         $materi_key = $array[0];
         $bulans = $array[1];
-        $kelas = $array[2];
+        $kelas_code = $array[2] ?? 'vir';
+        
         $tanggal_rkm = explode('ie', $bulans);
-        $tahun = $tanggal_rkm[1];
-        $bulan = str_pad($tanggal_rkm[2], 2, '0', STR_PAD_LEFT); // Menambahkan 0 di depan jika perlu
-        $hari = str_pad($tanggal_rkm[0], 2, '0', STR_PAD_LEFT); // Menambahkan 0 di depan jika perlu
+        if (count($tanggal_rkm) < 3) {
+            \Log::error('Invalid date format in ID', ['bulans' => $bulans, 'tanggal_rkm' => $tanggal_rkm]);
+            return back()->with('error', 'Format tanggal tidak valid.');
+        }
+
+        $hari = str_pad($tanggal_rkm[0] ?? date('d'), 2, '0', STR_PAD_LEFT);
+        $tahun = $tanggal_rkm[1] ?? date('Y');
+        $bulan = str_pad($tanggal_rkm[2] ?? date('m'), 2, '0', STR_PAD_LEFT);
         $tanggal_awal = $tahun . '-' . $bulan . '-' . $hari;
-        $tanggal_mulai = Carbon::parse($tanggal_awal);
-        $endOfWeek = $tanggal_mulai->copy()->addDays(2);
-        $tanggal_akhir = $endOfWeek->format('Y-m-d');
-        $params = $id;
 
-        // Menyesuaikan nilai $kelas berdasarkan kode
-        if ($kelas == 'inhb') {
-            $kelas = 'Inhouse Bandung';
-        } else if ($kelas == 'inhlb') {
-            $kelas = 'Inhouse Luar Bandung';
-        } else if ($kelas == 'off') {
-            $kelas = 'Offline';
-        } else if ($kelas == 'vir') {
-            $kelas = 'Virtual';
-        } else {
-            return 404;
+        // Map kelas codes to method names
+        $kelasMap = [
+            'inhb' => 'Inhouse Bandung',
+            'inhlb' => 'Inhouse Luar Bandung',
+            'off' => 'Offline',
+            'vir' => 'Virtual',
+            'exam' => 'Exam Only'
+        ];
+
+        $metode_kelas = $kelasMap[$kelas_code] ?? null;
+
+        if (!$metode_kelas) {
+            \Log::warning('Invalid kelas code', [
+                'code' => $kelas_code, 
+                'id' => $id,
+                'available_codes' => array_keys($kelasMap)
+            ]);
+            return back()->with('error', 'Kode kelas tidak valid: ' . $kelas_code);
         }
 
-        // Query RKM
-        $rkm = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan', 'instruktur2', 'asisten'])
-            ->where('materi_key', $materi_key)
-            ->where('metode_kelas', $kelas)
-            ->whereBetween('tanggal_awal', [$tanggal_awal, $tanggal_akhir])
-            ->get();
+        // Log the parsed parameters
+        \Log::info('RKM Show Parameters', [
+            'original_id' => $id,
+            'materi_key' => $materi_key,
+            'metode_kelas' => $metode_kelas,
+            'kelas_code' => $kelas_code,
+            'tanggal_awal' => $tanggal_awal,
+            'parsed_date_parts' => [
+                'hari' => $hari,
+                'bulan' => $bulan,
+                'tahun' => $tahun
+            ]
+        ]);
 
-        if ($rkm->isEmpty()) {
-            return back()->with('error', 'RKM ini telah dipindahkan atau dihapus.');
+        try {
+            // First, let's see what RKM records exist for this materi_key
+            $debugQuery = RKM::where('materi_key', $materi_key)->get();
+            \Log::info('Available RKM records for materi_key', [
+                'materi_key' => $materi_key,
+                'total_records' => $debugQuery->count(),
+                'records' => $debugQuery->map(function($item) {
+                    return [
+                        'id' => $item->id,
+                        'tanggal_awal' => $item->tanggal_awal,
+                        'tanggal_akhir' => $item->tanggal_akhir,
+                        'metode_kelas' => $item->metode_kelas,
+                        'status' => $item->status,
+                        'created_at' => $item->created_at->format('Y-m-d H:i:s')
+                    ];
+                })->toArray()
+            ]);
+
+            // Build the query
+            $query = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan', 'instruktur2', 'asisten'])
+                ->where('materi_key', $materi_key)
+                ->where('metode_kelas', $metode_kelas);
+
+            // For Exam Only, we might need to be more flexible with date matching
+            if ($metode_kelas === 'Exam Only') {
+                $query->where(function($q) use ($tanggal_awal) {
+                    $q->where('tanggal_awal', $tanggal_awal)
+                    ->orWhere('tanggal_akhir', $tanggal_awal)
+                    ->orWhere(function($subq) use ($tanggal_awal) {
+                        // Sometimes exam only might be created with today's date but different exam date
+                        $subq->whereDate('created_at', $tanggal_awal);
+                    });
+                });
+            } else {
+                $query->where('tanggal_awal', $tanggal_awal);
+            }
+
+            // Log the SQL query for debugging
+            \Log::info('Executing RKM Query', [
+                'sql' => $query->toSql(),
+                'bindings' => $query->getBindings()
+            ]);
+
+            $rkm = $query->first();
+
+            if (!$rkm) {
+                // If exact match fails, try a more lenient search for Exam Only
+                if ($metode_kelas === 'Exam Only') {
+                    \Log::info('Exact match failed, trying lenient search for Exam Only');
+                    
+                    $rkm = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan', 'instruktur2', 'asisten'])
+                        ->where('materi_key', $materi_key)
+                        ->where('metode_kelas', $metode_kelas)
+                        ->orderBy('created_at', 'desc')
+                        ->first();
+
+                    if ($rkm) {
+                        \Log::info('Found RKM with lenient search', [
+                            'found_id' => $rkm->id,
+                            'found_tanggal_awal' => $rkm->tanggal_awal,
+                            'searched_tanggal' => $tanggal_awal
+                        ]);
+                    }
+                }
+            }
+
+            if (!$rkm) {
+                \Log::warning('RKM not found', [
+                    'materi_key' => $materi_key,
+                    'metode_kelas' => $metode_kelas,
+                    'tanggal_awal' => $tanggal_awal,
+                    'available_records_count' => RKM::where('materi_key', $materi_key)->count(),
+                    'exam_only_count' => RKM::where('metode_kelas', 'Exam Only')->count()
+                ]);
+                
+                return back()->with('error', 'RKM tidak ditemukan. Data mungkin telah dipindahkan atau dihapus.');
+            }
+
+            \Log::info('RKM Found Successfully', [
+                'rkm_id' => $rkm->id,
+                'materi' => $rkm->materi->nama_materi ?? 'N/A',
+                'perusahaan' => $rkm->perusahaan->nama_perusahaan ?? 'N/A',
+                'tanggal_awal' => $rkm->tanggal_awal,
+                'metode_kelas' => $rkm->metode_kelas
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('RKM Show Exception', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return back()->with('error', 'Terjadi kesalahan sistem: ' . $e->getMessage());
         }
 
-        // Ambil data pertama dari RKM
-        $ids = $rkm->firstOrFail();
+        // Get related data
+        $comments = $rkm->comments ?? collect();
+        $souvenir = souvenirinhouse::where('id_rkm', $rkm->id)->first();
 
-        // Inisialisasi comments dan souvenir
-        $comments = collect();
-        $souvenir = null;
+        // Convert single RKM to collection to match blade template expectations
+        $rkmCollection = collect([$rkm]);
 
-        foreach ($rkm as $data) {
-            $comments = $comments->merge($data->comments);
-            $souvenir = souvenirinhouse::where('id_rkm', $data->id)->first();
-        }
+        // Log successful completion
+        \Log::info('RKM Show completed successfully', [
+            'rkm_id' => $rkm->id,
+            'comments_count' => $comments->count(),
+            'has_souvenir' => $souvenir ? true : false
+        ]);
 
-        return view('rkm.show', compact('rkm', 'comments', 'ids', 'params', 'materi_key', 'souvenir'));
+        return view('rkm.show', [
+            'rkm' => $rkmCollection,
+            'comments' => $comments,
+            'params' => $id,
+            'materi_key' => $materi_key,
+            'souvenir' => $souvenir
+        ]);
     }
     public function edit(string $id)
     {
@@ -1021,24 +1144,152 @@ class RKMController extends Controller
         return view('rkm.show', compact('rkm', 'comments', 'ids', 'params', 'materi_key', 'souvenir'));
     }
 
-    public function updateMakanan(Request $request, $id)
+public function updateMakanan(Request $request, $id)
 {
-    $rkm = RKM::find($id); // jangan langsung OrFail biar bisa handle error sendiri
-    if (!$rkm) {
+    try {
+        // Validasi input
+        $request->validate([
+            'makanan' => 'required|in:0,1,2'
+        ]);
+
+        // Cari RKM berdasarkan ID dengan validasi keberadaan
+        $rkm = RKM::find($id);
+        
+        if (!$rkm) {
+            return response()->json([
+                'status' => false,
+                'message' => 'RKM tidak ditemukan dengan ID: ' . $id
+            ], 404);
+        }
+
+        // Update makanan
+        $rkm->makanan = $request->makanan;
+        $saved = $rkm->save();
+
+        if (!$saved) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal menyimpan perubahan makanan'
+            ], 500);
+        }
+
+        // Log untuk debugging
+        \Log::info('Makanan updated successfully', [
+            'rkm_id' => $id,
+            'old_makanan' => $rkm->getOriginal('makanan'),
+            'new_makanan' => $request->makanan,
+            'user' => auth()->user()->username ?? 'unknown'
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Makanan berhasil diperbarui',
+            'data' => [
+                'id' => $rkm->id,
+                'makanan' => $rkm->makanan,
+                'makanan_text' => $this->getMakananText($rkm->makanan)
+            ]
+        ]);
+
+    } catch (\Illuminate\Validation\ValidationException $e) {
         return response()->json([
             'status' => false,
-            'message' => 'RKM tidak ditemukan'
-        ], 404);
+            'message' => 'Data tidak valid: ' . implode(', ', $e->validator->errors()->all())
+        ], 422);
+    } catch (\Exception $e) {
+        // Log error untuk debugging
+        \Log::error('Error updating makanan', [
+            'rkm_id' => $id,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+
+        return response()->json([
+            'status' => false,
+            'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage()
+        ], 500);
+    }
+}
+
+private function getMakananText($makanan)
+{
+    switch (strval($makanan)) {
+        case '0':
+            return 'Tidak Ada';
+        case '1':
+            return 'Nasi Box';
+        case '2':
+            return 'Prasmanan';
+        default:
+            return '-';
+    }
+}
+public function getRKM($tahun, $bulan)
+{
+    $query = RKM::with(['materi', 'perusahaan', 'sales']) // relasi yang dipake di blade
+        ->whereYear('tanggal_awal', $tahun)
+        ->whereMonth('tanggal_awal', $bulan)
+        ->orderBy('tanggal_awal', 'asc') // Urutkan berdasarkan tanggal
+        ->orderBy('id', 'asc'); // Sebagai fallback, urutkan berdasarkan ID
+
+    // kalau mau khusus exam_only, tinggal tambahin
+    if (request()->has('exam_only') && request()->exam_only == 1) {
+        $query->where('tipe', 'exam_only');
     }
 
-    $rkm->makanan = $request->makanan;
-    $rkm->save();
+    $rawData = $query->get();
+    
+    // Filter data yang valid (memiliki ID dan data lengkap)
+    $validData = $rawData->filter(function($rkm) {
+        return $rkm->id && 
+               $rkm->materi_key && 
+               $rkm->tanggal_awal &&
+               $rkm->materi &&
+               $rkm->perusahaan;
+    });
+
+    // Group data by weeks
+    $groupedData = [];
+    
+    foreach ($validData as $rkm) {
+        $tanggalAwal = Carbon::parse($rkm->tanggal_awal);
+        $startOfWeek = $tanggalAwal->startOfWeek(Carbon::MONDAY);
+        $weekKey = $startOfWeek->format('Y-m-d');
+        
+        if (!isset($groupedData[$weekKey])) {
+            $groupedData[$weekKey] = [
+                'start' => $weekKey,
+                'data' => []
+            ];
+        }
+        
+        $groupedData[$weekKey]['data'][] = $rkm;
+    }
+    
+    // Sort weeks by date
+    ksort($groupedData);
+    
+    // Group by month
+    $monthlyData = [];
+    foreach ($groupedData as $weekData) {
+        $monthKey = Carbon::parse($weekData['start'])->format('Y-m');
+        
+        if (!isset($monthlyData[$monthKey])) {
+            $monthlyData[$monthKey] = [
+                'month' => $monthKey,
+                'weeksData' => []
+            ];
+        }
+        
+        $monthlyData[$monthKey]['weeksData'][] = $weekData;
+    }
 
     return response()->json([
         'status' => true,
-        'message' => 'Makanan berhasil diperbarui'
+        'data' => array_values($monthlyData)
     ]);
 }
+
 
 
 }

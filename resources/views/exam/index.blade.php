@@ -13,7 +13,15 @@
         </div>
     </div>
     <div class="row justify-content-center">
+        <div class="col-md-12 d-flex my-2 justify-content-end">
+            @can('Create Exam')
+                <a class="btn click-primary mx-1" href="{{ route('exam.createOnly') }}">Create Exam</a>
+            @endcan
+        </div>
         <div class="col-md-12">
+             {{-- @can('Rekap Exam') --}}
+                    <a href="{{ route('exam.rekapexam') }}" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Tambah Perusahaan"><img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> Rekap Exam</a>
+                {{-- @endcan --}}
             <div class="card m-4">
                 <div class="card-body table-responsive">
                     <h3 class="card-title text-center my-1">{{ __('Data Pengajuan Exam') }}</h3>
@@ -48,6 +56,7 @@
                                 <th scope="col">Tanggal Pengajuan</th>
                                 <th scope="col">Nama Perusahaan</th>
                                 <th scope="col">Pax</th>
+                                <th scope="col">Status</th>
                                 <th scope="col">sales</th>
                                 <th scope="col">instruktur</th>
                                 <th scope="col">Aksi</th>
@@ -238,58 +247,80 @@
                 }
             },
             "columns": [
-                {   "data": null,
-                    "render": function (data){
-                        return tableIndex2++
-                    }
-                },
-                {"data": "materi"},
-                {
-                    "data": null,
-                    "render": function (data, type, row) {
-                        return moment(data.tanggal_pengajuan).format('LL');
-                    },
-                },
-                {"data": "perusahaan"},
-                {"data": "pax"},
-                {
-                        "data": "rkm.sales_key",
-                        "visible": false
-                },
-                {
-                        "data": "rkm.instruktur_key",
-                        "visible": false
-                },
-                {
-                    "data": null,
-                    // "visible" : false,
-                    "render": function(data, type, row) {
-                            var actions = "";
-                                actions += '<div class="dropdown">';
-                                actions += '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
-                                actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
-                                actions += '<a class="dropdown-item" disabled href="{{ url('/exam') }}/' + row.id + '" data-toggle="tooltip" data-placement="top" title="Detail User"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Detail</a>';
-                                actions += '@can('Edit Exam')';
-                                actions += '<a class="dropdown-item" href="{{ url('/exam') }}/' + row.id + '/edit"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Edit</a>';
-                                actions += '@endcan';
-                                actions += '@can('Delete Exam')';
-                                actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/exam') }}/' + row.id + '" method="POST">';
-                                actions += '@csrf';
-                                actions += '@method('DELETE')';
-                                actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
-                                actions += '</form>';
-                                actions += '@endcan';
-                                actions += '</div>';
-                                actions += '</div>';
-                        return actions;
-                    }
+    {   "data": null,
+        "render": function (data){
+            return tableIndex2++;
+        }
+    },
+    {   // Nama Materi
+        "data": null,
+        "render": function (data) {
+            return data.materi?.nama_materi ?? data.rkm?.materi?.nama_materi ?? '-';
+        }
+    },
+    {   // Tanggal
+        "data": null,
+        "render": function (data) {
+            return data.tanggal_pengajuan ? moment(data.tanggal_pengajuan).format('LL') : '-';
+        }
+    },
+    {   // Nama Perusahaan
+        "data": null,
+        "render": function (data) {
+            return data.perusahaan?.nama_perusahaan ?? data.rkm?.perusahaan?.nama_perusahaan ?? '-';
+        }
+    },
+    { "data": "pax" },
+    {   // Status dengan badge
+        "data": null,
+        "render": function (data) {
+            var statusBadge = '';
+            if (data.status == '3') {
+                statusBadge = '<span class="badge bg-info">Exam Only</span>';
+                // Check if room assigned
+                if (data.rkm && data.rkm.ruang && data.rkm.ruang !== 'Exam') {
+                    statusBadge += ' <span class="badge bg-success">Room Assigned</span>';
                 }
-            ],
+            } else {
+                statusBadge = '<span class="badge bg-primary">Regular Exam</span>';
+            }
+            return statusBadge;
+        }
+    },
+    { "data": "rkm.sales_key", "visible": false },
+    { "data": "rkm.instruktur_key", "visible": false },
+    {
+        "data": null,
+        "render": function(data, type, row) {
+            var actions = "";
+            actions += '<div class="dropdown">';
+            actions += '<button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>';
+            actions += '<div class="dropdown-menu">';
+            actions += '<a class="dropdown-item" href="{{ url('/exam') }}/' + row.id + '">Detail</a>';
+            
+            // Add Assign Room option for Exam Only (status = 3) and if room not yet assigned
+            if (row.status == '3') {
+                var roomAssigned = row.rkm && row.rkm.ruang && row.rkm.ruang !== 'Exam';
+                if (!roomAssigned) {
+                    actions += '@can("Edit Exam")<a class="dropdown-item" href="{{ route('exam.assignRoom', '') }}/' + row.id + '"><i class="fas fa-home"></i> Assign Ruangan</a>@endcan';
+                } else {
+                    actions += '<a class="dropdown-item text-success" href="#"><i class="fas fa-check"></i> Ruangan: ' + (row.rkm.ruang || '-') + '</a>';
+                }
+            }
+            
+            actions += '@can("Edit Exam")<a class="dropdown-item" href="{{ url('/exam') }}/' + row.id + '/edit">Edit</a>@endcan';
+            actions += '@can("Delete Exam")<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/exam') }}/' + row.id + '" method="POST">@csrf @method("DELETE")<button type="submit" class="dropdown-item">Hapus</button></form>@endcan';
+            actions += '</div></div>';
+            return actions;
+        }
+    }
+],
+
             // "order": [[2, 'desc']], // Ubah urutan menjadi descending untuk kolom ke-6
             // "columnDefs" : [{"targets":[2], "type":"date"}],
             "initComplete": function() {
-                this.api().columns(6).search(idInstruktur).draw();
-                this.api().columns(5).search(idSales).draw();
+                this.api().columns(7).search(idInstruktur).draw();
+                this.api().columns(6).search(idSales).draw();
             }
         });
     });

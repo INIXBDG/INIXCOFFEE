@@ -9,10 +9,10 @@ class trackingNetSales extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['id_netSales', 'tracking'];
+    protected $fillable = ['id_rkm', 'tracking'];
 
     public function perhitunganNetSales()
     {
-        return $this->belongsTo(perhitunganNetSales::class, 'id_netSales', 'id');
+        return $this->hasMany(perhitunganNetSales::class, 'id_tracking', 'id');
     }
 }

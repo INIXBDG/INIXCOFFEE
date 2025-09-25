@@ -1,5 +1,10 @@
 <?php
 
+use App\Http\Controllers\TicketController;
+use App\Http\Controllers\AktivitasController;
+use App\Http\Controllers\CatatanSalesController;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\PeluangController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -43,5 +48,7 @@ Route::get('materiinix/{id}', [App\Http\Controllers\Api\apiController::class, 'g
 // Route::get('getPerusahaanById', [App\Http\Controllers\Api\PerusahaanController::class, 'getPerusahaanById'])->name('getPerusahaanById');
 Route::get('getInventaris', [App\Http\Controllers\Api\apiController::class, 'getInventaris'])->name('getInventaris');
 
+
+Route::post('/create/ticket', [TicketController::class, 'store']);
 
 

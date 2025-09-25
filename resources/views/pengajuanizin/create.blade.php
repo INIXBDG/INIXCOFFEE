@@ -37,7 +37,9 @@
                         <div class="row mb-3" id="tanggal-row">
                             <label for="tanggal" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal') }}</label>
                             <div class="col-md-6">
-                                <input id="tanggal" type="text" class="form-control @error('tanggal') is-invalid @enderror" value="{{ now()->format('d M Y') }}" name="tanggal" autocomplete="tanggal" autofocus readonly>
+                                <input id="tanggal" type="text" class="form-control @error('tanggal') is-invalid @enderror" 
+                                    value="{{ \Carbon\Carbon::now()->locale('id')->isoFormat('DD MMMM YYYY') }}" 
+                                    name="tanggal" autocomplete="tanggal" autofocus readonly>
                                 @error('tanggal')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
