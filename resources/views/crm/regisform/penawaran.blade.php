@@ -200,6 +200,20 @@
             text-align: left;
         }
 
+        .vendor-images {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: space-between;
+        }
+
+        .vendor-images img {
+            width: 80px;
+            height: auto;
+            object-fit: contain;
+        }
+
         @media print {
             body {
                 margin: 0;
@@ -339,6 +353,21 @@
                 page-break-inside: avoid;
             }
 
+            .vendor-images {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 5mm;
+                margin-top: 8mm;
+                justify-content: space-between;
+                page-break-inside: avoid;
+            }
+
+            .vendor-images img {
+                width: 30mm;
+                height: auto;
+                object-fit: contain;
+            }
+
             button {
                 display: none;
             }
@@ -468,6 +497,20 @@
             "Konsultasi pasca pelatihan",
             "Pembahasan studi kasus",
             "Akses Webinar Gratis"
+        ];
+
+        // Placeholder untuk vendor images (ganti dengan URL gambar vendor yang sebenarnya)
+        const vendorImages = [
+            "{{asset('assets/img/vendor/aws.png')}}",
+            "{{asset('assets/img/vendor/bnsp.png')}}",
+            "{{asset('assets/img/vendor/cisco.png')}}",
+            "{{asset('assets/img/vendor/eccouncil.png')}}",
+            "{{asset('assets/img/vendor/epi.png')}}",
+            "{{asset('assets/img/vendor/itrain.png')}}",
+            "{{asset('assets/img/vendor/microsoft.png')}}",
+            "{{asset('assets/img/vendor/mikrotik.png')}}",
+            "{{asset('assets/img/vendor/pearsonvue.png')}}",
+            "{{asset('assets/img/vendor/redhat.png')}}",
         ];
 
         // Fungsi untuk format Rupiah
@@ -733,6 +776,13 @@
                 <p><span class="label">Lampiran</span><span class="value">: ${lampiran}</span></p>
             ` : '';
 
+            // Generate HTML untuk vendor images
+            const vendorImagesHTML = `
+                <div class="vendor-images">
+                    ${vendorImages.map(url => `<img src="${url}" alt="Vendor Logo" />`).join('')}
+                </div>
+            `;
+
             const previewHTML = `
                 <div class="container">
                     <img src="${backgroundUrl}" class="background-image" alt="Background">
@@ -803,6 +853,7 @@
                             <p class="signature"><strong>${namaSales}</strong></p>
                             <p>${jabatanSales},</p> 
                             <p>Inixindo Bandung</p>
+                            ${vendorImagesHTML}
                         </div>
                     </div>
                 </div>
@@ -866,6 +917,19 @@
                 .list-disc { list-style-type: disc; padding-left: 15px; }
                 .list-decimal { list-style-type: decimal; padding-left: 30px; }
                 .signature { margin-top: 13mm; page-break-inside: avoid; }
+                .vendor-images {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 5mm;
+                    margin-top: 115mm;
+                    justify-content: space-between;
+                    page-break-inside: avoid;
+                }
+                .vendor-images img {
+                    width: 30mm;
+                    height: auto;
+                    object-fit: contain;
+                }
                 button { display: none; }
                 img.background-image {
                     position: fixed !important;
