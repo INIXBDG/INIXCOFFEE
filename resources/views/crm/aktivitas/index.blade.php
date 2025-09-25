@@ -55,12 +55,10 @@
                                 <div class="mb-3">
                                     <label class="form-label" for="id_perusahaan">Nama Perusahaan</label>
                                     <select class="form-select" id="id_perusahaan" name="id_perusahaan" required>
-                                        <option value="" disabled selected>Pilih Perusahaan</option>
-                                        @forelse ($perusahaan as $p)
+                                        <option value="">Pilih Perusahaan</option>
+                                        @foreach ($perusahaan as $p)
                                             <option value="{{ $p->id }}">{{ $p->nama_perusahaan }}</option>
-                                        @empty
-                                            <option disabled>Tidak ada kontak tersedia</option>
-                                        @endforelse
+                                        @endforeach
                                     </select>
                                 </div>
 
@@ -162,6 +160,8 @@
                                         <option value="Call">Call</option>
                                         <option value="Email">Email</option>
                                         <option value="Visit">Visit</option>
+                                        <option value="Meet">Meeting</option>
+                                        <option value="Incharge">Incharge Inhouse</option>
                                     </select>
                                 </div>
 
@@ -198,7 +198,8 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-
+    <!-- JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         $(document).ready(function() {
             $('#aktivitasTable').DataTable({
@@ -245,8 +246,28 @@
                 ]
             });
 
-
+            initPerusahaanSelect2();
         });
+
+        function initPerusahaanSelect2() {
+            var $select = $('#id_perusahaan');
+
+            // safety: pastikan select2 tersedia
+            if (typeof $.fn.select2 !== 'function') {
+                console.error('Select2 belum ter-load!');
+                return;
+            }
+
+            // cari modal parent (jika ada)
+            var $closestModal = $select.closest('.modal');
+
+            $select.select2({
+                width: '100%',
+                theme: 'bootstrap-5',
+                // pastikan dropdown di-append ke modal (atau body jika tidak ada modal)
+                dropdownParent: $closestModal.length ? $closestModal : $(document.body)
+            });
+        }
 
         function editAktivitas(row) {
             $('#edit_id').val(row.id);
@@ -254,27 +275,23 @@
             $('#edit_subject').val(row.subject);
             $('#edit_deskripsi').val(row.deskripsi);
 
+            // ✅ perbaikan ambil tanggal langsung
             if (row.waktu_aktivitas) {
-                const dateObj = new Date(row.waktu_aktivitas);
-                if (!isNaN(dateObj)) {
-                    const tanggal = dateObj.toISOString().split('T')[0];
-                    $('#edit_waktu_aktivitas').val(tanggal);
-                } else {
-                    console.error("Nilai waktu_aktivitas tidak valid:", row.waktu_aktivitas);
-                    $('#edit_waktu_aktivitas').val('');
-                }
+                // kalau format lengkap "2025-09-24 00:00:00", ambil 10 karakter pertama
+                const tanggal = row.waktu_aktivitas.substring(0, 10);
+                $('#edit_waktu_aktivitas').val(tanggal);
             } else {
                 $('#edit_waktu_aktivitas').val('');
             }
+
             console.log('buka');
 
             const modal = new bootstrap.Modal(document.getElementById('editActivityModal'));
-
             modal.show();
         }
 
 
-        $('#editActivityForm').submit(function(e) {
+        $('#editActivityForm').off('submit').on('submit', function (e) {
             e.preventDefault();
 
             const id = $('#edit_id').val();
@@ -283,35 +300,35 @@
                 aktivitas: $('#edit_aktivitas').val(),
                 subject: $('#edit_subject').val(),
                 deskripsi: $('#edit_deskripsi').val(),
-                waktu_aktivitas: $('#edit_waktu_aktivitas').val()
+                waktu_aktivitas: $('#edit_waktu_aktivitas').val() // sudah format YYYY-MM-DD
             };
 
             fetch(url, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    },
-                    body: JSON.stringify(data)
-                })
-                .then(async (res) => {
-                    if (!res.ok) {
-                        const text = await res.text();
-                        throw new Error('Gagal update: ' + text);
-                    }
-                    return res.json();
-                })
-                .then(res => {
-                    alert(res.message || 'Aktivitas berhasil diperbarui.');
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('editActivityModal'));
-                    modal.hide();
-                    $('#aktivitasTable').DataTable().ajax.reload();
-                })
-                .catch(err => {
-                    console.error(err);
-                    alert('Terjadi kesalahan saat memperbarui aktivitas.');
-                });
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(async (res) => {
+                if (!res.ok) {
+                    const text = await res.text();
+                    throw new Error('Gagal update: ' + text);
+                }
+                return res.json();
+            })
+            .then(res => {
+                alert(res.message || 'Aktivitas berhasil diperbarui.');
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editActivityModal'));
+                modal.hide();
+                $('#aktivitasTable').DataTable().ajax.reload();
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Terjadi kesalahan saat memperbarui aktivitas.');
+            });
         });
 
         function hapusAktivitas(id) {
@@ -343,20 +360,20 @@
             document.getElementById('activityForm').reset();
         }
 
+
         document.addEventListener("DOMContentLoaded", function() {
-            const perusahaanSelect = document.getElementById("id_perusahaan");
+        // 🔍 Aktifkan Select2 untuk perusahaan
+
+
             const contactSelect = document.getElementById("id_contact");
             const contactTypeInput = document.getElementById("contact_type");
             const newContactFields = document.getElementById("newContactFields");
 
-            if (!perusahaanSelect || !contactSelect) {
-                console.error("Dropdown perusahaan atau kontak tidak ditemukan!");
-                return;
-            }
+            // 🔄 Ambil kontak saat perusahaan dipilih
+            $('#id_perusahaan').on('change', function() {
+                const perusahaanId = $(this).val();
 
-            perusahaanSelect.addEventListener("change", function() {
-                const perusahaanId = this.value;
-
+                // Reset dropdown kontak
                 contactSelect.innerHTML = `
                     <option value="" disabled selected>Pilih Kontak</option>
                     <option value="new" data-type="contact">+ Tambahkan Kontak Baru</option>
@@ -384,8 +401,9 @@
 
                                 const nama = item.nama || "Tidak ada nama";
                                 const email = item.email || "Tidak ada email";
-                                const divisi = item.type === 'peserta' ? 'C-Peserta' : (item
-                                    .divisi || 'tidak ada divisi');
+                                const divisi = item.type === 'peserta'
+                                    ? 'C-Peserta'
+                                    : (item.divisi || 'tidak ada divisi');
 
                                 option.textContent = `${nama} (${divisi}) - ${email}`;
                                 contactSelect.appendChild(option);
@@ -402,9 +420,10 @@
                     });
             });
 
-            contactSelect.addEventListener("change", function() {
+            // 🎯 Tampilkan form kontak baru jika pilih "new"
+            $('#id_contact').on('change', function() {
                 const selectedOption = this.options[this.selectedIndex];
-                const type = selectedOption.dataset.type || "contact";
+                const type = selectedOption ? (selectedOption.dataset.type || "contact") : "contact";
                 contactTypeInput.value = type;
 
                 if (this.value === "new") {
@@ -414,5 +433,6 @@
                 }
             });
         });
+
     </script>
 @endsection

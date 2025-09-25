@@ -30,11 +30,19 @@ class OutstandingController extends Controller
 
     public function singkronDataOutstanding(Request $request)
     {
+        $tanggal_awal = $request->input('tanggal_awal');
+        $tanggal_akhir = $request->input('tanggal_akhir');
+
         Carbon::setWeekStartsAt(Carbon::MONDAY);
         Carbon::setWeekEndsAt(Carbon::SUNDAY);
 
-        $startOfWeek = Carbon::now()->startOfWeek()->toDateString();
-        $endOfWeek = Carbon::now()->endOfWeek()->toDateString();
+        if (empty($tanggal_awal) || empty($tanggal_akhir)) {
+            $startOfWeek = Carbon::now()->startOfWeek()->toDateString();
+            $endOfWeek = Carbon::now()->endOfWeek()->toDateString();
+        } else {
+            $startOfWeek = Carbon::parse($tanggal_awal)->toDateString();
+            $endOfWeek = Carbon::parse($tanggal_akhir)->toDateString();
+        }
 
         $existing = Outstanding::pluck('id_rkm')->toArray();
 
@@ -42,7 +50,6 @@ class OutstandingController extends Controller
             ->where('status', '0')
             ->whereNotIn('id', $existing)
             ->get();
-
 
         if ($rkms->isEmpty()) {
             return redirect()->route('outstanding.index')->with(['info' => 'Tidak ada data baru untuk disinkronkan.']);
@@ -52,7 +59,8 @@ class OutstandingController extends Controller
             $outstanding = Outstanding::create([
                 'id_rkm' => $rkm->id,
                 'due_date' => Carbon::parse($rkm->tanggal_awal)->addMonth()->toDateString(),
-                'sales_key' => $rkm->sales_key
+                'sales_key' => $rkm->sales_key,
+                'net_sales' => $rkm->harga_jual
             ]);
 
             if (!$outstanding || !$outstanding->id) {
@@ -70,7 +78,6 @@ class OutstandingController extends Controller
                 'pembayaran' => 0,
             ];
 
-            // Aktifkan status yang sesuai dengan input
             $request_status = $request->status_tracking;
             $active_statuses = [
                 'invoice' => ['invoice'],
@@ -89,7 +96,6 @@ class OutstandingController extends Controller
                 }
             }
 
-            // Simpan tracking
             trackingOutstanding::create(array_merge($status_tracking, [
                 'id_outstanding' => $outstanding->id,
                 'status_resi' => $request->status_resi ?? '-',
@@ -130,8 +136,15 @@ class OutstandingController extends Controller
             }
         }
 
-        return redirect()->route('outstanding.index')->with(['success' => 'Data Outstanding berhasil disinkronkan!']);
+        if (empty($tanggal_awal) || empty($tanggal_akhir)) {
+            return redirect()->route('outstanding.index')->with(['success' => 'Data Outstanding berhasil disinkronkan! Harap isi detail data outstanding minggu ini.']);
+        } else {
+            $startOfWeek = Carbon::parse($tanggal_awal)->toDateString();
+            $endOfWeek = Carbon::parse($tanggal_akhir)->toDateString();
+            return redirect()->route('outstanding.index')->with(['success' => 'Data Outstanding berhasil disinkronkan untuk minggu ' . $startOfWeek . ' - ' . $endOfWeek]);
+        }
     }
+
     public function getOutstandingLunas()
     {
         $users = auth()->user();

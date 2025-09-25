@@ -192,34 +192,14 @@
                     url: "{{ route('index.json.pic') }}",
                     type: 'GET'
                 },
-                columns: [{
-                        data: 'nama',
-                        name: 'nama'
-                    },
-                    {
-                        data: 'perusahaan',
-                        name: 'perusahaan'
-                    },
-                    {
-                        data: 'sales_key',
-                        name: 'sales_key'
-                    },
-                    {
-                        data: 'status',
-                        name: 'status'
-                    },
-                    {
-                        data: 'email',
-                        name: 'email'
-                    },
-                    {
-                        data: 'cp',
-                        name: 'cp'
-                    },
-                    {
-                        data: 'divisi',
-                        name: 'divisi'
-                    },
+                columns: [
+                    { data: 'nama', name: 'nama' },
+                    { data: 'perusahaan', name: 'perusahaan' },
+                    { data: 'sales_key', name: 'sales_key' },
+                    { data: 'status', name: 'status' },
+                    { data: 'email', name: 'email' },
+                    { data: 'cp', name: 'cp' },
+                    { data: 'divisi', name: 'divisi' },
                     {
                         data: null,
                         name: 'action',
@@ -228,30 +208,35 @@
                         render: function(data, type, row) {
                             if (row.status === 'Contact' || row.status === 'Contact Baru') {
                                 return `
-                                    <button class="btn btn-sm btn-warning edit-btn" data-id="${row.contact_id}" 
-                                        data-nama="${row.nama}" data-perusahaan="${row.perusahaan}" 
-                                        data-email="${row.email}" data-cp="${row.cp}" 
-                                        data-divisi="${row.divisi}" data-id_perusahaan="${row.id_perusahaan}">
+                                <div class="d-flex flex-column gap-2">
+                                    <button class="btn btn-sm btn-warning edit-btn"
+                                        data-id="${row.contact_id}"
+                                        data-nama="${row.nama}"
+                                        data-perusahaan="${row.perusahaan}"
+                                        data-email="${row.email}"
+                                        data-cp="${row.cp}"
+                                        data-divisi="${row.divisi}"
+                                        data-id_perusahaan="${row.id_perusahaan}">
                                         Edit
                                     </button>
-                                    <button class="btn btn-sm btn-danger delete-btn" data-id="${row.contact_id}">
+                                    <button class="btn btn-sm btn-danger delete-btn"
+                                        data-id="${row.contact_id}">
                                         Delete
                                     </button>
+                                </div>
                                 `;
                             }
                             return '';
                         }
                     }
                 ],
-                order: [
-                    [0, 'asc']
-                ]
+                order: [[0, 'asc']]
             });
 
-            // Reset form for Tambah Client
+            // Reset form untuk Tambah Client
             window.resetForm = function() {
                 $('#clientForm')[0].reset();
-                $('#id_perusahaan').val('');
+                $('#id_perusahaan').val('').trigger('change'); // reset select2
                 $('#clientForm').find('.is-invalid').removeClass('is-invalid');
                 $('#clientForm').find('.invalid-feedback').hide();
             };
@@ -260,7 +245,6 @@
             $('#picTable').on('click', '.edit-btn', function() {
                 var id = $(this).data('id');
                 var nama = $(this).data('nama');
-                var perusahaan = $(this).data('perusahaan');
                 var email = $(this).data('email');
                 var cp = $(this).data('cp');
                 var divisi = $(this).data('divisi');
@@ -271,7 +255,9 @@
                 $('#edit_email').val(email);
                 $('#edit_cp').val(cp);
                 $('#edit_divisi').val(divisi);
-                $('#edit_id_perusahaan').val(id_perusahaan.toString());
+
+                // set select2 di form edit
+                $('#edit_id_perusahaan').val(id_perusahaan.toString()).trigger('change');
 
                 $('#editClientModal').modal('show');
             });
@@ -302,6 +288,29 @@
                     }
                 });
             });
+
+            // Inisialisasi select2
+            initPerusahaanSelect2('#id_perusahaan');       // form tambah
+            initPerusahaanSelect2('#edit_id_perusahaan');  // form edit
         });
+
+        // Fungsi umum select2
+        function initPerusahaanSelect2(selector) {
+            var $select = $(selector);
+
+            if (typeof $.fn.select2 !== 'function') {
+                console.error('Select2 belum ter-load!');
+                return;
+            }
+
+            var $closestModal = $select.closest('.modal');
+
+            $select.select2({
+                width: '100%',
+                theme: 'bootstrap-5',
+                dropdownParent: $closestModal.length ? $closestModal : $(document.body)
+            });
+        }
+
     </script>
 @endsection

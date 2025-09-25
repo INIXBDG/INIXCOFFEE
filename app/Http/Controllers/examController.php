@@ -772,6 +772,121 @@ public function show(string $id)
 
     }
 
+/**
+ * Redirect to management kelas for room assignment
+ */
+public function assignRoom($id)
+{
+    $exam = eksam::with(['rkm', 'materi', 'perusahaan'])->findOrFail($id);
+    
+    // Hanya exam only yang bisa assign ruangan
+    if ($exam->status != '3') {
+        return redirect()->back()->with('error', 'Hanya Exam Only yang dapat di-assign ruangan.');
+    }
+    
+    // Store exam ID in session untuk digunakan setelah assign room
+    session(['exam_assign_id' => $id]);
+    session(['exam_assign_data' => [
+        'materi' => $exam->materi->nama_materi ?? 'N/A', // PERBAIKAN: gunakan materi bukan materis
+        'perusahaan' => $exam->perusahaan->nama_perusahaan ?? 'N/A',
+        'pax' => $exam->pax,
+        'invoice' => $exam->invoice
+    ]]);
+    
+    // Redirect ke management kelas dengan parameter
+    return redirect()->route('managementKelas.index', ['assign_mode' => 'exam', 'exam_id' => $id])
+                   ->with('info', 'Pilih ruangan dan tanggal untuk exam: ' . ($exam->materi->nama_materi ?? 'N/A'));
+}
+
+    /**
+     * Process room assignment from management kelas
+     */
+    public function processRoomAssignment(Request $request)
+    {
+        $examId = session('exam_assign_id');
+
+        if (!$examId) {
+            return redirect()->route('exam.index')->with('error', 'Session expired. Silakan coba lagi.');
+        }
+
+        $request->validate([
+            'ruang' => 'required|string',
+            'tanggal' => 'required|date',
+            'jam_mulai' => 'required',
+            'jam_selesai' => 'required|after:jam_mulai',
+            'kebutuhan' => 'nullable|string',
+            'keterangan' => 'nullable|string',
+        ]);
+
+        $exam = eksam::with(['rkm', 'materi', 'perusahaan'])->findOrFail($examId);
+
+        if ($exam->status != '3') {
+            return redirect()->route('exam.index')->with('error', 'Hanya Exam Only yang dapat di-assign ruangan.');
+        }
+
+        try {
+            DB::transaction(function () use ($request, $exam) {
+                // 1. Update RKM dengan data ruangan
+                $exam->rkm->update([
+                    'ruang' => $request->ruang,
+                    'tanggal_awal' => $request->tanggal,
+                    'tanggal_akhir' => $request->tanggal,
+                    'metode_kelas' => 'Offline' // Change from Exam Only to Offline
+                ]);
+
+                // 2. PERBAIKAN: Buat entry di manajemen_ruangans
+                // Ini yang menyebabkan warna tidak muncul - data harus ada di kedua tabel
+                \App\Models\manajemenRuangan::create([
+                    'ruangan' => $request->ruang,
+                    'tanggal' => $request->tanggal,
+                    'jam_mulai' => $request->jam_mulai,
+                    'jam_selesai' => $request->jam_selesai,
+                    'kebutuhan' => $request->filled('kebutuhan') ? $request->kebutuhan : 
+                                  'Exam - ' . ($exam->materi->nama_materi ?? 'Unknown'),
+                    'keterangan' => $request->filled('keterangan') ? $request->keterangan : 
+                                   'Exam untuk ' . ($exam->perusahaan->nama_perusahaan ?? 'Unknown') . 
+                                   ' (Pax: ' . $exam->pax . ', Invoice: ' . $exam->invoice . ')',
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+            });
+
+            // Clear session
+            session()->forget(['exam_assign_id', 'exam_assign_data']);
+
+            return redirect()->route('exam.index')->with('success', 'Ruangan berhasil di-assign untuk exam.');
+
+        } catch (\Exception $e) {
+            \Log::error('Exam room assignment failed: ' . $e->getMessage());
+            return redirect()->route('exam.index')->with('error', 'Gagal assign ruangan: ' . $e->getMessage());
+        }
+    }
+
+    // TAMBAHAN: Method untuk menghapus assignment jika diperlukan
+    public function removeRoomAssignment($id)
+    {
+        try {
+            $exam = eksam::with('rkm')->findOrFail($id);
+
+            DB::transaction(function () use ($exam) {
+                // Hapus dari manajemen_ruangans
+                \App\Models\manajemenRuangan::where('ruangan', $exam->rkm->ruang)
+                    ->where('kebutuhan', 'LIKE', 'Exam - %')
+                    ->delete();
+
+                // Reset RKM
+                $exam->rkm->update([
+                    'ruang' => null,
+                    'metode_kelas' => 'Exam Only'
+                ]);
+            });
+
+            return redirect()->back()->with('success', 'Assignment ruangan berhasil dihapus.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal menghapus assignment: ' . $e->getMessage());
+        }
+    }
 
     public function rekapExam()
     {
@@ -828,14 +943,5 @@ public function show(string $id)
         });
 
         return Excel::download(new rekapExamExport($data), 'Rekap Exam '.$year . '-'. $month.'.xlsx');
-    }
-
-        public function exportExcelKhusus(string $id)
-    {
-        // Ambil data menggunakan metode getFeedbackData yang sudah ada
-        $post = $this->getFeedbackData($id);
-
-        // Konfigurasi header Excel
-        
     }
 }

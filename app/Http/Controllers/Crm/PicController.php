@@ -171,16 +171,16 @@ class PicController extends Controller
                 }
 
                 return [
-                    'peserta_id' => $item->peserta_id ?? '-',
-                    'contact_id' => $item->contact_id ?? '-',
-                    'nama' => $item->nama ?? '-',
-                    'perusahaan' => $item->nama_perusahaan ?? '-',
-                    'sales_key' => $item->sales_key ?? '-',
+                    'peserta_id' => $item->peserta_id,
+                    'contact_id' => $item->contact_id,
+                    'nama' => $item->nama,
+                    'perusahaan' => $item->nama_perusahaan,
+                    'sales_key' => $item->sales_key,
                     'status' => $statusText,
-                    'email' => $item->email ?? '-',
-                    'cp' => $item->cp ?? '-',
-                    'divisi' => $item->divisi ?? '-',
-                    'id_perusahaan' => $item->perusahaan_key ?? '-',
+                    'email' => $item->email,
+                    'cp' => $item->cp,
+                    'divisi' => $item->divisi,
+                    'id_perusahaan' => $item->perusahaan_key,
                 ];
             });
 

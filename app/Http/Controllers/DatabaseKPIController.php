@@ -558,20 +558,125 @@ class DatabaseKPIController extends Controller
             ->unique(fn($item) => $item['nama'] . $item['jenis_penilaian'])
             ->values();
 
+        $persentaseJenis = [
+            'General Manager' => 35,
+            'Manager/SPV/Team Leader (Atasan Langsung)' => 30,
+            'Rekan Kerja (Satu Divisi)' => 20,
+            'Pekerja (Beda Divisi)' => 10,
+            'Self Apprisial' => 5,
+        ];
+
+        $dataChartQuartal = formPenilaian::where('id_karyawan', $id_karyawan)
+            ->where('tahun', $form->tahun)
+            ->get()
+            ->groupBy(fn($f) => $f->quartal)
+            ->map(function ($quartalForms) use ($persentaseJenis) {
+                $groupSkor = collect($persentaseJenis)->mapWithKeys(fn($v, $k) => [$k => []]);
+
+                foreach ($quartalForms as $form) {
+                    $allEvaluatorData = shareForm::with('evaluator')
+                        ->where('id_evaluated', $form->id_karyawan)
+                        ->where('kode_form', $form->kode_form)
+                        ->get();
+
+                    foreach ($allEvaluatorData as $evaluatorItem) {
+                        $nilaiCollection = nilaiKPI::where('id_evaluator', $evaluatorItem->id_evaluator)
+                            ->where('id_evaluated', $evaluatorItem->id_evaluated)
+                            ->where('kode_form', $form->kode_form)
+                            ->where('jenis_penilaian', $evaluatorItem->jenis_penilaian)
+                            ->get();
+
+                        $totalSkorEvaluator = 0;
+
+                        foreach ($nilaiCollection as $nilai) {
+                            $skor = ($nilai->nilai * $nilai->bobot) / 100;
+                            $totalSkorEvaluator += $skor;
+                        }
+
+                        if ($groupSkor->has($evaluatorItem->jenis_penilaian)) {
+                            $current = $groupSkor->get($evaluatorItem->jenis_penilaian, []);
+                            $current[] = $totalSkorEvaluator;
+                            $groupSkor->put($evaluatorItem->jenis_penilaian, $current);
+                        }
+                    }
+                }
+
+                $totalSemuaSkor = 0;
+                foreach ($groupSkor as $jenis => $skorList) {
+                    if (count($skorList) > 0) {
+                        $rataRata = array_sum($skorList) / count($skorList);
+                        $persen = $persentaseJenis[$jenis] ?? 0;
+                        $skorFinal = ($rataRata * $persen) / 100;
+                        $totalSemuaSkor += $skorFinal;
+                    }
+                }
+
+                return number_format($totalSemuaSkor, 2, '.', '');
+            });
+
+
+        $dataChartAll = formPenilaian::where('id_karyawan', $id_karyawan)
+            ->get()
+            ->groupBy(fn($f) => $f->quartal)
+            ->map(function ($quartalForms) use ($persentaseJenis) {
+                $groupSkor = collect($persentaseJenis)->mapWithKeys(fn($v, $k) => [$k => []]);
+
+                foreach ($quartalForms as $form) {
+                    $allEvaluatorData = shareForm::with('evaluator')
+                        ->where('id_evaluated', $form->id_karyawan)
+                        ->where('kode_form', $form->kode_form)
+                        ->get();
+
+                    foreach ($allEvaluatorData as $evaluatorItem) {
+                        $nilaiCollection = nilaiKPI::where('id_evaluator', $evaluatorItem->id_evaluator)
+                            ->where('id_evaluated', $evaluatorItem->id_evaluated)
+                            ->where('kode_form', $form->kode_form)
+                            ->where('jenis_penilaian', $evaluatorItem->jenis_penilaian)
+                            ->get();
+
+                        $totalSkorEvaluator = 0;
+
+                        foreach ($nilaiCollection as $nilai) {
+                            $skor = ($nilai->nilai * $nilai->bobot) / 100;
+                            $totalSkorEvaluator += $skor;
+                        }
+
+                        if ($groupSkor->has($evaluatorItem->jenis_penilaian)) {
+                            $current = $groupSkor->get($evaluatorItem->jenis_penilaian, []);
+                            $current[] = $totalSkorEvaluator;
+                            $groupSkor->put($evaluatorItem->jenis_penilaian, $current);
+                        }
+                    }
+                }
+
+                $totalSemuaSkor = 0;
+                foreach ($groupSkor as $jenis => $skorList) {
+                    if (count($skorList) > 0) {
+                        $rataRata = array_sum($skorList) / count($skorList);
+                        $persen = $persentaseJenis[$jenis] ?? 0;
+                        $skorFinal = ($rataRata * $persen) / 100;
+                        $totalSemuaSkor += $skorFinal;
+                    }
+                }
+
+                return number_format($totalSemuaSkor, 2, '.', '');
+            });
+
         return response()->json([
-            'data' => [
-                [
-                    'evaluated' => $evaluated,
-                    'dataAbsen' => $dataAbsen,
-                    'data' => [
-                        'evaluator' => $evaluatorList,
-                        'dataKriteria' => $dataKriteria
-                    ]
+            'data' => [[
+                'evaluated' => $evaluated,
+                'dataAbsen' => $dataAbsen,
+                'data' => [
+                    'evaluator' => $evaluatorList,
+                    'dataKriteria' => $dataKriteria,
+                ],
+                'chart' => [
+                    'quartal' => $dataChartQuartal,
+                    'all' => $dataChartAll
                 ]
-            ]
+            ]]
         ]);
     }
-
     public function indexBerandaKpi()
     {
         return view('databasekpi.dashboard');

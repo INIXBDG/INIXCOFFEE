@@ -380,11 +380,10 @@
                                     <input type="hidden" name="id_contact" value="{{ $data->id }}">
                                     <div class="mb-3">
                                         <label for="materi" class="form-label">Materi</label>
-                                        <select class="form-control" id="materi" name="materi" required>
+                                        <select class="form-select" id="materi" name="materi" required>
                                             <option value="" disabled selected>-- Pilih Materi --</option>
                                             @foreach ($materi as $item)
-                                                <option value="{{ $item->id }}">{{ $item->nama_materi }}
-                                                </option>
+                                                <option value="{{ $item->id }}">{{ $item->nama_materi }}</option>
                                             @endforeach
                                         </select>
                                     </div>
@@ -554,9 +553,6 @@
                                         </div>
                                     </td>
                                 </tr>
-                                <script>
-                                    console.log($item)
-                                </script>
                             @endforeach
                         </tbody>
                     </table>
@@ -578,9 +574,9 @@
                             @csrf
                             <input type="hidden" name="id_perusahaan" value="{{ $data->id }}">
                             <div class="mb-3">
-                                <label for="id_contact" class="form-label">Pilih Contact atau Peserta</label>
+                                <label for="id_contact" class="form-label">Pilih Contact</label>
                                 <select name="id_contact" class="form-control" id="id_contact" required>
-                                    <option value="">-- Pilih Kategori --</option>
+                                    <option value="">-- Pilih Contact --</option>
                                     @foreach($items as $contact)
                                         <option value="{{ $contact['id'] }}" data-type="{{ $contact['type'] }}">
                                             {{ $contact['label'] }}
@@ -588,7 +584,6 @@
                                     @endforeach
                                     </option>
                                 </select>
-                                <!-- Input tersembunyi untuk melacak tipe -->
                                 <input type="hidden" name="contact_type" id="contact_type" value="">
                             </div>
 
@@ -600,6 +595,7 @@
                                     <option value="Email">Email</option>
                                     <option value="Visit">Visit</option>
                                     <option value="Meet">Meeting</option>
+                                    <option value="Incharge">Incharge Inhouse</option>
                                 </select>
                             </div>
                             <div class="mb-3">
@@ -648,6 +644,8 @@
                                     <option value="Call">Call</option>
                                     <option value="Email">Email</option>
                                     <option value="Visit">Visit</option>
+                                    <option value="Meet">Meeting</option>
+                                    <option value="Incharge">Incharge Inhouse</option>
                                 </select>
                             </div>
                             <div class="mb-3">
@@ -675,36 +673,77 @@
         </div>
 
         <script>
-            // Submit form via AJAX
-            document.getElementById('editAktivitasForm').addEventListener('submit', function(e) {
-                e.preventDefault(); // Stop default form submit
+            document.addEventListener("DOMContentLoaded", function () {
+                // Init Select2
+                initMateriSelect2();
 
-                const form = this;
-                const url = form.action;
-                const formData = new FormData(form);
-
-                fetch(url, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
-                        },
-                        body: formData
-                    })
-                    .then(response => {
-                        if (response.ok) {
-                            alert('Data berhasil diperbarui');
-                            window.location.reload(); // Reload page after success
+                // Format input harga
+                const hargaInput = document.getElementById("harga");
+                if (hargaInput) {
+                    hargaInput.addEventListener("input", function () {
+                        let value = this.value.replace(/\D/g, ""); // ambil angka saja
+                        if (value) {
+                            this.value = new Intl.NumberFormat("id-ID", {
+                                style: "currency",
+                                currency: "IDR",
+                                minimumFractionDigits: 0
+                            }).format(value);
                         } else {
-                            alert('Gagal menyimpan data');
+                            this.value = "";
                         }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('Terjadi kesalahan');
                     });
+
+                    // sebelum submit, ubah ke angka murni
+                    if (hargaInput.form) {
+                        hargaInput.form.addEventListener("submit", function () {
+                            hargaInput.value = hargaInput.value.replace(/\D/g, "");
+                        });
+                    }
+                }
+
+                // Change listener untuk id_contact
+                const idContact = document.getElementById('id_contact');
+                if (idContact) {
+                    idContact.addEventListener('change', function () {
+                        const selectedOption = this.options[this.selectedIndex];
+                        const type = selectedOption.getAttribute('data-type');
+                        document.getElementById('contact_type').value = type || '';
+                    });
+                }
+
+                // Submit form via AJAX
+                const form = document.getElementById('editAktivitasForm');
+                if (form) {
+                    form.addEventListener('submit', function(e) {
+                        e.preventDefault();
+
+                        const url = form.action;
+                        const formData = new FormData(form);
+
+                        fetch(url, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+                            },
+                            body: formData
+                        })
+                        .then(response => {
+                            if (response.ok) {
+                                alert('Data berhasil diperbarui');
+                                window.location.reload();
+                            } else {
+                                alert('Gagal menyimpan data');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Terjadi kesalahan');
+                        });
+                    });
+                }
             });
 
-            // Fungsi ini harus berada DI LUAR event listener
+            // Fungsi untuk edit aktivitas (dipanggil dari luar)
             function editAktivitas(data) {
                 document.getElementById('edit_id').value = data.id;
                 document.getElementById('edit_id_contact').value = data.id_contact;
@@ -717,36 +756,23 @@
                 document.getElementById('editAktivitasForm').action = `/crm/aktivitas/update/${data.id}`;
             }
 
-            document.getElementById('id_contact').addEventListener('change', function () {
-                const selectedOption = this.options[this.selectedIndex];
-                const type = selectedOption.getAttribute('data-type');
-                document.getElementById('contact_type').value = type || '';
-            });
+            // Init Select2 Materi
+            function initMateriSelect2() {
+                var $select = $('#materi');
 
-            document.addEventListener("DOMContentLoaded", function () {
-                const hargaInput = document.getElementById("harga");
+                if (typeof $.fn.select2 !== 'function') {
+                    console.error('Select2 belum ter-load!');
+                    return;
+                }
 
-                hargaInput.addEventListener("input", function (e) {
-                    // ambil angka aja
-                    let value = this.value.replace(/\D/g, "");
-
-                    if (value) {
-                        // format ke Rupiah
-                        this.value = new Intl.NumberFormat("id-ID", {
-                            style: "currency",
-                            currency: "IDR",
-                            minimumFractionDigits: 0
-                        }).format(value);
-                    } else {
-                        this.value = "";
-                    }
+                var $closestModal = $select.closest('.modal');
+                $select.select2({
+                    placeholder: "-- Pilih Materi --",
+                    width: '100%',
+                    theme: 'bootstrap-5',
+                    dropdownParent: $closestModal.length ? $closestModal : $(document.body)
                 });
-
-                // sebelum form submit, ubah ke angka murni
-                hargaInput.form.addEventListener("submit", function () {
-                    hargaInput.value = hargaInput.value.replace(/\D/g, "");
-                });
-            });
+            }
         </script>
     </div>
 @endsection

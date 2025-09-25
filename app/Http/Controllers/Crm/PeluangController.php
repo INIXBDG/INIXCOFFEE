@@ -36,15 +36,15 @@ class PeluangController extends Controller
         if ($user->jabatan === 'Sales') {
             $idSales = $user->id_sales;
             $data = Peluang::where('id_sales', $idSales)->get();
-            $contact = Perusahaan::where('sales_key', $idSales)->get();
+            $Perusahaan = Perusahaan::where('sales_key', $idSales)->get();
         } elseif (in_array($user->jabatan, $allowedJabatan)) {
             $data = Peluang::all();
-            $contact = Perusahaan::all();
+            $Perusahaan = Perusahaan::all();
         } else {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 
-        return view('crm.peluang.index', compact('data', 'contact', 'materi', 'aktivitas'));
+        return view('crm.peluang.index', compact('data', 'Perusahaan', 'materi', 'aktivitas'));
     }
 
     public function indexJson()
@@ -119,25 +119,79 @@ class PeluangController extends Controller
 
     public function detail($id)
     {
-        $aktivitas = Aktivitas::where('id_peluang', $id)->get();
+        // Ambil peluang dan relasi terkait
         $peluang = Peluang::with(['materiRelation', 'rkm'])
             ->where('id', $id)
-            ->first();
-        if ($peluang && $peluang->rkm) {
-            $peluang->rkm->metode_kelas = $peluang->rkm->metode_kelas === 'Offline' ? 'off' : ($peluang->rkm->metode_kelas === 'Inhouse Bandung' ? 'inhb' : ($peluang->rkm->metode_kelas === 'Inhouse Luar Bandung' ? 'inhlb' : 'vir'));
+            ->firstOrFail();
+
+        // Normalisasi data RKM
+        if ($peluang->rkm) {
+            $peluang->rkm->metode_kelas = $peluang->rkm->metode_kelas === 'Offline' ? 'off' :
+                ($peluang->rkm->metode_kelas === 'Inhouse Bandung' ? 'inhb' :
+                ($peluang->rkm->metode_kelas === 'Inhouse Luar Bandung' ? 'inhlb' : 'vir'));
+
             $peluang->rkm->tanggal_awal_day = $peluang->rkm->tanggal_awal ? date('d', strtotime($peluang->rkm->tanggal_awal)) : null;
             $peluang->rkm->tanggal_awal_month = $peluang->rkm->tanggal_awal ? date('n', strtotime($peluang->rkm->tanggal_awal)) : null;
             $peluang->rkm->tanggal_awal_year = $peluang->rkm->tanggal_awal ? date('Y', strtotime($peluang->rkm->tanggal_awal)) : null;
         }
+
         $materi = Materi::all();
-        $netsales = perhitunganNetSales::with('trackingNetSales', 'approvedNetSales', 'peserta')->where('id_rkm', $peluang->id_rkm)->get();
+
+        $netsales = perhitunganNetSales::with('trackingNetSales', 'approvedNetSales', 'peserta')
+            ->where('id_rkm', $peluang->id_rkm)
+            ->get();
+
         $regis = Regisform::where('id_peluang', $id)->first();
 
         $ids_peserta_yang_sudah_ada = perhitunganNetSales::where('id_rkm', $peluang->rkm->id)->pluck('id_peserta');
-        $regisuser = Registrasi::with('peserta')->where('id_rkm', $peluang->rkm->id)->whereNotIn('id_peserta', $ids_peserta_yang_sudah_ada)->get();
 
-        // dd($ids_peserta_yang_sudah_ada);
-        return view('crm.peluang.detail', compact('peluang', 'aktivitas', 'materi', 'netsales', 'regis', 'regisuser'));
+        $regisuser = Registrasi::with('peserta')
+            ->where('id_rkm', $peluang->rkm->id)
+            ->whereNotIn('id_peserta', $ids_peserta_yang_sudah_ada)
+            ->get();
+
+        // 🔹 Ambil semua aktivitas seperti $aktivitass
+        $perusahaan = $peluang->perusahaan;
+
+        $aktivitass = Aktivitas::with(['contact', 'peserta'])
+            ->where(function ($query) use ($perusahaan) {
+                $query->whereIn('id_contact', $perusahaan->contacts->pluck('id'))
+                    ->orWhereIn('id_peserta', $perusahaan->peserta->pluck('id'));
+            })
+            ->orderByDesc('created_at')
+            ->get();
+
+        //untuk aktivitas
+        $data = Perusahaan::with(['contacts', 'peserta'])->where('id', $perusahaan->id )->firstOrFail();
+        $items = [];
+            foreach ($data->contacts as $contact) {
+                $items[] = [
+                    'id' => $contact->id,
+                    'nama' => $contact->nama,
+                    'type' => 'contact',
+                    'label' => "[Contact] " . $contact->nama . " (" . ($contact->email ?? 'Tidak ada email') . ")"
+                ];
+            }
+            foreach ($data->peserta as $peserta) {
+                $items[] = [
+                    'id' => $peserta->id,
+                    'nama' => $peserta->nama,
+                    'type' => 'peserta',
+                    'label' => "[Peserta] " . $peserta->nama. " (" . ($peserta->email ?? 'Tidak ada email') . ")"
+                ];
+            }
+            usort($items, function ($a, $b) {
+                return strcasecmp($a['label'], $b['label']);
+            });
+        return view('crm.peluang.detail', compact(
+            'peluang',
+            'aktivitass',
+            'materi',
+            'netsales',
+            'regis',
+            'items',
+            'regisuser'
+        ));
     }
 
     public function AmbilAktivitas($id)
