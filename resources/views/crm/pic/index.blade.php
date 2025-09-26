@@ -184,6 +184,7 @@
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
     <script>
+        const isRestricted = @json(in_array(auth()->user()->jabatan, $allowedUser));
         $(document).ready(function() {
             var table = $('#picTable').DataTable({
                 processing: true,
@@ -218,7 +219,7 @@
                                             data-cp="${row.cp}"
                                             data-divisi="${row.divisi}"
                                             data-id_perusahaan="${row.id_perusahaan}"
-                                            @unless(in_array(auth()->user()->role, $allowedUser)) disabled @endunless
+                                            ${isRestricted ? 'disabled' : ''}
                                         >
                                             Edit
                                         </button>
@@ -226,7 +227,7 @@
                                         <button
                                             class="btn btn-sm btn-danger delete-btn"
                                             data-id="${row.contact_id}"
-                                            @unless(in_array(auth()->user()->role, $allowedUser)) disabled @endunless
+                                            ${isRestricted ? 'disabled' : ''}
                                         >
                                             Delete
                                         </button>
