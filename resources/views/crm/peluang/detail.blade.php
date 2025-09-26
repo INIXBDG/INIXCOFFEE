@@ -756,6 +756,10 @@
 
         <script>
             document.addEventListener('DOMContentLoaded', function() {
+
+                // Select2
+                initContactSelect2()
+
                 let peluang = @json($peluang);
                 console.log(peluang)
                 console.log(peluang.materi.nama_materi);
@@ -875,5 +879,21 @@
                 });
 
             });
+
+            function initContactSelect2() {
+                var $select = $('#id_contact');
+
+                if (typeof $.fn.select2 !== 'function') {
+                    console.error('Select2 belum ter-load!');
+                    return;
+                }
+
+                var $closestModal = $select.closest('.modal');
+                $select.select2({
+                    width: '100%',
+                    theme: 'bootstrap-5',
+                    dropdownParent: $closestModal.length ? $closestModal : $(document.body)
+                });
+            }
         </script>
     @endsection
