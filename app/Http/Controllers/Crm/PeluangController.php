@@ -22,6 +22,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Notifications\CommentNotification;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 
 class PeluangController extends Controller
@@ -58,7 +59,7 @@ class PeluangController extends Controller
                 $data = Peluang::where('id_sales', $idSales)
                     ->with('materiRelation')
                     ->select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap', 'created_at', 'id_rkm', 'id_sales')
-                    ->orderBy('created_at','desc')
+                    ->orderBy('created_at', 'desc')
                     ->get()
                     ->map(function ($item) {
                         $item->periode = $item->periode_mulai . ' s/d ' . $item->periode_selesai;
@@ -126,9 +127,7 @@ class PeluangController extends Controller
 
         // Normalisasi data RKM
         if ($peluang->rkm) {
-            $peluang->rkm->metode_kelas = $peluang->rkm->metode_kelas === 'Offline' ? 'off' :
-                ($peluang->rkm->metode_kelas === 'Inhouse Bandung' ? 'inhb' :
-                ($peluang->rkm->metode_kelas === 'Inhouse Luar Bandung' ? 'inhlb' : 'vir'));
+            $peluang->rkm->metode_kelas = $peluang->rkm->metode_kelas === 'Offline' ? 'off' : ($peluang->rkm->metode_kelas === 'Inhouse Bandung' ? 'inhb' : ($peluang->rkm->metode_kelas === 'Inhouse Luar Bandung' ? 'inhlb' : 'vir'));
 
             $peluang->rkm->tanggal_awal_day = $peluang->rkm->tanggal_awal ? date('d', strtotime($peluang->rkm->tanggal_awal)) : null;
             $peluang->rkm->tanggal_awal_month = $peluang->rkm->tanggal_awal ? date('n', strtotime($peluang->rkm->tanggal_awal)) : null;
@@ -154,6 +153,7 @@ class PeluangController extends Controller
         $perusahaan = $peluang->perusahaan;
 
         $aktivitass = Aktivitas::with(['contact', 'peserta'])
+            ->where('id_peluang', $id)
             ->where(function ($query) use ($perusahaan) {
                 $query->whereIn('id_contact', $perusahaan->contacts->pluck('id'))
                     ->orWhereIn('id_peserta', $perusahaan->peserta->pluck('id'));
@@ -161,28 +161,30 @@ class PeluangController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        //untuk aktivitas
-        $data = Perusahaan::with(['contacts', 'peserta'])->where('id', $perusahaan->id )->firstOrFail();
+        $user = Auth::user();
+        $aktivitasTambahan = Aktivitas::where('id_sales', $user->id_sales)->whereNull('id_peluang')->get();
+
+        $data = Perusahaan::with(['contacts', 'peserta'])->where('id', $perusahaan->id)->firstOrFail();
         $items = [];
-            foreach ($data->contacts as $contact) {
-                $items[] = [
-                    'id' => $contact->id,
-                    'nama' => $contact->nama,
-                    'type' => 'contact',
-                    'label' => "[Contact] " . $contact->nama . " (" . ($contact->email ?? 'Tidak ada email') . ")"
-                ];
-            }
-            foreach ($data->peserta as $peserta) {
-                $items[] = [
-                    'id' => $peserta->id,
-                    'nama' => $peserta->nama,
-                    'type' => 'peserta',
-                    'label' => "[Peserta] " . $peserta->nama. " (" . ($peserta->email ?? 'Tidak ada email') . ")"
-                ];
-            }
-            usort($items, function ($a, $b) {
-                return strcasecmp($a['label'], $b['label']);
-            });
+        foreach ($data->contacts as $contact) {
+            $items[] = [
+                'id' => $contact->id,
+                'nama' => $contact->nama,
+                'type' => 'contact',
+                'label' => "[Contact] " . $contact->nama . " (" . ($contact->email ?? 'Tidak ada email') . ")"
+            ];
+        }
+        foreach ($data->peserta as $peserta) {
+            $items[] = [
+                'id' => $peserta->id,
+                'nama' => $peserta->nama,
+                'type' => 'peserta',
+                'label' => "[Peserta] " . $peserta->nama . " (" . ($peserta->email ?? 'Tidak ada email') . ")"
+            ];
+        }
+        usort($items, function ($a, $b) {
+            return strcasecmp($a['label'], $b['label']);
+        });
         return view('crm.peluang.detail', compact(
             'peluang',
             'aktivitass',
@@ -190,7 +192,8 @@ class PeluangController extends Controller
             'netsales',
             'regis',
             'items',
-            'regisuser'
+            'regisuser',
+            'aktivitasTambahan'
         ));
     }
 
@@ -400,35 +403,84 @@ class PeluangController extends Controller
 
     public function update(Request $request, $id)
     {
-        $validated = $request->validate([
-            'materi' => 'required|string|max:255',
-            'catatan' => 'nullable|string|max:255',
-            'harga' => 'required|numeric|min:0',
-            'netsales' => 'required|numeric|min:0',
-            'periode_mulai' => 'required|date',
-            'periode_selesai' => 'required|date|after_or_equal:periode_mulai',
-            'pax' => 'required|numeric|min:1',
-            'tentatif' => 'nullable|boolean',
-        ]);
+        try {
+            // Validate the request
+            $validated = $request->validate([
+                'materi' => 'required|string|max:255',
+                'catatan' => 'nullable|string|max:255',
+                'harga' => 'required|numeric|min:0',
+                'pax' => 'required|integer|min:1',
+                'periode_mulai' => 'required|date',
+                'periode_selesai' => 'required|date|after_or_equal:periode_mulai',
+                'tentatif' => 'nullable|boolean',
+                'id_aktivitas' => 'nullable|array',
+                'id_aktivitas.*' => 'integer|exists:aktivitas,id',
+            ]);
 
-        $peluang = Peluang::findOrFail($id);
+            // Start a database transaction
+            DB::beginTransaction();
 
-        $rkm = RKM::where('id', $peluang->id_rkm)->first();
-        $rkm->materi_key = $request->materi;
-        $rkm->harga_jual = $request->harga;
-        $rkm->tanggal_awal = $request->periode_mulai;
-        $rkm->tanggal_akhir = $request->periode_selesai;
-        $rkm->pax = $request->pax;
-        $rkm->isi_pax = $request->pax;
-        $rkm->update();
+            // Find the Peluang record
+            $peluang = Peluang::findOrFail($id);
 
-        $peluang->update($validated);
+            // Find the related RKM record
+            $rkm = RKM::where('id', $peluang->id_rkm)->first();
+            if (!$rkm) {
+                throw new \Exception('RKM record not found for this Peluang.');
+            }
 
-        return back()->with([
-            'message' => 'Lead berhasil diperbarui.',
-        ]);
+            // Update RKM
+            $rkm->materi_key = $request->materi;
+            $rkm->harga_jual = $request->harga;
+            $rkm->tanggal_awal = $request->periode_mulai;
+            $rkm->tanggal_akhir = $request->periode_selesai;
+            $rkm->pax = $request->pax;
+            $rkm->isi_pax = $request->pax;
+            $rkm->save();
+
+            // Update Peluang
+            $peluang->update([
+                'materi' => $validated['materi'],
+                'catatan' => $validated['catatan'],
+                'harga' => $validated['harga'],
+                'pax' => $validated['pax'],
+                'periode_mulai' => $validated['periode_mulai'],
+                'periode_selesai' => $validated['periode_selesai'],
+                'tentatif' => $validated['tentatif'] ?? false,
+            ]);
+
+            // Update Aktivitas: Set id_peluang only for newly selected activities
+            $selectedAktivitasIds = $request->input('id_aktivitas', []);
+            if (!empty($selectedAktivitasIds)) {
+                foreach ($selectedAktivitasIds as $aktivitasId) {
+                    $aktivitas = Aktivitas::find($aktivitasId);
+                    if ($aktivitas) {
+                        $aktivitas->id_peluang = $id;
+                        $aktivitas->save();
+                    } else {
+                        Log::warning("Aktivitas with ID {$aktivitasId} not found.");
+                    }
+                }
+            }
+
+            // Commit the transaction
+            DB::commit();
+
+            return back()->with([
+                'message' => 'Lead berhasil diperbarui.',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Validation error in Peluang update: ', $e->errors());
+            return back()->withErrors($e->errors())->withInput();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error updating Peluang: ' . $e->getMessage());
+            return back()->with([
+                'error' => 'Gagal memperbarui lead: ' . $e->getMessage(),
+            ])->withInput();
+        }
     }
-
+    
     public function updateTahap($id, Request $request)
     {
         // Ambil peluang beserta relasi RKM jika ada (pastikan relation 'rkm' didefinisikan di model Peluang)

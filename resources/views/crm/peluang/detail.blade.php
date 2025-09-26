@@ -3,7 +3,16 @@
 @section('crm_contents')
     @php
         $isLost = strtolower($peluang->tahap) === 'lost';
-        $allowedUser = ['Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur'];
+        $allowedUser = [
+            'Adm Sales',
+            'SPV Sales',
+            'HRD',
+            'Finance & Accounting',
+            'GM',
+            'Sales',
+            'Direktur Utama',
+            'Direktur',
+        ];
     @endphp
     <div class="content-wrapper">
         <div class="container-xxl flex-grow-1 container-p-y">
@@ -11,11 +20,8 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="fw-bold mb-0">Detail Lead</h4>
                 <div class="d-flex gap-2">
-                    <button type="button"
-                            class="btn btn-primary"
-                            data-bs-toggle="modal"
-                            data-bs-target="#paymentAdvanceModal"
-                            @if ($peluang->tahap !== 'merah' || $regisuser->isEmpty()) disabled @endif>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#paymentAdvanceModal"
+                        @if ($peluang->tahap !== 'merah' || $regisuser->isEmpty()) disabled @endif>
                         <i class="menu-icon bx bx-plus"></i> Payment Advance
                     </button>
                     @if ($isLost)
@@ -60,6 +66,7 @@
 
                         <div class="card-body">
                             <dl class="row">
+                                <input type="text" hidden disabled value="{{ $peluang->id_contact }}" name="id_contact">
                                 <dt class="col-sm-4">Materi</dt>
                                 <dd class="col-sm-8">{{ $peluang->materiRelation->nama_materi ?? '-' }}</dd>
 
@@ -229,9 +236,10 @@
                                     @foreach ($aktivitass as $item)
                                         <tr>
                                             <td class="px-3 py-2 text-center">{{ $item->id_sales }}</td>
-                                            <td class="px-3 py-2">{{ $item->contact->nama ?? $item->peserta->nama ?? '-' }}</td>
                                             <td class="px-3 py-2">
-                                                @if($item->aktivitas === 'Incharge')
+                                                {{ $item->contact->nama ?? ($item->peserta->nama ?? '-') }}</td>
+                                            <td class="px-3 py-2">
+                                                @if ($item->aktivitas === 'Incharge')
                                                     Incharge Inhouse
                                                 @else
                                                     {{ $item->aktivitas }}
@@ -244,17 +252,18 @@
                                             </td>
                                             <td class="px-3 py-2 text-center">
                                                 <div class="d-flex gap-2 justify-content-center">
-                                                    <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal"
-                                                        data-bs-target="#editAktivitasModal"
+                                                    <button type="button" class="btn btn-sm btn-warning"
+                                                        data-bs-toggle="modal" data-bs-target="#editAktivitasModal"
                                                         onclick='editAktivitas(@json($item))'>
                                                         Edit
                                                     </button>
-                                                    <form action="{{ route('delete.aktivitas', $item->id) }}" method="POST"
-                                                        onsubmit="return confirm('Yakin ingin menghapus?')"
+                                                    <form action="{{ route('delete.aktivitas', $item->id) }}"
+                                                        method="POST" onsubmit="return confirm('Yakin ingin menghapus?')"
                                                         style="display: inline;">
                                                         @csrf
                                                         @method('DELETE')
-                                                        <button type="submit" class="btn btn-sm btn-danger">Hapus</button>
+                                                        <button type="submit"
+                                                            class="btn btn-sm btn-danger">Hapus</button>
                                                     </form>
                                                 </div>
                                             </td>
@@ -276,7 +285,7 @@
                     @csrf
                     @method('POST')
                     <input type="hidden" name="id_sales" value="{{ auth()->user()->id_sales }}">
-                    <input type="hidden" name="id_perusahaan" value="{{ $peluang->id_contact }}">
+                    <input type="hidden" name="id_perusahaan" id="id_perusahaan" value="{{ $peluang->id_contact }}">
                     <input type="hidden" name="id_peluang" value="{{ $peluang->id }}">
 
                     <div class="modal-content">
@@ -290,7 +299,7 @@
                                 <label for="id_contact" class="form-label">Pilih Contact</label>
                                 <select name="id_contact" class="form-control" id="id_contact">
                                     <option value="">-- Pilih Contact </option>
-                                    @foreach($items as $contact)
+                                    @foreach ($items as $contact)
                                         <option value="{{ $contact['id'] }}" data-type="{{ $contact['type'] }}">
                                             {{ $contact['label'] }}
                                         </option>
@@ -340,7 +349,7 @@
         <!-- Modal Edit Peluang -->
         <div class="modal fade" id="editPeluangModal" tabindex="-1" aria-labelledby="editPeluangModalLabel"
             aria-hidden="true">
-            <div class="modal-dialog">
+            <div class="modal-dialog modal-lg">
                 <form action="{{ route('edit.peluang', $peluang->id) }}" method="POST" id="editLeads">
                     @method('PUT')
                     @csrf
@@ -352,6 +361,22 @@
                         </div>
 
                         <div class="modal-body">
+                            @if (session('error'))
+                                <div class="alert alert-danger">
+                                    {{ session('error') }}
+                                </div>
+                            @endif
+                            @if ($errors->any())
+                                <div class="alert alert-danger">
+                                    <ul>
+                                        @foreach ($errors->all() as $error)
+                                            <li>{{ $error }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
+
+                            <!-- Existing Fields -->
                             <div class="mb-3">
                                 <label for="materi" class="form-label">Materi</label>
                                 <select class="form-select" id="materi" name="materi" required>
@@ -363,54 +388,78 @@
                                         </option>
                                     @endforeach
                                 </select>
+                                @error('materi')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
                             </div>
 
                             <div class="mb-3">
                                 <label for="catatan" class="form-label">Catatan</label>
-                                <textarea class="form-control" id="catatan" name="catatan" rows="2">{{ $peluang->catatan }}</textarea>
+                                <textarea class="form-control" id="catatan" name="catatan" rows="2">{{ old('catatan', $peluang->catatan) }}</textarea>
+                                @error('catatan')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
                             </div>
 
                             <div class="mb-3">
                                 <label for="harga" class="form-label">Harga Penawaran</label>
                                 <input type="text" class="form-control editLead" id="harga" name="harga"
-                                    value="{{ 'Rp ' . number_format($peluang->harga, 0, ',', '.') }}" required>
+                                    value="{{ old('harga', 'Rp ' . number_format($peluang->harga, 0, ',', '.')) }}"
+                                    required>
+                                @error('harga')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
                             </div>
-
-                            {{-- <div class="mb-3">
-                                <label for="netsales" class="form-label">Net Sales</label>
-                                <input type="text" class="form-control editLead" id="netsales" name="netsales"
-                                    value="{{ 'Rp ' . number_format($peluang->netsales, 0, ',', '.') }}" required>
-                            </div> --}}
 
                             <div class="mb-3">
                                 <label for="pax" class="form-label">Jumlah Peserta (Pax)</label>
                                 <input type="number" class="form-control" id="pax" name="pax" min="1"
-                                    value="{{ $peluang->pax }}" required>
+                                    value="{{ old('pax', $peluang->pax) }}" required>
+                                @error('pax')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
                             </div>
 
                             <div class="mb-3">
                                 <label for="periode_mulai" class="form-label">Periode Mulai</label>
                                 <input type="date" class="form-control" id="periode_mulai" name="periode_mulai"
-                                    value="{{ $peluang->periode_mulai }}" required>
+                                    value="{{ old('periode_mulai', $peluang->periode_mulai) }}" required>
+                                @error('periode_mulai')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
                             </div>
 
                             <div class="mb-3">
                                 <label for="periode_selesai" class="form-label">Periode Selesai</label>
                                 <input type="date" class="form-control" id="periode_selesai" name="periode_selesai"
-                                    value="{{ $peluang->periode_selesai }}" required>
+                                    value="{{ old('periode_selesai', $peluang->periode_selesai) }}" required>
+                                @error('periode_selesai')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
                             </div>
 
                             <input type="hidden" name="tentatif" value="0">
-
                             <div class="form-check form-switch mb-3">
                                 <input class="form-check-input" type="checkbox" role="switch" id="tentatifSwitch"
                                     name="tentatif" value="1"
                                     {{ old('tentatif', $peluang->tentatif) ? 'checked' : '' }}>
                                 <label class="form-check-label" for="tentatifSwitch">Tentatif</label>
                             </div>
+
+                            <!-- Related Activities -->
+                            <div class="mb-3">
+                                <h6 class="fw-bold">Aktivitas Terkait</h6>
+                                <div id="editAktivitasTableWrapper">
+                                    <p class="text-muted">Memuat aktivitas...</p>
+                                </div>
+                                @error('id_aktivitas.*')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
+                            </div>
                         </div>
 
                         <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
                             <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
                         </div>
                     </div>
@@ -510,8 +559,9 @@
                             </div>
                             <div class="mb-3">
                                 <label for="hargaPenawaran" class="form-label">Harga Penawaran</label>
-                                <input type="text" class="form-control rupiah" id="hargaPenawaran" name="hargaPenawaran"
-                                    value="Rp {{ number_format($peluang->harga, 0, ',', '.') }}" readonly>
+                                <input type="text" class="form-control rupiah" id="hargaPenawaran"
+                                    name="hargaPenawaran" value="Rp {{ number_format($peluang->harga, 0, ',', '.') }}"
+                                    readonly>
                             </div>
                             <div class="mb-3">
                                 <label for="transportasi" class="form-label">Transportasi</label>
@@ -753,40 +803,110 @@
 
 
 
-
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
         <script>
-            document.addEventListener('DOMContentLoaded', function() {
+            $(document).ready(function() {
+                const perusahaanId = $('#id_perusahaan').val();
 
-                // Select2
-                initContactSelect2()
+                // Function to fetch and display activities
+                function loadActivities(targetElementId) {
+                    $.ajax({
+                        url: `/crm/ambil/aktivitas/${perusahaanId}`,
+                        method: 'GET',
+                        dataType: 'json',
+                        success: function(data) {
+                            const activities = data.data ||
+                                data; // Fallback if response is directly an array
+
+                            if (!Array.isArray(activities) || activities.length === 0) {
+                                $(`#${targetElementId}`).html(
+                                    `<p class="text-muted">Tidak ada aktivitas yang tersedia untuk contact ini.</p>`
+                                );
+                                return;
+                            }
+
+                            let table = `
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Pilih</th>
+                                    <th>Kontak</th>
+                                    <th>Jenis Aktivitas</th>
+                                    <th>Subjek</th>
+                                    <th>Deskripsi</th>
+                                    <th>Waktu Aktivitas</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                            activities.forEach(a => {
+                                const waktu = new Date(a.waktu).toLocaleDateString(
+                                    'id-ID', {
+                                        day: '2-digit',
+                                        month: 'long',
+                                        year: 'numeric'
+                                    });
+                                table += `
+                        <tr>
+                            <td><input type="checkbox" name="id_aktivitas[]" value="${a.id}"></td>
+                            <td>${a.kontak || '-'}</td>
+                            <td>${a.aktivitas || '-'}</td>
+                            <td>${a.subject || '-'}</td>
+                            <td>${a.deskripsi ?? '-'}</td>
+                            <td>${waktu}</td>
+                        </tr>
+                    `;
+                            });
+
+                            table += `</tbody></table></div>`;
+                            $(`#${targetElementId}`).html(table);
+                        },
+                        error: function(err) {
+                            console.error('Gagal memuat aktivitas:', err);
+                            $(`#${targetElementId}`).html(
+                                `<p class="text-danger">Terjadi kesalahan saat memuat aktivitas. Periksa console untuk detail.</p>`
+                            );
+                        }
+                    });
+                }
+
+                // Load activities for the main "Aktivitas Terkait" table
+                loadActivities('aktivitasTableWrapper');
+
+                // Load activities when Edit Lead Modal is opened
+                $('#editPeluangModal').on('show.bs.modal', function() {
+                    loadActivities('editAktivitasTableWrapper');
+                });
+
+                // Existing JavaScript for Select2 and input formatting
+                initContactSelect2();
 
                 let peluang = @json($peluang);
-                console.log(peluang)
-                console.log(peluang.materi.nama_materi);
+                console.log(peluang);
 
                 const editLead = document.querySelectorAll(".editLead");
                 const rupiahInputs = document.querySelectorAll(".rupiah");
                 const tahapSelect = document.getElementById('tahap');
                 const closeWinInput = document.getElementById('input-close-win');
-                const paInput = document.getElementById('HargaPA');
                 const displayInput = document.getElementById('close_win_display');
                 const hiddenInput = document.getElementById('close_win');
                 const descLostInput = document.getElementById('input-desc-lost');
                 const descLostField = document.getElementById('desc_lost');
 
-                // toggle input sesuai tahap
+                // Toggle inputs based on stage
                 function toggleInputs() {
                     if (tahapSelect.value.toLowerCase() === 'merah') {
                         closeWinInput.classList.remove('d-none');
                         displayInput.setAttribute('required', 'required');
                         hiddenInput.setAttribute('required', 'required');
-
                         descLostInput.classList.add('d-none');
                         descLostField.removeAttribute('required');
                     } else if (tahapSelect.value.toLowerCase() === 'lost') {
                         descLostInput.classList.remove('d-none');
                         descLostField.setAttribute('required', 'required');
-
                         closeWinInput.classList.add('d-none');
                         displayInput.removeAttribute('required');
                         hiddenInput.removeAttribute('required');
@@ -794,7 +914,6 @@
                         closeWinInput.classList.add('d-none');
                         displayInput.removeAttribute('required');
                         hiddenInput.removeAttribute('required');
-
                         descLostInput.classList.add('d-none');
                         descLostField.removeAttribute('required');
                     }
@@ -802,43 +921,39 @@
 
                 if (tahapSelect) {
                     tahapSelect.addEventListener('change', toggleInputs);
-                    toggleInputs(); // trigger awal
+                    toggleInputs(); // Initial trigger
                 }
 
-                // format rupiah saat user ketik
+                // Format rupiah for close_win_display
                 displayInput.addEventListener('input', function() {
-                    let value = this.value.replace(/\D/g, ''); // angka murni
+                    let value = this.value.replace(/\D/g, ''); // Pure numbers
                     if (!value) {
                         this.value = "";
                         hiddenInput.value = "";
                         return;
                     }
 
-                    // update tampilan
                     this.value = new Intl.NumberFormat('id-ID', {
                         style: 'currency',
                         currency: 'IDR',
                         minimumFractionDigits: 0
                     }).format(value);
-
-                    // update hidden untuk backend
                     hiddenInput.value = value;
                 });
 
-                // sebelum submit pastikan hiddenInput aman
+                // Ensure hiddenInput is clean before submission
                 document.getElementById('updates').addEventListener('submit', function() {
                     hiddenInput.value = displayInput.value.replace(/\D/g, '');
                 });
 
+                // Format rupiah inputs
                 rupiahInputs.forEach(input => {
                     input.addEventListener("input", function() {
-                        let value = this.value.replace(/\D/g, ""); // angka murni
+                        let value = this.value.replace(/\D/g, "");
                         if (!value) {
                             this.value = "";
                             return;
                         }
-
-                        // format tampilan Rp
                         this.value = new Intl.NumberFormat("id-ID", {
                             style: "currency",
                             currency: "IDR",
@@ -847,22 +962,20 @@
                     });
                 });
 
-                // sebelum submit, reset ke angka murni
+                // Clean rupiah inputs before submission
                 document.getElementById("StorePA").addEventListener("submit", function() {
                     rupiahInputs.forEach(input => {
-                        input.value = input.value.replace(/\D/g, ""); // kirim angka murni
+                        input.value = input.value.replace(/\D/g, "");
                     });
                 });
 
                 editLead.forEach(input => {
                     input.addEventListener("input", function() {
-                        let value = this.value.replace(/\D/g, ""); // angka murni
+                        let value = this.value.replace(/\D/g, "");
                         if (!value) {
                             this.value = "";
                             return;
                         }
-
-                        // format tampilan Rp
                         this.value = new Intl.NumberFormat("id-ID", {
                             style: "currency",
                             currency: "IDR",
@@ -871,29 +984,25 @@
                     });
                 });
 
-                // sebelum submit, reset ke angka murni
                 document.getElementById("editLeads").addEventListener("submit", function() {
                     editLead.forEach(input => {
-                        input.value = input.value.replace(/\D/g, ""); // kirim angka murni
+                        input.value = input.value.replace(/\D/g, "");
                     });
                 });
 
-            });
-
-            function initContactSelect2() {
-                var $select = $('#id_contact');
-
-                if (typeof $.fn.select2 !== 'function') {
-                    console.error('Select2 belum ter-load!');
-                    return;
+                function initContactSelect2() {
+                    var $select = $('#id_contact');
+                    if (typeof $.fn.select2 !== 'function') {
+                        console.error('Select2 belum ter-load!');
+                        return;
+                    }
+                    var $closestModal = $select.closest('.modal');
+                    $select.select2({
+                        width: '100%',
+                        theme: 'bootstrap-5',
+                        dropdownParent: $closestModal.length ? $closestModal : $(document.body)
+                    });
                 }
-
-                var $closestModal = $select.closest('.modal');
-                $select.select2({
-                    width: '100%',
-                    theme: 'bootstrap-5',
-                    dropdownParent: $closestModal.length ? $closestModal : $(document.body)
-                });
-            }
+            });
         </script>
     @endsection
