@@ -566,13 +566,13 @@
 
                 <div class="row">
                     {{-- Kolom Peserta --}}
-                    <div class="col-md-6">
+                    <div class="col-md-7">
                         <h5 class="fw-semibold mb-3">Peserta</h5>
                         <div class="table-responsive">
                             <table class="table table-bordered table-hover">
                                 <thead class="table-primary">
                                     <tr>
-                                        <th class="text-center">No</th>
+                                        <th class="px-3 py-2 text-center">No</th>
                                         <th class="px-3 py-2">Nama</th>
                                         <th class="px-3 py-2">Email</th>
                                         <th class="px-3 py-2">Kelas Terakhir</th>
@@ -581,7 +581,7 @@
                                 <tbody>
                                     @forelse ($data->peserta as $index => $peserta)
                                         <tr>
-                                            <td class="text-center">{{ $index + 1 }}</td>
+                                            <td class="px-3 py-2 text-center">{{ $index + 1 }}</td>
                                             <td class="px-3 py-2">{{ $peserta->nama }}</td>
                                             <td class="px-3 py-2">
                                                 {{ $peserta->email ?? 'Tidak ada email' }}
@@ -608,7 +608,7 @@
                     </div>
 
                     {{-- Kolom Contact --}}
-                    <div class="col-md-6">
+                    <div class="col-md-5">
                         <h5 class="fw-semibold mb-3">Contact</h5>
                         <div class="table-responsive">
                             <table class="table table-bordered table-hover">
