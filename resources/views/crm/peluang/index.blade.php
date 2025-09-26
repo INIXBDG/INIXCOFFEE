@@ -59,7 +59,7 @@
                                 <!-- Form Kontak -->
                                 <div class="mb-3">
                                     <label class="form-label" for="id_perusahaan">Perusahaan</label>
-                                    <select class="form-select" id="id_perusahaan" name="id_perusahaan" required>
+                                    <select class="form-select" id="id_perusahaan" name="id_contact" required>
                                         <option value="" disabled selected>Pilih Perusahaan</option>
                                         @foreach ($Perusahaan as $p)
                                             <option value="{{ $p->id }}">{{ $p->nama_perusahaan }}
@@ -304,6 +304,75 @@
 
             initPerusahaanSelect2();
             initMateriSelect2();
+
+            // Pindah event listener ke sini untuk consistency dengan jQuery dan Select2
+            $('#id_perusahaan').on('change', function() {
+                const perusahaanId = $(this).val();
+
+                if (!perusahaanId) {
+                    $('#aktivitasTableWrapper').html(
+                        `<p class="text-muted">Silakan pilih contact client terlebih dahulu.</p>`);
+                    return;
+                }
+
+                $.ajax({
+                    url: `/crm/ambil/aktivitas/${perusahaanId}`,
+                    method: 'GET',
+                    dataType: 'json',
+                    success: function(data) {
+                        // Asumsi response mirip DataTable: { data: [...] }, jadi ambil data.data
+                        const activities = data.data || data; // Fallback jika langsung array
+
+                        if (!Array.isArray(activities) || activities.length === 0) {
+                            $('#aktivitasTableWrapper').html(
+                                `<p class="text-muted">Tidak ada aktivitas yang tersedia untuk contact ini.</p>`);
+                            return;
+                        }
+
+                        let table = `
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Pilih</th>
+                                            <th>Kontak</th>
+                                            <th>Jenis Aktivitas</th>
+                                            <th>Subjek</th>
+                                            <th>Deskripsi</th>
+                                            <th>Waktu Aktivitas</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                        `;
+
+                        activities.forEach(a => {
+                            const waktu = new Date(a.waktu).toLocaleDateString('id-ID', {
+                                day: '2-digit',
+                                month: 'long',
+                                year: 'numeric'
+                            });
+                            table += `
+                                <tr>
+                                    <td><input type="checkbox" name="id_aktivitas[]" value="${a.id}"></td>
+                                    <td>${a.kontak || '-'}</td>
+                                    <td>${a.aktivitas || '-'}</td>
+                                    <td>${a.subject || '-'}</td>
+                                    <td>${a.deskripsi ?? '-'}</td>
+                                    <td>${waktu}</td>
+                                </tr>
+                            `;
+                        });
+
+                        table += `</tbody></table></div>`;
+                        $('#aktivitasTableWrapper').html(table);
+                    },
+                    error: function(err) {
+                        console.error('Gagal memuat aktivitas:', err);
+                        $('#aktivitasTableWrapper').html(
+                            `<p class="text-danger">Terjadi kesalahan saat memuat aktivitas. Periksa console untuk detail.</p>`);
+                    }
+                });
+            });
         });
 
         function initPerusahaanSelect2() {
@@ -345,73 +414,6 @@
                 dropdownParent: $closestModal.length ? $closestModal : $(document.body)
             });
         }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const contactSelect = document.getElementById('id_perusahaan');
-            const tableWrapper = document.getElementById('aktivitasTableWrapper');
-
-            contactSelect.addEventListener('change', function() {
-                const perusahaanId = this.value; // sekarang ini ID perusahaan
-
-                if (!perusahaanId) {
-                    tableWrapper.innerHTML =
-                        `<p class="text-muted">Silakan pilih contact client terlebih dahulu.</p>`;
-                    return;
-                }
-
-                fetch(`/crm/ambil/aktivitas/${perusahaanId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.length === 0) {
-                            tableWrapper.innerHTML =
-                                `<p class="text-muted">Tidak ada aktivitas yang tersedia untuk contact ini.</p>`;
-                            return;
-                        }
-
-                        let table = `
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Pilih</th>
-                                        <th>Kontak</th>
-                                    <th>Jenis Aktivitas</th>
-                                    <th>Subjek</th>
-                                    <th>Deskripsi</th>
-                                    <th>Waktu Aktivitas</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                    `;
-
-                        data.forEach(a => {
-                            const waktu = new Date(a.waktu).toLocaleDateString('id-ID', {
-                                day: '2-digit',
-                                month: 'long',
-                                year: 'numeric'
-                            });
-                            table += `
-                        <tr>
-                            <td><input type="checkbox" name="id_aktivitas[]" value="${a.id}"></td>
-                            <td>${a.kontak}</td>
-                            <td>${a.aktivitas}</td>
-                            <td>${a.subject}</td>
-                            <td>${a.deskripsi ?? '-'}</td>
-                            <td>${waktu}</td>
-                        </tr>
-                    `;
-                        });
-
-                        table += `</tbody></table></div>`;
-                        tableWrapper.innerHTML = table;
-                    })
-                    .catch(err => {
-                        console.error('Gagal memuat aktivitas:', err);
-                        tableWrapper.innerHTML =
-                            `<p class="text-danger">Terjadi kesalahan saat memuat aktivitas.</p>`;
-                    });
-            });
-        });
 
         function resetForm() {
             const form = document.getElementById('form-data');
