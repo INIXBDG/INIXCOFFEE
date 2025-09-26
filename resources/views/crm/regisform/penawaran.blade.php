@@ -308,7 +308,7 @@
                 font-size: 9pt;
                 margin: 1mm 0;
                 line-height: 13pt;
-                page-break-inside: avoid;
+                page-break-inside: auto; /* Allow terms to split if necessary, except for keuntungan */
             }
 
             .closing {
@@ -316,7 +316,6 @@
                 margin: 1mm 0;
                 line-height: 13pt;
                 page-break-inside: avoid;
-                page-break-before: auto;
             }
 
             .closing p.contact-info {
@@ -545,7 +544,7 @@
             const days = parseInt(duration) || 0;
             const end = new Date(start);
             end.setDate(start.getDate() + days - 1);
-            return `${start.getDate()} - ${end.getDate()} ${end.toLocaleString('id-ID', { month: 'long', year: 'numeric' })}`;
+            return `${start.getDate()} - ${end.toLocaleString('id-ID', { month: 'long', year: 'numeric' })}`;
         }
 
         // Event listener untuk memilih perusahaan
@@ -783,6 +782,7 @@
                 </div>
             `;
 
+            // Wrap keuntungan and closing in a single container to control page breaks
             const previewHTML = `
                 <div class="container">
                     <img src="${backgroundUrl}" class="background-image" alt="Background">
@@ -837,23 +837,28 @@
                             <ul class="list-disc pl-6">${syaratList}</ul>
                             <p class="font-semibold mt-2" style="font-weight:bold;">Fasilitas dan Perlengkapan yang Kami Sediakan:</p>
                             <ol class="list-decimal pl-6">${fasilitasHTML}</ol>
-                            <p class="font-semibold mt-2" style="font-weight:bold;">Keuntungan yang Akan Anda Dapatkan:</p>
-                            <ul class="list-disc pl-6">${keuntunganHTML}</ul>
                         </div>
 
-                        <div class="closing text-sm text-gray-700">
-                            <p>Demikian surat penawaran ini kami sampaikan. Besar harapan kami dapat bekerja sama dengan Bapak/Ibu.</p>
-                            <p style="margin-bottom:6mm;"><strong>Untuk informasi lebih lanjut dan penyesuaian harga maupun fasilitas, mohon hubungi:</strong></p>
-                            <p class="contact-info"><span class="label">Whatsapp</span><span class="value">: ${waSales}</span></p>
-                            <p class="contact-info"><span class="label">Telepon</span><span class="value">: ${telpSales}</span></p>
-                            <p class="contact-info"><span class="label">Email</span><span class="value"><a href="mailto:${emailSales}" style="text-decoration:none; color: black;">: ${emailSales}</a></span></p>
-                            <br />
-                            <p class="mt-2">Hormat kami,</p>
-                            <p class="font-bold" style="padding-bottom:4%;">INIXINDO BANDUNG</p>
-                            <p class="signature"><strong>${namaSales}</strong></p>
-                            <p>${jabatanSales},</p> 
-                            <p>Inixindo Bandung</p>
-                            ${vendorImagesHTML}
+                        <div class="keuntungan-closing-container">
+                            <div class="terms text-sm text-gray-800">
+                                <p class="font-semibold mt-2" style="font-weight:bold;">Keuntungan yang Akan Anda Dapatkan:</p>
+                                <ul class="list-disc pl-6">${keuntunganHTML}</ul>
+                            </div>
+
+                            <div class="closing text-sm text-gray-700">
+                                <p>Demikian surat penawaran ini kami sampaikan. Besar harapan kami dapat bekerja sama dengan Bapak/Ibu.</p>
+                                <p style="margin-bottom:6mm;"><strong>Untuk informasi lebih lanjut dan penyesuaian harga maupun fasilitas, mohon hubungi:</strong></p>
+                                <p class="contact-info"><span class="label">Whatsapp</span><span class="value">: ${waSales}</span></p>
+                                <p class="contact-info"><span class="label">Telepon</span><span class="value">: ${telpSales}</span></p>
+                                <p class="contact-info"><span class="label">Email</span><span class="value"><a href="mailto:${emailSales}" style="text-decoration:none; color: black;">: ${emailSales}</a></span></p>
+                                <br />
+                                <p class="mt-2">Hormat kami,</p>
+                                <p class="font-bold" style="padding-bottom:4%;">INIXINDO BANDUNG</p>
+                                <p class="signature"><strong>${namaSales}</strong></p>
+                                <p>${jabatanSales},</p> 
+                                <p>Inixindo Bandung</p>
+                                ${vendorImagesHTML}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -906,8 +911,13 @@
                 .lampiran p span.value { flex: 1; text-align: left; }
                 .penerima { font-size: 9pt; margin-top: 8mm; line-height: 5pt; page-break-inside: avoid; }
                 .deskripsi { font-size: 9pt; margin: 6mm 0; line-height: 13pt; text-align: justify; page-break-inside: avoid; }
-                .terms { font-size: 9pt; margin: 6mm 0; line-height: 13pt; break-inside: avoid; page-break-inside: avoid; display: block; }
-                .closing { font-size: 9pt; margin: 1mm 0; line-height: 5pt; break-inside: avoid; page-break-inside: avoid; page-break-before: always; display: block; }
+                .terms { font-size: 9pt; margin: 6mm 0; line-height: 13pt; page-break-inside: auto; display: block; }
+                .keuntungan-closing-container {
+                    page-break-before: auto;
+                    page-break-inside: avoid;
+                    break-inside: avoid;
+                }
+                .closing { font-size: 9pt; margin: 1mm 0; line-height: 5pt; }
                 .closing p.contact-info { display: flex; align-items: flex-start; }
                 .closing p.contact-info span.label { flex: 0 0 20mm; text-align: left; }
                 .closing p.contact-info span.value { flex: 1; text-align: left; }
@@ -921,7 +931,7 @@
                     display: flex;
                     flex-wrap: wrap;
                     gap: 5mm;
-                    margin-top: 115mm;
+                    margin-top: 90mm;
                     justify-content: space-between;
                     page-break-inside: avoid;
                 }
@@ -938,7 +948,6 @@
                     width: 206mm !important;
                     height: 288mm !important;
                     z-index: -1 !important;
-                    // opacity: 0.1 !important;
                     -webkit-print-color-adjust: exact !important;
                     print-color-adjust: exact !important;
                 }
@@ -956,7 +965,7 @@
             printWindow.focus();
             setTimeout(() => {
                 printWindow.print();
-            }, 1000);
+            }, 2000);
         }
     </script>
 </body>
