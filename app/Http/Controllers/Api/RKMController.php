@@ -41,7 +41,7 @@ class RKMController extends Controller
                 $start = $startOfWeek->format('Y-m-d');
                 $end = $endOfWeek->format('Y-m-d');
                 $startOfWeek = $startOfWeek->addWeek();
-                $rows = RKM::with('materi')
+                $rows = RKM::with(['materi', 'peluang'])
                     ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
                     ->whereBetween('r_k_m_s.tanggal_awal', [$start, $end])
 					->whereDoesntHave('peluang', function ($query) {
