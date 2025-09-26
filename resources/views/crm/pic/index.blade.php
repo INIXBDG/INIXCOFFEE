@@ -208,22 +208,29 @@
                         render: function(data, type, row) {
                             if (row.status === 'Contact' || row.status === 'Contact Baru') {
                                 return `
-                                <div class="d-flex flex-column gap-2">
-                                    <button class="btn btn-sm btn-warning edit-btn"
-                                        data-id="${row.contact_id}"
-                                        data-nama="${row.nama}"
-                                        data-perusahaan="${row.perusahaan}"
-                                        data-email="${row.email}"
-                                        data-cp="${row.cp}"
-                                        data-divisi="${row.divisi}"
-                                        data-id_perusahaan="${row.id_perusahaan}">
-                                        Edit
-                                    </button>
-                                    <button class="btn btn-sm btn-danger delete-btn"
-                                        data-id="${row.contact_id}">
-                                        Delete
-                                    </button>
-                                </div>
+                                    <div class="d-flex flex-column gap-2">
+                                        <button
+                                            class="btn btn-sm btn-warning edit-btn"
+                                            data-id="${row.contact_id}"
+                                            data-nama="${row.nama}"
+                                            data-perusahaan="${row.perusahaan}"
+                                            data-email="${row.email}"
+                                            data-cp="${row.cp}"
+                                            data-divisi="${row.divisi}"
+                                            data-id_perusahaan="${row.id_perusahaan}"
+                                            @unless(in_array(auth()->user()->role, $allowedUser)) disabled @endunless
+                                        >
+                                            Edit
+                                        </button>
+
+                                        <button
+                                            class="btn btn-sm btn-danger delete-btn"
+                                            data-id="${row.contact_id}"
+                                            @unless(in_array(auth()->user()->role, $allowedUser)) disabled @endunless
+                                        >
+                                            Delete
+                                        </button>
+                                    </div>
                                 `;
                             }
                             return '';

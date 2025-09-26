@@ -247,6 +247,7 @@
             });
 
             initPerusahaanSelect2();
+            initContactSelect2();
         });
 
         function initPerusahaanSelect2() {
@@ -265,6 +266,26 @@
                 width: '100%',
                 theme: 'bootstrap-5',
                 // pastikan dropdown di-append ke modal (atau body jika tidak ada modal)
+                dropdownParent: $closestModal.length ? $closestModal : $(document.body)
+            });
+        }
+
+        function initContactSelect2() {
+            var $select = $('#id_contact');
+
+            // safety: pastikan select2 tersedia
+            if (typeof $.fn.select2 !== 'function') {
+                console.error('Select2 belum ter-load!');
+                return;
+            }
+
+            // cari modal parent (jika ada)
+            var $closestModal = $select.closest('.modal');
+
+            $select.select2({
+                width: '100%',
+                theme: 'bootstrap-5',
+
                 dropdownParent: $closestModal.length ? $closestModal : $(document.body)
             });
         }

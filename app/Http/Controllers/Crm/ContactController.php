@@ -135,7 +135,7 @@ class ContactController extends Controller
 
     public function detail($id)
     {
-        $data = Perusahaan::with(['contacts', 'peserta'])->where('id', $id)->firstOrFail();
+        $data = Perusahaan::with(['contacts', 'peserta.latestRegistrasi.materi'])->where('id', $id)->firstOrFail();
 
         $items = [];
 
@@ -186,6 +186,8 @@ class ContactController extends Controller
         $peluang = Peluang::where('id_contact', $data->id)
             ->with('materiRelation')
             ->get();
+
+            // dd($items);
 
         $materi = Materi::all();
 

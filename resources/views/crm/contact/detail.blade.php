@@ -560,6 +560,92 @@
             </div>
         </div>
 
+        <div class="card shadow-sm mt-4">
+            <div class="card-body">
+                <h2 class="card-title h4 fw-bold mb-3">Data Peserta & Contact</h2>
+
+                <div class="row">
+                    {{-- Kolom Peserta --}}
+                    <div class="col-md-6">
+                        <h5 class="fw-semibold mb-3">Peserta</h5>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead class="table-primary">
+                                    <tr>
+                                        <th class="text-center">No</th>
+                                        <th class="px-3 py-2">Nama</th>
+                                        <th class="px-3 py-2">Email</th>
+                                        <th class="px-3 py-2">Kelas Terakhir</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse ($data->peserta as $index => $peserta)
+                                        <tr>
+                                            <td class="text-center">{{ $index + 1 }}</td>
+                                            <td class="px-3 py-2">{{ $peserta->nama }}</td>
+                                            <td class="px-3 py-2">
+                                                {{ $peserta->email ?? 'Tidak ada email' }}
+                                            </td>
+                                            <td class="px-3 py-2">
+                                                @if ($peserta->latestRegistrasi)
+                                                    {{ $peserta->latestRegistrasi?->materi?->nama_materi }}
+                                                    (<span class="text-danger">
+                                                        {{ \Carbon\Carbon::parse($peserta->latestRegistrasi->created_at)->translatedFormat('d F Y') }}
+                                                    </span>)
+                                                @else
+                                                    <span class="text-muted fst-italic">Belum ada kelas</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="4" class="text-center py-3">Belum ada peserta</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {{-- Kolom Contact --}}
+                    <div class="col-md-6">
+                        <h5 class="fw-semibold mb-3">Contact</h5>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead class="table-primary">
+                                    <tr>
+                                        <th class="px-3 py-2 text-center">No</th>
+                                        <th class="px-3 py-2">Nama</th>
+                                        <th class="px-3 py-2">Email</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse ($data->contacts as $index => $contact)
+                                        <tr>
+                                            <td class="px-3 py-2 text-center">{{ $index + 1 }}</td>
+                                            <td class="px-3 py-2">{{ $contact->nama }}</td>
+                                            <td class="px-3 py-2">
+                                                @if ($contact->email)
+                                                    {{ $contact->email }}
+                                                @else
+                                                    <span class="text-muted fst-italic">Tidak ada email</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="3" class="text-center py-3">Belum ada contact</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
         <!-- Modal: Tambah Aktivitas -->
         <div class="modal fade" id="tambahAktivitasModal" tabindex="-1" aria-labelledby="tambahAktivitasModalLabel"
             aria-hidden="true">
@@ -676,6 +762,7 @@
             document.addEventListener("DOMContentLoaded", function () {
                 // Init Select2
                 initMateriSelect2();
+                initContactSelect2();
 
                 // Format input harga
                 const hargaInput = document.getElementById("harga");
@@ -767,7 +854,22 @@
 
                 var $closestModal = $select.closest('.modal');
                 $select.select2({
-                    placeholder: "-- Pilih Materi --",
+                    width: '100%',
+                    theme: 'bootstrap-5',
+                    dropdownParent: $closestModal.length ? $closestModal : $(document.body)
+                });
+            }
+
+            function initContactSelect2() {
+                var $select = $('#id_contact');
+
+                if (typeof $.fn.select2 !== 'function') {
+                    console.error('Select2 belum ter-load!');
+                    return;
+                }
+
+                var $closestModal = $select.closest('.modal');
+                $select.select2({
                     width: '100%',
                     theme: 'bootstrap-5',
                     dropdownParent: $closestModal.length ? $closestModal : $(document.body)
