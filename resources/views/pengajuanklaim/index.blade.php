@@ -1,7 +1,6 @@
 @extends('layouts.app')
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 
-
 @section('content')
     <div class="modal fade" id="genericModal" tabindex="-1" role="dialog" aria-labelledby="genericModalLabel" aria-hidden="true" data-bs-backdrop="false" data-bs-keyboard="false">
         <div class="modal-dialog" role="document">
@@ -214,19 +213,35 @@
             </div>
         </div>
 
+        @php
+        function canUserApprove($kendala, $pengajuDivisi, $userJabatan) {  
+            switch ($kendala) {
+                case 'Human Error':
+                    return $userJabatan === 'GM';
+                
+                case 'Absen Pulang':
+                    return $userJabatan === 'HRD';
+                
+                case 'System Error':
+                    if ($pengajuDivisi === 'Office') {  // Sekarang pakai divisi pengaju
+                        return $userJabatan === 'GM';
+                    } else {
+                        return strpos($userJabatan, 'Koordinator') !== false;
+                    }
+                
+                default:
+                    return in_array($userJabatan, ['HRD', 'GM']);
+            }
+        }
+
+        $currentUserJabatan = auth()->user()->karyawan->jabatan ?? '';
+        $currentUserDivisi = auth()->user()->karyawan->divisi ?? '';  // Tetap simpan, tapi tidak dipakai di canUserApprove untuk System Error
+        @endphp
+
         <div class="row justify-content-center">
             <div class="col-md-12">
                 <div class="d-flex justify-content-end">
-                    <!-- <a href="{{ route('pengajuanklaim.NoRecord') }}" class="btn btn-info color-white me-2">Absen Tidak Terekap</a>
-                    <a href="{{ route('pengajuanklaim.SchemeWork') }}" class="btn btn-warning me-2">Perubahan Jam Kerja</a>
-                    <a href="{{ route('pengajuanklaim.CancelLeave') }}" class="btn btn-danger me-2">Pembatalan Cuti</a> -->
-                    {{-- <div>
-                        <select class="form-select" id="tabelSelector">
-                            <option value="no_record">Absen Tidak Terekam</option>
-                            <option value="schema_work">Perubahan Jam Kerja</option>
-                            <option value="cancel_leave">Pembatalan Cuti</option>
-                        </select>
-                    </div> --}}
+                    <!-- Navigation buttons (commented out) -->
                 </div>
                 <div class="card m-4">
                     <div class="card-body table-responsive">
@@ -275,7 +290,23 @@
                                         <td>{{ $no++ }}</td>
                                         <td>{{ $data->karyawan->nama_lengkap }}</td>
                                         <td>{{ $data->karyawan->divisi }}</td>
-                                        <td>{{ $data->kendala }}</td>
+                                        <td>
+                                            <span class="badge 
+                                                @switch($data->kendala)
+                                                    @case('Human Error')
+                                                        bg-warning text-dark
+                                                        @break
+                                                    @case('Absen Pulang')
+                                                        bg-info text-white
+                                                        @break
+                                                    @case('System Error')
+                                                        bg-danger text-white
+                                                        @break
+                                                    @default
+                                                        bg-secondary text-white
+                                                @endswitch
+                                            ">{{ $data->kendala }}</span>
+                                        </td>
                                         <td>
                                             @if($data->absensiKaryawan)
                                             {{ \Carbon\Carbon::parse($data->absensiKaryawan->tanggal)->translatedFormat('l, d F Y') }}
@@ -324,20 +355,37 @@
                                                     <form action="{{ route('pengajuanklaim.deleteNoRecord') }}" method="POST">
                                                         @csrf
                                                         <input type="hidden" value="{{ $data->id }}" name="id_noRecord">
-                                                        <button type="submit" class="dropdown-item" data-toggle="tooltip" title="Lihat Bukti">
-                                                            <span><img src="{{ asset('icon/trash-danger.svg') }}" alt="eye.png" width="20px" height="20px"></span> Hapus Data
+                                                        <button type="submit" class="dropdown-item" data-toggle="tooltip" title="Hapus Data" onclick="return confirm('Yakin ingin menghapus data ini?')">
+                                                            <span><img src="{{ asset('icon/trash-danger.svg') }}" alt="delete.png" width="20px" height="20px"></span> Hapus Data
                                                         </button>
                                                     </form>
-                                                    @if($data->approval === 1)
-                                                    @elseif($data->approval === 0)
-                                                        <button type="button"
-                                                            class="dropdown-item"
-                                                            data-id="{{ $data->id }}"
-                                                            data-type="noRecord"
-                                                            data-toggle="modal"
-                                                            data-target="#genericModal">
-                                                            <span><img src="{{ asset('icon/clipboard-primary.svg') }}" alt="eye.png" width="20px" height="20px"></span> Approve
-                                                        </button>
+                                                    
+                                                    @if($data->approval === 0)
+                                                        @if(canUserApprove($data->kendala, $data->karyawan->divisi, $currentUserJabatan))
+                                                            <button type="button"
+                                                                class="dropdown-item approve-btn"
+                                                                data-id="{{ $data->id }}"
+                                                                data-type="noRecord"
+                                                                data-kendala="{{ $data->kendala }}"
+                                                                title="Approve pengajuan">
+                                                                <span><img src="{{ asset('icon/clipboard-primary.svg') }}" alt="approve.png" width="20px" height="20px"></span> Approve
+                                                            </button>
+                                                        @else
+                                                            <button type="button"
+                                                                class="dropdown-item disabled text-muted"
+                                                                disabled
+                                                                title="Anda tidak memiliki akses untuk approve {{ $data->kendala }}">
+                                                                <span><img src="{{ asset('icon/clipboard-secondary.svg') }}" alt="no-access.png" width="20px" height="20px"></span> Approve
+                                                            </button>
+                                                        @endif
+                                                    @elseif($data->approval === 1)
+                                                        <span class="dropdown-item text-success">
+                                                            <span><img src="{{ asset('icon/check-circle.svg') }}" alt="approved.png" width="20px" height="20px"></span> Sudah Disetujui
+                                                        </span>
+                                                    @elseif($data->approval === 2)
+                                                        <span class="dropdown-item text-danger">
+                                                            <span><img src="{{ asset('icon/x-circle.svg') }}" alt="rejected.png" width="20px" height="20px"></span> Sudah Ditolak
+                                                        </span>
                                                     @endif
                                                 </div>
                                             </div>
@@ -435,25 +483,38 @@
                                                     <form action="{{ route('pengajuanklaim.deleteSchemeWork') }}" method="POST">
                                                         @csrf
                                                         <input type="hidden" value="{{ $data->id }}" name="id_scheme_work">
-                                                        <button type="submit" class="dropdown-item" data-toggle="tooltip" title="Hapus Data">
-                                                            <span><img src="{{ asset('icon/trash-danger.svg') }}" alt="eye.png" width="20px" height="20px"></span> Hapus Data
+                                                        <button type="submit" class="dropdown-item" data-toggle="tooltip" title="Hapus Data" onclick="return confirm('Yakin ingin menghapus data ini?')">
+                                                            <span><img src="{{ asset('icon/trash-danger.svg') }}" alt="delete.png" width="20px" height="20px"></span> Hapus Data
                                                         </button>
                                                     </form>
-                                                    {{--@if(auth()->user()->jabatan === 'HRD') --}}
-                                                    @if($data->approval === 1)
-                                                    @elseif($data->approval === 0)
-                                                        <button type="button"
-                                                            class="dropdown-item"
-                                                            data-id="{{ $data->id }}"
-                                                            data-type="schemeWork"
-                                                            data-bukti="{{ $data->bukti_gambar ? 1 : 0 }}"
-                                                            data-toggle="modal"
-                                                            data-target="#genericModal">
-                                                            <span><img src="{{ asset('icon/clipboard-primary.svg') }}" alt="eye.png" width="20px" height="20px"></span> Approve
-                                                        </button>
-                                                        
+                                                    
+                                                    @if($data->approval === 0)
+                                                        @if(in_array($currentUserJabatan, ['HRD', 'Koordinator ITSM']))
+                                                            <button type="button"
+                                                                class="dropdown-item approve-btn"
+                                                                data-id="{{ $data->id }}"
+                                                                data-type="schemeWork"
+                                                                data-bukti="{{ $data->bukti_gambar ? 1 : 0 }}"
+                                                                title="Approve pengajuan">
+                                                                <span><img src="{{ asset('icon/clipboard-primary.svg') }}" alt="approve.png" width="20px" height="20px"></span> Approve
+                                                            </button>
+                                                        @else
+                                                            <button type="button"
+                                                                class="dropdown-item disabled text-muted"
+                                                                disabled
+                                                                title="Hanya HRD atau Koordinator ITSM yang bisa approve">
+                                                                <span><img src="{{ asset('icon/clipboard-secondary.svg') }}" alt="no-access.png" width="20px" height="20px"></span> Approve
+                                                            </button>
+                                                        @endif
+                                                    @elseif($data->approval === 1)
+                                                        <span class="dropdown-item text-success">
+                                                            <span><img src="{{ asset('icon/check-circle.svg') }}" alt="approved.png" width="20px" height="20px"></span> Sudah Disetujui
+                                                        </span>
+                                                    @elseif($data->approval === 2)
+                                                        <span class="dropdown-item text-danger">
+                                                            <span><img src="{{ asset('icon/x-circle.svg') }}" alt="rejected.png" width="20px" height="20px"></span> Sudah Ditolak
+                                                        </span>
                                                     @endif
-                                                    {{-- @endif --}}
                                                 </div>
                                             </div>
                                         </td>
@@ -550,27 +611,43 @@
                                                     <button class="dropdown-item" data-toggle="modal" data-toggle="tooltip" title="Lihat Bukti" data-target="#cancelLeaveModal{{ $data->id }}">
                                                         <span><img src="{{ asset('icon/eye.svg') }}" alt="eye.png" width="20px" height="20px"></span> Bukti Gambar
                                                     </button>
-                                                    <button class="dropdown-item" data-toggle="modal" data-toggle="tooltip" title="Lihat Bukti" data-target="#DetailcancelLeaveModal{{ $data->id }}">
+                                                    <button class="dropdown-item" data-toggle="modal" data-toggle="tooltip" title="Lihat Detail" data-target="#DetailcancelLeaveModal{{ $data->id }}">
                                                         <span><img src="{{ asset('icon/eye.svg') }}" alt="eye.png" width="20px" height="20px"></span> Detail
                                                     </button>
                                                     <form action="{{ route('pengajuanklaim.deleteCancelLeave') }}" method="POST">
                                                         @csrf
                                                         <input type="hidden" value="{{ $data->id }}" name="id_cancel_leave">
-                                                        <button type="submit" class="dropdown-item" data-toggle="tooltip" title="Hapus Data">
-                                                            <span><img src="{{ asset('icon/trash-danger.svg') }}" alt="eye.png" width="20px" height="20px"></span> Hapus Data
+                                                        <button type="submit" class="dropdown-item" data-toggle="tooltip" title="Hapus Data" onclick="return confirm('Yakin ingin menghapus data ini?')">
+                                                            <span><img src="{{ asset('icon/trash-danger.svg') }}" alt="delete.png" width="20px" height="20px"></span> Hapus Data
                                                         </button>
                                                     </form>
-                                                    @if($data->approval === 1)
-                                                    @elseif($data->approval === 0)
-                                                        <button type="button"
-                                                            class="dropdown-item"
-                                                            data-id="{{ $data->id }}"
-                                                            data-type="cancelLeave"
-                                                            data-bukti="{{ $data->bukti_gambar ? 1 : 0 }}"
-                                                            data-toggle="modal"
-                                                            data-target="#genericModal">
-                                                            <span><img src="{{ asset('icon/clipboard-primary.svg') }}" alt="eye.png" width="20px" height="20px"></span> Approve
-                                                        </button>
+                                                    
+                                                    @if($data->approval === 0)
+                                                        @if(in_array($currentUserJabatan, ['HRD', 'Koordinator ITSM']))
+                                                            <button type="button"
+                                                                class="dropdown-item approve-btn"
+                                                                data-id="{{ $data->id }}"
+                                                                data-type="cancelLeave"
+                                                                data-bukti="{{ $data->bukti_gambar ? 1 : 0 }}"
+                                                                title="Approve pengajuan">
+                                                                <span><img src="{{ asset('icon/clipboard-primary.svg') }}" alt="approve.png" width="20px" height="20px"></span> Approve
+                                                            </button>
+                                                        @else
+                                                            <button type="button"
+                                                                class="dropdown-item disabled text-muted"
+                                                                disabled
+                                                                title="Hanya HRD atau Koordinator ITSM yang bisa approve">
+                                                                <span><img src="{{ asset('icon/clipboard-secondary.svg') }}" alt="no-access.png" width="20px" height="20px"></span> Approve
+                                                            </button>
+                                                        @endif
+                                                    @elseif($data->approval === 1)
+                                                        <span class="dropdown-item text-success">
+                                                            <span><img src="{{ asset('icon/check-circle.svg') }}" alt="approved.png" width="20px" height="20px"></span> Sudah Disetujui
+                                                        </span>
+                                                    @elseif($data->approval === 2)
+                                                        <span class="dropdown-item text-danger">
+                                                            <span><img src="{{ asset('icon/x-circle.svg') }}" alt="rejected.png" width="20px" height="20px"></span> Sudah Ditolak
+                                                        </span>
                                                     @endif
                                                 </div>
                                             </div>
@@ -651,6 +728,31 @@
             }
         }
     }
+
+    /* Style untuk tombol disabled */
+    .dropdown-item.disabled {
+        color: #6c757d !important;
+        pointer-events: none !important;
+        background-color: transparent !important;
+        cursor: not-allowed !important;
+        opacity: 0.6 !important;
+    }
+
+    .dropdown-item.disabled:hover {
+        background-color: transparent !important;
+        color: #6c757d !important;
+    }
+
+    .dropdown-item.disabled:focus {
+        background-color: transparent !important;
+        color: #6c757d !important;
+        outline: none !important;
+    }
+
+    .dropdown-item.disabled:active {
+        background-color: transparent !important;
+        color: #6c757d !important;
+    }
 </style>
 @push('js')
 
@@ -661,26 +763,36 @@
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
 <script>
-    $(document).ready(function() {
-        $('#no_record_table').dataTable();
-        $('#cancel_leave_table').dataTable();
-        $('#schema_work_table').dataTable();
-        // Tooltip untuk semua elemen dengan attribute title
-        $('[title]').tooltip();
-        // Menangani klik tombol untuk membuka genericModal dengan data dinamis
-        $('button[data-target="#genericModal"]').on('click', function() {
-            const id = $(this).data('id');
-            const type = $(this).data('type');
+$(document).ready(function() {
+    // Inisialisasi DataTables
+    $('#no_record_table').DataTable();
+    $('#cancel_leave_table').DataTable();
+    $('#schema_work_table').DataTable();
 
-            // Reset input alasan penolakan dan sembunyikan default
-            $('#rejectReason').val('');
-            $('#rejectReasonGroup').hide();
+    // Tooltip
+    $('[title]').tooltip();
 
-            let modalTitle = '';
-            let modalQuestion = '';
+    // Event delegation untuk approve-btn (mendukung elemen dinamis)
+    $(document).on('click', '.approve-btn', function(e) {
+        e.preventDefault();
+        
+        const id = $(this).data('id');
+        const type = $(this).data('type');
+        const kendala = $(this).data('kendala');
 
-            // Set judul dan pertanyaan modal sesuai type
-            switch(type) {
+        $('#rejectReason').val('');
+        $('#rejectReasonGroup').hide();
+
+        let modalTitle = '';
+        let modalQuestion = '';
+
+        switch(type) {
+            case 'noRecord':
+                modalTitle = 'Approve No Record';
+                modalQuestion = `Setujui pengajuan No Record dengan kendala "${kendala}" (ID: ${id}) ini?`;
+                $('#rejectReasonGroup').show();
+                $('#schemework').hide();
+                break;
                 case 'cancelLeave':
                     modalTitle = 'Approve Cancel Leave';
                     modalQuestion = `Setujui pengajuan Cancel Leave dengan ID: ${id} ini?`;
@@ -693,12 +805,7 @@
                     $('#rejectReasonGroup').show();
                     $('#schemework').show();
                     break;
-                case 'noRecord':
-                    modalTitle = 'Approve No Record';
-                    modalQuestion = `Setujui pengajuan No Record dengan ID: ${id} ini?`;
-                    $('#rejectReasonGroup').show();
-                    $('#schemework').hide();
-                    break;
+
                 default:
                     modalTitle = 'Approval Confirmation';
                     modalQuestion = 'Apakah Anda yakin?';
@@ -707,12 +814,13 @@
                     break;
             }
 
-            $('#genericModalLabel').text(modalTitle);
-            $('#modalQuestion').text(modalQuestion);
+$('#genericModalLabel').text(modalTitle);
+        $('#modalQuestion').text(modalQuestion);
 
-            // Simpan data id dan type ke tombol Approve dan Reject
-            $('#btnApproveGeneric').data('id', id).data('type', type);
-            $('#btnRejectGeneric').data('id', id).data('type', type);
+        $('#btnApproveGeneric').data('id', id).data('type', type);
+        $('#btnRejectGeneric').data('id', id).data('type', type);
+        
+        $('#genericModal').modal('show');
         });
 
         // Handler saat klik tombol Setujui
@@ -733,25 +841,49 @@
                 const jam_masuk = $('#jam_masuk').val();
                 const jam_pulang = $('#jam_pulang').val();
 
+                if (!jam_masuk || !jam_pulang) {
+                    alert('Harap isi jam masuk dan jam pulang untuk Scheme Work!');
+                    return;
+                }
+
                 ajaxData.jam_masuk = jam_masuk;
                 ajaxData.jam_pulang = jam_pulang;
             }
 
             console.log(`Menyetujui ${type} dengan ID: ${id}`, ajaxData);
-            // alert(`Pengajuan ${type} dengan ID ${id} disetujui!`);
 
             $.ajax({
                 url: '/pengajuan-klaim/approval',
                 method: 'POST',
                 data: ajaxData,
+                beforeSend: function() {
+                    // Show loading state
+                    $('#btnApproveGeneric').prop('disabled', true).text('Processing...');
+                },
                 success: function(response) {
                     console.log(response);
                     $('#genericModal').modal('hide');
-                    // location.reload();
+                    
+                    if (response.success) {
+                        alert('Pengajuan berhasil disetujui!');
+                        location.reload(); // Reload untuk update tampilan
+                    } else {
+                        alert('Gagal menyetujui: ' + response.message);
+                    }
                 },
                 error: function(xhr) {
                     console.error(xhr.responseText);
-                    alert('Terjadi kesalahan saat menyetujui.');
+                    let errorMsg = 'Terjadi kesalahan saat menyetujui.';
+                    
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    }
+                    
+                    alert(errorMsg);
+                },
+                complete: function() {
+                    // Reset button state
+                    $('#btnApproveGeneric').prop('disabled', false).text('Setujui');
                 }
             });
         });
@@ -768,7 +900,6 @@
             }
 
             console.log(`Menolak ${type} dengan ID: ${id}, Alasan: ${rejectReason}`);
-            alert(`Pengajuan ${type} dengan ID ${id} ditolak dengan alasan: ${rejectReason}`);
 
             $.ajax({
                 url: '/pengajuan-klaim/reject',
@@ -780,16 +911,34 @@
                     reject_reason: rejectReason,
                     _token: '{{ csrf_token() }}'
                 },
+                beforeSend: function() {
+                    // Show loading state
+                    $('#btnRejectGeneric').prop('disabled', true).text('Processing...');
+                },
                 success: function(response) {
                     console.log(response);
                     $('#genericModal').modal('hide');
-                    // Bisa update UI setelah penolakan berhasil
-                    // location.reload();
-
+                    
+                    if (response.success) {
+                        alert('Pengajuan berhasil ditolak!');
+                        location.reload(); // Reload untuk update tampilan
+                    } else {
+                        alert('Gagal menolak: ' + response.message);
+                    }
                 },
                 error: function(xhr) {
                     console.error(xhr.responseText);
-                    alert('Terjadi kesalahan saat menolak.');
+                    let errorMsg = 'Terjadi kesalahan saat menolak.';
+                    
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    }
+                    
+                    alert(errorMsg);
+                },
+                complete: function() {
+                    // Reset button state
+                    $('#btnRejectGeneric').prop('disabled', false).text('Tolak');
                 }
             });
         });
@@ -797,64 +946,13 @@
         // Reset form saat modal ditutup
         $('#genericModal').on('hidden.bs.modal', function () {
             $('#rejectReason').val('');
+            $('#jam_masuk').val('');
+            $('#jam_pulang').val('');
             $('#rejectReasonGroup').hide();
+            $('#schemework').hide();
         });
-
-        // // Fungsi showTimeInputs dan showTextarea untuk menampilkan input sesuai kebutuhan
-        // function showTimeInputs(id) {
-        //     $('#timeInputs' + id).removeClass('d-none');
-        //     $('#textareaDiv' + id).addClass('d-none');
-        // }
-
-        // function showTextarea(id) {
-        //     $('#textareaDiv' + id).removeClass('d-none');
-        //     $('#timeInputs' + id).addClass('d-none');
-        // }
-
-        // // Menampilkan tabel sesuai pilihan selector
-        // const tables = {
-        //     no_record: $('#no_record_table'),
-        //     scheme_work: $('#schema_work_table'),
-        //     cancel_leave: $('#cancel_leave_table')
-        // };
-
-        // const judulMap = {
-        //     no_record: "Absen Tidak Terekam",
-        //     scheme_work: "Terlambat Karena Perubahan Jam Kerja",
-        //     cancel_leave: "Pembatalan Cuti"
-        // };
-
-        // function showTable(selected) {
-        //     $.each(tables, function(key, element) {
-        //         if (element.length) {
-        //             element.css('display', (key === selected) ? 'block' : 'none');
-        //         }
-        //     });
-
-        //     if (judulMap[selected]) {
-        //         $('#judulTabel').text(judulMap[selected]);
-        //     }
-
-        //     // Update URL tanpa reload
-        //     const url = new URL(window.location.href);
-        //     url.searchParams.set('tabel', selected);
-        //     window.history.replaceState({}, '', url);
-        // }
-
-        // // Inisialisasi default tabel dari URL atau no_record
-        // const urlParams = new URLSearchParams(window.location.search);
-        // const defaultTable = urlParams.get('tabel') || 'no_record';
-
-        // $('#tabelSelector').val(defaultTable);
-        // showTable(defaultTable);
-
-        // // Event saat select berubah
-        // $('#tabelSelector').on('change', function() {
-        //     showTable(this.value);
-        // });
     });
 </script>
-
 
 @endpush
 @endsection
