@@ -2241,62 +2241,13 @@ Swal.fire({
                 }, 1000);
             });
 
-            let isLoaded = false;
-            let isLoading = false;
-
+            // Pasang handler click yang memanggil fungsi
             $('#pills-dashboard-tab').on('click', function () {
-                if (isLoaded || isLoading) return; // jika sudah dimuat atau sedang dimuat, batalkan
-
-                isLoading = true;
-                $('#loadingModal').modal('show');
-
-                // Pastikan kita menunggu semua fadeOut selesai
-                $('.tab-pane.show').fadeOut(100).promise().done(function () {
-                    // Hapus kelas show/active setelah animasi selesai (bisa targetkan yang relevan)
-                    $('.tab-pane.show').removeClass('show active');
-
-                    const $contentContainer = $('#dashboard-content');
-                    $.ajax({
-                        url: '/partials/dashboard',
-                        type: 'GET',
-                        dataType: 'html',
-                        success: function (html) {
-                            $contentContainer.html(html);
-
-                            // muat script dashboard.js
-                            $.getScript('{{ asset("js/dashboard.js") }}')
-                                .done(function () {
-                                    console.log('dashboard.js berhasil dimuat dan dijalankan');
-
-                                    // panggil inisialisasi jika ada
-                                    if (typeof initializeYearlySales === 'function') {
-                                        initializeYearlySales();
-                                    }
-
-                                    isLoaded = true;
-                                    isLoading = false;
-                                    $('#loadingModal').modal('hide');
-                                })
-                                .fail(function () {
-                                    console.error('Gagal memuat dashboard.js');
-                                    $contentContainer.append('<p>Terjadi kesalahan saat memuat dashboard.</p>');
-                                    isLoading = false;
-                                    $('#loadingModal').modal('hide');
-                                });
-                        },
-                        error: function (xhr, status, error) {
-                            console.error('Gagal memuat konten dashboard:', error);
-                            $contentContainer.html('<p>Terjadi kesalahan saat memuat dashboard.</p>');
-                            isLoading = false;
-                            $('#loadingModal').modal('hide');
-                        }
-                    });
-
-                    // Tampilkan tab dashboard setelah memasukkan konten/animasi
-                    $('#pills-dashboard').fadeIn(100).addClass('show active');
+                loadDashboard().catch(function (err) {
+                    // optional: tangani error global di sini
+                    console.error(err);
                 });
             });
-
             $('#pills-admin-tab').click(function() {
                 $('#loadingModal').modal('show');
                 // initializeYearlySales();
@@ -2313,6 +2264,80 @@ Swal.fire({
             // console.log(progress, carprogress);
         });
 
+                /**
+                 * loadDashboard({ force: boolean }) -> Promise
+                 * - force: jika true, akan memuat ulang meskipun sudah dimuat sebelumnya
+                 */
+                function loadDashboard({ force = false } = {}) {
+                    let isLoaded = false;
+                    let isLoading = false;
+                    if (isLoaded && !force) {
+                        return Promise.resolve({ status: 'already_loaded' });
+                    }
+                    if (isLoading) {
+                        return Promise.reject(new Error('already_loading'));
+                    }
+
+                    isLoading = true;
+                    $('#pills-dashboard-tab').prop('disabled', true); // optional UX: disable tombol
+                    $('#loadingModal').modal('show');
+                    setTimeout(() => {
+                        $('#loadingModal').modal('hide');
+                    }, 400);
+
+                    return new Promise((resolve, reject) => {
+                        // tunggu semua fadeOut selesai
+                        $('.tab-pane.show').fadeOut(100).promise().done(function () {
+                        $('.tab-pane.show').removeClass('show active');
+
+                        const $contentContainer = $('#dashboard-content');
+
+                        $.ajax({
+                            url: '/partials/dashboard',
+                            type: 'GET',
+                            dataType: 'html'
+                        })
+                            .done(function (html) {
+                            $contentContainer.html(html);
+                            // muat script dashboard.js
+                            $.getScript('{{ asset("js/dashboard.js") }}')
+                                .done(function () {
+                                console.log('dashboard.js berhasil dimuat dan dijalankan');
+
+                                if (typeof initializeYearlySales === 'function') {
+                                    initializeYearlySales();
+                                }
+
+                                isLoaded = true;
+                                isLoading = false;
+                                $('#loadingModal').modal('hide');
+                                $('#pills-dashboard-tab').prop('disabled', false);
+                                $('#pills-dashboard').fadeIn(100).addClass('show active');
+
+                                resolve({ status: 'loaded' });
+                                })
+                                .fail(function () {
+                                console.error('Gagal memuat dashboard.js');
+                                $contentContainer.append('<p>Terjadi kesalahan saat memuat dashboard.</p>');
+                                isLoading = false;
+                                $('#loadingModal').modal('hide');
+                                $('#pills-dashboard-tab').prop('disabled', false);
+                                reject(new Error('getScript_failed'));
+                                });
+
+                            })
+                            .fail(function (xhr, status, error) {
+                            console.error('Gagal memuat konten dashboard:', error);
+                            $contentContainer.html('<p>Terjadi kesalahan saat memuat dashboard.</p>');
+                            isLoading = false;
+                            $('#loadingModal').modal('hide');
+                            $('#pills-dashboard-tab').prop('disabled', false);
+                            reject(new Error('ajax_failed'));
+                            });
+                        });
+                    });
+                }
+
         function cekjabatan() {
             var jabatan = '{{ auth()->user()->jabatan }}'
             if (jabatan === 'Direktur' || jabatan === 'Direktur Utama') {
@@ -2323,17 +2348,9 @@ Swal.fire({
                 $('#pills-home').removeClass('show active');
                 $('#loadingModal').modal('show');
                 // initializeYearlySales();
-                $.get('/partials/dashboard', function (data) {
-                    $('#pills-dashboard').html(data);
-
-                    // Muat script dashboard.js secara otomatis
-                    $.getScript('{{ asset("js/dashboard.js") }}', function () {
-                        
-                    }).fail(function () {
-                        console.error('Gagal memuat dashboard.js');
-                    });
-                }).fail(function () {
-                    $('#pills-dashboard').html('<p>Terjadi kesalahan saat memuat dashboard.</p>');
+                loadDashboard().catch(function (err) {
+                    // optional: tangani error global di sini
+                    console.error(err);
                 });
                 setTimeout(() => {
                     $('#loadingModal').modal('hide');
@@ -2589,6 +2606,9 @@ Swal.fire({
             }
         }
         $('#modalPemberitahuan').on('click', '.btn-danger', handleNotificationDismissal);
+        
+
+
 
     </script>
 </body>
