@@ -111,13 +111,10 @@
                                     <div class="row justify-content-center align-items-end modern-ranking">
 
                                         <!-- First Place -->
-
                                         <div class="col-12 col-md-4 d-flex flex-column align-items-center justify-content-center text-center podium-card mb-3 order-1 order-md-2">
                                             <div class="card-podium rank-1">
                                                 <div class="circle-satu first-position shadow">
-                                                    <img src="{{ asset('css/b1.png') }}" 
-                                                        alt="Keterlambatan ke-1" 
-                                                        class="present-photo-satu rounded-circle border border-white">
+                                                    <img src="{{ asset('css/b1.png') }}" alt="Keterlambatan ke-1" class="present-photo-satu rounded-circle border border-white" id="present-photo-satu">
                                                 </div>
                                                 <p class="position-label">Peringkat 1</p>
                                                 <img src="{{ asset('images/medal-1.png') }}" class="medal-bawah" alt="Medal">
@@ -128,9 +125,7 @@
                                         <div class="col-12 col-md-4 d-flex flex-column align-items-center justify-content-center text-center podium-card mb-3 order-2 order-md-1">
                                             <div class="card-podium rank-2">
                                                 <div class="circle second-position shadow-sm">
-                                                    <img src="{{ asset('storage/photos/pemain2.jpg') }}" 
-                                                        alt="Keterlambatan ke-2" 
-                                                        class="present-photo rounded-circle border border-white">
+                                                    <img src="{{ asset('storage/photos/pemain2.jpg') }}" alt="Keterlambatan ke-2" class="present-photo rounded-circle border border-white" id="present-photo-dua">
                                                 </div>
                                                 <p class="position-label">Peringkat 2</p>
                                                 <img src="{{ asset('images/medal-2.png') }}" alt="Medali Perak" class="medal-bawah">
@@ -141,9 +136,7 @@
                                         <div class="col-12 col-md-4 d-flex flex-column align-items-center justify-content-center text-center podium-card mb-3 order-3 order-md-3">
                                             <div class="card-podium rank-3">
                                                 <div class="circle third-position shadow-sm">
-                                                    <img src="{{ asset('storage/photos/pemain3.jpg') }}" 
-                                                        alt="Keterlambatan ke-3" 
-                                                        class="present-photo rounded-circle border border-white">
+                                                    <img src="{{ asset('storage/photos/pemain3.jpg') }}" alt="Keterlambatan ke-3" class="present-photo rounded-circle border border-white" id="present-photo-tiga">
                                                 </div>
                                                 <p class="position-label">Peringkat 3</p>
                                                 <img src="{{ asset('images/medal-3.png') }}" alt="Medali Perunggu" class="medal-bawah">

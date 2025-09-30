@@ -2241,58 +2241,62 @@ Swal.fire({
                 }, 1000);
             });
 
-            // Handle Dashboard button click with fade effect
-            $('#pills-dashboard-tab').click(function() {
-                let isLoaded = false;
-                if (isLoaded) return; // Hindari memuat ulang
+            let isLoaded = false;
+            let isLoading = false;
+
+            $('#pills-dashboard-tab').on('click', function () {
+                if (isLoaded || isLoading) return; // jika sudah dimuat atau sedang dimuat, batalkan
+
+                isLoading = true;
                 $('#loadingModal').modal('show');
-                // initializeYearlySales();
-                $('.tab-pane.show').fadeOut(100, function() {
-                    $(this).removeClass('show active');
+
+                // Pastikan kita menunggu semua fadeOut selesai
+                $('.tab-pane.show').fadeOut(100).promise().done(function () {
+                    // Hapus kelas show/active setelah animasi selesai (bisa targetkan yang relevan)
+                    $('.tab-pane.show').removeClass('show active');
+
                     const $contentContainer = $('#dashboard-content');
-                    
+                    $.ajax({
+                        url: '/partials/dashboard',
+                        type: 'GET',
+                        dataType: 'html',
+                        success: function (html) {
+                            $contentContainer.html(html);
 
-                        $.ajax({
-                            url: '/partials/dashboard', // Ganti URL sesuai rute Laravel kamu
-                            type: 'GET',
-                            dataType: 'html',
-                            success: function (html) {
-                                // 1. Masukkan konten partial ke container
-                                $contentContainer.html(html);
+                            // muat script dashboard.js
+                            $.getScript('{{ asset("js/dashboard.js") }}')
+                                .done(function () {
+                                    console.log('dashboard.js berhasil dimuat dan dijalankan');
 
-                                // 2. Muat dan jalankan dashboard.js secara dinamis
-                                $.getScript('{{ asset("js/dashboard.js") }}')
-                                    .done(function () {
-                                        console.log('dashboard.js berhasil dimuat dan dijalankan');
-                                        $('#loadingModal').modal('show');
+                                    // panggil inisialisasi jika ada
+                                    if (typeof initializeYearlySales === 'function') {
+                                        initializeYearlySales();
+                                    }
 
-                                        setTimeout(() => {
-                                            if (typeof initializeYearlySales === 'function') {
-                                                initializeYearlySales();
-                                            }
-                                        }, 100); // Tunggu 0.5 detik
-                                        $('#loadingModal').modal('hide');
+                                    isLoaded = true;
+                                    isLoading = false;
+                                    $('#loadingModal').modal('hide');
+                                })
+                                .fail(function () {
+                                    console.error('Gagal memuat dashboard.js');
+                                    $contentContainer.append('<p>Terjadi kesalahan saat memuat dashboard.</p>');
+                                    isLoading = false;
+                                    $('#loadingModal').modal('hide');
+                                });
+                        },
+                        error: function (xhr, status, error) {
+                            console.error('Gagal memuat konten dashboard:', error);
+                            $contentContainer.html('<p>Terjadi kesalahan saat memuat dashboard.</p>');
+                            isLoading = false;
+                            $('#loadingModal').modal('hide');
+                        }
+                    });
 
-                                    })
-                                    .fail(function () {
-                                        console.error('Gagal memuat dashboard.js');
-                                        $contentContainer.append('<p>Terjadi kesalahan saat memuat dashboard.</p>');
-                                    });
-
-                                isLoaded = true;
-                            },
-                            error: function (xhr, status, error) {
-                                console.error('Gagal memuat konten dashboard:', error);
-                                $contentContainer.html('<p>Terjadi kesalahan saat memuat dashboard.</p>');
-                            }
-                        });
-                    // After fadeOut, show the dashboard tab with fadeIn
+                    // Tampilkan tab dashboard setelah memasukkan konten/animasi
                     $('#pills-dashboard').fadeIn(100).addClass('show active');
-                    setTimeout(() => {
-                        $('#loadingModal').modal('hide');
-                    }, 1000);
                 });
             });
+
             $('#pills-admin-tab').click(function() {
                 $('#loadingModal').modal('show');
                 // initializeYearlySales();
@@ -2586,39 +2590,6 @@ Swal.fire({
         }
         $('#modalPemberitahuan').on('click', '.btn-danger', handleNotificationDismissal);
 
-        //function switch toggle
-
-        // document.addEventListener('DOMContentLoaded', function() {
-        //     const navOptions = document.querySelectorAll('input[name="nav-options"]');
-
-        //     navOptions.forEach(option => {
-        //         option.addEventListener('change', function() {
-        //             // Get the ID of the selected option
-        //             const selectedId = this.id;
-        //             console.log('Selected option:', selectedId); // Ini boleh tetap ada untuk debugging di console browser
-
-        //             // --- Di sinilah Anda meletakkan logika aplikasi Anda yang sebenarnya ---
-        //             // Contoh:
-        //             switch (selectedId) {
-        //                 case 'pills-home-tab':
-        //                     // Logika untuk Home (misal: tampilkan bagian Home, muat data home)
-        //                     // console.log('Mengaktifkan Home...');
-        //                     break;
-        //                 case 'pills-dashboard-tab':
-        //                     // Logika untuk Dashboard (misal: tampilkan bagian Dashboard, muat data dashboard)
-        //                     // console.log('Mengaktifkan Dashboard...');
-        //                     break;
-        //                 case 'pills-admin-tab':
-        //                     // Logika untuk SuperAdmin (misal: tampilkan bagian SuperAdmin, muat data admin)
-        //                     // console.log('Mengaktifkan SuperAdmin...');
-        //                     break;
-        //                 default:
-        //                     break;
-        //             }
-        //             // --- Akhir dari logika aplikasi ---
-        //         });
-        //     });
-        // });
     </script>
 </body>
 
