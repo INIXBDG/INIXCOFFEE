@@ -26,39 +26,39 @@ class izinTigaJamController extends Controller
     }
 
    public function getPengajuanIzin()
-{
-    $user = auth()->user()->karyawan_id;
-    $karyawan = karyawan::findOrFail($user);
-    $jabatan = $karyawan->jabatan;
-    $divisi = $karyawan->divisi;
+    {
+        $user = auth()->user()->karyawan_id;
+        $karyawan = karyawan::findOrFail($user);
+        $jabatan = $karyawan->jabatan;
+        $divisi = $karyawan->divisi;
 
-    if (in_array($jabatan, ['Office Manager', 'Education Manager', 'SPV Sales', 'Koordinator ITSM'])) {
-        $pengajuanizin = izinTigaJam::with('karyawan')->whereHas('karyawan', function ($query) use ($divisi) {
-            $query->where('divisi', $divisi);
-        })->latest()->get();
-    } elseif (in_array($jabatan, ['HRD', 'GM', 'Koordinator Office'])) {
-        $pengajuanizin = izinTigaJam::with('karyawan')->latest()->get();
-    } else {
-        $pengajuanizin = izinTigaJam::with('karyawan')->whereHas('karyawan', function ($query) use ($user) {
-            $query->where('id', $user);
-        })->latest()->get();
+        if (in_array($jabatan, ['Office Manager', 'Education Manager', 'SPV Sales', 'Koordinator ITSM'])) {
+            $pengajuanizin = izinTigaJam::with('karyawan')->whereHas('karyawan', function ($query) use ($divisi) {
+                $query->where('divisi', $divisi);
+            })->latest()->get();
+        } elseif (in_array($jabatan, ['HRD', 'GM', 'Koordinator Office'])) {
+            $pengajuanizin = izinTigaJam::with('karyawan')->latest()->get();
+        } else {
+            $pengajuanizin = izinTigaJam::with('karyawan')->whereHas('karyawan', function ($query) use ($user) {
+                $query->where('id', $user);
+            })->latest()->get();
+        }
+
+        // Tambahkan tanggal_pengajuan_terformat ke setiap item
+        $pengajuanizin->transform(function ($item) {
+            $item->tanggal_pengajuan_terformat = \Carbon\Carbon::parse($item->tanggal_pengajuan)->format('d M Y');
+            return $item;
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'List pengajuanizin',
+            'data' => [
+                'pengajuanizin' => $pengajuanizin,
+                'divisi' => $divisi,
+            ],
+        ]);
     }
-
-    // Tambahkan tanggal_pengajuan_terformat ke setiap item
-    $pengajuanizin->transform(function ($item) {
-        $item->tanggal_pengajuan_terformat = \Carbon\Carbon::parse($item->tanggal_pengajuan)->format('d M Y');
-        return $item;
-    });
-
-    return response()->json([
-        'success' => true,
-        'message' => 'List pengajuanizin',
-        'data' => [
-            'pengajuanizin' => $pengajuanizin,
-            'divisi' => $divisi,
-        ],
-    ]);
-}
 
     public function create()
     {
@@ -88,23 +88,23 @@ class izinTigaJamController extends Controller
     $besok   = now()->copy()->addDay()->toDateString();
 
     // Logika aturan Pak Bos
-   if ($tanggalPengajuan === $hariIni) {
-    // Jika izin untuk hari ini, wajib sudah absen
-    $absensiKaryawan = AbsensiKaryawan::where('id_karyawan', $karyawan->id)
-        ->whereDate('tanggal', $hariIni)
-        ->first();
+    if ($tanggalPengajuan === $hariIni) {
+        // Jika izin untuk hari ini, wajib sudah absen
+        $absensiKaryawan = AbsensiKaryawan::where('id_karyawan', $karyawan->id)
+            ->whereDate('tanggal', $hariIni)
+            ->first();
 
-    if (!$absensiKaryawan) {
-        return redirect()->route('pengajuanizin.index')->with(['error' => 'Anda harus absen terlebih dahulu jika mengajukan izin untuk hari ini.']);
+        if (!$absensiKaryawan) {
+            return redirect()->route('pengajuanizin.index')->with(['error' => 'Anda harus absen terlebih dahulu jika mengajukan izin untuk hari ini.']);
+        }
+
+        $jamMulai = \Carbon\Carbon::createFromFormat('H:i', $request->jam_mulai);
+        $sekarang = \Carbon\Carbon::now();
+
+        if ($jamMulai->lt(\Carbon\Carbon::createFromTime($sekarang->hour, $sekarang->minute))) {
+            return redirect()->route('pengajuanizin.index')->with(['error' => 'Jam mulai tidak boleh kurang dari waktu saat ini.']);
+        }
     }
-
-    $jamMulai = \Carbon\Carbon::createFromFormat('H:i', $request->jam_mulai);
-    $sekarang = \Carbon\Carbon::now();
-
-    if ($jamMulai->lt(\Carbon\Carbon::createFromTime($sekarang->hour, $sekarang->minute))) {
-        return redirect()->route('pengajuanizin.index')->with(['error' => 'Jam mulai tidak boleh kurang dari waktu saat ini.']);
-    }
-}
 
 
     // Simpan izin
