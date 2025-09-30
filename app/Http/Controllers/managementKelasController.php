@@ -14,7 +14,7 @@ class managementKelasController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware('permission:View Management Kelas', ['only' => ['index']]);
+        // $this->middleware('permission:View Management Kelas', ['only' => ['index']]);
     }
     
     public function index(Request $request)
