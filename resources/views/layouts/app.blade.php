@@ -641,63 +641,38 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/locale/id.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/timepicker/1.3.5/jquery.timepicker.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/js/bootstrap-datetimepicker.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- <script>
-        let lastNotifCount = 0;
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/js/bootstrap-datetimepicker.min.js"></script>
+    <script>
+        document.getElementById('logout-link').addEventListener('click', function (e) {
+            e.preventDefault();
 
-        function playNotif() {
-            const audio = document.getElementById("notifSound");
-            audio.play();
-        }
+            Swal.fire({
+                title: 'Apakah Anda yakin?',
+                text: "Anda akan keluar dari aplikasi",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya, keluar',
+                cancelButtonText: 'Batal',
+                showClass: {
+                    popup: 'animate__animated animate__fadeInDown animate__faster'
+                },
+                hideClass: {
+                    popup: 'animate__animated animate__fadeOutUp animate__faster'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('logout-form').submit();
+                }
+            });
 
-        function fetchNotifications() {
-            fetch("{{ route('notifications.fetch') }}")
-                .then(res => res.json())
-                .then(data => {
-                    const badgeContainer = document.querySelector('.nav-link.position-relative');
-                    let badge = badgeContainer.querySelector('.badge');
+        });
 
-                    const count = data.length;
-
-                    // Hapus hasil fetch lama tapi tetap pertahankan badgeContainer
-                    const existingItems = document.querySelectorAll('.notif-item'); // class ini untuk setiap item notif
-                    existingItems.forEach(item => item.remove());
-
-                    // Tambahkan data baru
-                    data.forEach(notif => {
-                        const notifElem = document.createElement('div');
-                        notifElem.className = 'notif-item'; // pastikan class ini khusus untuk hasil fetch
-                        notifElem.textContent = notif.message; // sesuaikan dengan property data
-                        badgeContainer.appendChild(notifElem);
-                    });
-
-                    // Update badge
-                    if (!badge && count > 0) {
-                        badge = document.createElement('span');
-                        badge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger';
-                        badgeContainer.appendChild(badge);
-                    }
-
-                    if (badge) {
-                        badge.innerHTML = count + '<span class="visually-hidden">unread notifications</span>';
-                    }
-
-                    // Play audio jika ada notifikasi baru
-                    if (count > lastNotifCount) {
-                        playNotif();
-                    }
-
-                    lastNotifCount = count;
-                })
-                .catch(err => console.error("Error fetch notifications:", err));
-        }
-
-        // Fetch setiap 5 detik
-        setInterval(fetchNotifications, 3000);
-    </script> -->
+    </script>
 </body>
 
 </html>

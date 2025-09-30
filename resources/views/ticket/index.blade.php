@@ -265,6 +265,9 @@
                             case 'vickyryandysaputra':
                                 pic = 'Vicky';
                                 break;
+                            case 'eggiherlambang':
+                                pic = 'Eggi';
+                                break;
                             // Tambahkan case lain jika diperlukan
                             default:
                                 pic = '';

@@ -119,7 +119,7 @@
             <div class="modal-body text-center">
                 @if($data->bukti_gambar)
                 <div class="frame-wrapper">
-                    <img src="{{ asset($data->bukti_gambar) }}" alt="Bukti Gambar" class="img-fluid rounded" width="300px" height="300px">
+                    <img src="{{ asset('storage/'.$data->bukti_gambar) }}" alt="Bukti Gambar" class="img-fluid rounded" width="300px" height="300px">
 
                     <div class="corner tl"></div>
                     <div class="corner tr"></div>
