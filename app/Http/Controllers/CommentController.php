@@ -32,8 +32,8 @@ class CommentController extends Controller
         $Eduman = karyawan::where('jabatan', 'Education Manager')->first();
         $SPVSales = karyawan::where('jabatan', 'SPV Sales')->first();
         $GM = karyawan::where('jabatan', 'GM')->first();
-        $CS = karyawan::where('jabatan', 'Customer Care')->first();
-        $AH = karyawan::where('jabatan', 'Admin Holding')->first();
+        $CS = karyawan::where('jabatan', 'Customer Care')->latest()->get();
+        $AH = karyawan::where('jabatan', 'Admin Holding')->latest()->get();
         // return $AH;  
         // Mengambil pengguna yang terlibat
         $users = array_map(function ($user) {
