@@ -670,8 +670,8 @@ class RKMController extends Controller
         $Eduman = karyawan::where('jabatan', 'Education Manager')->first();
         $SPVSales = karyawan::where('jabatan', 'SPV Sales')->first();
         $GM = karyawan::where('jabatan', 'GM')->first();
-        $CS = karyawan::where('jabatan', 'Customer Care')->first();
-        $TS = karyawan::where('jabatan', 'Technical Support')->first();
+        $CS = karyawan::where('jabatan', 'Customer Care')->latest()->get();
+        $TS = karyawan::where('jabatan', 'Technical Support')->latest()->get();
         $sales = karyawan::where('kode_karyawan', $bersangkutan->sales_key)->first();
         $instrukturs = karyawan::whereIn('kode_karyawan', [
             $bersangkutan->instruktur_key,

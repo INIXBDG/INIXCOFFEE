@@ -45,7 +45,7 @@ class PesertaController extends Controller
         || $jabatan == 'Instruktur'|| $jabatan == 'Education Manager' || $jabatan == 'Office Manager'
         || $jabatan == 'Customer Care' || $jabatan == 'Customer Service' || $jabatan == 'Admin Holding' 
         || $jabatan == 'Finance & Accounting' || $jabatan == 'Koordinator Office'
-        || $jabatan == 'HRD' || $jabatan == 'Programmer' || $jabatan == 'Direktur Utama' || $jabatan == 'Direktur') {
+        || $jabatan == 'HRD' || $jabatan == 'Programmer' || $jabatan == 'Direktur Utama' || $jabatan == 'Direktur' || $jabatan == 'Technical Support') {
             return response()->json([
                 'success' => true,
                 'message' => 'List Peserta',
