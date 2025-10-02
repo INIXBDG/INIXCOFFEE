@@ -336,7 +336,7 @@
 
                                             @case(1)
                                             <span class="badge rounded-pill bg-success">
-                                                <i class="bi bi-check-circle me-1"></i> Disetujui
+                                                <i class="bi bi-check-circle me-1"></i> Disetujui oleh 
                                             </span>
                                             @break
 

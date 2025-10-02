@@ -374,6 +374,7 @@ function getDataRKM() {
                     html += '</table>';
                     html += '</div>';
                     html += '</div>';
+
                 });
             });
             setTimeout(() => {

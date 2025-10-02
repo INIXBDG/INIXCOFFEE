@@ -341,8 +341,8 @@
                                             }
                                             $daysOfWeek = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
                                             @endphp
-                                            <div class="table-resposive">
-                                                <table class="table text-center" id="tabel">
+                                            <div class="table-responsive">
+                                                <table class="table table-responsive text-center" id="tabel">
                                                     <thead>
                                                         <tr>
                                                             @foreach ($daysOfWeek as $day)
@@ -534,7 +534,6 @@
                                                     </tbody>
                                                 </table>
                                             </div>
-
                                             <div class="container">
                                                 <div class="row">
                                                     <div class="col-md-12">
@@ -618,6 +617,7 @@
             </div>
         </div>
         <style>
+            
             @media screen and (min-width: 769px) {
 
                 /* CSS untuk layar web */
@@ -764,6 +764,7 @@
             tr.selected .checkmark:after {
                 display: block;
             }
+            
         </style>
         {{-- <script>
     document.addEventListener('DOMContentLoaded', function() {
