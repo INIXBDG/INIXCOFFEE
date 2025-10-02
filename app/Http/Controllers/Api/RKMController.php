@@ -49,11 +49,13 @@ class RKMController extends Controller
                     })
                     // ->whereBetween('r_k_m_s.tanggal_akhir', [$start, $end])
                     ->select(
+                        'r_k_m_s.id',
                         'r_k_m_s.materi_key',
                         'r_k_m_s.ruang',
                         'r_k_m_s.metode_kelas',
                         'r_k_m_s.event',
                         'r_k_m_s.exam',
+                        'r_k_m_s.makanan',
                         DB::raw('GROUP_CONCAT(r_k_m_s.instruktur_key SEPARATOR ", ") AS instruktur_all'),
                         DB::raw('GROUP_CONCAT(r_k_m_s.perusahaan_key SEPARATOR ", ") AS perusahaan_all'),
                         DB::raw('GROUP_CONCAT(r_k_m_s.sales_key SEPARATOR ", ") AS sales_all'),
@@ -64,12 +66,14 @@ class RKMController extends Controller
                         DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir') // Adding tanggal_akhir
                     )
                     ->groupBy(
+                        'r_k_m_s.id',
                         'r_k_m_s.materi_key',
                         'r_k_m_s.ruang',
                         'r_k_m_s.metode_kelas',
                         'r_k_m_s.event',
                         'r_k_m_s.exam',
-                        'r_k_m_s.tanggal_awal'
+                        'r_k_m_s.tanggal_awal',
+                        'r_k_m_s.makanan'
                     )
                     ->orderBy('status_all', 'asc')
                     ->orderBy('r_k_m_s.tanggal_awal', 'asc')

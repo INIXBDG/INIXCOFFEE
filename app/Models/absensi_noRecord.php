@@ -18,6 +18,7 @@ class absensi_noRecord extends Model
     'kronologi',
     'tanggal',
     'approval',
+    'approved_by',
     'alasan_approval',
     'approval_date',
     'waktu_masuk',
