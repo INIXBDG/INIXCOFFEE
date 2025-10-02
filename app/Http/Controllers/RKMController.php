@@ -352,7 +352,7 @@ class RKMController extends Controller
     public function editInstruktur($id)
     {
         // return $id;
-        $karyawan = Karyawan::whereIn('jabatan', ['Instruktur', 'Education Manager', 'Technical Support'])
+        $karyawan = Karyawan::whereIn('jabatan', ['Instruktur', 'Education Manager'])
             ->where('status_aktif', '1')
             ->get();
         $array = explode('ixb', $id);
@@ -670,7 +670,10 @@ class RKMController extends Controller
         $Eduman = karyawan::where('jabatan', 'Education Manager')->first();
         $SPVSales = karyawan::where('jabatan', 'SPV Sales')->first();
         $GM = karyawan::where('jabatan', 'GM')->first();
-        $CS = karyawan::where('jabatan', 'Customer Care')->latest()->get();
+        $cs_codes = karyawan::where('jabatan', 'Customer Care')->latest()->get();
+        $ah_codes = karyawan::where('jabatan', 'Admin Holding')->latest()->get();
+        $CS = $cs_codes->pluck('kode_karyawan')->filter()->all(); // returns array of codes
+		$AH = $ah_codes->pluck('kode_karyawan')->filter()->all();
         $TS = karyawan::where('jabatan', 'Technical Support')->latest()->get();
         $sales = karyawan::where('kode_karyawan', $bersangkutan->sales_key)->first();
         $instrukturs = karyawan::whereIn('kode_karyawan', [
@@ -689,15 +692,24 @@ class RKMController extends Controller
             $SPVSales->kode_karyawan ?? null,
             $GM->kode_karyawan ?? null,
             $CS->kode_karyawan ?? null,
+			$AH->kode_karyawan ?? null,
             $TS->kode_karyawan ?? null,
             $sales->kode_karyawan ?? null,
         ]);
 
         $instrukturKeys = $instrukturs->pluck('kode_karyawan')->toArray();
 
-        $users = User::whereHas('karyawan', function ($query) use ($users, $instrukturKeys) {
-            $query->whereIn('kode_karyawan', array_filter(array_merge($users, $instrukturKeys)));
-        })->get();
+        // Pastikan $users adalah array datar
+		$usersFlat = collect($users)
+			->flatten() // 🔄 Flatten nested arrays
+			->filter()   // 🧹 Hapus nilai kosong/null
+			->values()   // 🧼 Reset index
+			->all();     // 📥 Konversi ke PHP array biasa
+
+		// Sekarang gunakan di query
+		$users = User::whereHas('karyawan', function ($query) use ($usersFlat) {
+			$query->whereIn('kode_karyawan', $usersFlat);
+		})->get();
 
         $path = '/rkm/' . $request->materi_key . 'ixb' . $hari . 'ie' . $tahun . 'ie' . $bulan . 'ixb' . $kelas;
 

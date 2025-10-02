@@ -32,9 +32,14 @@ class CommentController extends Controller
         $Eduman = karyawan::where('jabatan', 'Education Manager')->first();
         $SPVSales = karyawan::where('jabatan', 'SPV Sales')->first();
         $GM = karyawan::where('jabatan', 'GM')->first();
-        $CS = karyawan::where('jabatan', 'Customer Care')->latest()->get();
-        $AH = karyawan::where('jabatan', 'Admin Holding')->latest()->get();
-        // return $AH;  
+        // Ambil koleksi karyawan (multiple), pastikan mereka berupa Laravel Collection
+		$CS = collect(karyawan::where('jabatan', 'Customer Care')->latest()->get());
+		$AH = collect(karyawan::where('jabatan', 'Admin Holding')->latest()->get());
+
+		// Ekstrak kode_karyawan dari setiap model
+		$cs_codes = $CS->pluck('kode_karyawan')->filter()->all(); // array string
+		$ah_codes = $AH->pluck('kode_karyawan')->filter()->all(); // array string
+		// return $cs_codes;  
         // Mengambil pengguna yang terlibat
         $users = array_map(function ($user) {
             return $user === '-' ? null : $user;
@@ -48,13 +53,21 @@ class CommentController extends Controller
             $kooroff->kode_karyawan,
             $SPVSales->kode_karyawan,
             $GM->kode_karyawan,
-            $CS->kode_karyawan,
-            $AH->kode_karyawan,
+            $cs_codes, // ✅ semua kode CS
+			$ah_codes, // ✅ semua kode AH
         ]);
 
-        $users = User::whereHas('karyawan', function ($query) use ($users) {
-            $query->whereIn('kode_karyawan', array_filter($users));
-        })->get();
+        // Pastikan $users adalah array datar
+		$usersFlat = collect($users)
+			->flatten() // 🔄 Flatten nested arrays
+			->filter()   // 🧹 Hapus nilai kosong/null
+			->values()   // 🧼 Reset index
+			->all();     // 📥 Konversi ke PHP array biasa
+
+		// Sekarang gunakan di query
+		$users = User::whereHas('karyawan', function ($query) use ($usersFlat) {
+			$query->whereIn('kode_karyawan', $usersFlat);
+		})->get();
 
         // Mengatur URL halaman untuk notifikasi
         $url = route('rkm.show', ['rkm' => $rkm->id]);
