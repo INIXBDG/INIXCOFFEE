@@ -44,40 +44,34 @@ class RKMController extends Controller
                 $rows = RKM::with(['materi', 'peluang'])
                     ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
                     ->whereBetween('r_k_m_s.tanggal_awal', [$start, $end])
-					->whereDoesntHave('peluang', function ($query) {
+                    ->whereDoesntHave('peluang', function ($query) {
                         $query->where('tentatif', 1); // Exclude RKM records where peluang.tentatif = 1
                     })
-                    // ->whereBetween('r_k_m_s.tanggal_akhir', [$start, $end])
                     ->select(
-                        'r_k_m_s.id',
+                        DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'), // Gabungkan semua id
                         'r_k_m_s.materi_key',
                         'r_k_m_s.ruang',
                         'r_k_m_s.metode_kelas',
                         'r_k_m_s.event',
-                        'r_k_m_s.exam',
-                        'r_k_m_s.makanan',
+                        DB::raw('GROUP_CONCAT(r_k_m_s.exam SEPARATOR ", ") AS exam'), // Gabungkan semua exam
+                        DB::raw('GROUP_CONCAT(r_k_m_s.makanan SEPARATOR ", ") AS makanan'), // Gabungkan semua makanan
                         DB::raw('GROUP_CONCAT(r_k_m_s.instruktur_key SEPARATOR ", ") AS instruktur_all'),
                         DB::raw('GROUP_CONCAT(r_k_m_s.perusahaan_key SEPARATOR ", ") AS perusahaan_all'),
                         DB::raw('GROUP_CONCAT(r_k_m_s.sales_key SEPARATOR ", ") AS sales_all'),
                         DB::raw('CASE WHEN SUM(r_k_m_s.status = 0) > 0 THEN 0 ELSE MIN(r_k_m_s.status) END AS status_all'),
                         DB::raw('SUM(r_k_m_s.pax) AS total_pax'),
-                        DB::raw('MAX(r_k_m_s.exam) AS jumlah_exam'),
-                        DB::raw('MIN(r_k_m_s.tanggal_awal) AS tanggal_awal'), // Adding tanggal_awal
-                        DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir') // Adding tanggal_akhir
+                        'r_k_m_s.tanggal_awal',
+                        DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir')
                     )
                     ->groupBy(
-                        'r_k_m_s.id',
                         'r_k_m_s.materi_key',
                         'r_k_m_s.ruang',
                         'r_k_m_s.metode_kelas',
                         'r_k_m_s.event',
-                        'r_k_m_s.exam',
-                        'r_k_m_s.tanggal_awal',
-                        'r_k_m_s.makanan'
+                        'r_k_m_s.tanggal_awal'
                     )
                     ->orderBy('status_all', 'asc')
                     ->orderBy('r_k_m_s.tanggal_awal', 'asc')
-                    // ->orderBy('r_k_m_s.tanggal_akhir', 'asc')
                     ->get();
 
                 foreach ($rows as $row) {
@@ -95,9 +89,8 @@ class RKMController extends Controller
                         $row->perusahaan = Perusahaan::whereIn('id', $perusahaan_ids)->get();
                     }
                 }
-                //return $rows;
 
-                $weekRanges[] = ['start' => $start, 'end' =>  $end, 'data' => $rows];
+                $weekRanges[] = ['start' => $start, 'end' => $end, 'data' => $rows];
             }
 
             $monthRanges[] = ['month' => $startOfMonth->translatedFormat('F-Y'), 'weeksData' => $weekRanges];
@@ -130,38 +123,47 @@ class RKMController extends Controller
                 $start = $startOfWeek->format('Y-m-d');
                 $end = $endOfWeek->format('Y-m-d');
                 $startOfWeek = $startOfWeek->addWeek();
-                $rows = RKM::with('materi')
-                    ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
-                    ->whereBetween('r_k_m_s.tanggal_awal', [$start, $end])
-                    // ->whereBetween('r_k_m_s.tanggal_akhir', [$start, $end])
-                    ->select(
-                        'r_k_m_s.id',
-                        'r_k_m_s.materi_key',
-                        'r_k_m_s.ruang',
-                        'r_k_m_s.metode_kelas',
-                        'r_k_m_s.event',
-                        'r_k_m_s.exam',
-                        DB::raw('GROUP_CONCAT(r_k_m_s.instruktur_key SEPARATOR ", ") AS instruktur_all'),
-                        DB::raw('GROUP_CONCAT(r_k_m_s.perusahaan_key SEPARATOR ", ") AS perusahaan_all'),
-                        DB::raw('GROUP_CONCAT(r_k_m_s.sales_key SEPARATOR ", ") AS sales_all'),
-                        DB::raw('CASE WHEN SUM(r_k_m_s.status = 0) > 0 THEN 0 ELSE MIN(r_k_m_s.status) END AS status_all'),
-                        DB::raw('SUM(r_k_m_s.pax) AS total_pax'),
-                        DB::raw('MIN(r_k_m_s.tanggal_awal) AS tanggal_awal'), // Adding tanggal_awal
-                        DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir') // Adding tanggal_akhir
-                    )
-                    ->groupBy(
-                        'r_k_m_s.id',
-                        'r_k_m_s.materi_key',
-                        'r_k_m_s.ruang',
-                        'r_k_m_s.metode_kelas',
-                        'r_k_m_s.event',
-                        'r_k_m_s.tanggal_awal'
-                    )
-                    ->orderBy('status_all', 'asc')
-                    ->orderBy('r_k_m_s.tanggal_awal', 'asc')
-                    // ->orderBy('r_k_m_s.tanggal_akhir', 'asc')
-                    ->get();
-
+                $rows = RKM::with(['materi', 'peluang'])
+        ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
+        ->whereBetween('r_k_m_s.tanggal_awal', [$start, $end])
+        ->whereDoesntHave('peluang', function ($query) {
+            $query->where('tentatif', 1);
+        })
+        ->select(
+            DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'),
+            'r_k_m_s.materi_key',
+            'r_k_m_s.ruang',
+            'r_k_m_s.metode_kelas',
+            'r_k_m_s.event',
+            DB::raw('GROUP_CONCAT(CASE 
+                WHEN r_k_m_s.exam = "0" THEN "Tidak"
+                WHEN r_k_m_s.exam = "1" THEN "Ya"
+                ELSE COALESCE(r_k_m_s.exam, "Tidak")
+            END SEPARATOR ", ") AS exam'),
+            DB::raw('GROUP_CONCAT(CASE 
+                WHEN r_k_m_s.makanan = "0" THEN "Tidak Ada"
+                WHEN r_k_m_s.makanan = "1" THEN "Nasi Box"
+                WHEN r_k_m_s.makanan = "2" THEN "Prasmanan"
+                ELSE COALESCE(r_k_m_s.makanan, "Tidak Ada")
+            END SEPARATOR ", ") AS makanan'),
+            DB::raw('GROUP_CONCAT(r_k_m_s.instruktur_key SEPARATOR ", ") AS instruktur_all'),
+            DB::raw('GROUP_CONCAT(r_k_m_s.perusahaan_key SEPARATOR ", ") AS perusahaan_all'),
+            DB::raw('GROUP_CONCAT(r_k_m_s.sales_key SEPARATOR ", ") AS sales_all'),
+            DB::raw('CASE WHEN SUM(r_k_m_s.status = 0) > 0 THEN 0 ELSE MIN(r_k_m_s.status) END AS status_all'),
+            DB::raw('SUM(r_k_m_s.pax) AS total_pax'),
+            'r_k_m_s.tanggal_awal',
+            DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir')
+        )
+        ->groupBy(
+            'r_k_m_s.materi_key',
+            'r_k_m_s.ruang',
+            'r_k_m_s.metode_kelas',
+            'r_k_m_s.event',
+            'r_k_m_s.tanggal_awal'
+        )
+        ->orderBy('status_all', 'asc')
+        ->orderBy('r_k_m_s.tanggal_awal', 'asc')
+        ->get();
                 foreach ($rows as $row) {
                     if ($row->instruktur_all == null) {
                         $sales_ids = explode(', ', $row->sales_all);
