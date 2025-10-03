@@ -306,7 +306,7 @@
                                                         bg-warning text-dark
                                                         @break
                                                     @case('Absen Pulang')
-                                                        bg-info text-white
+                                                        bg-info text-light
                                                         @break
                                                     @case('System Error')
                                                         bg-danger text-white
@@ -336,7 +336,7 @@
 
                                             @case(1)
                                             <span class="badge rounded-pill bg-success">
-                                                <i class="bi bi-check-circle me-1"></i> Disetujui oleh 
+                                                <i class="bi bi-check-circle me-1"></i> Disetujui
                                             </span>
                                             @break
 
