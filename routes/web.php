@@ -569,4 +569,7 @@ Route::post('/tickets/{ticket}/accept', [TicketController::class, 'accept'])->na
 Route::post('/tickets/{ticket}/finish', [TicketController::class, 'finish'])->name('tickets.finish');
 Route::post('/tickets/{ticket}/block', [TicketController::class, 'block'])->name('tickets.block');
 Route::get('/getTickets', [TicketController::class, 'getTickets'])->name('getTickets');
-
+Route::get('/test-error', function () {
+    // ini error manual
+    throw new \Exception('Test error from Handler.php');
+});
