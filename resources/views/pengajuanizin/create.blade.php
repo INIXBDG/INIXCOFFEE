@@ -35,10 +35,10 @@
                         </div>
 
                         <div class="row mb-3" id="tanggal-row">
-                            <label for="tanggal" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal') }}</label>
+                            <label for="tanggal" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Pengajuan Izin') }}</label>
                             <div class="col-md-6">
-                                <input id="tanggal" type="text" class="form-control @error('tanggal') is-invalid @enderror" 
-                                    value="{{ \Carbon\Carbon::now()->locale('id')->isoFormat('DD MMMM YYYY') }}" 
+                                <input id="tanggal" type="date" class="form-control @error('tanggal') is-invalid @enderror" 
+                                    value="{{ \Carbon\Carbon::now()->toDateString() }}" 
                                     name="tanggal" autocomplete="tanggal" autofocus readonly>
                                 @error('tanggal')
                                 <span class="invalid-feedback" role="alert">
@@ -49,7 +49,7 @@
                         </div>
 
                         <div class="row mb-3" id="tanggal_pengajuan-row">
-                            <label for="tanggal_pengajuan" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Pengajuan Izin') }}</label>
+                            <label for="tanggal_pengajuan" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Izin') }}</label>
                             <div class="col-md-6">
                                 <input id="tanggal_pengajuan" type="date" name="tanggal_pengajuan"
                                     class="form-control @error('tanggal_pengajuan') is-invalid @enderror"
