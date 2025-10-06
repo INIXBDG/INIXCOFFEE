@@ -111,20 +111,20 @@
                                     <span class="detail-label">Role</span>
                                     <span class="detail-value">{{ $users->role }}</span>
                                 </div>
-                            @if ($karyawan->divisi == 'Sales & Marketing')
+                                {{-- @if ($karyawan->divisi == 'Sales & Marketing') --}}
                                 <div class="detail-row">
                                     <span class="detail-label">Email</span>
-                                    <span class="detail-value">{{ $karyawan->email }}</span>
+                                    <span class="detail-value">{{ $users->karyawan->email ?? '-' }}</span>
                                 </div>
                                 <div class="detail-row">
                                     <span class="detail-label">Telepon</span>
-                                    <span class="detail-value">{{ $karyawan->telepon }}</span>
+                                    <span class="detail-value">{{ $users->karyawan->telepon ?? '-' }}</span>
                                 </div>
                                 <div class="detail-row">
                                     <span class="detail-label">Whatsapp</span>
-                                    <span class="detail-value">{{ $karyawan->whatsapp }}</span>
+                                    <span class="detail-value">{{ $users->karyawan->whatsapp ?? '-' }}</span>
                                 </div>
-                            @endif
+                                {{-- @endif --}}
 
                                 <div class="detail-row">
                                     <span class="detail-label">Status</span>

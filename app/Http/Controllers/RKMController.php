@@ -663,62 +663,66 @@ class RKMController extends Controller
             'user_update' => auth()->user()->username,
         ];
 
-        $bersangkutan = RKM::findOrFail($id);
+            $bersangkutan = RKM::findOrFail($id);
 
-        $Offman = karyawan::where('jabatan', 'Office Manager')->first();
-        $kooroff = karyawan::where('jabatan', 'Koordinator Office')->first();
-        $Eduman = karyawan::where('jabatan', 'Education Manager')->first();
-        $SPVSales = karyawan::where('jabatan', 'SPV Sales')->first();
-        $GM = karyawan::where('jabatan', 'GM')->first();
-        $cs_codes = karyawan::where('jabatan', 'Customer Care')->latest()->get();
-        $ah_codes = karyawan::where('jabatan', 'Admin Holding')->latest()->get();
-        $CS = $cs_codes->pluck('kode_karyawan')->filter()->all(); // returns array of codes
-		$AH = $ah_codes->pluck('kode_karyawan')->filter()->all();
-        $TS = karyawan::where('jabatan', 'Technical Support')->latest()->get();
-        $sales = karyawan::where('kode_karyawan', $bersangkutan->sales_key)->first();
-        $instrukturs = karyawan::whereIn('kode_karyawan', [
-            $bersangkutan->instruktur_key,
-            $bersangkutan->instruktur_key2,
-            $bersangkutan->asisten_key
-        ])->get();
+            $Offman = karyawan::where('jabatan', 'Office Manager')->first();
+            $kooroff = karyawan::where('jabatan', 'Koordinator Office')->first();
+            $Eduman = karyawan::where('jabatan', 'Education Manager')->first();
+            $SPVSales = karyawan::where('jabatan', 'SPV Sales')->first();
+            $GM = karyawan::where('jabatan', 'GM')->first();
+            $cs_codes = karyawan::where('jabatan', 'Customer Care')->latest()->get();
+            $ah_codes = karyawan::where('jabatan', 'Admin Holding')->latest()->get();
+            $ts_codes = karyawan::where('jabatan', 'Technical Support')->latest()->get();
 
-        $users = array_map(function ($user) {
-            return $user === '-' ? null : $user;
-        }, [
-            $request->sales_key,
-            $Eduman->kode_karyawan ?? null,
-            $Offman->kode_karyawan ?? null,
-            $kooroff->kode_karyawan ?? null,
-            $SPVSales->kode_karyawan ?? null,
-            $GM->kode_karyawan ?? null,
-            $CS->kode_karyawan ?? null,
-			$AH->kode_karyawan ?? null,
-            $TS->kode_karyawan ?? null,
-            $sales->kode_karyawan ?? null,
-        ]);
+            $CS = $cs_codes->pluck('kode_karyawan')->filter()->all();
+            $AH = $ah_codes->pluck('kode_karyawan')->filter()->all();
+            $TS = $ts_codes->pluck('kode_karyawan')->filter()->all();
 
-        $instrukturKeys = $instrukturs->pluck('kode_karyawan')->toArray();
+            $sales = karyawan::where('kode_karyawan', $bersangkutan->sales_key)->first();
+            $instrukturs = karyawan::whereIn('kode_karyawan', [
+                $bersangkutan->instruktur_key,
+                $bersangkutan->instruktur_key2,
+                $bersangkutan->asisten_key
+            ])->get();
 
-        // Pastikan $users adalah array datar
-		$usersFlat = collect($users)
-			->flatten() // 🔄 Flatten nested arrays
-			->filter()   // 🧹 Hapus nilai kosong/null
-			->values()   // 🧼 Reset index
-			->all();     // 📥 Konversi ke PHP array biasa
+            // Array untuk single users (yang pakai mapping)
+            $singleUsers = array_map(function ($user) {
+                return $user === '-' ? null : $user;
+            }, [
+                $request->sales_key,
+                $Eduman->kode_karyawan ?? null,
+                $Offman->kode_karyawan ?? null,
+                $kooroff->kode_karyawan ?? null,
+                $SPVSales->kode_karyawan ?? null,
+                $GM->kode_karyawan ?? null,
+                $sales->kode_karyawan ?? null,
+            ]);
 
-		// Sekarang gunakan di query
-		$users = User::whereHas('karyawan', function ($query) use ($usersFlat) {
-			$query->whereIn('kode_karyawan', $usersFlat);
-		})->get();
+            $instrukturKeys = $instrukturs->pluck('kode_karyawan')->toArray();
 
-        $path = '/rkm/' . $request->materi_key . 'ixb' . $hari . 'ie' . $tahun . 'ie' . $bulan . 'ixb' . $kelas;
+            // Gabungkan single users dengan array CS, AH, TS
+            $usersFlat = collect($singleUsers)
+                ->merge($CS)  // Tambahkan semua Customer Care
+                ->merge($AH)  // Tambahkan semua Admin Holding
+                ->merge($TS)  // Tambahkan semua Technical Support
+                ->filter()    // Hapus nilai kosong/null
+                ->unique()    // Hapus duplikat
+                ->values()    // Reset index
+                ->all();      // Konversi ke PHP array
 
-        foreach ($users as $user) {
-            NotificationFacade::send($user, new RKMUpdateNotification($data, $path));
-        }
+            // Query users
+            $users = User::whereHas('karyawan', function ($query) use ($usersFlat) {
+                $query->whereIn('kode_karyawan', $usersFlat);
+            })->get();
 
-        return redirect()->route('rkm.index')->with(['success' => 'Data Berhasil Diubah!']);
-    }
+            $path = '/rkm/' . $request->materi_key . 'ixb' . $hari . 'ie' . $tahun . 'ie' . $bulan . 'ixb' . $kelas;
+
+            foreach ($users as $user) {
+                NotificationFacade::send($user, new RKMUpdateNotification($data, $path));
+            }
+
+            return redirect()->route('rkm.index')->with(['success' => 'Data Berhasil Diubah!']);
+             }
     /**
      * destroy
      *

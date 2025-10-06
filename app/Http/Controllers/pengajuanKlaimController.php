@@ -81,13 +81,11 @@ class pengajuanKlaimController extends Controller
                 ->whereNull('jam_keluar')
                 ->whereNotNull('jam_masuk')
                 ->first();
-                // dd($absen);
 
             if (!$absen) {
                 return back()->withErrors(['tanggal_absen' => 'Tanggal tidak ditemukan di data absensi. Anda hanya dapat mengajukan Absen Pulang pada tanggal kerja yang valid.']);
             }
         }
-
 
         // Cegah pengajuan ganda untuk tanggal yang sama
         $existingKlaim = absensi_noRecord::where('id_karyawan', $request->id_karyawan)
@@ -156,17 +154,49 @@ class pengajuanKlaimController extends Controller
 
             // Kirim notifikasi
             $karyawan = karyawan::find($request->id_karyawan);
-            $hrd = karyawan::where('jabatan', 'HRD')->first();
-
+            
+            // Tentukan approver berdasarkan kendala
             $kodePenerima = [];
-            if ($hrd) $kodePenerima[] = $hrd->kode_karyawan;
+            $statusMessage = "";
+            
+            if ($request->kendala === 'Human Error') {
+                // Hanya GM yang bisa approve Human Error
+                $gm = karyawan::where('jabatan', 'GM')->first();
+                if ($gm) $kodePenerima[] = $gm->kode_karyawan;
+                $statusMessage = "Menunggu Persetujuan GM";
+            } elseif ($request->kendala === 'Absen Pulang') {
+                // Hanya HRD yang bisa approve Absen Pulang
+                $hrd = karyawan::where('jabatan', 'HRD')->first();
+                if ($hrd) $kodePenerima[] = $hrd->kode_karyawan;
+                $statusMessage = "Menunggu Persetujuan HRD";
+            } elseif ($request->kendala === 'System Error') {
+                // Koordinator divisi bisa approve, kecuali office yang di approve GM
+                if ($karyawan->divisi === 'Office') {
+                    $gm = karyawan::where('jabatan', 'GM')->first();
+                    if ($gm) $kodePenerima[] = $gm->kode_karyawan;
+                    $statusMessage = "Menunggu Persetujuan GM";
+                } else {
+                    $koordinator = karyawan::where('divisi', $karyawan->divisi)
+                                          ->where('jabatan', 'LIKE', '%Koordinator%')
+                                          ->first();
+                    if ($koordinator) {
+                        $kodePenerima[] = $koordinator->kode_karyawan;
+                        $statusMessage = "Menunggu Persetujuan Koordinator";
+                    }
+                }
+            } else {
+                // Default ke HRD untuk kendala lainnya
+                $hrd = karyawan::where('jabatan', 'HRD')->first();
+                if ($hrd) $kodePenerima[] = $hrd->kode_karyawan;
+                $statusMessage = "Menunggu Persetujuan HRD";
+            }
+
             if ($karyawan) $kodePenerima[] = $karyawan->kode_karyawan;
 
             $users = User::whereHas('karyawan', function ($query) use ($kodePenerima) {
                 $query->whereIn('kode_karyawan', $kodePenerima);
             })->get();
 
-            $statusMessage = "Menunggu Persetujuan HRD";
             $notificationData = [
                 'tipe'            => 'no_record',
                 'nama_lengkap'    => $karyawan->nama_lengkap,
@@ -185,12 +215,34 @@ class pengajuanKlaimController extends Controller
 
             // Redirect sesuai jabatan
             $jabatan = auth()->user()->karyawan->jabatan ?? null;
-            if (!in_array($jabatan, ['HRD', 'Koordinator ITSM', 'Education Manager', 'SPV Sales'])) {
-                return redirect('/pengajuan-klaim?tabel=no_record')->with('success', 'Berhasil mengajukan, menunggu persetujuan HRD.');
+            if (in_array($jabatan, ['HRD', 'GM', 'Koordinator ITSM'])) {
+                return redirect('/pengajuan-klaim?tabel=no_record')->with('success', 'Berhasil mengajukan, menunggu persetujuan.');
             }
 
             return redirect('/absensi/karyawan')->with('success', 'Berhasil mengajukan.');
     }
+
+    private function canApprove($kendala, $pengajuDivisi, $jabatan)
+    {
+        switch ($kendala) {
+            case 'Human Error':
+                return $jabatan === 'GM';
+            
+            case 'Absen Pulang':
+                return $jabatan === 'HRD';
+            
+            case 'System Error':
+                if ($pengajuDivisi === 'Office') {
+                    return $jabatan === 'GM';
+                } else {
+                    return strpos($jabatan, 'Koordinator') !== false;
+                }
+            
+            default:
+                return in_array($jabatan, ['HRD', 'GM']);
+        }
+    }
+
 
     public function deleteNoRecord(Request $request)
     {
@@ -350,6 +402,7 @@ class pengajuanKlaimController extends Controller
 
         return view('pengajuanklaim.createSchemaWork', compact('karyawan', 'karyawanall', 'data_absen'));
     }
+    
     public function createSchemeWork(Request $request)
     {
         $this->validate($request, [
@@ -435,6 +488,7 @@ class pengajuanKlaimController extends Controller
 
         return redirect('/pengajuan-klaim?tabel=schema_work')->with('success', 'Berhasil mengajukan');
     }
+    
     public function deleteSchemeWork(Request $request)
     {
         $this->validate($request, [
@@ -485,10 +539,9 @@ class pengajuanKlaimController extends Controller
 
     public function approval(Request $request)
     {
-        // dd($request->all());
         $this->validate($request, [
-            'type'       => 'required|string',
-            'action'       => 'required|string',
+            'type' => 'required|string',
+            'action' => 'required|string',
         ]);
 
         $currentUser = auth()->user()->karyawan;
@@ -497,59 +550,23 @@ class pengajuanKlaimController extends Controller
         $namaApprover =$currentUser->nama_lengkap ?? null;
 
          // Mulai transaksi database
+
         DB::beginTransaction();
 
         try {
             switch ($request->type) {
-            case 'noRecord':
-                $jenis_PK = absensi_noRecord::findOrfail($request->id);
-                // $jenis_PK->approval = $request->approval;
-                $jenis_PK->approval_date = now();
-                if ($request->filled('alasan_approval')) {
-                    $jenis_PK->alasan_approval = $request->alasan_approval;
-                }
-                $jenis_PK->save();
-                if($jenis_PK->kendala == 'Absen Pulang'){
-                    $cekAbsen = AbsensiKaryawan::where('id_karyawan', $jenis_PK->id_karyawan)
-                                ->whereDate('tanggal', $jenis_PK->tanggal)
-                                ->first();
-                    // dd($cekAbsen);
-                    if (!$cekAbsen) {
+                case 'noRecord':
+                    // Load relasi karyawan untuk menghindari error "Trying to get property of non-object"
+                    $jenis_PK = absensi_noRecord::with('karyawan')->findOrFail($request->id);
+
+                    // Cek apakah user bisa approve berdasarkan kendala dan divisi pengaju
+                    if (!$this->canApprove($jenis_PK->kendala, $jenis_PK->karyawan ? $jenis_PK->karyawan->divisi : null, $jabatan)) {
                         return response()->json([
                             'success' => false,
-                            'message' => 'Data Absen tidak ditemukan.',
+                            'message' => 'Anda tidak memiliki akses untuk menyetujui pengajuan ini berdasarkan kendala: ' . ($jenis_PK->kendala ?? 'Tidak Diketahui'),
                             'data' => $request->type,
                         ]);
                     }
-                    $cekAbsen->jam_keluar =  '17:00:00';
-                    $cekAbsen->save();
-                    $jenis_PK->id_absen = $cekAbsen->id;
-                    $jenis_PK->approval = 1;
-                    $jenis_PK->waktu_masuk = $cekAbsen->jam_masuk;
-                    $jenis_PK->waktu_pulang = $cekAbsen->jam_keluar;
-                    $jenis_PK->save();
-                }else{
-                $newAbsen = AbsensiKaryawan::create([
-                    'id_karyawan'         => $jenis_PK->id_karyawan,
-                    'tanggal'             => $jenis_PK->tanggal,
-                    'jam_masuk'           => $jenis_PK->waktu_masuk ?? '08:00:00',
-                    'jam_keluar'          => $jenis_PK->waktu_pulang ?? '17:00:00',
-                    'keterangan'              => 'Masuk (' . $request->type . ')',
-                    'waktu_keterlambatan' => '00:00:00',
-                    'keterangan_pulang'              => 'Pulang (' . $request->type . ')',
-                    'foto' => $jenis_PK->bukti_gambar
-                ]);
-                $jenis_PK->id_absen = $newAbsen->id;
-                $jenis_PK->approval = 1;
-                $jenis_PK->waktu_masuk = $newAbsen->jam_masuk;
-                $jenis_PK->waktu_pulang = $newAbsen->jam_keluar;
-                $jenis_PK->save();
-                }
-               
-                 // ✅ Kirim notifikasi
-                $karyawan = karyawan::find($jenis_PK->id_karyawan);
-                $approvers = karyawan::whereIn('jabatan', ['HRD', 'Koordinator ITSM'])->get();
-                $kodePenerima = $approvers->pluck('kode_karyawan')->toArray();
 
                     $jenis_PK->approval_date = now();
                     if ($request->filled('alasan_approval')) {
@@ -577,7 +594,23 @@ class pengajuanKlaimController extends Controller
                         $jenis_PK->waktu_masuk = $cekAbsen->jam_masuk;
                         $jenis_PK->waktu_pulang = $cekAbsen->jam_keluar;
                     } else {
-                        // Untuk System Error dan lainnya, buat absen baru
+                    $existingAbsen = AbsensiKaryawan::where('id_karyawan', $jenis_PK->id_karyawan)
+                        ->whereDate('tanggal', $jenis_PK->tanggal)
+                        ->first();
+
+                    if ($existingAbsen) {
+                        $existingAbsen->update([
+                            'jam_masuk' => $jenis_PK->waktu_masuk ?? $existingAbsen->jam_masuk,
+                            'jam_keluar' => $jenis_PK->waktu_pulang ?? $existingAbsen->jam_keluar,
+                            'keterangan' => 'Masuk (' . $request->type . ')',
+                            'keterangan_pulang' => 'Pulang (' . $request->type . ')',
+                            'foto' => $jenis_PK->bukti_gambar,
+                        ]);
+                        
+                        $jenis_PK->id_absen = $existingAbsen->id;
+                        $jenis_PK->waktu_masuk = $existingAbsen->jam_masuk;
+                        $jenis_PK->waktu_pulang = $existingAbsen->jam_keluar;
+                    } else {
                         $newAbsen = AbsensiKaryawan::create([
                             'id_karyawan' => $jenis_PK->id_karyawan,
                             'tanggal' => $jenis_PK->tanggal,
@@ -588,18 +621,25 @@ class pengajuanKlaimController extends Controller
                             'keterangan_pulang' => 'Pulang (' . $request->type . ')',
                             'foto' => $jenis_PK->bukti_gambar,
                         ]);
+                        
                         $jenis_PK->id_absen = $newAbsen->id;
-                        $jenis_PK->approval = 1;
-                        $jenis_PK->approved_by = $namaApprover;
                         $jenis_PK->waktu_masuk = $newAbsen->jam_masuk;
                         $jenis_PK->waktu_pulang = $newAbsen->jam_keluar;
                     }
+                    
+                    $jenis_PK->approval = 1;
+                    $jenis_PK->approved_by = $namaApprover;
+                }
+                    $jenis_PK->save();
 
-                $users = User::whereHas('karyawan', function ($query) use ($kodePenerima) {
-                    $query->whereIn('kode_karyawan', $kodePenerima);
-                })->get();
+                    // Kirim notifikasi
+                    $karyawan = $jenis_PK->karyawan; // Pastikan relasi sudah di-load
+                    $approvers = karyawan::whereIn('jabatan', ['HRD', 'GM', 'Koordinator ITSM'])->get();
+                    $kodePenerima = $approvers->pluck('kode_karyawan')->toArray();
 
-                $statusMessage = $jenis_PK->approval == 1 ? "Telah Disetujui Oleh HRD" : "Telah Ditolak Oleh HRD";
+                    if ($karyawan) {
+                        $kodePenerima[] = $karyawan->kode_karyawan;
+                    }
 
                     $users = User::whereHas('karyawan', function ($query) use ($kodePenerima) {
                         $query->whereIn('kode_karyawan', $kodePenerima);
@@ -624,99 +664,120 @@ class pengajuanKlaimController extends Controller
                     }
                     break;
 
-                $path = 'pengajuan-klaim?tabel=no_record';
-                foreach ($users as $user) {
-                    NotificationFacade::send($user, new noRecordExchangeNotification($notificationData, $path));
-                }
-            break;
+                    case 'schemeWork':
+                        $jenis_PK = absensi_noRecord::findOrfail($request->id);
 
-            case 'schemeWork':
-                $jenis_PK = absensi_noRecord::findOrfail($request->id);
-
-                if (!$jenis_PK) {
-                    return response()->json([
-                            'success' => false,
-                            'message' => 'Data Absen tidak ditemukan.',
-                            'data' => $request->type,
-                    ]);
-                }
-                // dd($jenis_PK);
-        
-                $jenis_PK->approval = '1';
-                if ($request->filled('alasan_approval')) {
-                    $jenis_PK->alasan_approval = $request->alasan_approval;
-                }
-                $jenis_PK->approval_date = now();
-
-                $absen = AbsensiKaryawan::where('id', $jenis_PK->id_absen)->first();
-                // hanya jika disetujui
+                        if (!$jenis_PK) {
+                            return response()->json([
+                                    'success' => false,
+                                    'message' => 'Data Absen tidak ditemukan.',
+                                    'data' => $request->type,
+                            ]);
+                        }
+                        
+                        // Cek akses approval untuk scheme work (default HRD)
+                        if (!in_array($jabatan, ['HRD', 'Koordinator ITSM'])) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'Anda tidak memiliki akses untuk menyetujui pengajuan ini.',
+                                'data' => $request->type,
+                            ]);
+                        }
                 
-                    if ($absen) {
-                        // Format dari input form (request) = H:i (contoh: 11:00)
-                        $waktuDiizinkan = \Carbon\Carbon::createFromFormat('H:i', $request->jam_masuk);
+                        $jenis_PK->approval = '1';
+                        if ($request->filled('alasan_approval')) {
+                            $jenis_PK->alasan_approval = $request->alasan_approval;
+                        }
+                        $jenis_PK->approval_date = now();
 
-                        // Format dari database = H:i:s (contoh: 11:00:00)
-                        $waktuAbsen = \Carbon\Carbon::createFromFormat('H:i:s', $absen->jam_masuk);
+                        $absen = AbsensiKaryawan::where('id', $jenis_PK->id_absen)->first();
+                        
+                        if ($absen) {
+                            // Format dari input form (request) = H:i (contoh: 11:00)
+                            $waktuDiizinkan = \Carbon\Carbon::createFromFormat('H:i', $request->jam_masuk);
 
-                        // Cek apakah masih dalam toleransi keterlambatan
-                        if ($waktuAbsen->lte($waktuDiizinkan->copy()->addMinutes(59))) {
-                            $absen->waktu_keterlambatan = "00:00:00";
+                            // Format dari database = H:i:s (contoh: 11:00:00)
+                            $waktuAbsen = \Carbon\Carbon::createFromFormat('H:i:s', $absen->jam_masuk);
+
+                            // Cek apakah masih dalam toleransi keterlambatan
+                            if ($waktuAbsen->lte($waktuDiizinkan->copy()->addMinutes(59))) {
+                                $absen->waktu_keterlambatan = "00:00:00";
+                            }
+
+                            $absen->save();
                         }
 
-                        $absen->save();
-                    }
+                        // Simpan waktu masuk & pulang yang diizinkan ke absensi_noRecord
+                        $jenis_PK->waktu_masuk = $request->jam_masuk;
+                        $jenis_PK->waktu_pulang = $request->jam_pulang;
+                    
+                        $jenis_PK->save();
 
-                    // Simpan waktu masuk & pulang yang diizinkan ke absensi_noRecord
-                    $jenis_PK->waktu_masuk = $request->jam_masuk;
-                    $jenis_PK->waktu_pulang = $request->jam_pulang;
-               
-                $jenis_PK->save();
+                        $karyawan = karyawan::find($jenis_PK->id_karyawan);
+                        $hrd = karyawan::where('jabatan', 'HRD')->first();
 
-                $karyawan = karyawan::find($jenis_PK->id_karyawan);
-                $hrd = karyawan::where('jabatan', 'HRD')->first();
+                        $kodePenerima = [];
 
-                $kodePenerima = [];
+                        if ($hrd) {
+                            $kodePenerima[] = $hrd->kode_karyawan;
+                        }
 
-                if ($hrd) {
-                    $kodePenerima[] = $hrd->kode_karyawan;
-                }
+                        if ($karyawan) {
+                            $kodePenerima[] = $karyawan->kode_karyawan;
+                        }
 
-                if ($karyawan) {
-                    $kodePenerima[] = $karyawan->kode_karyawan;
-                }
+                        $users = User::whereHas('karyawan', function ($query) use ($kodePenerima) {
+                            $query->whereIn('kode_karyawan', $kodePenerima);
+                        })->get();
 
                         $statusMessage = $jenis_PK->approval == 1 ? "Telah Disetujui Oleh " . $namaApprover : "Ditolak Oleh " . $namaApprover;
 
-                $statusMessage = $jenis_PK->approval == 1 ? "Telah Disetujui Oleh HRD" : "Ditolak Oleh HRD";
+                        $notificationData = [
+                            'tipe'            => 'scheme_work',
+                            'nama_lengkap'    => $karyawan->nama_lengkap,
+                            'kendala'         => $jenis_PK->kendala,
+                            'tanggal'         => $absen->tanggal,
+                            'kronologi'       => $jenis_PK->kronologi,
+                            'status'          => $statusMessage,
+                            'approval'        => $request->approval,
+                            'alasan_approval' => $request->alasan_approval ?? null,
+                        ];
 
-                $notificationData = [
-                    'tipe'            => 'scheme_work',
-                    'nama_lengkap'    => $karyawan->nama_lengkap,
-                    'kendala'         => $jenis_PK->kendala,
-                    'tanggal'         => $absen->tanggal,
-                    'kronologi'       => $jenis_PK->kronologi,
-                    'status'          => $statusMessage,
-                    'approval'        => $request->approval,
-                    'alasan_approval' => $request->alasan_approval ?? null,
-                ];
+                        $path = '/pengajuan-klaim?tabel=schema_work';
 
-                $path = '/pengajuan-klaim?tabel=schema_work';
+                        foreach ($users as $user) {
+                            NotificationFacade::send($user, new schemeWorkExchangeNotification($notificationData, $path));
+                        }
+                    break;
 
-                foreach ($users as $user) {
-                    NotificationFacade::send($user, new schemeWorkExchangeNotification($notificationData, $path));
-                }
-            break;
+                    case 'cancelLeave':
+                        $jenis_PK = pembatalanCuti::findOrFail($request->id);
+                        
+                        // Cek akses approval untuk cancel leave (default HRD)
+                        if (!in_array($jabatan, ['HRD', 'Koordinator ITSM'])) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'Anda tidak memiliki akses untuk menyetujui pengajuan ini.',
+                                'data' => $request->type,
+                            ]);
+                        }
+                        
+                        $jenis_PK->approval = 1;
+                        if ($request->filled('alasan_approval')) {
+                            $jenis_PK->alasan_approval = $request->alasan_approval;
+                        }
+                        $jenis_PK->approval_date = now();
+                        $jenis_PK->save();
 
-            case 'cancelLeave':
-                $jenis_PK = pembatalanCuti::findOrFail($request->id);
-                // dd($jenis_PK);
-                $jenis_PK->approval = 1;
-                if ($request->filled('alasan_approval')) {
-                    $jenis_PK->alasan_approval = $request->alasan_approval;
-                }
-                $jenis_PK->approval_date = now();
-                $jenis_PK->save();
-                    // dd($jenis_PK->id_cuti, $request->approval);
+                        $karyawan = karyawan::find($jenis_PK->id_karyawan);
+                        $hrd = karyawan::where('jabatan', 'HRD')->first();
+
+                        $kodePenerima = [];
+
+                        if ($hrd) {
+                            $kodePenerima[] = $hrd->kode_karyawan;
+                        }
+
                         if ($karyawan) {
                             $kodePenerima[] = $karyawan->kode_karyawan;
                         }
@@ -756,78 +817,38 @@ class pengajuanKlaimController extends Controller
                         
                         $path = '/pengajuan-klaim?tabel=cancel_leave';
 
-                $kodePenerima = [];
+                        foreach ($users as $user) {
+                            NotificationFacade::send($user, new cancelLeaveExchangeNotification($notificationData, $path));
+                        }
+                    break;
 
-                if ($hrd) {
-                    $kodePenerima[] = $hrd->kode_karyawan;
-                }
-
-                if ($karyawan) {
-                    $kodePenerima[] = $karyawan->kode_karyawan;
-                }
-                $users = User::whereHas('karyawan', function ($query) use ($kodePenerima) {
-                    $query->whereIn('kode_karyawan', $kodePenerima);
-                })->get();
-                $statusMessage = $jenis_PK->approval == 1 ? "Telah Disetujui Oleh HRD" : "Telah Ditolak Oleh HRD";
-                $data_cuti = pengajuancuti::where('id', $jenis_PK->id_cuti)->first();
-                if (!$data_cuti) {
+                    default:
                     return response()->json([
-                            'success' => false,
-                            'message' => 'Data Cuti tidak ditemukan.',
+                        'success' => false,
+                        'message' => 'Gagal Mengambil Data.',
+                        'data' => $request->type,
+                                ]);
+                        }
+
+                        DB::commit();
+                        return response()->json([
+                            'success' => true,
+                            'message' => 'Berhasil memproses data.',
                             'data' => $request->type,
-                    ]);
-                }
-                // dd($data_cuti);
-                $notificationData = [
-                    'tipe'            => 'cancel_leave',
-                    'nama_lengkap'    => $karyawan->nama_lengkap,
-                    'kronologi'       => $request->kronologi,
-                    'jenis'           => $data_cuti->tipe,
-                    'tanggal_awal'    => $data_cuti->tanggal_awal,
-                    'tanggal_akhir'   => $data_cuti->tanggal_akhir,
-                    'status'          => $statusMessage,
-                    'durasi'          => $data_cuti->durasi,
-                    'alasan'          => $data_cuti->alasan,
-                    'approval'        => $jenis_PK->approval,
-                    'alasan_approval' => null,
-                ];
-                if ($request->action == "approve") {
-                    $deletingData = pengajuancuti::findOrFail($jenis_PK->id_cuti);
-                    $deletingData->delete();
-                }
-                $path = '/pengajuan-klaim?tabel=cancel_leave';
-
-                foreach ($users as $user) {
-                    NotificationFacade::send($user, new cancelLeaveExchangeNotification($notificationData, $path));
-                }
-            break;
-
-            default:
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Gagal Mengambil Data.',
-                    'data' => $request->type,
-                ]);
-            }
-
-            DB::commit();
-            return response()->json([
-                'success' => true,
-                'message' => 'Berhasil memproses data.',
-                'data' => $request->type,
-            ]);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal.' . $e->getMessage() ,
-                'data' => $request->type,
-            ]);
-        }
+                        ]);
+                    } catch (\Exception $e) {
+                        DB::rollBack();
+                        Log::error('Approval Failed: ' . $e->getMessage() . ' - Request: ' . json_encode($request->all()));
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Gagal: ' . $e->getMessage(),
+                            'data' => $request->type,
+                        ]);
+                    }
     }
+    
     public function reject(Request $request)
     {
-        // dd($request->all());
         $this->validate($request, [
             'type'       => 'required|string',
             'action'       => 'required|string',
@@ -843,12 +864,23 @@ class pengajuanKlaimController extends Controller
         DB::beginTransaction();
 
         try {
-            switch ($request->type) {
+        switch ($request->type) {
             case 'noRecord':
                 $jenis_PK = absensi_noRecord::findOrfail($request->id);
+                
+                // Cek apakah user bisa reject berdasarkan kendala
+                if (!$this->canApprove($jenis_PK->kendala, $jenis_PK->karyawan->divisi, $jabatan)) {  // Ubah: Pakai $jenis_PK->karyawan->divisi (divisi pengaju)
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Anda tidak memiliki akses untuk menolak pengajuan ini berdasarkan kendala: ' . $jenis_PK->kendala,
+                        'data' => $request->type,
+                    ]);
+                }
+                
                 $jenis_PK->approval = 2;
                 $jenis_PK->approved_by = $namaApprover;
                 $jenis_PK->alasan_approval = $request->reject_reason;
+                $jenis_PK->approval_date = now();
                 $jenis_PK->save();
                 
                 // Send notification
@@ -880,21 +912,43 @@ class pengajuanKlaimController extends Controller
                     NotificationFacade::send($user, new noRecordExchangeNotification($notificationData, $path));
                 }
             break;
+            
             case 'schemeWork':
                 $jenis_PK = absensi_noRecord::findOrfail($request->id);
-                // dd($jenis_PK);
+                
+                if (!in_array($jabatan, ['HRD', 'Koordinator ITSM'])) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Anda tidak memiliki akses untuk menolak pengajuan ini.',
+                        'data' => $request->type,
+                    ]);
+                }
+                
                 $jenis_PK->approval = 2;
                 $jenis_PK->approved_by = $namaApprover;
                 $jenis_PK->alasan_approval = $request->reject_reason;
+                $jenis_PK->approval_date = now();
                 $jenis_PK->save();
             break;
+            
             case 'cancelLeave':
                 $jenis_PK = pembatalanCuti::findOrfail($request->id);
+                
+                if (!in_array($jabatan, ['HRD', 'Koordinator ITSM'])) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Anda tidak memiliki akses untuk menolak pengajuan ini.',
+                        'data' => $request->type,
+                    ]);
+                }
+                
                 $jenis_PK->approval = 2;
                 $jenis_PK->approved_by = $namaApprover;
                 $jenis_PK->alasan_approval = $request->reject_reason;
+                $jenis_PK->approval_date = now();
                 $jenis_PK->save();
             break;
+            
             default:
             return response()->json([
                     'success' => false,
@@ -902,6 +956,7 @@ class pengajuanKlaimController extends Controller
                     'data' => $request->type,
                 ]);
          }
+         
          DB::commit();
             return response()->json([
                 'success' => true,
@@ -916,6 +971,5 @@ class pengajuanKlaimController extends Controller
                 'data' => $request->type,
             ]);
         }
-
     }
 }
