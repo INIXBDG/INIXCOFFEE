@@ -7,7 +7,7 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\PeluangController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\WebhookController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -51,4 +51,4 @@ Route::get('getInventaris', [App\Http\Controllers\Api\apiController::class, 'get
 
 Route::post('/create/ticket', [TicketController::class, 'store']);
 
-
+Route::match(['get', 'post'], '/webhook/fonnte', [WebhookController::class, 'handle']);

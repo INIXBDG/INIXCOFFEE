@@ -69,14 +69,24 @@ class TicketController extends Controller
             'timestamp' => $request->datetime
             // nilai default lainnya tetap
         ]);
+        
+        $todayCount = Tickets::whereDate('created_at', today())->count();
+        $char = chr(96 + $todayCount); // a untuk tiket pertama, b untuk kedua, dst.
+        $ticketId = 'NIX' . now()->format('ymd') . $char;
+        $ticket->ticket_id = $ticketId;
+        $ticket->save();
 
-        $message = "Ada Ticketing Masuk:\n"
-            . "Nama Karyawan: {$ticket->nama_karyawan}\n"
-            . "Divisi: {$ticket->divisi}\n"
-            . "Kategori: {$ticket->kategori}\n"
-            . "Keperluan: {$ticket->keperluan}\n"
-            . "Detail Kendala: {$ticket->detail_kendala}\n"
-            . "Mohon untuk segera dikerjakan. Terimakasih!";
+
+       $message = "Ada Ticketing Masuk:\n"
+        . "ID Tiket: *{$ticket->ticket_id}*\n\n"
+        . "Nama Karyawan: {$ticket->nama_karyawan}\n"
+        . "Divisi: {$ticket->divisi}\n"
+        . "Kategori: {$ticket->kategori}\n"
+        . "Keperluan: {$ticket->keperluan}\n"
+        . "Detail Kendala: {$ticket->detail_kendala}\n\n"
+        . "Balas dengan format:\n"
+        . "`/terima {$ticket->ticket_id}` untuk memproses.";
+
 
         $spreadsheetId = '1k_NRI52B-alnGVeLTGB8cecL3f1G-C7_WCVGnQQGe9Y';
         $range = 'Form Responses 1!A:H';  // Pastikan nama sheet dan kolom sesuai di Spreadsheet Anda
@@ -111,7 +121,7 @@ class TicketController extends Controller
                 $detail_kendala_td,
             ]
         ];
-        $message = $this->appendValues($spreadsheetId, $range, $values);
+        // $message = $this->appendValues($spreadsheetId, $range, $values);
         $ticket->update([
             'row' => $message
         ]);
