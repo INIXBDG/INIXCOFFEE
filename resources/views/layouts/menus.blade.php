@@ -1345,7 +1345,7 @@
                                                                         class="img-responsive" width="30px">
                                                                 </div>
                                                                 <div class="col-md-10" style="margin-left: 10px">
-                                                                    <a href="/tunjangan"
+                                                                    <a href="{{route('gaji.index')}}"
                                                                         class="link stretched-link text-decoration-none">
                                                                         <h5 class="card-title">Update Gaji Karyawan</h5>
                                                                     </a>
