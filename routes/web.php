@@ -31,6 +31,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 use App\Http\Controllers\InvoiceRKMController;
+use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\MakananRkmController;
 use App\Http\Controllers\managementKelasController;
 use App\Http\Controllers\TicketController;
@@ -569,4 +570,13 @@ Route::post('/tickets/{ticket}/accept', [TicketController::class, 'accept'])->na
 Route::post('/tickets/{ticket}/finish', [TicketController::class, 'finish'])->name('tickets.finish');
 Route::post('/tickets/{ticket}/block', [TicketController::class, 'block'])->name('tickets.block');
 Route::get('/getTickets', [TicketController::class, 'getTickets'])->name('getTickets');
+
+// Gaji
+Route::get('/gaji/karyawan', [KaryawanController::class, 'gajiIndex'])->name('gaji.index');
+Route::post('/gaji', [KaryawanController::class, 'storeGaji'])->name('gaji.store');
+Route::put('/gaji/{id}', [KaryawanController::class, 'updateGaji'])->name('gaji.update');
+Route::delete('/gaji/{id}', [KaryawanController::class, 'destroyGaji'])->name('gaji.destroy');
+
+//Slip Gaji
+Route::get('/slip/gaji', [KaryawanController::class, 'slip'])->name('SlipGaji');
 

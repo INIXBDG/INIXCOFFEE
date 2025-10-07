@@ -37,6 +37,7 @@ class karyawan extends Model
         'email',
         'whatsapp',
         'telepon',
+        'gaji',
     ];
 
     public function user()
