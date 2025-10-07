@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Models\jabatan;
+use App\Models\TunjanganKaryawan;
 use Vinkla\Hashids\Facades\Hashids;
 use Carbon\Carbon;
 
@@ -90,6 +91,7 @@ public function updateData(Request $request, $id)
         $id_instruktur = $request->kode_karyawan;
     }
 
+
     if (in_array($request->jabatan, ['SPV Sales', 'Sales', 'Adm Sales'])) {
         $id_sales = $request->kode_karyawan;
     }
@@ -147,5 +149,45 @@ public function updateData(Request $request, $id)
         return redirect()->route('user.show', Hashids::encode($post->id))->with([
             'success' => 'Foto dan/atau TTD berhasil diperbarui!'
         ]);
+    }
+
+    public function gajiIndex()
+    {
+        if (Auth::user()->jabatan !== "HRD") {
+            abort(403, 'Anda tidak memiliki izin untuk mengakses halaman ini.');
+        }
+
+        $karyawan = user::with('karyawan')->where('status_akun', "1")->get();
+        return view('gaji.index', compact('karyawan'));
+    }
+
+    public function updateGaji(Request $request, $id)
+    {
+        $request->validate([
+            'jumlah_gaji' => 'required|numeric|min:0',
+        ]);
+
+        $karyawan = Karyawan::findOrFail($id);
+        $karyawan->update(['gaji' => $request->jumlah_gaji]);
+
+        return redirect()->route('gaji.index')->with('success', 'Gaji berhasil diperbarui.');
+    }
+
+    public function destroyGaji($id)
+    {
+        $karyawan = Karyawan::findOrFail($id);
+        $karyawan->update(['gaji' => null]); // Nullify salary instead of deleting record
+
+        return redirect()->route('gaji.index')->with('success', 'Gaji berhasil dihapus.');
+    }
+
+    public function slip()
+    {
+        $HRD = User::with('karyawan')->find('55');
+        $user = User::with('karyawan')->find(Auth::id());
+        $tunjangan = TunjanganKaryawan::where('id_karyawan', Auth::id())
+            ->with('karyawan', 'jenistunjangan')
+            ->get();
+        return view('tunjangan.slip', compact('user', 'tunjangan', 'HRD'));
     }
 }
