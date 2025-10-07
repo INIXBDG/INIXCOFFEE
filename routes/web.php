@@ -580,3 +580,7 @@ Route::delete('/gaji/{id}', [KaryawanController::class, 'destroyGaji'])->name('g
 //Slip Gaji
 Route::get('/slip/gaji', [KaryawanController::class, 'slip'])->name('SlipGaji');
 
+Route::get('/test-error', function () {
+    // ini error manual
+    throw new \Exception('Test error from Handler.php');
+});

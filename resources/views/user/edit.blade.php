@@ -174,18 +174,56 @@
                                     @enderror
                                 </div>
                             </div>
-                            {{-- <div class="row">
-                            <div class="col-md-4 col-sm-4 col-xs-4"><p>Nomor Handphone</p></div>
-                            <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
-                            <div class="col-md-7 col-sm-7 col-xs-7">
-                                <input id="notelp" placeholder="Masukan Nomor HP Anda" type="text" class="form-control @error('notelp') is-invalid @enderror" name="notelp" value="{{ old('notelp', $users->notelp ) }}" autocomplete="notelp">
-                            @error('notelp')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
-                            </div>
-                        </div> --}}
+                            <div class="row">
+    <div class="col-md-4 col-sm-4 col-xs-4"><p>Email</p></div>
+    <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
+    <div class="col-md-7 col-sm-7 col-xs-7">
+        <input id="email" placeholder="Masukan Email Anda" type="email" 
+               class="form-control @error('email') is-invalid @enderror" 
+               name="email" 
+               value="{{ old('email', $users->email) }}" 
+               required autocomplete="email">
+        @error('email')
+        <span class="invalid-feedback" role="alert">
+            <strong>{{ $message }}</strong>
+        </span>
+        @enderror
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4 col-sm-4 col-xs-4"><p>Nomor Handphone</p></div>
+    <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
+    <div class="col-md-7 col-sm-7 col-xs-7">
+        <input id="telepon" type="text" placeholder="Masukan Nomor HP Anda" 
+               class="form-control @error('telepon') is-invalid @enderror" 
+               name="telepon" 
+               value="{{ old('telepon', $users->telepon) }}" 
+               autocomplete="telepon">
+        @error('telepon')
+        <span class="invalid-feedback" role="alert">
+            <strong>{{ $message }}</strong>
+        </span>
+        @enderror
+    </div>
+</div> 
+
+<div class="row">
+    <div class="col-md-4 col-sm-4 col-xs-4"><p>Nomor WhatsApp</p></div>
+    <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
+    <div class="col-md-7 col-sm-7 col-xs-7">
+        <input id="whatsapp" type="text" placeholder="Masukan Nomor WhatsApp Anda" 
+               class="form-control @error('whatsapp') is-invalid @enderror" 
+               name="whatsapp" 
+               value="{{ old('whatsapp', $users->whatsapp) }}" 
+               autocomplete="whatsapp">
+        @error('whatsapp')
+        <span class="invalid-feedback" role="alert">
+            <strong>{{ $message }}</strong>
+        </span>
+        @enderror
+    </div>
+</div>
                         <div class="row">
                             <div class="col-md-4 col-sm-4 col-xs-4"><p>Status Kerja</p></div>
                             <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>

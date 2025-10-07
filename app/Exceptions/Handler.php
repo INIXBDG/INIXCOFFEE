@@ -4,6 +4,8 @@ namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Throwable;
+use Sentry\Laravel\Facade as Sentry;
+use Illuminate\Validation\ValidationException;
 
 class Handler extends ExceptionHandler
 {
@@ -42,7 +44,14 @@ class Handler extends ExceptionHandler
     public function register(): void
     {
         $this->reportable(function (Throwable $e) {
-            //
+            // kalau error validasi, jangan kirim ke sentry
+            if ($e instanceof ValidationException) {
+                return false; 
+            }
+
+            if (app()->bound('sentry')) {
+                \Sentry\captureException($e);
+            }
         });
     }
 }

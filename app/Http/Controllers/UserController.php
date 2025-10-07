@@ -50,6 +50,7 @@ class UserController extends Controller
             'nama_lengkap' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255'],
             'email' => ['nullable', 'email'],
+            'whatsapp' => ['nullable', 'string', 'max:255'],
             'jabatan' => ['required', 'string', 'max:255'],
             'divisi' => ['required', 'string', 'max:255'],
             'status_akun' => ['nullable', 'string', 'max:255'],
