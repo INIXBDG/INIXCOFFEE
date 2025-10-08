@@ -1100,9 +1100,35 @@
 
 
 /* Peringkat label warna */
-.rank-1 .position-label { color: #FFD93D; }
-.rank-2 .position-label { color: #b3aaff; }
-.rank-3 .position-label { color: #ff914d; }
+.rank-1 .position-label {
+    color: #FFD93D;
+    /* Menambahkan outline hitam setebal 1px */
+    text-shadow: 
+        -1px -1px 0 #000,  
+         1px -1px 0 #000,
+        -1px  1px 0 #000,
+         1px  1px 0 #000;
+}
+
+.rank-2 .position-label { 
+    color: #eac7ffff; 
+    /* Menambahkan outline putih setebal 1px agar kontras dengan teks gelap */
+    text-shadow: 
+        -1px -1px 0 #000,  
+         1px -1px 0 #000,
+        -1px  1px 0 #000,
+         1px  1px 0 #000;
+}
+
+.rank-3 .position-label { 
+    color: #ff914d; 
+    /* Menambahkan outline hitam setebal 1px */
+    text-shadow: 
+        -1px -1px 0 #000,  
+         1px -1px 0 #000,
+        -1px  1px 0 #000,
+         1px  1px 0 #000;
+}
 
 
 
