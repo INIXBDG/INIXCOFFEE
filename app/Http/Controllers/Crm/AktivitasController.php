@@ -74,7 +74,7 @@ class AktivitasController extends Controller
             $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'SPV Sales'];
 
             $query = Aktivitas::with(['contact', 'peserta'])
-                ->select('id', 'id_sales', 'id_contact', 'id_peserta', 'aktivitas', 'subject', 'deskripsi', 'waktu_aktivitas');
+                ->select('id', 'id_sales', 'id_contact', 'id_peserta', 'aktivitas', 'deskripsi', 'waktu_aktivitas');
 
             if ($user->jabatan === 'Sales') {
                 $query->where('id_sales', $user->id_sales);
@@ -91,7 +91,7 @@ class AktivitasController extends Controller
             $orderColumnIndex = request()->get('order')[0]['column'] ?? 0;
             $orderDirection = request()->get('order')[0]['dir'] ?? 'asc';
 
-            $orderColumns = ['id', 'id_sales', 'id_contact', 'aktivitas', 'subject', 'deskripsi', 'waktu_aktivitas'];
+            $orderColumns = ['id', 'id_sales', 'id_contact', 'aktivitas', 'deskripsi', 'waktu_aktivitas'];
             $orderColumn = $orderColumns[$orderColumnIndex] ?? 'id';
 
             $totalRecords = $query->count();
@@ -99,7 +99,6 @@ class AktivitasController extends Controller
             if (!empty($searchValue)) {
                 $query->where(function ($q) use ($searchValue) {
                     $q->where('aktivitas', 'like', "%{$searchValue}%")
-                        ->orWhere('subject', 'like', "%{$searchValue}%")
                         ->orWhere('deskripsi', 'like', "%{$searchValue}%");
                 });
             }
@@ -128,7 +127,6 @@ class AktivitasController extends Controller
                         'kontak' => $kontak,
                         'id_sales' => $item->id_sales,
                         'aktivitas' => ($item->aktivitas === 'Incharge') ? 'Incharge Inhouse' : ucfirst($item->aktivitas),
-                        'subject' => $item->subject,
                         'deskripsi' => $item->deskripsi,
                         'waktu_aktivitas' => \Carbon\Carbon::parse($item->waktu_aktivitas)->format('d/m/Y'),
                     ];
