@@ -412,9 +412,8 @@
 
                 ],
                 "initComplete": function() {
-
-                            this.api().columns(3).search(idSales).draw();
-                        }
+                        this.api().columns(3).search(idSales).draw();
+                }
         });
     });
 </script>
