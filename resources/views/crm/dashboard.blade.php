@@ -30,18 +30,10 @@
                             <div class="btn-group btn-group-sm" role="group">
                                 <button type="button" class="btn btn-outline-primary filter-btn active"
                                     data-filter="all">All</button>
-                                <button type="button" class="btn btn-outline-primary filter-btn"
-                                    data-filter="Contact">Contact</button>
-                                <button type="button" class="btn btn-outline-primary filter-btn"
-                                    data-filter="Call">Call</button>
-                                <button type="button" class="btn btn-outline-primary filter-btn"
-                                    data-filter="Email">Email</button>
-                                <button type="button" class="btn btn-outline-primary filter-btn"
-                                    data-filter="Visit">Visit</button>
-                                <button type="button" class="btn btn-outline-primary filter-btn"
-                                    data-filter="Meet">Meet</button>
-                                <button type="button" class="btn btn-outline-primary filter-btn"
-                                    data-filter="Incharge">Incharge</button>
+                                @foreach ($activitysales as $sales)
+                                    <button type="button" class="btn btn-outline-primary filter-btn"
+                                        data-filter="{{ $sales['id_sales'] }}">{{ $sales['id_sales'] }}</button>
+                                @endforeach
                             </div>
                         </div>
                         <div class="activity-container" style="max-height: 280px; overflow-y: auto;">
@@ -50,6 +42,11 @@
                                     <strong class="text-dark d-block mb-2">{{ $sales['id_sales'] }}</strong>
                                     @php
                                         $aktivitas = [
+                                            'DB' => [
+                                                'jumlah' => $sales['DB'],
+                                                'target' => $sales['target_DB'],
+                                                'warna' => 'info',
+                                            ],
                                             'Contact' => [
                                                 'jumlah' => $sales['contact'],
                                                 'target' => $sales['target_contact'],
@@ -73,12 +70,37 @@
                                             'Meet' => [
                                                 'jumlah' => $sales['meet'],
                                                 'target' => $sales['target_meet'],
-                                                'warna' => 'success',
+                                                'warna' => 'warning',
                                             ],
                                             'Incharge' => [
                                                 'jumlah' => $sales['incharge'],
                                                 'target' => $sales['target_incharge'],
                                                 'warna' => 'success',
+                                            ],
+                                            'Penawaran Awal' => [
+                                                'jumlah' => $sales['PA'],
+                                                'target' => $sales['target_PA'],
+                                                'warna' => 'success',
+                                            ],
+                                            'Penawaran Internal' => [
+                                                'jumlah' => $sales['PI'],
+                                                'target' => $sales['target_PI'],
+                                                'warna' => 'success',
+                                            ],
+                                            'Telemarketing' => [
+                                                'jumlah' => $sales['Telemarketing'],
+                                                'target' => $sales['target_Telemarketing'],
+                                                'warna' => 'danger',
+                                            ],
+                                            'Form Masuk' => [
+                                                'jumlah' => $sales['Form_Masuk'],
+                                                'target' => $sales['target_Form_Masuk'],
+                                                'warna' => 'danger',
+                                            ],
+                                            'Form Keluar' => [
+                                                'jumlah' => $sales['Form_Keluar'],
+                                                'target' => $sales['target_Form_Keluar'],
+                                                'warna' => 'danger',
                                             ],
                                         ];
                                     @endphp
@@ -607,33 +629,23 @@
             // Initial map render
             updateMapMarkers('all');
 
-            // Filter functionality for activities
             const filterButtons = document.querySelectorAll('.filter-btn');
             filterButtons.forEach(button => {
                 button.addEventListener('click', () => {
                     filterButtons.forEach(btn => btn.classList.remove('active'));
                     button.classList.add('active');
-                    applyActivityFilter();
+                    applySalesFilter();
                 });
             });
 
-            function applyActivityFilter() {
-                const activityFilter = document.querySelector('.filter-btn.active')?.dataset.filter;
-                if (!activityFilter) return;
+            function applySalesFilter() {
+                const selectedSalesId = document.querySelector('.filter-btn.active')?.dataset.filter;
+                if (!selectedSalesId) return;
 
                 const salesItems = document.querySelectorAll('.sales-item');
-                const activityItems = document.querySelectorAll('.activity-item');
-
-                activityItems.forEach(item => {
-                    const activityType = item.dataset.activity;
-                    item.style.display = (activityFilter === 'all' || activityType === activityFilter) ?
-                        'block' : 'none';
-                });
-
                 salesItems.forEach(item => {
-                    const visibleActivities = item.querySelectorAll(
-                        '.activity-item[style="display: block;"]');
-                    item.style.display = visibleActivities.length > 0 ? 'block' : 'none';
+                    item.style.display = (selectedSalesId === 'all' || item.dataset.salesId ===
+                        selectedSalesId) ? 'block' : 'none';
                 });
             }
 

@@ -58,6 +58,11 @@ class CRMController extends Controller
                 $actualVisit = $userAktivitas->where('aktivitas', 'Visit')->count();
                 $actualMeet = $userAktivitas->where('aktivitas', 'Meet')->count();
                 $actualIncharge = $userAktivitas->where('aktivitas', 'Incharge')->count();
+                $actualPA = $userAktivitas->where('aktivitas', 'PA')->count();
+                $actualPI = $userAktivitas->where('aktivitas', 'PI')->count();
+                $actualTelemarketing = $userAktivitas->where('aktivitas', 'Telemarketing')->count();
+                $actualForm_Masuk = $userAktivitas->where('aktivitas', 'Form_Masuk')->count();
+                $actualForm_Keluar = $userAktivitas->where('aktivitas', 'Form_Keluar')->count();
 
                 $salesTarget = $target[$id_sales] ?? null;
 
@@ -66,21 +71,39 @@ class CRMController extends Controller
                     ->whereMonth('created_at', Carbon::now()->month)
                     ->whereYear('created_at', Carbon::now()->year)
                     ->count();
+                
+                $perusahaanBaru = Perusahaan::where('sales_key', $id_sales)
+                    ->where('status', 'Database Baru')
+                    ->whereMonth('created_at', Carbon::now()->month)
+                    ->whereYear('created_at', Carbon::now()->year)
+                    ->count();
 
                 $activitysales[] = [
                     'id_sales' => $id_sales,
                     'contact' => $contactbaru,
+                    'DB' => $perusahaanBaru,
                     'call' => $actualCall,
                     'email' => $actualEmail,
                     'visit' => $actualVisit,
                     'meet' => $actualMeet,
                     'incharge' => $actualIncharge,
+                    'PA' => $actualPA,
+                    'PI' => $actualPI,
+                    'Telemarketing' => $actualTelemarketing,
+                    'Form_Masuk' => $actualForm_Masuk,
+                    'Form_Keluar' => $actualForm_Keluar,
+                    'target_DB' => $salesTarget->DB ?? 0,
                     'target_contact' => $salesTarget->Contact ?? 0,
                     'target_call' => $salesTarget->Call ?? 0,
                     'target_email' => $salesTarget->Email ?? 0,
                     'target_visit' => $salesTarget->Visit ?? 0,
                     'target_meet' => $salesTarget->Meet ?? 0,
                     'target_incharge' => $salesTarget->Incharge ?? 0,
+                    'target_PA' => $salesTarget->PA ?? 0,
+                    'target_PI' => $salesTarget->PI ?? 0,
+                    'target_Telemarketing' => $salesTarget->Telemarketing ?? 0,
+                    'target_Form_Masuk' => $salesTarget->FormM ?? 0,
+                    'target_Form_Keluar' => $salesTarget->FormK ?? 0,
                 ];
             }
 

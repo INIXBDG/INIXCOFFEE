@@ -41,24 +41,17 @@
                         <h5 class="card-title mb-0 text-primary">Target Aktivitas Sales</h5>
                     </div>
                     <div class="card-body p-3">
-                        <!-- Filter Section -->
-                        <div class="mb-3">
-                            <div class="btn-group btn-group-sm" role="group">
-                                <button type="button" class="btn btn-outline-primary filter-btn active" data-filter="all">All</button>
-                                <button type="button" class="btn btn-outline-primary filter-btn" data-filter="Contact">Contact</button>
-                                <button type="button" class="btn btn-outline-primary filter-btn" data-filter="Call">Call</button>
-                                <button type="button" class="btn btn-outline-primary filter-btn" data-filter="Email">Email</button>
-                                <button type="button" class="btn btn-outline-primary filter-btn" data-filter="Visit">Visit</button>
-                                <button type="button" class="btn btn-outline-primary filter-btn" data-filter="Meet">Meet</button>
-                                <button type="button" class="btn btn-outline-primary filter-btn" data-filter="Incharge">Incharge</button>
-                            </div>
-                        </div>
-                        <div class="activity-container" style="max-height: 280px; overflow-y: auto;">
+                        <div class="activity-container" style="max-height: 355px; overflow-y: auto;">
                             @if (!empty($activitysales))
                                 <div class="mb-3 sales-item" data-sales-id="{{ $activitysales['id_sales'] }}">
                                     <strong class="text-dark d-block mb-2">Sales ID: {{ $activitysales['id_sales'] }}</strong>
                                     @php
                                         $aktivitas = [
+                                            'DB' => [
+                                                'jumlah' => $activitysales['DB'],
+                                                'target' => $activitysales['target_DB'],
+                                                'warna' => 'info',
+                                            ],
                                             'Contact' => [
                                                 'jumlah' => $activitysales['contact'],
                                                 'target' => $activitysales['target_contact'],
@@ -82,11 +75,21 @@
                                             'Meet' => [
                                                 'jumlah' => $activitysales['meet'],
                                                 'target' => $activitysales['target_meet'],
-                                                'warna' => 'success',
+                                                'warna' => 'Warning',
                                             ],
                                             'Incharge' => [
                                                 'jumlah' => $activitysales['incharge'],
                                                 'target' => $activitysales['target_incharge'],
+                                                'warna' => 'success',
+                                            ],
+                                            'Penawaran Awal' => [
+                                                'jumlah' => $activitysales['PA'],
+                                                'target' => $activitysales['target_PA'],
+                                                'warna' => 'success',
+                                            ],
+                                            'Penawaran Internal' => [
+                                                'jumlah' => $activitysales['PI'],
+                                                'target' => $activitysales['target_PI'],
                                                 'warna' => 'success',
                                             ],
                                         ];
@@ -417,30 +420,6 @@
                         }
                     }
                 }
-            });
-
-            // Filter functionality for activity sales
-            const filterButtons = document.querySelectorAll('.filter-btn');
-            const activityItems = document.querySelectorAll('.activity-item');
-
-            filterButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    // Remove active class from all buttons
-                    filterButtons.forEach(btn => btn.classList.remove('active'));
-                    // Add active class to clicked button
-                    button.classList.add('active');
-
-                    const filter = button.dataset.filter;
-
-                    // Show/hide activity items based on filter
-                    activityItems.forEach(item => {
-                        if (filter === 'all' || item.dataset.activity === filter) {
-                            item.style.display = 'block';
-                        } else {
-                            item.style.display = 'none';
-                        }
-                    });
-                });
             });
         });
     </script>
