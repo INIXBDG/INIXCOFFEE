@@ -27,74 +27,35 @@
                     <a href="{{ route('peserta.exportPDFs') }}" class="btn btn-danger">Export to PDF</a>
                 @endif
             </div>
-            <div class="card m-4" id="peserta">
+            
+            {{-- SINGLE TABLE --}}
+            <div class="card m-4">
                 <div class="card-body table-responsive">
                     <h3 class="card-title text-center my-1">{{ __('Data Peserta') }}</h3>
-                    <table class="table table-striped" id="pesertatable">
+                    <table class="table table-striped" id="pesertaTable">
                         <thead>
                           <tr>
                             <th scope="col">Nama</th>
                             <th scope="col">Email</th>
-                            <th scope="col">id</th>
+                            @if (auth()->user()->id_instruktur && auth()->user()->id_instruktur != 'AD' && auth()->user()->jabatan != 'Technical Support')
+                                <th scope="col">id</th>
+                            @endif
+                            @if (auth()->user()->id_sales && auth()->user()->id_sales != 'AM')
+                                <th scope="col">id</th>
+                                <th scope="col">id</th>
+                            @endif
                             <th scope="col">Jenis Kelamin</th>
                             <th scope="col">Nomor Handphone</th>
                             <th scope="col">Alamat</th>
                             <th scope="col">Perusahaan/Instansi</th>
                             <th scope="col">Tanggal Lahir</th>
+                            @if (!auth()->user()->id_instruktur || auth()->user()->id_instruktur == 'AD' || auth()->user()->jabatan == 'Technical Support')
+                                <th scope="col">Created_at</th>
+                                <th scope="col">Aksi</th>
+                            @endif
                           </tr>
                         </thead>
-                        <tbody>
-
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="card m-4" id="pesertaall">
-                <div class="card-body table-responsive">
-                    <h3 class="card-title text-center my-1">{{ __('Data Peserta') }}</h3>
-                    <table class="table table-striped" id="pesertaalltable">
-                        <thead>
-                          <tr>
-                            <th scope="col">Nama</th>
-                            <th scope="col">Email</th>
-                            <th scope="col">Jenis Kelamin</th>
-                            <th scope="col">Nomor Handphone</th>
-                            <th scope="col">Alamat</th>
-                            <th scope="col">Perusahaan/Instansi</th>
-                            <th scope="col">Tanggal Lahir</th>
-                            <th scope="col">Created_at</th>
-                            {{-- @if (auth()->user()->jabatan == 'Programmer') --}}
-                            <th scope="col">Aksi</th>
-                            {{-- @endif --}}
-                          </tr>
-                        </thead>
-                        <tbody>
-
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="card m-4" id="pesertaSales">
-                <div class="card-body table-responsive">
-                    <h3 class="card-title text-center my-1">{{ __('Data Peserta') }}</h3>
-                    <table class="table table-striped" id="pesertatableSales">
-                        <thead>
-                          <tr>
-                            <th scope="col">Nama</th>
-                            <th scope="col">Email</th>
-                            <th scope="col">id</th>
-                            <th scope="col">id</th>
-                            <th scope="col">Jenis Kelamin</th>
-                            <th scope="col">Nomor Handphone</th>
-                            <th scope="col">Alamat</th>
-                            <th scope="col">Perusahaan/Instansi</th>
-                            <th scope="col">Tanggal Lahir</th>
-                            <th scope="col">Aksi</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-
-                        </tbody>
+                        <tbody></tbody>
                     </table>
                 </div>
             </div>
@@ -168,185 +129,20 @@
 		var jabatan = "{{ auth()->user()->jabatan }}";
         console.log(idInstruktur);
         console.log(idSales);
+        
         if(idInstruktur == 'AD' || jabatan == "Technical Support"){
             var idInstruktur = "";
         }
         if(idSales == 'AM'){
-                var idSales = "";
-            }
-        // console.log(idSales);
-        if(idInstruktur )
-		{
-            $('#peserta').show();
-            $('#pesertaall').hide();
-            $('#pesertaSales').hide();
-        }else if(idSales){
-            $('#peserta').hide();
-            $('#pesertaall').hide();
-            $('#pesertaSales').show();
+            var idSales = "";
         }
-        else{
-           $('#peserta').hide();
-           $('#pesertaall').show();
-           $('#pesertaSales').hide();
-
-        }
-        $('#pesertaalltable').DataTable({
-            "ajax": {
-                "url": "{{ route('getPesertaall') }}", // URL API untuk mengambil data
-                "type": "GET",
-                "beforeSend": function () {
-                    $('#loadingModal').modal('show');
-                    $('#loadingModal').on('show.bs.modal', function () {
-                        $('#loadingModal').removeAttr('inert');
-                    });
-                },
-                "complete": function () {
-                    setTimeout(() => {
-                        $('#loadingModal').modal('hide');
-                        $('#loadingModal').on('hidden.bs.modal', function () {
-                            $('#loadingModal').attr('inert', true);
-                        });
-                    }, 1000);
-                }
-            },
-            "columns": [
-                {"data": "nama"},
-                {"data": "email"},
-                {
-                    "data": null,
-                    "render": function(data) {
-                        return data.jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan';
-                    }
-                },
-                {"data": "no_hp"},
-                {"data": "alamat"},
-                {"data": "perusahaan.nama_perusahaan"},
-                {
-                    "data": "tanggal_lahir",
-                    "render": function(data) {
-                        return moment(data).format('DD MMMM YYYY');
-                    }
-                },
-                {
-                    "data": "latest_registrasi.created_at",
-                    "visible": false,
-                    "render": function(data, type, row) {
-                        return data === null || data === undefined ? '-' : data;
-                    }
-                },
-
-                {
-                    "data": null,
-                    "render": function(data, type, row) {
-                        var actions = "";
-                            actions += '@if (auth()->user()->can('Edit Peserta'))'
-                            actions += '<div class="dropdown">';
-                            actions += '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
-                            actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
-                            actions += '<a class="dropdown-item" href="{{ url('/peserta') }}/' + row.id + '/edit" data-toggle="tooltip" title="Edit Peserta"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Edit</a>';
-                            actions += '</div>';
-                            actions += '</div>';
-                            actions += '@else'
-                            actions += '<div class="dropdown">';
-                            actions += '<button class="btn dropdown-toggle disabled" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
-                            actions += '</div>';
-                            actions += '@endif'
-                    
-                        return actions;
-                    }
-                }
-            ],
-            "order": [[7, 'desc']],
-            "columnDefs": [{"targets": [7], "type": "date"}],
-        });
-
-        $('#pesertatable').DataTable({
-            "ajax": {
-                "url": "{{ route('getRegistrasiall') }}", // URL API untuk mengambil data
-                "type": "GET",
-                "beforeSend": function () {
-                    $('#loadingModal').modal('show');
-                    $('#loadingModal').on('show.bs.modal', function () {
-                        $('#loadingModal').removeAttr('inert');
-                    });
-                },
-                "complete": function () {
-                    setTimeout(() => {
-                        $('#loadingModal').modal('hide');
-                        $('#loadingModal').on('hidden.bs.modal', function () {
-                            $('#loadingModal').attr('inert', true);
-                        });
-                    }, 1000);
-                }
-            },
-            "columns": [
-                {"data": "peserta.nama"},
-                {"data": "peserta.email"},
-                {
-                    "data": "id_instruktur",
-                    "visible": false
-                },
-                {
-                    "data": "peserta.jenis_kelamin",
-                    "render": function(data) {
-                        return data == 'L' ? 'Laki-laki' : 'Perempuan';
-                    }
-                },
-                {"data": "peserta.no_hp"},
-                {"data": "peserta.alamat"},
-                {"data": "peserta.perusahaan.nama_perusahaan"},
-                {
-                    "data": "peserta.tanggal_lahir",
-                    "render": function(data) {
-                        moment.locale('id')
-                        return moment(data).format('DD MMMM YYYY');
-                    }
-                }
-            ],
-            "initComplete": function() {
-                this.api().columns(2).search(idInstruktur).draw();
-                // this.api().columns(3).search(idSales).draw();
-            }
-        });
-
-        $('#pesertatableSales').DataTable({
-            "dom": 'Bfrtip',
-           "buttons": [
-                        {
-                            extend: 'excel',
-                            text: 'Export to Excel',
-                            exportOptions: {
-                                columns: [ 1, 2, 3, 4 ] // Kolom yang akan diekspor ke Excel
-                            },
-                            filename: 'Inixindo E-office Data Peserta', // Specify the filename here
-                        },
-                        {
-                            extend: 'pdf',
-                            text: 'Export to PDF',
-                            exportOptions: {
-                                columns: [ 1, 2, 3, 4 ] // Kolom yang akan diekspor ke PDF
-                            },
-                            customize: function(doc) {
-                                doc.content[1].table.widths = ['*', '*', '*', '*']; // Menyesuaikan lebar kolom
-                                doc.content.splice(0, 1, {
-                                    text: 'Inixindo E-Office Data Peserta',
-                                    fontSize: 12,
-                                    alignment: 'center',
-                                    margin: [0, 0, 0, 12] // Margin dari header
-                                });
-                                doc['footer'] = function(currentPage, pageCount) {
-                                    return {
-                                        text: 'Data Peserta ' + currentPage.toString() + ' of ' + pageCount,
-                                        alignment: 'center',
-                                        margin: [0, 0, 0, 12] // Margin dari footer
-                                    };
-                                };
-                            }
-                        }
-                    ],
+        
+        var tableConfig = {};
+        
+        if(idInstruktur) {
+            tableConfig = {
                 "ajax": {
-                    "url": "{{ route('getPesertaall') }}", // URL API untuk mengambil data
+                    "url": "{{ route('getRegistrasiall') }}",
                     "type": "GET",
                     "beforeSend": function () {
                         $('#loadingModal').modal('show');
@@ -364,40 +160,116 @@
                     }
                 },
                 "columns": [
-                    {"data": "nama"},
-                    {"data": "email"},
+                    {"data": "peserta.nama"},
+                    {"data": "peserta.email"},
                     {
-                        "data": "id",
+                        "data": "id_instruktur",
                         "visible": false
                     },
                     {
-                        "data": "perusahaan.sales_key",
-                        "visible": false
-                    },
-                    {
-                        "data": null,
+                        "data": "peserta.jenis_kelamin",
                         "render": function(data) {
-                            return data.jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan';
+                            return data == 'L' ? 'Laki-laki' : 'Perempuan';
                         }
                     },
-                    {"data": "no_hp"},
-                    {"data": "alamat"},
-                    {"data": "perusahaan.nama_perusahaan"},
+                    {"data": "peserta.no_hp"},
+                    {"data": "peserta.alamat"},
+                    {"data": "peserta.perusahaan.nama_perusahaan"},
                     {
-                        "data": "tanggal_lahir",
+                        "data": "peserta.tanggal_lahir",
+                        "render": function(data) {
+                            moment.locale('id')
+                            return moment(data).format('DD MMMM YYYY');
+                        }
+                    }
+                ],
+                "initComplete": function() {
+                    this.api().columns(2).search(idInstruktur).draw();
+                }
+            };
+        } else if(idSales) {
+            tableConfig = {
+                "dom": 'Bfrtip',
+                "buttons": [
+                    {
+                        extend: 'excel',
+                        text: 'Export to Excel',
+                        exportOptions: {
+                            columns: [ 0, 1, 3, 4, 5, 6, 7 ]
+                        },
+                        filename: 'Inixindo E-office Data Peserta'
+                    },
+                    {
+                        extend: 'pdf',
+                        text: 'Export to PDF',
+                        exportOptions: {
+                            columns: [ 0, 1, 3, 4, 5, 6, 7 ]
+                        },
+                        customize: function(doc) {
+                            doc.content[1].table.widths = ['*', '*', '*', '*', '*', '*', '*'];
+                            doc.content.splice(0, 1, {
+                                text: 'Inixindo E-Office Data Peserta',
+                                fontSize: 12,
+                                alignment: 'center',
+                                margin: [0, 0, 0, 12]
+                            });
+                            doc['footer'] = function(currentPage, pageCount) {
+                                return {
+                                    text: 'Data Peserta ' + currentPage.toString() + ' of ' + pageCount,
+                                    alignment: 'center',
+                                    margin: [0, 0, 0, 12]
+                                };
+                            };
+                        }
+                    }
+                ],
+                "ajax": {
+                    "url": "{{ route('getRegistrasiall') }}",
+                    "type": "GET",
+                    "beforeSend": function () {
+                        $('#loadingModal').modal('show');
+                        $('#loadingModal').on('show.bs.modal', function () {
+                            $('#loadingModal').removeAttr('inert');
+                        });
+                    },
+                    "complete": function () {
+                        setTimeout(() => {
+                            $('#loadingModal').modal('hide');
+                            $('#loadingModal').on('hidden.bs.modal', function () {
+                                $('#loadingModal').attr('inert', true);
+                            });
+                        }, 1000);
+                    }
+                },
+                "columns": [
+                    {"data": "peserta.nama"},
+                    {"data": "peserta.email"},
+                    {"data": "peserta.id", "visible": false},
+                    {"data": "peserta.perusahaan.sales_key", "visible": false},
+                    {
+                        "data": "peserta.jenis_kelamin",
+                        "render": function(data) {
+                            return data === 'L' ? 'Laki-laki' : 'Perempuan';
+                        }
+                    },
+                    {"data": "peserta.no_hp"},
+                    {"data": "peserta.alamat"},
+                    {"data": "peserta.perusahaan.nama_perusahaan"},
+                    {
+                        "data": "peserta.tanggal_lahir",
                         "render": function(data) {
                             return moment(data).format('DD MMMM YYYY');
                         }
                     },
                     {
-                    "data": null,
-                    "render": function(data, type, row) {
-                        var actions = "";
+                        "data": null,
+                        "render": function(data, type, row) {
+                            var actions = "";
                             actions += '@if (auth()->user()->can('Edit Peserta'))'
                             actions += '<div class="dropdown">';
                             actions += '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
                             actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
-                            actions += '<a class="dropdown-item" href="{{ url('/peserta') }}/' + row.id + '/edit" data-toggle="tooltip" title="Edit Peserta"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Edit</a>';
+                            actions += '<a class="dropdown-item" href="{{ url('/peserta') }}/' + row.peserta.id + '/edit" data-toggle="tooltip" title="Edit Peserta"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Edit</a>';
                             actions += '</div>';
                             actions += '</div>';
                             actions += '@else'
@@ -405,17 +277,86 @@
                             actions += '<button class="btn dropdown-toggle disabled" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
                             actions += '</div>';
                             actions += '@endif'
-                        return actions;
+                            return actions;
+                        }
                     }
-                }
-                    
-
                 ],
                 "initComplete": function() {
-
-                            this.api().columns(3).search(idSales).draw();
+                    this.api().columns(3).search(idSales).draw();
+                }
+            };
+        } else {
+            tableConfig = {
+                "ajax": {
+                    "url": "{{ route('getRegistrasiall') }}",
+                    "type": "GET",
+                    "beforeSend": function () {
+                        $('#loadingModal').modal('show');
+                        $('#loadingModal').on('show.bs.modal', function () {
+                            $('#loadingModal').removeAttr('inert');
+                        });
+                    },
+                    "complete": function () {
+                        setTimeout(() => {
+                            $('#loadingModal').modal('hide');
+                            $('#loadingModal').on('hidden.bs.modal', function () {
+                                $('#loadingModal').attr('inert', true);
+                            });
+                        }, 1000);
+                    }
+                },
+                "columns": [
+                    {"data": "peserta.nama"},
+                    {"data": "peserta.email"},
+                    {
+                        "data": "peserta.jenis_kelamin",
+                        "render": function(data) {
+                            return data === 'L' ? 'Laki-laki' : 'Perempuan';
                         }
-        });
+                    },
+                    {"data": "peserta.no_hp"},
+                    {"data": "peserta.alamat"},
+                    {"data": "peserta.perusahaan.nama_perusahaan"},
+                    {
+                        "data": "peserta.tanggal_lahir",
+                        "render": function(data) {
+                            return moment(data).format('DD MMMM YYYY');
+                        }
+                    },
+                    {
+                        "data": "created_at",
+                        "visible": false,
+                        "render": function(data, type, row) {
+                            return data === null || data === undefined ? '-' : data;
+                        }
+                    },
+                    {
+                        "data": null,
+                        "render": function(data, type, row) {
+                            var actions = "";
+                            actions += '@if (auth()->user()->can('Edit Peserta'))'
+                            actions += '<div class="dropdown">';
+                            actions += '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
+                            actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
+                            actions += '<a class="dropdown-item" href="{{ url('/peserta') }}/' + row.peserta.id + '/edit" data-toggle="tooltip" title="Edit Peserta"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Edit</a>';
+                            actions += '</div>';
+                            actions += '</div>';
+                            actions += '@else'
+                            actions += '<div class="dropdown">';
+                            actions += '<button class="btn dropdown-toggle disabled" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
+                            actions += '</div>';
+                            actions += '@endif'
+                            return actions;
+                        }
+                    }
+                ],
+                "order": [[7, 'desc']],
+                "columnDefs": [{"targets": [7], "type": "date"}]
+            };
+        }
+        
+        // Initialize DataTable dengan config yang sesuai
+        $('#pesertaTable').DataTable(tableConfig);
     });
 </script>
 @endpush
