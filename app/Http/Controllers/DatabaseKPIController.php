@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\activityLog;
 use App\Models\formPenilaian;
 use App\Models\karyawan;
 use App\Models\kategoriKPI;
@@ -13,6 +14,7 @@ use App\Models\tipeKategoriTabel;
 use App\Models\User;
 use App\Notifications\CommentNotification;
 use App\Notifications\penilaianExcangheNotifikasi;
+use Google\Service\AnalyticsReporting\Activity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Contracts\Service\Attribute\Required;
@@ -40,6 +42,179 @@ class DatabaseKPIController extends Controller
         $this->middleware('permission:View DatabaseKPI', ['only' => ['index']]);
     }
 
+
+    public function activityLog()
+    {
+        $id_karyawan = Auth::user()->id;
+
+        $dataAuth = activityLog::with('karyawan')
+            ->where('user_id', $id_karyawan)
+            ->whereIn('status', ['Login', 'Logout'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $dataVisit = activityLog::with('karyawan')
+            ->where('user_id', $id_karyawan)
+            ->whereNotIn('status', ['Login', 'Logout'])
+            ->whereNotIn('status', ['Absen Masuk', 'Absen keluar'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $dataAbsen = activityLog::with('karyawan')
+            ->where('user_id', $id_karyawan)
+            ->whereIn('status', ['Absen Masuk', 'Absen Keluar'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('databasekpi.activityLog', compact(['dataAuth', 'dataVisit', 'dataAbsen']));
+    }
+
+    public function downloadDivisi(Request $request)
+    {
+        $request->validate([
+            'divisi'  => 'required|string',
+            'quartal' => 'required|string',
+            'tahun'   => 'required|integer'
+        ]);
+
+        $quartal = $request->input('quartal');
+        $tahun   = $request->input('tahun');
+        $divisi  = $request->input('divisi');
+
+        $formPenilaians = formPenilaian::with('karyawan')
+            ->whereHas('karyawan', function ($q) use ($divisi) {
+                $q->where('divisi', $divisi);
+            })
+            ->where('quartal', $quartal)
+            ->where('tahun', $tahun)
+            ->where('jenis_form', 'Rutin')
+            ->get();
+
+        if ($formPenilaians->isEmpty()) {
+            return back()->with('error', 'Tidak ada data penilaian untuk divisi & periode tersebut');
+        }
+
+        $finalData = [];
+
+        foreach ($formPenilaians->groupBy('id_karyawan') as $id_karyawan => $forms) {
+            $form = $forms->first();
+
+            $evaluated = [
+                'nama'    => optional($form->karyawan)->nama_lengkap . ' - ' . optional($form->karyawan)->divisi ?? '-',
+                'quartal' => $form->quartal,
+                'tahun'   => $form->tahun,
+                'id_karyawan' => $form->id_karyawan,
+                'catatan' => $form->catatan,
+            ];
+
+            // === Data Absensi ===
+            $dataAbsensi = AbsensiKaryawan::where('id_karyawan', $form->id_karyawan)
+                ->whereMonth('created_at', $quartal) // asumsi quartal = angka bulan
+                ->whereYear('created_at', $tahun)
+                ->get();
+
+            $telat = $dataAbsensi->where('keterangan', 'Telat')->count();
+            $izin  = $dataAbsensi->where('keterangan', 'Izin')->count();
+            $sakit = $dataAbsensi->where('keterangan', 'Sakit')->count();
+
+            $dataAbsen = [
+                'sakit' => $sakit,
+                'telat' => $telat,
+                'izin'  => $izin
+            ];
+
+            // === Ambil Kategori KPI ===
+            $allKategoriKPIs = $forms->flatMap(function ($form) {
+                return kategoriKPI::where('kode_kategori', $form->kode_kategori)->get();
+            })->unique('judul_kategori')->values();
+
+            // === Evaluator Data ===
+            $allEvaluatorData = $forms->flatMap(function ($form) {
+                return shareForm::with('evaluator')
+                    ->where('id_evaluated', $form->id_karyawan)
+                    ->where('kode_form', $form->kode_form)
+                    ->get();
+            });
+
+            $evaluatorList = [];
+
+            foreach ($allEvaluatorData as $evaluatorItem) {
+                $nilaiCollection = nilaiKPI::where('id_evaluator', $evaluatorItem->id_evaluator)
+                    ->where('id_evaluated', $evaluatorItem->id_evaluated)
+                    ->where('kode_form', $form->kode_form)
+                    ->where('jenis_penilaian', $evaluatorItem->jenis_penilaian)
+                    ->get();
+
+                $listNilaiEvaluator = [];
+
+                foreach ($allKategoriKPIs as $kategori) {
+                    $item = $nilaiCollection->first(
+                        fn($item) =>
+                        $item->id_evaluator === $evaluatorItem->id_evaluator &&
+                            $item->name_variabel === $kategori->judul_kategori
+                    );
+
+                    $listNilaiEvaluator[] = [
+                        'pesan' => $item->pesan ?? '-',
+                        'nilai' => $item->nilai ?? '-'
+                    ];
+                }
+
+                $evaluatorList[] = [
+                    'nama' => optional($evaluatorItem->evaluator)->nama_lengkap . ' - ' . optional($evaluatorItem->evaluator)->divisi ?? '-',
+                    'jenis_penilaian' => $evaluatorItem->jenis_penilaian ?? '-',
+                    'nilai' => $listNilaiEvaluator
+                ];
+            }
+
+            // === Data Kriteria ===
+            $dataKriteria = $forms->map(function ($form) {
+                $kategoriKPIs = kategoriKPI::where('kode_kategori', $form->kode_kategori)->get();
+
+                $detailKriteria = $kategoriKPIs->map(function ($kategori) {
+                    $tipeDetails = tipeKategoriTabel::where('id_kategori', $kategori->id)->get();
+
+                    return [
+                        'sub_kriteria' => $kategori->judul_kategori,
+                        'bobot' => $kategori->bobot,
+                        'detailTipeSubKriteria' => $tipeDetails->map(fn($tipe) => [
+                            'ket_sub_tipe' => $tipe->ket_tipe,
+                            'nilai_ket_sub_tipe' => $tipe->nilai_ket_sub_tipe
+                        ])->toArray()
+                    ];
+                });
+
+                return [
+                    'kriteria' => $form->nama_penilaian,
+                    'detailKriteria' => $detailKriteria
+                ];
+            })->toArray();
+
+            $evaluatorList = collect($evaluatorList)
+                ->unique(fn($item) => $item['nama'] . $item['jenis_penilaian'])
+                ->values();
+
+            // === Push Data ===
+            $finalData[] = [
+                'evaluated' => $evaluated,
+                'dataAbsen' => $dataAbsen,
+                'data' => [
+                    'evaluator' => $evaluatorList,
+                    'dataKriteria' => $dataKriteria
+                ]
+            ];
+        }
+
+        $data = ['data' => $finalData];
+
+        return view('pdf.rekapPenilaianDivisi', $data);
+
+        // $pdf = Pdf::loadView('pdf.rekapPenilaianDivisi', $data);
+
+        // $filename = "Rekap_Penilaian_Divisi_{$divisi}_{$quartal}_{$tahun}.pdf";
+
+        // return $pdf->download($filename);
+    }
     public function downloadPDF(Request $request)
     {
         $request->validate([
@@ -227,21 +402,24 @@ class DatabaseKPIController extends Controller
             ]
         ];
 
-        $pdf = Pdf::loadView('pdf.rekapPenilaian', $data);
+        return view('pdf.rekapPenilaian', $data);
 
-        $evaluatedName = preg_replace('/[^a-zA-Z0-9_]/', '_', $evaluated['nama'] ?? 'nama');
-        $quartal = $evaluated['quartal'] ?? 'Q';
-        $tahun = $evaluated['tahun'] ?? 'tahun';
+        // $pdf = Pdf::loadView('pdf.rekapPenilaian', $data);
 
-        $filename = "Rekap_Penilaian_{$evaluatedName}_{$quartal}_{$tahun}.pdf";
+        // $evaluatedName = preg_replace('/[^a-zA-Z0-9_]/', '_', $evaluated['nama'] ?? 'nama');
+        // $quartal = $evaluated['quartal'] ?? 'Q';
+        // $tahun = $evaluated['tahun'] ?? 'tahun';
 
-        return $pdf->download($filename);
+        // $filename = "{$tipe_button}-Rekap_Penilaian_{$evaluatedName}_{$quartal}_{$tahun}.pdf";
+
+        // return $pdf->download($filename);
     }
 
-    public function indexKategori()
+    public function indexKategori(Request $request)
     {
-        $divisi = karyawan::select('divisi')->distinct()->get()->pluck('divisi');
-        return view('databasekpi.indexKategori', compact('divisi'));
+        $divisi = karyawan::select('divisi')->distinct()->pluck('divisi');
+        $tipe = $request->query('tipe', 'rutin');
+        return view('databasekpi.indexKategori', compact(['divisi', 'tipe']));
     }
 
     public function kirimEmailData(Request $request)
@@ -403,7 +581,6 @@ class DatabaseKPIController extends Controller
             ], 500);
         }
     }
-
     public function sendCatatan(Request $request)
     {
         $request->validate([
@@ -435,15 +612,18 @@ class DatabaseKPIController extends Controller
     {
         $request->validate([
             'id_karyawan' => 'required',
-            'kodeForm'    => 'required|string'
+            'kodeForm'    => 'required|string',
+            'jenis_form'  => 'required|string',
         ]);
 
         $id_karyawan = $request->input('id_karyawan');
         $kodeForm = $request->input('kodeForm');
+        $jenis_form = $request->input('jenis_form');
 
         $formPenilaians = formPenilaian::with('karyawan')
             ->where('id_karyawan', $id_karyawan)
             ->where('kode_form', $kodeForm)
+            ->where('jenis_form', $jenis_form)
             ->get();
 
         if ($formPenilaians->isEmpty()) {
@@ -507,6 +687,7 @@ class DatabaseKPIController extends Controller
             foreach ($allKategoriKPIs as $kategori) {
                 $item = $nilaiCollection->first(function ($nilai) use ($evaluatorItem, $kategori) {
                     return $nilai->id_evaluator === $evaluatorItem->id_evaluator &&
+                        $nilai->kode_kategori === $kategori->kode_kategori &&
                         $nilai->name_variabel === $kategori->judul_kategori;
                 });
 
@@ -515,6 +696,7 @@ class DatabaseKPIController extends Controller
                     'nilai' => $item->nilai ?? '-'
                 ];
             }
+
 
             $evaluatorList[] = [
                 'nama'            => optional($evaluatorItem->evaluator)->nama_lengkap . ' - ' . optional($evaluatorItem->evaluator)->divisi ?? '-',
@@ -538,6 +720,7 @@ class DatabaseKPIController extends Controller
                     return [
                         'sub_kriteria' => $kategori->judul_kategori,
                         'bobot' => $kategori->bobot,
+                        'tipe_input' => $kategori->tipe_kategori,
                         'detailTipeSubKriteria' => $tipeDetails->map(fn($tipe) => [
                             'ket_sub_tipe' => $tipe->ket_tipe,
                             'nilai_ket_sub_tipe' => $tipe->nilai_ket_sub_tipe
@@ -558,110 +741,6 @@ class DatabaseKPIController extends Controller
             ->unique(fn($item) => $item['nama'] . $item['jenis_penilaian'])
             ->values();
 
-        $persentaseJenis = [
-            'General Manager' => 35,
-            'Manager/SPV/Team Leader (Atasan Langsung)' => 30,
-            'Rekan Kerja (Satu Divisi)' => 20,
-            'Pekerja (Beda Divisi)' => 10,
-            'Self Apprisial' => 5,
-        ];
-
-        $dataChartQuartal = formPenilaian::where('id_karyawan', $id_karyawan)
-            ->where('tahun', $form->tahun)
-            ->get()
-            ->groupBy(fn($f) => $f->quartal)
-            ->map(function ($quartalForms) use ($persentaseJenis) {
-                $groupSkor = collect($persentaseJenis)->mapWithKeys(fn($v, $k) => [$k => []]);
-
-                foreach ($quartalForms as $form) {
-                    $allEvaluatorData = shareForm::with('evaluator')
-                        ->where('id_evaluated', $form->id_karyawan)
-                        ->where('kode_form', $form->kode_form)
-                        ->get();
-
-                    foreach ($allEvaluatorData as $evaluatorItem) {
-                        $nilaiCollection = nilaiKPI::where('id_evaluator', $evaluatorItem->id_evaluator)
-                            ->where('id_evaluated', $evaluatorItem->id_evaluated)
-                            ->where('kode_form', $form->kode_form)
-                            ->where('jenis_penilaian', $evaluatorItem->jenis_penilaian)
-                            ->get();
-
-                        $totalSkorEvaluator = 0;
-
-                        foreach ($nilaiCollection as $nilai) {
-                            $skor = ($nilai->nilai * $nilai->bobot) / 100;
-                            $totalSkorEvaluator += $skor;
-                        }
-
-                        if ($groupSkor->has($evaluatorItem->jenis_penilaian)) {
-                            $current = $groupSkor->get($evaluatorItem->jenis_penilaian, []);
-                            $current[] = $totalSkorEvaluator;
-                            $groupSkor->put($evaluatorItem->jenis_penilaian, $current);
-                        }
-                    }
-                }
-
-                $totalSemuaSkor = 0;
-                foreach ($groupSkor as $jenis => $skorList) {
-                    if (count($skorList) > 0) {
-                        $rataRata = array_sum($skorList) / count($skorList);
-                        $persen = $persentaseJenis[$jenis] ?? 0;
-                        $skorFinal = ($rataRata * $persen) / 100;
-                        $totalSemuaSkor += $skorFinal;
-                    }
-                }
-
-                return number_format($totalSemuaSkor, 2, '.', '');
-            });
-
-
-        $dataChartAll = formPenilaian::where('id_karyawan', $id_karyawan)
-            ->get()
-            ->groupBy(fn($f) => $f->quartal)
-            ->map(function ($quartalForms) use ($persentaseJenis) {
-                $groupSkor = collect($persentaseJenis)->mapWithKeys(fn($v, $k) => [$k => []]);
-
-                foreach ($quartalForms as $form) {
-                    $allEvaluatorData = shareForm::with('evaluator')
-                        ->where('id_evaluated', $form->id_karyawan)
-                        ->where('kode_form', $form->kode_form)
-                        ->get();
-
-                    foreach ($allEvaluatorData as $evaluatorItem) {
-                        $nilaiCollection = nilaiKPI::where('id_evaluator', $evaluatorItem->id_evaluator)
-                            ->where('id_evaluated', $evaluatorItem->id_evaluated)
-                            ->where('kode_form', $form->kode_form)
-                            ->where('jenis_penilaian', $evaluatorItem->jenis_penilaian)
-                            ->get();
-
-                        $totalSkorEvaluator = 0;
-
-                        foreach ($nilaiCollection as $nilai) {
-                            $skor = ($nilai->nilai * $nilai->bobot) / 100;
-                            $totalSkorEvaluator += $skor;
-                        }
-
-                        if ($groupSkor->has($evaluatorItem->jenis_penilaian)) {
-                            $current = $groupSkor->get($evaluatorItem->jenis_penilaian, []);
-                            $current[] = $totalSkorEvaluator;
-                            $groupSkor->put($evaluatorItem->jenis_penilaian, $current);
-                        }
-                    }
-                }
-
-                $totalSemuaSkor = 0;
-                foreach ($groupSkor as $jenis => $skorList) {
-                    if (count($skorList) > 0) {
-                        $rataRata = array_sum($skorList) / count($skorList);
-                        $persen = $persentaseJenis[$jenis] ?? 0;
-                        $skorFinal = ($rataRata * $persen) / 100;
-                        $totalSemuaSkor += $skorFinal;
-                    }
-                }
-
-                return number_format($totalSemuaSkor, 2, '.', '');
-            });
-
         return response()->json([
             'data' => [[
                 'evaluated' => $evaluated,
@@ -670,13 +749,131 @@ class DatabaseKPIController extends Controller
                     'evaluator' => $evaluatorList,
                     'dataKriteria' => $dataKriteria,
                 ],
-                'chart' => [
-                    'quartal' => $dataChartQuartal,
-                    'all' => $dataChartAll
-                ]
             ]]
         ]);
     }
+
+    public function getDetailChartPenilaian(Request $request)
+    {
+        $request->validate([
+            'id_karyawan' => 'required|integer',
+            'tahun'       => 'nullable',
+        ]);
+
+        $id_karyawan = $request->input('id_karyawan');
+        $tahunFilter = (int) $request->input('tahun', now()->year);
+
+        $allFormPenilaians = formPenilaian::where('id_karyawan', $id_karyawan)
+            ->where('jenis_form', 'Rutin')
+            ->get();
+
+        if ($allFormPenilaians->isEmpty()) {
+            return response()->json(['chartQuartal' => [], 'chartAllYears' => []]);
+        }
+
+        $uniqueFormGroups = $allFormPenilaians->unique(fn($item) => $item->tahun . '|' . $item->quartal . '|' . $item->kode_form)
+            ->values();
+
+        $persentaseJenis = [
+            'General Manager' => 35,
+            'Manager/SPV/Team Leader (Atasan Langsung)' => 30,
+            'Rekan Kerja (Satu Divisi)' => 20,
+            'Pekerja (Beda Divisi)' => 10,
+            'Self Apprisial' => 5,
+        ];
+
+        $allResults = [];
+
+        foreach ($uniqueFormGroups as $group) {
+            $tahun    = (int) $group->tahun;
+            $quartal  = $group->quartal;
+            $kodeForm = $group->kode_form;
+
+            $kategoriKpis = $allFormPenilaians->where('tahun', $tahun)
+                ->where('quartal', $quartal)
+                ->where('kode_form', $kodeForm)
+                ->pluck('kode_kategori')
+                ->unique();
+
+            $allKategori = kategoriKPI::whereIn('kode_kategori', $kategoriKpis)
+                ->where('tipe_kategori', '!=', 'textarea')
+                ->get()
+                ->keyBy('judul_kategori');
+
+            $evaluators = shareForm::where('id_evaluated', $id_karyawan)
+                ->where('kode_form', $kodeForm)
+                ->get()
+                ->groupBy('jenis_penilaian');
+
+            $nilaiAll = NilaiKPI::where('id_evaluated', $id_karyawan)
+                ->where('kode_form', $kodeForm)
+                ->where('status', '1')
+                ->get();
+
+            $totalSkorAkhirKaryawan = 0;
+
+            foreach ($evaluators as $jenisPenilaian => $evaluatorGroup) {
+                $bobotJenis = $persentaseJenis[$jenisPenilaian] ?? 0;
+                if ($bobotJenis === 0) continue;
+
+                $skorJenisPenilaian = 0;
+
+                foreach ($allKategori as $judulKategori => $kategori) {
+                    $nilaiPerEvaluator = [];
+
+                    foreach ($evaluatorGroup as $evaluatorItem) {
+                        $itemNilai = $nilaiAll->first(function ($it) use ($evaluatorItem, $judulKategori, $jenisPenilaian) {
+                            return $it->id_evaluator == $evaluatorItem->id_evaluator
+                                && $it->jenis_penilaian == $jenisPenilaian
+                                && $it->name_variabel == $judulKategori
+                                && is_numeric($it->nilai);
+                        });
+
+                        if ($itemNilai) {
+                            $nilaiPerEvaluator[] = (float) $itemNilai->nilai;
+                        }
+                    }
+
+                    $avgNilaiSub = count($nilaiPerEvaluator) > 0
+                        ? array_sum($nilaiPerEvaluator) / count($nilaiPerEvaluator)
+                        : 0;
+
+                    $bobotKategori = (float) $kategori->bobot;
+                    $skorJenisPenilaian += $avgNilaiSub * ($bobotKategori / 100);
+                }
+
+                $totalSkorAkhirKaryawan += ($skorJenisPenilaian * $bobotJenis) / 100;
+            }
+
+            $allResults[$tahun][$quartal][$kodeForm] = number_format($totalSkorAkhirKaryawan, 2, '.', '');
+        }
+
+        $chartQuartal = [];
+        $chartAllYears = $allResults;
+
+        if (isset($allResults[$tahunFilter])) {
+            $chartQuartal = $allResults[$tahunFilter];
+        }
+
+        if (empty($chartQuartal) && !empty($allResults)) {
+            $latestYear = max(array_keys($allResults));
+            $chartQuartal = $allResults[$latestYear];
+        }
+
+        $finalChartQuartal = [];
+        foreach (['Q1', 'Q2', 'Q3', 'Q4'] as $q) {
+            if (isset($chartQuartal[$q])) {
+                $finalChartQuartal[$q] = $chartQuartal[$q];
+            }
+        }
+
+        return response()->json([
+            'chartQuartal'  => $finalChartQuartal,
+            'chartAllYears' => $chartAllYears,
+        ]);
+    }
+
+
     public function indexBerandaKpi()
     {
         return view('databasekpi.dashboard');
@@ -701,9 +898,9 @@ class DatabaseKPIController extends Controller
         return redirect()->back()->with('success', 'Review penilaian berhasil dikirim.');
     }
 
-    public function detailPenilaian($kodeForm, $id_karyawan)
+    public function detailPenilaian($kodeForm, $id_karyawan, $tipe)
     {
-        return view('databasekpi.detailPenilaian', compact('kodeForm', 'id_karyawan'));
+        return view('databasekpi.detailPenilaian', compact('kodeForm', 'id_karyawan', 'tipe'));
     }
 
     public function penilaianEvaluator(Request $request)
@@ -815,10 +1012,11 @@ class DatabaseKPIController extends Controller
             }
 
             DB::commit();
-            return redirect()->route('formPenilaian.show', [
+            return view('databasekpi.formPenilaian', [
                 'kode_form' => $kode_form,
-                'id_evaluated' => $id_evaluated
-            ])->with('success', 'Terima kasih telah menilai. Penilaian Anda berhasil disimpan.');
+                'id_evaluated' => $id_evaluated,
+                'status' => false,
+            ]);
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', 'Terjadi kesalahan saat menyimpan: ' . $e->getMessage());
@@ -939,6 +1137,7 @@ class DatabaseKPIController extends Controller
             'kode_form'         => 'required|string',
             'id_evaluated'      => 'required|integer',
             'jenis_penilaian'   => 'required|string',
+            'jenis_form'        => 'required|string',
         ]);
 
         $id_evaluator_array = $request->input('id_karyawan');
@@ -946,11 +1145,13 @@ class DatabaseKPIController extends Controller
         $kode_form          = $request->input('kode_form');
         $id_evaluated       = $request->input('id_evaluated');
         $jenis_penilaian    = $request->input('jenis_penilaian');
+        $jenis_form         = $request->input('jenis_form');
 
         $karyawanEvaluated = Karyawan::find($id_evaluated);
 
         $dataFormKategori = formPenilaian::where('kode_form', $kode_form)
             ->where('id_karyawan', $id_evaluated)
+            ->where('jenis_form', $jenis_form)
             ->get();
 
         $dataKategori = kategoriKPI::whereIn('kode_kategori', $dataFormKategori->pluck('kode_kategori'))->get();
@@ -1080,6 +1281,7 @@ class DatabaseKPIController extends Controller
             'kriteria.*.sub_kriteria.*.ket_tipe.*'        => 'nullable|string',
             'kriteria.*.sub_kriteria.*.nilai_ket_tipe'    => 'nullable|array',
             'kriteria.*.sub_kriteria.*.nilai_ket_tipe.*'  => 'nullable|string',
+            'jenis_form'                                  => 'required|string',
         ]);
 
         $id_karyawan_array   = $request->input('id_karyawan');
@@ -1087,6 +1289,7 @@ class DatabaseKPIController extends Controller
         $kodeFormPenilaian   = Str::random(20);
         $month               = now()->month;
         $year                = now()->year;
+        $jenis_form          = $request->input('jenis_form');
 
         $quarterLabel = match (true) {
             $month >= 1 && $month <= 3 => 'Q1',
@@ -1114,6 +1317,7 @@ class DatabaseKPIController extends Controller
                     $form->nama_penilaian = $nama_penilaian_utama;
                     $form->quartal        = $quarterLabel;
                     $form->tahun          = $year;
+                    $form->jenis_form     = $jenis_form;
                     $form->save();
 
                     foreach ($kriteriaData['sub_kriteria'] as $subKriteriaData) {
@@ -1357,8 +1561,6 @@ class DatabaseKPIController extends Controller
         $outputData = array_values($groupedOutputData);
         $status = count($outputData) > 0 ? true : false;
 
-        // dd([$outputData, $evaluatorEmploye, $status]);
-
         return view('databasekpi.formPenilaian', compact('outputData', 'evaluatorEmploye', 'status'));
     }
 
@@ -1403,10 +1605,12 @@ class DatabaseKPIController extends Controller
         $filterQuartal = request()->get('quartal');
         $filterTahun = request()->get('tahun');
         $filterDivisi = request()->get('divisi');
+        $jenisForm = request()->get('jenis_form');
 
         $dataFormPenilaianCollection = formPenilaian::with('karyawan')
             ->when($filterQuartal, fn($q) => $q->where('quartal', $filterQuartal))
             ->when($filterTahun, fn($q) => $q->where('tahun', $filterTahun))
+            ->where('jenis_form', $jenisForm)
             ->get();
 
         $allKodeForms = $dataFormPenilaianCollection->pluck('kode_form')->unique()->values();
@@ -1697,11 +1901,13 @@ class DatabaseKPIController extends Controller
         $jenis_penilaian = $request->input('jenis_penilaian');
         $quartal = $request->input('quartal');
         $tahun = $request->input('tahun');
+        $jenis_form = $request->input('jenis_form');
 
         $data_evaluated = formPenilaian::where('kode_form', $kode_form)
             ->where('id_karyawan', $id_karyawan)
             ->where('quartal', $quartal)
             ->where('tahun', $tahun)
+            ->where('jenis_form', $jenis_form)
             ->get();
 
         if ($data_evaluated->isEmpty()) {
@@ -1999,7 +2205,7 @@ class DatabaseKPIController extends Controller
         $evaluatorCheck = shareForm::where('kode_form', $kode_form)->exists();
 
         if ($evaluatorCheck) {
-            return redirect()->back()->with('error', 'Jangan lupa dibersihkan terlebih dahulu');
+            return back()->with('error', 'Jangan lupa dibersihkan terlebih dahulu');
         }
 
         $allFormIds = formPenilaian::where('kode_form', $kode_form)
@@ -2057,27 +2263,29 @@ class DatabaseKPIController extends Controller
 
     public function hapus(Request $request)
     {
-        $kode_form = $request->input('kode_form');
-        $id_karyawan = $request->input('id_karyawan');
+        $kode_form     = $request->input('kode_form');
+        $id_karyawan   = $request->input('id_karyawan');
         $jenis_penilaian = $request->input('jenis_penilaian');
-        $quartal = $request->input('quartal');
-        $tahun = $request->input('tahun');
+        $quartal       = $request->input('quartal');
+        $tahun         = $request->input('tahun');
+        $jenis_form    = $request->input('jenis_form');
 
         $data_evaluated = formPenilaian::where('kode_form', $kode_form)
             ->where('id_karyawan', $id_karyawan)
             ->where('quartal', $quartal)
             ->where('tahun', $tahun)
+            ->where('jenis_form', $jenis_form)
             ->get();
 
         if ($data_evaluated->isEmpty()) {
             return response()->json([
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => 'Data penilaian tidak ditemukan.'
             ]);
         }
 
         $kodeKategoriList = $data_evaluated->pluck('kode_kategori')->unique();
-        $kodeFormList    = $data_evaluated->pluck('kode_form')->unique();
+        $kodeFormList     = $data_evaluated->pluck('kode_form')->unique();
 
         $idEvaluators = shareForm::where('id_evaluated', $id_karyawan)
             ->whereIn('kode_form', $kodeFormList)
@@ -2105,7 +2313,11 @@ class DatabaseKPIController extends Controller
                 ->delete();
         }
 
-        $data_evaluated->each->delete();
+        formPenilaian::where('kode_form', $kode_form)
+            ->where('id_karyawan', $id_karyawan)
+            ->where('quartal', $quartal)
+            ->where('tahun', $tahun)
+            ->delete();
 
         foreach ($kodeKategoriList as $kodeKategori) {
             $masihDipakai = formPenilaian::where('kode_kategori', $kodeKategori)->exists();
@@ -2120,8 +2332,8 @@ class DatabaseKPIController extends Controller
         }
 
         return response()->json([
-            'status' => 'success',
-            'message' => 'Berhasil menghapus penilaian!',
+            'status'        => 'success',
+            'message'       => 'Berhasil menghapus penilaian!',
             'deleted_nilai' => $deletedNilai,
             'deleted_share' => $deletedShare
         ]);
@@ -2134,7 +2346,7 @@ class DatabaseKPIController extends Controller
             ->count();
 
         $year = date('Y');
-        $month = date('n');
+        $month = date('m');
 
         if ($month >= 1 && $month <= 3) {
             $startMonth = 1;
@@ -2153,34 +2365,29 @@ class DatabaseKPIController extends Controller
         $startDate = date("$year-$startMonth-01 00:00:00");
         $endDate   = date("$year-$endMonth-" . date("t", strtotime("$year-$endMonth-01")) . " 23:59:59");
 
-        $totalAbsensiCuti = pengajuancuti::where('tipe', 'Cuti')
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->where('approval_manager', '1')
-            ->count();
-
         $AbsenCuti = pengajuancuti::with('karyawan')
             ->where('tipe', 'Cuti')
             ->whereBetween('created_at', [$startDate, $endDate])
             ->where('approval_manager', '1')
             ->get();
 
+        $totalAbsensiCuti = $AbsenCuti->pluck('id_karyawan')->unique()->count();
+
         $arrayAbsenCuti = $AbsenCuti->map(function ($cuti) {
             return [
-                'namaKaryawan'   => $cuti->karyawan->nama_lengkap,
-                'divisi'         => $cuti->karyawan->divisi,
-                'alasan'         => $cuti->alasan
+                'id_karyawan'  => $cuti->id_karyawan,
+                'namaKaryawan' => $cuti->karyawan->nama_lengkap,
+                'divisi'       => $cuti->karyawan->divisi,
+                'alasan'       => $cuti->alasan,
+                'tanggalAwal'  => $cuti->tanggal_awal,
+                'tanggalAkhir' => $cuti->tanggal_akhir
             ];
         });
 
         $dataAbsensiCuti = [
-            'totalAbsenCuti'   => $totalAbsensiCuti,
-            'dataCuti'         => $arrayAbsenCuti
+            'totalAbsenCuti' => $totalAbsensiCuti,
+            'dataCuti'       => $arrayAbsenCuti
         ];
-
-        $totalAbsensiSakit = pengajuancuti::where('tipe', 'Sakit')
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->where('approval_manager', '1')
-            ->count();
 
         $AbsenSakit = pengajuancuti::with('karyawan')
             ->where('tipe', 'Sakit')
@@ -2188,37 +2395,43 @@ class DatabaseKPIController extends Controller
             ->where('approval_manager', '1')
             ->get();
 
+        $totalAbsensiSakit = $AbsenSakit->pluck('id_karyawan')->unique()->count();
+
         $arrayAbsensiSakit = $AbsenSakit->map(function ($sakit) {
             return [
-                'namaKaryawan'  => $sakit->karyawan->nama_lengkap,
-                'divisi'        => $sakit->karyawan->divisi,
-                'alasan'         => $sakit->alasan
+                'id_karyawan'  => $sakit->id_karyawan,
+                'namaKaryawan' => $sakit->karyawan->nama_lengkap,
+                'divisi'       => $sakit->karyawan->divisi,
+                'alasan'       => $sakit->alasan,
+                'tanggalAwal'  => $sakit->tanggal_awal,
+                'tanggalAkhir' => $sakit->tanggal_akhir
             ];
         });
 
         $dataAbsensiSakit = [
             'totalAbsenSakit' => $totalAbsensiSakit,
-            'dataSakit'       => $arrayAbsensiSakit,
+            'dataSakit'       => $arrayAbsensiSakit
         ];
-
-        $totalAbsenIzin = izinTigaJam::whereBetween('created_at', [$startDate, $endDate])
-            ->count();
 
         $AbsenIzin = izinTigaJam::with('karyawan')
             ->whereBetween('created_at', [$startDate, $endDate])
             ->get();
 
+        $totalAbsenIzin = $AbsenIzin->pluck('id_karyawan')->unique()->count();
+
         $arrayAbsensiIzin = $AbsenIzin->map(function ($izin) {
             return [
-                'namaKaryawan'   => $izin->karyawan->nama_lengkap,
-                'divisi'         => $izin->karyawan->divisi,
-                'alasan'         => $izin->alasan
+                'id_karyawan'      => $izin->id_karyawan,
+                'namaKaryawan'     => $izin->karyawan->nama_lengkap,
+                'divisi'           => $izin->karyawan->divisi,
+                'alasan'           => $izin->alasan,
+                'tanggalPengajuan' => $izin->tanggal_pengajuan,
             ];
         });
 
         $dataAbsensiIzin = [
-            'totalAbsenIzin'  => $totalAbsenIzin,
-            'dataIzin'        => $arrayAbsensiIzin
+            'totalAbsenIzin' => $totalAbsenIzin,
+            'dataIzin'       => $arrayAbsensiIzin
         ];
 
         $dataCard_utama = [
@@ -2246,16 +2459,51 @@ class DatabaseKPIController extends Controller
             ->count();
 
         $dataChartJumlahPenilaianBerjalan = [
-            'totalSemua'  => $totalSemua,
+            'totalSemua' => $totalSemua,
             'totalDilaksanakan' => $totalDilaksanakan,
             'totalBelumDilaksanakan' => $totalBelumDilaksanakan
+        ];
+
+        $dataTotalFormulir = formPenilaian::whereBetween('created_at', [$startDate, $endDate])
+            ->selectRaw('COUNT(*) as jumlah')
+            ->groupBy('kode_form', 'id_karyawan')
+            ->get()
+            ->count();
+
+        $dataFormulirRutin = formPenilaian::whereBetween('created_at', [$startDate, $endDate])
+            ->where('jenis_form', 'Rutin')
+            ->selectRaw('COUNT(*) as jumlah')
+            ->groupBy('kode_form', 'id_karyawan')
+            ->get()
+            ->count();
+
+        $dataFormulirProbation = formPenilaian::whereBetween('created_at', [$startDate, $endDate])
+            ->where('jenis_form', 'Probation')
+            ->selectRaw('COUNT(*) as jumlah')
+            ->groupBy('kode_form', 'id_karyawan')
+            ->get()
+            ->count();
+
+        $dataFormulirKontrak = formPenilaian::whereBetween('created_at', [$startDate, $endDate])
+            ->where('jenis_form', 'Kontrak')
+            ->selectRaw('COUNT(*) as jumlah')
+            ->groupBy('kode_form', 'id_karyawan')
+            ->get()
+            ->count();
+
+        $dataFormulir = [
+            'totalFormulir' => $dataTotalFormulir,
+            'totalRutin'    => $dataFormulirRutin,
+            'totalProbation' => $dataFormulirProbation,
+            'totalKontrak'  => $dataFormulirKontrak
         ];
 
         $dataDivisi = Karyawan::whereNot('divisi', 'Direksi')
             ->select('divisi')
             ->distinct()
             ->get();
-        $bulan =  now()->month;
+
+        $bulan = now()->month;
         $quarterLabel = match (true) {
             $bulan >= 1 && $bulan <= 3 => 'Q1',
             $bulan >= 4 && $bulan <= 6 => 'Q2',
@@ -2263,26 +2511,45 @@ class DatabaseKPIController extends Controller
             default => 'Q4',
         };
 
-        $formPenilaian = formPenilaian::where('quartal', $quarterLabel)
+        $formPenilaian = formPenilaian::with('karyawan')
+            ->where('quartal', $quarterLabel)
             ->where('tahun', $year)
+            ->where('jenis_form', 'Rutin')
             ->select('id_karyawan', 'kode_form', 'quartal', 'tahun')
             ->groupBy('id_karyawan', 'kode_form', 'quartal', 'tahun')
             ->get();
 
         $hasilPenilaian = [];
+        $persentaseJenis = [
+            'General Manager' => 35,
+            'Manager/SPV/Team Leader (Atasan Langsung)' => 30,
+            'Rekan Kerja (Satu Divisi)' => 20,
+            'Pekerja (Beda Divisi)' => 10,
+            'Self Apprisial' => 5
+        ];
 
         foreach ($formPenilaian as $form) {
             $evaluatedId = $form->id_karyawan;
             $kodeForm = $form->kode_form;
 
+            $formsForEvaluated = formPenilaian::where('id_karyawan', $evaluatedId)
+                ->where('kode_form', $kodeForm)
+                ->where('quartal', $form->quartal)
+                ->where('tahun', $form->tahun)
+                ->get();
+
+            $allKategori = $formsForEvaluated->flatMap(function ($f) {
+                return kategoriKPI::where('kode_kategori', $f->kode_kategori)->get();
+            })->unique('judul_kategori')->values();
+
             $evaluators = shareForm::where('id_evaluated', $evaluatedId)
                 ->where('kode_form', $kodeForm)
                 ->get();
 
-            $totalNilaiEvaluated = 0;
+            $skorJenis = [];
 
             foreach ($evaluators as $eval) {
-                $nilaiList = NilaiKPI::where('id_evaluator', $eval->id_evaluator)
+                $nilaiCollection = NilaiKPI::where('id_evaluator', $eval->id_evaluator)
                     ->where('id_evaluated', $evaluatedId)
                     ->where('kode_form', $kodeForm)
                     ->where('jenis_penilaian', $eval->jenis_penilaian)
@@ -2290,89 +2557,65 @@ class DatabaseKPIController extends Controller
 
                 $totalNilaiEvaluator = 0;
 
-                foreach ($nilaiList as $nilai) {
-                    $kategori = kategoriKPI::where('kode_kategori', $nilai->kode_kategori)->first();
-                    if ($kategori) {
-                        $totalNilaiEvaluator += $nilai->nilai * ($kategori->bobot / 100);
+                foreach ($allKategori as $kategori) {
+                    $item = $nilaiCollection->first(function ($it) use ($kategori) {
+                        return isset($it->name_variabel) && trim($it->name_variabel) === trim($kategori->judul_kategori);
+                    });
+
+                    if ($item && is_numeric($item->nilai) && is_numeric($kategori->bobot)) {
+                        $totalNilaiEvaluator += ((float)$item->nilai) * (((float)$kategori->bobot) / 100);
                     }
                 }
 
-                $bobotJenis = match ($eval->jenis_penilaian) {
-                    'General Manager' => 35,
-                    'Manager/SPV/Team Leader (Atasan Langsung)' => 30,
-                    'Rekan Kerja (Satu Divisi)' => 16,
-                    'Pekerja (Beda Divisi)' => 10,
-                    'Self Apprisial' => 5,
-                    default => 0
-                };
+                $skorJenis[$eval->jenis_penilaian][] = $totalNilaiEvaluator;
+            }
 
-                $totalNilaiEvaluated += $totalNilaiEvaluator * ($bobotJenis / 100);
+            $totalNilaiEvaluated = 0;
+
+            foreach ($skorJenis as $jenis => $listSkor) {
+                $rataRataJenis = count($listSkor) ? array_sum($listSkor) / count($listSkor) : 0;
+                $bobotJenis = $persentaseJenis[$jenis] ?? 0;
+
+                if ($bobotJenis == 0) {
+                    $jenisNorm = preg_replace('/\s+/', '', strtolower($jenis));
+                    foreach ($persentaseJenis as $k => $v) {
+                        $kNorm = preg_replace('/\s+/', '', strtolower($k));
+                        similar_text($kNorm, $jenisNorm, $percent);
+                        if ($kNorm === $jenisNorm || $percent >= 80) {
+                            $bobotJenis = $v;
+                            break;
+                        }
+                    }
+                }
+
+                $totalNilaiEvaluated += ($rataRataJenis * $bobotJenis) / 100;
             }
 
             $hasilPenilaian[] = [
                 'nama_karyawan' => $form->karyawan->nama_lengkap ?? '',
-                'foto'          => $form->karyawan->foto,
-                'divisi' => $form->karyawan->divisi ?? '',
+                'foto'          => $form->karyawan->foto ?? null,
+                'divisi'        => $form->karyawan->divisi ?? '',
                 'total_nilai'   => round($totalNilaiEvaluated, 2)
             ];
         }
-
-        $user = auth()->user()->karyawan_id;
-        $karyawan = karyawan::findOrfail($user);
-        $jabatan = $karyawan->jabatan;
-        $divisi = $karyawan->divisi;
-
-        if ($jabatan == 'Finance & Accounting') {
-            $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')
-                ->whereMonth('created_at', $month)
-                ->whereYear('created_at', $year)
-                ->latest()
-                ->take(10)
-                ->get();
-        } elseif (
-            $jabatan == 'Office Manager' ||
-            $jabatan == 'Education Manager' ||
-            $jabatan == 'SPV Sales' ||
-            $jabatan == 'Koordinator ITSM'
-        ) {
-            $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')
-                ->whereHas('karyawan', function ($query) use ($divisi) {
-                    $query->where('divisi', $divisi);
-                })
-                ->latest()
-                ->take(10)
-                ->get();
-        } elseif ($jabatan == 'GM' || $jabatan == 'Koordinator Office') {
-            $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')
-                ->latest()
-                ->take(10)
-                ->get();
-        } else {
-            $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')
-                ->whereHas('karyawan', function ($query) use ($user) {
-                    $query->where('id', $user);
-                })
-                ->latest()
-                ->take(10)
-                ->get();
-        }
-
-        $karyawan = karyawan::findOrFail($user);
-        $jabatan  = $karyawan->jabatan;
-
-        $SuratPerjalanan = SuratPerjalanan::with('karyawan', 'RKM')
-            ->where('approval_manager', '1')
-            ->where('approval_hrd', '0')
-            ->latest()
-            ->get();
 
         return response()->json([
             'dataCard_first' => $dataCard_utama,
             'dataChartPenilaian' => $dataChartJumlahPenilaianBerjalan,
             'dataDivisi' => $dataDivisi,
             'dataRangking' => $hasilPenilaian,
-            'dataPengajuanBarang' => $PengajuanBarang,
-            'dataSPJ' => $SuratPerjalanan
+            'dataFormulir'  => $dataFormulir
+        ]);
+    }
+
+    public function getDataProfile(Request $request)
+    {
+        $user = auth()->user()->karyawan_id;
+
+        $karyawan = karyawan::where('id', $user)->first();
+
+        return response()->json([
+            'data' => $karyawan
         ]);
     }
 }

@@ -513,7 +513,7 @@
             if (alert) {
                 alert.remove();
             }
-        }, 5000); // 5000ms = 5 detik
+        }, 5000); 
     </script>
     @endif
     @if(session('error'))
@@ -630,7 +630,7 @@
             </div>
         </div>
     </nav>
-    <!-- <audio id="notifSound" src="{{ asset('bell.mp3') }}" preload="auto"></audio> -->
+    <audio id="notifSound" src="{{ asset('bell.mp3') }}" preload="auto"></audio>
 
     <main class="py-2" id="bgsvg">
         @yield('content')
@@ -645,59 +645,61 @@
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- <script>
+    <script>
+        window.addEventListener("message", (ev) => {
+            if (ev.data?.source === "EXT_NOTIF") {
+                console.log("Window terima notif:", ev.data.payload);
+                updateDOM(ev.data.payload);
+            }
+        });
+
+
         let lastNotifCount = 0;
 
         function playNotif() {
             const audio = document.getElementById("notifSound");
-            audio.play();
+            if (audio) audio.play();
         }
 
-        function fetchNotifications() {
-            fetch("{{ route('notifications.fetch') }}")
-                .then(res => res.json())
-                .then(data => {
-                    const badgeContainer = document.querySelector('.nav-link.position-relative');
-                    let badge = badgeContainer.querySelector('.badge');
+        function updateDOM(data) {
+            const badgeContainer = document.querySelector('.nav-link.position-relative');
+            if (!badgeContainer) return;
 
-                    const count = data.length;
+            let badge = badgeContainer.querySelector('.badge');
+            const count = data.length;
 
-                    // Hapus hasil fetch lama tapi tetap pertahankan badgeContainer
-                    const existingItems = document.querySelectorAll('.notif-item'); // class ini untuk setiap item notif
-                    existingItems.forEach(item => item.remove());
+            // Hapus hasil lama
+            const existingItems = document.querySelectorAll('.notif-item');
+            existingItems.forEach(item => item.remove());
 
-                    // Tambahkan data baru
-                    data.forEach(notif => {
-                        const notifElem = document.createElement('div');
-                        notifElem.className = 'notif-item'; // pastikan class ini khusus untuk hasil fetch
-                        notifElem.textContent = notif.message; // sesuaikan dengan property data
-                        badgeContainer.appendChild(notifElem);
-                    });
+            // Tambahkan data baru
+            data.forEach(notif => {
+                const notifElem = document.createElement('div');
+                notifElem.className = 'notif-item';
+                notifElem.textContent = notif.message;
+                badgeContainer.appendChild(notifElem);
+            });
 
-                    // Update badge
-                    if (!badge && count > 0) {
-                        badge = document.createElement('span');
-                        badge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger';
-                        badgeContainer.appendChild(badge);
-                    }
+            // Update badge
+            if (!badge && count > 0) {
+                badge = document.createElement('span');
+                badge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger';
+                badgeContainer.appendChild(badge);
+            }
 
-                    if (badge) {
-                        badge.innerHTML = count + '<span class="visually-hidden">unread notifications</span>';
-                    }
+            if (badge) {
+                badge.innerHTML = count + '<span class="visually-hidden">unread notifications</span>';
+            }
 
-                    // Play audio jika ada notifikasi baru
-                    if (count > lastNotifCount) {
-                        playNotif();
-                    }
+            // Play audio jika ada notif baru
+            if (count > lastNotifCount) {
+                playNotif();
+            }
 
-                    lastNotifCount = count;
-                })
-                .catch(err => console.error("Error fetch notifications:", err));
+            lastNotifCount = count;
         }
+    </script>
 
-        // Fetch setiap 5 detik
-        setInterval(fetchNotifications, 3000);
-    </script> -->
 </body>
 
 </html>

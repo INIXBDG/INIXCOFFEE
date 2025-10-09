@@ -37,12 +37,12 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \App\Http\Middleware\SessionTimeout::class,
-
+            \App\Http\Middleware\LogActivity::class,
         ],
 
         'api' => [
             // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
-            \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
+            \Illuminate\Routing\Middleware\ThrottleRequests::class . ':api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
     ];
@@ -76,5 +76,4 @@ class Kernel extends HttpKernel
         // Middleware lainnya...
         'logviewer.access' => \App\Http\Middleware\LogViewerAccessMiddleware::class,
     ];
-    
 }

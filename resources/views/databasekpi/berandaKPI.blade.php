@@ -2,610 +2,373 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Dashboard KPI</title>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/gh/BlackrockDigital/startbootstrap-sb-admin-2@gh-pages/css/sb-admin-2.min.css" rel="stylesheet">
-  <script>
-    (function() {
-      try {
-        let savedTheme = localStorage.getItem('theme');
-
-        if (!savedTheme) {
-          savedTheme = 'light';
-          localStorage.setItem('theme', savedTheme);
-        }
-
-        document.documentElement.setAttribute('data-bs-theme', savedTheme);
-      } catch (e) {}
-    })();
-  </script>
-
-  <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet"> -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha512-DxV+EoADOkOygM4IR9yXP8Sb2qwgidEmeqAEmDKIOfPRQZOWbXCzLC6vjbZyy0vPisbH2SyW27+ddLVCN+OMzQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <title>Database KPI</title>
+  <link rel="stylesheet" href="{{ asset('template_KPI/dist/assets/vendors/mdi/css/materialdesignicons.min.css') }} ">
+  <link rel="stylesheet" href="{{ asset('template_KPI/dist/assets/vendors/ti-icons/css/themify-icons.css') }}">
+  <link rel="stylesheet" href="{{ asset('template_KPI/dist/assets/vendors/css/vendor.bundle.base.css') }}">
+  <link rel="stylesheet" href="{{ asset('template_KPI/dist/assets/vendors/font-awesome/css/font-awesome.min.css') }}">
+  <link rel="stylesheet" href="{{ asset('template_KPI/dist/assets/vendors/font-awesome/css/font-awesome.min.css') }}" />
+  <link rel="stylesheet" href="{{ asset('template_KPI/dist/assets/vendors/bootstrap-datepicker/bootstrap-datepicker.min.css') }}">
+  <link rel="stylesheet" href="{{ asset('template_KPI/dist/assets/css/style.css') }}">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+  <link rel="shortcut icon" href="{{ asset('icon/logoinix.png') }}" />
   <style>
-    body {
-      overflow-x: hidden;
-    }
-
-    #wrapper {
-      display: flex;
-    }
-
-    .sidebar-desktop {
+    .toast {
       position: fixed;
-      top: 0;
-      bottom: 0;
+      top: 50px;
+      right: 20px;
+      background: linear-gradient(90deg, #ff6b6b, #ff8787);
+      color: white;
+      padding: 15px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+      opacity: 0;
+      transform: translateY(-20px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+      pointer-events: none;
+      z-index: 1055;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .sidebar-offcanvas.active {
       left: 0;
-      width: 200px;
+    }
+
+    @media screen and (max-width: 991px) {
+      .sidebar-offcanvas {
+        position: fixed;
+        left: -250px;
+        transition: left 0.25s ease-in-out;
+      }
+    }
+
+    .sidebar {
       height: 100vh;
-      z-index: 1000;
+      max-height: 100vh;
+      overflow-y: auto;
     }
 
-    #content-wrapper {
-      margin-left: 220px;
-      width: calc(100% - 220px);
+    .page-body-wrapper {
+      display: flex;
+      min-height: 100vh;
     }
 
-    .topbar {
-      position: fixed;
-      top: 0;
-      right: 0;
-      left: 0;
-      z-index: 3;
+    .page-body-wrapper {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
     }
 
-    .sidebar-mobile {
-      position: fixed;
-      top: 0;
-      left: -220px;
-      width: 150px;
-      height: 100%;
-      background-color: #102B48;
-      z-index: 1050;
-      transition: left .3s ease;
+    html,
+    body {
+      overflow: hidden;
     }
 
-    .sidebar-mobile.active {
-      left: 0;
+    .sidebar {
+      width: 250px;
+      transition: all 0.3s ease;
     }
 
-    @media (max-width: 992px) {
-      .sidebar-desktop {
-        display: none;
+    .sidebar.sidebar-collapsed {
+      width: 70px;
+    }
+
+    @media screen and (max-width: 991px) {
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: -250px;
+        height: 100%;
+        z-index: 1030;
       }
 
-      .sidebar-mobile {
-        display: block;
+      .sidebar.sidebar-open {
+        left: 0;
       }
 
-      #content-wrapper {
-        margin-left: 0;
+      .main-panel {
+        flex-grow: 1;
         width: 100%;
       }
+    }
 
-      .logo-navbar {
-        width: 10rem;
+
+    .main-panel {
+      flex-grow: 1;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .sidebar {
+      width: 250px;
+      transition: all 0.3s ease-in-out;
+    }
+
+    .sidebar.sidebar-hidden {
+      margin-left: -250px;
+    }
+
+    @media screen and (max-width: 991px) {
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: -250px;
+        height: 100%;
+        z-index: 1030;
       }
-    }
 
-    @media (min-width: 992px) {
-      .sidebar-desktop {
-        display: block;
+      .sidebar.sidebar-open {
+        left: 0;
       }
-
-      .sidebar-mobile {
-        display: none;
-      }
-
-      .logo-navbar {
-        margin-left: 15rem;
-      }
-    }
-
-    .sidebar-dark .nav-link:not(.active),
-    .sidebar-dark .collapse-item:not(.active) {
-      color: rgba(255, 255, 255, 0.8);
-    }
-
-    .nav-item.active>.nav-link,
-    .nav-link.active {
-      background-color: white;
-      border-radius: 50px 0 0 50px;
-      color: black !important;
-    }
-
-    .collapse-item.active {
-      background-color: white;
-      border-radius: 50px 0 0 50px;
-      color: black !important;
-    }
-
-    .nav-item.active>.nav-link:hover,
-    .nav-link.active:hover,
-    .collapse-item.active:hover {
-      color: black !important;
-      background-color: #fff;
-    }
-
-    .nav-link,
-    .collapse-item {
-      cursor: pointer;
-      transition: background-color .3s ease, color .3s ease;
-    }
-
-    .nav-item.active>.nav-link i,
-    .nav-link.active i,
-    .collapse-item.active i {
-      color: black !important;
-    }
-
-    .nav-link[style*="cursor: default;"] {
-      cursor: default !important;
-      color: rgba(255, 255, 255, 0.85);
-      font-weight: 600;
-      padding-left: 1.5rem;
-      pointer-events: none;
-    }
-
-    .label-nav-item {
-      margin-bottom: -20px;
-    }
-
-    .nav-item.active-mobile>.nav-link {
-      position: relative;
-      background-color: white;
-      color: black !important;
-      z-index: 1;
-      font-weight: bold;
-      border-radius: 0;
-      overflow: visible;
-      border-top-left-radius: 50px;
-      border-bottom-left-radius: 50px;
-    }
-
-    .nav-item.active>.nav-link {
-      position: relative;
-      background-color: white;
-      color: black !important;
-      z-index: 1;
-      font-weight: bold;
-      border-radius: 0;
-      overflow: visible;
-      border-top-left-radius: 50px;
-      border-bottom-left-radius: 50px;
-    }
-
-    .nav-item.active>.nav-link::before {
-      content: "";
-      position: absolute;
-      top: -20px;
-      right: 0;
-      width: 20px;
-      height: 20px;
-      background-color: #102B48;
-      border-radius: 50%;
-      box-shadow: 8px 8px 0 white;
-    }
-
-    .nav-item.active>.nav-link::after {
-      content: "";
-      position: absolute;
-      bottom: -20px;
-      right: 0;
-      width: 20px;
-      height: 20px;
-      background-color: #102B48;
-      border-radius: 50%;
-      box-shadow: 8px -8px 0 white;
-    }
-
-    [data-bs-theme="dark"] .sidebar-desktop {
-      background-color: #102B48;
-      box-shadow: 10px 0 0 #343a40;
-    }
-
-    [data-bs-theme="dark"] .nav-item.active>.nav-link,
-    [data-bs-theme="dark"] .collapse-item.active {
-      color: #EEEEEE !important;
-    }
-
-    [data-bs-theme="dark"] .nav-item.active>.nav-link,
-    [data-bs-theme="dark"] .collapse-item.active {
-      background-color: #343a40 !important;
-      color: #fff !important;
-    }
-
-    [data-bs-theme="dark"] .nav-item.active>.nav-link::before {
-      background-color: #1E1E1E;
-      box-shadow: 8px 8px 0 #343a40;
-    }
-
-    [data-bs-theme="dark"] .nav-item.active>.nav-link::after {
-      background-color: #1E1E1E;
-      box-shadow: 8px -8px 0 #343a40;
-    }
-
-    [data-bs-theme="light"] .nav-item.active>.nav-link::before {
-      background-color: #F8F9FA;
-      box-shadow: 8px 8px 0 #E9ECEF;
-    }
-
-    [data-bs-theme="light"] .nav-item.active>.nav-link::after {
-      background-color: #F8F9FA;
-      box-shadow: 8px -8px 0 #E9ECEF;
-    }
-
-    [data-bs-theme="light"] .sidebar-desktop {
-      background-color: #102B48;
-      box-shadow: 10px 0 0 #E9ECEF;
-    }
-
-    [data-bs-theme="auto"] .sidebar-desktop {
-      box-shadow: 10px 0 0 #ffffff;
-    }
-
-    [data-bs-theme="light"] .nav-item>.nav-link,
-    [data-bs-theme="light"] .nav-item>.nav-link i,
-    [data-bs-theme="light"] .sidebar-brand {
-      color: black !important;
-    }
-
-    [data-bs-theme="light"] .nav-item>.nav-link * {
-      color: black !important;
-    }
-
-    [data-bs-theme="dark"] .sidebar-desktop,
-    [data-bs-theme="dark"] .sidebar-mobile {
-      background-color: #1e1e1e !important;
-    }
-
-    [data-bs-theme="light"] .sidebar-desktop,
-    [data-bs-theme="light"] .sidebar-mobile {
-      background-color: #f8f9fa !important;
-    }
-
-    [data-bs-theme="auto"] .sidebar-desktop,
-    [data-bs-theme="auto"] .sidebar-mobile {
-      background-color: #102B48 !important;
-    }
-
-    [data-bs-theme="dark"] .sidebar-mobile {
-      box-shadow: 10px 0 0 #343a40;
-    }
-
-    [data-bs-theme="light"] .sidebar-mobile {
-      box-shadow: 10px 0 0 #E9ECEF;
-    }
-
-    .cl-blue {
-      background-color: #2E86FC;
-      transition: background-color 0.3s ease;
-    }
-
-    .cl-blue:hover {
-      background-color: #1c6fe0;
-    }
-
-    .cl-green {
-      background-color: #28A745;
-      transition: background-color 0.3s ease;
-    }
-
-    .cl-green:hover {
-      background-color: #218838;
-    }
-
-    .cl-red {
-      background-color: #E74C3C;
-      transition: background-color 0.3s ease;
-    }
-
-    .cl-red:hover {
-      background-color: #c0392b;
-    }
-
-    .cl-yellow {
-      background-color: #FFC107;
-      transition: background-color 0.3s ease;
-    }
-
-    .cl-yellow:hover {
-      background-color: #e0a800;
-    }
-
-    .cl-grey {
-      background-color: #6C757D;
-      transition: background-color 0.3s ease;
-    }
-
-    .cl-grey:hover {
-      background-color: #5a6268;
-    }
-
-    .w-blue {
-      color: #2E86FC;
-      transition: color 0.3s ease;
-    }
-
-    .w-blue:hover {
-      color: #1c6fe0;
-    }
-
-    .w-green {
-      color: #28A745;
-      transition: color 0.3s ease;
-    }
-
-    .w-green:hover {
-      color: #218838;
-    }
-
-    .w-red {
-      color: #E74C3C;
-      transition: color 0.3s ease;
-    }
-
-    .w-red:hover {
-      color: #c0392b;
-    }
-
-    .w-yellow {
-      color: #FFC107;
-      transition: color 0.3s ease;
-    }
-
-    .w-yellow:hover {
-      color: #e0a800;
-    }
-
-    .w-grey {
-      color: #6C757D;
-      transition: color 0.3s ease;
-    }
-
-    .w-grey:hover {
-      color: #5a6268;
-    }
-
-    .bg-theme {
-      background-color: var(--bs-body-bg) !important;
-      color: var(--bs-body-color) !important;
     }
   </style>
 </head>
 
 <body id="page-top">
-  <div id="wrapper">
-    <ul class="navbar-nav sidebar-desktop sidebar sidebar-dark accordion" id="accordionSidebar">
-      <a class="sidebar-brand d-flex align-items-center justify-content-center" href="#">
-        <div class="sidebar-brand-text mx-3">database kpi</div>
-      </a>
-      <hr class="sidebar-divider my-0">
-      <li class="nav-item {{ Request::routeIs('berandaKPI.get') ? 'active' : '' }}">
-        <a class="nav-link {{ Request::routeIs('berandaKPI.get') ? 'active' : '' }}" href="{{ route('berandaKPI.get') }}">
-          <i class="fas fa-fw fa-tachometer-alt"></i>
-          <span>Dashboard</span>
-        </a>
-      </li>
-      @php
-      use Illuminate\Support\Str;
-      $penilaian360Routes = ['penilaian360*', 'ketegoriKPI.get', 'ketegori.kpi.create'];
-      $isPenilaian360Active = collect($penilaian360Routes)->contains(function ($pattern) {
-      if (Str::contains($pattern, '*')) {
-      return Request::is($pattern);
-      }
-      return Route::currentRouteName() === $pattern;
-      });
-      @endphp
-      <li class="nav-item label-nav-item">
-        <label class="nav-link text-white font-weight-bold" style="cursor: default;">
-          Penilaian 360°
-        </label>
-      </li>
-      <li class="nav-item {{ Route::currentRouteName() == 'ketegoriKPI.get' ? 'active' : '' }}">
-        <a class="nav-link" href="{{ route('ketegoriKPI.get') }}">
-          <i class="fas fa-table"></i>
-          <span>Tabel Data</span>
-        </a>
-      </li>
-      <li class="nav-item {{ Route::currentRouteName() == 'ketegori.kpi.create' ? 'active' : '' }}">
-        <a class="nav-link" href="{{ route('ketegori.kpi.create') }}">
-          <i class="fas fa-plus-circle"></i>
-          <span>Buat Penilaian</span>
-        </a>
-      </li>
-      <li class="nav-item {{ Route::currentRouteName() == 'penilaian.form.data' ? 'active' : '' }}">
-        <a class="nav-link" href="{{ route('penilaian.form.data') }}">
-          <i class="fa-solid fa-table-list"></i>
-          <span>Data Form</span>
-        </a>
-      </li>
-      <hr class="sidebar-divider d-none d-md-block">
-    </ul>
-    <ul class="navbar-nav sidebar-mobile sidebar-dark accordion" id="accordionSidebarMobile">
-      <div class="d-flex justify-content-between align-items-center p-3">
-        <a class="sidebar-brand d-flex align-items-left" href="#" style="text-decoration: none; font-size : 25px;">
-          <div class="sidebar-brand-text mx-3">KPI</div>
-        </a>
-        <button id="closeSidebarMobile" class="btn btn-sm text-danger" style="font-size: 20px; background: transparent; border: none;">
-          &times;
+  <div class="container-scroller">
+    <nav class="navbar default-layout-navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
+      <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-start">
+        <a class="navbar-brand brand-logo" href="{{ route('berandaKPI.get') }}"><img src="{{ asset('template_KPI/dist/assets/images/logo.svg') }}" alt="logo" /></a>
+        <a class="navbar-brand brand-logo-mini" href="{{ route('berandaKPI.get') }}"><img src="{{ asset('template_KPI/dist/assets/images/logo-mini.svg') }}" alt="logo" /></a>
+      </div>
+      <div class="navbar-menu-wrapper d-flex align-items-stretch">
+        <button id="btnMobileSidebar" class="navbar-toggler" type="button">
+          <i class="mdi mdi-menu"></i>
+        </button>
+        <div class="search-field d-none d-md-block">
+          <form class="d-flex align-items-center h-100" action="#">
+            <div class="input-group">
+              <div class="input-group-prepend bg-transparent">
+                <i class="input-group-text border-0 mdi mdi-magnify"></i>
+              </div>
+              <input type="text" class="form-control bg-transparent border-0" placeholder="Search projects">
+            </div>
+          </form>
+        </div>
+        <ul class="navbar-nav navbar-nav-right">
+          <li class="nav-item nav-profile dropdown">
+            <a class="nav-link dropdown-toggle" id="profileDropdown" href="#" data-bs-toggle="dropdown" aria-expanded="false">
+              <div class="nav-profile-img">
+                <div id="profile_navbar">
+                </div>
+                <span class="availability-status online"></span>
+              </div>
+              <div class="nav-profile-text">
+                <p class="mb-1 text-black">{{ auth()->user()->username }}</p>
+              </div>
+            </a>
+            <div class="dropdown-menu navbar-dropdown" aria-labelledby="profileDropdown">
+              <a class="dropdown-item" href="{{ route('activity.log') }}">
+                <i class="mdi mdi-cached me-2 text-success"></i> Activity Log </a>
+              <div class="dropdown-divider"></div>
+              <a class="dropdown-item" href="{{ route('home') }}">
+                <i class="mdi mdi-logout me-2 text-primary"></i> Signout </a>
+            </div>
+          </li>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link count-indicator dropdown-toggle" id="notificationDropdown" href="#" data-bs-toggle="modal" data-bs-target="#notificationModal">
+              <i class="mdi mdi-bell-outline"></i>
+              @if(auth()->user()->unreadNotifications->count() > 0)
+              <span class="position-absolute translate-middle badge rounded-pill bg-danger" style="margin-left: 30px;">
+                {{ auth()->user()->unreadNotifications->count() }}
+                <span class="visually-hidden">unread notifications</span>
+              </span>
+              @endif
+            </a>
+          </li>
+        </ul>
+        <button class="navbar-toggler navbar-toggler-right d-lg-none align-self-center" type="button" data-toggle="offcanvas">
+          <span class="mdi mdi-menu"></span>
         </button>
       </div>
-      <hr class="sidebar-divider my-0 mt-2 mb-2 bg-theme">
-      <li class="nav-item {{ Route::currentRouteName() == 'berandaKPI.get' ? 'active' : '' }}">
-        <a class="nav-link p-3 ml-2" href="{{ route('berandaKPI.get') }}" style="font-size: 12px;">
-          <i class="fas fa-fw fa-tachometer-alt"></i>
-          <span>Dashboard</span>
-        </a>
-      </li>
-      <hr class="sidebar-divider my-0 mt-2 mb-2">
-      <li class="nav-item {{ Route::currentRouteName() == 'ketegoriKPI.get' ? 'active' : '' }}">
-        <a class="nav-link p-3 ml-2" href="{{ route('ketegoriKPI.get') }}" style="font-size: 12px;">
-          <i class="fas fa-table"></i>
-          <span>Tabel Data</span>
-        </a>
-      </li>
-      <li class="nav-item {{ Route::currentRouteName() == 'ketegori.kpi.create' ? 'active' : '' }}">
-        <a class="nav-link p-3 ml-2" href="{{ route('ketegori.kpi.create') }}" style="font-size: 12px;">
-          <i class="fas fa-plus-circle"></i>
-          <span>Buat Penilaian</span>
-        </a>
-      </li>
-      <li class="nav-item {{ Route::currentRouteName() == 'penilaian.form.data' ? 'active' : '' }}">
-        <a class="nav-link p-3 ml-2" href="{{ route('penilaian.form.data') }}" style="font-size: 12px;">
-          <i class="fa-solid fa-table-list"></i>
-          <span>Data Form</span>
-        </a>
-      </li>
-    </ul>
-    <div id="content-wrapper" class="d-flex flex-column">
-      <div id="content">
-        <nav class="navbar navbar-expand topbar mb-4 static-top shadow px-3 bg-theme">
-          <button id="sidebarToggleMobile" class="btn btn-link d-lg-none rounded-circle me-3">
-            <i class="fa fa-bars"></i>
-          </button>
-          <a class="navbar-brand d-flex align-items-center" href="#">
-            <img src="logo_original.png" alt="Logo" class="logo-navbar" style="height: 40px;">
-          </a>
-          <ul class="navbar-nav ms-auto align-items-center">
-            <li class="nav-item dropdown me-2">
-              <button class="btn btn-link nav-link dropdown-toggle d-flex align-items-center" id="themeDropdown" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="fa-solid fa-moon theme-icon-active"></i>
-              </button>
-              <ul class="dropdown-menu dropdown-menu-end">
-                <li>
-                  <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="light">
-                    <i class="fa-solid fa-sun me-2"></i> Light
-                    <i class="fa-solid fa-check ms-auto d-none"></i>
-                  </button>
+    </nav>
+    <div class="container-fluid page-body-wrapper">
+      <nav class="sidebar sidebar-offcanvas" id="sidebar">
+        <ul class="nav">
+          <li class="nav-item nav-profile">
+            <a href="#" class="nav-link">
+              <div class="nav-profile-image">
+                <div id="profile_sidebar">
+                </div>
+                <span class="login-status online"></span>
+              </div>
+              <div class="nav-profile-text d-flex flex-column">
+                <span class="font-weight-bold mb-2">{{ auth()->user()->username }}</span>
+                <span class="text-secondary text-small">{{ auth()->user()->jabatan }}</span>
+              </div>
+              <i class="mdi mdi-bookmark-check text-success nav-profile-badge"></i>
+            </a>
+          </li>
+          <li class="nav-item {{ Request::routeIs('berandaKPI.get') ? 'active-item' : '' }}">
+            <a class="nav-link " href="{{ route('berandaKPI.get') }}">
+              <span class="menu-title">Dashboard</span>
+              <i class="mdi mdi-home menu-icon"></i>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" style="margin-left: -10px;">
+              <span class="menu-title">Penilaian 360°</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="collapse" href="#forms" aria-expanded="true" aria-controls="forms">
+              <span class="menu-title">Table Penilaian</span>
+              <i class="menu-arrow"></i>
+              <i class="mdi mdi-table menu-icon"></i>
+            </a>
+            <div class="collapse show" id="forms" style="">
+              <ul class="nav flex-column sub-menu">
+                <li class="nav-item {{ request('tipe') === 'rutin' ? 'active' : '' }}">
+                  <a class="nav-link" href="{{ route('ketegoriKPI.get', ['tipe' => 'rutin']) }}">
+                    <span class="menu-title">Rutin</span>
+                  </a>
                 </li>
-                <li>
-                  <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="dark">
-                    <i class="fa-solid fa-moon me-2"></i> Dark
-                    <i class="fa-solid fa-check ms-auto d-none"></i>
-                  </button>
+
+                <li class="nav-item {{ request('tipe') === 'probation' ? 'active' : '' }}">
+                  <a class="nav-link" href="{{ route('ketegoriKPI.get', ['tipe' => 'probation']) }}">
+                    <span class="menu-title">Probation</span>
+                  </a>
                 </li>
-                <li>
-                  <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="auto">
-                    <i class="fa-solid fa-circle-half-stroke me-2"></i> Auto
-                    <i class="fa-solid fa-check ms-auto d-none"></i>
-                  </button>
+
+                <li class="nav-item {{ request('tipe') === 'kontrak' ? 'active' : '' }}">
+                  <a class="nav-link" href="{{ route('ketegoriKPI.get', ['tipe' => 'kontrak']) }}">
+                    <span class="menu-title">Kontrak</span>
+                  </a>
                 </li>
               </ul>
-            </li>
-            <li class="nav-item">
-              <a href="{{ route('home') }}" class="btn text-white" style="background-color: #d9534f;">
-                <i class="fa-solid fa-arrow-right-from-bracket"></i>
-              </a>
-            </li>
-          </ul>
-        </nav>
-        <div class="container-fluid bg-theme" style="margin-top: 40px;">
-          <div class="pt-4 pb-4 mt-4">
-            @yield('contentKPI')
+            </div>
+          </li>
+          <li class="nav-item {{ Request::routeIs('ketegori.kpi.create') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('ketegori.kpi.create') }}">
+              <span class="menu-title">Buat Penilaian</span>
+              <i class="mdi mdi-plus-box menu-icon"></i>
+            </a>
+          </li>
+          <li class="nav-item {{ Request::routeIs('penilaian.form.data') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('penilaian.form.data') }}">
+              <span class="menu-title">Data Form</span>
+              <i class="mdi mdi-file-document menu-icon"></i>
+            </a>
+          </li>
+        </ul>
+      </nav>
+      <div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable" style="max-width: 550px;">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="notificationModalLabel">Alert Pemberitahuan</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              @include('partials.notifications')
+            </div>
+            <div class="modal-footer">
+              @if(auth()->user()->unreadNotifications->count() > 0)
+              <form action="{{ route('notifications.markAllAsRead') }}" method="POST" class="d-inline">
+                @csrf
+                @method('PUT')
+                <button type="submit" class="btn btn-info btn-sm rounded-pill px-4">
+                  Tandai Semua sebagai Dibaca
+                </button>
+              </form>
+              @endif
+              <button type="button" class="btn btn-danger btn-sm rounded-pill px-4" data-bs-dismiss="modal">
+                Tutup
+              </button>
+            </div>
           </div>
         </div>
       </div>
+      <div class="main-panel">
+        <div aria-live="polite" aria-atomic="true" class="position-relative">
+          <div class="toast-container top-0 end-0 p-3"></div>
+        </div>
+
+        @yield('contentKPI')
+          <footer class="footer">
+            <div class="d-sm-flex justify-content-center justify-content-sm-between">
+              <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Database KPI Inixindo Bandung.</span>
+              <span class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center">By ITSM Inixindo <i class="mdi mdi-heart text-danger"></i></span>
+            </div>
+          </footer>
+      </div>
     </div>
   </div>
-  <a class="scroll-to-top rounded" href="#page-top">
-    <i class="fas fa-angle-up"></i>
-  </a>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/BlackrockDigital/startbootstrap-sb-admin-2@gh-pages/js/sb-admin-2.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
-  <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{{ asset('template_KPI/dist/assets/vendors/js/vendor.bundle.base.js') }}"></script>
+  <script src="{{ asset('template_KPI/dist/assets/vendors/chart.js/chart.umd.js') }}"></script>
+  <script src="{{ asset('template_KPI/dist/assets/vendors/bootstrap-datepicker/bootstrap-datepicker.min.js') }}"></script>
+  <script src="{{ asset('template_KPI/dist/assets/js/off-canvas.js') }}"></script>
+  <script src="{{ asset('template_KPI/dist/assets/js/misc.js') }}"></script>
+  <script src="{{ asset('template_KPI/dist/assets/js/settings.js') }}"></script>
+  <script src="{{ asset('template_KPI/dist/assets/js/todolist.js') }}"></script>
+  <script src="{{ asset('template_KPI/dist/assets/js/jquery.cookie.js') }}"></script>
+  <script src="{{ asset('template_KPI/dist/assets/js/dashboard.js') }}"></script>
+  <script src="{{ asset('template_KPI/dist/assets/js/desktop-notification.js') }}"></script>
   <script>
     $(document).ready(function() {
-      $('#sidebarToggleMobile').on('click', function() {
-        $('.sidebar-mobile').addClass('active');
+      $.ajax({
+        url: "{{ route('GetDataProfile.kpi') }}",
+        type: 'GET',
+        success: function(response) {
+          const data = response.data;
+          const profile_sidebar = $('#profile_sidebar');
+          const profile_navbar = $('#profile_navbar');
+
+          profile_sidebar.empty();
+
+          if (data.foto === null) {
+            profile_sidebar.append(`
+              <img src="{{ asset('template_KPI/dist/assets/images/screenshots/user-profile.jpg') }}" alt="image" class="img-fluid rounded-circle">
+            `);
+          } else {
+            profile_sidebar.append(`
+              <img src="{{ asset('assets/img/avatars') }}/${data.foto}" alt="image" class="img-fluid rounded-circle">
+            `);
+          }
+
+          profile_navbar.empty();
+
+          if (data.foto === null) {
+            profile_navbar.append(`
+              <img src="{{ asset('template_KPI/dist/assets/images/screenshots/user-profile.jpg') }}" alt="image" class="img-fluid rounded-circle">
+            `);
+          } else {
+            profile_navbar.append(`
+              <img src="{{ asset('assets/img/avatars') }}/${data.foto}" alt="image" class="img-fluid rounded-circle">
+            `);
+          }
+        }
       });
-      $('#closeSidebarMobile').on('click', function() {
-        $('.sidebar-mobile').removeClass('active');
+    });
+
+    document.addEventListener("DOMContentLoaded", function() {
+      var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+      var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+      })
+    });
+
+    $(document).ready(function() {
+      $("#btnMobileSidebar").on("click", function() {
+        if (window.innerWidth > 991) {
+          $("#sidebar").toggleClass("sidebar-hidden");
+        } else {
+          $("#sidebar").toggleClass("sidebar-open");
+        }
       });
     });
   </script>
-  <script>
-    const themeButtons = document.querySelectorAll('[data-bs-theme-value]');
-    const activeIcon = document.querySelector('#themeDropdown .theme-icon-active');
-    const logoNavbar = document.querySelector('.logo-navbar');
 
-    function applyThemeStyles(theme) {
-      const sidebarDesktop = document.querySelector('.sidebar-desktop');
-      const sidebarMobile = document.querySelector('.sidebar-mobile');
-      const activeLinks = document.querySelectorAll('.nav-item.active > .nav-link, .nav-link.active');
-
-      if (theme === 'auto') {
-        sidebarDesktop.style.backgroundColor = '#102B48';
-        sidebarMobile.style.backgroundColor = '#102B48';
-        activeLinks.forEach(link => {
-          link.style.backgroundColor = 'white';
-          link.style.color = 'black';
-        });
-        logoNavbar.src = 'logo_original.png';
-      }
-      if (theme === 'light') {
-        sidebarDesktop.style.backgroundColor = '#f8f9fa';
-        sidebarMobile.style.backgroundColor = '#f8f9fa';
-        activeLinks.forEach(link => {
-          link.style.backgroundColor = '#e9ecef';
-          link.style.color = '#000';
-        });
-        logoNavbar.src = "{{ asset('icon/logo_e-officeb.svg') }}";
-      }
-      if (theme === 'dark') {
-        sidebarDesktop.style.backgroundColor = '#1e1e1e';
-        sidebarMobile.style.backgroundColor = '#1e1e1e';
-        activeLinks.forEach(link => {
-          link.style.backgroundColor = '#333';
-          link.style.color = '#fff';
-        });
-        logoNavbar.src = "{{ asset('icon/logo_e-officew.svg') }}";
-      }
-      if (theme === 'auto') {
-        logoNavbar.src = "{{ asset('icon/logo_e-officeb.svg') }}";
-      }
-    }
-
-    function setTheme(theme, save = true) {
-      document.documentElement.setAttribute('data-bs-theme', theme);
-      themeButtons.forEach(btn => {
-        btn.classList.remove('active');
-        btn.querySelector('.fa-check').classList.add('d-none');
-      });
-      const activeBtn = document.querySelector(`[data-bs-theme-value="${theme}"]`);
-      if (activeBtn) {
-        activeBtn.classList.add('active');
-        activeBtn.querySelector('.fa-check').classList.remove('d-none');
-        activeIcon.className = activeBtn.querySelector('i').className + ' theme-icon-active';
-      }
-      applyThemeStyles(theme);
-      if (save) {
-        localStorage.setItem('theme', theme);
-      }
-    }
-
-    const savedTheme = localStorage.getItem('theme') || 'auto';
-    setTheme(savedTheme, false);
-
-    themeButtons.forEach(button => {
-      button.addEventListener('click', () => {
-        const theme = button.getAttribute('data-bs-theme-value');
-        setTheme(theme);
-      });
-    });
-  </script>
   @yield('script')
 </body>
 

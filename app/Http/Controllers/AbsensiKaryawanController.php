@@ -7,6 +7,7 @@ use App\Notifications\noRecordExchangeNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use App\Models\AbsensiKaryawan;
+use App\Models\activityLog;
 use App\Models\izinTigaJam;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
 use App\Models\karyawan;
@@ -19,7 +20,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
-
+use Jenssegers\Agent\Agent;
 
 class AbsensiKaryawanController extends Controller
 {
@@ -167,61 +168,60 @@ class AbsensiKaryawanController extends Controller
             ];
         }
 
-    if ($isWeekend && !in_array($jabatan, ['Office Boy', 'Technical Support'])) {
-        return [
-            'valid' => true,
-            'keterangan' => 'Masuk',
-            'keterlambatan' => '00:00:00'
-        ];
-    }
+        if ($isWeekend && !in_array($jabatan, ['Office Boy', 'Technical Support'])) {
+            return [
+                'valid' => true,
+                'keterangan' => 'Masuk',
+                'keterlambatan' => '00:00:00'
+            ];
+        }
 
         // Hitung keterlambatan untuk jabatan lain dan hari selain weekend
         $keterlambatan = '00:00:00';
         $keterangan = 'Masuk';
-      if ($izinHariIni) {
-    // Jam mulai izin dari database
-    $izinMulai = Carbon::parse($izinHariIni->jam_mulai);
-    $batasAwalMasuk = $izinMulai->copy()->addHour(); // 1 jam setelah izin
-    $batasAkhirMasuk = $izinMulai->copy()->addHours(3); // 3 jam setelah izin
+        if ($izinHariIni) {
+            // Jam mulai izin dari database
+            $izinMulai = Carbon::parse($izinHariIni->jam_mulai);
+            $batasAwalMasuk = $izinMulai->copy()->addHour(); // 1 jam setelah izin
+            $batasAkhirMasuk = $izinMulai->copy()->addHours(3); // 3 jam setelah izin
 
-    if ($waktu->lessThan($batasAwalMasuk)) {
-        // Terlalu cepat
+            if ($waktu->lessThan($batasAwalMasuk)) {
+                // Terlalu cepat
+                return [
+                    'valid' => false,
+                    'message' => 'Anda belum bisa absen. Minimal pukul ' . $batasAwalMasuk->format('H:i')
+                ];
+            } elseif ($waktu->greaterThan($batasAkhirMasuk)) {
+                // Telat lebih dari 3 jam
+                $diffMinutes = $waktu->diffInMinutes($batasAkhirMasuk);
+                $hours = intdiv($diffMinutes, 60);
+                $minutes = ($diffMinutes % 60);
+                $keterlambatan = sprintf('%02d:%02d:00', $hours, $minutes);
+                $keterangan = 'Telat (izin 3 Jam)';
+            } else {
+                // Masuk sesuai izin
+                $keterangan = 'Masuk (Izin 3 Jam)';
+                $keterlambatan = '00:00:00';
+            }
+        } elseif ($waktu->greaterThan($config['jamMulaiShift'])) {
+            // Telat normal
+            $diffMinutes = $waktu->diffInMinutes($config['jamMulaiShift']);
+            $hours = intdiv($diffMinutes, 60);
+            $minutes = ($diffMinutes % 60);
+            $keterlambatan = sprintf('%02d:%02d:00', $hours, $minutes);
+            $keterangan = 'Telat';
+        } else {
+            // Masuk tepat waktu
+            $keterangan = 'Masuk';
+            $keterlambatan = '00:00:00';
+        }
+
         return [
-            'valid' => false,
-            'message' => 'Anda belum bisa absen. Minimal pukul ' . $batasAwalMasuk->format('H:i')
+            'valid' => true,
+            'keterangan' => $keterangan,
+            'keterlambatan' => $keterlambatan
         ];
-    } elseif ($waktu->greaterThan($batasAkhirMasuk)) {
-        // Telat lebih dari 3 jam
-        $diffMinutes = $waktu->diffInMinutes($batasAkhirMasuk);
-        $hours = intdiv($diffMinutes, 60);
-        $minutes = ($diffMinutes % 60);
-        $keterlambatan = sprintf('%02d:%02d:00', $hours, $minutes);
-        $keterangan = 'Telat (izin 3 Jam)';
-    } else {
-        // Masuk sesuai izin
-        $keterangan = 'Masuk (Izin 3 Jam)';
-        $keterlambatan = '00:00:00';
     }
-
-} elseif ($waktu->greaterThan($config['jamMulaiShift'])) {
-    // Telat normal
-    $diffMinutes = $waktu->diffInMinutes($config['jamMulaiShift']);
-    $hours = intdiv($diffMinutes, 60);
-    $minutes = ($diffMinutes % 60);
-    $keterlambatan = sprintf('%02d:%02d:00', $hours, $minutes);
-    $keterangan = 'Telat';
-} else {
-    // Masuk tepat waktu
-    $keterangan = 'Masuk';
-    $keterlambatan = '00:00:00';
-}
-
-    return [
-        'valid' => true,
-        'keterangan' => $keterangan,
-        'keterlambatan' => $keterlambatan
-    ];
-}
 
 
 
