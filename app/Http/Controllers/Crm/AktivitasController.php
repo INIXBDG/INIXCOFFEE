@@ -153,8 +153,7 @@ class AktivitasController extends Controller
         $validated = $request->validate([
             'id_contact' => 'required|integer',
             'id_peluang' => 'required|integer',
-            'aktivitas' => 'required|in:Call,Email,Visit,Meet',
-            'subject' => 'required|string',
+            'aktivitas' => 'required|in:Call,Email,Visit,Meet,Incharge,PA,PI,DB,Telemarketing,Form_Masuk,Form_Keluar',
             'deskripsi' => 'required|string',
             'waktu_aktivitas' => 'required|date',
         ]);
@@ -175,8 +174,7 @@ class AktivitasController extends Controller
             'id_contact'      => 'required|string',
             'id_peluang'      => 'nullable',
             'contact_type'    => 'nullable|string|in:contact,peserta',
-            'aktivitas'       => 'required|in:Call,Email,Visit,Meet,Incharge',
-            'subject'         => 'required|string|max:255',
+            'aktivitas' => 'required|in:Call,Email,Visit,Meet,Incharge,PA,PI,DB,Telemarketing,Form_Masuk,Form_Keluar',
             'deskripsi'       => 'nullable|string',
             'waktu_aktivitas' => 'required|date',
         ]);
@@ -263,7 +261,6 @@ class AktivitasController extends Controller
         $aktivitas = Aktivitas::findOrFail($id);
         $aktivitas->update([
             'aktivitas' => $request->aktivitas,
-            'subject' => $request->subject,
             'deskripsi' => $request->deskripsi,
             'waktu_aktivitas' => $request->waktu_aktivitas,
         ]);

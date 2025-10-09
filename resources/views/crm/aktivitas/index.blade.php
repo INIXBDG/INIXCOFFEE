@@ -107,13 +107,12 @@
                                         <option value="Visit">Visit</option>
                                         <option value="Meet">Meeting</option>
                                         <option value="Incharge">Incharge Inhouse</option>
+                                        <option value="PA">Penawaran Awal</option>
+                                        <option value="PI">Penawaran Internal</option>
+                                        <option value="Telemarketing">Telemarketing</option>
+                                        <option value="Form_Masuk">Regis Form Masuk</option>
+                                        <option value="Form_Keluar">Regis Form Keluar</option>
                                     </select>
-                                </div>
-
-                                {{-- Subjek --}}
-                                <div class="mb-3">
-                                    <label class="form-label" for="subject">Subjek</label>
-                                    <input type="text" class="form-control" id="subject" name="subject" required>
                                 </div>
 
                                 {{-- Deskripsi --}}
@@ -162,13 +161,12 @@
                                         <option value="Visit">Visit</option>
                                         <option value="Meet">Meeting</option>
                                         <option value="Incharge">Incharge Inhouse</option>
+                                        <option value="PA">Penawaran Awal</option>
+                                        <option value="PI">Penawaran Internal</option>
+                                        <option value="Telemarketing">Telemarketing</option>
+                                        <option value="Form_Masuk">Form Masuk</option>
+                                        <option value="Form_Keluar">Form Keluar</option>
                                     </select>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label" for="edit_subject">Subjek</label>
-                                    <input type="text" class="form-control" id="edit_subject" name="subject"
-                                        required>
                                 </div>
 
                                 <div class="mb-3">
@@ -194,7 +192,7 @@
         </div>
     </div>
 
-    <!-- Include jQuery and DataTables -->
+   <!-- Include jQuery and DataTables -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
@@ -222,9 +220,6 @@
                     },
                     {
                         data: 'aktivitas'
-                    },
-                    {
-                        data: 'subject'
                     },
                     {
                         data: 'deskripsi'
@@ -293,7 +288,6 @@
         function editAktivitas(row) {
             $('#edit_id').val(row.id);
             $('#edit_aktivitas').val(row.aktivitas);
-            $('#edit_subject').val(row.subject);
             $('#edit_deskripsi').val(row.deskripsi);
 
             // ✅ perbaikan ambil tanggal langsung
@@ -319,7 +313,6 @@
             const url = `/crm/aktivitas/update/${id}`;
             const data = {
                 aktivitas: $('#edit_aktivitas').val(),
-                subject: $('#edit_subject').val(),
                 deskripsi: $('#edit_deskripsi').val(),
                 waktu_aktivitas: $('#edit_waktu_aktivitas').val() // sudah format YYYY-MM-DD
             };

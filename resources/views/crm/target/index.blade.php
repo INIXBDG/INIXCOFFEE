@@ -24,12 +24,18 @@
             <thead>
                 <tr>
                     <th>Sales</th>
+                    <th>DB</th>
                     <th>Contact</th>
                     <th>Call</th>
                     <th>Visit</th>
                     <th>Email</th>
                     <th>Meet</th>
                     <th>Incharge</th>
+                    <th>PA</th>
+                    <th>PI</th>
+                    <th>Telemarketing</th>
+                    <th>Form Masuk</th>
+                    <th>Form Keluar</th>
                     <th>Aksi</th>
                 </tr>
             </thead>
@@ -37,12 +43,18 @@
                 @foreach ($target as $activity)
                     <tr>
                         <td>{{ $activity->id_sales }}</td>
+                        <td>{{ $activity->DB }}</td>
                         <td>{{ $activity->Contact }}</td>
                         <td>{{ $activity->Call }}</td>
                         <td>{{ $activity->Visit }}</td>
                         <td>{{ $activity->Email }}</td>
                         <td>{{ $activity->Meet }}</td>
                         <td>{{ $activity->Incharge }}</td>
+                        <td>{{ $activity->PA }}</td>
+                        <td>{{ $activity->PI }}</td>
+                        <td>{{ $activity->Telemarketing }}</td>
+                        <td>{{ $activity->FormM }}</td>
+                        <td>{{ $activity->FormK }}</td>
                         <td>
                             <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal"
                                 data-bs-target="#editModal{{ $activity->id }}">Edit</button>
@@ -85,6 +97,11 @@
                                             </select>
                                         </div>
                                         <div class="mb-3">
+                                            <label for="Contact{{ $activity->id }}" class="form-label">DB</label>
+                                            <input type="number" class="form-control" id="Contact{{ $activity->id }}"
+                                                name="DB" value="{{ $activity->DB }}" required>
+                                        </div>
+                                        <div class="mb-3">
                                             <label for="Contact{{ $activity->id }}" class="form-label">Contact</label>
                                             <input type="number" class="form-control" id="Contact{{ $activity->id }}"
                                                 name="Contact" value="{{ $activity->Contact }}" required>
@@ -113,6 +130,31 @@
                                             <label for="Incharge{{ $activity->id }}" class="form-label">Incharge</label>
                                             <input type="number" class="form-control" id="Incharge{{ $activity->id }}"
                                                 name="Incharge" value="{{ $activity->Incharge }}" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="Incharge{{ $activity->id }}" class="form-label">Incharge</label>
+                                            <input type="number" class="form-control" id="PA{{ $activity->id }}"
+                                                name="PA" value="{{ $activity->PA }}" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="Incharge{{ $activity->id }}" class="form-label">Incharge</label>
+                                            <input type="number" class="form-control" id="PI{{ $activity->id }}"
+                                                name="PI" value="{{ $activity->PI }}" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="Incharge{{ $activity->id }}" class="form-label">Incharge</label>
+                                            <input type="number" class="form-control" id="Telemarketing{{ $activity->id }}"
+                                                name="Telemarketing" value="{{ $activity->Telemarketing }}" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="Incharge{{ $activity->id }}" class="form-label">Incharge</label>
+                                            <input type="number" class="form-control" id="FormM{{ $activity->id }}"
+                                                name="FormM" value="{{ $activity->FormM }}" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="Incharge{{ $activity->id }}" class="form-label">Incharge</label>
+                                            <input type="number" class="form-control" id="FormK{{ $activity->id }}"
+                                                name="FormK" value="{{ $activity->FormK }}" required>
                                         </div>
                                     </div>
                                     <div class="modal-footer">
@@ -150,6 +192,10 @@
                             </div>
 
                             <div class="mb-3">
+                                <label for="Contact" class="form-label">DB</label>
+                                <input type="number" class="form-control" id="DB" name="DB" required>
+                            </div>
+                            <div class="mb-3">
                                 <label for="Contact" class="form-label">Contact</label>
                                 <input type="number" class="form-control" id="Contact" name="Contact" required>
                             </div>
@@ -172,6 +218,26 @@
                             <div class="mb-3">
                                 <label for="Incharge" class="form-label">Incharge</label>
                                 <input type="number" class="form-control" id="Incharge" name="Incharge" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="Incharge" class="form-label">Penawaran Awal</label>
+                                <input type="number" class="form-control" id="PA" name="PA" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="Incharge" class="form-label">Penawaran Internal</label>
+                                <input type="number" class="form-control" id="PI" name="PI" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="Incharge" class="form-label">Penawaran Awal</label>
+                                <input type="number" class="form-control" id="Telemarketing" name="Telemarketing" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="Incharge" class="form-label">Penawaran Internal</label>
+                                <input type="number" class="form-control" id="FormM" name="FormM" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="Incharge" class="form-label">Penawaran Internal</label>
+                                <input type="number" class="form-control" id="FormK" name="FormK" required>
                             </div>
                         </div>
                         <div class="modal-footer">

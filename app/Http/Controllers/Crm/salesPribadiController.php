@@ -56,6 +56,11 @@ class salesPribadiController extends Controller
             $actualVisit = $aktivitas->where('aktivitas', 'Visit')->count();
             $actualMeet = $aktivitas->where('aktivitas', 'Meet')->count();
             $actualIncharge = $aktivitas->where('aktivitas', 'Incharge')->count();
+            $actualPA = $aktivitas->where('aktivitas', 'PA')->count();
+            $actualPI = $aktivitas->where('aktivitas', 'PI')->count();
+            $actualTelemarketing = $aktivitas->where('aktivitas', 'Telemarketing')->count();
+            $actualForm_Masuk = $aktivitas->where('aktivitas', 'Form_Masuk')->count();
+            $actualForm_Keluar = $aktivitas->where('aktivitas', 'Form_Keluar')->count();
 
             // hitung contact baru bulan ini
             $contactbaru = Contact::where('sales_key', $idSales)
@@ -64,20 +69,38 @@ class salesPribadiController extends Controller
                 ->whereYear('created_at', Carbon::now()->year)
                 ->count();
 
+            $perusahaanBaru = Perusahaan::where('sales_key', $idSales)
+                ->where('status', 'Database Baru')
+                ->whereMonth('created_at', Carbon::now()->month)
+                ->whereYear('created_at', Carbon::now()->year)
+                ->count();
+
             $activitysales = [
                 'id_sales' => $idSales,
+                'DB' => $perusahaanBaru,
                 'contact' => $contactbaru,
                 'call' => $actualCall,
                 'email' => $actualEmail,
                 'visit' => $actualVisit,
                 'meet' => $actualMeet,
                 'incharge' => $actualIncharge,
+                'PA' => $actualPA,
+                'PI' => $actualPI,
+                'Telemarketing' => $actualTelemarketing,
+                'Form_Masuk' => $actualForm_Masuk,
+                'Form_Keluar' => $actualForm_Keluar,
+                'target_DB' => $target->DB ?? 0,
                 'target_contact' => $target->Contact ?? 0,
                 'target_call' => $target->Call ?? 0,
                 'target_email' => $target->Email ?? 0,
                 'target_visit' => $target->Visit ?? 0,
                 'target_meet' => $target->Meet ?? 0,
                 'target_incharge' => $target->Incharge ?? 0,
+                'target_PA' => $target->PA ?? 0,
+                'target_PI' => $target->PI ?? 0,
+                'target_Telemarketing' => $target->Telemarketing ?? 0,
+                'target_Form_Masuk' => $target->FormM ?? 0,
+                'target_Form_Keluar' => $target->FormK ?? 0,
             ];
 
             // 3. Top 5 produk paling banyak terjual
