@@ -6,6 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\Auth;
+use Jenssegers\Agent\Agent;
 
 class SessionTimeout
 {
@@ -19,7 +20,35 @@ class SessionTimeout
         $timeout = 1800; // 30 minutes
 
         if (Auth::check() && (time() - session('last_activity') > $timeout)) {
-            Auth::logout();
+            $agent = new Agent();
+
+            $user = auth()->user(); // simpan dulu user sebelum logout
+            $userId = $user->id;
+            $jabatan = $user->jabatan;
+
+            $userAgent = $request->header('User-Agent');
+            $ip = $request->ip();
+
+            $agent->setUserAgent($userAgent);
+
+            $platform = $agent->platform();
+            $browser = $agent->browser();
+            $device = $agent->device();
+            $currentUrl = $request->fullUrl();
+
+            $activityLog = new \App\Models\activityLog();
+            $activityLog->user_id = $userId; 
+            $activityLog->status = 'logout';
+            $activityLog->url = $currentUrl;
+            $activityLog->ip = $ip;
+            $activityLog->user_agent = $userAgent;
+            $activityLog->platform = $platform;
+            $activityLog->browser = $browser;
+            $activityLog->device = $device;
+            $activityLog->method = $request->method(); 
+            $activityLog->save();
+
+            Auth::logout(); // logout setelah dicatat
             return redirect('/login')->withErrors(['Your session has expired due to inactivity.']);
         }
 

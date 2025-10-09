@@ -2,60 +2,150 @@
 
 @section('contentKPI')
 <style>
-    .button-view-all {
-        text-decoration: none;
+    @media (max-width: 768px) {
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        #table_penilaian th,
+        #table_penilaian td {
+            font-size: 12px;
+            padding: 6px;
+            white-space: nowrap;
+        }
+
+        .custom-dt-length,
+        .custom-dt-search {
+            width: 100% !important;
+            display: block;
+            margin-bottom: 5px;
+            text-align: left !important;
+        }
+
+        .custom-dt-search input {
+            width: 100% !important;
+        }
+
+        .custom-dt-info,
+        .custom-dt-pagination {
+            width: 100%;
+            display: block;
+            text-align: center !important;
+            margin-top: 5px;
+        }
+
+        .aksi-col .btn {
+            padding: 4px 6px;
+            font-size: 12px;
+        }
+
+        #modalEvaluated .modal-dialog {
+            max-width: 90%;
+            margin: auto;
+        }
     }
 </style>
-<div class="container mt-4 mb-4">
-    <div class="card p-3">
-        <div class="card-head">
-            <div class="card-title text-center fw-bold">Semua Form Penilaian
-            </div>
-            <div class="d-flex flex-wrap gap-3 mt-3">
-                <div class="flex-fill">
-                    <label for="quartal" class="form-label mb-1">Quartal</label>
-                    <select class="form-select form-select-sm" name="quartal" id="quartal">
-                        <option value="Q1">Q1</option>
-                        <option value="Q2">Q2</option>
-                        <option value="Q3">Q3</option>
-                        <option value="Q4">Q4</option>
-                    </select>
-                </div>
-                <div class="flex-fill">
-                    <label for="tahun" class="form-label mb-1">Tahun</label>
-                    <select class="form-select form-select-sm" name="tahun" id="tahun">
-                        <option value="">Pilih Tahun</option>
-                        @for($i = now()->year; $i >= 2020; $i--)
-                        <option value="{{ $i }}">{{ $i }}</option>
-                        @endfor
-                    </select>
-                </div>
-            </div>
+
+<div class="content-wrapper">
+    @if (session('error'))
+    <script>
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal',
+            text: "{{ session('error') }}",
+            confirmButtonColor: '#d33',
+            customClass: {
+                cancelButton: 'btn btn-gradient-danger'
+            },
+        });
+    </script>
+    @endif
+
+    @if ($errors->any())
+    <script>
+        Swal.fire({
+            icon: 'error',
+            title: 'Validasi Gagal',
+            html: `{!! implode('<br>', $errors->all()) !!}`,
+            confirmButtonColor: '#d33',
+            customClass: {
+                cancelButton: 'btn btn-gradient-danger'
+            },
+        });
+    </script>
+    @endif
+    <div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="loading-spinner"></div>
         </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered table-striped text-center align-middle bg-theme" id="table_penilaian">
-                    <thead class="text-center bg-theme">
-                        <tr>
-                            <th>No</th>
-                            <th>Kode Form</th>
-                            <th class="text-center">Evaluated</th>
-                            <th>Quartal</th>
-                            <th>Tahun</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="body_content">
-                        <tr>
-                            <td colspan="6" class="text-center">Memuat data...</td>
-                        </tr>
-                    </tbody>
-                </table>
+    </div>
+    <div class="page-header">
+        <h3 class="page-title">
+            <span class="page-title-icon bg-gradient-primary text-white me-2">
+                <i class="mdi mdi-file-document"></i>
+            </span> Penilaian
+        </h3>
+        <nav aria-label="breadcrumb">
+            <ul class="breadcrumb">
+                <li class="breadcrumb-item active" aria-current="page">
+                    <span></span>Data Form <i class="mdi mdi-alert-circle-outline icon-sm text-primary align-middle" data-bs-toggle="tooltip" data-bs-placement="top" title="Rubah form yang mungkin anda salah buat. hati hati dengan form yang telah dikirim ke evaluator!"></i>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    <div class="row">
+        <div class="col">
+            <div class="card p-3">
+                <div class="card-head">
+                    <div class="card-title text-center fw-bold mt-3">Semua Form Penilaian
+                    </div>
+                    <div class="d-flex flex-wrap gap-3 mt-3">
+                        <div class="flex-fill">
+                            <label for="quartal" class="form-label mb-1">Quartal</label>
+                            <select class="form-select form-select-sm" name="quartal" id="quartal">
+                                <option value="Q1">Q1</option>
+                                <option value="Q2">Q2</option>
+                                <option value="Q3">Q3</option>
+                                <option value="Q4">Q4</option>
+                            </select>
+                        </div>
+                        <div class="flex-fill">
+                            <label for="tahun" class="form-label mb-1">Tahun</label>
+                            <select class="form-select form-select-sm" name="tahun" id="tahun">
+                                <option value="">Pilih Tahun</option>
+                                @for($i = now()->year; $i >= 2020; $i--)
+                                <option value="{{ $i }}">{{ $i }}</option>
+                                @endfor
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive-mobile">
+                        <table class="table table-bordered table-striped text-center align-middle bg-theme" id="table_penilaian">
+                            <thead class="text-center bg-theme">
+                                <tr>
+                                    <th>No</th>
+                                    <th>Kode Form</th>
+                                    <th class="text-center">Evaluated</th>
+                                    <th>Quartal</th>
+                                    <th>Tahun</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="body_content">
+                                <tr>
+                                    <td colspan="6" class="text-center">Memuat data...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
-
 <div class="modal fade" id="modalEvaluated" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -81,6 +171,124 @@
 
     #table_penilaian tbody tr:hover .action-btn {
         display: inline-block;
+    }
+
+    .dataTables_length label select {
+        width: 15vh !important;
+    }
+
+    .custom-dt-pagination .pagination .page-item.active .page-link {
+        background: linear-gradient(to right, #da8cff, #9a55ff) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 15% !important;
+    }
+
+    .custom-dt-pagination .pagination .page-item .page-link {
+        background: transparent !important;
+        color: black !important;
+        border: none !important;
+        margin-left: 5px !important;
+        margin-right: 5px !important;
+    }
+
+    .custom-dt-pagination .pagination .page-item .page-link:hover {
+        background: linear-gradient(to right, #d786fcff, #9652fcff) !important;
+        border-radius: 15% !important;
+        color: white !important;
+    }
+
+    .custom-dt-pagination .pagination .page-item.next .page-link:hover {
+        background: linear-gradient(to right, #d786fcff, #9652fcff) !important;
+        border-radius: 15% !important;
+        color: white !important;
+    }
+
+    .custom-dt-pagination .pagination .page-item.previous .page-link:hover {
+        background: linear-gradient(to right, #d786fcff, #9652fcff) !important;
+        border-radius: 15% !important;
+        color: white !important;
+    }
+
+    .dataTable thead tr .sorting::before,
+    .dataTable thead tr .sorting::after {
+        visibility: hidden !important;
+        content: none !important;
+    }
+
+    @media only screen and (max-width:500px) {
+
+        .dataTables_length label select {
+            width: 100% !important;
+            margin-bottom: 5px !important;
+        }
+    }
+
+    .custom-dt-length,
+    .custom-dt-search,
+    .custom-dt-info,
+    .custom-dt-pagination {
+        position: sticky;
+        background: #fff;
+        z-index: 10;
+    }
+
+    .custom-dt-length,
+    .custom-dt-search {
+        top: 0;
+    }
+
+    .custom-dt-info,
+    .custom-dt-pagination {
+        bottom: 0;
+    }
+
+    #table_penilaian {
+        width: 100% !important;
+    }
+
+    .dataTables_wrapper .dataTables_scroll {
+        width: 100% !important;
+    }
+
+    @media (max-width: 576px) {
+        .table-responsive-mobile {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .table-responsive-mobile table {
+            min-width: 600px;
+        }
+
+        #table_penilaian th,
+        #table_penilaian td {
+            font-size: 14px;
+            padding: 10px 8px;
+        }
+
+        .dataTables_length,
+        .dataTables_filter,
+        .dataTables_info,
+        .dataTables_paginate {
+            width: 100% !important;
+        }
+
+        .dataTables_filter input,
+        .dataTables_length select {
+            width: 100% !important;
+        }
+
+        .dataTables_info {
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .dataTables_paginate .pagination {
+            justify-content: center;
+            flex-wrap: wrap;
+        }
     }
 </style>
 
@@ -141,7 +349,9 @@
                                 <td>${item.quartal}</td>
                                 <td>${item.tahun}</td>
                                 <td class="aksi-col text-center">
-                                    <a class="btn btn-sm btn-warning action-btn" href="/penilaian/data-form/edit/${item.kode_form}"><i class="fa-solid fa-pen-to-square"></i></a>
+                                    <a class="btn btn-sm btn-gradient-warning text-black" href="/penilaian/data-form/edit/${item.kode_form}">
+                                        <i class="mdi mdi-pencil"></i>
+                                    </a>
                                 </td>
                             </tr>
                         `);
@@ -153,10 +363,16 @@
                         pageLength: 10,
                         lengthMenu: [5, 10, 25, 50, 100],
                         responsive: true,
+                        scrollX: true,
+                        scrollCollapse: true,
+                        dom: "<'row mb-2'<'col-md-6 custom-dt-length'l><'col-md-6 text-end custom-dt-search'f>>" +
+                            "<'row'<'col-sm-12'tr>>" +
+                            "<'row mt-2'<'col-md-5 custom-dt-info'i><'col-md-7 custom-dt-pagination'p>>",
                         language: {
-                            search: "Cari:",
-                            lengthMenu: "Tampilkan _MENU_ data",
-                            info: "Menampilkan _START_ - _END_ dari _TOTAL_ data",
+                            search: "",
+                            searchPlaceholder: "Cari data...",
+                            lengthMenu: "_MENU_ per halaman",
+                            info: "Menampilkan _START_ - _END_ dari _TOTAL_ entri",
                             infoEmpty: "Tidak ada data",
                             zeroRecords: "Data tidak ditemukan",
                             paginate: {
