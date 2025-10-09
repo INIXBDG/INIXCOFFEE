@@ -25,7 +25,6 @@
                                     <th>Client</th>
                                     <th>Sales</th>
                                     <th style="text-align: center;">Jenis Aktivitas</th>
-                                    <th style="text-align: center;">Subjek</th>
                                     <th>Deskripsi</th>
                                     <th style="text-align: center;">Waktu Aktivitas</th>
                                     <th style="text-align: center;">Aksi</th>
