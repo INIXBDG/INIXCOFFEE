@@ -67,84 +67,93 @@ class AktivitasController extends Controller
         return response()->json($allData);
     }
 
-    public function indexJson()
-    {
-        try {
-            $user = Auth::user();
-            $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'SPV Sales'];
-
-            $query = Aktivitas::with(['contact', 'peserta'])
-                ->select('id', 'id_sales', 'id_contact', 'id_peserta', 'aktivitas', 'deskripsi', 'waktu_aktivitas');
-
-            if ($user->jabatan === 'Sales') {
-                $query->where('id_sales', $user->id_sales);
-            } elseif (!in_array($user->jabatan, $allowedJabatan)) {
+        public function indexJson()
+        {
+            try {
+                $user = Auth::user();
+                $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'SPV Sales'];
+    
+                $query = Aktivitas::with(['contact', 'peserta'])
+                    ->select('id', 'id_sales', 'id_contact', 'id_peserta', 'aktivitas', 'deskripsi', 'waktu_aktivitas');
+    
+                if ($user->jabatan === 'Sales') {
+                    $query->where('id_sales', $user->id_sales);
+                } elseif (!in_array($user->jabatan, $allowedJabatan)) {
+                    return response()->json([
+                        'error' => 'Unauthorized access.'
+                    ], 403);
+                }
+    
+                $draw = request()->get('draw', 1);
+                $start = request()->get('start', 0);
+                $length = request()->get('length', 10);
+                $searchValue = request()->get('search')['value'] ?? '';
+                $orderColumnIndex = request()->get('order')[0]['column'] ?? 0;
+                $orderDirection = request()->get('order')[0]['dir'] ?? 'asc';
+    
+                $orderColumns = ['id', 'id_sales', 'id_contact', 'aktivitas', 'deskripsi', 'waktu_aktivitas'];
+                $orderColumn = $orderColumns[$orderColumnIndex] ?? 'id';
+    
+                $totalRecords = $query->count();
+    
+                if (!empty($searchValue)) {
+                    $query->where(function ($q) use ($searchValue) {
+                        $q->where('aktivitas', 'like', "%{$searchValue}%")
+                            ->orWhere('deskripsi', 'like', "%{$searchValue}%");
+                    });
+                }
+    
+                $totalFiltered = $query->count();
+                $data =  $query->orderBy('waktu_aktivitas', 'desc')
+                    ->orderBy($orderColumn, $orderDirection)
+                    ->offset($start)
+                    ->limit($length)
+                    ->get()
+                    ->map(function ($item) {
+                        if ($item->id_peserta) {
+                            $namaKontak = $item->peserta?->nama;
+                            $namaPerusahaan = $item->peserta?->perusahaan?->nama_perusahaan;
+                        } else {
+                            $namaKontak = $item->contact?->nama;
+                            $namaPerusahaan = $item->contact?->perusahaan?->nama_perusahaan;
+                        }
+    
+                        $kontak = $namaKontak;
+                        if ($namaPerusahaan !== '-') {
+                            $kontak .= ' (' . $namaPerusahaan . ')';
+                        }
+    
+                        $aktivitas = match ($item->aktivitas) {
+                            'Incharge' => 'Incharge Inhouse',
+                            'Form_Masuk' => 'Form Masuk',
+                            'Form_Keluar' => 'Form Keluar',
+                            default => ucfirst($item->aktivitas),
+                        };
+    
+                        return [
+                            'id' => $item->id,
+                            'kontak' => $kontak,
+                            'id_sales' => $item->id_sales,
+                            'aktivitas' => $aktivitas,
+                            'deskripsi' => $item->deskripsi,
+                            'waktu_aktivitas' => \Carbon\Carbon::parse($item->waktu_aktivitas)->format('d/m/Y'),
+                        ];
+                    });
+    
                 return response()->json([
-                    'error' => 'Unauthorized access.'
-                ], 403);
+                    'draw' => $draw,
+                    'recordsTotal' => $totalRecords,
+                    'recordsFiltered' => $totalFiltered,
+                    'data' => $data,
+                ]);
+            } catch (\Exception $e) {
+                Log::error('IndexJson Error: ' . $e->getMessage());
+                return response()->json([
+                    'error' => 'Terjadi kesalahan pada server. Silakan coba lagi nanti.',
+                ], 500);
             }
-
-            $draw = request()->get('draw', 1);
-            $start = request()->get('start', 0);
-            $length = request()->get('length', 10);
-            $searchValue = request()->get('search')['value'] ?? '';
-            $orderColumnIndex = request()->get('order')[0]['column'] ?? 0;
-            $orderDirection = request()->get('order')[0]['dir'] ?? 'asc';
-
-            $orderColumns = ['id', 'id_sales', 'id_contact', 'aktivitas', 'deskripsi', 'waktu_aktivitas'];
-            $orderColumn = $orderColumns[$orderColumnIndex] ?? 'id';
-
-            $totalRecords = $query->count();
-
-            if (!empty($searchValue)) {
-                $query->where(function ($q) use ($searchValue) {
-                    $q->where('aktivitas', 'like', "%{$searchValue}%")
-                        ->orWhere('deskripsi', 'like', "%{$searchValue}%");
-                });
-            }
-
-            $totalFiltered = $query->count();
-            $data = $query->orderBy($orderColumn, $orderDirection)
-                ->offset($start)
-                ->limit($length)
-                ->get()
-                ->map(function ($item) {
-                    if ($item->id_peserta) {
-                        $namaKontak = $item->peserta?->nama;
-                        $namaPerusahaan = $item->peserta?->perusahaan?->nama_perusahaan;
-                    } else {
-                        $namaKontak = $item->contact?->nama;
-                        $namaPerusahaan = $item->contact?->perusahaan?->nama_perusahaan;
-                    }
-
-                    $kontak = $namaKontak;
-                    if ($namaPerusahaan !== '-') {
-                        $kontak .= ' (' . $namaPerusahaan . ')';
-                    }
-
-                    return [
-                        'id' => $item->id,
-                        'kontak' => $kontak,
-                        'id_sales' => $item->id_sales,
-                        'aktivitas' => ($item->aktivitas === 'Incharge') ? 'Incharge Inhouse' : ucfirst($item->aktivitas),
-                        'deskripsi' => $item->deskripsi,
-                        'waktu_aktivitas' => \Carbon\Carbon::parse($item->waktu_aktivitas)->format('d/m/Y'),
-                    ];
-                });
-
-            return response()->json([
-                'draw' => $draw,
-                'recordsTotal' => $totalRecords,
-                'recordsFiltered' => $totalFiltered,
-                'data' => $data,
-            ]);
-        } catch (\Exception $e) {
-            Log::error('IndexJson Error: ' . $e->getMessage());
-            return response()->json([
-                'error' => 'Terjadi kesalahan pada server. Silakan coba lagi nanti.',
-            ], 500);
         }
-    }
+
 
     public function store(Request $request)
     {
