@@ -109,7 +109,7 @@ class OutstandingController extends Controller
                     'nama_materi' => $rkmData->materi->nama_materi,
                     'nama_perusahaan' => $rkmData->perusahaan->nama_perusahaan,
                     'due_date' => $outstanding->due_date,
-                    'net_sales' => $request->net_sales,
+                    // 'net_sales' => $request->net_sales,
                     'status_pembayaran' => $request->status_pembayaran,
                     'sales_key' => $rkmData->sales_key,
                 ];

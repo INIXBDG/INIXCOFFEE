@@ -62,6 +62,20 @@ class Nilaifeedback extends Model
         's5',
         's6',
         's7',
+        'M',
+        'TextM',
+        'P',
+        'TextP',
+        'F',
+        'TextF',
+        'I',
+        'TextI',
+        'IB',
+        'TextIB',
+        'IAS',
+        'TextIAS',
+        'S',
+        'TextS',
     ];
     public function rkm()
     {

@@ -147,6 +147,7 @@
                                     <option value="7" {{ old('ruang', $rkm->ruang) == "7" ? 'selected' : '' }}>7</option>
                                     <option value="ADOC" {{ old('ruang', $rkm->ruang) == "ADOC" ? 'selected' : '' }}>ADOC</option>
                                     <option value="Inhouse" {{ old('ruang', $rkm->ruang) == "Inhouse" ? 'selected' : '' }}>Inhouse</option>
+                                    <option value="Virtual" {{ old('ruang', $rkm->ruang) == "Virtual" ? 'selected' : '' }}>Virtual</option>
                                     <option value="Working Space" {{ Str::startsWith(old('ruang', $rkm->ruang), 'Working Space') ? 'selected' : '' }}>
                                         Working Space (isi manual)
                                     </option>

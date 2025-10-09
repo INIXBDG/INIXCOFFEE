@@ -28,6 +28,8 @@ class Peserta extends Model
     {
         return $this->hasOne(Registrasi::class, 'id_peserta', 'id')->latestOfMany('created_at');
     }
+
     
+
 
 }

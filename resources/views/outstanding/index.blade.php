@@ -334,25 +334,18 @@
                     "data": null,
                     "render": function(data, type, row) {
                         var actions = "";
-                        actions += '@if (auth()->user()->can('
-                        Edit Outstanding ') || auth()->user()->can('
-                        Delete Outstanding '))'
+                        actions += '@if (auth()->user()->can('Edit Outstanding') || auth()->user()->can('Delete Outstanding '))';
                         actions += '<div class="dropdown">';
                         actions += '<button class="btn dropdown-toggle text-white" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
                         actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
-                        actions += '@can('
-                        Edit Outstanding ')';
-                        actions += '<a class="dropdown-item" href="{{ url(' / outstanding ') }}/' + row.id + '/edit"><img src="{{ asset('
-                        icon / edit - warning.svg ') }}" class=""> Edit</a>';
+                        actions += '@can('Edit Outstanding')';
+                        actions += '<a class="dropdown-item" href="{{ url('/outstanding') }}/' + row.id + '/edit"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Edit</a>';
                         actions += '@endcan';
-                        actions += '@can('
-                        Delete Outstanding ')';
-                        actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url(' / outstanding ') }}/' + row.id + '" method="POST">';
+                        actions += '@can('Delete Outstanding')';
+                        actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/outstanding') }}/' + row.id + '" method="POST">';
                         actions += '@csrf';
-                        actions += '@method('
-                        DELETE ')';
-                        actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('
-                        icon / trash - danger.svg ') }}" class=""> Hapus</button>';
+                        actions += '@method('DELETE')';
+                        actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
                         actions += '</form>';
                         actions += '@endcan';
                         actions += '</div>';
@@ -542,27 +535,19 @@
                 {
                     "data": null,
                     "render": function(data, type, row) {
-
                         var actions = "";
-                        actions += '@if (auth()->user()->can('
-                        Edit Outstanding ') || auth()->user()->can('
-                        Delete Outstanding '))'
+                        actions += '@if (auth()->user()->can('Edit Outstanding') || auth()->user()->can('Delete Outstanding '))';
                         actions += '<div class="dropdown">';
                         actions += '<button class="btn dropdown-toggle text-white" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
                         actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
-                        actions += '@can('
-                        Edit Outstanding ')';
-                        actions += '<a class="dropdown-item" href="{{ url(' / outstanding ') }}/' + row.id + '/edit"><img src="{{ asset('
-                        icon / edit - warning.svg ') }}" class=""> Edit</a>';
+                        actions += '@can('Edit Outstanding')';
+                        actions += '<a class="dropdown-item" href="{{ url('/outstanding') }}/' + row.id + '/edit"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Edit</a>';
                         actions += '@endcan';
-                        actions += '@can('
-                        Delete Outstanding ')';
-                        actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url(' / outstanding ') }}/' + row.id + '" method="POST">';
+                        actions += '@can('Delete Outstanding')';
+                        actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/outstanding') }}/' + row.id + '" method="POST">';
                         actions += '@csrf';
-                        actions += '@method('
-                        DELETE ')';
-                        actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('
-                        icon / trash - danger.svg ') }}" class=""> Hapus</button>';
+                        actions += '@method('DELETE')';
+                        actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
                         actions += '</form>';
                         actions += '@endcan';
                         actions += '</div>';

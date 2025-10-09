@@ -826,13 +826,13 @@ function fetchTabInix(year) {
                 
                 if (data.keterlambatan.length >= 3) {
                     // Mengisi src untuk foto peringkat kedua
-                    $('.second-position #present-photo').attr('src', '/storage/' + data.keterlambatan[1].foto);
+                    $('.second-position #present-photo-dua').attr('src', '/storage/' + data.keterlambatan[1].foto);
 
                     // Mengisi src untuk foto peringkat pertama
                     $('.first-position #present-photo-satu').attr('src', '/storage/' + data.keterlambatan[0].foto);
 
                     // Mengisi src untuk foto peringkat ketiga
-                    $('.third-position #present-photo').attr('src', '/storage/' + data.keterlambatan[2].foto);
+                    $('.third-position #present-photo-tiga').attr('src', '/storage/' + data.keterlambatan[2].foto);
                 } else {
                     console.warn('Data keterlambatan kurang dari 3');
                 }

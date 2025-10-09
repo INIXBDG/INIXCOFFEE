@@ -315,6 +315,7 @@ class RKMController extends Controller
 
         return view('rkm.show', compact('rkm', 'comments', 'ids', 'params', 'materi_key', 'souvenir'));
     }
+
     public function edit(string $id)
     {
         $post = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan'])->findOrFail($id);
@@ -351,7 +352,7 @@ class RKMController extends Controller
     public function editInstruktur($id)
     {
         // return $id;
-        $karyawan = Karyawan::whereIn('jabatan', ['Instruktur', 'Education Manager', 'Technical Support'])
+        $karyawan = Karyawan::whereIn('jabatan', ['Instruktur', 'Education Manager'])
             ->where('status_aktif', '1')
             ->get();
         $array = explode('ixb', $id);
@@ -662,50 +663,66 @@ class RKMController extends Controller
             'user_update' => auth()->user()->username,
         ];
 
-        $bersangkutan = RKM::findOrFail($id);
+            $bersangkutan = RKM::findOrFail($id);
 
-        $Offman = karyawan::where('jabatan', 'Office Manager')->first();
-        $kooroff = karyawan::where('jabatan', 'Koordinator Office')->first();
-        $Eduman = karyawan::where('jabatan', 'Education Manager')->first();
-        $SPVSales = karyawan::where('jabatan', 'SPV Sales')->first();
-        $GM = karyawan::where('jabatan', 'GM')->first();
-        $CS = karyawan::where('jabatan', 'Customer Care')->first();
-        $TS = karyawan::where('jabatan', 'Technical Support')->first();
-        $sales = karyawan::where('kode_karyawan', $bersangkutan->sales_key)->first();
-        $instrukturs = karyawan::whereIn('kode_karyawan', [
-            $bersangkutan->instruktur_key,
-            $bersangkutan->instruktur_key2,
-            $bersangkutan->asisten_key
-        ])->get();
+            $Offman = karyawan::where('jabatan', 'Office Manager')->first();
+            $kooroff = karyawan::where('jabatan', 'Koordinator Office')->first();
+            $Eduman = karyawan::where('jabatan', 'Education Manager')->first();
+            $SPVSales = karyawan::where('jabatan', 'SPV Sales')->first();
+            $GM = karyawan::where('jabatan', 'GM')->first();
+            $cs_codes = karyawan::where('jabatan', 'Customer Care')->latest()->get();
+            $ah_codes = karyawan::where('jabatan', 'Admin Holding')->latest()->get();
+            $ts_codes = karyawan::where('jabatan', 'Technical Support')->latest()->get();
 
-        $users = array_map(function ($user) {
-            return $user === '-' ? null : $user;
-        }, [
-            $request->sales_key,
-            $Eduman->kode_karyawan ?? null,
-            $Offman->kode_karyawan ?? null,
-            $kooroff->kode_karyawan ?? null,
-            $SPVSales->kode_karyawan ?? null,
-            $GM->kode_karyawan ?? null,
-            $CS->kode_karyawan ?? null,
-            $TS->kode_karyawan ?? null,
-            $sales->kode_karyawan ?? null,
-        ]);
+            $CS = $cs_codes->pluck('kode_karyawan')->filter()->all();
+            $AH = $ah_codes->pluck('kode_karyawan')->filter()->all();
+            $TS = $ts_codes->pluck('kode_karyawan')->filter()->all();
 
-        $instrukturKeys = $instrukturs->pluck('kode_karyawan')->toArray();
+            $sales = karyawan::where('kode_karyawan', $bersangkutan->sales_key)->first();
+            $instrukturs = karyawan::whereIn('kode_karyawan', [
+                $bersangkutan->instruktur_key,
+                $bersangkutan->instruktur_key2,
+                $bersangkutan->asisten_key
+            ])->get();
 
-        $users = User::whereHas('karyawan', function ($query) use ($users, $instrukturKeys) {
-            $query->whereIn('kode_karyawan', array_filter(array_merge($users, $instrukturKeys)));
-        })->get();
+            // Array untuk single users (yang pakai mapping)
+            $singleUsers = array_map(function ($user) {
+                return $user === '-' ? null : $user;
+            }, [
+                $request->sales_key,
+                $Eduman->kode_karyawan ?? null,
+                $Offman->kode_karyawan ?? null,
+                $kooroff->kode_karyawan ?? null,
+                $SPVSales->kode_karyawan ?? null,
+                $GM->kode_karyawan ?? null,
+                $sales->kode_karyawan ?? null,
+            ]);
 
-        $path = '/rkm/' . $request->materi_key . 'ixb' . $hari . 'ie' . $tahun . 'ie' . $bulan . 'ixb' . $kelas;
+            $instrukturKeys = $instrukturs->pluck('kode_karyawan')->toArray();
 
-        foreach ($users as $user) {
-            NotificationFacade::send($user, new RKMUpdateNotification($data, $path));
-        }
+            // Gabungkan single users dengan array CS, AH, TS
+            $usersFlat = collect($singleUsers)
+                ->merge($CS)  // Tambahkan semua Customer Care
+                ->merge($AH)  // Tambahkan semua Admin Holding
+                ->merge($TS)  // Tambahkan semua Technical Support
+                ->filter()    // Hapus nilai kosong/null
+                ->unique()    // Hapus duplikat
+                ->values()    // Reset index
+                ->all();      // Konversi ke PHP array
 
-        return redirect()->route('rkm.index')->with(['success' => 'Data Berhasil Diubah!']);
-    }
+            // Query users
+            $users = User::whereHas('karyawan', function ($query) use ($usersFlat) {
+                $query->whereIn('kode_karyawan', $usersFlat);
+            })->get();
+
+            $path = '/rkm/' . $request->materi_key . 'ixb' . $hari . 'ie' . $tahun . 'ie' . $bulan . 'ixb' . $kelas;
+
+            foreach ($users as $user) {
+                NotificationFacade::send($user, new RKMUpdateNotification($data, $path));
+            }
+
+            return redirect()->route('rkm.index')->with(['success' => 'Data Berhasil Diubah!']);
+             }
     /**
      * destroy
      *
@@ -1021,24 +1038,156 @@ class RKMController extends Controller
         return view('rkm.show', compact('rkm', 'comments', 'ids', 'params', 'materi_key', 'souvenir'));
     }
 
-    public function updateMakanan(Request $request, $id)
-{
-    $rkm = RKM::find($id); // jangan langsung OrFail biar bisa handle error sendiri
-    if (!$rkm) {
-        return response()->json([
-            'status' => false,
-            'message' => 'RKM tidak ditemukan'
-        ], 404);
+    public function updateMakanan(Request $request)
+    {
+        try {
+            // Validasi input
+            $request->validate([
+                'ids' => 'required|array', // Validasi bahwa ids adalah array
+                'ids.*' => 'required|integer|exists:r_k_m_s,id', // Validasi setiap ID
+                'makanan' => 'required|in:0,1,2' // Validasi nilai makanan
+            ]);
+
+            $ids = $request->input('ids');
+            $makanan = $request->input('makanan');
+            $updatedIds = [];
+
+            // Update setiap RKM berdasarkan ID
+            foreach ($ids as $id) {
+                $rkm = RKM::find($id);
+
+                if (!$rkm) {
+                    continue; // Lewati jika ID tidak ditemukan
+                }
+
+                $oldMakanan = $rkm->makanan;
+                $rkm->makanan = $makanan;
+                $saved = $rkm->save();
+
+                if ($saved) {
+                    $updatedIds[] = $id;
+                    // Log untuk debugging
+                    \Log::info('Makanan updated successfully', [
+                        'rkm_id' => $id,
+                        'old_makanan' => $oldMakanan,
+                        'new_makanan' => $makanan,
+                        'user' => auth()->user()->username ?? 'unknown'
+                    ]);
+                }
+            }
+
+            if (empty($updatedIds)) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Gagal memperbarui makanan untuk semua ID'
+                ], 500);
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Makanan berhasil diperbarui untuk ID: ' . implode(', ', $updatedIds),
+                'data' => [
+                    'ids' => $updatedIds,
+                    'makanan' => $makanan,
+                    'makanan_text' => $this->getMakananText($makanan)
+                ]
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Data tidak valid: ' . implode(', ', $e->validator->errors()->all())
+            ], 422);
+        } catch (\Exception $e) {
+            // Log error untuk debugging
+            \Log::error('Error updating makanan', [
+                'ids' => $request->input('ids', []),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
-    $rkm->makanan = $request->makanan;
-    $rkm->save();
+    private function getMakananText($makanan)
+    {
+        switch (strval($makanan)) {
+            case '0':
+                return 'Tidak Ada';
+            case '1':
+                return 'Nasi Box';
+            case '2':
+                return 'Prasmanan';
+            default:
+                return '-';
+        }
+    }
+    public function getRKM($tahun, $bulan)
+    {
+        $query = RKM::with(['materi', 'perusahaan', 'sales']) // relasi yang dipake di blade
+            ->whereYear('tanggal_awal', $tahun)
+            ->whereMonth('tanggal_awal', $bulan)
+            ->orderBy('tanggal_awal', 'asc') // Urutkan berdasarkan tanggal
+            ->orderBy('id', 'asc'); // Sebagai fallback, urutkan berdasarkan ID
 
-    return response()->json([
-        'status' => true,
-        'message' => 'Makanan berhasil diperbarui'
-    ]);
-}
+        // kalau mau khusus exam_only, tinggal tambahin
+        if (request()->has('exam_only') && request()->exam_only == 1) {
+            $query->where('tipe', 'exam_only');
+        }
 
+        $rawData = $query->get();
 
+        // Filter data yang valid (memiliki ID dan data lengkap)
+        $validData = $rawData->filter(function ($rkm) {
+            return $rkm->id &&
+                $rkm->materi_key &&
+                $rkm->tanggal_awal &&
+                $rkm->materi &&
+                $rkm->perusahaan;
+        });
+
+        // Group data by weeks
+        $groupedData = [];
+
+        foreach ($validData as $rkm) {
+            $tanggalAwal = Carbon::parse($rkm->tanggal_awal);
+            $startOfWeek = $tanggalAwal->startOfWeek(Carbon::MONDAY);
+            $weekKey = $startOfWeek->format('Y-m-d');
+
+            if (!isset($groupedData[$weekKey])) {
+                $groupedData[$weekKey] = [
+                    'start' => $weekKey,
+                    'data' => []
+                ];
+            }
+
+            $groupedData[$weekKey]['data'][] = $rkm;
+        }
+
+        // Sort weeks by date
+        ksort($groupedData);
+
+        // Group by month
+        $monthlyData = [];
+        foreach ($groupedData as $weekData) {
+            $monthKey = Carbon::parse($weekData['start'])->format('Y-m');
+
+            if (!isset($monthlyData[$monthKey])) {
+                $monthlyData[$monthKey] = [
+                    'month' => $monthKey,
+                    'weeksData' => []
+                ];
+            }
+
+            $monthlyData[$monthKey]['weeksData'][] = $weekData;
+        }
+
+        return response()->json([
+            'status' => true,
+            'data' => array_values($monthlyData)
+        ]);
+    }
 }

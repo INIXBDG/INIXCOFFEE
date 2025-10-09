@@ -90,7 +90,7 @@ class PermissionTableSeeder extends Seeder
             'View RekapAbsensi',
             'Create RekapAbsensi'
          ];
-         
+
          foreach ($permissions as $permission) {
               Permission::create(['name' => $permission]);
          }
