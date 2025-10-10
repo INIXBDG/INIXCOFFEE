@@ -11,6 +11,7 @@ use App\Models\Peluang;
 use App\Models\Perusahaan;
 use App\Models\RKM;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Auth\Events\Validated;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -229,9 +230,17 @@ class ContactController extends Controller
         // Simpan data perusahaan
         $perusahaan = Perusahaan::create($validated + ['sales_key' => $id_sales]);
 
+        $aktivitas = new Aktivitas();
+        $aktivitas->id_sales = $id_sales;
+        $aktivitas->aktivitas = 'DB';
+        $aktivitas->deskripsi = 'Database baru berhasil ditambahkan';
+        $aktivitas->waktu_aktivitas = Carbon::now();
+        $aktivitas->save();
+
         return back()->with([
             'message' => 'Data perusahaan berhasil disimpan.',
             'data' => $perusahaan,
+            'aktivitas' => $aktivitas,
         ]);
     }
 

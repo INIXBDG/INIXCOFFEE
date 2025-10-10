@@ -143,8 +143,9 @@
                                         </div>
                                         <div class="mb-3">
                                             <label for="Incharge{{ $activity->id }}" class="form-label">Incharge</label>
-                                            <input type="number" class="form-control" id="Telemarketing{{ $activity->id }}"
-                                                name="Telemarketing" value="{{ $activity->Telemarketing }}" required>
+                                            <input type="number" class="form-control"
+                                                id="Telemarketing{{ $activity->id }}" name="Telemarketing"
+                                                value="{{ $activity->Telemarketing }}" required>
                                         </div>
                                         <div class="mb-3">
                                             <label for="Incharge{{ $activity->id }}" class="form-label">Incharge</label>
@@ -228,15 +229,16 @@
                                 <input type="number" class="form-control" id="PI" name="PI" required>
                             </div>
                             <div class="mb-3">
-                                <label for="Incharge" class="form-label">Penawaran Awal</label>
-                                <input type="number" class="form-control" id="Telemarketing" name="Telemarketing" required>
+                                <label for="Incharge" class="form-label">Telemarketing</label>
+                                <input type="number" class="form-control" id="Telemarketing" name="Telemarketing"
+                                    required>
                             </div>
                             <div class="mb-3">
-                                <label for="Incharge" class="form-label">Penawaran Internal</label>
+                                <label for="Incharge" class="form-label">Form Masuk</label>
                                 <input type="number" class="form-control" id="FormM" name="FormM" required>
                             </div>
                             <div class="mb-3">
-                                <label for="Incharge" class="form-label">Penawaran Internal</label>
+                                <label for="Incharge" class="form-label">Form Keluar</label>
                                 <input type="number" class="form-control" id="FormK" name="FormK" required>
                             </div>
                         </div>

@@ -22,7 +22,8 @@
                                     @forelse ($chartData as $item)
                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                             <span class="small">{{ $item['kategori'] }}</span>
-                                            <span class="small text-muted">{{ number_format($item['jumlah'], 0, ',', '.') }} ({{ $item['persen'] }}%)</span>
+                                            <span class="small text-muted">{{ number_format($item['jumlah'], 0, ',', '.') }}
+                                                ({{ $item['persen'] }}%)</span>
                                         </div>
                                     @empty
                                         <p class="text-muted small mb-0">Tidak ada data kategori.</p>
@@ -44,7 +45,8 @@
                         <div class="activity-container" style="max-height: 355px; overflow-y: auto;">
                             @if (!empty($activitysales))
                                 <div class="mb-3 sales-item" data-sales-id="{{ $activitysales['id_sales'] }}">
-                                    <strong class="text-dark d-block mb-2">Sales ID: {{ $activitysales['id_sales'] }}</strong>
+                                    <strong class="text-dark d-block mb-2">Sales ID:
+                                        {{ $activitysales['id_sales'] }}</strong>
                                     @php
                                         $aktivitas = [
                                             'DB' => [
@@ -92,19 +94,40 @@
                                                 'target' => $activitysales['target_PI'],
                                                 'warna' => 'success',
                                             ],
+                                            'Telemarketing' => [
+                                                'jumlah' => $activitysales['Telemarketing'],
+                                                'target' => $activitysales['target_Telemarketing'],
+                                                'warna' => 'danger',
+                                            ],
+                                            'Form Masuk' => [
+                                                'jumlah' => $activitysales['Form_Masuk'],
+                                                'target' => $activitysales['target_Form_Masuk'],
+                                                'warna' => 'danger',
+                                            ],
+                                            'Form Keluar' => [
+                                                'jumlah' => $activitysales['Form_Keluar'],
+                                                'target' => $activitysales['target_Form_Keluar'],
+                                                'warna' => 'danger',
+                                            ],
                                         ];
                                     @endphp
                                     @foreach ($aktivitas as $label => $data)
                                         @php
-                                            $persen = $data['target'] > 0 ? min(round(($data['jumlah'] / $data['target']) * 100), 100) : 0;
+                                            $persen =
+                                                $data['target'] > 0
+                                                    ? min(round(($data['jumlah'] / $data['target']) * 100), 100)
+                                                    : 0;
                                         @endphp
                                         <div class="mb-2 activity-item" data-activity="{{ $label }}">
                                             <div class="d-flex justify-content-between align-items-center mb-1">
-                                                <span class="small text-muted">{{ $label }}: {{ number_format($data['jumlah'], 0, ',', '.') }}/{{ number_format($data['target'], 0, ',', '.') }}</span>
-                                                <span class="badge bg-{{ $data['warna'] }}-subtle text-dark">{{ $persen }}%</span>
+                                                <span class="small text-muted">{{ $label }}:
+                                                    {{ number_format($data['jumlah'], 0, ',', '.') }}/{{ number_format($data['target'], 0, ',', '.') }}</span>
+                                                <span
+                                                    class="badge bg-{{ $data['warna'] }}-subtle text-dark">{{ $persen }}%</span>
                                             </div>
                                             <div class="progress" style="height: 6px;">
-                                                <div class="progress-bar bg-{{ $data['warna'] }}" style="width: {{ $persen }}%;"></div>
+                                                <div class="progress-bar bg-{{ $data['warna'] }}"
+                                                    style="width: {{ $persen }}%;"></div>
                                             </div>
                                         </div>
                                     @endforeach
@@ -129,7 +152,8 @@
                         @forelse ($best as $item)
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <div class="text-truncate" style="max-width: 70%;">
-                                    <strong class="text-dark">{{ $item->materi->nama_materi ?? $item->materi_key }}</strong>
+                                    <strong
+                                        class="text-dark">{{ $item->materi->nama_materi ?? $item->materi_key }}</strong>
                                 </div>
                                 <span class="badge bg-success-subtle text-success">
                                     {{ number_format($item->total_pax, 0, ',', '.') }} Pax
@@ -157,7 +181,8 @@
                         @forelse ($profit as $item)
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <div class="text-truncate" style="max-width: 70%;">
-                                    <strong class="text-dark">{{ $item->materi->nama_materi ?? $item->materi_key }}</strong>
+                                    <strong
+                                        class="text-dark">{{ $item->materi->nama_materi ?? $item->materi_key }}</strong>
                                 </div>
                                 <span class="badge bg-info-subtle text-info">
                                     Rp {{ number_format($item->total_revenue, 0, ',', '.') }}
@@ -287,7 +312,8 @@
             <!-- Distribusi Perusahaan per Lokasi -->
             <div class="col-12">
                 <div class="card h-100 shadow-sm border-0 rounded-3">
-                    <div class="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
+                    <div
+                        class="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0 text-primary">Distribusi Perusahaan per Lokasi</h5>
                     </div>
                     <div class="card-body p-3">
@@ -303,7 +329,9 @@
                                     @forelse ($totalDaerah as $item)
                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                             <span class="small">{{ $item['lokasi'] }}</span>
-                                            <span class="small text-muted">{{ number_format($item['total'], 0, ',', '.') }} ({{ $item['persen'] }}%)</span>
+                                            <span
+                                                class="small text-muted">{{ number_format($item['total'], 0, ',', '.') }}
+                                                ({{ $item['persen'] }}%)</span>
                                         </div>
                                     @empty
                                         <p class="text-muted small mb-0">Tidak ada data lokasi.</p>
@@ -346,7 +374,8 @@
                                     label: context => {
                                         const index = context.dataIndex;
                                         const dataset = context.dataset;
-                                        const item = (id === 'kategoriChart' ? chartData : lokasiData)[index];
+                                        const item = (id === 'kategoriChart' ? chartData :
+                                            lokasiData)[index];
                                         const key = id === 'kategoriChart' ? 'kategori' : 'lokasi';
                                         const value = id === 'kategoriChart' ? 'jumlah' : 'total';
                                         return `${item[key]}: ${item[value]} (${item.persen}%)`;
