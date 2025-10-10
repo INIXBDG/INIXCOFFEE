@@ -352,30 +352,7 @@
             </div>
         </div>
 
-        <div class="card card-rounded flex-fill">
-            <div class="card-body">
-                <h4 class="card-title card-title-dash">Data Formulir</h4>
-                <div class="pt-3">
-                    <div class="row">
-                        <div class="col-sm-6">
-                            <canvas id="doughnutCharthr" height="200"></canvas>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="row doughnut-hr-legend mb-4">
-                                <div class="col-6" id="totalFormulir"></div>
-                                <div class="col-6" id="totalRutin"></div>
-                            </div>
-                            <div class="row doughnut-hr-legend">
-                                <div class="col-6" id="totalProbation"></div>
-                                <div class="col-6" id="totalKontrak"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- <div class="card card-rounded w-100 h-100">
+         <div class="card card-rounded w-100 h-100">
             <div class="card-body">
                 <h4 class="card-title card-title-dash mb-4">Target Manager/Koordinator</h4>
 
@@ -415,10 +392,10 @@
                     </div>
                 </div>
             </div>
-        </div> -->
+        </div>
     </div>
 </div>
-<!-- <div class="row">
+<div class="row">
     <div class="col-lg-6 d-flex flex-column">
         <div class="card card-rounded flex-fill">
             <div class="card-body">
@@ -456,7 +433,7 @@
                         <img class="img-sm rounded-2 me-3" src="{{ asset('template_KPI/dist/assets/images/screenshots/user-profile.jpg') }}" alt="profile">
                         <div class="flex-grow-1">
                             <div class="d-flex justify-content-between">
-                                <h6 class="mb-1">Xepi - Finance</h6>
+                                <h6 class="mb-1">Xepi - Finance & Accounting</h6>
                                 <small class="text-muted">78%</small>
                             </div>
                             <div class="progress progress-sm mt-1">
@@ -470,7 +447,7 @@
                         <img class="img-sm rounded-2 me-3" src="{{ asset('template_KPI/dist/assets/images/screenshots/user-profile.jpg') }}" alt="profile">
                         <div class="flex-grow-1">
                             <div class="d-flex justify-content-between">
-                                <h6 class="mb-1">Networking</h6>
+                                <h6 class="mb-1">Riffa - Finance & Accounting</h6>
                                 <small class="text-muted">62%</small>
                             </div>
                             <div class="progress progress-sm mt-1">
@@ -484,7 +461,7 @@
                         <img class="img-sm rounded-2 me-3" src="{{ asset('template_KPI/dist/assets/images/screenshots/user-profile.jpg') }}" alt="profile">
                         <div class="flex-grow-1">
                             <div class="d-flex justify-content-between">
-                                <h6 class="mb-1">Compliance</h6>
+                                <h6 class="mb-1">Amanda - HRD</h6>
                                 <small class="text-muted">60%</small>
                             </div>
                             <div class="progress progress-sm mt-1">
@@ -511,7 +488,7 @@
             </div>
         </div>
     </div>
-</div> -->
+</div>
 </div>
 @endsection
 

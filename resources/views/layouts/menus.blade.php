@@ -1925,7 +1925,7 @@
                                 <div class="col-md-12 mt-1">
                                     <div class="card">
                                         <div class="card-body">
-                                            <h5 class="text-center card-title">performance assessment</h5>
+                                            <h5 class="text-center card-title">Performance Assessment</h5>
                                             <div class="row">
                                                 @can('View KPI Penilaian')
                                                 <div class="col-sm-6 mt-2">
