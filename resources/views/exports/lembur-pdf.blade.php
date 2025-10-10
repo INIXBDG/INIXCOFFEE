@@ -99,31 +99,39 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @php
-                            $totaljam = 0;
-                            $totalkeseluruhanjam = 0;
-                            $totalkeseluruhanclaim = 0;
-                            @endphp
-
+							@php
+								// Inisialisasi variabel total di luar loop, agar tidak error undefined
+								$totalJamNumerik = 0;
+								$totalkeseluruhanjam = 0;
+								$totalkeseluruhanclaim = 0;
+							@endphp
                             @foreach ($data as $item)
                             @php
-                            $start = \Carbon\Carbon::parse(str_replace('.', ':', $item->jam_mulai));
-                            $end = \Carbon\Carbon::parse(str_replace('.', ':', $item->jam_selesai));
+								$start = DateTime::createFromFormat('H:i', $item->jam_mulai);
+								$end = DateTime::createFromFormat('H:i', $item->jam_selesai);
 
-                            $diffInMinutes = $end->diffInMinutes($start);
-                            $hours = floor($diffInMinutes / 60);
-                            $minutes = $diffInMinutes % 60;
+								if ($end < $start) {
+									$end->modify('+1 day');
+								}
 
-                            $totaljam = $hours . ' Jam ' . $minutes . ' Menit';
+								$interval = $end->diff($start);
+								$totalHours = round($interval->h + ($interval->i / 60) + ($interval->s / 3600), 2);
+								
+								// Penjumlahan tanpa number_format, agar tetap float
+								$totalJamNumerik += $totalHours;
+								
+								// Number format untuk tampilan jam lembur per baris
+								$totaljam = number_format($totalHours, 2, '.', '');
 
-                            $totalJamNumerik = $hours + $minutes;
+								// Hitung lembur per baris, berdasarkan jam yang baru dihitung
+								$nilaiLembur = (float) $item->hitunglembur->nilai_lembur;
+								$totalLembur = $nilaiLembur * $totalHours;
 
-                            $nilaiLembur = (float) $item->hitunglembur->nilai_lembur;
-                            $totalLembur = $nilaiLembur * number_format($totalJamNumerik, 2) ;
-
-                            $totalkeseluruhanjam += number_format($totalJamNumerik, 2) ;
-                            $totalkeseluruhanclaim += $totalLembur;
-                            @endphp
+								// Akumulasi total keseluruhan
+								$totalkeseluruhanjam += $totalHours;
+								$totalkeseluruhanclaim += $totalLembur;
+								//dd($totalkeseluruhanjam);
+							@endphp
 
                             <tr>
                                 <td>{{ $loop->iteration }}</td>
@@ -142,7 +150,7 @@
                         <tfoot>
                             <tr>
                                 <th colspan="6">Total Jam Lembur</th>
-                                <th>{{ $totaljam }}</th>
+                                <th>{{ $totalkeseluruhanjam }}</th>
                                 <th>Total Claim</th>
                                 <th>Rp. {{ number_format($totalkeseluruhanclaim, 2, '.', '') }}</th>
                             </tr>

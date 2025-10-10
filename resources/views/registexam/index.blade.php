@@ -210,8 +210,8 @@
             },
             "columns": [
                 {"data": "rkm.tanggal_awal", "visible": false},
-                {"data": "materi"},
-                {"data": "perusahaan"},
+                {"data": "rkm.materi.nama_materi"},
+                {"data": "rkm.perusahaan.nama_perusahaan"},
                 {"data": "pax"},
                 {
                 "data": null,

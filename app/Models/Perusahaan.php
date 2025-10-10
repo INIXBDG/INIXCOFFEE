@@ -18,6 +18,7 @@ class Perusahaan extends Model
         'alamat',
         'cp',
         'no_telp',
+        'email',
         'foto_npwp',
     ];
 
@@ -28,11 +29,21 @@ class Perusahaan extends Model
 
     public function rkms()
     {
-        return $this->hasMany(Rkm::class, 'perusahaan_key', 'id');
+        return $this->hasMany(RKM::class, 'perusahaan_key', 'id');
     }
 
     public function peserta()
     {
         return $this->hasMany(Peserta::class, 'perusahaan_key', 'id');
     }
+
+    public function contacts()
+    {
+        return $this->hasMany(Contact::class, 'id_perusahaan', 'id');
+    }
+
+    public function peluang(){
+        return $this->hasMany(Peluang::class, 'id_contact', 'id');
+    }
+
 }

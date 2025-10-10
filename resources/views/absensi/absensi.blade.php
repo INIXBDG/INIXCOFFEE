@@ -119,7 +119,7 @@
             <div class="modal-body text-center">
                 @if($data->bukti_gambar)
                 <div class="frame-wrapper">
-                    <img src="{{ asset($data->bukti_gambar) }}" alt="Bukti Gambar" class="img-fluid rounded" width="300px" height="300px">
+                    <img src="{{ asset('storage/'.$data->bukti_gambar) }}" alt="Bukti Gambar" class="img-fluid rounded" width="300px" height="300px">
 
                     <div class="corner tl"></div>
                     <div class="corner tr"></div>
@@ -433,7 +433,7 @@
             <div class="row my-2">
                 <div class="col-md-12">
                     <div class="card">
-                        <div class="card-body">
+                        <div class="card-body table-responsive">
                             <div class="col-md-12">
                                 <div class="card-body table-responsive">
                                     <h6>Ajukan Klaim Absen Anda:</h6>
@@ -453,10 +453,8 @@
                                             <option value="Skema Kerja">Skema Kerja</option>
                                             <option value="Pembatalan Cuti">Pembatalan Cuti</option>
                                         </select>
-
                                     </div>
                                 </div>
-
                             </div>
                             <div class="table-responsive jenis-table" id="table-tidak-terekam">
                                 <h6>Data Pengajuan Klaim Absen Tidak Terekam</h6>
@@ -780,6 +778,9 @@
             </div>
         </div>
         <style>
+            
+
+            
             /* Mario-inspired theme variables */
             :root {
                 --mario-red: #e74c3c;
@@ -927,6 +928,7 @@
                 background-color: #2980b9;
                 transition: background 0.3s ease;
             }
+            
 
             /* Mobile view (≤576px) */
             @media (max-width: 576px) {

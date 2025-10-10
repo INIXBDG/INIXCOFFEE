@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\PerhitunganNetSales;
-use App\Models\ApprovedNetSales;
+use App\Models\perhitunganNetSales;
+use App\Models\approvedNetSales;
 use App\Models\Karyawan;
 use App\Models\RKM;
 use App\Models\trackingNetSales;
@@ -13,13 +13,13 @@ use Illuminate\Support\Facades\Log;
 use App\Notifications\NetSalesNotification;
 use Illuminate\Support\Facades\Notification;
 
-class approvedNetSalesController extends Controller
+class ApprovedNetSalesController extends Controller
 {
     public function approve(Request $request)
     {
         try {
-            $id = $request->input('id_net_sales');
-            $netSales = PerhitunganNetSales::with('karyawan')->find($id);
+            $id = $request->input('id_rkm');
+            $netSales = perhitunganNetSales::with('karyawan')->where('id_rkm', $id)->first();
 
             if (!$netSales) {
                 return response()->json(['error' => 'Data tidak ditemukan.'], 404);
@@ -31,7 +31,7 @@ class approvedNetSalesController extends Controller
                 $statusTracking = $request->input('status_tracking');
 
                 if (!empty($statusTracking)) {
-                    $tracking = trackingNetSales::where('id_netSales', $netSales->id)->first();
+                    $tracking = trackingNetSales::where('id', $netSales->id_tracking)->first();
                     if ($tracking) {
                         $tracking->tracking = $statusTracking;
                         $tracking->save();
@@ -55,8 +55,8 @@ class approvedNetSalesController extends Controller
             $keteranganInput = $request->input('keterangan');
 
             if (!empty($keteranganInput)) {
-                ApprovedNetSales::create([
-                    'id_netSales' => $netSales->id,
+                approvedNetSales::create([
+                    'id_rkm' => $netSales->id_rkm,
                     'tanggal' => now()->format('Y-m-d'),
                     'status' => 0,
                     'keterangan' => "Ditolak: " . $keteranganInput,
@@ -74,18 +74,17 @@ class approvedNetSalesController extends Controller
                 return response()->json(['success' => true, 'message' => 'Pengajuan ditolak dan notifikasi dikirim.']);
             }
 
-            // Approval logic (I → II → III) tetap dilanjutkan seperti sebelumnya...
-            $latestApproval = ApprovedNetSales::where('id_netSales', $netSales->id)
+            $latestApproval = approvedNetSales::where('id_rkm', $netSales->id_rkm)
                 ->orderByDesc('created_at')
                 ->first();
 
-            $newApproval = new ApprovedNetSales();
-            $newApproval->id_netSales = $netSales->id;
+            $newApproval = new approvedNetSales();
+            $newApproval->id_rkm = $netSales->id_rkm;
             $newApproval->tanggal = now()->format('Y-m-d');
             $newApproval->status = 1;
 
             if (!$latestApproval) {
-                $newApproval->level_status = 'I';
+                $newApproval->level_status = '1';
                 $newApproval->keterangan = 'Telah disetujui oleh SPV Sales';
                 $newApproval->save();
 
@@ -110,8 +109,8 @@ class approvedNetSalesController extends Controller
                     'alasan' => 'SPV Sales telah menyetujui pengajuan Anda.',
                 ];
                 Notification::send($salesUser, new NetSalesNotification($dummyCommentSales, $url, $path));
-            } elseif ($latestApproval->level_status === 'I') {
-                $newApproval->level_status = 'II';
+            } elseif ($latestApproval->level_status === '1') {
+                $newApproval->level_status = '2';
                 $newApproval->keterangan = 'Telah disetujui oleh General Manager';
                 $newApproval->save();
 
@@ -136,8 +135,8 @@ class approvedNetSalesController extends Controller
                     'alasan' => 'General Manager telah menyetujui pengajuan Anda.',
                 ];
                 Notification::send($salesUser, new NetSalesNotification($dummyCommentSales, $url, $path));
-            } elseif ($latestApproval->level_status === 'II') {
-                $newApproval->level_status = 'III';
+            } elseif ($latestApproval->level_status === '2') {
+                $newApproval->level_status = '3';
                 $newApproval->keterangan = $statusTracking;
                 $newApproval->save();
 
@@ -148,8 +147,8 @@ class approvedNetSalesController extends Controller
                     'alasan' => $statusTracking,
                 ];
                 Notification::send($salesUser, new NetSalesNotification($dummyCommentSales, $url, $path));
-            } elseif ($latestApproval->level_status === 'III') {
-                $newApproval->level_status = 'III';
+            } elseif ($latestApproval->level_status === '3') {
+                $newApproval->level_status = '3';
                 $newApproval->keterangan = $statusTracking;
                 $newApproval->save();
 
