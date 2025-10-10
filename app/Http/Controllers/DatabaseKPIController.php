@@ -2348,19 +2348,22 @@ class DatabaseKPIController extends Controller
         $year = date('Y');
         $month = date('m');
 
-        if ($month >= 1 && $month <= 3) {
-            $startMonth = 1;
-            $endMonth = 3;
-        } elseif ($month >= 4 && $month <= 6) {
-            $startMonth = 4;
-            $endMonth = 6;
-        } elseif ($month >= 7 && $month <= 9) {
-            $startMonth = 7;
-            $endMonth = 9;
-        } else {
-            $startMonth = 10;
-            $endMonth = 12;
-        }
+        // if ($month >= 1 && $month <= 3) {
+        //     $startMonth = 1;
+        //     $endMonth = 3;
+        // } elseif ($month >= 4 && $month <= 6) {
+        //     $startMonth = 4;
+        //     $endMonth = 6;
+        // } elseif ($month >= 7 && $month <= 9) {
+        //     $startMonth = 7;
+        //     $endMonth = 9;
+        // } else {
+        //     $startMonth = 10;
+        //     $endMonth = 12;
+        // }
+
+        $startMonth = 1;
+        $endMonth = 12;
 
         $startDate = date("$year-$startMonth-01 00:00:00");
         $endDate   = date("$year-$endMonth-" . date("t", strtotime("$year-$endMonth-01")) . " 23:59:59");
@@ -2413,19 +2416,50 @@ class DatabaseKPIController extends Controller
             'dataSakit'       => $arrayAbsensiSakit
         ];
 
-        $AbsenIzin = izinTigaJam::with('karyawan')
+        $AbsenIzin1 = izinTigaJam::with('karyawan')
             ->whereBetween('created_at', [$startDate, $endDate])
             ->get();
+
+        $AbsenIzin2 = pengajuancuti::with('karyawan')
+            ->where('tipe', 'Izin')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->where('approval_manager', '1')
+            ->get();
+
+        $AbsenIzin = $AbsenIzin1->merge($AbsenIzin2);
 
         $totalAbsenIzin = $AbsenIzin->pluck('id_karyawan')->unique()->count();
 
         $arrayAbsensiIzin = $AbsenIzin->map(function ($izin) {
+
+            $tanggalPengajuan = null;
+            $tanggalAwal      = null;
+            $tanggalAkhir     = null;
+
+            if ($izin instanceof izinTigaJam) {
+                $tanggalPengajuan = Carbon::parse($izin->tanggal_pengajuan ?? $izin->created_at)->format('D, d M Y');
+            } elseif ($izin instanceof pengajuancuti) {
+                $tanggalAwal  = $izin->tanggal_awal ? Carbon::parse($izin->tanggal_awal)->format('D, d M Y') : null;
+                $tanggalAkhir = $izin->tanggal_akhir ? Carbon::parse($izin->tanggal_akhir)->format('D, d M Y') : null;
+            }
+
+            $jenisIzin = null;
+
+            if ($tanggalAwal || $tanggalAkhir) {
+                $jenisIzin = 'Izin';
+            } else {
+                $jenisIzin = 'Izin 3 Jam';
+            }
+            
             return [
+                'jenisIzin'        => $jenisIzin,
                 'id_karyawan'      => $izin->id_karyawan,
-                'namaKaryawan'     => $izin->karyawan->nama_lengkap,
-                'divisi'           => $izin->karyawan->divisi,
-                'alasan'           => $izin->alasan,
-                'tanggalPengajuan' => $izin->tanggal_pengajuan,
+                'namaKaryawan'     => $izin->karyawan->nama_lengkap ?? '-',
+                'divisi'           => $izin->karyawan->divisi ?? '-',
+                'alasan'           => $izin->alasan ?? '-',
+                'tanggalPengajuan' => $tanggalPengajuan,
+                'tanggalAwal'      => $tanggalAwal,
+                'tanggalAkhir'     => $tanggalAkhir,
             ];
         });
 

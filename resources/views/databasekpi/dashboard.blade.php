@@ -352,7 +352,30 @@
             </div>
         </div>
 
-         <div class="card card-rounded w-100 h-100">
+        <div class="card card-rounded flex-fill">
+            <div class="card-body">
+                <h4 class="card-title card-title-dash">Data Formulir</h4>
+                <div class="pt-3">
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <canvas id="doughnutCharthr" height="200"></canvas>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="row doughnut-hr-legend mb-4">
+                                <div class="col-6" id="totalFormulir"></div>
+                                <div class="col-6" id="totalRutin"></div>
+                            </div>
+                            <div class="row doughnut-hr-legend">
+                                <div class="col-6" id="totalProbation"></div>
+                                <div class="col-6" id="totalKontrak"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- <div class="card card-rounded w-100 h-100">
             <div class="card-body">
                 <h4 class="card-title card-title-dash mb-4">Target Manager/Koordinator</h4>
 
@@ -392,10 +415,10 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> -->
     </div>
 </div>
-<div class="row">
+<!-- <div class="row">
     <div class="col-lg-6 d-flex flex-column">
         <div class="card card-rounded flex-fill">
             <div class="card-body">
@@ -488,7 +511,7 @@
             </div>
         </div>
     </div>
-</div>
+</div> -->
 </div>
 @endsection
 
@@ -751,10 +774,14 @@
 
                 contentModalBodyKI.empty();
                 if (dataIzin.length === 0) {
-                    contentModalBodyKI.append(`<div class="list-group-item border-0 d-flex align-items-center rounded-3 shadow-sm mb-3 p-3">Tidak ada karyawan yang izin di quartal ini</div>`);
+                    contentModalBodyKI.append(`
+                        <div class="list-group-item border-0 d-flex align-items-center rounded-3 shadow-sm mb-3 p-3">
+                            Tidak ada karyawan yang izin di quartal ini
+                        </div>`);
                 } else {
                     let accordionHtml = `<div class="accordion" id="accordionIzin">`;
                     const groupedIzin = {};
+
                     dataIzin.forEach(item => {
                         if (!groupedIzin[item.namaKaryawan]) {
                             groupedIzin[item.namaKaryawan] = {
@@ -763,42 +790,68 @@
                             };
                         }
                         groupedIzin[item.namaKaryawan].records.push({
+                            jenisIzin: item.jenisIzin,
                             alasan: item.alasan,
-                            tanggalPengajuan: item.tanggalPengajuan
+                            tanggalPengajuan: item.tanggalPengajuan,
+                            tanggalAwal: item.tanggalAwal,
+                            tanggalAkhir: item.tanggalAkhir
                         });
                     });
+
                     let index = 0;
                     for (const [nama, detail] of Object.entries(groupedIzin)) {
                         let words = nama.split(" ");
                         let initials = words[0].charAt(0).toUpperCase() + (words[1] ? words[1].charAt(0).toUpperCase() : "");
                         let randomBg = bgClasses[Math.floor(Math.random() * bgClasses.length)];
-                        let alasanList = detail.records.map((rec, idx) =>
-                            `<li><strong>Izin ${idx+1} (${rec.tanggalPengajuan}):</strong> ${rec.alasan}</li>`).join("");
+
+                        let alasanList = detail.records.map((rec, idx) => {
+                            let tanggalDisplay;
+
+                            if (rec.jenisIzin === 'Izin' && rec.tanggalAwal && rec.tanggalAkhir) {
+                                tanggalDisplay = `${rec.tanggalAwal} s/d ${rec.tanggalAkhir}`;
+                            } else {
+                                tanggalDisplay = rec.tanggalPengajuan ?? "-";
+                            }
+
+                            return `
+                            <li>
+                                <strong>${rec.jenisIzin || 'Izin'} (${tanggalDisplay}):</strong> 
+                                ${rec.alasan || '-'}
+                            </li>`;
+                        }).join("");
+
                         accordionHtml += `
-                        <div class="accordion-item">
-                            <h2 class="accordion-header" id="headingIzin${index}">
-                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseIzin${index}" aria-expanded="false" aria-controls="collapseIzin${index}">
-                                    ${nama} - ${detail.divisi}
-                                </button>
-                            </h2>
-                            <div id="collapseIzin${index}" class="accordion-collapse collapse" aria-labelledby="headingIzin${index}" data-bs-parent="#accordionIzin">
-                                <div class="accordion-body">
-                                    <div class="d-flex align-items-start">
-                                        <div class="avatar ${randomBg} text-white rounded-circle d-flex justify-content-center align-items-center me-3" style="width:40px; height:40px; font-weight:bold;">${initials}</div>
-                                        <div>
-                                            <h6 class="mb-0 fw-semibold">${nama}</h6>
-                                            <small class="text-muted">${detail.divisi}</small>
-                                            <ul class="mt-2 mb-0">${alasanList}</ul>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingIzin${index}">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                        data-bs-target="#collapseIzin${index}" aria-expanded="false" aria-controls="collapseIzin${index}">
+                                        ${nama} - ${detail.divisi || '-'}
+                                    </button>
+                                </h2>
+                                <div id="collapseIzin${index}" class="accordion-collapse collapse" 
+                                    aria-labelledby="headingIzin${index}" data-bs-parent="#accordionIzin">
+                                    <div class="accordion-body">
+                                        <div class="d-flex align-items-start">
+                                            <div class="avatar ${randomBg} text-white rounded-circle d-flex justify-content-center 
+                                                align-items-center me-3" style="width:40px; height:40px; font-weight:bold;">
+                                                ${initials}
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0 fw-semibold">${nama}</h6>
+                                                <small class="text-muted">${detail.divisi || '-'}</small>
+                                                <ul class="mt-2 mb-0">${alasanList}</ul>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>`;
+                            </div>`;
                         index++;
                     }
+
                     accordionHtml += `</div>`;
                     contentModalBodyKI.append(accordionHtml);
                 }
+
 
                 select_peringkatPenilaian.empty();
                 const Divisi = response.dataDivisi ?? [];

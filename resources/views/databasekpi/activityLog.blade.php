@@ -166,41 +166,46 @@ use Carbon\Carbon;
         </div>
 
         <div class="tab-pane fade" id="attendanceMonitoring" role="tabpanel">
-            <h4 class="card-title">Data Absen Anda</h4>
-            <p class="card-description">Data dalam tabel ini terekam saat Anda absen di Inixcoffee.</p>
-            <div class="table-responsive max-table-height">
-                <table class="table table-sm table-striped">
-                    <thead class="table-light sticky-header">
-                        <tr>
-                            <th>User</th>
-                            <th>Jabatan</th>
-                            <th>Status</th>
-                            <th>URL</th>
-                            <th>Browser</th>
-                            <th>IP</th>
-                            <th>Platform</th>
-                            <th>Tanggal</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($dataAbsen as $absen)
-                        <tr>
-                            <td>{{ $absen->karyawan->nama_lengkap }}</td>
-                            <td>{{ $absen->karyawan->jabatan }}</td>
-                            <td>{{ $absen->status }}</td>
-                            <td>
-                                <a href="{{ $absen->url }}" target="_blank" class="text-decoration-none">
-                                    {{ Str::limit($absen->url,  255) }}
-                                </a>
-                            </td>
-                            <td>{{ $absen->browser }}</td>
-                            <td>{{ $absen->ip }}</td>
-                            <td>{{ $absen->platform }}</td>
-                            <td>{{ Carbon::parse($visit->created_at)->translatedFormat('l, d F Y H:i') }}</td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+            <div class="card">
+                <div class="card-body">
+
+                    <h4 class="card-title">Data Absen Anda</h4>
+                    <p class="card-description">Data dalam tabel ini terekam saat Anda absen di Inixcoffee.</p>
+                    <div class="table-responsive max-table-height">
+                        <table class="table table-sm table-striped">
+                            <thead class="table-light sticky-header">
+                                <tr>
+                                    <th>User</th>
+                                    <th>Jabatan</th>
+                                    <th>Status</th>
+                                    <th>URL</th>
+                                    <th>Browser</th>
+                                    <th>IP</th>
+                                    <th>Platform</th>
+                                    <th>Tanggal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($dataAbsen as $absen)
+                                <tr>
+                                    <td>{{ $absen->karyawan->nama_lengkap }}</td>
+                                    <td>{{ $absen->karyawan->jabatan }}</td>
+                                    <td>{{ $absen->status }}</td>
+                                    <td>
+                                        <a href="{{ $absen->url }}" target="_blank" class="text-decoration-none">
+                                            {{ Str::limit($absen->url,  255) }}
+                                        </a>
+                                    </td>
+                                    <td>{{ $absen->browser }}</td>
+                                    <td>{{ $absen->ip }}</td>
+                                    <td>{{ $absen->platform }}</td>
+                                    <td>{{ Carbon::parse($visit->created_at)->translatedFormat('l, d F Y H:i') }}</td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
