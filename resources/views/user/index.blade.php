@@ -31,6 +31,7 @@
                             <th scope="col">Jabatan</th>
                             <th scope="col">Divisi</th>
                             <th scope="col">Kode Karyawan</th>
+                            <th scope="col">Jatah Cuti</th>
                             <th scope="col">Aksi</th>
                           </tr>
                         </thead>
@@ -169,6 +170,7 @@
                 {"data": "karyawan.jabatan"},
                 {"data": "karyawan.divisi"},
                 {"data": "karyawan.kode_karyawan"},
+                {"data": "karyawan.cuti"},
                 {
                 "data": null,
                 "render": function(data, type, row) {

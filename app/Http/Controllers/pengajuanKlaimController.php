@@ -547,6 +547,9 @@ class pengajuanKlaimController extends Controller
         $currentUser = auth()->user()->karyawan;
         $jabatan = $currentUser->jabatan ?? null;
         $divisi = $currentUser->divisi ?? null;
+        $namaApprover =$currentUser->nama_lengkap ?? null;
+
+         // Mulai transaksi database
 
         DB::beginTransaction();
 
@@ -587,10 +590,27 @@ class pengajuanKlaimController extends Controller
                         $cekAbsen->save();
                         $jenis_PK->id_absen = $cekAbsen->id;
                         $jenis_PK->approval = 1;
+                        $jenis_PK->approved_by = $namaApprover;
                         $jenis_PK->waktu_masuk = $cekAbsen->jam_masuk;
                         $jenis_PK->waktu_pulang = $cekAbsen->jam_keluar;
                     } else {
-                        // Untuk System Error dan lainnya, buat absen baru
+                    $existingAbsen = AbsensiKaryawan::where('id_karyawan', $jenis_PK->id_karyawan)
+                        ->whereDate('tanggal', $jenis_PK->tanggal)
+                        ->first();
+
+                    if ($existingAbsen) {
+                        $existingAbsen->update([
+                            'jam_masuk' => $jenis_PK->waktu_masuk ?? $existingAbsen->jam_masuk,
+                            'jam_keluar' => $jenis_PK->waktu_pulang ?? $existingAbsen->jam_keluar,
+                            'keterangan' => 'Masuk (' . $request->type . ')',
+                            'keterangan_pulang' => 'Pulang (' . $request->type . ')',
+                            'foto' => $jenis_PK->bukti_gambar,
+                        ]);
+                        
+                        $jenis_PK->id_absen = $existingAbsen->id;
+                        $jenis_PK->waktu_masuk = $existingAbsen->jam_masuk;
+                        $jenis_PK->waktu_pulang = $existingAbsen->jam_keluar;
+                    } else {
                         $newAbsen = AbsensiKaryawan::create([
                             'id_karyawan' => $jenis_PK->id_karyawan,
                             'tanggal' => $jenis_PK->tanggal,
@@ -601,12 +621,15 @@ class pengajuanKlaimController extends Controller
                             'keterangan_pulang' => 'Pulang (' . $request->type . ')',
                             'foto' => $jenis_PK->bukti_gambar,
                         ]);
+                        
                         $jenis_PK->id_absen = $newAbsen->id;
-                        $jenis_PK->approval = 1;
                         $jenis_PK->waktu_masuk = $newAbsen->jam_masuk;
                         $jenis_PK->waktu_pulang = $newAbsen->jam_keluar;
                     }
-
+                    
+                    $jenis_PK->approval = 1;
+                    $jenis_PK->approved_by = $namaApprover;
+                }
                     $jenis_PK->save();
 
                     // Kirim notifikasi
@@ -622,7 +645,7 @@ class pengajuanKlaimController extends Controller
                         $query->whereIn('kode_karyawan', $kodePenerima);
                     })->get();
 
-                    $statusMessage = $jenis_PK->approval == 1 ? "Telah Disetujui Oleh " . $jabatan : "Telah Ditolak Oleh " . $jabatan;
+                    $statusMessage = $jenis_PK->approval == 1 ? "Telah Disetujui Oleh " . $namaApprover : "Telah Ditolak Oleh " . $namaApprover;
 
                     $notificationData = [
                         'tipe' => 'no_record',
@@ -707,7 +730,7 @@ class pengajuanKlaimController extends Controller
                             $query->whereIn('kode_karyawan', $kodePenerima);
                         })->get();
 
-                        $statusMessage = $jenis_PK->approval == 1 ? "Telah Disetujui Oleh " . $jabatan : "Ditolak Oleh " . $jabatan;
+                        $statusMessage = $jenis_PK->approval == 1 ? "Telah Disetujui Oleh " . $namaApprover : "Ditolak Oleh " . $namaApprover;
 
                         $notificationData = [
                             'tipe'            => 'scheme_work',
@@ -761,8 +784,8 @@ class pengajuanKlaimController extends Controller
                         $users = User::whereHas('karyawan', function ($query) use ($kodePenerima) {
                             $query->whereIn('kode_karyawan', $kodePenerima);
                         })->get();
-                        
-                        $statusMessage = $jenis_PK->approval == 1 ? "Telah Disetujui Oleh " . $jabatan : "Telah Ditolak Oleh " . $jabatan;
+
+                        $statusMessage = $jenis_PK->approval == 1 ? "Telah Disetujui Oleh " . $namaApprover : "Telah Ditolak Oleh " . $namaApprover;
                         $data_cuti = pengajuancuti::where('id', $jenis_PK->id_cuti)->first();
                         
                         if (!$data_cuti) {
@@ -834,6 +857,9 @@ class pengajuanKlaimController extends Controller
         $currentUser = auth()->user()->karyawan;
         $jabatan = $currentUser->jabatan ?? null;
         $divisi = $currentUser->divisi ?? null;
+        $namaApprover =$currentUser->nama_lengkap ?? null;
+
+         // Mulai transaksi database
 
         DB::beginTransaction();
 
@@ -852,6 +878,7 @@ class pengajuanKlaimController extends Controller
                 }
                 
                 $jenis_PK->approval = 2;
+                $jenis_PK->approved_by = $namaApprover;
                 $jenis_PK->alasan_approval = $request->reject_reason;
                 $jenis_PK->approval_date = now();
                 $jenis_PK->save();
@@ -875,7 +902,7 @@ class pengajuanKlaimController extends Controller
                     'kendala'         => $jenis_PK->kendala,
                     'tanggal'         => $jenis_PK->tanggal,
                     'kronologi'       => $jenis_PK->kronologi,
-                    'status'          => "Telah Ditolak Oleh " . $jabatan,
+                    'status'          => "Telah Ditolak Oleh " . $namaApprover,
                     'approval'        => "Reject",
                     'alasan_approval' => $request->reject_reason,
                 ];
@@ -898,6 +925,7 @@ class pengajuanKlaimController extends Controller
                 }
                 
                 $jenis_PK->approval = 2;
+                $jenis_PK->approved_by = $namaApprover;
                 $jenis_PK->alasan_approval = $request->reject_reason;
                 $jenis_PK->approval_date = now();
                 $jenis_PK->save();
@@ -915,6 +943,7 @@ class pengajuanKlaimController extends Controller
                 }
                 
                 $jenis_PK->approval = 2;
+                $jenis_PK->approved_by = $namaApprover;
                 $jenis_PK->alasan_approval = $request->reject_reason;
                 $jenis_PK->approval_date = now();
                 $jenis_PK->save();

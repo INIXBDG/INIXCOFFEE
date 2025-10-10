@@ -3,14 +3,17 @@
 namespace App\Http\Controllers\Crm;
 
 use App\Http\Controllers\Controller;
+use App\Models\Aktivitas;
 use Illuminate\Http\Request;
 use App\Models\Contact;
 use App\Models\Perusahaan;
 use App\Models\Peserta;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
+use function Symfony\Component\VarDumper\Dumper\esc;
 
 class PicController extends Controller
 {
@@ -220,6 +223,14 @@ class PicController extends Controller
         $validated['status'] = '1';
         $validated['sales_key'] = $request->input('sales_key', auth()->user()->id_sales ?? null);
         Contact::create($validated);
+
+        
+        $aktivitas = new Aktivitas();
+        $aktivitas->id_sales = Auth::user()->id_sales;
+        $aktivitas->aktivitas = 'Contact';
+        $aktivitas->deskripsi = 'Contact baru berhasil ditambahkan';
+        $aktivitas->waktu_aktivitas = Carbon::now();
+        $aktivitas->save();
 
         return redirect()->route('index.pic')->with('success', 'Contact berhasil ditambahkan.');
     }

@@ -682,6 +682,11 @@
                                     <option value="Visit">Visit</option>
                                     <option value="Meet">Meeting</option>
                                     <option value="Incharge">Incharge Inhouse</option>
+                                    <option value="PA">Penawaran Awal</option>
+                                    <option value="PI">Penawaran Internal</option>
+                                    <option value="Telemarketing">Telemarketing</option>
+                                    <option value="Form_Masuk">Regis Form Masuk</option>
+                                    <option value="Form_Keluar">Regis Form Keluar</option>      
                                 </select>
                             </div>
                             <div class="mb-3">

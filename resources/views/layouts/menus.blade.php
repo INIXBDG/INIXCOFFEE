@@ -49,7 +49,6 @@
             grid-template-columns: 1fr 1fr;
             gap: 6px;
         }
-
         .cube_item {
             height: 40px;
             width: 40px;
@@ -1329,13 +1328,32 @@
                                                             <div class="col-md-10" style="margin-left: 10px">
                                                                 <a href="/tunjangan"
                                                                     class="link stretched-link text-decoration-none">
-                                                                    <h5 class="card-title">Tunjangan</h5>
+                                                                    <h5 class="card-title">Gaji & Tunjangan</h5>
                                                                 </a>
-                                                                <p class="card-text">Tunjangan Karyawan.</p>
+                                                                <p class="card-text">Gaji & Tunjangan Karyawan.</p>
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </div>
+                                                @can("Managament Gaji")
+                                                    <div class="col-sm-6 mt-2">
+                                                        <div class="card" id="card-hover">
+                                                            <div class="card-body d-flex">
+                                                                <div class="col-md-2">
+                                                                    <img src="{{ asset('icon/dollar-sign.svg') }}"
+                                                                        class="img-responsive" width="30px">
+                                                                </div>
+                                                                <div class="col-md-10" style="margin-left: 10px">
+                                                                    <a href="{{route('gaji.index')}}"
+                                                                        class="link stretched-link text-decoration-none">
+                                                                        <h5 class="card-title">Update Gaji Karyawan</h5>
+                                                                    </a>
+                                                                    <p class="card-text">Update Gaji Karyawan.</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                @endcan
                                                 <div class="col-sm-6 mt-2">
                                                     <div class="card" id="card-hover">
                                                         <div class="card-body d-flex">
@@ -1506,7 +1524,7 @@
                                         </div>
                                     </div>
                                 </div>
-
+                                
                             </div>
                         </div>
                         <div class="col-md-12 col-sm-12 col-xs-12 col-lg-6 col-xl-6">
@@ -2081,6 +2099,427 @@
 
                             </div>
                         </div>
+                        <div class="col-md-12 col-sm-12 col-xs-12 col-lg-6 col-xl-6">
+                            <div class="row">
+                                <div class="col-md-12 mt-1">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h5 class="text-center card-title">Performance Assessment</h5>
+                                            <div class="row">
+                                                @can('View KPI Penilaian')
+                                                <div class="col-sm-6 mt-2">
+                                                    <div class="card" id="card-hover">
+                                                        <div class="card-body d-flex">
+                                                            <div class="col-md-2">
+                                                                <i class="fa fa-ranking-star" style="font-size: 30px;"></i>
+                                                            </div>
+                                                        </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endcan
+                                    @can('Fitur Menu Finance')
+                                            <div class="row">
+                                                {{-- RKM --}}
+                                                <div class="col-md-12 mt-1">
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <h5 class="text-center card-title">Finance</h5>
+                                                            <div class="row">
+                                                                @can('View CC')
+                                                                    <div class="col-sm-6 mt-2">
+                                                                        <div class="card" id="card-hover">
+                                                                            <div class="card-body d-flex">
+                                                                                <div class="col-md-2">
+                                                                                    <img src="{{ asset('icon/credit-card.svg') }}"
+                                                                                        class="img-responsive" width="30px">
+                                                                                </div>
+                                                                                <div class="col-md-10"
+                                                                                    style="margin-left: 10px">
+                                                                                    <a href="/creditcard"
+                                                                                        class="link stretched-link text-decoration-none">
+                                                                                        <h5 class="card-title">Credit Card</h5>
+                                                                                    </a>
+                                                                                    <p class="card-text">Data Credit Card.</p>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                @endcan
+                                                                @can('View Tunjangan')
+                                                                    <div class="col-sm-6 mt-2">
+                                                                        <div class="card" id="card-hover">
+                                                                            <div class="card-body d-flex">
+                                                                                <div class="col-md-2">
+                                                                                    <img src="{{ asset('icon/credit-card.svg') }}"
+                                                                                        class="img-responsive" width="30px">
+                                                                                </div>
+                                                                                <div class="col-md-10"
+                                                                                    style="margin-left: 10px">
+                                                                                    <a href="/tunjangangenerate"
+                                                                                        class="link stretched-link text-decoration-none">
+                                                                                        <h5 class="card-title">Hitung Tunjangan
+                                                                                        </h5>
+                                                                                    </a>
+                                                                                    <p class="card-text">Data Tunjangan
+                                                                                        Karyawan</p>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                @endcan
+                                                                @can('View HitungLembur')
+                                                                    <div class="col-sm-6 mt-2">
+                                                                        <div class="card" id="card-hover">
+                                                                            <div class="card-body d-flex">
+                                                                                <div class="col-md-2">
+                                                                                    <img src="{{ asset('icon/credit-card.svg') }}"
+                                                                                        class="img-responsive" width="30px">
+                                                                                </div>
+                                                                                <div class="col-md-10"
+                                                                                    style="margin-left: 10px">
+                                                                                    <a href="/overtime"
+                                                                                        class="link stretched-link text-decoration-none">
+                                                                                        <h5 class="card-title">Hitung Lembur
+                                                                                        </h5>
+                                                                                    </a>
+                                                                                    <p class="card-text">Data Lembur Karyawan
+                                                                                    </p>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                @endcan
+                                                                @can('View Souvenir')
+                                                                    <div class="col-sm-6 mt-2">
+                                                                        <div class="card" id="card-hover">
+                                                                            <div class="card-body d-flex">
+                                                                                <div class="col-md-2">
+                                                                                    <img src="{{ asset('icon/award.svg') }}"
+                                                                                        class="img-responsive" width="30px">
+                                                                                </div>
+                                                                                <div class="col-md-10"
+                                                                                    style="margin-left: 10px">
+                                                                                    <a href="/souvenir"
+                                                                                        class="link stretched-link text-decoration-none">
+                                                                                        <h5 class="card-title">Souvenir</h5>
+                                                                                    </a>
+                                                                                    <p class="card-text">Data Souvenir.</p>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                @endcan
+                                                                @can('View Outstanding')
+                                                                    <div class="col-sm-6 mt-2">
+                                                                        <div class="card" id="card-hover">
+                                                                            <div class="card-body d-flex">
+                                                                                <div class="col-md-2">
+                                                                                    <img src="{{ asset('icon/bookmark.svg') }}"
+                                                                                        class="img-responsive" width="30px">
+                                                                                </div>
+                                                                                <div class="col-md-10"
+                                                                                    style="margin-left: 10px">
+                                                                                    <a href="/outstanding"
+                                                                                        class="link stretched-link text-decoration-none">
+                                                                                        <h5 class="card-title">Outstanding</h5>
+                                                                                    </a>
+                                                                                    <p class="card-text">Data Outstanding.</p>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                @endcan
+                                                                @can('View PaymantAdvance')
+                                                                    <div class="col-sm-6 mt-2">
+                                                                        <div class="card" id="card-hover">
+                                                                            <div class="card-body d-flex">
+                                                                                <div class="col-md-2">
+                                                                                    <i class="fa fa-cart-shopping"
+                                                                                        style="font-size: 30px;"></i>
+                                                                                </div>
+                                                                                <div class="col-md-10" style="margin-left: 10px">
+                                                                                    <a href="/paymantAdvance"
+                                                                                        class="link stretched-link text-decoration-none">
+                                                                                        <h5 class="card-title">Payment Advance</h5>
+                                                                                    </a>
+                                                                                    <p class="card-text">Pengajuan Payment Advance.</p>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                @endcan
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                    @endcan
+									{{-- @can('View DatabaseKPI') --}}
+										<div class="row">
+											<div class="col-md-12 mt-1">
+												<div class="card">
+													<div class="card-body">
+														<h5 class="text-center card-title">Performance Assesment</h5>
+														<div class="row">
+															@can('View KPI Penilaian')
+															<div class="col-sm-6 mt-2">
+																<div class="card" id="card-hover">
+																	<div class="card-body d-flex">
+																		<div class="col-md-2">
+																			<i class="fa fa-ranking-star" style="font-size: 30px;"></i>
+																		</div>
+																		<div class="col-md-10" style="margin-left: 10px">
+																			<a href="{{ route('berandaKPI.get') }}" class="link stretched-link text-decoration-none">
+																				<h5 class="card-title">Penilaian</h5>
+																			</a>
+																			<p class="card-text">Data Penilaian Semua Karyawan.</p>
+																		</div>
+																	</div>
+																</div>
+															</div>
+															@endcan
+															@php
+															$id_karyawan = Auth()->user()->karyawan_id;
+															$month = \Carbon\Carbon::now()->month;
+															$year = \Carbon\Carbon::now()->year;
+															$Q = '[Kesalahan Program]';
+
+															if ($month >= 1 && $month <= 3) {
+																$Q='Q1' ;
+																} elseif ($month>= 4 && $month <= 6) {
+																	$Q='Q2' ;
+																	} elseif ($month>= 7 && $month <= 9) {
+																		$Q='Q3' ;
+																		} elseif ($month>= 10 && $month <= 12) {
+																			$Q='Q4' ;
+																			}
+																			@endphp
+
+																			<div class="col-sm-6 mt-2">
+																			<div class="card" id="card-hover">
+																				<div class="card-body d-flex">
+																					<div class="col-md-2">
+																						<img src="{{ asset('icon/bookOpen.svg') }}" class="img-responsive" width="30px">
+																					</div>
+																					<div class="col-md-10" style="margin-left: 10px">
+																						<a href="{{ '/penilaian360/index/' . $id_karyawan }}" class="link stretched-link text-decoration-none">
+																							<h5 class="card-title">Penilaian 360</h5>
+																						</a>
+																						<p class="card-text">Data Penilaian {{ $Q }} Anda Tahun {{ $year }}.</p>
+																					</div>
+																				</div>
+																			</div>
+														</div>
+														<div class="col-sm-6 mt-2">
+															<div class="card" id="card-hover">
+																<div class="card-body d-flex">
+																	<div class="col-md-2">
+																		<img src="{{ asset('icon/bookOpen.svg') }}" class="img-responsive" width="30px">
+																	</div>
+																	<div class="col-md-10" style="margin-left: 10px">
+																		<a href="{{ '/getFormPenilaianUser/' . $id_karyawan }}" class="link stretched-link text-decoration-none">
+																			<h5 class="card-title">Evaluator</h5>
+																		</a>
+																		<p class="card-text">
+																			Form Penilaian {{ $Q }} Yang Harus Anda Evaluasi di Tahun {{ $year }} .
+																		</p>
+																	</div>
+																</div>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+									{{-- @endcan --}}
+                                    @can('Fitur Menu Education')
+                                        <div class="row">
+                                            <div class="col-md-12 mt-1">
+                                                <div class="card">
+                                                    <div class="card-body">
+                                                        <h5 class="text-center card-title">Education</h5>
+                                                        <div class="row">
+                                                            @can('View TunjanganEducation')
+                                                            <div class="col-sm-6 mt-2">
+                                                                <div class="card" id="card-hover">
+                                                                    <div class="card-body d-flex">
+                                                                        <div class="col-md-2">
+                                                                            <img src="{{ asset('icon/table.svg') }}"
+                                                                                class="img-responsive" width="30px">
+                                                                        </div>
+                                                                        <div class="col-md-10"
+                                                                            style="margin-left: 10px">
+                                                                            <a href="/tunjanganEducation"
+                                                                                class="link stretched-link text-decoration-none">
+                                                                                <h5 class="card-title">Tunjangan
+                                                                                    Education
+                                                                                </h5>
+                                                                            </a>
+                                                                            <p class="card-text">Data Tunjangan
+                                                                                Education.
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            @endcan
+                                                            @can('View RekapInstruktur')
+                                                            <div class="col-sm-6 mt-2">
+                                                                <div class="card" id="card-hover">
+                                                                    <div class="card-body d-flex">
+                                                                        <div class="col-md-2">
+                                                                            <img src="{{ asset('icon/target.svg') }}"
+                                                                                class="img-responsive" width="30px">
+                                                                        </div>
+                                                                        <div class="col-md-10"
+                                                                            style="margin-left: 10px">
+                                                                            <a href="/rekapmengajarinstruktur"
+                                                                                class="link stretched-link text-decoration-none">
+                                                                                <h5 class="card-title">Rekap Mengajar
+                                                                                    Instruktur
+                                                                                </h5>
+                                                                            </a>
+                                                                            <p class="card-text">Data rekapan mengajar
+                                                                                instruktur.
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            @endcan
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endcan
+                                    @can('Fitur Menu Office')
+                                        <div class="row">
+                                                <div class="col-md-12 mt-1">
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <h5 class="text-center card-title">Office</h5>
+                                                            <div class="row">
+                                                                @can('View Inventaris')
+                                                                <div class="col-sm-6 mt-2">
+                                                                    <div class="card" id="card-hover">
+                                                                        <div class="card-body d-flex">
+                                                                            <div class="col-md-2">
+                                                                                <img src="{{ asset('icon/file-text.svg') }}"
+                                                                                    class="img-responsive" width="30px">
+                                                                            </div>
+                                                                            <div class="col-md-10"
+                                                                                style="margin-left: 10px">
+                                                                                <a href="{{ route('IndexInventaris') }}"
+                                                                                    class="link stretched-link text-decoration-none">
+                                                                                    <h5 class="card-title">Inventaris</h5>
+                                                                                </a>
+                                                                                <p class="card-text">Data Inventaris
+                                                                                    Inixindo.
+                                                                                </p>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                @endcan
+                                                                @can('View Klaim')
+                                                                    <div class="col-sm-6 mt-2">
+                                                                        <div class="card" id="card-hover">
+                                                                            <div class="card-body d-flex">
+                                                                                <div class="col-md-2">
+                                                                                    <img src="{{ asset('icon/paperclip.svg') }}"
+                                                                                        class="img-responsive" width="30px">
+                                                                                </div>
+                                                                                <div class="col-md-10" style="margin-left: 10px">
+                                                                                    <a href="/pengajuan-klaim"
+                                                                                        class="link stretched-link text-decoration-none">
+                                                                                        <h5 class="card-title">Pengajuan Klaim</h5>
+                                                                                    </a>
+                                                                                    <p class="card-text">Pengajuan Absen, Jam Kerja, & Cuti</p>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                @endcan
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                        </div>
+                                    @endcan
+                                    @can('Fitur CRM')
+                                            <div class="row">
+                                                <div class="col-md-12 mt-1">
+                                                    <div class="card">
+                                                        <div class="card-body">
+                                                            <h5 class="text-center card-title">Customer Relationship Management</h5>
+                                                            <div class="row">
+                                                                    <div class="col-sm-6 mt-2">
+                                                                        <div class="card" id="card-hover">
+                                                                            <div class="card-body d-flex">
+                                                                                <div class="col-md-2">
+                                                                                    <img src="{{ asset('icon/credit-card.svg') }}"
+                                                                                        class="img-responsive"
+                                                                                        width="30px">
+                                                                                </div>
+                                                                                <div class="col-md-10"
+                                                                                    style="margin-left: 10px">
+                                                                                    <a href="{{ route('CRM.index') }}"
+                                                                                        class="link stretched-link text-decoration-none">
+                                                                                        <h5 class="card-title">Fitur CRM
+                                                                                        </h5>
+                                                                                    </a>
+                                                                                    <p class="card-text">Masuk Fitur CRM
+                                                                                    </p>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                    @endcan
+                                    @can('Fitur Menu Manajemen')
+                                        <div class="row">
+                                            <div class="col-md-12 mt-1">
+                                                <div class="card">
+                                                    <div class="card-body">
+                                                        <h5 class="text-center card-title">Management</h5>
+                                                        <div class="row">
+                                                                <div class="col-sm-6 mt-2">
+                                                                    <div class="card" id="card-hover">
+                                                                        <div class="card-body d-flex">
+                                                                            <div class="col-md-2">
+                                                                                <img src="{{ asset('icon/target.svg') }}"
+                                                                                    class="img-responsive"
+                                                                                    width="30px">
+                                                                            </div>
+                                                                            <div class="col-md-10"
+                                                                                style="margin-left: 10px">
+                                                                                <a href="/target"
+                                                                                    class="link stretched-link text-decoration-none">
+                                                                                    <h5 class="card-title">Set Target
+                                                                                    </h5>
+                                                                                </a>
+                                                                                <p class="card-text">Manajemen Target.
+                                                                                </p>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endcan
+
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="tab-pane fade" id="pills-admin" role="tabpanel" aria-labelledby="pills-admin-tab">
@@ -2206,38 +2645,38 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/timepicker/1.3.5/jquery.timepicker.min.js"></script>
     {{-- SweetAlert2 --}}
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-document.getElementById('logout-link').addEventListener('click', function (e) {
-    e.preventDefault();
+    <script>
+    document.getElementById('logout-link').addEventListener('click', function (e) {
+        e.preventDefault();
 
-Swal.fire({
-    title: 'Apakah Anda yakin?',
-    text: "Anda akan keluar dari aplikasi",
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#3085d6',
-    cancelButtonColor: '#d33',
-    confirmButtonText: 'Ya, keluar',
-    cancelButtonText: 'Batal',
-    showClass: {
-        popup: 'animate__animated animate__fadeInDown animate__faster'
-    },
-    hideClass: {
-        popup: 'animate__animated animate__fadeOutUp animate__faster'
-    }
-}).then((result) => {
-    if (result.isConfirmed) {
-        document.getElementById('logout-form').submit();
-    }
-});
+    Swal.fire({
+        title: 'Apakah Anda yakin?',
+        text: "Anda akan keluar dari aplikasi",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, keluar',
+        cancelButtonText: 'Batal',
+        showClass: {
+            popup: 'animate__animated animate__fadeInDown animate__faster'
+        },
+        hideClass: {
+            popup: 'animate__animated animate__fadeOutUp animate__faster'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('logout-form').submit();
+        }
+    });
 
-});
-</script>
+    });
+    </script>
     <script>
         $(document).ready(function() {
             handleNotificationDismissal();
             // initializeYearlySales();
-
+            
             $('#tahun').change(function() {
                 initializeYearlySales();
             });
@@ -2259,56 +2698,11 @@ Swal.fire({
                 }, 1000);
             });
 
-            // Handle Dashboard button click with fade effect
-            $('#pills-dashboard-tab').click(function() {
-                let isLoaded = false;
-                if (isLoaded) return; // Hindari memuat ulang
-                $('#loadingModal').modal('show');
-                // initializeYearlySales();
-                $('.tab-pane.show').fadeOut(100, function() {
-                    $(this).removeClass('show active');
-                    const $contentContainer = $('#dashboard-content');
-
-
-                        $.ajax({
-                            url: '/partials/dashboard', // Ganti URL sesuai rute Laravel kamu
-                            type: 'GET',
-                            dataType: 'html',
-                            success: function (html) {
-                                // 1. Masukkan konten partial ke container
-                                $contentContainer.html(html);
-
-                                // 2. Muat dan jalankan dashboard.js secara dinamis
-                                $.getScript('{{ asset("js/dashboard.js") }}')
-                                    .done(function () {
-                                        console.log('dashboard.js berhasil dimuat dan dijalankan');
-                                        $('#loadingModal').modal('show');
-
-                                        setTimeout(() => {
-                                            if (typeof initializeYearlySales === 'function') {
-                                                initializeYearlySales();
-                                            }
-                                        }, 100); // Tunggu 0.5 detik
-                                        $('#loadingModal').modal('hide');
-
-                                    })
-                                    .fail(function () {
-                                        console.error('Gagal memuat dashboard.js');
-                                        $contentContainer.append('<p>Terjadi kesalahan saat memuat dashboard.</p>');
-                                    });
-
-                                isLoaded = true;
-                            },
-                            error: function (xhr, status, error) {
-                                console.error('Gagal memuat konten dashboard:', error);
-                                $contentContainer.html('<p>Terjadi kesalahan saat memuat dashboard.</p>');
-                            }
-                        });
-                    // After fadeOut, show the dashboard tab with fadeIn
-                    $('#pills-dashboard').fadeIn(100).addClass('show active');
-                    setTimeout(() => {
-                        $('#loadingModal').modal('hide');
-                    }, 1000);
+            // Pasang handler click yang memanggil fungsi
+            $('#pills-dashboard-tab').on('click', function () {
+                loadDashboard().catch(function (err) {
+                    // optional: tangani error global di sini
+                    console.error(err);
                 });
             });
             $('#pills-admin-tab').click(function() {
@@ -2327,6 +2721,80 @@ Swal.fire({
             // console.log(progress, carprogress);
         });
 
+                /**
+                 * loadDashboard({ force: boolean }) -> Promise
+                 * - force: jika true, akan memuat ulang meskipun sudah dimuat sebelumnya
+                 */
+                function loadDashboard({ force = false } = {}) {
+                    let isLoaded = false;
+                    let isLoading = false;
+                    if (isLoaded && !force) {
+                        return Promise.resolve({ status: 'already_loaded' });
+                    }
+                    if (isLoading) {
+                        return Promise.reject(new Error('already_loading'));
+                    }
+
+                    isLoading = true;
+                    $('#pills-dashboard-tab').prop('disabled', true); // optional UX: disable tombol
+                    $('#loadingModal').modal('show');
+                    setTimeout(() => {
+                        $('#loadingModal').modal('hide');
+                    }, 400);
+
+                    return new Promise((resolve, reject) => {
+                        // tunggu semua fadeOut selesai
+                        $('.tab-pane.show').fadeOut(100).promise().done(function () {
+                        $('.tab-pane.show').removeClass('show active');
+
+                        const $contentContainer = $('#dashboard-content');
+
+                        $.ajax({
+                            url: '/partials/dashboard',
+                            type: 'GET',
+                            dataType: 'html'
+                        })
+                            .done(function (html) {
+                            $contentContainer.html(html);
+                            // muat script dashboard.js
+                            $.getScript('{{ asset("js/dashboard.js") }}')
+                                .done(function () {
+                                console.log('dashboard.js berhasil dimuat dan dijalankan');
+
+                                if (typeof initializeYearlySales === 'function') {
+                                    initializeYearlySales();
+                                }
+
+                                isLoaded = true;
+                                isLoading = false;
+                                $('#loadingModal').modal('hide');
+                                $('#pills-dashboard-tab').prop('disabled', false);
+                                $('#pills-dashboard').fadeIn(100).addClass('show active');
+
+                                resolve({ status: 'loaded' });
+                                })
+                                .fail(function () {
+                                console.error('Gagal memuat dashboard.js');
+                                $contentContainer.append('<p>Terjadi kesalahan saat memuat dashboard.</p>');
+                                isLoading = false;
+                                $('#loadingModal').modal('hide');
+                                $('#pills-dashboard-tab').prop('disabled', false);
+                                reject(new Error('getScript_failed'));
+                                });
+
+                            })
+                            .fail(function (xhr, status, error) {
+                            console.error('Gagal memuat konten dashboard:', error);
+                            $contentContainer.html('<p>Terjadi kesalahan saat memuat dashboard.</p>');
+                            isLoading = false;
+                            $('#loadingModal').modal('hide');
+                            $('#pills-dashboard-tab').prop('disabled', false);
+                            reject(new Error('ajax_failed'));
+                            });
+                        });
+                    });
+                }
+
         function cekjabatan() {
             var jabatan = '{{ auth()->user()->jabatan }}'
             if (jabatan === 'Direktur' || jabatan === 'Direktur Utama') {
@@ -2337,17 +2805,9 @@ Swal.fire({
                 $('#pills-home').removeClass('show active');
                 $('#loadingModal').modal('show');
                 // initializeYearlySales();
-                $.get('/partials/dashboard', function (data) {
-                    $('#pills-dashboard').html(data);
-
-                    // Muat script dashboard.js secara otomatis
-                    $.getScript('{{ asset("js/dashboard.js") }}', function () {
-
-                    }).fail(function () {
-                        console.error('Gagal memuat dashboard.js');
-                    });
-                }).fail(function () {
-                    $('#pills-dashboard').html('<p>Terjadi kesalahan saat memuat dashboard.</p>');
+                loadDashboard().catch(function (err) {
+                    // optional: tangani error global di sini
+                    console.error(err);
                 });
                 setTimeout(() => {
                     $('#loadingModal').modal('hide');
@@ -2603,40 +3063,10 @@ Swal.fire({
             }
         }
         $('#modalPemberitahuan').on('click', '.btn-danger', handleNotificationDismissal);
+        
 
-        //function switch toggle
 
-        // document.addEventListener('DOMContentLoaded', function() {
-        //     const navOptions = document.querySelectorAll('input[name="nav-options"]');
 
-        //     navOptions.forEach(option => {
-        //         option.addEventListener('change', function() {
-        //             // Get the ID of the selected option
-        //             const selectedId = this.id;
-        //             console.log('Selected option:', selectedId); // Ini boleh tetap ada untuk debugging di console browser
-
-        //             // --- Di sinilah Anda meletakkan logika aplikasi Anda yang sebenarnya ---
-        //             // Contoh:
-        //             switch (selectedId) {
-        //                 case 'pills-home-tab':
-        //                     // Logika untuk Home (misal: tampilkan bagian Home, muat data home)
-        //                     // console.log('Mengaktifkan Home...');
-        //                     break;
-        //                 case 'pills-dashboard-tab':
-        //                     // Logika untuk Dashboard (misal: tampilkan bagian Dashboard, muat data dashboard)
-        //                     // console.log('Mengaktifkan Dashboard...');
-        //                     break;
-        //                 case 'pills-admin-tab':
-        //                     // Logika untuk SuperAdmin (misal: tampilkan bagian SuperAdmin, muat data admin)
-        //                     // console.log('Mengaktifkan SuperAdmin...');
-        //                     break;
-        //                 default:
-        //                     break;
-        //             }
-        //             // --- Akhir dari logika aplikasi ---
-        //         });
-        //     });
-        // });
     </script>
 </body>
 

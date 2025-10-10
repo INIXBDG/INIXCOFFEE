@@ -35,10 +35,10 @@
                         </div>
 
                         <div class="row mb-3" id="tanggal-row">
-                            <label for="tanggal" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal') }}</label>
+                            <label for="tanggal" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Pengajuan Izin') }}</label>
                             <div class="col-md-6">
-                                <input id="tanggal" type="text" class="form-control @error('tanggal') is-invalid @enderror" 
-                                    value="{{ \Carbon\Carbon::now()->locale('id')->isoFormat('DD MMMM YYYY') }}" 
+                                <input id="tanggal" type="date" class="form-control @error('tanggal') is-invalid @enderror" 
+                                    value="{{ \Carbon\Carbon::now()->toDateString() }}" 
                                     name="tanggal" autocomplete="tanggal" autofocus readonly>
                                 @error('tanggal')
                                 <span class="invalid-feedback" role="alert">
@@ -49,7 +49,7 @@
                         </div>
 
                         <div class="row mb-3" id="tanggal_pengajuan-row">
-                            <label for="tanggal_pengajuan" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Pengajuan Izin') }}</label>
+                            <label for="tanggal_pengajuan" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Izin') }}</label>
                             <div class="col-md-6">
                                 <input id="tanggal_pengajuan" type="date" name="tanggal_pengajuan"
                                     class="form-control @error('tanggal_pengajuan') is-invalid @enderror"
@@ -137,8 +137,14 @@
 
 document.addEventListener('DOMContentLoaded', function () {
     const jamMulaiInput = document.getElementById('jam_mulai');
+    const jamSelesaiInput = document.getElementById('jam_selesai');
     const errorMessage = document.getElementById('jam_mulai-error');
     const tanggalInput = document.getElementById('tanggal_pengajuan_izin');
+
+    // Konstanta durasi dan waktu makan siang (dalam menit dari tengah malam)
+    const DURASI_MENIT = 3 * 60; // 3 jam
+    const LUNCH_START = 12 * 60; // 12:00 -> 720
+    const LUNCH_END = 13 * 60;   // 13:00 -> 780 (jadikan exclusive)
 
     function getCurrentTime() {
         const now = new Date();
@@ -148,9 +154,47 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function isTodaySelected() {
+        if (!tanggalInput) return false;
         const selectedDate = tanggalInput.value; // format: YYYY-MM-DD
         const today = new Date().toISOString().split('T')[0]; // format: YYYY-MM-DD
         return selectedDate === today;
+    }
+
+    function timeStringToMinutes(t) {
+        if (!t) return null;
+        const [hh, mm] = t.split(':').map(Number);
+        return hh * 60 + mm;
+    }
+
+    function minutesToTimeString(m) {
+        // wrap around 24 jam jika perlu
+        const total = ((m % 1440) + 1440) % 1440;
+        const hh = String(Math.floor(total / 60)).padStart(2, '0');
+        const mm = String(total % 60).padStart(2, '0');
+        return `${hh}:${mm}`;
+    }
+
+    function calculateEndTime(startTimeStr) {
+        const startMinRaw = timeStringToMinutes(startTimeStr);
+        if (startMinRaw === null) return '';
+
+        // Jika start berada di jam makan siang, geser ke akhir jam makan siang
+        let s = startMinRaw;
+        if (s >= LUNCH_START && s < LUNCH_END) {
+            s = LUNCH_END;
+        }
+
+        // Hitung end tanpa memperhitungkan makan siang terlebih dahulu
+        let e = s + DURASI_MENIT;
+
+        // Jika periode kerja (s .. e) melewati awal jam makan siang, tambahkan overlap yang terpotong
+        if (s < LUNCH_START && e > LUNCH_START) {
+            // overlap antara [LUNCH_START, LUNCH_END) dan [s, e)
+            const overlap = Math.max(0, Math.min(e, LUNCH_END) - Math.max(s, LUNCH_START));
+            e += overlap;
+        }
+
+        return minutesToTimeString(e);
     }
 
     function updateJamMulaiConstraint() {
@@ -173,6 +217,13 @@ document.addEventListener('DOMContentLoaded', function () {
             jamMulaiInput.classList.remove('is-invalid');
             errorMessage.classList.add('d-none');
         }
+
+        // Setelah memastikan jam_mulai valid, hitung jam_selesai
+        if (jamMulaiInput.value) {
+            jamSelesaiInput.value = calculateEndTime(jamMulaiInput.value);
+        } else {
+            jamSelesaiInput.value = '';
+        }
     }
 
     // Event listeners
@@ -189,6 +240,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }, 60000);
 });
+
 
 
 

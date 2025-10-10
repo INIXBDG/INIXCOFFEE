@@ -5,11 +5,16 @@ namespace App\Http\Controllers\Crm;
 use App\Http\Controllers\Controller;
 use App\Models\Aktivitas;
 use App\Models\Contact;
+use App\Models\Feedback;
+use App\Models\Materi;
+use App\Models\Nilaifeedback;
 use App\Models\Peluang;
 use App\Models\Perusahaan;
+use App\Models\Peserta;
 use App\Models\RKM;
 use App\Models\TargetActivity;
 use App\Models\User;
+use App\Models\vendor;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -58,29 +63,42 @@ class CRMController extends Controller
                 $actualVisit = $userAktivitas->where('aktivitas', 'Visit')->count();
                 $actualMeet = $userAktivitas->where('aktivitas', 'Meet')->count();
                 $actualIncharge = $userAktivitas->where('aktivitas', 'Incharge')->count();
+                $actualPA = $userAktivitas->where('aktivitas', 'PA')->count();
+                $actualPI = $userAktivitas->where('aktivitas', 'PI')->count();
+                $actualTelemarketing = $userAktivitas->where('aktivitas', 'Telemarketing')->count();
+                $actualForm_Masuk = $userAktivitas->where('aktivitas', 'Form_Masuk')->count();
+                $actualForm_Keluar = $userAktivitas->where('aktivitas', 'Form_Keluar')->count();
+                $actualDB = $userAktivitas->where('aktivitas', 'DB')->count();
+                $actualContact = $userAktivitas->where('aktivitas', 'Contact')->count();
 
                 $salesTarget = $target[$id_sales] ?? null;
 
-                $contactbaru = Contact::where('sales_key', $id_sales)
-                    ->where('status', '1')
-                    ->whereMonth('created_at', Carbon::now()->month)
-                    ->whereYear('created_at', Carbon::now()->year)
-                    ->count();
-
                 $activitysales[] = [
                     'id_sales' => $id_sales,
-                    'contact' => $contactbaru,
+                    'contact' => $actualContact,
+                    'DB' => $actualDB,
                     'call' => $actualCall,
                     'email' => $actualEmail,
                     'visit' => $actualVisit,
                     'meet' => $actualMeet,
                     'incharge' => $actualIncharge,
+                    'PA' => $actualPA,
+                    'PI' => $actualPI,
+                    'Telemarketing' => $actualTelemarketing,
+                    'Form_Masuk' => $actualForm_Masuk,
+                    'Form_Keluar' => $actualForm_Keluar,
+                    'target_DB' => $salesTarget->DB ?? 0,
                     'target_contact' => $salesTarget->Contact ?? 0,
                     'target_call' => $salesTarget->Call ?? 0,
                     'target_email' => $salesTarget->Email ?? 0,
                     'target_visit' => $salesTarget->Visit ?? 0,
                     'target_meet' => $salesTarget->Meet ?? 0,
                     'target_incharge' => $salesTarget->Incharge ?? 0,
+                    'target_PA' => $salesTarget->PA ?? 0,
+                    'target_PI' => $salesTarget->PI ?? 0,
+                    'target_Telemarketing' => $salesTarget->Telemarketing ?? 0,
+                    'target_Form_Masuk' => $salesTarget->FormM ?? 0,
+                    'target_Form_Keluar' => $salesTarget->FormK ?? 0,
                 ];
             }
 
@@ -230,6 +248,151 @@ class CRMController extends Controller
                 ->groupBy('lokasis.id', 'lokasis.lokasi', 'lokasis.latitude', 'lokasis.longitude')
                 ->get();
 
+            // 12. Total Pesert Terdaftar
+            $TotalPeserta = Peserta::all()->count();
+
+            // 13. Rata" Feedback Peserta
+            $feedbacks = Nilaifeedback::all([
+                'M1',
+                'M2',
+                'M3',
+                'M4',
+                'P1',
+                'P2',
+                'P3',
+                'P4',
+                'P5',
+                'P6',
+                'P7',
+                'F1',
+                'F2',
+                'F3',
+                'F4',
+                'F5',
+                'I1',
+                'I2',
+                'I3',
+                'I4',
+                'I5',
+                'I6',
+                'I7',
+                'I8',
+                'I1b',
+                'I2b',
+                'I3b',
+                'I4b',
+                'I5b',
+                'I6b',
+                'I7b',
+                'I8b',
+                'I1as',
+                'I2as',
+                'I3as',
+                'I4as',
+                'I5as',
+                'I6as',
+                'I7as',
+                'I8as',
+            ]);
+
+            // Kumpulkan semua nilai dari setiap baris & kolom
+            $allValues = collect();
+
+            foreach ($feedbacks as $feedback) {
+                $values = [
+                    $feedback->M1,
+                    $feedback->M2,
+                    $feedback->M3,
+                    $feedback->M4,
+                    $feedback->P1,
+                    $feedback->P2,
+                    $feedback->P3,
+                    $feedback->P4,
+                    $feedback->P5,
+                    $feedback->P6,
+                    $feedback->P7,
+                    $feedback->F1,
+                    $feedback->F2,
+                    $feedback->F3,
+                    $feedback->F4,
+                    $feedback->F5,
+                    $feedback->I1,
+                    $feedback->I2,
+                    $feedback->I3,
+                    $feedback->I4,
+                    $feedback->I5,
+                    $feedback->I6,
+                    $feedback->I7,
+                    $feedback->I8,
+                    $feedback->I1b,
+                    $feedback->I2b,
+                    $feedback->I3b,
+                    $feedback->I4b,
+                    $feedback->I5b,
+                    $feedback->I6b,
+                    $feedback->I7b,
+                    $feedback->I8b,
+                    $feedback->I1as,
+                    $feedback->I2as,
+                    $feedback->I3as,
+                    $feedback->I4as,
+                    $feedback->I5as,
+                    $feedback->I6as,
+                    $feedback->I7as,
+                    $feedback->I8as,
+                ];
+
+                // Masukkan semua nilai ke collection utama
+                $allValues = $allValues->merge($values);
+            }
+
+            // Filter hanya angka yang valid
+            $numericValues = $allValues->filter(fn($v) => is_numeric($v));
+
+            // Hitung rata-rata keseluruhan
+            $AvgFeedback = $numericValues->avg();
+
+
+            // 14. Jumlah Materi
+            $TotalMateri = Materi::all()->count();
+
+            // 15. Jumlah Vendor
+            $TotalVendor = vendor::all()->count();
+
+            // 16. Top 5 Vendor Terjual
+            $topVendors = DB::table('r_k_m_s')
+                ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
+                ->where('r_k_m_s.status', '0')
+                ->select('materis.vendor', DB::raw('count(*) as total'))
+                ->groupBy('materis.vendor')
+                ->orderBy('total', 'desc')
+                ->limit(5)
+                ->get();
+
+            // 17. Top 5 Kategori Materi Terjual
+            $topKategoriMateri = DB::table('r_k_m_s')
+                ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
+                ->where('r_k_m_s.status', '0')
+                ->select('materis.kategori_materi', DB::raw('count(*) as total'))
+                ->groupBy('materis.kategori_materi')
+                ->orderBy('total', 'desc')
+                ->limit(5)
+                ->get();
+
+            // 18. Top 5 Spend Perusahaan per Segmentasi
+            $topSpendSeg = DB::table('r_k_m_s')
+                ->join('perusahaans', 'r_k_m_s.perusahaan_key', '=', 'perusahaans.id')
+                ->where('r_k_m_s.status', '0')
+                ->select(
+                    'perusahaans.kategori_perusahaan',
+                    DB::raw('COUNT(*) as total'),
+                    DB::raw('SUM(r_k_m_s.harga_jual) as spend')
+                )
+                ->groupBy('perusahaans.kategori_perusahaan')
+                ->orderByDesc('total')
+                ->limit(5)
+                ->get();
+
             return view('crm.dashboard', compact(
                 'chartData',
                 'activitysales',
@@ -244,7 +407,6 @@ class CRMController extends Controller
                 'prospek',
                 'map',
             ));
-
         } else {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }

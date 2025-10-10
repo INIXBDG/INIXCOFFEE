@@ -165,16 +165,18 @@
     $(document).ready(function(){
         var idInstruktur = "{{ auth()->user()->id_instruktur }}";
         var idSales = "{{ auth()->user()->id_sales }}";
+		var jabatan = "{{ auth()->user()->jabatan }}";
         console.log(idInstruktur);
         console.log(idSales);
-        if(idInstruktur == 'AD'){
+        if(idInstruktur == 'AD' || jabatan == "Technical Support"){
             var idInstruktur = "";
         }
         if(idSales == 'AM'){
                 var idSales = "";
             }
         // console.log(idSales);
-        if(idInstruktur){
+        if(idInstruktur )
+		{
             $('#peserta').show();
             $('#pesertaall').hide();
             $('#pesertaSales').hide();

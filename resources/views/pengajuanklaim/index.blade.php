@@ -225,7 +225,16 @@
                 case 'System Error':
                     if ($pengajuDivisi === 'Office') {  // Sekarang pakai divisi pengaju
                         return $userJabatan === 'GM';
-                    } else {
+                    } else if($pengajuDivisi === 'Education'){
+                        return $userJabatan === 'Education Manager';
+
+                    } else if($pengajuDivisi === 'Sales & Marketing'){
+                        return $userJabatan === 'SPV Sales';
+
+                    } else if($pengajuDivisi === 'IT Service Management'){
+                        return $userJabatan === 'Koordinator ITSM';
+                    } 
+                    else {
                         return strpos($userJabatan, 'Koordinator') !== false;
                     }
                 
@@ -297,7 +306,7 @@
                                                         bg-warning text-dark
                                                         @break
                                                     @case('Absen Pulang')
-                                                        bg-info text-white
+                                                        bg-info text-light
                                                         @break
                                                     @case('System Error')
                                                         bg-danger text-white
@@ -489,7 +498,7 @@
                                                     </form>
                                                     
                                                     @if($data->approval === 0)
-                                                        @if(in_array($currentUserJabatan, ['HRD', 'Koordinator ITSM']))
+                                                        @if(in_array($currentUserJabatan, ['HRD']))
                                                             <button type="button"
                                                                 class="dropdown-item approve-btn"
                                                                 data-id="{{ $data->id }}"
@@ -502,7 +511,7 @@
                                                             <button type="button"
                                                                 class="dropdown-item disabled text-muted"
                                                                 disabled
-                                                                title="Hanya HRD atau Koordinator ITSM yang bisa approve">
+                                                                title="Hanya HRD yang bisa approve">
                                                                 <span><img src="{{ asset('icon/clipboard-secondary.svg') }}" alt="no-access.png" width="20px" height="20px"></span> Approve
                                                             </button>
                                                         @endif
@@ -566,93 +575,97 @@
                                 <tbody>
                                     @php
                                     $no = 1;
+                                    $divisi = auth()->user()->karyawan->divisi;
                                     @endphp
                                     @foreach ($cancelLeave as $data)
-                                    <tr>
-                                        <td>{{ $no++ }}</td>
-                                        <td>{{ $data->karyawan->nama_lengkap }}</td>
-                                        <td>{{ $data->karyawan->divisi }}</td>
-                                        <td>{{ \Carbon\Carbon::parse($data->tanggal_awal)->translatedFormat('l, d F Y') }} - {{ \Carbon\Carbon::parse($data->tanggal_akhir)->translatedFormat('l, d F Y') }}</td>
-                                        <td>{{ $data->durasi }}</td>
-                                        <td>{{ $data->alasan }}</td>
-                                        <td>{{ $data->kronologi }}</td>
-                                        <td>
-                                            @switch($data->approval)
-                                            @case(0)
-                                            <span class="badge rounded-pill bg-warning text-dark">
-                                                <i class="bi bi-hourglass-split me-1"></i> Menunggu Atasan
-                                            </span>
-                                            @break
+                                    @if ($divisi == $data->karyawan->divisi)
+                                        <tr>
+                                            <td>{{ $no++ }}</td>
+                                            <td>{{ $data->karyawan->nama_lengkap }}</td>
+                                            <td>{{ $data->karyawan->divisi }}</td>
+                                            <td>{{ \Carbon\Carbon::parse($data->tanggal_awal)->translatedFormat('l, d F Y') }} - {{ \Carbon\Carbon::parse($data->tanggal_akhir)->translatedFormat('l, d F Y') }}</td>
+                                            <td>{{ $data->durasi }}</td>
+                                            <td>{{ $data->alasan }}</td>
+                                            <td>{{ $data->kronologi }}</td>
+                                            <td>
+                                                @switch($data->approval)
+                                                @case(0)
+                                                <span class="badge rounded-pill bg-warning text-dark">
+                                                    <i class="bi bi-hourglass-split me-1"></i> Menunggu Atasan
+                                                </span>
+                                                @break
 
-                                            @case(1)
-                                            <span class="badge rounded-pill bg-success">
-                                                <i class="bi bi-check-circle me-1"></i> Disetujui
-                                            </span>
-                                            @break
+                                                @case(1)
+                                                <span class="badge rounded-pill bg-success">
+                                                    <i class="bi bi-check-circle me-1"></i> Disetujui
+                                                </span>
+                                                @break
 
-                                            @case(2)
-                                            <span class="badge rounded-pill bg-danger">
-                                                <i class="bi bi-x-circle me-1"></i> Ditolak
-                                            </span>
-                                            @break
+                                                @case(2)
+                                                <span class="badge rounded-pill bg-danger">
+                                                    <i class="bi bi-x-circle me-1"></i> Ditolak
+                                                </span>
+                                                @break
 
-                                            @default
-                                            <span class="badge rounded-pill bg-secondary">
-                                                <i class="bi bi-question-circle me-1"></i> Tidak Diketahui
-                                            </span>
-                                            @endswitch
-                                        </td>
+                                                @default
+                                                <span class="badge rounded-pill bg-secondary">
+                                                    <i class="bi bi-question-circle me-1"></i> Tidak Diketahui
+                                                </span>
+                                                @endswitch
+                                            </td>
 
-                                        <td>{{ $data->alasan_approval ?? '-' }}</td>
-                                        <td style="font-size: 14px;">
-                                            <div class="btn-group dropup">
-                                                <button type="button" class="btn dropdown-toggle btn-secondary" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>
-                                                <div class="dropdown-menu">
-                                                    <button class="dropdown-item" data-toggle="modal" data-toggle="tooltip" title="Lihat Bukti" data-target="#cancelLeaveModal{{ $data->id }}">
-                                                        <span><img src="{{ asset('icon/eye.svg') }}" alt="eye.png" width="20px" height="20px"></span> Bukti Gambar
-                                                    </button>
-                                                    <button class="dropdown-item" data-toggle="modal" data-toggle="tooltip" title="Lihat Detail" data-target="#DetailcancelLeaveModal{{ $data->id }}">
-                                                        <span><img src="{{ asset('icon/eye.svg') }}" alt="eye.png" width="20px" height="20px"></span> Detail
-                                                    </button>
-                                                    <form action="{{ route('pengajuanklaim.deleteCancelLeave') }}" method="POST">
-                                                        @csrf
-                                                        <input type="hidden" value="{{ $data->id }}" name="id_cancel_leave">
-                                                        <button type="submit" class="dropdown-item" data-toggle="tooltip" title="Hapus Data" onclick="return confirm('Yakin ingin menghapus data ini?')">
-                                                            <span><img src="{{ asset('icon/trash-danger.svg') }}" alt="delete.png" width="20px" height="20px"></span> Hapus Data
+                                            <td>{{ $data->alasan_approval ?? '-' }}</td>
+                                            <td style="font-size: 14px;">
+                                                <div class="btn-group dropup">
+                                                    <button type="button" class="btn dropdown-toggle btn-secondary" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>
+                                                    <div class="dropdown-menu">
+                                                        <button class="dropdown-item" data-toggle="modal" data-toggle="tooltip" title="Lihat Bukti" data-target="#cancelLeaveModal{{ $data->id }}">
+                                                            <span><img src="{{ asset('icon/eye.svg') }}" alt="eye.png" width="20px" height="20px"></span> Bukti Gambar
                                                         </button>
-                                                    </form>
-                                                    
-                                                    @if($data->approval === 0)
-                                                        @if(in_array($currentUserJabatan, ['HRD', 'Koordinator ITSM']))
-                                                            <button type="button"
-                                                                class="dropdown-item approve-btn"
-                                                                data-id="{{ $data->id }}"
-                                                                data-type="cancelLeave"
-                                                                data-bukti="{{ $data->bukti_gambar ? 1 : 0 }}"
-                                                                title="Approve pengajuan">
-                                                                <span><img src="{{ asset('icon/clipboard-primary.svg') }}" alt="approve.png" width="20px" height="20px"></span> Approve
+                                                        <button class="dropdown-item" data-toggle="modal" data-toggle="tooltip" title="Lihat Detail" data-target="#DetailcancelLeaveModal{{ $data->id }}">
+                                                            <span><img src="{{ asset('icon/eye.svg') }}" alt="eye.png" width="20px" height="20px"></span> Detail
+                                                        </button>
+                                                        <form action="{{ route('pengajuanklaim.deleteCancelLeave') }}" method="POST">
+                                                            @csrf
+                                                            <input type="hidden" value="{{ $data->id }}" name="id_cancel_leave">
+                                                            <button type="submit" class="dropdown-item" data-toggle="tooltip" title="Hapus Data" onclick="return confirm('Yakin ingin menghapus data ini?')">
+                                                                <span><img src="{{ asset('icon/trash-danger.svg') }}" alt="delete.png" width="20px" height="20px"></span> Hapus Data
                                                             </button>
-                                                        @else
-                                                            <button type="button"
-                                                                class="dropdown-item disabled text-muted"
-                                                                disabled
-                                                                title="Hanya HRD atau Koordinator ITSM yang bisa approve">
-                                                                <span><img src="{{ asset('icon/clipboard-secondary.svg') }}" alt="no-access.png" width="20px" height="20px"></span> Approve
-                                                            </button>
+                                                        </form>
+                                                        
+                                                        @if($data->approval === 0)
+                                                            @if(in_array($currentUserJabatan, ['HRD', 'Koordinator ITSM', 'SPV Sales', 'Education Manager']))
+                                                                <button type="button"
+                                                                    class="dropdown-item approve-btn"
+                                                                    data-id="{{ $data->id }}"
+                                                                    data-type="cancelLeave"
+                                                                    data-bukti="{{ $data->bukti_gambar ? 1 : 0 }}"
+                                                                    title="Approve pengajuan">
+                                                                    <span><img src="{{ asset('icon/clipboard-primary.svg') }}" alt="approve.png" width="20px" height="20px"></span> Approve
+                                                                </button>
+                                                            @else
+                                                                <button type="button"
+                                                                    class="dropdown-item disabled text-muted"
+                                                                    disabled
+                                                                    title="Hanya Koordinator yang bisa approve">
+                                                                    <span><img src="{{ asset('icon/clipboard-secondary.svg') }}" alt="no-access.png" width="20px" height="20px"></span> Approve
+                                                                </button>
+                                                            @endif
+                                                        @elseif($data->approval === 1)
+                                                            <span class="dropdown-item text-success">
+                                                                <span><img src="{{ asset('icon/check-circle.svg') }}" alt="approved.png" width="20px" height="20px"></span> Sudah Disetujui
+                                                            </span>
+                                                        @elseif($data->approval === 2)
+                                                            <span class="dropdown-item text-danger">
+                                                                <span><img src="{{ asset('icon/x-circle.svg') }}" alt="rejected.png" width="20px" height="20px"></span> Sudah Ditolak
+                                                            </span>
                                                         @endif
-                                                    @elseif($data->approval === 1)
-                                                        <span class="dropdown-item text-success">
-                                                            <span><img src="{{ asset('icon/check-circle.svg') }}" alt="approved.png" width="20px" height="20px"></span> Sudah Disetujui
-                                                        </span>
-                                                    @elseif($data->approval === 2)
-                                                        <span class="dropdown-item text-danger">
-                                                            <span><img src="{{ asset('icon/x-circle.svg') }}" alt="rejected.png" width="20px" height="20px"></span> Sudah Ditolak
-                                                        </span>
-                                                    @endif
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                            </td>
+                                        </tr>
+                                    @endif
+
                                     @endforeach
 
                                 </tbody>
