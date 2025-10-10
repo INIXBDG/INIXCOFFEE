@@ -9,7 +9,10 @@
             <a href="{{ url()->previous() }}" class="btn click-primary my-2"><img src="{{ asset('icon/arrow-left.svg') }}" class="img-responsive" width="20px"> Back</a>
 
 
-
+            @php
+            use Carbon\Carbon;
+            \Carbon\Carbon::setLocale('id');
+            @endphp
             @if (auth()->user()->jabatan == "HRD" || auth()->user()->jabatan == "Koordinator Office" || auth()->user()->username == $users->username)
             <div class="d-flex justify-content-end mb-3">
                 <a href="{{ route('karyawan.edit', ['hashid' => $users->hashids]) }}"
@@ -282,7 +285,7 @@
                                                         @endif
                                                     </td>
 
-                                                    <td>{{ $visit->created_at->format('d-m-Y H:i:s') }}</td>
+                                                    <td>{{ Carbon::parse($visit->created_at)->translatedFormat('l, d F Y H:i') }}</td>
                                                 </tr>
 
                                                 <tr class="collapse bg-light" id="uaRow{{ $visit->id }}">
@@ -329,8 +332,10 @@
                                                 <tr>
                                                     <td>{{ $auth->karyawan->nama_lengkap }}</td>
                                                     <td>{{ $auth->karyawan->jabatan }}</td>
-                                                    <td class="text-success">{{ $auth->status }}</td>
-                                                    <td>{{ $auth->created_at->format('d-m-Y H:i:s') }}</td>
+                                                    <td class="{{ $auth->status == 'login' ? 'text-success' : 'text-danger' }}">
+                                                        {{ $auth->status }}
+                                                    </td>
+                                                    <td>{{ Carbon::parse( $auth->created_at)->translatedFormat('l, d F Y H:i') }}</td>
                                                     <td>
                                                         <a href="{{ $auth->url }}" target="_blank" class="text-decoration-none">
                                                             {{ Str::limit($auth->url, 255) }}
@@ -374,7 +379,7 @@
                                                     <td>{{ $absen->browser }}</td>
                                                     <td>{{ $absen->ip }}</td>
                                                     <td>{{ $absen->platform }}</td>
-                                                    <td>{{ $absen->created_at->format('d-m-Y H:i:s') }}</td>
+                                                    <td>{{ Carbon::parse($absen->created_at)->translatedFormat('l, d F Y H:i') }}</td>
                                                 </tr>
                                                 @endforeach
                                             </tbody>

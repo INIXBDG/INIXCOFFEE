@@ -15,7 +15,8 @@
   <link rel="stylesheet" href="{{ asset('template_KPI/dist/assets/vendors/bootstrap-datepicker/bootstrap-datepicker.min.css') }}">
   <link rel="stylesheet" href="{{ asset('template_KPI/dist/assets/css/style.css') }}">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
-  <link rel="shortcut icon" href="{{ asset('icon/logoinix.png') }}" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
   <style>
     .toast {
       position: fixed;
@@ -294,12 +295,12 @@
         </div>
 
         @yield('contentKPI')
-          <footer class="footer">
-            <div class="d-sm-flex justify-content-center justify-content-sm-between">
-              <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Database KPI Inixindo Bandung.</span>
-              <span class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center">By ITSM Inixindo <i class="mdi mdi-heart text-danger"></i></span>
-            </div>
-          </footer>
+        <footer class="footer">
+          <div class="d-sm-flex justify-content-center justify-content-sm-between">
+            <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Database KPI Inixindo Bandung.</span>
+            <span class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center">By ITSM Inixindo <i class="mdi mdi-heart text-danger"></i></span>
+          </div>
+        </footer>
       </div>
     </div>
   </div>

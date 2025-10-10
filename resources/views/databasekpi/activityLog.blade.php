@@ -17,6 +17,10 @@
         overflow-y: auto;
     }
 </style>
+@php
+use Carbon\Carbon;
+\Carbon\Carbon::setLocale('id');
+@endphp
 <div class="content-wrapper">
     <ul class="nav nav-tabs" id="myTab" role="tablist">
         <li class="nav-item" role="presentation">
@@ -95,7 +99,7 @@
                                         @endif
                                     </td>
 
-                                    <td>{{ $visit->created_at->format('d-m-Y H:i:s') }}</td>
+                                    <td>{{ Carbon::parse($visit->created_at)->translatedFormat('l, d F Y H:i') }}</td>
                                 </tr>
 
                                 <tr class="collapse bg-light" id="uaRow{{ $visit->id }}">
@@ -146,7 +150,7 @@
                                     <td>{{ $auth->karyawan->nama_lengkap }}</td>
                                     <td>{{ $auth->karyawan->jabatan }}</td>
                                     <td class="text-success">{{ $auth->status }}</td>
-                                    <td>{{ $auth->created_at->format('d-m-Y H:i:s') }}</td>
+                                    <td>{{ Carbon::parse($auth->created_at)->translatedFormat('l, d F Y H:i') }}</td>
                                     <td>
                                         <a href="{{ $auth->url }}" target="_blank" class="text-decoration-none">
                                             {{ Str::limit($auth->url, 255) }}
@@ -192,7 +196,7 @@
                             <td>{{ $absen->browser }}</td>
                             <td>{{ $absen->ip }}</td>
                             <td>{{ $absen->platform }}</td>
-                            <td>{{ $absen->created_at->format('d-m-Y H:i:s') }}</td>
+                            <td>{{ Carbon::parse($visit->created_at)->translatedFormat('l, d F Y H:i') }}</td>
                         </tr>
                         @endforeach
                     </tbody>
