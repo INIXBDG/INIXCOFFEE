@@ -61,24 +61,13 @@ class salesPribadiController extends Controller
             $actualTelemarketing = $aktivitas->where('aktivitas', 'Telemarketing')->count();
             $actualForm_Masuk = $aktivitas->where('aktivitas', 'Form_Masuk')->count();
             $actualForm_Keluar = $aktivitas->where('aktivitas', 'Form_Keluar')->count();
-
-            // hitung contact baru bulan ini
-            $contactbaru = Contact::where('sales_key', $idSales)
-                ->where('status', '1')
-                ->whereMonth('created_at', Carbon::now()->month)
-                ->whereYear('created_at', Carbon::now()->year)
-                ->count();
-
-            $perusahaanBaru = Perusahaan::where('sales_key', $idSales)
-                ->where('status', 'Database Baru')
-                ->whereMonth('created_at', Carbon::now()->month)
-                ->whereYear('created_at', Carbon::now()->year)
-                ->count();
+            $actualDB = $aktivitas->where('aktivitas', 'DB')->count();
+            $actualContact = $aktivitas->where('aktivitas', 'Contact')->count();
 
             $activitysales = [
                 'id_sales' => $idSales,
-                'DB' => $perusahaanBaru,
-                'contact' => $contactbaru,
+                'DB' => $actualDB,
+                'contact' => $actualContact,
                 'call' => $actualCall,
                 'email' => $actualEmail,
                 'visit' => $actualVisit,

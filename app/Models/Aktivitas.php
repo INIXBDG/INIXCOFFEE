@@ -17,6 +17,9 @@ class Aktivitas extends Model
         'subject',
         'deskripsi',
         'waktu_aktivitas',
+        'harga',
+        'total',
+        'pax',
     ];
 
     public function peluang()
