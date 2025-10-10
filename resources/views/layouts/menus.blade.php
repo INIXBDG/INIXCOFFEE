@@ -1506,7 +1506,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+
                             </div>
                         </div>
                         <div class="col-md-12 col-sm-12 col-xs-12 col-lg-6 col-xl-6">
@@ -1595,6 +1595,24 @@
                                                                     </div>
                                                                 </div>
                                                                 @endcan
+                                                                @can('View LabSubs')
+                                                                <div class="col-sm-6 mt-2">
+                                                                    <div class="card" id="card-hover">
+                                                                        <div class="card-body d-flex align-items-center">
+                                                                            <div class="col-md-2 text-center">
+                                                                                <img src="{{ asset('icon/flask.svg') }}"
+                                                                                    class="img-responsive" width="30px">
+                                                                            </div>
+                                                                            <div class="col-md-10" style="margin-left: 10px">
+                                                                                <a href="/pengajuanlabsdansubs" class="link stretched-link text-decoration-none">
+                                                                                    <h5 class="card-title">Pengajuan Lab dan Subs</h5>
+                                                                                </a>
+                                                                                <p class="card-text">Pengajuan Lab dan Subs.</p>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                @endcan
                                                                 @can('View Absensi&Sertifikat')
                                                                 <div class="col-sm-6 mt-2">
                                                                     <div class="card" id="card-hover">
@@ -1654,7 +1672,7 @@
                                                                     </div>
                                                                 </div>
                                                                 @endcan
-                                                            
+
                                                             </div>
                                                         </div>
                                                 </div>
@@ -2219,7 +2237,7 @@ Swal.fire({
         $(document).ready(function() {
             handleNotificationDismissal();
             // initializeYearlySales();
-            
+
             $('#tahun').change(function() {
                 initializeYearlySales();
             });
@@ -2250,7 +2268,7 @@ Swal.fire({
                 $('.tab-pane.show').fadeOut(100, function() {
                     $(this).removeClass('show active');
                     const $contentContainer = $('#dashboard-content');
-                    
+
 
                         $.ajax({
                             url: '/partials/dashboard', // Ganti URL sesuai rute Laravel kamu
@@ -2324,7 +2342,7 @@ Swal.fire({
 
                     // Muat script dashboard.js secara otomatis
                     $.getScript('{{ asset("js/dashboard.js") }}', function () {
-                        
+
                     }).fail(function () {
                         console.error('Gagal memuat dashboard.js');
                     });
