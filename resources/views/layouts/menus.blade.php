@@ -2207,33 +2207,33 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/timepicker/1.3.5/jquery.timepicker.min.js"></script>
     {{-- SweetAlert2 --}}
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-document.getElementById('logout-link').addEventListener('click', function (e) {
-    e.preventDefault();
+    <script>
+    document.getElementById('logout-link').addEventListener('click', function (e) {
+        e.preventDefault();
 
-Swal.fire({
-    title: 'Apakah Anda yakin?',
-    text: "Anda akan keluar dari aplikasi",
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#3085d6',
-    cancelButtonColor: '#d33',
-    confirmButtonText: 'Ya, keluar',
-    cancelButtonText: 'Batal',
-    showClass: {
-        popup: 'animate__animated animate__fadeInDown animate__faster'
-    },
-    hideClass: {
-        popup: 'animate__animated animate__fadeOutUp animate__faster'
-    }
-}).then((result) => {
-    if (result.isConfirmed) {
-        document.getElementById('logout-form').submit();
-    }
-});
+    Swal.fire({
+        title: 'Apakah Anda yakin?',
+        text: "Anda akan keluar dari aplikasi",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, keluar',
+        cancelButtonText: 'Batal',
+        showClass: {
+            popup: 'animate__animated animate__fadeInDown animate__faster'
+        },
+        hideClass: {
+            popup: 'animate__animated animate__fadeOutUp animate__faster'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('logout-form').submit();
+        }
+    });
 
-});
-</script>
+    });
+    </script>
     <script>
         $(document).ready(function() {
             handleNotificationDismissal();
