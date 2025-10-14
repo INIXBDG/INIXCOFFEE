@@ -40,4 +40,9 @@ class registexam extends Model
         return $this->hasOne(cc::class, 'id', 'cc'); // sesuaikan key-nya
 
     }
+    public function hasilexam()
+    {
+        return $this->hasOne(hasilexam::class, 'id_registexam', 'id'); // sesuaikan key-nya
+
+    }
 }

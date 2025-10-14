@@ -197,6 +197,7 @@
                                     <th scope="col">Tipe</th>
                                     <th scope="col">Ruangan</th>
                                     <th scope="col">Kondisi</th>
+                                    <th scope="col">Tanggal Pembelian</th>
                                     <th scope="col">Aksi</th>
                                 </tr>
                             </thead>
@@ -346,6 +347,13 @@
                         },
                         {
                             data: 'kondisi'
+                        },
+                        {
+                            "data": null,
+                            "render": function (data, type, row) {
+                                var created_at = moment(data.waktu_pembelian).format('dddd, DD MMMM YYYY');
+                                return created_at;
+                            },
                         },
                         {
                             data: null,

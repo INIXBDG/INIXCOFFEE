@@ -11,6 +11,7 @@
         "google/apiclient": "2.15",
         "guzzlehttp/guzzle": "^7.2",
         "intervention/image": "2.7",
+        "irazasyed/telegram-bot-sdk": "^3.15",
         "jenssegers/agent": "^2.6",
         "laravel/framework": "^10.0",
         "laravel/reverb": "^1.6",
@@ -20,6 +21,7 @@
         "maatwebsite/excel": "^3.1",
         "pusher/pusher-php-server": "*",
         "rap2hpoutre/laravel-log-viewer": "^2.4",
+        "sentry/sentry-laravel": "^4.16",
         "spatie/laravel-image-optimizer": "^1.8",
         "spatie/laravel-permission": "^6.13",
         "vinkla/hashids": "^11.0"

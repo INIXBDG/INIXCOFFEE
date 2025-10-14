@@ -1095,103 +1095,94 @@
         });
     }
     function generatefeedbackedit(id, cek) {
-        var temp = id.split(','); // Memisahkan ID menjadi array
-        // console.log(temp);
-        // 
-        // Variabel untuk menyimpan total nilai
-        var totalFeedback = 0;
-        var count = 0; // Untuk menghitung jumlah permintaan yang berhasil
+        var temp = id.split(',');
+		var totalNilai = 0;
+		var totalCount = 0;
 
-        // Menggunakan forEach untuk melakukan AJAX untuk setiap ID
-        temp.forEach(function(item) {
-            $.ajax({
-                url: "{{ route('getNilaiFeedbackInstRKM', ['id' => ':id']) }}".replace(':id', item), // Mengganti :id dengan item
-                type: "GET",
-                dataType: "json",
-                success: function(data) {
-                    // Menambahkan nilai feedback ke totalFeedback
-                    if (cek === 'Instruktur1') {
-                        totalFeedback += data.average.instruktur || 0; // Menambahkan nilai instruktur
-                    } else if (cek === 'Instruktur2') {
-                        totalFeedback += data.average.instruktur2 || 0; // Menambahkan nilai instruktur2
-                    } else if (cek === 'Asisten') {
-                        totalFeedback += data.average.asisten || 0; // Menambahkan nilai asisten
-                    }
-                    count++; // Meningkatkan jumlah permintaan yang berhasil
+		var requests = temp.map(function(item) {
+			return $.ajax({
+				url: "{{ route('getNilaiFeedbackInstRKM', ['id' => ':id']) }}".replace(':id', item),
+				type: "GET",
+				dataType: "json"
+			}).then(function(data) {
+				data.feedbacks.forEach(function(fb) {
+					if (cek === 'Instruktur1') {
+						if (fb.instruktur) {
+							totalNilai += fb.instruktur;
+							totalCount++;
+						}
+					} else if (cek === 'Instruktur2') {
+						if (fb.instruktur2) {
+							totalNilai += fb.instruktur2;
+							totalCount++;
+						}
+					} else if (cek === 'Asisten') {
+						if (fb.asisten) {
+							totalNilai += fb.asisten;
+							totalCount++;
+						}
+					}
+				});
+			}).catch(function(error) {
+				console.error("Error fetching data for ID " + item, error);
+			});
+		});
 
-                    // Jika semua permintaan selesai, hitung rata-rata
-                    if (count === temp.length) {
-                        var averageFeedback = totalFeedback / count; // Menghitung rata-rata
-                        $('#feedback_inst_edit').val(averageFeedback); // Mengatur nilai rata-rata ke elemen
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error("Error fetching data for ID " + item + ": " + error);
-                    count++; // Meningkatkan jumlah permintaan yang berhasil meskipun ada error
-
-                    // Jika semua permintaan selesai, hitung rata-rata
-                    if (count === temp.length) {
-                        var averageFeedback = totalFeedback / count; // Menghitung rata-rata
-                        $('#feedback_inst_edit').val(averageFeedback); // Mengatur nilai rata-rata ke elemen
-                    }
-                }
-            });
-        });
+		Promise.all(requests).then(function() {
+			var averageFeedback = totalCount > 0 ? (totalNilai / totalCount) : 0;
+			$('#feedback_inst_edit').val(averageFeedback.toFixed(2));
+		});
     }
     function generatefeedback(id) {
-        var temp = id.split(', '); // Memisahkan ID menjadi array
-        // console.log(temp);
-        
-        // Variabel untuk menyimpan total nilai
-        var instruktur1 = 0;
-        var instruktur2 = 0;
-        var asisten = 0;
-        var count = 0; // Untuk menghitung jumlah permintaan yang berhasil
+		var temp = id.split(', '); // Pisahkan ID menjadi array
+		var totalInstruktur1 = 0;
+		var totalInstruktur2 = 0;
+		var totalAsisten = 0;
 
-        // Menggunakan forEach untuk melakukan AJAX untuk setiap ID
-        temp.forEach(function(item) {
-            $.ajax({
-                url: "{{ route('getNilaiFeedbackInstRKM', ['id' => ':id']) }}".replace(':id', item),
-                type: "GET",
-                dataType: "json",
-                success: function(data) {
-                    // console.log(item, data);
-                    instruktur1 += data.average.instruktur || 0;
-                    instruktur2 += data.average.instruktur2 || 0;
-                    asisten += data.average.asisten || 0;
-                    count++; // Meningkatkan jumlah permintaan yang berhasil
+		var countInstruktur1 = 0;
+		var countInstruktur2 = 0;
+		var countAsisten = 0;
 
-                    // Jika semua permintaan selesai, hitung rata-rata
-                    if (count === temp.length) {
-                        var averageFeedback1 = instruktur1 / count; // Rata-rata instruktur1
-                        var averageFeedback2 = instruktur2 / count; // Rata-rata instruktur2
-                        var averageFeedback3 = asisten / count; // Rata-rata asisten
+		// Buat daftar promise agar tunggu semua AJAX selesai
+		var requests = temp.map(function(item) {
+			return $.ajax({
+				url: "{{ route('getNilaiFeedbackInstRKM', ['id' => ':id']) }}".replace(':id', item),
+				type: "GET",
+				dataType: "json"
+			}).then(function(data) {
+				// Loop semua feedback mentah di data.feedbacks
+				data.feedbacks.forEach(function(fb) {
+					if (fb.instruktur && fb.instruktur > 0) {
+						totalInstruktur1 += fb.instruktur;
+						countInstruktur1++;
+					}
+					if (fb.instruktur2 && fb.instruktur2 > 0) {
+						totalInstruktur2 += fb.instruktur2;
+						countInstruktur2++;
+					}
+					if (fb.asisten && fb.asisten > 0) {
+						totalAsisten += fb.asisten;
+						countAsisten++;
+					}
+				});
+			}).catch(function(error) {
+				console.error("Error fetching data for ID " + item + ": " + error);
+			});
+		});
 
-                        // Mengatur nilai rata-rata ke elemen input
-                        $('#feedback_inst').val(averageFeedback1); // Mengatur nilai dengan 2 desimal
-                        $('#feedback_inst_2').val(averageFeedback2); // Mengatur nilai dengan 2 desimal
-                        $('#feedback_ass').val(averageFeedback3); // Mengatur nilai dengan 2 desimal
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error("Error fetching data for ID " + item + ": " + error);
-                    count++; // Meningkatkan jumlah permintaan yang berhasil meskipun ada error
+		// Setelah semua AJAX selesai, baru hitung rata-rata total
+		Promise.all(requests).then(function() {
+			var averageFeedback1 = countInstruktur1 > 0 ? (totalInstruktur1 / countInstruktur1) : 0;
+			var averageFeedback2 = countInstruktur2 > 0 ? (totalInstruktur2 / countInstruktur2) : 0;
+			var averageFeedback3 = countAsisten > 0 ? (totalAsisten / countAsisten) : 0;
 
-                    // Jika semua permintaan selesai, hitung rata-rata
-                    if (count === temp.length) {
-                        var averageFeedback1 = instruktur1 / count; // Rata-rata instruktur1
-                        var averageFeedback2 = instruktur2 / count; // Rata-rata instruktur2
-                        var averageFeedback3 = asisten / count; // Rata-rata asisten
+			// Isi input dengan hasil rata-rata (dua desimal)
+			$('#feedback_inst').val(averageFeedback1.toFixed(2));
+			$('#feedback_inst_2').val(averageFeedback2.toFixed(2));
+			$('#feedback_ass').val(averageFeedback3.toFixed(2));
+		});
+	}
 
-                        // Mengatur nilai rata-rata ke elemen input
-                        $('#feedback_inst').val(averageFeedback1); // Mengatur nilai dengan 2 desimal
-                        $('#feedback_inst_2').val(averageFeedback2); // Mengatur nilai dengan 2 desimal
-                        $('#feedback_ass').val(averageFeedback3); // Mengatur nilai dengan 2 desimal
-                    }
-                }
-            });
-        });
-    }
 
     function tableMengajar() {
         if ($.fn.DataTable.isDataTable('#mengajartable')) {

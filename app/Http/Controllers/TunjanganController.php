@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Exports\TunjanganExport;
 use Maatwebsite\Excel\Facades\Excel;
+
 class TunjanganController extends Controller
 {
     protected $AbsensiKaryawanController;
@@ -27,7 +28,6 @@ class TunjanganController extends Controller
         $this->middleware('auth');
         $this->AbsensiKaryawanController = $AbsensiKaryawanController;
         $this->overtimeController = $overtimeController;
-
     }
     public function index()
     {
@@ -114,11 +114,14 @@ class TunjanganController extends Controller
             ->with('karyawan', 'jenistunjangan') // Mengambil data karyawan terkait
             ->get();
 
+        $gaji = Karyawan::findOrFail($id)->gaji;
+
         // Format data yang akan dikirimkan
         return response()->json([
             'success' => true,
             'message' => 'List Tunjangan Saya pada bulan ' . $bulan . '-' . $tahun,
-            'data' => $tunjangan
+            'data' => $tunjangan,
+            'gaji' => $gaji
         ]);
     }
 
@@ -155,11 +158,11 @@ class TunjanganController extends Controller
             ->with('karyawan', 'jenistunjangan') // Mengambil data karyawan terkait
             ->get();
         // dd($post);
-         // Hitung total tunjangan, potongan, dan total bersih
+        // Hitung total tunjangan, potongan, dan total bersih
         $totalTunjangan = 0;
         $totalPotongan = 0;
         $dataluar = $this->AbsensiKaryawanController->jumlahAbsensi($id, $bulan, $tahun);
-         // Check if the response is a JsonResponse
+        // Check if the response is a JsonResponse
         if ($dataluar instanceof \Illuminate\Http\JsonResponse) {
             $absensiData = $dataluar->getData(); // Get the data from the JsonResponse
         } else {
@@ -200,7 +203,7 @@ class TunjanganController extends Controller
         $pdf = pdf::loadView('tunjangan.pdf', $data);
 
         // Menyimpan atau langsung mengirimkan file PDF
-        return $pdf->download('Tunjangan_'.$id.'_'.$bulan.'_'.$tahun.'.pdf');
+        return $pdf->download('Tunjangan_' . $id . '_' . $bulan . '_' . $tahun . '.pdf');
     }
 
     public function tunjanganExportPDF($month, $year)
@@ -218,7 +221,7 @@ class TunjanganController extends Controller
             ->with('karyawan', 'jenistunjangan') // Mengambil data karyawan terkait
             ->get()
             ->groupBy('karyawan.nama_lengkap') // Mengelompokkan berdasarkan nama karyawan
-            ->sortBy(function($group) {
+            ->sortBy(function ($group) {
                 return $group->first()->karyawan->divisi; // Mengurutkan berdasarkan divisi
             });
 
@@ -293,7 +296,7 @@ class TunjanganController extends Controller
         $tunjangan = JenisTunjangan::findOrFail($id);
 
         // Create a new record if no duplicate exists
-       $tunjangan->update([
+        $tunjangan->update([
             'nama_tunjangan' => $request->nama_tunjangan,
             'tipe' => $request->tipe,
             'nilai' => $request->nilai,
@@ -321,10 +324,10 @@ class TunjanganController extends Controller
 
         // Ambil semua karyawan yang aktif dan termasuk dalam divisi yang relevan
         $karyawanList = Karyawan::whereNotIn('jabatan', ['Komisaris', 'Direktur'])
-                        ->whereNotIn('id', [1, 3])
-                        ->where('kode_karyawan', 'not like', '%OL%')
-                        ->where('status_aktif', '1')
-                        ->get();
+            ->whereNotIn('id', [1, 3])
+            ->where('kode_karyawan', 'not like', '%OL%')
+            ->where('status_aktif', '1')
+            ->get();
 
         // return $karyawanList;
         foreach ($karyawanList as $karyawan) {
@@ -332,9 +335,9 @@ class TunjanganController extends Controller
 
             // Periksa apakah perhitungan sudah dilakukan untuk karyawan ini
             $existingCalculation = TunjanganKaryawan::where('id_karyawan', $karyawanId)
-                                    ->where('bulan', $bulan)
-                                    ->where('tahun', $tahun)
-                                    ->first();
+                ->where('bulan', $bulan)
+                ->where('tahun', $tahun)
+                ->first();
 
             if ($existingCalculation) {
                 // return redirect()->route('tunjangangenerate.index')->with(['error' => 'Tunjangan sudah dihitung otomatis untuk bulan dan tahun yang sama']);
@@ -375,9 +378,7 @@ class TunjanganController extends Controller
                     $keterangan = "Terlambat > 15 menit";
                 } else {
                     $keterangan = "Terlambat " . floor($totalSeconds / 60) . " menit";
-                $includeTunjangan[] = 'Absensi';
-
-
+                    $includeTunjangan[] = 'Absensi';
                 }
             } else {
                 $keterangan = "Tidak pernah terlambat";
@@ -411,18 +412,18 @@ class TunjanganController extends Controller
             $totalPotongan = 0;
 
             foreach ($jenisTunjangan as $tunjangan) {
-                if($tunjangan->nama_tunjangan == 'Lembur'){
+                if ($tunjangan->nama_tunjangan == 'Lembur') {
                     $lembur = lembur::with('karyawan', 'hitunglembur')
-                                ->where('id_karyawan', $karyawanId)
-                                ->whereMonth('tanggal_spl', $bulan)
-                                ->whereYear('tanggal_spl', $tahun)
-                                ->get();
+                        ->where('id_karyawan', $karyawanId)
+                        ->whereMonth('tanggal_spl', $bulan)
+                        ->whereYear('tanggal_spl', $tahun)
+                        ->get();
                     // dd($lembur);
                     $totalLemburan = 0;
                     // $log = [];
 
-                    foreach($lembur as $data){
-                        if($data->id_hitung_lembur == null || $data->id_hitung_lembur == ''){
+                    foreach ($lembur as $data) {
+                        if ($data->id_hitung_lembur == null || $data->id_hitung_lembur == '') {
                             // $log[] = 'Lewat karena id_hitung_lembur kosong/null';
                             continue;
                         }
@@ -436,25 +437,24 @@ class TunjanganController extends Controller
                         $jamLembur = (strtotime($data->jam_selesai) - strtotime($data->jam_mulai)) / 3600;
                         $subtotal = $jamLembur * $nilaiLembur;
                         $totalLemburan += $subtotal;
-
                     }
                     // if($totalLembur > 0){
-                        $jenisTunjangans = JenisTunjangan::where('nama_tunjangan', 'Lembur')->first();
-                        $tunjanganKaryawan = new TunjanganKaryawan();
-                        $tunjanganKaryawan->id_karyawan = $karyawanId;
-                        $tunjanganKaryawan->bulan = $bulan;
-                        $tunjanganKaryawan->tahun = $tahun;
-                        $tunjanganKaryawan->jenis_tunjangan = $jenisTunjangans->id;
-                        $tunjanganKaryawan->keterangan = $tunjangan->tipe;
-                        // $tunjanganKaryawan->jumlah_absensi = '1';
-                        $tunjanganKaryawan->total = $totalLemburan; // Pastikan nilai adalah integer (casting)
-                        $tunjanganKaryawan->save();
+                    $jenisTunjangans = JenisTunjangan::where('nama_tunjangan', 'Lembur')->first();
+                    $tunjanganKaryawan = new TunjanganKaryawan();
+                    $tunjanganKaryawan->id_karyawan = $karyawanId;
+                    $tunjanganKaryawan->bulan = $bulan;
+                    $tunjanganKaryawan->tahun = $tahun;
+                    $tunjanganKaryawan->jenis_tunjangan = $jenisTunjangans->id;
+                    $tunjanganKaryawan->keterangan = $tunjangan->tipe;
+                    // $tunjanganKaryawan->jumlah_absensi = '1';
+                    $tunjanganKaryawan->total = $totalLemburan; // Pastikan nilai adalah integer (casting)
+                    $tunjanganKaryawan->save();
                     // }else{
 
                     // }
 
 
-                }else if ($tunjangan->hitung == 'Perhari' && $tunjangan->tipe == 'Tunjangan') {
+                } else if ($tunjangan->hitung == 'Perhari' && $tunjangan->tipe == 'Tunjangan') {
                     if ($karyawan->jabatan == 'Direktur Utama') {
                         $jumlahAbsensi = AbsensiKaryawan::whereMonth('tanggal', $bulan)  // Ganti dengan bulan yang ingin dihitung
                             ->whereYear('tanggal', $tahun)  // Ganti dengan tahun yang sesuai
@@ -465,7 +465,7 @@ class TunjanganController extends Controller
 
                         $sebelumtigaratus = (float)$tunjangan->nilai * $jumlahAbsensi;
                         $jumlahTunjangan = $sebelumtigaratus + 300000;
-                    }else {
+                    } else {
                         // Hitung untuk karyawan lain tanpa tambahan
                         $jumlahTunjangan = $tunjangan->nilai * $jumlahAbsensi;
                     }
@@ -494,9 +494,7 @@ class TunjanganController extends Controller
                     // $tunjanganKaryawan->jumlah_absensi = '1';
                     $tunjanganKaryawan->total = (float) $tunjangan->nilai; // Pastikan nilai adalah integer (casting)
                     $tunjanganKaryawan->save();
-
                 }
-
             }
         }
 
@@ -584,7 +582,6 @@ class TunjanganController extends Controller
             $tunjanganKaryawan->save(); // Simpan ke database
         }
         return redirect()->route('tunjangangenerate.index')->with(['success' => 'Data Berhasil Disimpan!']);
-
     }
 
     public function storeManual(Request $request)
@@ -599,21 +596,20 @@ class TunjanganController extends Controller
         DB::beginTransaction(); // Mulai transaksi
 
         try {
-            if($deletedata){
+            if ($deletedata) {
                 foreach ($deletedata as $index => $nama_tunjangan) {
                     $jenisTunjangan = JenisTunjangan::where('nama_tunjangan', $nama_tunjangan)->first();
                     $tunjanganKaryawan = TunjanganKaryawan::where('id_karyawan', $karyawanId)
-                            ->where('bulan', $bulan)
-                            ->where('tahun', $tahun)
-                            ->where('jenis_tunjangan', $jenisTunjangan->id)
-                            ->first();
-                            if ($tunjanganKaryawan) {
-                                $tunjanganKaryawan->delete();
-                            }
-
+                        ->where('bulan', $bulan)
+                        ->where('tahun', $tahun)
+                        ->where('jenis_tunjangan', $jenisTunjangan->id)
+                        ->first();
+                    if ($tunjanganKaryawan) {
+                        $tunjanganKaryawan->delete();
+                    }
                 }
             }
-            if($dataTunjangan){
+            if ($dataTunjangan) {
                 foreach ($dataTunjangan as $namaTunjangan => $nilai) {
                     // Menghilangkan karakter '_' dari namaTunjangan
                     $namaTunjanganId = str_replace('_', ' ', $namaTunjangan);
@@ -682,17 +678,13 @@ class TunjanganController extends Controller
             ->with('karyawan', 'jenistunjangan') // Mengambil data karyawan terkait
             ->get()
             ->groupBy('karyawan.nama_lengkap') // Mengelompokkan berdasarkan nama karyawan
-            ->sortBy(function($group) {
+            ->sortBy(function ($group) {
                 return $group->first()->karyawan->divisi; // Mengurutkan berdasarkan divisi
             });
         $nama_tunjangan = JenisTunjangan::get();
 
         return Excel::download(new TunjanganExport($post, $nama_tunjangan), 'rekap_tunjangan.xlsx');
     }
-
-
-
-
 }
 
 // foreach ($dataTunjangan as $tunjangan) {

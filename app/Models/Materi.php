@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Materi extends Model
 {
     use HasFactory;
+    protected $table = 'materis';
     protected $fillable = [
         'nama_materi',
         'kode_materi',
@@ -23,5 +24,11 @@ class Materi extends Model
     public function rkms()
     {
         return $this->hasMany(Rkm::class, 'materi_key', 'id');
+    }
+
+    // Add the relationship to Peluang
+    public function peluangs()
+    {
+        return $this->hasMany(Peluang::class, 'materi', 'id');
     }
 }

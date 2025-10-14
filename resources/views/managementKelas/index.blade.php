@@ -4,7 +4,26 @@
 <div class="container-fluid py-5">
     <div class="row justify-content-center">
         <div class="col-lg-10 text-center">
-            <h2 class="mb-4 fw-bold">Daftar Ruang Kelas Offline</h2>
+            @if($assignMode === 'exam' && $examData)
+                <div class="alert alert-info mb-4">
+                    <h5><i class="fas fa-clipboard-check"></i> Mode Assign Ruangan untuk Exam</h5>
+                    <div class="row">
+                        <div class="col-md-3"><strong>Materi:</strong> {{ $examData['materi'] }}</div>
+                        <div class="col-md-3"><strong>Perusahaan:</strong> {{ $examData['perusahaan'] }}</div>
+                        <div class="col-md-3"><strong>Pax:</strong> {{ $examData['pax'] }}</div>
+                        <div class="col-md-3"><strong>Invoice:</strong> {{ $examData['invoice'] }}</div>
+                    </div>
+                    <p class="mt-2 mb-0">Pilih ruangan yang kosong untuk jadwal exam ini</p>
+                </div>
+            @endif
+
+            <h2 class="mb-4 fw-bold">
+                @if($assignMode === 'exam')
+                    Pilih Ruang untuk Exam
+                @else
+                    Daftar Ruang Kelas Offline
+                @endif
+            </h2>
 
             <div class="row justify-content-center mb-5">
                 <div class="col-md-4 mb-2">
@@ -13,6 +32,13 @@
                         class="form-control shadow-sm rounded-pill px-4"
                         value="{{ date('Y-m-d') }}">
                 </div>
+                @if($assignMode === 'exam')
+                    <div class="col-md-2">
+                        <a href="{{ route('exam.index') }}" class="btn btn-secondary rounded-pill px-4">
+                            <i class="fas fa-arrow-left"></i> Kembali ke Exam
+                        </a>
+                    </div>
+                @endif
             </div>
 
             <div class="row g-4 justify-content-center" id="ruangList">
@@ -21,7 +47,7 @@
                 @endphp
                 @foreach($ruangs as $r)
                 <div id="container-ruang-{{ $r }}" class="col-md-4 col-sm-6 ruang-container">
-                    <div class="ruang">
+                    <div class="ruang {{ $assignMode === 'exam' ? 'exam-assign-mode' : '' }}">
                         <div class="ruang-title mb-4" style="font-size: 35px;">Ruang {{ $r }}</div>
                         <input type="hidden" class="ruang-nama" value="{{ $r }}">
 
@@ -69,13 +95,25 @@
             @csrf
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modalKelolaManagementLabel">Modal title</h5>
+                    <h5 class="modal-title" id="modalKelolaManagementLabel">
+                        @if($assignMode === 'exam')
+                            Assign Exam ke Ruangan
+                        @else
+                            Kelola Ruangan
+                        @endif
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body"></div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary">Simpan</button>
+                    <button type="submit" class="btn btn-primary">
+                        @if($assignMode === 'exam')
+                            <i class="fas fa-check"></i> Assign Exam
+                        @else
+                            Simpan
+                        @endif
+                    </button>
                 </div>
             </div>
         </form>
@@ -98,6 +136,16 @@
         box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
         cursor: pointer;
         animation: zoomFade 0.8s ease both;
+    }
+
+    .ruang.exam-assign-mode:not(.ruang-ada) {
+        border: 3px dashed #28a745;
+        background: linear-gradient(145deg, #f8fff9, #e8f5e8);
+    }
+
+    .ruang.exam-assign-mode:not(.ruang-ada):hover {
+        background: linear-gradient(145deg, #e8f5e8, #d4edda);
+        transform: scale(1.02);
     }
 
     @keyframes zoomFade {
@@ -130,6 +178,17 @@
         background: #dc3545 !important;
         color: #ffffff !important;
     }
+
+    .exam-assign-indicator {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: #28a745;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 12px;
+    }
 </style>
 
 @push('js')
@@ -137,6 +196,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
 <script>
     let containerFilters = {};
+    const isExamMode = {{ $assignMode === 'exam' ? 'true' : 'false' }};
 
     function getContainerId(d) {
         if (d.ruang === "-") return d.ruangan.replace('Ruang ', '');
@@ -165,7 +225,20 @@
 
         $(document).on("click", ".ruang:not(.ruang-ada)", function() {
             let ruang = $(this).find(".ruang-nama").val();
-            openModalKelola(ruang);
+            if (isExamMode) {
+                openModalKelolaExam(ruang);
+            } else {
+                openModalKelola(ruang);
+            }
+        });
+
+        // Prevent clicking occupied rooms in exam mode
+        $(document).on("click", ".ruang.ruang-ada", function(e) {
+            if (isExamMode) {
+                e.preventDefault();
+                alert('Ruangan ini sudah terisi. Silakan pilih ruangan lain.');
+                return false;
+            }
         });
     });
 
@@ -230,6 +303,11 @@
             kelola.empty();
             tanggalSpan.text(filterUtama);
             ruangBox.removeClass("ruang-ada manajemen rkm").css("background", "");
+            
+            // Add exam mode indicator for empty rooms
+            if (isExamMode) {
+                info.html('<span class="text-success"><i class="fas fa-check"></i> Tersedia untuk Exam</span>');
+            }
             return;
         }
 
@@ -241,7 +319,10 @@
             materi.html(`<ul><li>${manajemen.tanggal} - ${manajemen.jam_mulai} s/d ${manajemen.jam_selesai}</li></ul>`);
             info.text("Kebutuhan: " + (manajemen.kebutuhan || "-"));
             tanggalSpan.text(manajemen.tanggal || filterUtama);
-            kelola.html(`<button type="button" class="btn btn-primary btn-kelola" data-bs-toggle="modal" data-bs-target="#modalKelolaManagement" data-ruang="${manajemen.ruangan}">Kelola</button>`);
+            
+            if (!isExamMode) {
+                kelola.html(`<button type="button" class="btn btn-primary btn-kelola" data-bs-toggle="modal" data-bs-target="#modalKelolaManagement" data-ruang="${manajemen.ruangan}">Kelola</button>`);
+            }
             return;
         }
 
@@ -252,21 +333,24 @@
                 (rkm.instruktur2 ? " • Instruktur2: " + rkm.instruktur2 : "") +
                 (rkm.asisten ? " • Asisten: " + rkm.asisten : ""));
             tanggalSpan.text(rkm.tanggal_awal + " s/d " + rkm.tanggal_akhir || filterUtama);
-            kelola.html(`<button type="button" class="btn btn-info btn-detail" data-bs-toggle="modal" data-bs-target="#modalDetailRKM"
-             data-ruang="${rkm.ruang}" 
-             data-tanggal_awal="${rkm.tanggal_awal}" 
-             data-tanggal_akhir="${rkm.tanggal_akhir}" 
-             data-materi="${rkm.materi}" 
-             data-sales="${rkm.sales}" 
-             data-instruktur="${rkm.instruktur}" 
-             data-instruktur2="${rkm.instruktur2}" 
-             data-asisten="${rkm.asisten}" 
-             data-perusahaan="${rkm.perusahaan}" 
-             data-harga_jual="${rkm.harga_jual}" 
-             data-pax="${rkm.pax}" 
-             data-exam="${rkm.exam}" 
-             data-authorize="${rkm.authorize}" 
-             >Detail</button>`);
+            
+            if (!isExamMode) {
+                kelola.html(`<button type="button" class="btn btn-info btn-detail" data-bs-toggle="modal" data-bs-target="#modalDetailRKM"
+                 data-ruang="${rkm.ruang}" 
+                 data-tanggal_awal="${rkm.tanggal_awal}" 
+                 data-tanggal_akhir="${rkm.tanggal_akhir}" 
+                 data-materi="${rkm.materi}" 
+                 data-sales="${rkm.sales}" 
+                 data-instruktur="${rkm.instruktur}" 
+                 data-instruktur2="${rkm.instruktur2}" 
+                 data-asisten="${rkm.asisten}" 
+                 data-perusahaan="${rkm.perusahaan}" 
+                 data-harga_jual="${rkm.harga_jual}" 
+                 data-pax="${rkm.pax}" 
+                 data-exam="${rkm.exam}" 
+                 data-authorize="${rkm.authorize}" 
+                 >Detail</button>`);
+            }
             return;
         }
     }
@@ -306,10 +390,55 @@
         myModal.show();
     }
 
+    function openModalKelolaExam(ruang) {
+        $("#modalKelolaManagementLabel").text("Assign Exam ke Ruang " + ruang);
+        $("#modalKelolaManagement .modal-body").html(`
+        <input type="hidden" name="ruang" value="${ruang}">
+        <div class="alert alert-info">
+            <strong>Exam Details:</strong><br>
+            @if($examData)
+            Materi: {{ $examData['materi'] }}<br>
+            Perusahaan: {{ $examData['perusahaan'] }}<br>
+            Pax: {{ $examData['pax'] }}<br>
+            Invoice: {{ $examData['invoice'] }}
+            @endif
+        </div>
+        <div class="form-group mt-3">
+            <label>Nama Ruangan</label>
+            <input type="text" class="form-control" value="Ruang ${ruang}" readonly>
+        </div>
+        <div class="form-group mt-3">
+            <label>Tanggal Exam <span class="text-danger">*</span></label>
+            <input type="date" class="form-control" name="tanggal" required>
+        </div>
+        <div class="form-group mt-3">
+            <label>Jam Mulai <span class="text-danger">*</span></label>
+            <input type="time" class="form-control" name="jam_mulai" id="jamMulai" required>
+        </div>
+        <div class="form-group mt-3">
+            <label>Jam Selesai <span class="text-danger">*</span></label>
+            <input type="time" class="form-control" name="jam_selesai" id="jamSelesai" required>
+        </div>
+        <small id="errorMsg" class="text-danger d-none">Jam selesai harus minimal 1 jam setelah jam mulai</small>
+        <div class="form-group mt-3">
+            <label>Kebutuhan (Optional)</label>
+            <textarea name="kebutuhan" class="form-control" placeholder="Akan diisi otomatis jika kosong"></textarea>
+            <small class="form-text text-muted">Default: Exam - [Nama Materi]</small>
+        </div>
+        <div class="form-group mt-3">
+            <label>Keterangan (Optional)</label>
+            <textarea name="keterangan" class="form-control" placeholder="Akan diisi otomatis jika kosong"></textarea>
+            <small class="form-text text-muted">Default: Exam untuk [Perusahaan] (Pax: [Jumlah])</small>
+        </div>
+    `);
+
+        var myModal = new bootstrap.Modal(document.getElementById('modalKelolaManagement'));
+        myModal.show();
+    }
+
     function openModalDetail(data) {
-        $("#modalDetailRKMLabel").text("Kelola Ruang " + data.ruang);
+        $("#modalDetailRKMLabel").text("Detail Ruang " + data.ruang);
         $("#modalDetailRKM #bodyContent").html(`
-        <input type="hidden" name="ruang" value="${data.ruang}">
         <div class="form-group mt-3">
             <label>Nama Ruangan</label>
             <input type="text" class="form-control" value="Ruang ${data.ruang}" readonly>
@@ -384,7 +513,11 @@
 
     $(document).on("click", ".btn-kelola", function() {
         let ruang = $(this).data("ruang");
-        openModalKelola(ruang);
+        if (isExamMode) {
+            openModalKelolaExam(ruang);
+        } else {
+            openModalKelola(ruang);
+        }
     });
 
     $(document).on("click", ".btn-detail", function() {

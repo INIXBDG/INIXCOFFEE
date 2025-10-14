@@ -51,6 +51,7 @@ class UserController extends Controller
             'nama_lengkap' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255'],
             'email' => ['nullable', 'email'],
+            'whatsapp' => ['nullable', 'string', 'max:255'],
             'jabatan' => ['required', 'string', 'max:255'],
             'divisi' => ['required', 'string', 'max:255'],
             'status_akun' => ['nullable', 'string', 'max:255'],
@@ -111,12 +112,12 @@ class UserController extends Controller
 
         $userId = $decoded[0];
         $users = User::findOrFail($userId);
+        $karyawan = karyawan::findOrFail($userId);
 
         // Batasi akses: hanya user itu sendiri atau admin
         if (auth()->id() !== $users->id && auth()->user()->jabatan !== 'HRD') {
             abort(403, 'Kamu tidak diizinkan mengakses data ini.');
         }
-
                 $id_karyawan = Auth::user()->id;
 
         $dataAuth = activityLog::with('karyawan')
