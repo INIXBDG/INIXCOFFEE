@@ -3,6 +3,7 @@
 namespace App\Console;
 
 use App\Models\activityLog;
+
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 use App\Notifications\OutstandingNotification;
@@ -34,8 +35,9 @@ class Kernel extends ConsoleKernel
                     Notification::send($financeUsers, new OutstandingNotification($outstanding, $path));
                 }
             } catch (\Exception $e) {
-                Log::error('Failed to send notifications: ' . $e->getMessage());
+                    Log::error('Failed to send notifications: ' . $e->getMessage());
             }
+
         })->weeklyOn(1, '8:00');
 
         $schedule->call(function () {
@@ -173,7 +175,7 @@ class Kernel extends ConsoleKernel
      */
     protected function commands(): void
     {
-        $this->load(__DIR__ . '/Commands');
+        $this->load(__DIR__.'/Commands');
 
         require base_path('routes/console.php');
     }
