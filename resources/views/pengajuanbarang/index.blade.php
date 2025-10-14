@@ -911,48 +911,36 @@ function toggleAlasanManager(show) {
     }
 }
 
+ $('#approveForm').on('submit', function(e) {
+        e.preventDefault();
+        let form = $(this);
+        let actionUrl = form.attr('action');
+        $('#loadingModal').modal('show');
 
+        $.ajax({
+            url: actionUrl,
+            type: 'POST',
+            data: form.serialize(),
+            success: function(res) {
+                $('#loadingModal').modal('hide');
+                $('#approveModal').modal('hide');
 
-// Skrip AJAX untuk form approve
-$('#approveForm').on('submit', function(e) {
-    e.preventDefault();
-    let form = $(this);
-    let actionUrl = form.attr('action');
-    $('#loadingModal').modal('show'); // tampilkan loading modal
+                if ($.fn.DataTable.isDataTable('#barangTable')) {
+                    $('#barangTable').DataTable().ajax.reload(null, false);
+                }
+                tableFinance(); 
+                tableKaryawan();
 
-    $.ajax({
-        url: actionUrl,
-        type: 'POST',
-        data: form.serialize(),
-        success: function(res) {
-            $('#loadingModal').modal('hide'); 
-            $('#approveModal').modal('hide'); 
-
-            if ($.fn.DataTable.isDataTable('#barangTable')) {
-                $('#barangTable').DataTable().ajax.reload(null, false);
+                if ('{{ auth()->user()->jabatan }}' == 'Finance & Accounting') {
+                    tableFinance();
+                }
+            },
+            error: function(err) {
+                $('#loadingModal').modal('hide');
+                alert('Gagal menyimpan data, silakan coba lagi.');
             }
-
-            if ($.fn.DataTable.isDataTable('#databelum')) {
-                var currentPageBelum = $('#databelum').DataTable().page();
-                $('#databelum').DataTable().ajax.reload(function(){
-                    $('#databelum').DataTable().page(currentPageBelum).draw('page');
-                }, false);
-            }
-            if ($.fn.DataTable.isDataTable('#datasudah')) {
-                var currentPageSudah = $('#datasudah').DataTable().page();
-                $('#datasudah').DataTable().ajax.reload(function(){
-                    $('#datasudah').DataTable().page(currentPageSudah).draw('page');
-                }, false);
-            }
-        },
-        error: function(err) {
-            $('#loadingModal').modal('hide'); 
-            alert('Gagal menyimpan data, silakan coba lagi.');
-        }
+        });
     });
-});
-
-
 </script>
 @endpush
 @endsection
