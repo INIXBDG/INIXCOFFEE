@@ -22,7 +22,8 @@
                                     @forelse ($chartData as $item)
                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                             <span class="small">{{ $item['kategori'] }}</span>
-                                            <span class="small text-muted">{{ number_format($item['jumlah'], 0, ',', '.') }} ({{ $item['persen'] }}%)</span>
+                                            <span class="small text-muted">{{ number_format($item['jumlah'], 0, ',', '.') }}
+                                                ({{ $item['persen'] }}%)</span>
                                         </div>
                                     @empty
                                         <p class="text-muted small mb-0">Tidak ada data kategori.</p>
@@ -41,24 +42,18 @@
                         <h5 class="card-title mb-0 text-primary">Target Aktivitas Sales</h5>
                     </div>
                     <div class="card-body p-3">
-                        <!-- Filter Section -->
-                        <div class="mb-3">
-                            <div class="btn-group btn-group-sm" role="group">
-                                <button type="button" class="btn btn-outline-primary filter-btn active" data-filter="all">All</button>
-                                <button type="button" class="btn btn-outline-primary filter-btn" data-filter="Contact">Contact</button>
-                                <button type="button" class="btn btn-outline-primary filter-btn" data-filter="Call">Call</button>
-                                <button type="button" class="btn btn-outline-primary filter-btn" data-filter="Email">Email</button>
-                                <button type="button" class="btn btn-outline-primary filter-btn" data-filter="Visit">Visit</button>
-                                <button type="button" class="btn btn-outline-primary filter-btn" data-filter="Meet">Meet</button>
-                                <button type="button" class="btn btn-outline-primary filter-btn" data-filter="Incharge">Incharge</button>
-                            </div>
-                        </div>
-                        <div class="activity-container" style="max-height: 280px; overflow-y: auto;">
+                        <div class="activity-container" style="max-height: 355px; overflow-y: auto;">
                             @if (!empty($activitysales))
                                 <div class="mb-3 sales-item" data-sales-id="{{ $activitysales['id_sales'] }}">
-                                    <strong class="text-dark d-block mb-2">Sales ID: {{ $activitysales['id_sales'] }}</strong>
+                                    <strong class="text-dark d-block mb-2">Sales ID:
+                                        {{ $activitysales['id_sales'] }}</strong>
                                     @php
                                         $aktivitas = [
+                                            'DB' => [
+                                                'jumlah' => $activitysales['DB'],
+                                                'target' => $activitysales['target_DB'],
+                                                'warna' => 'info',
+                                            ],
                                             'Contact' => [
                                                 'jumlah' => $activitysales['contact'],
                                                 'target' => $activitysales['target_contact'],
@@ -82,26 +77,57 @@
                                             'Meet' => [
                                                 'jumlah' => $activitysales['meet'],
                                                 'target' => $activitysales['target_meet'],
-                                                'warna' => 'success',
+                                                'warna' => 'Warning',
                                             ],
                                             'Incharge' => [
                                                 'jumlah' => $activitysales['incharge'],
                                                 'target' => $activitysales['target_incharge'],
                                                 'warna' => 'success',
                                             ],
+                                            'Penawaran Awal' => [
+                                                'jumlah' => $activitysales['PA'],
+                                                'target' => $activitysales['target_PA'],
+                                                'warna' => 'success',
+                                            ],
+                                            'Penawaran Internal' => [
+                                                'jumlah' => $activitysales['PI'],
+                                                'target' => $activitysales['target_PI'],
+                                                'warna' => 'success',
+                                            ],
+                                            'Telemarketing' => [
+                                                'jumlah' => $activitysales['Telemarketing'],
+                                                'target' => $activitysales['target_Telemarketing'],
+                                                'warna' => 'danger',
+                                            ],
+                                            'Form Masuk' => [
+                                                'jumlah' => $activitysales['Form_Masuk'],
+                                                'target' => $activitysales['target_Form_Masuk'],
+                                                'warna' => 'danger',
+                                            ],
+                                            'Form Keluar' => [
+                                                'jumlah' => $activitysales['Form_Keluar'],
+                                                'target' => $activitysales['target_Form_Keluar'],
+                                                'warna' => 'danger',
+                                            ],
                                         ];
                                     @endphp
                                     @foreach ($aktivitas as $label => $data)
                                         @php
-                                            $persen = $data['target'] > 0 ? min(round(($data['jumlah'] / $data['target']) * 100), 100) : 0;
+                                            $persen =
+                                                $data['target'] > 0
+                                                    ? min(round(($data['jumlah'] / $data['target']) * 100), 100)
+                                                    : 0;
                                         @endphp
                                         <div class="mb-2 activity-item" data-activity="{{ $label }}">
                                             <div class="d-flex justify-content-between align-items-center mb-1">
-                                                <span class="small text-muted">{{ $label }}: {{ number_format($data['jumlah'], 0, ',', '.') }}/{{ number_format($data['target'], 0, ',', '.') }}</span>
-                                                <span class="badge bg-{{ $data['warna'] }}-subtle text-dark">{{ $persen }}%</span>
+                                                <span class="small text-muted">{{ $label }}:
+                                                    {{ number_format($data['jumlah'], 0, ',', '.') }}/{{ number_format($data['target'], 0, ',', '.') }}</span>
+                                                <span
+                                                    class="badge bg-{{ $data['warna'] }}-subtle text-dark">{{ $persen }}%</span>
                                             </div>
                                             <div class="progress" style="height: 6px;">
-                                                <div class="progress-bar bg-{{ $data['warna'] }}" style="width: {{ $persen }}%;"></div>
+                                                <div class="progress-bar bg-{{ $data['warna'] }}"
+                                                    style="width: {{ $persen }}%;"></div>
                                             </div>
                                         </div>
                                     @endforeach
@@ -126,7 +152,8 @@
                         @forelse ($best as $item)
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <div class="text-truncate" style="max-width: 70%;">
-                                    <strong class="text-dark">{{ $item->materi->nama_materi ?? $item->materi_key }}</strong>
+                                    <strong
+                                        class="text-dark">{{ $item->materi->nama_materi ?? $item->materi_key }}</strong>
                                 </div>
                                 <span class="badge bg-success-subtle text-success">
                                     {{ number_format($item->total_pax, 0, ',', '.') }} Pax
@@ -154,7 +181,8 @@
                         @forelse ($profit as $item)
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <div class="text-truncate" style="max-width: 70%;">
-                                    <strong class="text-dark">{{ $item->materi->nama_materi ?? $item->materi_key }}</strong>
+                                    <strong
+                                        class="text-dark">{{ $item->materi->nama_materi ?? $item->materi_key }}</strong>
                                 </div>
                                 <span class="badge bg-info-subtle text-info">
                                     Rp {{ number_format($item->total_revenue, 0, ',', '.') }}
@@ -284,7 +312,8 @@
             <!-- Distribusi Perusahaan per Lokasi -->
             <div class="col-12">
                 <div class="card h-100 shadow-sm border-0 rounded-3">
-                    <div class="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
+                    <div
+                        class="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0 text-primary">Distribusi Perusahaan per Lokasi</h5>
                     </div>
                     <div class="card-body p-3">
@@ -300,7 +329,9 @@
                                     @forelse ($totalDaerah as $item)
                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                             <span class="small">{{ $item['lokasi'] }}</span>
-                                            <span class="small text-muted">{{ number_format($item['total'], 0, ',', '.') }} ({{ $item['persen'] }}%)</span>
+                                            <span
+                                                class="small text-muted">{{ number_format($item['total'], 0, ',', '.') }}
+                                                ({{ $item['persen'] }}%)</span>
                                         </div>
                                     @empty
                                         <p class="text-muted small mb-0">Tidak ada data lokasi.</p>
@@ -343,7 +374,8 @@
                                     label: context => {
                                         const index = context.dataIndex;
                                         const dataset = context.dataset;
-                                        const item = (id === 'kategoriChart' ? chartData : lokasiData)[index];
+                                        const item = (id === 'kategoriChart' ? chartData :
+                                            lokasiData)[index];
                                         const key = id === 'kategoriChart' ? 'kategori' : 'lokasi';
                                         const value = id === 'kategoriChart' ? 'jumlah' : 'total';
                                         return `${item[key]}: ${item[value]} (${item.persen}%)`;
@@ -417,30 +449,6 @@
                         }
                     }
                 }
-            });
-
-            // Filter functionality for activity sales
-            const filterButtons = document.querySelectorAll('.filter-btn');
-            const activityItems = document.querySelectorAll('.activity-item');
-
-            filterButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    // Remove active class from all buttons
-                    filterButtons.forEach(btn => btn.classList.remove('active'));
-                    // Add active class to clicked button
-                    button.classList.add('active');
-
-                    const filter = button.dataset.filter;
-
-                    // Show/hide activity items based on filter
-                    activityItems.forEach(item => {
-                        if (filter === 'all' || item.dataset.activity === filter) {
-                            item.style.display = 'block';
-                        } else {
-                            item.style.display = 'none';
-                        }
-                    });
-                });
             });
         });
     </script>

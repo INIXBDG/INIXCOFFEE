@@ -25,30 +25,32 @@
                 </div>
                 <div class="modal-body">
                     <h6 id="modalKaryawanName"></h6>
-                    <table class="table table-bordered" id="detailTable">
-                        <thead>
-                            <tr>
-                                <th>Nama Tunjangan</th>
-                                <th>Keterangan</th>
-                                <th>Total</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                        <tfoot>
-                            <tr style="background-color: #006A67; color:white;">
-                                <td colspan="2">Total Tunjangan:</td>
-                                <td id="modal_total_tunjangan"></td>
-                            </tr>
-                            <tr style="background-color: #FF2929; color:white;">
-                                <td colspan="2">Total Potongan:</td>
-                                <td id="modal_total_potongan"></td>
-                            </tr>
-                            <tr>
-                                <td colspan="2"><strong>Total Bersih:</strong></td>
-                                <td id="modal_total_bersih"></td>
-                            </tr>
-                        </tfoot>
-                    </table>
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="detailTable">
+                            <thead>
+                                <tr>
+                                    <th>Nama Tunjangan</th>
+                                    <th>Keterangan</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                            <tfoot>
+                                <tr style="background-color: #006A67; color:white;">
+                                    <td colspan="2">Total Tunjangan:</td>
+                                    <td id="modal_total_tunjangan"></td>
+                                </tr>
+                                <tr style="background-color: #FF2929; color:white;">
+                                    <td colspan="2">Total Potongan:</td>
+                                    <td id="modal_total_potongan"></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2"><strong>Total Bersih:</strong></td>
+                                    <td id="modal_total_bersih"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-danger" onclick="rejectTunjangan()">Reject</button>
@@ -83,76 +85,95 @@
         <div class="col-md-12">
             <!-- HRD Section: Data Tunjangan Karyawan & Detail Tunjangan Karyawan -->
             @if(auth()->user()->jabatan === 'HRD')
-            <div class="d-flex justify-content-end">
+            <div class="d-flex flex-wrap justify-content-end gap-2 mb-3">
                 @can('Create Tunjangan')
-                    <a href="{{ route('penghitunganTunjangan') }}" class="btn btn-md click-primary mx-4"><img src="{{ asset('icon/plus.svg') }}" width="30px"> Penghitungan Tunjangan Umum Otomatis</a>
-                    <a href="{{ route('tunjangan.create') }}" class="btn btn-md click-primary mx-4"><img src="{{ asset('icon/plus.svg') }}" width="30px"> Buat Jenis Tunjangan</a>
-                    <a href="{{ route('createManual') }}" class="btn btn-md click-primary mx-4"><img src="{{ asset('icon/plus.svg') }}" width="30px"> Manual Tunjangan</a>
+                    <a href="{{ route('penghitunganTunjangan') }}" class="btn btn-md click-primary">
+                        <img src="{{ asset('icon/plus.svg') }}" width="30px" class="d-none d-md-inline"> 
+                        <span class="d-none d-md-inline">Penghitungan Tunjangan Umum Otomatis</span>
+                        <span class="d-md-none">Tunjangan Otomatis</span>
+                    </a>
+                    <a href="{{ route('tunjangan.create') }}" class="btn btn-md click-primary">
+                        <img src="{{ asset('icon/plus.svg') }}" width="30px" class="d-none d-md-inline">
+                        <span class="d-none d-md-inline">Buat Jenis Tunjangan</span>
+                        <span class="d-md-none">Jenis Tunjangan</span>
+                    </a>
+                    <a href="{{ route('createManual') }}" class="btn btn-md click-primary">
+                        <img src="{{ asset('icon/plus.svg') }}" width="30px" class="d-none d-md-inline">
+                        <span class="d-none d-md-inline">Manual Tunjangan</span>
+                        <span class="d-md-none">Manual</span>
+                    </a>
                 @endcan
             </div>
-            <div class="card m-4">
+            <div class="card m-2 m-md-4">
                 <div class="card-body">
                     <h3 class="card-title text-center my-1">{{ __('Data Tunjangan') }}</h3>
                     <div class="row">
-                        <div class="col-md-6">
-                            <div class="card m-4">
+                        <div class="col-lg-6 col-12">
+                            <div class="card m-2 m-md-4">
                                 <div class="card-body">
                                     <h3 class="card-title text-center my-1">{{ __('Data Tunjangan Karyawan') }}</h3>
-                                    <div class="card-body d-flex justify-content-center">
-                                        <div class="col-md-4 mx-1">
-                                            <label for="tahun" class="form-label">Tahun</label>
-                                            <select id="tahun" class="form-select" aria-label="tahun">
-                                                <option disabled>Pilih Tahun</option>
-                                                @php
-                                                $tahun_sekarang = now()->year;
-                                                for ($tahun = 2020; $tahun <= $tahun_sekarang + 2; $tahun++) {
-                                                    $selected = $tahun == $tahun_sekarang ? 'selected' : '';
-                                                    echo "<option value=\"$tahun\" $selected>$tahun</option>";
-                                                }
-                                                @endphp
-                                            </select>
-                                        </div>
-                                        <div class="col-md-4 mx-1">
-                                            <label for="bulan" class="form-label">Bulan</label>
-                                            <select id="bulan" class="form-select" aria-label="bulan">
-                                                <option disabled>Pilih Bulan</option>
-                                                @php
-                                                $bulan_sekarang = now()->month;
-                                                $nama_bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-                                                for ($bulan = 1; $bulan <= 12; $bulan++) {
-                                                    $bulan_awal = $nama_bulan[$bulan - 1];
-                                                    $selected = $bulan == $bulan_sekarang ? 'selected' : '';
-                                                    echo "<option value=\"$bulan\" $selected>$bulan_awal</option>";
-                                                }
-                                                @endphp
-                                            </select>
-                                        </div>
-                                        <div class="col-md-4 mx-1">
-                                            <a href="#" class="btn btn-danger" style="margin: 30px 8px 4px 8px;" id="exportpdf" onclick="exportPDF()">Export to PDF</a>
-                                            <a href="#" class="btn btn-success" style="margin: 30px 8px 4px 8px;" id="exportexcel" onclick="exportExcel()">Export to Excel</a>
+                                    <div class="card-body">
+                                        <div class="row g-2">
+                                            <div class="col-6 col-md-4">
+                                                <label for="tahun" class="form-label">Tahun</label>
+                                                <select id="tahun" class="form-select" aria-label="tahun">
+                                                    <option disabled>Pilih Tahun</option>
+                                                    @php
+                                                    $tahun_sekarang = now()->year;
+                                                    for ($tahun = 2020; $tahun <= $tahun_sekarang + 2; $tahun++) {
+                                                        $selected = $tahun == $tahun_sekarang ? 'selected' : '';
+                                                        echo "<option value=\"$tahun\" $selected>$tahun</option>";
+                                                    }
+                                                    @endphp
+                                                </select>
+                                            </div>
+                                            <div class="col-6 col-md-4">
+                                                <label for="bulan" class="form-label">Bulan</label>
+                                                <select id="bulan" class="form-select" aria-label="bulan">
+                                                    <option disabled>Pilih Bulan</option>
+                                                    @php
+                                                    $bulan_sekarang = now()->month;
+                                                    $nama_bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                                                    for ($bulan = 1; $bulan <= 12; $bulan++) {
+                                                        $bulan_awal = $nama_bulan[$bulan - 1];
+                                                        $selected = $bulan == $bulan_sekarang ? 'selected' : '';
+                                                        echo "<option value=\"$bulan\" $selected>$bulan_awal</option>";
+                                                    }
+                                                    @endphp
+                                                </select>
+                                            </div>
+                                            <div class="col-12 col-md-4">
+                                                <label class="form-label d-none d-md-block">&nbsp;</label>
+                                                <div class="d-flex gap-2">
+                                                    <a href="#" class="btn btn-danger btn-sm flex-fill" id="exportpdf" onclick="exportPDF()">PDF</a>
+                                                    <a href="#" class="btn btn-success btn-sm flex-fill" id="exportexcel" onclick="exportExcel()">Excel</a>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                    <table class="table table-bordered" id="tablekaryawan">
-                                        <thead>
-                                            <th scope="col">No</th>
-                                            <th scope="col">Nama Karyawan</th>
-                                            <th scope="col">Divisi</th>
-                                            <th scope="col">Detail Absensi</th>
-                                        </thead>
-                                        <tbody>
-                                            <!-- Data Karyawan akan diisi di sini -->
-                                        </tbody>
-                                    </table>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered" id="tablekaryawan">
+                                            <thead>
+                                                <th scope="col">No</th>
+                                                <th scope="col">Nama Karyawan</th>
+                                                <th scope="col">Divisi</th>
+                                                <th scope="col">Detail Absensi</th>
+                                            </thead>
+                                            <tbody>
+                                                <!-- Data Karyawan akan diisi di sini -->
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="card m-4">
+                        <div class="col-lg-6 col-12">
+                            <div class="card m-2 m-md-4">
                                 <div class="card-body">
                                     <h3 class="card-title text-center my-1" id="detailTunjangan">{{ __('Detail Tunjangan Karyawan') }}</h3>
                                     <div class="row">
                                         <div class="col-md-12">
-                                            <div class="card m-4">
+                                            <div class="card m-2 m-md-4">
                                                 <div class="card-body">
                                                     <div class="row">
                                                         <div class="col-md-12">
@@ -160,7 +181,10 @@
                                                                 @csrf
                                                                 <div class="row mb-3">
                                                                     <div class="col-md-12 d-flex justify-content-end">
-                                                                        <a href="#" class="btn click-primary mx-4" id="generateTunjangan" onclick="generateTunjanganUmum()">Generate Tunjangan Umum Karyawan</a>
+                                                                        <a href="#" class="btn click-primary btn-sm" id="generateTunjangan" onclick="generateTunjanganUmum()">
+                                                                            <span class="d-none d-md-inline">Generate Tunjangan Umum Karyawan</span>
+                                                                            <span class="d-md-none">Generate Tunjangan</span>
+                                                                        </a>
                                                                     </div>
                                                                 </div>
                                                                 <div class="row mb-3">
@@ -217,17 +241,19 @@
                                                                     <div class="col-md-12">
                                                                         <div class="card mt-4">
                                                                             <div class="card-body">
-                                                                                <table class="table table-bordered">
-                                                                                    <thead>
-                                                                                        <tr>
-                                                                                            <th>Nama Tunjangan</th>
-                                                                                            <th>Detail</th>
-                                                                                            <th>Nilai</th>
-                                                                                            <th>Total</th>
-                                                                                        </tr>
-                                                                                    </thead>
-                                                                                    <tbody id="dataPreview"></tbody>
-                                                                                </table>
+                                                                                <div class="table-responsive">
+                                                                                    <table class="table table-bordered">
+                                                                                        <thead>
+                                                                                            <tr>
+                                                                                                <th>Nama Tunjangan</th>
+                                                                                                <th>Detail</th>
+                                                                                                <th>Nilai</th>
+                                                                                                <th>Total</th>
+                                                                                            </tr>
+                                                                                        </thead>
+                                                                                        <tbody id="dataPreview"></tbody>
+                                                                                    </table>
+                                                                                </div>
                                                                                 <div>
                                                                                     <strong id="total">Total: 0</strong>
                                                                                 </div>
@@ -257,41 +283,45 @@
 
                     <!-- GM Section: Approval Tunjangan Karyawan -->
                     @if(auth()->user()->jabatan === 'GM')
-                    <div class="card m-4">
+                    <div class="card m-2 m-md-4">
                         <div class="card-body">
                             <h3 class="card-title text-center my-1">{{ __('Approval Tunjangan Karyawan') }}</h3>
                             <div class="card my-2">
-                                <div class="card-body d-flex justify-content-center">
-                                    <div class="col-md-3 mx-1">
-                                        <label for="tahun" class="form-label">Tahun</label>
-                                        <select id="tahun" class="form-select">
-                                            @php
-                                            $tahun_sekarang = now()->year;
-                                            for ($tahun = 2020; $tahun <= $tahun_sekarang + 2; $tahun++) {
-                                                $selected = $tahun == $tahun_sekarang ? 'selected' : '';
-                                                echo "<option value=\"$tahun\" $selected>$tahun</option>";
-                                            }
-                                            @endphp
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3 mx-1">
-                                        <label for="bulan" class="form-label">Bulan</label>
-                                        <select id="bulan" class="form-select">
-                                            @php
-                                            $bulan_sekarang = now()->month;
-                                            $nama_bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-                                            for ($bulan = 1; $bulan <= 12; $bulan++) {
-                                                $selected = $bulan == $bulan_sekarang ? 'selected' : '';
-                                                echo "<option value=\"$bulan\" $selected>{$nama_bulan[$bulan - 1]}</option>";
-                                            }
-                                            @endphp
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3 mx-1">
-                                        <button class="btn click-primary" style="margin-top: 30px" onclick="loadPendingApproval()">Cari Data</button>
-                                    </div>
-                                    <div class="col-md-3 mx-1">
-                                        <button class="btn btn-success" style="margin-top: 30px" onclick="bulkApprove()">Approve Semua</button>
+                                <div class="card-body">
+                                    <div class="row g-2">
+                                        <div class="col-6 col-md-3">
+                                            <label for="tahun" class="form-label">Tahun</label>
+                                            <select id="tahun" class="form-select">
+                                                @php
+                                                $tahun_sekarang = now()->year;
+                                                for ($tahun = 2020; $tahun <= $tahun_sekarang + 2; $tahun++) {
+                                                    $selected = $tahun == $tahun_sekarang ? 'selected' : '';
+                                                    echo "<option value=\"$tahun\" $selected>$tahun</option>";
+                                                }
+                                                @endphp
+                                            </select>
+                                        </div>
+                                        <div class="col-6 col-md-3">
+                                            <label for="bulan" class="form-label">Bulan</label>
+                                            <select id="bulan" class="form-select">
+                                                @php
+                                                $bulan_sekarang = now()->month;
+                                                $nama_bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                                                for ($bulan = 1; $bulan <= 12; $bulan++) {
+                                                    $selected = $bulan == $bulan_sekarang ? 'selected' : '';
+                                                    echo "<option value=\"$bulan\" $selected>{$nama_bulan[$bulan - 1]}</option>";
+                                                }
+                                                @endphp
+                                            </select>
+                                        </div>
+                                        <div class="col-6 col-md-3">
+                                            <label class="form-label d-none d-md-block">&nbsp;</label>
+                                            <button class="btn click-primary w-100" onclick="loadPendingApproval()">Cari Data</button>
+                                        </div>
+                                        <div class="col-6 col-md-3">
+                                            <label class="form-label d-none d-md-block">&nbsp;</label>
+                                            <button class="btn btn-success w-100" onclick="bulkApprove()">Approve Semua</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -310,20 +340,22 @@
                                 <div id="pending" class="tab-pane fade show active">
                                     <div class="card mt-3">
                                         <div class="card-body">
-                                            <table class="table table-bordered" id="tablePending">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Nama Karyawan</th>
-                                                        <th>Divisi</th>
-                                                        <th>Jumlah Item</th>
-                                                        <th>Total Tunjangan</th>
-                                                        <th>Total Potongan</th>
-                                                        <th>Total Bersih</th>
-                                                        <th>Aksi</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody></tbody>
-                                            </table>
+                                            <div class="table-responsive">
+                                                <table class="table table-bordered" id="tablePending">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Nama Karyawan</th>
+                                                            <th>Divisi</th>
+                                                            <th>Jumlah Item</th>
+                                                            <th>Total Tunjangan</th>
+                                                            <th>Total Potongan</th>
+                                                            <th>Total Bersih</th>
+                                                            <th>Aksi</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody></tbody>
+                                                </table>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -331,20 +363,22 @@
                                 <div id="history" class="tab-pane fade">
                                     <div class="card mt-3">
                                         <div class="card-body">
-                                            <table class="table table-bordered" id="tableHistory">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Tanggal</th>
-                                                        <th>Nama Karyawan</th>
-                                                        <th>Tunjangan</th>
-                                                        <th>Total</th>
-                                                        <th>Status</th>
-                                                        <th>Approved By</th>
-                                                        <th>Note</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody></tbody>
-                                            </table>
+                                            <div class="table-responsive">
+                                                <table class="table table-bordered" id="tableHistory">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Tanggal</th>
+                                                            <th>Nama Karyawan</th>
+                                                            <th>Tunjangan</th>
+                                                            <th>Total</th>
+                                                            <th>Status</th>
+                                                            <th>Approved By</th>
+                                                            <th>Note</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody></tbody>
+                                                </table>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -357,17 +391,136 @@
         </div>
     </div>
 </div>
+
 <style>
+    /* Wrapper untuk scroll horizontal */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Styling untuk tabel mobile */
+    @media screen and (max-width: 768px) {
+        .table {
+            font-size: 11px;
+        }
+        
+        .table thead th {
+            padding: 6px 4px;
+            white-space: nowrap;
+        }
+        
+        .table tbody td {
+            padding: 6px 4px;
+            white-space: nowrap;
+        }
+        
+        /* Button sizing untuk mobile */
+        .btn-sm {
+            padding: 4px 8px;
+            font-size: 10px;
+        }
+        
+        .btn-md {
+            padding: 6px 10px;
+            font-size: 11px;
+        }
+        
+        /* Card body padding reduction */
+        .card-body {
+            padding: 10px;
+        }
+        
+        .card-title {
+            font-size: 16px;
+        }
+        
+        /* Modal adjustments */
+        .modal-dialog {
+            margin: 10px;
+        }
+        
+        /* Form label smaller */
+        .form-label {
+            font-size: 12px;
+        }
+        
+        .form-control, .form-select {
+            font-size: 12px;
+        }
+    }
+
+    @media screen and (max-width: 576px) {
+        .table-responsive {
+            overflow-x: auto;
+        }
+        .table {
+            font-size: 10px;
+        }
+        .table th, .table td {
+            padding: 4px 2px;
+            white-space: nowrap;
+        }
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter,
+        .dataTables_wrapper .dataTables_info,
+        .dataTables_wrapper .dataTables_paginate {
+            font-size: 11px;
+        }
+        .nav-tabs .nav-link {
+            font-size: 12px;
+            padding: 6px 8px;
+        }
+        .card-title {
+            font-size: 14px;
+        }
+        .btn, .btn-sm, .btn-md {
+            font-size: 10px;
+            padding: 4px 8px;
+        }
+    }
+    
+    /* Styling untuk DataTables responsive */
+    table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control:before,
+    table.dataTable.dtr-inline.collapsed > tbody > tr > th.dtr-control:before {
+        background-color: #006A67;
+    }
+    
     .nav-tabs {
         display: flex;
         flex-wrap: nowrap;
         overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
+    
+    .nav-tabs .nav-link {
+        white-space: nowrap;
+    }
+    
+    /* Button group responsive */
+    @media screen and (max-width: 768px) {
+        .d-flex.gap-2 {
+            gap: 0.5rem !important;
+        }
+        
+        .flex-fill {
+            font-size: 11px;
+        }
+    }
+    @media screen and (max-width: 576px) {
+    .card-body {
+        overflow-x: auto;
+    }
+}
 </style>
+
 @push('js')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+<!-- DataTables Responsive -->
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.1/css/responsive.dataTables.min.css">
+<script src="https://cdn.datatables.net/responsive/2.4.1/js/dataTables.responsive.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
 <script>
     $(document).ready(function () {
@@ -684,6 +837,8 @@
             $('#tablekaryawan').DataTable().destroy();
         }
         var tableKaryawan = $('#tablekaryawan').DataTable({
+                responsive: true,
+                 autoWidth: false,
             "ajax": {
                 "url": "{{ route('getUserall') }}",
                 "type": "GET",
@@ -701,10 +856,17 @@
                 {
                     "data": null,
                     "render": function(data, type, row) {
-                        return '<button type="button" onclick="getDataTunjangan(' + row.id + ')" class="btn click-primary">Detail Tunjangan</button>';
+                        return '<button type="button" onclick="getDataTunjangan(' + row.id + ')" class="btn click-primary btn-sm">Detail</button>';
                     },
                 }
             ],
+            "responsive": true,
+            "autoWidth": false,
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.11.5/i18n/id.json"
+            },
+            "pageLength": 10,
+            "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "Semua"]]
         });
     }
 
@@ -991,31 +1153,6 @@
 
     let currentKaryawan = null;
 
-    function formatRupiah(angka) {
-        var isNegative = angka < 0;
-        var number_string = Math.abs(angka).toString();
-        var split = number_string.split('.');
-        var bulat = split[0];
-        var desimal = split[1] || '';
-        var sisa = bulat.length % 3;
-        var rupiah = bulat.substr(0, sisa);
-        var ribuan = bulat.substr(sisa).match(/\d{3}/gi);
-
-        if (ribuan) {
-            var separator = sisa ? '.' : '';
-            rupiah += separator + ribuan.join('.');
-        }
-
-        desimal = desimal.substr(0, 2);
-        rupiah = rupiah + (desimal ? ',' + desimal : '');
-
-        if (isNegative) {
-            rupiah = '-' + rupiah;
-        }
-
-        return 'Rp. ' + rupiah;
-    }
-
     function loadPendingApproval() {
         if ($.fn.DataTable.isDataTable('#tablePending')) {
             $('#tablePending').DataTable().destroy();
@@ -1025,6 +1162,8 @@
         var tahun = $('#tahun').val();
 
         $('#tablePending').DataTable({
+            responsive: true,
+            autoWidth: false,
             ajax: {
                 url: '/getTunjanganPendingApproval/' + bulan + '/' + tahun,
                 type: 'GET',
@@ -1095,10 +1234,14 @@
                     defaultContent: '<button class="btn btn-sm btn-secondary" disabled>No Data</button>'
                 }
             ],
-            language: {
-                emptyTable: "Tidak ada data tunjangan pending untuk periode ini",
-                zeroRecords: "Tidak ada data yang cocok",
-                loadingRecords: "Memuat data..."
+            "responsive": true,
+            "autoWidth": false,
+            "pageLength": 10,
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.11.5/i18n/id.json",
+                "emptyTable": "Tidak ada data tunjangan pending untuk periode ini",
+                "zeroRecords": "Tidak ada data yang cocok",
+                "loadingRecords": "Memuat data..."
             }
         });
     }
@@ -1183,7 +1326,8 @@
                 id_karyawan: currentKaryawan.id_karyawan,
                 bulan: currentKaryawan.bulan,
                 tahun: currentKaryawan.tahun,
-                type: 'all'
+                type: 'all',
+                rejection_note: note
             },
             success: function(response) {
                 alert(response.message);
@@ -1233,6 +1377,8 @@
         var tahun = $('#tahun').val();
 
         $('#tableHistory').DataTable({
+                responsive: true,
+                autoWidth: false,
             ajax: {
                 url: '/getApprovalHistory/' + bulan + '/' + tahun,
                 type: 'GET',
@@ -1276,7 +1422,13 @@
                     }
                 }
             ],
-            order: [[0, 'desc']]
+            "responsive": true,
+            "autoWidth": false,
+            "order": [[0, 'desc']],
+            "pageLength": 10,
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.11.5/i18n/id.json"
+            }
         });
     }
 </script>
