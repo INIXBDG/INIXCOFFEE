@@ -97,30 +97,305 @@ class TunjanganController extends Controller
         ]);
     }
 
-    public function getTunjanganSaya($id, $month, $year)
-    {
+public function getTunjanganSaya($id, $month, $year)
+{
+    if ($month == 1) {
+        $bulan = 12;
+        $tahun = $year - 1;
+    } else {
+        $bulan = $month - 1;
+        $tahun = $year;
+    }
+
+    // Hanya ambil tunjangan yang sudah di-approve
+    $tunjangan = TunjanganKaryawan::where('id_karyawan', $id)
+        ->where('bulan', $bulan)
+        ->where('tahun', $tahun)
+        ->approved() // Gunakan scope approved
+        ->with('karyawan', 'jenistunjangan')
+        ->get();
+
+    return response()->json([
+        'success' => true,
+        'message' => 'List Tunjangan Saya pada bulan ' . $bulan . '-' . $tahun,
+        'data' => $tunjangan
+    ]);
+}
+
+// 2. Halaman approval untuk GM
+public function indexApproval()
+{
+    $month = Carbon::now()->format('m');
+    $year = Carbon::now()->format('Y');
+    return view('tunjangan.approval', compact('month', 'year'));
+}
+
+
+public function getTunjanganPendingApproval($month, $year)
+{
+    try {
         if ($month == 1) {
-            $bulan = 12; // Desember
-            $tahun = $year - 1; // Tahun sebelumnya
+            $bulan = 12;
+            $tahun = $year - 1;
         } else {
             $bulan = $month - 1;
-            $tahun = $year; // Untuk bulan lain, tetap bulan yang diminta
+            $tahun = $year;
         }
 
-        // Ambil data tunjangan berdasarkan ID karyawan, bulan, dan tahun
-        $tunjangan = TunjanganKaryawan::where('id_karyawan', $id)
-            ->where('bulan', $bulan)
+        $tunjangan = TunjanganKaryawan::where('bulan', $bulan)
             ->where('tahun', $tahun)
-            ->with('karyawan', 'jenistunjangan') // Mengambil data karyawan terkait
+            ->where('status_approval', 'pending')
+            ->with(['karyawan', 'jenistunjangan'])
             ->get();
 
-        // Format data yang akan dikirimkan
+        // Jika tidak ada data, return array kosong tapi tetap valid JSON
+        if ($tunjangan->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Tidak ada tunjangan pending untuk bulan ' . $bulan . '-' . $tahun,
+                'data' => []
+            ]);
+        }
+
+        $grouped = $tunjangan->groupBy('id_karyawan');
+        $formattedData = [];
+
+        foreach ($grouped as $karyawanId => $items) {
+            $totalTunjangan = 0;
+            $totalPotongan = 0;
+            $details = [];
+
+            foreach ($items as $item) {
+                // Safety check - pastikan relasi ada
+                if (!$item->jenistunjangan) {
+                    \Log::warning("Jenis tunjangan null untuk item ID: " . $item->id);
+                    continue;
+                }
+
+                $details[] = [
+                    'id' => $item->id,
+                    'nama_tunjangan' => $item->jenistunjangan->nama_tunjangan,
+                    'keterangan' => $item->keterangan,
+                    'total' => (float) $item->total,
+                ];
+
+                if ($item->keterangan == 'Tunjangan') {
+                    $totalTunjangan += (float) $item->total;
+                } else {
+                    $totalPotongan += (float) $item->total;
+                }
+            }
+
+            $firstItem = $items->first();
+            
+            // Safety check - pastikan karyawan ada
+            if (!$firstItem || !$firstItem->karyawan) {
+                \Log::warning("Karyawan null untuk id_karyawan: " . $karyawanId);
+                continue;
+            }
+
+            $formattedData[] = [
+                'id_karyawan' => (int) $karyawanId,
+                'nama_karyawan' => $firstItem->karyawan->nama_lengkap ?? 'Unknown',
+                'divisi' => $firstItem->karyawan->divisi ?? '-',
+                'bulan' => (int) $bulan,
+                'tahun' => (int) $tahun,
+                'total_tunjangan' => (float) $totalTunjangan,
+                'total_potongan' => (float) $totalPotongan,
+                'total_bersih' => (float) ($totalTunjangan + $totalPotongan),
+                'details' => $details,
+                'jumlah_item' => count($items)
+            ];
+        }
+
         return response()->json([
             'success' => true,
-            'message' => 'List Tunjangan Saya pada bulan ' . $bulan . '-' . $tahun,
-            'data' => $tunjangan
+            'message' => 'List Tunjangan Pending Approval',
+            'data' => $formattedData
         ]);
+
+    } catch (\Exception $e) {
+        \Log::error('=== ERROR getTunjanganPendingApproval ===');
+        \Log::error('Message: ' . $e->getMessage());
+        \Log::error('File: ' . $e->getFile() . ':' . $e->getLine());
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Error: ' . $e->getMessage(),
+            'data' => []
+        ], 500);
     }
+}
+// 4. Approve tunjangan (per karyawan atau per item)
+public function approveTunjangan(Request $request)
+{
+    $request->validate([
+        'id_karyawan' => 'required',
+        'bulan' => 'required',
+        'tahun' => 'required',
+        'type' => 'required|in:all,selected', // all = approve semua item karyawan, selected = approve item tertentu
+        'item_ids' => 'required_if:type,selected|array' // ID tunjangan yang dipilih
+    ]);
+
+    try {
+        DB::beginTransaction();
+
+        if ($request->type == 'all') {
+            // Approve semua tunjangan karyawan untuk periode tertentu
+            TunjanganKaryawan::where('id_karyawan', $request->id_karyawan)
+                ->where('bulan', $request->bulan)
+                ->where('tahun', $request->tahun)
+                ->where('status_approval', 'pending')
+                ->update([
+                    'status_approval' => 'approved',
+                    'approved_by' => auth()->id(),
+                    'approved_at' => now()
+                ]);
+        } else {
+            // Approve item tunjangan yang dipilih
+            TunjanganKaryawan::whereIn('id', $request->item_ids)
+                ->where('status_approval', 'pending')
+                ->update([
+                    'status_approval' => 'approved',
+                    'approved_by' => auth()->id(),
+                    'approved_at' => now()
+                ]);
+        }
+
+        DB::commit();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Tunjangan berhasil di-approve'
+        ]);
+
+    } catch (\Exception $e) {
+        DB::rollback();
+        Log::error('Error approving tunjangan: ' . $e->getMessage());
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Terjadi kesalahan saat approve tunjangan'
+        ], 500);
+    }
+}
+
+// 5. Reject tunjangan
+public function rejectTunjangan(Request $request)
+{
+    $request->validate([
+        'id_karyawan' => 'required',
+        'bulan' => 'required',
+        'tahun' => 'required',
+        'rejection_note' => 'required|string',
+        'type' => 'required|in:all,selected',
+        'item_ids' => 'required_if:type,selected|array'
+    ]);
+
+    try {
+        DB::beginTransaction();
+
+        if ($request->type == 'all') {
+            TunjanganKaryawan::where('id_karyawan', $request->id_karyawan)
+                ->where('bulan', $request->bulan)
+                ->where('tahun', $request->tahun)
+                ->where('status_approval', 'pending')
+                ->update([
+                    'status_approval' => 'rejected',
+                    'approved_by' => auth()->id(),
+                    'approved_at' => now(),
+                    'rejection_note' => $request->rejection_note
+                ]);
+        } else {
+            TunjanganKaryawan::whereIn('id', $request->item_ids)
+                ->where('status_approval', 'pending')
+                ->update([
+                    'status_approval' => 'rejected',
+                    'approved_by' => auth()->id(),
+                    'approved_at' => now(),
+                    'rejection_note' => $request->rejection_note
+                ]);
+        }
+
+        DB::commit();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Tunjangan berhasil di-reject'
+        ]);
+
+    } catch (\Exception $e) {
+        DB::rollback();
+        Log::error('Error rejecting tunjangan: ' . $e->getMessage());
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Terjadi kesalahan saat reject tunjangan'
+        ], 500);
+    }
+}
+
+// 6. Bulk approve - approve semua pending di periode tertentu
+public function bulkApproveTunjangan(Request $request)
+{
+    $request->validate([
+        'bulan' => 'required',
+        'tahun' => 'required',
+    ]);
+
+    try {
+        DB::beginTransaction();
+
+        $updated = TunjanganKaryawan::where('bulan', $request->bulan)
+            ->where('tahun', $request->tahun)
+            ->where('status_approval', 'pending')
+            ->update([
+                'status_approval' => 'approved',
+                'approved_by' => auth()->id(),
+                'approved_at' => now()
+            ]);
+
+        DB::commit();
+
+        return response()->json([
+            'success' => true,
+            'message' => "Berhasil approve {$updated} tunjangan"
+        ]);
+
+    } catch (\Exception $e) {
+        DB::rollback();
+        Log::error('Error bulk approving: ' . $e->getMessage());
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Terjadi kesalahan saat bulk approve'
+        ], 500);
+    }
+}
+
+// 7. Get history approval
+public function getApprovalHistory($month, $year)
+{
+    if ($month == 1) {
+        $bulan = 12;
+        $tahun = $year - 1;
+    } else {
+        $bulan = $month - 1;
+        $tahun = $year;
+    }
+
+    $tunjangan = TunjanganKaryawan::where('bulan', $bulan)
+        ->where('tahun', $tahun)
+        ->whereIn('status_approval', ['approved', 'rejected'])
+        ->with(['karyawan', 'jenistunjangan', 'approvedBy'])
+        ->orderBy('approved_at', 'desc')
+        ->get();
+
+    return response()->json([
+        'success' => true,
+        'data' => $tunjangan
+    ]);
+}
 
     public function getTunjanganSayaGenerate($id, $month, $year)
     {
@@ -689,6 +964,7 @@ class TunjanganController extends Controller
 
         return Excel::download(new TunjanganExport($post, $nama_tunjangan), 'rekap_tunjangan.xlsx');
     }
+    
 
 
 
