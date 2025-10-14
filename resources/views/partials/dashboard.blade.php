@@ -1111,7 +1111,7 @@
 }
 
 .rank-2 .position-label { 
-    color: #eac7ffff; 
+    color: #c0aaff; 
     /* Menambahkan outline putih setebal 1px agar kontras dengan teks gelap */
     text-shadow: 
         -1px -1px 0 #000,  

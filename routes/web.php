@@ -197,6 +197,14 @@ Route::get('getJenisTunjanganIndex', [App\Http\Controllers\TunjanganController::
 Route::get('getJenisTunjanganUmum', [App\Http\Controllers\TunjanganController::class, 'getJenisTunjanganUmum'])->name('getJenisTunjanganUmum');
 Route::get('getTunjanganSaya/{id}/{month}/{year}', [App\Http\Controllers\TunjanganController::class, 'getTunjanganSaya'])->name('getTunjanganSaya');
 Route::get('getTunjanganSayaGenerate/{id}/{month}/{year}', [App\Http\Controllers\TunjanganController::class, 'getTunjanganSayaGenerate'])->name('getTunjanganSayaGenerate');
+Route::get('/tunjangan/approval', [App\Http\Controllers\TunjanganController::class, 'indexApproval'])->name('tunjangan.approval');
+Route::get('/getTunjanganPendingApproval/{month}/{year}', [App\Http\Controllers\TunjanganController::class, 'getTunjanganPendingApproval'])->name('getTunjanganPendingApproval');
+Route::post('/approveTunjangan', [App\Http\Controllers\TunjanganController::class, 'approveTunjangan'])->name('approveTunjangan');
+Route::post('/rejectTunjangan', [App\Http\Controllers\TunjanganController::class, 'rejectTunjangan'])->name('rejectTunjangan');
+Route::post('/bulkApproveTunjangan', [App\Http\Controllers\TunjanganController::class, 'bulkApproveTunjangan'])->name('bulkApproveTunjangan');
+Route::get('/getApprovalHistory/{month}/{year}', [App\Http\Controllers\TunjanganController::class, 'getApprovalHistory'])->name('getApprovalHistory');
+Route::get('/checkTunjanganStatus/{id}/{month}/{year}', [App\Http\Controllers\TunjanganController::class, 'checkTunjanganStatus'])->name('checkTunjanganStatus');
+// =====================================================
 Route::get('generate-tunjangan-pdf/{id}/{month}/{year}', [App\Http\Controllers\TunjanganController::class, 'generateTunjanganPDF'])->name('generateTunjanganPDF');
 Route::get('penghitunganTunjangan', [App\Http\Controllers\TunjanganController::class, 'penghitunganTunjangan'])->name('penghitunganTunjangan');
 Route::get('tunjanganManualCreate', [App\Http\Controllers\TunjanganController::class, 'createManual'])->name('createManual');
