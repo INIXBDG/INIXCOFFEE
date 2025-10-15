@@ -437,108 +437,132 @@
         // ===============================
         // 🔹 Fungsi Load Semua Target Aktivitas (Dengan Chart)
         // ===============================
-        async function loadSemuaTargetAktivitas() {
-            try {
-                const res = await fetch(`/crm/semua-target-aktivitas`);
-                if (!res.ok) throw new Error("Gagal mengambil data target aktivitas");
+            async function loadSemuaTargetAktivitas() {
+                try {
+                    console.log("🚀 Memulai loadSemuaTargetAktivitas...");
 
-                const response = await res.json();
-                const wrapper = document.getElementById("salesTargetWrapper");
-                wrapper.innerHTML = "";
+                    const res = await fetch(`/crm/semua-target-aktivitas`);
+                    console.log("📡 Status fetch:", res.status, res.statusText);
 
-                // 🔹 Deteksi apakah manajemen (punya banyak sales)
-                const list = Array.isArray(response.data)
-                    ? response.data              // manajemen
-                    : [response];                // sales sendiri
+                    if (!res.ok) throw new Error("Gagal mengambil data target aktivitas");
 
-                if (!list || list.length === 0) {
-                    wrapper.innerHTML = `
-                        <div class="col-12">
-                            <div class="alert alert-warning text-center mb-0">
-                                Tidak ada data target aktivitas sales.
-                            </div>
-                        </div>`;
-                    return;
-                }
+                    const response = await res.json();
+                    console.log("🧩 Data dari API:", response);
 
-                // 🔹 Layout utama wrapper
-                if (list.length > 1) {
-                    // Untuk manajemen → grid banyak kolom
-                    wrapper.classList.add("row", "g-3");
-                    wrapper.style.maxHeight = "";
-                    wrapper.style.overflow = "";
-                } else {
-                    // Untuk sales biasa → tampilan besar tunggal
-                    wrapper.classList.remove("row");
-                    wrapper.style.maxHeight = "";
-                    wrapper.style.overflow = "";
-                }
+                    const wrapper = document.getElementById("salesTargetWrapper");
+                    if (!wrapper) {
+                        console.error("❌ Elemen #salesTargetWrapper tidak ditemukan!");
+                        return;
+                    }
 
-                // 🔹 Loop semua sales
-                list.forEach((sales) => {
-                    const items = sales.data || [];
-                    if (items.length === 0) return;
+                    wrapper.innerHTML = "";
 
-                    const progressBars = items.map(row => {
-                        const jenis = row.jenis || "-";
-                        const target = row.target ?? 0;
-                        const realisasi = row.realisasi ?? 0;
-                        const percent = row.percent ?? 0;
-                        const deadline = row.deadline || "-";
+                    let list = [];
 
-                        let color = "#e0e0e0";
-                        if (percent >= 100) color = "#4caf50";
-                        else if (percent >= 50) color = "#2196f3";
-                        else if (percent > 0) color = "#ffb300";
-
-                        let deadlineColor = "#dc3545";
-                        const today = new Date();
-                        const [d, m, y] = deadline.split('/');
-                        if (d && m && y) {
-                            const deadlineDate = new Date(`${y}-${m}-${d}`);
-                            if (deadlineDate >= today) deadlineColor = "#28a745";
-                        }
-
-                        return `
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between mb-1 small">
-                                    <span>${jenis}: ${realisasi}/${target}</span>
-                                    <span>${percent}%</span>
-                                </div>
-                                <div class="progress" style="height: 10px;">
-                                    <div class="progress-bar" style="width:${percent}%; background-color:${color};"></div>
-                                </div>
-                                <div class="mt-1 fw-bold" style="font-size: 0.9rem; color:${deadlineColor}">
-                                    Deadline: ${deadline}
+                    // ✅ Gunakan id_sales untuk deteksi
+                    if (Array.isArray(response)) {
+                        console.log("👔 Mode manajemen (array sales) terdeteksi");
+                        list = response;
+                    } else if (response.id_sales) {
+                        console.log("👤 Mode sales tunggal terdeteksi:", response.id_sales);
+                        list = [response];
+                    } else {
+                        console.warn("⚠️ Data tidak memiliki id_sales, tidak dapat ditampilkan:", response);
+                        wrapper.innerHTML = `
+                            <div class="col-12">
+                                <div class="alert alert-warning text-center mb-0">
+                                    Tidak ada data target aktivitas sales.
                                 </div>
                             </div>`;
-                    }).join("");
+                        return;
+                    }
 
-                    // 🔹 Styling per card
-                    const colClass = list.length > 1 ? "col-xl-3 col-lg-4 col-md-6 col-sm-12" : "col-12";
-                    const cardScrollStyle = list.length > 1
-                        ? `max-height: 250px; overflow-y: auto;`
-                        : "";
+                    console.log("📋 Data final untuk dirender:", list);
 
-                    wrapper.innerHTML += `
-                        <div class="${colClass}">
-                            <div class="card shadow-sm border-0 rounded-3 h-100">
-                                <div class="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
-                                    <h6 class="card-title mb-0 text-primary fw-semibold">
-                                        ${sales.sales || sales.id_sales || "Sales"}
-                                    </h6>
+                    // 🔹 Layout wrapper
+                    if (list.length > 1) {
+                        wrapper.classList.add("row", "g-3");
+                        wrapper.style.maxHeight = "";
+                        wrapper.style.overflow = "";
+                        console.log("💡 Layout: grid (manajemen)");
+                    } else {
+                        wrapper.classList.remove("row");
+                        wrapper.style.maxHeight = "";
+                        wrapper.style.overflow = "";
+                        console.log("💡 Layout: tunggal (sales)");
+                    }
+
+                    // 🔹 Render setiap sales
+                    list.forEach((sales, index) => {
+                        console.log(`🧱 Render sales ke-${index + 1}:`, sales);
+
+                        const items = sales.data || [];
+                        if (items.length === 0) {
+                            console.warn(`⚠️ Sales ${sales.id_sales} tidak punya data aktivitas.`);
+                            return;
+                        }
+
+                        const progressBars = items.map(row => {
+                            const jenis = row.jenis || "-";
+                            const target = row.target ?? 0;
+                            const realisasi = row.realisasi ?? 0;
+                            const percent = row.percent ?? 0;
+                            const deadline = row.deadline || "-";
+
+                            let color = "#e0e0e0";
+                            if (percent >= 100) color = "#4caf50";
+                            else if (percent >= 50) color = "#2196f3";
+                            else if (percent > 0) color = "#ffb300";
+
+                            let deadlineColor = "#dc3545";
+                            const today = new Date();
+                            const [d, m, y] = deadline.split('/');
+                            if (d && m && y) {
+                                const deadlineDate = new Date(`${y}-${m}-${d}`);
+                                if (deadlineDate >= today) deadlineColor = "#28a745";
+                            }
+
+                            return `
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-1 small">
+                                        <span>${jenis}: ${realisasi}/${target}</span>
+                                        <span>${percent}%</span>
+                                    </div>
+                                    <div class="progress" style="height: 10px;">
+                                        <div class="progress-bar" style="width:${percent}%; background-color:${color};"></div>
+                                    </div>
+                                    <div class="mt-1 fw-bold" style="font-size: 0.9rem; color:${deadlineColor}">
+                                        Deadline: ${deadline}
+                                    </div>
+                                </div>`;
+                        }).join("");
+
+                        const colClass = list.length > 1 ? "col-xl-3 col-lg-4 col-md-6 col-sm-12" : "col-12";
+                        const cardScrollStyle = list.length > 1 ? `max-height: 250px; overflow-y: auto;` : "";
+
+                        wrapper.innerHTML += `
+                            <div class="${colClass}">
+                                <div class="card shadow-sm border-0 rounded-3 h-100">
+                                    <div class="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
+                                        <h6 class="card-title mb-0 text-primary fw-semibold">
+                                            ${sales.sales || sales.id_sales}
+                                        </h6>
+                                    </div>
+                                    <div class="card-body p-3" style="${cardScrollStyle}">
+                                        ${progressBars}
+                                    </div>
                                 </div>
-                                <div class="card-body p-3" style="${cardScrollStyle}">
-                                    ${progressBars}
-                                </div>
-                            </div>
-                        </div>`;
-                });
-            } catch (err) {
-                console.error(err);
-                alert("Terjadi kesalahan saat memuat data target aktivitas.");
+                            </div>`;
+                    });
+
+                    console.log("✅ Render selesai.");
+
+                } catch (err) {
+                    console.error("💥 ERROR:", err);
+                    alert("Terjadi kesalahan saat memuat data target aktivitas.");
+                }
             }
-        }
+
 
         // ===============================
         // 🔹 Fungsi Edit & Hapus Aktivitas (Tetap Sama)
