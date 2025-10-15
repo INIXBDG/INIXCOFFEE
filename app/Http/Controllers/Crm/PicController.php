@@ -222,11 +222,13 @@ class PicController extends Controller
         // Simpan contact baru
         $validated['status'] = '1';
         $validated['sales_key'] = $request->input('sales_key', auth()->user()->id_sales ?? null);
-        Contact::create($validated);
 
-        
+        $contact = Contact::create($validated); // simpan dan ambil objek Contact
+
+        // Simpan aktivitas dengan id_contact
         $aktivitas = new Aktivitas();
         $aktivitas->id_sales = Auth::user()->id_sales;
+        $aktivitas->id_contact = $contact->id; // tambahkan id_contact dari contact baru
         $aktivitas->aktivitas = 'Contact';
         $aktivitas->deskripsi = 'Contact baru berhasil ditambahkan';
         $aktivitas->waktu_aktivitas = Carbon::now();
