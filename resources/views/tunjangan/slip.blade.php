@@ -102,7 +102,7 @@
         .employee-table {
             border-collapse: collapse;
             width: 100%;
-            margin: 2mm 0;
+            margin: -3mm 0;
         }
 
         .employee-table th,
@@ -119,7 +119,7 @@
 
         .combined-table {
             width: 100%;
-            margin: 6mm 0;
+            margin: 3mm 0;
             border-collapse: separate;
             border-spacing: 0 6px;
             font-size: 10pt;
@@ -520,11 +520,11 @@
                             .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2mm; }
                             .logo img { width: 200px; }
                             .office-info { font-size: 10pt; line-height: 12pt; max-width: 70mm; line-height: 1; }
-                            .headertext { font-size: 14pt; margin: 2mm 0; padding: 1mm 0; text-decoration: underline; font-weight: bold; text-align: center; }
-                            .employee-table { border-collapse: collapse; width: 100%; margin: 2mm 0; }
+                            .headertext { font-size: 14pt; margin: 3mm 0; padding: 1mm 0; text-decoration: underline; font-weight: bold; text-align: center; }
+                            .employee-table { border-collapse: collapse; width: 100%; margin: -3mm 0; }
                             .employee-table th, .employee-table td { border: 1px solid #ccc; padding: 4pt 6pt; text-align: left; font-size: 10pt; }
                             .employee-table th { background-color: #f2f2f2; }
-                            .combined-table { width: 100%; page-break-inside: avoid; margin: 6mm 0; border-collapse: separate; border-spacing: 0 6px; font-size: 10pt; }
+                            .combined-table { width: 100%; page-break-inside: avoid; margin: 3mm 0; border-collapse: separate; border-spacing: 0 6px; font-size: 10pt; }
                             .combined-table th, .combined-table td { text-align: left; padding: 6pt 8pt; font-weight: normal; }
                             .combined-table .pendapatan-header { background-color: #006A67; color: white; font-weight: bold; border-radius: 6px 0 0 0; padding: 8pt; }
                             .combined-table .potongan-header { background-color: #FF2929; color: white; font-weight: bold; border-radius: 0 6px 0 0; padding: 8pt; }
