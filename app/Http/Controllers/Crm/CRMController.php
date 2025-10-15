@@ -47,47 +47,60 @@ class CRMController extends Controller
             // 2. Target dan aktivitas
             $target = TargetActivity::all()->keyBy('id_sales');
 
-            $aktivitas = Aktivitas::whereMonth('waktu_aktivitas', Carbon::now()->month)
+            $aktivitas = Aktivitas::with('contact.perusahaan', 'peserta')
+                ->whereMonth('waktu_aktivitas', Carbon::now()->month)
                 ->whereYear('waktu_aktivitas', Carbon::now()->year)
                 ->get();
 
-            $sales = User::where('jabatan', 'Sales')->where('status_akun', '1')->pluck('id_sales')->toArray();
+            $sales = User::where('jabatan', 'Sales')
+                ->where('status_akun', '1')
+                ->pluck('id_sales')
+                ->toArray();
+
             $activitysales = [];
 
             foreach ($sales as $id_sales) {
                 $userAktivitas = $aktivitas->where('id_sales', $id_sales);
 
-                $actualContact = $userAktivitas->where('aktivitas', 'Contact')->count();
-                $actualCall = $userAktivitas->where('aktivitas', 'Call')->count();
-                $actualEmail = $userAktivitas->where('aktivitas', 'Email')->count();
-                $actualVisit = $userAktivitas->where('aktivitas', 'Visit')->count();
-                $actualMeet = $userAktivitas->where('aktivitas', 'Meet')->count();
-                $actualIncharge = $userAktivitas->where('aktivitas', 'Incharge')->count();
-                $actualPA = $userAktivitas->where('aktivitas', 'PA')->count();
-                $actualPI = $userAktivitas->where('aktivitas', 'PI')->count();
-                $actualTelemarketing = $userAktivitas->where('aktivitas', 'Telemarketing')->count();
-                $actualForm_Masuk = $userAktivitas->where('aktivitas', 'Form_Masuk')->count();
-                $actualForm_Keluar = $userAktivitas->where('aktivitas', 'Form_Keluar')->count();
-                $actualDB = $userAktivitas->where('aktivitas', 'DB')->count();
-                $actualContact = $userAktivitas->where('aktivitas', 'Contact')->count();
+                // Ambil data berdasarkan jenis aktivitas
+                $contactData = $userAktivitas->where('aktivitas', 'Contact');
+                $callData = $userAktivitas->where('aktivitas', 'Call');
+                $emailData = $userAktivitas->where('aktivitas', 'Email');
+                $visitData = $userAktivitas->where('aktivitas', 'Visit');
+                $meetData = $userAktivitas->where('aktivitas', 'Meet');
+                $inchargeData = $userAktivitas->where('aktivitas', 'Incharge');
+                $paData = $userAktivitas->where('aktivitas', 'PA');
+                $piData = $userAktivitas->where('aktivitas', 'PI');
+                $teleData = $userAktivitas->where('aktivitas', 'Telemarketing');
+                $formMasukData = $userAktivitas->where('aktivitas', 'Form_Masuk');
+                $formKeluarData = $userAktivitas->where('aktivitas', 'Form_Keluar');
+                $dbData = $userAktivitas->where('aktivitas', 'DB');
 
                 $salesTarget = $target[$id_sales] ?? null;
 
                 $activitysales[] = [
                     'id_sales' => $id_sales,
-                    'contact' => $actualContact,
-                    'DB' => $actualDB,
-                    'call' => $actualCall,
-                    'email' => $actualEmail,
-                    'visit' => $actualVisit,
-                    'meet' => $actualMeet,
-                    'incharge' => $actualIncharge,
-                    'PA' => $actualPA,
-                    'PI' => $actualPI,
-                    'Telemarketing' => $actualTelemarketing,
-                    'Form_Masuk' => $actualForm_Masuk,
-                    'Form_Keluar' => $actualForm_Keluar,
-                    'target_DB' => $salesTarget->DB ?? 0,
+
+                    // 📊 Jumlah aktivitas
+                    'contact' => $contactData->count(),
+                    'call' => $callData->count(),
+                    'email' => $emailData->count(),
+                    'visit' => $visitData->count(),
+                    'meet' => $meetData->count(),
+                    'incharge' => $inchargeData->count(),
+                    'PA' => $paData->count(),
+                    'PI' => $piData->count(),
+                    'Telemarketing' => $teleData->count(),
+                    'Form_Masuk' => $formMasukData->count(),
+                    'Form_Keluar' => $formKeluarData->count(),
+                    'DB' => $dbData->count(),
+
+                    // 💰 Total nilai
+                    'total_PA' => $paData->sum('total'),
+                    'total_Form_Masuk' => $formMasukData->sum('total'),
+                    'total_Form_Keluar' => $formKeluarData->sum('total'),
+
+                    // 🎯 Target
                     'target_contact' => $salesTarget->Contact ?? 0,
                     'target_call' => $salesTarget->Call ?? 0,
                     'target_email' => $salesTarget->Email ?? 0,
@@ -99,6 +112,21 @@ class CRMController extends Controller
                     'target_Telemarketing' => $salesTarget->Telemarketing ?? 0,
                     'target_Form_Masuk' => $salesTarget->FormM ?? 0,
                     'target_Form_Keluar' => $salesTarget->FormK ?? 0,
+                    'target_DB' => $salesTarget->DB ?? 0,
+
+                    // 🗂️ Data aktivitas (detail)
+                    'data_contact' => $contactData->values(),
+                    'data_call' => $callData->values(),
+                    'data_email' => $emailData->values(),
+                    'data_visit' => $visitData->values(),
+                    'data_meet' => $meetData->values(),
+                    'data_incharge' => $inchargeData->values(),
+                    'data_PA' => $paData->values(),
+                    'data_PI' => $piData->values(),
+                    'data_Telemarketing' => $teleData->values(),
+                    'data_Form_Masuk' => $formMasukData->values(),
+                    'data_Form_Keluar' => $formKeluarData->values(),
+                    'data_DB' => $dbData->values(),
                 ];
             }
 
