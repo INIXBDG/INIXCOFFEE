@@ -36,28 +36,41 @@
                     <th>Telemarketing</th>
                     <th>Form Masuk</th>
                     <th>Form Keluar</th>
+                    <th>Deadline</th>
                     <th>Aksi</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach ($target as $activity)
-                    <tr>
-                        <td>{{ $activity->id_sales }}</td>
-                        <td>{{ $activity->DB }}</td>
-                        <td>{{ $activity->Contact }}</td>
-                        <td>{{ $activity->Call }}</td>
-                        <td>{{ $activity->Visit }}</td>
-                        <td>{{ $activity->Email }}</td>
-                        <td>{{ $activity->Meet }}</td>
-                        <td>{{ $activity->Incharge }}</td>
-                        <td>{{ $activity->PA }}</td>
-                        <td>{{ $activity->PI }}</td>
-                        <td>{{ $activity->Telemarketing }}</td>
-                        <td>{{ $activity->FormM }}</td>
-                        <td>{{ $activity->FormK }}</td>
-                        <td>
+                <tr>
+                    <td>{{ $activity->id_sales }}</td>
+                    <td>{{ $activity->DB }}</td>
+                    <td>{{ $activity->Contact }}</td>
+                    <td>{{ $activity->Call }}</td>
+                    <td>{{ $activity->Visit }}</td>
+                    <td>{{ $activity->Email }}</td>
+                    <td>{{ $activity->Meet }}</td>
+                    <td>{{ $activity->Incharge }}</td>
+                    <td>{{ $activity->PA }}</td>
+                    <td>{{ $activity->PI }}</td>
+                    <td>{{ $activity->Telemarketing }}</td>
+                    <td>{{ $activity->FormM }}</td>
+                    <td>{{ $activity->FormK }}</td>
+
+                    {{-- ✅ Tambahan kolom deadline --}}
+                    <td>
+                        @if ($activity->deadline)
+                            {{ \Carbon\Carbon::parse($activity->deadline)->format('d/m/Y') }}
+                        @else
+                            <span class="text-muted">Belum ditentukan</span>
+                        @endif
+                    </td>
+
+                    <td>
+                        <div class="d-flex gap-2">
                             <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal"
                                 data-bs-target="#editModal{{ $activity->id }}">Edit</button>
+
                             <form action="{{ route('index.target.delete', $activity->id) }}" method="POST"
                                 style="display: inline-block;"
                                 onsubmit="return confirm('Yakin ingin menghapus data ini?');">
@@ -65,9 +78,9 @@
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-sm btn-danger">Hapus</button>
                             </form>
-                        </td>
-                    </tr>
-
+                        </div>
+                    </td>
+                </tr>
                     <!-- Edit Modal -->
                     <div class="modal fade" id="editModal{{ $activity->id }}" tabindex="-1"
                         aria-labelledby="editModalLabel{{ $activity->id }}" aria-hidden="true">
@@ -95,6 +108,10 @@
                                                     </option>
                                                 @endforeach
                                             </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="deadline" class="form-label">Deadline</label>
+                                            <input type="date" class="form-control" id="deadline" name="deadline" required>
                                         </div>
                                         <div class="mb-3">
                                             <label for="Contact{{ $activity->id }}" class="form-label">DB</label>
@@ -190,6 +207,11 @@
                                         <option value="{{ $item->id_sales }}">{{ $item->id_sales }}</option>
                                     @endforeach
                                 </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="deadline" class="form-label">Deadline</label>
+                                <input type="date" class="form-control" id="deadline" name="deadline" required>
                             </div>
 
                             <div class="mb-3">
