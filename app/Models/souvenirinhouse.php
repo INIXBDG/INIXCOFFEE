@@ -11,6 +11,7 @@ class souvenirinhouse extends Model
     protected $fillable = [
         'nama_souvenir',
         'id_rkm',
+        'id_souvenir',
     ];
 
     public function souvenir()
