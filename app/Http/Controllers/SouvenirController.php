@@ -19,9 +19,9 @@ class SouvenirController extends Controller
     {
         $this->middleware('auth');
         $this->middleware('permission:View Souvenir', ['only' => ['index']]);
-        $this->middleware('permission:Create Souvenir', ['only' => ['create','store']]);
-        $this->middleware('permission:Edit Souvenir', ['only' => ['update','edit', 'editstok']]);
-        $this->middleware('permission:Souvenir RKM', ['only' => ['createSouvenirInhouse','storeSouvenirInhouse', 'updateSouvenirInhouse']]);
+        $this->middleware('permission:Create Souvenir', ['only' => ['create', 'store']]);
+        $this->middleware('permission:Edit Souvenir', ['only' => ['update', 'edit', 'editstok']]);
+        $this->middleware('permission:Souvenir RKM', ['only' => ['createSouvenirInhouse', 'storeSouvenirInhouse', 'updateSouvenirInhouse']]);
     }
     public function index()
     {
@@ -32,7 +32,7 @@ class SouvenirController extends Controller
         $souvenirs = Souvenir::all();
 
         // Iterasi melalui setiap souvenir dan ubah blob_foto menjadi base64
-        $souvenirsWithBase64 = $souvenirs->map(function($souvenir) {
+        $souvenirsWithBase64 = $souvenirs->map(function ($souvenir) {
             if (!is_null($souvenir->blob_foto)) {
                 $souvenir->base64_foto = base64_encode($souvenir->blob_foto);
             } else {
@@ -54,7 +54,7 @@ class SouvenirController extends Controller
     public function getSouvenirPeserta()
     {
         $souvenirs = souvenirpeserta::with('souvenir', 'rkm', 'rkm.materi', 'rkm.perusahaan', 'regist.peserta')->get();
-           
+
         return response()->json([
             'success' => true,
             'message' => 'List Souvenir',
@@ -82,8 +82,8 @@ class SouvenirController extends Controller
             'harga'             => 'required',
             'stok'              => 'required',
             'foto'              => 'nullable|image|mimes:jpeg,jpg,png|max:1024',
-            'min_harga_pelatihan'=> 'required',
-            'max_harga_pelatihan'=> 'required',
+            'min_harga_pelatihan' => 'required',
+            'max_harga_pelatihan' => 'required',
         ]);
 
         // Remove dots from price inputs
@@ -186,7 +186,7 @@ class SouvenirController extends Controller
         // dd($request->all());
         $stok = $request->stok + $request->new_stok;
         // return $stok;
-        if(!$request->nama_souvenir){
+        if (!$request->nama_souvenir) {
 
             $post = souvenir::findOrFail($id);
             catatansouvenir::create([
@@ -199,8 +199,7 @@ class SouvenirController extends Controller
             $post->update([
                 'stok'     => $stok,
             ]);
-
-        }else{
+        } else {
             // Remove dots from price inputs
             $harga = str_replace('.', '', $request->harga);
             $min_harga_pelatihan = str_replace('.', '', $request->min_harga_pelatihan);
@@ -272,7 +271,7 @@ class SouvenirController extends Controller
             ]);
         }
 
-        
+
 
         return redirect()->route('souvenir.index')->with(['success' => 'Data Berhasil Diperbarui!']);
     }
@@ -291,54 +290,82 @@ class SouvenirController extends Controller
 
         return redirect()->route('souvenir.index')->with(['success' => 'Data Berhasil Dihapus!']);
     }
+
     public function createSouvenirInhouse($id): View
     {
-        $souvenir = souvenirinhouse::where('id_rkm', $id)->first();
-        if($souvenir){
-                // $souvenirs = souvenir::get();
-            return view('souvenirinhouse.edit', compact('souvenir', 'id'));
-            }else{
-                // $souvenir = souvenir::get();
-            return view('souvenirinhouse.create', compact('id'));
+        $souvenirInhouse = souvenirinhouse::where('id_rkm', $id)->first();
+
+        $souvenirs = souvenir::get();
+
+        if ($souvenirInhouse) {
+            return view('souvenirinhouse.edit', compact('souvenirInhouse', 'souvenirs', 'id'));
+        } else {
+            return view('souvenirinhouse.create', compact('souvenirs', 'id'));
         }
-        // $rkm = RKM::where('id', $id)->first();
-    }
-public function storeSouvenirInhouse(Request $request): RedirectResponse
-{
-    // dd($request->all());
-
-    $idRkm = $request->id_rkm;
-
-    if ($request->nama_souvenir === 'All Item') {
-		souvenirinhouse::create([
-            'nama_souvenir' => $request->nama_souvenir,
-            'id_rkm'        => $idRkm,
-        ]);
-        //souvenirinhouse::insert($data);
-    } else {
-        // Simpan satu souvenir biasa
-        souvenirinhouse::create([
-            'nama_souvenir' => $request->nama_souvenir,
-            'id_rkm'        => $idRkm,
-        ]);
     }
 
-    return redirect()->route('rkm.index')->with(['success' => 'Data Berhasil Disimpan!']);
-}
+    public function filterSouvenir($keyword)
+    {
+        if ($keyword === 'All Item') {
+            $data = souvenir::select('id', 'nama_souvenir')->get();
+        } else {
+            $data = souvenir::where('nama_souvenir', 'LIKE', "%{$keyword}%")
+                ->select('id', 'nama_souvenir')
+                ->get();
+        }
+
+        return response()->json($data);
+    }
+
+
+    public function storeSouvenirInhouse(Request $request): RedirectResponse
+    {
+        // dd($request->all());
+        $idRkm = $request->id_rkm;
+
+        // Pastikan request berisi array souvenir
+        if (!empty($request->nama_souvenir) && is_array($request->nama_souvenir)) {
+            foreach ($request->nama_souvenir as $idSouvenir) {
+                // Cari data souvenir di tabel souvenir
+                $souvenir = souvenir::find($idSouvenir);
+
+                if ($souvenir) {
+                    souvenirinhouse::create([
+                        'id_rkm'        => $idRkm,
+                        'id_souvenir'   => $idSouvenir,
+                        'nama_souvenir' => $souvenir->nama_souvenir,
+                    ]);
+                }
+            }
+        }
+
+        return redirect()
+            ->route('rkm.index')
+            ->with(['success' => 'Data Berhasil Disimpan!']);
+    }
 
 
     public function updateSouvenirInhouse($id, Request $request)
     {
-        $post = souvenirinhouse::findOrFail($id);
-        // return $request->all();
-        $post->update([
-            'nama_souvenir'     => $request->nama_souvenir,
-            'id_rkm'     => $request->id_rkm,
+        $request->validate([
+            'id_souvenir' => 'required|array',
+            'id_rkm' => 'required',
         ]);
 
-        return redirect()->route('rkm.index')->with(['success' => 'Data Berhasil Disimpan!']);
+        // Hapus data lama
+        souvenirinhouse::where('id_rkm', $request->id_rkm)->delete();
+
+        // Simpan ulang souvenir baru
+        foreach ($request->id_souvenir as $souvenirId) {
+            $souvenir = souvenir::find($souvenirId);
+
+            souvenirinhouse::create([
+                'id_rkm'         => $request->id_rkm,
+                'id_souvenir'    => $souvenir->id,
+                'nama_souvenir'  => $souvenir->nama_souvenir,
+            ]);
+        }
+
+        return redirect()->route('rkm.index')->with(['success' => 'Data Berhasil Diperbarui!']);
     }
-
-
 }
-

@@ -34,6 +34,7 @@ use App\Http\Controllers\InvoiceRKMController;
 use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\MakananRkmController;
 use App\Http\Controllers\managementKelasController;
+use App\Http\Controllers\SouvenirController;
 use App\Http\Controllers\TicketController;
 
 
@@ -274,6 +275,7 @@ Route::get('/get-users', [App\Http\Controllers\UserController::class, 'getUsers'
 Route::get('/user-dropdown', [App\Http\Controllers\UserController::class, 'showUserDropdown'])->name('user.dropdown');
 
 Route::get('/rkm/{id}/souvenir', [App\Http\Controllers\SouvenirController::class, 'createSouvenirInhouse'])->name('createSouvenirInhouse');
+Route::get('/souvenir/filter/{keyword}', [SouvenirController::class, 'filterSouvenir'])->name('filterSouvenir');
 Route::post('/rkm/storesouvenir', [App\Http\Controllers\SouvenirController::class, 'storeSouvenirInhouse'])->name('storeSouvenirInhouse');
 Route::put('/rkm/{id}/updatesouvenir', [App\Http\Controllers\SouvenirController::class, 'updateSouvenirInhouse'])->name('updateSouvenirInhouse');
 
