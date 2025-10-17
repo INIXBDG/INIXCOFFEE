@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Form Surat Penawaran</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -35,11 +37,15 @@
             margin: 10px 0;
         }
 
-        #pelatihan-list, #fasilitas-list, #keuntungan-list {
+        #pelatihan-list,
+        #fasilitas-list,
+        #keuntungan-list {
             margin-top: 10px;
         }
 
-        .pelatihan-row, .fasilitas-row, .keuntungan-row {
+        .pelatihan-row,
+        .fasilitas-row,
+        .keuntungan-row {
             display: flex;
             flex-direction: column;
             gap: 5px;
@@ -200,6 +206,12 @@
             text-align: left;
         }
 
+        .signature img {
+            width: 100px;
+            height: auto;
+            object-fit: contain;
+        }
+
         .vendor-images {
             display: flex;
             flex-wrap: wrap;
@@ -308,7 +320,7 @@
                 font-size: 9pt;
                 margin: 1mm 0;
                 line-height: 13pt;
-                page-break-inside: auto; /* Allow terms to split if necessary, except for keuntungan */
+                page-break-inside: auto;
             }
 
             .closing {
@@ -350,6 +362,12 @@
             .signature {
                 margin-top: 8mm;
                 page-break-inside: avoid;
+            }
+
+            .signature img {
+                width: 30mm;
+                height: auto;
+                object-fit: contain;
             }
 
             .vendor-images {
@@ -403,11 +421,9 @@
     <form id="penawaran-form">
         <h3>Data Surat</h3>
         <label>No Surat:</label>
-        <input type="text" id="no-surat" placeholder="Contoh: 088/MKT-VN-INIX/BDG/VIII/2025" required>
-
+        <input type="text" id="no-surat" value="{{$no}}" required>
         <label>Hal:</label>
         <input type="text" id="hal" value="Surat Penawaran Pelatihan">
-
         <label>Lampiran:</label>
         <input type="text" id="lampiran" value="" placeholder="Silabus, dll">
 
@@ -463,7 +479,7 @@
         <label>Email:</label>
         <input type="text" id="email-sales" value="{{ $sales->email }}" required>
 
-        <button type="button" id="preview-btn">Generate Preview</button>
+        <button type="button" id="preview-btn">Generate PDF</button>
     </form>
 
     <div id="preview-modal">
@@ -471,9 +487,13 @@
     </div>
 
     <script>
+        const {
+            jsPDF
+        } = window.jspdf;
         const materiData = @json($materi);
         const deskripsiData = @json($deskripsi->deskripsi);
         const backgroundUrl = "{{ asset('assets/img/backgrounds/kop.png') }}";
+        const signatureUrl = "{{ asset('storage/ttd/' . (Auth::user()->karyawan->ttd ?? '')) }}";
 
         // Set default deskripsi from controller
         document.getElementById('deskripsi').value = deskripsiData || '';
@@ -498,18 +518,18 @@
             "Akses Webinar Gratis"
         ];
 
-        // Placeholder untuk vendor images (ganti dengan URL gambar vendor yang sebenarnya)
+        // Placeholder untuk vendor images
         const vendorImages = [
-            "{{asset('assets/img/vendor/aws.png')}}",
-            "{{asset('assets/img/vendor/bnsp.png')}}",
-            "{{asset('assets/img/vendor/cisco.png')}}",
-            "{{asset('assets/img/vendor/eccouncil.png')}}",
-            "{{asset('assets/img/vendor/epi.png')}}",
-            "{{asset('assets/img/vendor/itrain.png')}}",
-            "{{asset('assets/img/vendor/microsoft.png')}}",
-            "{{asset('assets/img/vendor/mikrotik.png')}}",
-            "{{asset('assets/img/vendor/pearsonvue.png')}}",
-            "{{asset('assets/img/vendor/redhat.png')}}",
+            "{{ asset('assets/img/vendor/aws.png') }}",
+            "{{ asset('assets/img/vendor/bnsp.png') }}",
+            "{{ asset('assets/img/vendor/cisco.png') }}",
+            "{{ asset('assets/img/vendor/eccouncil.png') }}",
+            "{{ asset('assets/img/vendor/epi.png') }}",
+            "{{ asset('assets/img/vendor/itrain.png') }}",
+            "{{ asset('assets/img/vendor/microsoft.png') }}",
+            "{{ asset('assets/img/vendor/mikrotik.png') }}",
+            "{{ asset('assets/img/vendor/pearsonvue.png') }}",
+            "{{ asset('assets/img/vendor/redhat.png') }}",
         ];
 
         // Fungsi untuk format Rupiah
@@ -530,21 +550,36 @@
 
         // Fungsi untuk menghitung harga dengan PPN
         function calculatePriceWithPPN(basePrice, ppnRate, includePPN) {
-            if (!basePrice || isNaN(basePrice)) return { total: 0, ppnAmount: 0 };
+            if (!basePrice || isNaN(basePrice)) return {
+                total: 0,
+                ppnAmount: 0
+            };
             const price = parseFloat(basePrice);
-            if (!includePPN) return { total: price, ppnAmount: 0 };
+            if (!includePPN) return {
+                total: price,
+                ppnAmount: 0
+            };
             const ppn = (price * ppnRate) / 100;
-            return { total: price + ppn, ppnAmount: ppn };
+            return {
+                total: price + ppn,
+                ppnAmount: ppn
+            };
         }
 
         // Fungsi untuk menghitung tanggal akhir
         function calculateEndDate(startDate, duration) {
-            if (!startDate || !duration) return '';
-            const start = new Date(startDate);
-            const days = parseInt(duration) || 0;
-            const end = new Date(start);
-            end.setDate(start.getDate() + days - 1);
-            return `${start.getDate()} - ${end.toLocaleString('id-ID', { month: 'long', year: 'numeric' })}`;
+            if (!startDate || !duration || isNaN(duration) || duration <= 0) return '';
+            try {
+                const start = new Date(startDate);
+                if (isNaN(start.getTime())) return ''; // Invalid date
+                const days = parseInt(duration, 10);
+                const end = new Date(start);
+                end.setDate(start.getDate() + days - 1);
+                return `${start.getDate()} - ${end.toLocaleString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+            } catch (e) {
+                console.error('Error calculating end date:', e);
+                return '';
+            }
         }
 
         // Event listener untuk memilih perusahaan
@@ -584,24 +619,31 @@
                 const ppnRate = parseFloat(document.getElementById('ppn-rate').value) || 0;
                 const includePPN = document.getElementById('include-ppn').checked;
                 const price = parseFloat(hargaInput.value) || 0;
-                const { ppnAmount } = calculatePriceWithPPN(price, ppnRate, includePPN);
+                const {
+                    ppnAmount
+                } = calculatePriceWithPPN(price, ppnRate, includePPN);
                 ppnAmountInput.value = formatRupiah(ppnAmount);
+            }
+
+            function updateEndDate() {
+                const durasi = materiSelect.options[materiSelect.selectedIndex]?.getAttribute('data-durasi') || '';
+                const startDate = tanggalAwalInput.value;
+                if (durasi && startDate) {
+                    const endDate = calculateEndDate(startDate, durasi);
+                    tanggalPelatihanInput.value = endDate || 'Tanggal tidak valid';
+                } else {
+                    tanggalPelatihanInput.value = '';
+                }
             }
 
             materiSelect.addEventListener('change', function() {
                 const selectedOption = this.options[this.selectedIndex];
                 const durasi = selectedOption.getAttribute('data-durasi') || '';
                 durasiInput.value = durasi ? `${durasi} Hari` : '';
-                if (tanggalAwalInput.value) {
-                    tanggalPelatihanInput.value = calculateEndDate(tanggalAwalInput.value, durasi);
-                }
+                updateEndDate();
             });
 
-            tanggalAwalInput.addEventListener('change', function() {
-                const durasi = materiSelect.options[materiSelect.selectedIndex]?.getAttribute(
-                    'data-durasi') || '';
-                tanggalPelatihanInput.value = calculateEndDate(this.value, durasi);
-            });
+            tanggalAwalInput.addEventListener('change', updateEndDate);
 
             hargaInput.addEventListener('input', updatePPN);
             document.getElementById('ppn-rate').addEventListener('input', updatePPN);
@@ -659,11 +701,12 @@
         function getDeskripsi() {
             const penerima = document.getElementById('penerima').value || '';
             const deskripsi = document.getElementById('deskripsi').value || '';
-            const constantPart = `<br><br>Kami mengundang Bapak/Ibu ${penerima},  untuk memperbarui pengetahuan dan keterampilan dalam bidang teknologi informasi, digitalisasi, serta  pengembangan soft skill lainnya , melalui program-program pelatihan yang diselenggarakan oleh Inixindo Bandung. Kami menawarkan pelatihan sebagai berikut:`;
+            const constantPart =
+                `<br><br>Kami mengundang Bapak/Ibu ${penerima}, untuk memperbarui pengetahuan dan keterampilan dalam bidang teknologi informasi, digitalisasi, serta pengembangan soft skill lainnya, melalui program-program pelatihan yang diselenggarakan oleh Inixindo Bandung. Kami menawarkan pelatihan sebagai berikut:`;
             return deskripsi + constantPart;
         }
 
-        document.getElementById('preview-btn').addEventListener('click', () => {
+        document.getElementById('preview-btn').addEventListener('click', async () => {
             const noSurat = document.getElementById('no-surat').value || '';
             const hal = document.getElementById('hal').value || '';
             const lampiran = document.getElementById('lampiran').value || '';
@@ -693,7 +736,10 @@
                 const durasi = row.querySelector('.durasi-pelatihan').value || '';
                 const tanggal = row.querySelector('.tanggal-pelatihan').value || '';
                 const harga = parseFloat(row.querySelector('.harga-pelatihan').value) || 0;
-                const { total, ppnAmount } = calculatePriceWithPPN(harga, ppnRate, includePPN);
+                const {
+                    total,
+                    ppnAmount
+                } = calculatePriceWithPPN(harga, ppnRate, includePPN);
                 if (!materi || !durasi || !tanggal || !harga) {
                     isPelatihanValid = false;
                     return;
@@ -754,8 +800,11 @@
             const selectedOptions = Array.from(select.selectedOptions);
             let syaratList = '';
             if (selectedOptions.length === 0) {
-                syaratList =
-                    `<li>Harga penawaran di atas sudah termasuk PPN ${ppnRate}%.</li><li>Form pendaftaran harus dikirim paling lambat 14 hari sebelum pelaksanaan pelatihan.</li><li>Pelatihan berlangsung pukul 09.00 hingga selesai.</li><li>Pelatihan diselenggarakan di Kantor Inixindo Bandung, Jalan Cipaganti No 95, Bandung.</li>`;
+                syaratList = `
+                    <li>Harga penawaran di atas sudah termasuk PPN ${ppnRate}%.</li>
+                    <li>Form pendaftaran harus dikirim paling lambat 14 hari sebelum pelaksanaan pelatihan.</li>
+                    <li>Pelatihan berlangsung pukul 09.00 hingga selesai.</li>
+                    <li>Pelatihan diselenggarakan di Kantor Inixindo Bandung, Jalan Cipaganti No 95, Bandung.</li>`;
             } else {
                 selectedOptions.forEach(option => {
                     const content = option.dataset.content || '';
@@ -782,8 +831,12 @@
                 </div>
             `;
 
-            // Wrap keuntungan and closing in a single container to control page breaks
-            const previewHTML = `
+            const signatureHTML = signatureUrl && signatureUrl !== '' ? `
+                <img src="${signatureUrl}" alt="Tanda Tangan ${namaSales}" class="signature-img" />
+            ` : `<p>Tanda Tangan Tidak Tersedia</p>`;
+
+            // Split content into two parts for page break before keuntungan
+            const firstPageContent = `
                 <div class="container">
                     <img src="${backgroundUrl}" class="background-image" alt="Background">
                     <div class="header-container">
@@ -800,20 +853,17 @@
                         <div class="waktu text-sm text-gray-700 text-right">
                             <p>Bandung, ${tanggalSekarang}</p>
                         </div>
-
                         <div class="lampiran text-sm text-gray-700">
                             <p><span class="label">No</span><span class="value">: ${noSurat}</span></p>
                             <p><span class="label">Hal</span><span class="value">: ${hal}</span></p>
                             ${lampiranHTML}
                         </div>
-
                         <div class="penerima text-sm text-gray-700">
                             <p>Kepada Yth.</p>
                             <p>Bapak/Ibu</p>
                             <p>Pimpinan ${penerima}</p>
                             <p>Di Tempat</p>
                         </div>
-
                         <div class="deskripsi text-sm text-gray-800">
                             <p class="font-semibold">Dengan Hormat,</p>
                             <p>${getDeskripsi()}</p>
@@ -831,32 +881,40 @@
                                 </tbody>
                             </table>
                         </div>
-
                         <div class="terms text-sm text-gray-800">
                             <p class="font-semibold" style="font-weight:bold;">Syarat dan Ketentuan:</p>
                             <ul class="list-disc pl-6">${syaratList}</ul>
                             <p class="font-semibold mt-2" style="font-weight:bold;">Fasilitas dan Perlengkapan yang Kami Sediakan:</p>
                             <ol class="list-decimal pl-6">${fasilitasHTML}</ol>
                         </div>
+                    </div>
+                </div>
+            `;
 
+            const secondPageContent = `
+                <div class="container">
+                    <div class="content-container">
+                        <img src="${backgroundUrl}" class="background-image" alt="Background">
                         <div class="keuntungan-closing-container">
                             <div class="terms text-sm text-gray-800">
                                 <p class="font-semibold mt-2" style="font-weight:bold;">Keuntungan yang Akan Anda Dapatkan:</p>
                                 <ul class="list-disc pl-6">${keuntunganHTML}</ul>
                             </div>
-
                             <div class="closing text-sm text-gray-700">
                                 <p>Demikian surat penawaran ini kami sampaikan. Besar harapan kami dapat bekerja sama dengan Bapak/Ibu.</p>
-                                <p style="margin-bottom:6mm;"><strong>Untuk informasi lebih lanjut dan penyesuaian harga maupun fasilitas, mohon hubungi:</strong></p>
+                                <p style="margin-bottom:9mm;"><strong>Untuk informasi lebih lanjut dan penyesuaian harga maupun fasilitas, mohon hubungi:</strong></p>
                                 <p class="contact-info"><span class="label">Whatsapp</span><span class="value">: ${waSales}</span></p>
                                 <p class="contact-info"><span class="label">Telepon</span><span class="value">: ${telpSales}</span></p>
                                 <p class="contact-info"><span class="label">Email</span><span class="value"><a href="mailto:${emailSales}" style="text-decoration:none; color: black;">: ${emailSales}</a></span></p>
                                 <br />
                                 <p class="mt-2">Hormat kami,</p>
                                 <p class="font-bold" style="padding-bottom:4%;">INIXINDO BANDUNG</p>
-                                <p class="signature"><strong>${namaSales}</strong></p>
-                                <p>${jabatanSales},</p> 
-                                <p>Inixindo Bandung</p>
+                                <div class="signature">
+                                    ${signatureHTML}
+                                    <p><strong>${namaSales}</strong></p>
+                                    <p>${jabatanSales},</p> 
+                                    <p>Inixindo Bandung</p>
+                                </div>
                                 ${vendorImagesHTML}
                             </div>
                         </div>
@@ -864,108 +922,131 @@
                 </div>
             `;
 
-            // Langsung panggil printPreview dengan konten yang dihasilkan
-            printPreview(previewHTML);
+            // Generate PDF
+            await generatePDF(firstPageContent, secondPageContent);
         });
 
-        function printPreview(content) {
-            const printWindow = window.open('', '', 'height=600, width=900');
-            printWindow.document.write('<html><head><title>Print Preview</title>');
-            printWindow.document.write('<style>');
-            printWindow.document.write(`
-                body { 
-                    margin: 0; 
-                    padding: 0; 
-                    font-size: 16pt; 
-                    font-family: Arial, sans-serif; 
-                    position: relative; 
-                    -webkit-print-color-adjust: exact !important; 
-                    print-color-adjust: exact !important;
-                    color-adjust: exact !important;
-                }
-                .container { 
-                    max-width: 190mm; 
-                    width: 100%; 
-                    margin: 0; 
-                    padding: 5mm; 
-                    background: transparent; 
-                    -webkit-print-color-adjust: exact !important;
-                    print-color-adjust: exact !important;
-                }
-                .header-container {
-                    width: 183mm;
-                    margin: 0;
-                    padding: 2mm 0;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: flex-start;
-                    page-break-after: avoid;
-                }
-                .content-container { page-break-before: auto; }
-                .logo img { width: 220px; }
-                .office-info { font-size: 9pt; line-height: 6pt; max-width: 70mm; }
-                .waktu { text-align: right; font-size: 9pt; margin: 1mm 25px; line-height: 5pt; page-break-inside: avoid; }
-                .lampiran { font-size: 9pt; margin: 0 0; line-height: 5pt; page-break-inside: avoid; }
-                .lampiran p { display: flex; align-items: flex-start; }
-                .lampiran p span.label { flex: 0 0 20mm; text-align: left; }
-                .lampiran p span.value { flex: 1; text-align: left; }
-                .penerima { font-size: 9pt; margin-top: 8mm; line-height: 5pt; page-break-inside: avoid; }
-                .deskripsi { font-size: 9pt; margin: 6mm 0; line-height: 13pt; text-align: justify; page-break-inside: avoid; }
-                .terms { font-size: 9pt; margin: 6mm 0; line-height: 13pt; page-break-inside: auto; display: block; }
-                .keuntungan-closing-container {
-                    page-break-before: auto;
-                    page-break-inside: avoid;
-                    break-inside: avoid;
-                }
-                .closing { font-size: 9pt; margin: 1mm 0; line-height: 5pt; }
-                .closing p.contact-info { display: flex; align-items: flex-start; }
-                .closing p.contact-info span.label { flex: 0 0 20mm; text-align: left; }
-                .closing p.contact-info span.value { flex: 1; text-align: left; }
-                .training-table { width: 100%; page-break-inside: avoid; margin: 1mm 0; border-collapse: collapse; }
-                .training-table th, .training-table td { font-size: 9pt; padding: 3pt 5pt; border: 1px solid #ccc; text-align: left; word-wrap: break-word; line-height: 12pt; }
-                .training-table th { background-color: #f2f2f2; }
-                .list-disc { list-style-type: disc; padding-left: 15px; }
-                .list-decimal { list-style-type: decimal; padding-left: 30px; }
-                .signature { margin-top: 13mm; page-break-inside: avoid; }
-                .vendor-images {
-                    display: flex;
-                    flex-wrap: wrap;
-                    gap: 5mm;
-                    margin-top: 90mm;
-                    justify-content: space-between;
-                    page-break-inside: avoid;
-                }
-                .vendor-images img {
-                    width: 30mm;
-                    height: auto;
-                    object-fit: contain;
-                }
-                button { display: none; }
-                img.background-image {
-                    position: fixed !important;
-                    top: 0 !important;
-                    left: 0 !important;
-                    width: 206mm !important;
-                    height: 288mm !important;
-                    z-index: -1 !important;
-                    -webkit-print-color-adjust: exact !important;
-                    print-color-adjust: exact !important;
-                }
-                @page { size: A4; margin: 5mm; background: white; }
-                @page :not(:first) {
-                    .header-container {
-                        display: none;
+        async function generatePDF(firstPageContent, secondPageContent) {
+            const doc = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
+
+            // CSS styles for PDF rendering
+            const styles = `
+                <style>
+                    body { 
+                        margin: 0; 
+                        padding: 0; 
+                        font-size: 9pt; 
+                        font-family: Arial, sans-serif; 
+                        position: relative; 
                     }
-                }
-            `);
-            printWindow.document.write('</style></head><body>');
-            printWindow.document.write(content);
-            printWindow.document.write('</body></html>');
-            printWindow.document.close();
-            printWindow.focus();
-            setTimeout(() => {
-                printWindow.print();
-            }, 2000);
+                    .container { 
+                        max-width: 190mm; 
+                        width: 100%; 
+                        margin: 0; 
+                        padding: 5mm; 
+                        background: transparent; 
+                    }
+                    .header-container {
+                        width: 183mm;
+                        margin: 0;
+                        padding: 2mm 0;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: flex-start;
+                    }
+                    .content-container { margin-left:10mm;}
+                    .logo img { width: 60mm; }
+                    .office-info { font-size: 9pt; line-height: 8pt; max-width: 70mm; }
+                    .waktu { text-align: right; font-size: 9pt; margin: 1mm 0; line-height: 12pt; }
+                    .lampiran { font-size: 9pt; margin: 1mm 0; line-height: 8pt; }
+                    .lampiran p { display: flex; align-items: flex-start; }
+                    .lampiran p span.label { flex: 0 0 20mm; text-align: left; }
+                    .lampiran p span.value { flex: 1; text-align: left; }
+                    .penerima { font-size: 9pt; margin-top: 8mm; line-height: 5pt; }
+                    .deskripsi { font-size: 9pt; margin: 6mm 0; line-height: 13pt; text-align: justify; }
+                    .terms { font-size: 9pt; margin: 6mm 0; line-height: 13pt; display: block; }
+                    .keuntungan-closing-container { }
+                    .closing { font-size: 9pt; margin: 1mm 0; line-height: 5pt; }
+                    .closing p.contact-info { display: flex; align-items: flex-start; }
+                    .closing p.contact-info span.label { flex: 0 0 20mm; text-align: left; }
+                    .closing p.contact-info span.value { flex: 1; text-align: left; }
+                    .training-table { width: 100%; margin: 1mm 0; border-collapse: collapse; }
+                    .training-table th, .training-table td { font-size: 9pt; padding: 3pt 5pt; border: 1px solid #ccc; text-align: left; word-wrap: break-word; line-height: 12pt; }
+                    .training-table th { background-color: #f2f2f2; }
+                    .list-disc { list-style-type: disc; padding-left: 15px; }
+                    .list-decimal { list-style-type: decimal; padding-left: 30px; }
+                    .signature { margin-top: 13mm; }
+                    .signature-img { width: 30mm; height: auto; object-fit: contain; margin-bottom: 5mm; }
+                    .vendor-images {
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 5mm;
+                        margin-top: 55mm;
+                        justify-content: space-between;
+                    }
+                    .vendor-images img {
+                        width: 30mm;
+                        height: auto;
+                        object-fit: contain;
+                    }
+                    img.background-image {
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        width: 210mm;
+                        height: 297mm;
+                        z-index: -1;
+                        opacity: 1;
+                    }
+                </style>
+            `;
+
+            // Create temporary containers for rendering
+            const tempContainer = document.createElement('div');
+            tempContainer.style.position = 'absolute';
+            tempContainer.style.top = '-9999px';
+            tempContainer.style.width = '215mm';
+            tempContainer.style.height = '297mm';
+            document.body.appendChild(tempContainer);
+
+            // Render first page
+            tempContainer.innerHTML = `<html><head>${styles}</head><body>${firstPageContent}</body></html>`;
+            let canvas = await html2canvas(tempContainer, {
+                scale: 2,
+                useCORS: true,
+                width: 210 * 3.78, // Convert mm to pixels (1mm = ~3.78px at 96dpi)
+                height: 297 * 3.78,
+                windowWidth: 210 * 3.78,
+                windowHeight: 297 * 3.78
+            });
+            const imgData = canvas.toDataURL('image/png');
+            doc.addImage(imgData, 'PNG', 0, 0, 210, 297);
+
+            // Add new page for keuntungan and closing
+            doc.addPage();
+
+            // Render second page
+            tempContainer.innerHTML = `<html><head>${styles}</head><body>${secondPageContent}</body></html>`;
+            canvas = await html2canvas(tempContainer, {
+                scale: 2,
+                useCORS: true,
+                width: 210 * 3.78,
+                height: 297 * 3.78,
+                windowWidth: 210 * 3.78,
+                windowHeight: 297 * 3.78
+            });
+            const imgData2 = canvas.toDataURL('image/png');
+            doc.addImage(imgData2, 'PNG', 0, 0, 210, 297);
+
+            // Clean up
+            document.body.removeChild(tempContainer);
+
+            // Download PDF
+            doc.save('Surat_Penawaran.pdf');
         }
     </script>
 </body>

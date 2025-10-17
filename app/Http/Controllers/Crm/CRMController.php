@@ -28,6 +28,14 @@ class CRMController extends Controller
         $user = Auth::user();
         $allowedUser = ['Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur', 'Programmer'];
 
+        $today = Carbon::now()->locale('id'); // Lokal Indonesia
+        $today->settings(['formatFunction' => 'translatedFormat']);
+
+        $tanggal = $today->translatedFormat('d F Y');
+
+        $firstDayOfMonth = $today->copy()->startOfMonth();
+        $mingguKeBulan = ceil(($today->day + $firstDayOfMonth->dayOfWeek) / 7);
+
         if (in_array($user->jabatan, $allowedUser)) {
 
             // 1. Kategori perusahaan chart
@@ -434,6 +442,8 @@ class CRMController extends Controller
                 'sales',
                 'prospek',
                 'map',
+                'tanggal',
+                'mingguKeBulan',
             ));
         } else {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');

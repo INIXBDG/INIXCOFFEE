@@ -11,6 +11,7 @@ use App\Models\Peluang;
 use App\Models\Perusahaan;
 use App\Models\RegisForm;
 use App\Models\RKM;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -41,8 +42,33 @@ class RegisFormController extends Controller
         $materi = Materi::all();
         $ketentuan = KetentuanForm::all();
         $deskripsi = Deskripsi::first();
+
+        $month = Carbon::now()->month; 
+        $year  = Carbon::now()->year;  
+
+        // Daftar angka Romawi untuk bulan
+        $romanMonths = [
+            1 => 'I',
+            2 => 'II',
+            3 => 'III',
+            4 => 'IV',
+            5 => 'V',
+            6 => 'VI',
+            7 => 'VII',
+            8 => 'VIII',
+            9 => 'IX',
+            10 => 'X',
+            11 => 'XI',
+            12 => 'XII',
+        ];
+
+        // Ambil bulan romawi berdasarkan bulan sekarang
+        $romanMonth = $romanMonths[$month];
+
+        // Gabungkan ke format nomormu
+        $no = "000/MKT-" . Auth::user()->id_sales . "-INIX/BDG/" . $romanMonth . "/" . $year;
         // dd($deskripsi);
-        return view('crm.regisform.penawaran', compact('sales', 'perusahaan', 'materi', 'ketentuan', 'deskripsi'));
+        return view('crm.regisform.penawaran', compact('sales', 'perusahaan', 'materi', 'ketentuan', 'deskripsi', 'no'));
     }
 
     public function upload(Request $request)
@@ -108,7 +134,7 @@ class RegisFormController extends Controller
         $deskripsiData = Deskripsi::first();
         return view('crm.regisform.ketentuan', compact('data', 'deskripsiData'));
     }
-    
+
     public function storeKetentuan(Request $request)
     {
         $data = new KetentuanForm();

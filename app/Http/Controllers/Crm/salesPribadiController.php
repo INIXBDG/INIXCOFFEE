@@ -21,6 +21,13 @@ class salesPribadiController extends Controller
     {
 
         $user = Auth::user();
+        $today = Carbon::now()->locale('id'); // Lokal Indonesia
+        $today->settings(['formatFunction' => 'translatedFormat']);
+
+        $tanggal = $today->translatedFormat('d F Y');
+
+        $firstDayOfMonth = $today->copy()->startOfMonth();
+        $mingguKeBulan = ceil(($today->day + $firstDayOfMonth->dayOfWeek) / 7);
 
         if ($user->jabatan === 'Sales') {
 
@@ -67,7 +74,7 @@ class salesPribadiController extends Controller
 
             $activitysales = [
                 'id_sales' => $idSales,
-                
+
                 // 📊 Jumlah aktivitas
                 'DB' => $actualDB->count(),
                 'contact' => $actualContact->count(),
@@ -175,7 +182,7 @@ class salesPribadiController extends Controller
                 ];
             }
 
-            return view('crm.myDashboard', compact('chartData', 'activitysales', 'best', 'profit', 'prospek', 'totalStatus', 'totalDaerah'));
+            return view('crm.myDashboard', compact('chartData', 'activitysales', 'best', 'profit', 'prospek', 'totalStatus', 'totalDaerah', 'tanggal', 'mingguKeBulan'));
         } else {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
