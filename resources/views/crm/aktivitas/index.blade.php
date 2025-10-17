@@ -4,6 +4,7 @@
     @php
         $allowedUser = ['Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
         $sales = Auth::user()->id_sales;
+        $isAllowedUser = in_array(Auth::user()->jabatan, $allowedUser);
     @endphp
     <div class="content-wrapper">
         <div class="container-xxl flex-grow-1 container-p-y">
@@ -434,135 +435,114 @@
             $select.select2({ width: '100%', theme: 'bootstrap-5', dropdownParent: $modal.length ? $modal : $(document.body) });
         }
 
+        window.isAllowedUser = {{ $isAllowedUser ? 'true' : 'false' }};
+
         // ===============================
         // 🔹 Fungsi Load Semua Target Aktivitas (Dengan Chart)
         // ===============================
-            async function loadSemuaTargetAktivitas() {
-                try {
-                    console.log("🚀 Memulai loadSemuaTargetAktivitas...");
+        async function loadSemuaTargetAktivitas(isAllowedUser = false) {
+            try {
+                console.log("🚀 Memulai loadSemuaTargetAktivitas...");
 
-                    const res = await fetch(`/crm/semua-target-aktivitas`);
-                    console.log("📡 Status fetch:", res.status, res.statusText);
+                const res = await fetch(`/crm/semua-target-aktivitas`);
+                if (!res.ok) throw new Error("Gagal mengambil data target aktivitas");
 
-                    if (!res.ok) throw new Error("Gagal mengambil data target aktivitas");
+                const response = await res.json();
+                console.log("🧩 Data dari API:", response);
 
-                    const response = await res.json();
-                    console.log("🧩 Data dari API:", response);
+                const wrapper = document.getElementById("salesTargetWrapper");
+                if (!wrapper) {
+                    console.error("❌ Elemen #salesTargetWrapper tidak ditemukan!");
+                    return;
+                }
 
-                    const wrapper = document.getElementById("salesTargetWrapper");
-                    if (!wrapper) {
-                        console.error("❌ Elemen #salesTargetWrapper tidak ditemukan!");
+                wrapper.innerHTML = "";
+
+                let list = [];
+
+                // 🧠 Deteksi format data
+                if (response.id_sales && Array.isArray(response.data)) {
+                    console.log("👤 Mode Sales Tunggal");
+                    list = [response];
+                } else if (Array.isArray(response.data)) {
+                    console.log("👥 Mode Multi Sales");
+                    list = response.data;
+                } else {
+                    console.warn("⚠️ Format data tidak dikenali:", response);
+                    return;
+                }
+
+                // 🔹 Render tiap sales
+                list.forEach((sales) => {
+                    const idSales = sales.id_sales || "(tanpa ID)";
+                    const items = sales.data || [];
+
+                    if (!items.length) {
+                        console.warn(`⚠️ Sales ${idSales} tidak punya data aktivitas.`);
                         return;
                     }
 
-                    wrapper.innerHTML = "";
+                    const progressBars = items.map(row => {
+                        const jenis = row.jenis || "-";
+                        const target = row.target ?? 0;
+                        const realisasi = row.realisasi ?? 0;
+                        const percent = row.percent ?? 0;
+                        const deadline = row.deadline || "-";
 
-                    let list = [];
+                        let color = "#e0e0e0";
+                        if (percent >= 100) color = "#4caf50";
+                        else if (percent >= 50) color = "#2196f3";
+                        else if (percent > 0) color = "#ffb300";
 
-                    // ✅ Gunakan id_sales untuk deteksi
-                    if (Array.isArray(response)) {
-                        console.log("👔 Mode manajemen (array sales) terdeteksi");
-                        list = response;
-                    } else if (response.id_sales) {
-                        console.log("👤 Mode sales tunggal terdeteksi:", response.id_sales);
-                        list = [response];
-                    } else {
-                        console.warn("⚠️ Data tidak memiliki id_sales, tidak dapat ditampilkan:", response);
-                        wrapper.innerHTML = `
-                            <div class="col-12">
-                                <div class="alert alert-warning text-center mb-0">
-                                    Tidak ada data target aktivitas sales.
-                                </div>
-                            </div>`;
-                        return;
-                    }
-
-                    console.log("📋 Data final untuk dirender:", list);
-
-                    // 🔹 Layout wrapper
-                    if (list.length > 1) {
-                        wrapper.classList.add("row", "g-3");
-                        wrapper.style.maxHeight = "";
-                        wrapper.style.overflow = "";
-                        console.log("💡 Layout: grid (manajemen)");
-                    } else {
-                        wrapper.classList.remove("row");
-                        wrapper.style.maxHeight = "";
-                        wrapper.style.overflow = "";
-                        console.log("💡 Layout: tunggal (sales)");
-                    }
-
-                    // 🔹 Render setiap sales
-                    list.forEach((sales, index) => {
-                        console.log(`🧱 Render sales ke-${index + 1}:`, sales);
-
-                        const items = sales.data || [];
-                        if (items.length === 0) {
-                            console.warn(`⚠️ Sales ${sales.id_sales} tidak punya data aktivitas.`);
-                            return;
+                        let deadlineColor = "#dc3545";
+                        const today = new Date();
+                        const [d, m, y] = deadline.split('/');
+                        if (d && m && y) {
+                            const deadlineDate = new Date(`${y}-${m}-${d}`);
+                            if (deadlineDate >= today) deadlineColor = "#28a745";
                         }
 
-                        const progressBars = items.map(row => {
-                            const jenis = row.jenis || "-";
-                            const target = row.target ?? 0;
-                            const realisasi = row.realisasi ?? 0;
-                            const percent = row.percent ?? 0;
-                            const deadline = row.deadline || "-";
-
-                            let color = "#e0e0e0";
-                            if (percent >= 100) color = "#4caf50";
-                            else if (percent >= 50) color = "#2196f3";
-                            else if (percent > 0) color = "#ffb300";
-
-                            let deadlineColor = "#dc3545";
-                            const today = new Date();
-                            const [d, m, y] = deadline.split('/');
-                            if (d && m && y) {
-                                const deadlineDate = new Date(`${y}-${m}-${d}`);
-                                if (deadlineDate >= today) deadlineColor = "#28a745";
-                            }
-
-                            return `
-                                <div class="mb-3">
-                                    <div class="d-flex justify-content-between mb-1 small">
-                                        <span>${jenis}: ${realisasi}/${target}</span>
-                                        <span>${percent}%</span>
-                                    </div>
-                                    <div class="progress" style="height: 10px;">
-                                        <div class="progress-bar" style="width:${percent}%; background-color:${color};"></div>
-                                    </div>
-                                    <div class="mt-1 fw-bold" style="font-size: 0.9rem; color:${deadlineColor}">
-                                        Deadline: ${deadline}
-                                    </div>
-                                </div>`;
-                        }).join("");
-
-                        const colClass = list.length > 1 ? "col-xl-3 col-lg-4 col-md-6 col-sm-12" : "col-12";
-                        const cardScrollStyle = list.length > 1 ? `max-height: 250px; overflow-y: auto;` : "";
-
-                        wrapper.innerHTML += `
-                            <div class="${colClass}">
-                                <div class="card shadow-sm border-0 rounded-3 h-100">
-                                    <div class="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
-                                        <h6 class="card-title mb-0 text-primary fw-semibold">
-                                            ${sales.sales || sales.id_sales}
-                                        </h6>
-                                    </div>
-                                    <div class="card-body p-3" style="${cardScrollStyle}">
-                                        ${progressBars}
-                                    </div>
+                        return `
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1 small">
+                                    <span>${jenis}: ${realisasi}/${target}</span>
+                                    <span>${percent}%</span>
+                                </div>
+                                <div class="progress" style="height: 10px;">
+                                    <div class="progress-bar" style="width:${percent}%; background-color:${color};"></div>
+                                </div>
+                                <div class="mt-1 fw-bold" style="font-size: 0.85rem; color:${deadlineColor}">
+                                    Deadline: ${deadline}
                                 </div>
                             </div>`;
-                    });
+                    }).join("");
 
-                    console.log("✅ Render selesai.");
+                    // 🔹 Gunakan layout berbeda tergantung role
+                    const colClass = isAllowedUser
+                        ? "col-xl-3 col-lg-4 col-md-6 col-sm-12" // grid kecil utk allowed user
+                        : "col-12"; // full width utk masing2 sales
 
-                } catch (err) {
-                    console.error("💥 ERROR:", err);
-                    alert("Terjadi kesalahan saat memuat data target aktivitas.");
-                }
+                    wrapper.innerHTML += `
+                        <div class="${colClass}">
+                            <div class="card shadow-sm border-0 rounded-3 h-100">
+                                <div class="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
+                                    <h6 class="card-title mb-0 text-primary fw-semibold">
+                                        Sales: ${idSales}
+                                    </h6>
+                                </div>
+                                <div class="card-body p-3" style="max-height: ${isAllowedUser ? '300px' : 'none'}; overflow-y: ${isAllowedUser ? 'auto' : 'visible'};">
+                                    ${progressBars}
+                                </div>
+                            </div>
+                        </div>`;
+                });
+
+                console.log("✅ Render selesai.");
+            } catch (err) {
+                console.error("💥 ERROR:", err);
+                alert("Terjadi kesalahan saat memuat data target aktivitas.");
             }
-
+        }
 
         // ===============================
         // 🔹 Fungsi Edit & Hapus Aktivitas (Tetap Sama)
@@ -612,7 +592,12 @@
             .catch(() => alert('Terjadi kesalahan saat menghapus aktivitas.'));
         }
 
-        document.addEventListener("DOMContentLoaded", loadSemuaTargetAktivitas);
+        document.addEventListener("DOMContentLoaded", () => {
+            // Ganti nilai ini pakai variabel dari server
+            // contoh: let isAllowedUser = {{ in_array(auth()->user()->jabatan, $allowedUser) ? 'true' : 'false' }};
+            const isAllowedUser = window.isAllowedUser || false;
+            loadSemuaTargetAktivitas(isAllowedUser);
+        });
     </script>
 
     <style>
