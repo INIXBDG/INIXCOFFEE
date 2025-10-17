@@ -418,6 +418,7 @@ Route::delete('/inventaris/delete/data/{id}', [InventarisController::class, 'del
 Route::post('/inventaris/create/kode', [InventarisController::class, 'createKode'])->name('CreateKodeIinvetaris');
 
 Route::post('/inventaris/import', [InventarisController::class, 'import'])->name('ImportDataInventaris');
+Route::get('/inventaris/export', [InventarisController::class, 'export'])->name('inventaris.export');
 
 Route::get('/penilaian360/index/{id_karyawan}', [App\Http\Controllers\DatabaseKPIController::class, 'index360'])->name('penilaian360');
 Route::get('/penilaian360/get/{id_karyawan}', [App\Http\Controllers\DatabaseKPIController::class, 'get360'])->name('get360');
