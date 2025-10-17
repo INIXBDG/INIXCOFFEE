@@ -337,7 +337,6 @@ class AktivitasController extends Controller
                 }
 
                 return response()->json([
-                    'sales' => $user->name,
                     'id_sales' => $user->id_sales,
                     'deadline' => $deadline,
                     'data' => $hasil
@@ -382,7 +381,6 @@ class AktivitasController extends Controller
                 }
 
                 $data[] = [
-                    'sales' => $sales->name,
                     'id_sales' => $sales->id_sales,
                     'deadline' => $deadline,
                     'data' => $hasil
