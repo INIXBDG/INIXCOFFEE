@@ -601,3 +601,10 @@ Route::get('/test-error', function () {
     // ini error manual
     throw new \Exception('Test error from Handler.php');
 });
+Route::middleware('auth')->get('/notifications/unread-count', function () {
+    return response()->json([
+        'count' => auth()->user()->unreadNotifications()->count(),
+    ]);
+})->name('notifications.unread-count');
+
+
