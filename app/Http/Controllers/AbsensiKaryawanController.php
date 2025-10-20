@@ -13,6 +13,7 @@ use App\Models\karyawan;
 use App\Models\pembatalanCuti;
 use App\Models\pengajuancuti;
 use App\Models\User;
+use App\Models\SuratPerjalanan;
 use App\Notifications\cancelLeaveExchangeNotification;
 use App\Notifications\schemeWorkExchangeNotification;
 use Carbon\Carbon;
@@ -53,7 +54,8 @@ class AbsensiKaryawanController extends Controller
             'keterangan' => 'required|string',
             'id_karyawan' => 'required|integer',
             'foto' => 'required|string',
-            'client_time' => 'sometimes|date'
+            'client_time' => 'sometimes|date',
+            'perintah_spj' => 'sometimes|boolean',
         ], [
             'keterangan.required' => 'Jenis absen harus dipilih',
             'foto.required' => 'Foto absen wajib diambil'
@@ -82,7 +84,13 @@ class AbsensiKaryawanController extends Controller
         }
 
         // Validasi shift dan waktu
-        $validationResult = $this->validateShiftWaktu($sekarang, $request->shift, $jabatan);
+        $validationResult = $this->validateShiftWaktu(
+            $sekarang,
+            $request->shift,
+            $jabatan,
+            $request->input('keterangan'),
+            $request->input('perintah_spj', false)
+        );
         if (!$validationResult['valid']) {
             return response()->json(['error' => $validationResult['message']], 400);
         }
@@ -144,29 +152,60 @@ class AbsensiKaryawanController extends Controller
             return false;
         }
     }
+private function validateShiftWaktu($waktu, $shift, $jabatan, $keterangan = null, $perintahSpj = false)
+{
+    $config = $this->getShiftConfig($waktu->dayOfWeek, $jabatan, $shift);
+    $isWeekend = ($waktu->dayOfWeek == Carbon::SATURDAY || $waktu->dayOfWeek == Carbon::SUNDAY);
+    $id_karyawan = auth()->user()->karyawan_id;
 
-    private function validateShiftWaktu($waktu, $shift, $jabatan)
-    {
-        $config = $this->getShiftConfig($waktu->dayOfWeek, $jabatan, $shift);
-        $isWeekend = ($waktu->dayOfWeek == Carbon::SATURDAY || $waktu->dayOfWeek == Carbon::SUNDAY);
+    $izinHariIni = izinTigaJam::where('id_karyawan', $id_karyawan)
+        ->whereDate('tanggal_pengajuan', $waktu->toDateString())
+        ->where('approval', 2)
+        ->first();
 
+    $keteranganLower = strtolower($keterangan ?? '');
 
-        $id_karyawan = auth()->user()->karyawan_id;
+    // ✅ Jika Inhouse Bandung, tidak pernah dianggap telat
+    if (strpos($keteranganLower, 'inhouse bandung') !== false) {
+        return [
+            'valid' => true,
+            'keterangan' => 'Masuk (Inhouse Bandung)',
+            'keterlambatan' => '00:00:00'
+        ];
+    }
 
-        $izinHariIni = izinTigaJam::where('id_karyawan', $id_karyawan)
-            ->whereDate('tanggal_pengajuan', $waktu->toDateString())
-            ->where('approval', 2)
-            ->first();
+    // ✅ Cek SPJ hanya jika keterangan berisi "spj" atau flag perintah_spj true
+    if (strpos($keteranganLower, 'spj') !== false || $perintahSpj) {
+        $spjAktif = \App\Models\SuratPerjalanan::where('id_karyawan', $id_karyawan)
+            ->whereDate('tanggal_berangkat', '<=', $waktu->toDateString())
+            ->whereDate('tanggal_pulang', '>=', $waktu->toDateString())
+            ->where('approval_manager', '1')
+            ->where('approval_hrd', '1')
+            ->where('approval_direksi', '1')
+            ->exists();
 
-        if (!$waktu->between($config['jamAwal'], $config['jamAkhir'])) {
+        if ($spjAktif) {
+            // Jika punya SPJ aktif → hapus keterlambatan
             return [
-                'valid' => false,
-                'message' => 'Waktu absen tidak sesuai shift. Jam kerja: ' .
-                    $config['jamAwal']->format('H:i') . ' - ' .
-                    $config['jamAkhir']->format('H:i')
+                'valid' => true,
+                'keterangan' => 'Masuk (SPJ)',
+                'keterlambatan' => '00:00:00'
             ];
         }
+        // Jika tidak punya SPJ aktif, lanjut ke aturan telat normal di bawah
+    }
 
+    // Validasi waktu shift
+    if (!$waktu->between($config['jamAwal'], $config['jamAkhir'])) {
+        return [
+            'valid' => false,
+            'message' => 'Waktu absen tidak sesuai shift. Jam kerja: ' .
+                $config['jamAwal']->format('H:i') . ' - ' .
+                $config['jamAkhir']->format('H:i')
+        ];
+    }
+
+    // Sabtu/Minggu (kecuali Office Boy & Technical Support)
     if ($isWeekend && !in_array($jabatan, ['Office Boy', 'Technical Support'])) {
         return [
             'valid' => true,
@@ -175,53 +214,45 @@ class AbsensiKaryawanController extends Controller
         ];
     }
 
-        // Hitung keterlambatan untuk jabatan lain dan hari selain weekend
-        $keterlambatan = '00:00:00';
-        $keterangan = 'Masuk';
-      if ($izinHariIni) {
-    // Jam mulai izin dari database
-    $izinMulai = Carbon::parse($izinHariIni->jam_mulai);
-    $batasAwalMasuk = $izinMulai->copy()->addHour(); // 1 jam setelah izin
-    $batasAkhirMasuk = $izinMulai->copy()->addHours(3); // 3 jam setelah izin
+    // Hitung keterlambatan
+    $keterlambatan = '00:00:00';
+    $keteranganOut = 'Masuk';
 
-    if ($waktu->lessThan($batasAwalMasuk)) {
-        // Terlalu cepat
-        return [
-            'valid' => false,
-            'message' => 'Anda belum bisa absen. Minimal pukul ' . $batasAwalMasuk->format('H:i')
-        ];
-    } elseif ($waktu->greaterThan($batasAkhirMasuk)) {
-        // Telat lebih dari 3 jam
-        $diffMinutes = $waktu->diffInMinutes($batasAkhirMasuk);
+    if ($izinHariIni) {
+        $izinMulai = Carbon::parse($izinHariIni->jam_mulai);
+        $batasAwalMasuk = $izinMulai->copy()->addHour();
+        $batasAkhirMasuk = $izinMulai->copy()->addHours(3);
+
+        if ($waktu->lessThan($batasAwalMasuk)) {
+            return [
+                'valid' => false,
+                'message' => 'Anda belum bisa absen. Minimal pukul ' . $batasAwalMasuk->format('H:i')
+            ];
+        } elseif ($waktu->greaterThan($batasAkhirMasuk)) {
+            $diffMinutes = $waktu->diffInMinutes($batasAkhirMasuk);
+            $hours = intdiv($diffMinutes, 60);
+            $minutes = ($diffMinutes % 60);
+            $keterlambatan = sprintf('%02d:%02d:00', $hours, $minutes);
+            $keteranganOut = 'Telat (izin 3 Jam)';
+        } else {
+            $keteranganOut = 'Masuk (Izin 3 Jam)';
+            $keterlambatan = '00:00:00';
+        }
+    } elseif ($waktu->greaterThan($config['jamMulaiShift'])) {
+        $diffMinutes = $waktu->diffInMinutes($config['jamMulaiShift']);
         $hours = intdiv($diffMinutes, 60);
         $minutes = ($diffMinutes % 60);
         $keterlambatan = sprintf('%02d:%02d:00', $hours, $minutes);
-        $keterangan = 'Telat (izin 3 Jam)';
-    } else {
-        // Masuk sesuai izin
-        $keterangan = 'Masuk (Izin 3 Jam)';
-        $keterlambatan = '00:00:00';
+        $keteranganOut = 'Telat';
     }
-
-} elseif ($waktu->greaterThan($config['jamMulaiShift'])) {
-    // Telat normal
-    $diffMinutes = $waktu->diffInMinutes($config['jamMulaiShift']);
-    $hours = intdiv($diffMinutes, 60);
-    $minutes = ($diffMinutes % 60);
-    $keterlambatan = sprintf('%02d:%02d:00', $hours, $minutes);
-    $keterangan = 'Telat';
-} else {
-    // Masuk tepat waktu
-    $keterangan = 'Masuk';
-    $keterlambatan = '00:00:00';
-}
 
     return [
         'valid' => true,
-        'keterangan' => $keterangan,
+        'keterangan' => $keteranganOut,
         'keterlambatan' => $keterlambatan
     ];
 }
+
 
 
 
@@ -492,7 +523,7 @@ class AbsensiKaryawanController extends Controller
             ? $sekarang->copy()->subDay()->toDateString()
             : $sekarang->toDateString();
         // return $tanggal;
-		
+        
         $absensi = AbsensiKaryawan::where('id_karyawan', $request->input('id_karyawan'))
             ->where('tanggal', $tanggal)
             ->latest()

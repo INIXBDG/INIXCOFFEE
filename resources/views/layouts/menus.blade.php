@@ -1354,7 +1354,7 @@
                                                             </div>
                                                         </div>
                                                     </div>
-                                                @endcan 
+                                                @endcan  
                                                 <div class="col-sm-6 mt-2">
                                                     <div class="card" id="card-hover">
                                                         <div class="card-body d-flex">
