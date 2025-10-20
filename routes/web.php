@@ -36,6 +36,7 @@ use App\Http\Controllers\MakananRkmController;
 use App\Http\Controllers\managementKelasController;
 use App\Http\Controllers\SouvenirController;
 use App\Http\Controllers\TicketController;
+use App\Http\Controllers\KanbanController;
 
 
 /*
@@ -606,3 +607,9 @@ Route::get('/test-error', function () {
     // ini error manual
     throw new \Exception('Test error from Handler.php');
 });
+
+// Kanban
+Route::get('/kanban', [KanbanController::class, 'index'])->name('kanban.index');
+Route::post('/tasks', [KanbanController::class, 'store'])->name('tasks.store');
+Route::post('/tasks/update-state', [KanbanController::class, 'updateState'])->name('tasks.update-state');
+
