@@ -8,179 +8,179 @@
 <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <style>
-    #table_karyawan {
-        width: 100% !important;
-        table-layout: auto;
-    }
-
-    #table_karyawan th,
-    #table_karyawan td {
-        font-size: 13px;
-        white-space: nowrap;
-        text-align: center;
-    }
-
     #table_karyawan td.text-start {
         text-align: left;
+        border: none;
     }
 
-    @media (max-width: 768px) {
+    #table_karyawan_wrapper .dataTables_scrollBody::-webkit-scrollbar {
+        height: 10px;
+        width: 8px;
+        background-color: transparent;
+        border: none;
+    }
 
-        #table_karyawan th,
-        #table_karyawan td {
-            font-size: 12px;
-            white-space: normal;
+    .loading-spinner {
+        width: 60px;
+        height: 60px;
+        border: 6px solid transparent;
+        border-top: 6px solid #a78bfa;
+        border-right: 6px solid #38bdf8;
+        border-bottom: 6px solid #34d399;
+        border-left: 6px solid #facc15;
+        border-radius: 50%;
+        animation: spin 1.2s linear infinite;
+        margin: auto;
+    }
+
+    @keyframes spin {
+        100% {
+            transform: rotate(360deg);
         }
     }
 
-    table.dataTable {
-        background-color: var(--bs-body-bg) !important;
-        color: var(--bs-body-color) !important;
+    #table_karyawan_wrapper .dataTables_length select {
+        width: 80px !important;
     }
 
-    table.dataTable thead th {
-        background-color: var(--bs-secondary-bg) !important;
-        color: var(--bs-body-color) !important;
+    #table_karyawan_wrapper .dataTables_filter input {
+        width: 200px !important;
     }
 
-    .dataTables_wrapper .dataTables_paginate .paginate_button {
-        background: var(--bs-body-bg) !important;
-        color: var(--bs-body-color) !important;
-        border: 1px solid var(--bs-border-color) !important;
-        border-radius: .375rem;
-        margin: 2px;
-        padding: 4px 10px;
+    #table_karyawan_wrapper .dataTables_paginate .paginate_button {
+        background: transparent !important;
+        color: black !important;
+        border: none !important;
+        margin: 0 5px !important;
     }
 
-    .dataTables_wrapper .dataTables_paginate .paginate_button.current {
-        background: var(--bs-primary) !important;
-        color: #fff !important;
-        border: 1px solid var(--bs-primary) !important;
+    #table_karyawan_wrapper .dataTables_paginate .paginate_button.current {
+        background: linear-gradient(to right, #da8cff, #9a55ff) !important;
+        color: white !important;
+        border-radius: 15% !important;
     }
 
-    .dataTables_wrapper .dataTables_filter input,
-    .dataTables_wrapper .dataTables_length select {
-        background-color: var(--bs-body-bg) !important;
-        color: var(--bs-body-color) !important;
-        border: 1px solid var(--bs-border-color) !important;
-    }
-
-    .dataTables_wrapper .dataTables_info {
-        color: var(--bs-body-color) !important;
-    }
-
-    .dataTables_wrapper .dataTables_filter input {
-        background-color: var(--bs-body-bg) !important;
-        color: var(--bs-body-color) !important;
-        border: 1px solid var(--bs-border-color) !important;
-        border-radius: .375rem;
-        padding: .375rem .75rem;
-    }
-
-    .dataTables_wrapper .dataTables_filter input::placeholder {
-        color: var(--bs-secondary-color, #6c757d) !important;
-        opacity: 0.7;
-    }
-
-    .dataTables_wrapper .dataTables_filter input:focus {
-        outline: none;
-        border-color: var(--bs-primary) !important;
-        box-shadow: 0 0 0 .25rem rgba(var(--bs-primary-rgb), .25);
+    .table-responsive {
+        overflow-x: none !important;
     }
 </style>
-<div class="container-fluid mb-3 mt-3">
-    <!-- <div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="spinnerModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="cube">
-                <div class="cube_item cube_x"></div>
-                <div class="cube_item cube_y"></div>
-                <div class="cube_item cube_x"></div>
-                <div class="cube_item cube_z"></div>
+<div class="content-wrapper">
+    <div class="page-header">
+        <h3 class="page-title">
+            <span class="page-title-icon bg-gradient-primary text-white me-2">
+                <i class="mdi mdi-file-document"></i>
+            </span> Penilaian
+        </h3>
+        <nav aria-label="breadcrumb">
+            <ul class="breadcrumb">
+                <li class="breadcrumb-item active" aria-current="page">
+                    <span></span>
+                    Tabel Penilaian
+                    <i class="mdi mdi-alert-circle-outline icon-sm text-primary align-middle"
+                        data-bs-toggle="tooltip"
+                        data-bs-placement="top"
+                        title="Halaman ini berisi daftar hasil penilaian karyawan.">
+                    </i>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    <div class="row">
+        <div class="col">
+            <div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="loading-spinner"></div>
+                </div>
             </div>
-        </div>
-    </div> -->
 
-    <div class="row justify-content-center">
-        <div class="col-md-12">
-            <div class="text-end">
-                <a href="{{ route('ketegori.kpi.create') }}" class="btn text-white cl-blue">Buat Penilaian</a>
-            </div>
-            <div class="card mt-2">
-                <div class="card-body table-responsive">
-                    <h3 class="card-title text-center my-1 mb-5">Database Penilaian </h3>
-                    <div class="container text-start w-100 d-flex justify-content-start">
-                        <div class="row w-auto">
-                            <div class="col-auto">
-                                <div class="mt-1 mb-1">
-                                    <div class="form-group">
-                                        <label for="divisiSelectUtama">Pilih Divisi</label>
-                                        <select name="divisiSelectUtama" id="divisiSelectUtama" class="form-control w-100">
-                                            <option selected disabled>Semua Divisi</option>
-                                            @foreach ($divisi as $item)
-                                            <option value="{{ $item }}">{{ $item }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-auto">
-                                <div class="mt-1 mb-1">
-                                    <div class="form-group">
-                                        <label for="quartalSelectUtama">Pilih Quartal</label>
-                                        <select name="quartalSelectUtama" id="quartalSelectUtama" class="form-control w-100">
-                                            <option value="Q1">Q1</option>
-                                            <option value="Q2">Q2</option>
-                                            <option value="Q3">Q3</option>
-                                            <option value="Q4">Q4</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-auto">
-                                <div class="mt-1 mb-1">
-                                    <div class="form-group">
-                                        <label for="tahunSelectUtama">Pilih Tahun</label>
-                                        <select name="tahunSelectUtama" id="tahunSelectUtama" class="form-control w-100">
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+            <div class="row justify-content-center">
+                <div class="col-md-12">
+                    <div class="text-end">
+                        <a href="{{ route('ketegori.kpi.create') }}" class="btn btn-primary">Buat Penilaian</a>
                     </div>
-                    <div class="table-responsive">
-                        <table id="table_karyawan" class="table table-bordered mt-4">
-                            <thead>
-                                <tr>
-                                    <th style="font-size: 14px; text-align: center;">No</th>
-                                    <th style="font-size: 14px; text-align: center;">Nama Evaluator</th>
-                                    <th style="font-size: 14px; text-align: center;">Yang Dinilai</th>
-                                    <th style="font-size: 14px; text-align: center;">Divisi</th>
-                                    <th style="font-size: 14px; text-align: center;">Tanggal Pembuatan</th>
-                                    <th style="font-size: 14px; text-align: center;">Kode Form</th>
-                                    <th style="font-size: 14px; text-align: center;">Quartal</th>
-                                    <th style="font-size: 14px; text-align: center;">Tahun</th>
-                                    <th style="font-size: 14px; text-align: center;">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tbody_table" class="text-center">
-                                <tr style="color: black;">
-                                    <td style="font-size: 14px; text-align: center;" colspan="9">Tidak Ada Data</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="card mt-2">
+                        <div class="card-body table-responsive">
+                            <h3 class="card-title text-center my-1 mb-5">Database Penilaian {{ $tipe }}</h3>
+                            <div class="container text-start w-100">
+                                <div class="row">
+                                    <div class="col-md">
+                                        <div class="mt-1 mb-1">
+                                            <div class="form-group">
+                                                <label for="divisiSelectUtama">Pilih Divisi</label>
+                                                <select name="divisiSelectUtama" id="divisiSelectUtama" class="form-select w-100">
+                                                    <option selected disabled>Semua Divisi</option>
+                                                    @foreach ($divisi as $item)
+                                                    <option value="{{ $item }}">{{ $item }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md">
+                                        <div class="mt-1 mb-1">
+                                            <div class="form-group">
+                                                <label for="quartalSelectUtama">Pilih Quartal</label>
+                                                <select name="quartalSelectUtama" id="quartalSelectUtama" class="form-select w-100">
+                                                    <option value="Q1">Q1</option>
+                                                    <option value="Q2">Q2</option>
+                                                    <option value="Q3">Q3</option>
+                                                    <option value="Q4">Q4</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md">
+                                        <div class="mt-1 mb-1">
+                                            <div class="form-group">
+                                                <label for="tahunSelectUtama">Pilih Tahun</label>
+                                                <select name="tahunSelectUtama" id="tahunSelectUtama" class="form-select w-100">
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <input type="hidden" name="jenis_form" id="jenis_form" value="{{ $tipe }}">
+                                </div>
+                            </div>
+                            <div class="table-responsif">
+                                <table id="table_karyawan" class="table table-bordered table-striped text-center bg-theme">
+                                    <thead>
+                                        <tr>
+                                            <th>No</th>
+                                            <th>Nama Evaluator</th>
+                                            <th>Yang Dinilai</th>
+                                            <th>Divisi</th>
+                                            <th>Tanggal Pembuatan</th>
+                                            <th>Kode Form</th>
+                                            <th>Quartal</th>
+                                            <th>Tahun</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbody_table" class="text-center">
+                                        <tr style="color: black;">
+                                            <td colspan="9">Tidak Ada Data</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
 @if (session('success'))
 <script>
     Swal.fire({
         icon: 'success',
         title: 'Berhasil',
         text: "{{ session('success') }}",
-        confirmButtonColor: '#3085d6'
+        customClass: {
+            confirmButton: 'btn btn-gradient-info me-3',
+        },
     });
 </script>
 @endif
@@ -191,10 +191,13 @@
         icon: 'error',
         title: 'Gagal',
         text: "{{ session('error') }}",
-        confirmButtonColor: '#d33'
+        customClass: {
+            confirmButton: 'btn btn-gradient-danger me-3',
+        },
     });
 </script>
 @endif
+
 
 @if ($errors->any())
 <script>
@@ -202,31 +205,37 @@
         icon: 'error',
         title: 'Validasi Gagal',
         html: `{!! implode('<br>', $errors->all()) !!}`,
-        confirmButtonColor: '#d33'
+        customClass: {
+            confirmButton: 'btn btn-gradient-danger me-3',
+        },
     });
 </script>
 @endif
-
 <div class="modal fade" id="shareEvaluatorModal" tabindex="-1" aria-labelledby="shareEvaluatorModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content shadow-sm rounded">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content  border-0 rounded-4">
             <form action="{{ route('penilaian.shareForm') }}" method="post">
                 @csrf
-                <div class="modal-header">
-                    <h5 class="modal-title" id="shareEvaluatorModalLabel">Bagikan Formulir Penilaian</h5>
-                    <button type="button" class="btn-close text-white cl-red btn" data-dismiss="modal" aria-label="Tutup">
-                    </button>
+
+                <div class="modal-header bg-gradient-primary text-white rounded-top-4">
+                    <h5 class="modal-title fw-bold" id="shareEvaluatorModalLabel">
+                        <i class="mdi mdi-share-variant me-2"></i> Bagikan Formulir Penilaian
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Tutup"></button>
                 </div>
+
                 <div class="modal-body p-4">
                     <div id="modal-body-content"></div>
                     <div id="content_select_input"></div>
+                    <input type="hidden" name="jenis_form" id="jenis_form" value="{{ $tipe }}">
                 </div>
-                <div class="modal-footer p-3">
-                    <button type="button" class="btn text-white cl-red btn-sm" data-dismiss="modal">
-                        <i class="fa fa-times me-1"></i> Batal
+
+                <div class="modal-footer d-flex justify-content-between p-3">
+                    <button type="button" class="btn btn-danger btn-sm" data-bs-dismiss="modal">
+                        <i class="mdi mdi-close me-1"></i> Batal
                     </button>
-                    <button type="submit" class="btn cl-green text-white btn-sm">
-                        <i class="fa fa-paper-plane me-1"></i> Kirim
+                    <button type="submit" class="btn btn-success btn-sm">
+                        <i class="mdi mdi-send me-1"></i> Kirim
                     </button>
                 </div>
             </form>
@@ -234,52 +243,74 @@
     </div>
 </div>
 
-<div class="modal fade" id="reviewPenilaianModal" tabindex="-1" aria-labelledby="reviewPenilaianModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content shadow-sm rounded">
+<div class="modal fade" id="evaluatorModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog  modal-dialog-centered">
+        <div class="modal-content rounded">
             <div class="modal-header">
-                <h5 class="modal-title" id="reviewPenilaianModalLabel">Review Penilaian</h5>
-                <button type="button" class="btn-close btn-close-white btn" data-dismiss="modal" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+                <h5 class="modal-title">Daftar Evaluator</h5>
+                <button type="button" class="btn btn-sm btn-danger" data-dismiss="modal">&times;</button>
             </div>
-
-            <div class="modal-body p-4">
-                <div id="content-body-review"></div>
-            </div>
-
-            <div class="modal-footer p-3">
-                <button type="button" class="btn text-white cl-red btn-sm" data-dismiss="modal">
-                    <i class="fa fa-times me-1"></i> Tutup
-                </button>
+            <div class="modal-body" id="evaluatorModalContent">
             </div>
         </div>
     </div>
 </div>
 
 <style>
-    select.form-select,
-    select.form-control {
-        background-color: var(--bs-body-bg) !important;
-        color: var(--bs-body-color) !important;
-        border: 1px solid var(--bs-border-color, #444) !important;
+    .select2-container--default .select2-selection--multiple {
+        background-color: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        /* biar rounded */
+        padding: 6px;
+        min-height: 42px;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        box-shadow: none !important;
     }
 
-    select.form-select option,
-    select.form-control option {
-        background-color: var(--bs-body-bg);
-        color: var(--bs-body-color);
+    .select2-container--default .select2-selection--multiple .select2-selection__choice {
+        background-color: #6c5ce7;
+        /* ungu sesuai Purple Admin */
+        border: none;
+        border-radius: 0.4rem;
+        color: #fff;
+        padding: 3px 10px;
+        margin-top: 4px;
+        font-size: 0.85rem;
     }
 
-    select[multiple].form-select option:checked {
-        background-color: var(--bs-primary) !important;
-        color: #fff !important;
+    .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+        color: #fff;
+        margin-right: 5px;
+        font-weight: bold;
+        cursor: pointer;
     }
 
-    .select2-container {
-        z-index: 9999 !important;
+    .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
     }
 
+    /* Placeholder biar rapih */
+    .select2-container--default .select2-selection--multiple .select2-search--inline .select2-search__field {
+        margin-top: 4px;
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+
+    /* Dropdown list */
     .select2-dropdown {
-        z-index: 9999 !important;
+        border-radius: 0.5rem;
+        border: 1px solid #dee2e6;
+        box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        background-color: #6c5ce7;
+        color: white;
     }
 
     .loader {
@@ -365,6 +396,21 @@
             margin-top: .5rem;
         }
     }
+
+    .table .dropdown-menu {
+        position: absolute !important;
+        z-index: 1055 !important;
+        /* lebih tinggi dari modal dan elemen lain */
+        transform: translate3d(0, 0, 0) !important;
+    }
+
+    .dataTables_wrapper {
+        overflow: visible !important;
+    }
+
+    .table-responsive {
+        overflow: visible !important;
+    }
 </style>
 @endsection
 @section('script')
@@ -388,7 +434,7 @@
             tahunSelect.appendChild(option);
         }
 
-        $('#quartalSelectUtama, #tahunSelectUtama, #divisiSelectUtama').on('change', function() {
+        $('#quartalSelectUtama, #tahunSelectUtama, #divisiSelectUtama, #jenis_form').on('change', function() {
             loadData();
         });
 
@@ -399,6 +445,7 @@
         const selectedQuartal = $('#quartalSelectUtama').val();
         const selectedTahun = $('#tahunSelectUtama').val();
         const selectedDivisi = $('#divisiSelectUtama').val();
+        const jenis_form = $('#jenis_form').val();
 
         $.ajax({
             url: "{{ route('penilaian.get.data') }}",
@@ -406,7 +453,8 @@
             data: {
                 quartal: selectedQuartal,
                 tahun: selectedTahun,
-                divisi: selectedDivisi
+                divisi: selectedDivisi,
+                jenis_form: jenis_form
             },
             beforeSend: function() {
                 $('#loadingModal').modal('show');
@@ -436,9 +484,17 @@
                             jenis = 'not_found';
                         }
 
+                        let button_evaluatorShow = (
+                                item.evaluator_by_jenis &&
+                                ((Array.isArray(item.evaluator_by_jenis) && item.evaluator_by_jenis.length > 0) ||
+                                    (typeof item.evaluator_by_jenis === 'object' && Object.keys(item.evaluator_by_jenis).length > 0))
+                            ) ?
+                            `<a href="javascript:void(0)" class="btn btn-sm btn-gradient-primary btn-show-evaluator" data-evaluator='${JSON.stringify(item.evaluator_by_jenis)}' style="">...</a>` :
+                            '';
+
                         return [
                             index + 1,
-                            generateEvaluatorByPenilaian(item),
+                            button_evaluatorShow,
                             item.evaluated,
                             item.evaluatedDivisi || '-',
                             item.tanggal,
@@ -446,42 +502,53 @@
                             item.quartal,
                             item.tahun,
                             `<div class="dropdown">
-                                <button class="btn cl-grey text-white dropdown-toggle" type="button" data-toggle="dropdown">Action</button>
+                                <button class="btn btn-light text-dark dropdown-toggle"
+                                        type="button"
+                                        data-bs-toggle="dropdown"
+                                        data-bs-boundary="viewport" 
+                                        aria-expanded="false">
+                                Action
+                                </button>
+
                                 <div class="dropdown-menu">
                                     <a href="#" class="dropdown-item" data-kode="${item.kode_form}" data-id="${item.id_karyawan}" onclick="shareForm(this)" data-toggle="modal" data-target="#shareEvaluatorModal">
                                         <i class="fa-solid fa-paper-plane me-4"></i> Share
                                     </a>
-                                    <a href="#" class="dropdown-item" data-kode="${item.kode_form}" data-id="${item.id_karyawan}" data-jenis_penilaian="${jenis}" onclick="ReviewForm(this)" data-toggle="modal" data-target="#reviewPenilaianModal">
-                                        <i class="fa-solid fa-list-check me-4"></i> Review
-                                    </a>
-                                    <a href="/penilaian/detail/data-penilaian/${item.kode_form}/${item.id_karyawan}" class="dropdown-item">
+                                    <a href="/penilaian/detail/data-penilaian/${item.kode_form}/${item.id_karyawan}/{{ $tipe }}" class="dropdown-item">
                                         <i class="fa-solid fa-magnifying-glass me-4"></i> Detail
                                     </a>
-                                    <a href="javascript:void(0)" class="dropdown-item btn-clean" data-kode_form="${item.kode_form}" data-id_karyawan="${item.id_karyawan}"  data-jenis_penilaian="${jenis}" data-quartal="${item.quartal}" data-tahun="${item.tahun}">
+                                    <a href="javascript:void(0)" class="dropdown-item" id="btn-clean" data-kode_form="${item.kode_form}" data-id_karyawan="${item.id_karyawan}"  data-jenis_penilaian="${jenis}" data-quartal="${item.quartal}" data-tahun="${item.tahun}" data-jenis_form="{{ $tipe }}">
                                         <i class="fa-solid fa-brush me-4"></i> Bersihkan
                                     </a>
-                                    <a href="javascript:void(0)" class="dropdown-item btn-hapus" data-kode_form="${item.kode_form}" data-id_karyawan="${item.id_karyawan}"  data-jenis_penilaian="${item.jenis_penilaian}" data-quartal="${item.quartal}" data-tahun="${item.tahun}">
+                                    <a href="javascript:void(0)" class="dropdown-item btn-hapus" data-kode_form="${item.kode_form}" data-id_karyawan="${item.id_karyawan}"  data-jenis_penilaian="${item.jenis_penilaian}" data-quartal="${item.quartal}" data-tahun="${item.tahun}" data-jenis_form="{{ $tipe }}">
                                         <i class="fa-solid fa-trash me-4"></i> Hapus
                                     </a>
                                 </div>
-                            </div>`
+                            </div>
+                            `
                         ];
                     }),
-                    paging: true,
                     pageLength: 10,
-                    searching: true,
-                    ordering: true,
-                    info: true,
-                    lengthChange: false,
+                    lengthMenu: [5, 10, 25, 50, 100],
                     responsive: true,
+                    scrollX: true,
+                    scrollCollapse: true,
+                    dom: "<'row mb-2'<'col-md-6 custom-dt-length'l><'col-md-6 text-end custom-dt-search'f>>" +
+                        "<'row'<'col-sm-12'tr>>" +
+                        "<'row mt-2'<'col-md-5 custom-dt-info'i><'col-md-7 custom-dt-pagination'p>>",
                     language: {
-                        emptyTable: "Tidak Ada Data"
+                        search: "",
+                        searchPlaceholder: "Cari data...",
+                        lengthMenu: "_MENU_ per halaman",
+                        info: "Menampilkan _START_ - _END_ dari _TOTAL_ entri",
+                        infoEmpty: "Data Tidak Ditemukan",
+                        paginate: {
+                            first: "Awal",
+                            last: "Akhir",
+                            previous: "<",
+                            next: ">"
+                        },
                     },
-                    columnDefs: [{
-                        targets: 7,
-                        orderable: false,
-                        searchable: false
-                    }]
                 });
             },
             complete: function() {
@@ -489,6 +556,30 @@
             }
         });
     }
+
+    $(document).on('show.bs.dropdown', '.table .dropdown', function() {
+        var $wrap = $(this);
+        var $menu = $wrap.find('.dropdown-menu');
+
+        var uid = 'dd-' + Math.random().toString(36).substr(2, 9);
+        $wrap.attr('data-dd-origin', uid);
+        $menu.attr('data-dd-origin', uid);
+
+        $menu.appendTo('body');
+    });
+
+    $(document).on('hidden.bs.dropdown', '.table .dropdown', function() {
+        var $wrap = $(this);
+        var uid = $wrap.attr('data-dd-origin');
+        if (!uid) return;
+
+        var $menu = $('body').find('.dropdown-menu[data-dd-origin="' + uid + '"]');
+        if ($menu.length) {
+            $wrap.append($menu);
+            $menu.removeAttr('data-dd-origin');
+        }
+        $wrap.removeAttr('data-dd-origin');
+    });
 
     $(document).on('click', '.btn-hapus', function(e) {
         e.preventDefault();
@@ -498,6 +589,7 @@
         let jenis_penilaian = $(this).data('jenis_penilaian');
         let quartal = $(this).data('quartal');
         let tahun = $(this).data('tahun');
+        let jenis_form = $(this).data('jenis_form');
 
         let formData = new FormData();
         formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
@@ -506,14 +598,17 @@
         formData.append('jenis_penilaian', jenis_penilaian);
         formData.append('quartal', quartal);
         formData.append('tahun', tahun);
+        formData.append('jenis_form', jenis_form);
 
         Swal.fire({
             title: 'Yakin ingin menghapus data?',
             text: "Data yang dihapus tidak bisa dikembalikan!",
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
+            customClass: {
+                confirmButton: 'btn btn-gradient-info me-3',
+                cancelButton: 'btn btn-gradient-danger'
+            },
             confirmButtonText: 'Ya, hapus!'
         }).then((result) => {
             if (result.isConfirmed) {
@@ -527,7 +622,10 @@
                         Swal.fire({
                             icon: 'success',
                             title: 'Berhasil!',
-                            text: response.message || 'Data berhasil dihapus.'
+                            text: response.message || 'Data berhasil dihapus.',
+                            customClass: {
+                                confirmButton: 'btn btn-gradient-info me-3',
+                            },
                         });
                         loadData();
                     },
@@ -535,7 +633,10 @@
                         Swal.fire({
                             icon: 'error',
                             title: 'Gagal!',
-                            text: xhr.responseJSON?.message || 'Terjadi kesalahan.'
+                            text: xhr.responseJSON?.message || 'Terjadi kesalahan.',
+                            customClass: {
+                                confirmButton: 'btn btn-gradient-info me-3',
+                            },
                         });
                     }
                 });
@@ -543,7 +644,39 @@
         });
     });
 
-    $(document).on('click', '.btn-clean', function(e) {
+    $(document).on('click', '.btn-show-evaluator', function() {
+        let evaluatorByJenis = $(this).data('evaluator');
+
+        let html = '';
+        Object.keys(evaluatorByJenis).forEach(function(jenis) {
+            html += `
+                <div class="card mb-3 shadow-sm">
+                    <div class="card-header bg-light">
+                        <strong><i class="fa-solid fa-users me-2 text-primary"></i> ${jenis}</strong>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">`;
+
+            evaluatorByJenis[jenis].forEach(function(ev, index) {
+                const badgeClass = ev.is_red ? 'bg-gradient-danger' : 'bg-gradient-success';
+                html += `
+                    <div class="col-6 mb-2 p-2 card-rounded ${badgeClass}">
+                        <span class="badge me-2">${index+1}</span> ${ev.name}
+                    </div>`;
+            });
+
+            html += `
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        $('#evaluatorModalContent').html(html);
+        $('#evaluatorModal').modal('show');
+    });
+
+    $(document).on('click', '#btn-clean', function(e) {
         e.preventDefault();
 
         let kode_form = $(this).data('kode_form');
@@ -565,8 +698,10 @@
             text: "Data yang dibersihkan tidak bisa dikembalikan!",
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
+            customClass: {
+                confirmButton: 'btn btn-gradient-info me-3',
+                cancelButton: 'btn btn-gradient-danger'
+            },
             confirmButtonText: 'Ya, bersihkan!'
         }).then((result) => {
             if (result.isConfirmed) {
@@ -574,13 +709,16 @@
                     url: `/penilaian/clean`,
                     type: 'POST',
                     data: formData,
-                    processData: false, // penting
-                    contentType: false, // penting
+                    processData: false,
+                    contentType: false,
                     success: function(response) {
                         Swal.fire({
                             icon: 'success',
                             title: 'Berhasil!',
-                            text: response.message || 'Data berhasil dibersihkan.'
+                            text: response.message || 'Data berhasil dibersihkan.',
+                            customClass: {
+                                confirmButton: 'btn btn-gradient-info me-3',
+                            },
                         });
                         loadData();
                     },
@@ -588,7 +726,10 @@
                         Swal.fire({
                             icon: 'error',
                             title: 'Gagal!',
-                            text: xhr.responseJSON?.message || 'Terjadi kesalahan.'
+                            text: xhr.responseJSON?.message || 'Terjadi kesalahan.',
+                            customClass: {
+                                confirmButton: 'btn btn-gradient-info me-3',
+                            },
                         });
                     }
                 });
@@ -618,77 +759,6 @@
 
     let allKaryawan = [];
 
-    function ReviewForm(el) {
-        const kodeForm = el.dataset.kode;
-        const idKaryawan = el.dataset.id;
-        const jenisPenilaian = el.dataset.jenis_penilaian;
-
-        const modalBody = $('#content-body-review');
-        modalBody.html(`<p class="mb-3">Pilih Evaluator Yang Akan Direview</p>`);
-
-        $.ajax({
-            url: "{{ route('penilaian.get.data') }}",
-            type: 'get',
-            success: function(response) {
-                const data = response.data;
-
-                const formItem = data.find(item =>
-                    item.kode_form == kodeForm && item.id_karyawan == idKaryawan
-                );
-
-                modalBody.html(`<p class="mb-3">Pilih Evaluator Yang Akan Direview</p>`);
-
-                if (!formItem || !formItem.evaluator_by_jenis) {
-                    modalBody.append('<p class="w-red">Tidak ada evaluator untuk form ini.</p>');
-                    return;
-                }
-
-                const evaluatorByJenis = formItem.evaluator_by_jenis;
-
-                Object.entries(evaluatorByJenis).forEach(([jenis, evaluators]) => {
-                    evaluators.forEach(evaluator => {
-                        const evaluatorId = evaluator.id;
-                        const isRed = evaluator.is_red;
-
-                        const nameParts = evaluator.name.split(" ");
-                        const limitedName = nameParts.slice(0, 2).join(" ");
-
-                        let jenis_penilaian = '';
-
-                        if (jenis === 'General Manager') {
-                            jenis_penilaian = 'J01P';
-                        } else if (jenis === 'Manager/SPV/Team Leader (Atasan Langsung)') {
-                            jenis_penilaian = 'J02P';
-                        } else if (jenis === 'Rekan Kerja (Satu Divisi)') {
-                            jenis_penilaian = 'J03P';
-                        } else if (jenis === 'Pekerja (Beda Divisi)') {
-                            jenis_penilaian = 'J04P';
-                        } else if (jenis === 'Self Apprisial') {
-                            jenis_penilaian = 'J05P';
-                        } else {
-                            jenis_penilaian = 'not_found';
-                        }
-
-
-                        const button = `
-                            <a href="/reviewPenilaian/${kodeForm}/${evaluatorId}/${jenis_penilaian}/${idKaryawan}" 
-                            class="btn mb-2 ms-3 ${isRed ? 'text-white cl-red' : 'text-white cl-grey'}">
-                                ${limitedName} – ${jenis}
-                            </a>
-                        `;
-
-                        modalBody.append(button);
-                    });
-                });
-            },
-            error: function() {
-                modalBody.html('<p class="w-red">Gagal mengambil data evaluator.</p>');
-            }
-        });
-
-        $('#reviewPenilaianModal').modal('show');
-    }
-
     function shareForm(el) {
         const kodeForm = el.dataset.kode;
         const idKaryawan = el.dataset.id;
@@ -697,9 +767,9 @@
         const contentSelect = $('#content_select_input');
 
         modalBody.html(`
-        <input type="hidden" value="${kodeForm}" name="kode_form">
-        <input type="hidden" value="${idKaryawan}" name="id_evaluated">
-    `);
+            <input type="hidden" value="${kodeForm}" name="kode_form">
+            <input type="hidden" value="${idKaryawan}" name="id_evaluated">
+        `);
 
         contentSelect.empty();
 
@@ -713,7 +783,7 @@
 
                 const html = `
                     <label class="mt-4">Jenis Penilaian</label>
-                    <select name="jenis_penilaian" class="form-control" required>
+                    <select name="jenis_penilaian" class="form-select" required>
                         <option disabled selected>Pilih Jenis Penilaian</option>
                         <option value="General Manager">General Manager</option>
                         <option value="Manager/SPV/Team Leader (Atasan Langsung)">Manager/SPV/Team Leader (Atasan Langsung)</option>
@@ -828,5 +898,4 @@
         $('#shareEvaluatorModal').modal('show');
     }
 </script>
-
 @endsection

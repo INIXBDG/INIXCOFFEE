@@ -44,40 +44,76 @@ class salesPribadiController extends Controller
             // 2. Target dan aktivitas
             $target = TargetActivity::where('id_sales', $idSales)->first();
 
-            $aktivitas = Aktivitas::where('id_sales', $idSales)
+            $aktivitas = Aktivitas::with('contact.perusahaan', 'peserta')
+                ->where('id_sales', $idSales)
                 ->whereMonth('waktu_aktivitas', Carbon::now()->month)
                 ->whereYear('waktu_aktivitas', Carbon::now()->year)
                 ->get();
 
             // hitung aktivitas
-            $actualContact = $aktivitas->where('aktivitas', 'Contact')->count();
-            $actualCall = $aktivitas->where('aktivitas', 'Call')->count();
-            $actualEmail = $aktivitas->where('aktivitas', 'Email')->count();
-            $actualVisit = $aktivitas->where('aktivitas', 'Visit')->count();
-            $actualMeet = $aktivitas->where('aktivitas', 'Meet')->count();
-            $actualIncharge = $aktivitas->where('aktivitas', 'Incharge')->count();
-
-            // hitung contact baru bulan ini
-            $contactbaru = Contact::where('sales_key', $idSales)
-                ->where('status', '1')
-                ->whereMonth('created_at', Carbon::now()->month)
-                ->whereYear('created_at', Carbon::now()->year)
-                ->count();
+            $actualContact = $aktivitas->where('aktivitas', 'Contact');
+            $actualCall = $aktivitas->where('aktivitas', 'Call');
+            $actualEmail = $aktivitas->where('aktivitas', 'Email');
+            $actualVisit = $aktivitas->where('aktivitas', 'Visit');
+            $actualMeet = $aktivitas->where('aktivitas', 'Meet');
+            $actualIncharge = $aktivitas->where('aktivitas', 'Incharge');
+            $actualPA = $aktivitas->where('aktivitas', 'PA');
+            $actualPI = $aktivitas->where('aktivitas', 'PI');
+            $actualTelemarketing = $aktivitas->where('aktivitas', 'Telemarketing');
+            $actualForm_Masuk = $aktivitas->where('aktivitas', 'Form_Masuk');
+            $actualForm_Keluar = $aktivitas->where('aktivitas', 'Form_Keluar');
+            $actualDB = $aktivitas->where('aktivitas', 'DB');
+            $actualContact = $aktivitas->where('aktivitas', 'Contact');
 
             $activitysales = [
                 'id_sales' => $idSales,
-                'contact' => $contactbaru,
-                'call' => $actualCall,
-                'email' => $actualEmail,
-                'visit' => $actualVisit,
-                'meet' => $actualMeet,
-                'incharge' => $actualIncharge,
+                
+                // 📊 Jumlah aktivitas
+                'DB' => $actualDB->count(),
+                'contact' => $actualContact->count(),
+                'call' => $actualCall->count(),
+                'email' => $actualEmail->count(),
+                'visit' => $actualVisit->count(),
+                'meet' => $actualMeet->count(),
+                'incharge' => $actualIncharge->count(),
+                'PA' => $actualPA->count(),
+                'PI' => $actualPI->count(),
+                'Telemarketing' => $actualTelemarketing->count(),
+                'Form_Masuk' => $actualForm_Masuk->count(),
+                'Form_Keluar' => $actualForm_Keluar->count(),
+
+                // 💰 Total nilai
+                'total_PA' => $actualPA->sum('total'),
+                'total_Form_Masuk' => $actualForm_Masuk->sum('total'),
+                'total_Form_Keluar' => $actualForm_Keluar->sum('total'),
+
+                // 🎯 Target
+                'target_DB' => $target->DB ?? 0,
                 'target_contact' => $target->Contact ?? 0,
                 'target_call' => $target->Call ?? 0,
                 'target_email' => $target->Email ?? 0,
                 'target_visit' => $target->Visit ?? 0,
                 'target_meet' => $target->Meet ?? 0,
                 'target_incharge' => $target->Incharge ?? 0,
+                'target_PA' => $target->PA ?? 0,
+                'target_PI' => $target->PI ?? 0,
+                'target_Telemarketing' => $target->Telemarketing ?? 0,
+                'target_Form_Masuk' => $target->FormM ?? 0,
+                'target_Form_Keluar' => $target->FormK ?? 0,
+
+                // 🗂️ Data aktivitas (detail)
+                'data_contact' => $actualContact->values(),
+                'data_call' => $actualCall->values(),
+                'data_email' => $actualEmail->values(),
+                'data_visit' => $actualVisit->values(),
+                'data_meet' => $actualMeet->values(),
+                'data_incharge' => $actualIncharge->values(),
+                'data_PA' => $actualPA->values(),
+                'data_PI' => $actualPI->values(),
+                'data_Telemarketing' => $actualTelemarketing->values(),
+                'data_Form_Masuk' => $actualForm_Masuk->values(),
+                'data_Form_Keluar' => $actualForm_Keluar->values(),
+                'data_DB' => $actualDB->values(),
             ];
 
             // 3. Top 5 produk paling banyak terjual

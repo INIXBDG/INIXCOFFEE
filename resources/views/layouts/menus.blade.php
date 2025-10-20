@@ -1354,7 +1354,7 @@
                                                             </div>
                                                         </div>
                                                     </div>
-                                                @endcan
+                                                @endcan 
                                                 <div class="col-sm-6 mt-2">
                                                     <div class="card" id="card-hover">
                                                         <div class="card-body d-flex">
@@ -1822,7 +1822,7 @@
 											<div class="col-md-12 mt-1">
 												<div class="card">
 													<div class="card-body">
-														<h5 class="text-center card-title">KPI</h5>
+														<h5 class="text-center card-title">Performance Assesment</h5>
 														<div class="row">
 															@can('View KPI Penilaian')
 															<div class="col-sm-6 mt-2">

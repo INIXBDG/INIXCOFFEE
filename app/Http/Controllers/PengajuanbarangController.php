@@ -30,7 +30,6 @@ class PengajuanBarangController extends Controller
 
         $jabatan = $user->karyawan->jabatan;
 
-        // Daftar jabatan yang otomatis dapat 'buka'
         $jabatanBuka = ['Finance & Accounting', 'GM', 'SPV Sales', 'Koordinator ITSM'];
 
         if (in_array($jabatan, $jabatanBuka)) {

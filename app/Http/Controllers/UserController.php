@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\activityLog;
 use App\Models\jabatan;
 use App\Models\karyawan;
 use App\Models\User;
@@ -117,8 +118,28 @@ class UserController extends Controller
         if (auth()->id() !== $users->id && auth()->user()->jabatan !== 'HRD') {
             abort(403, 'Kamu tidak diizinkan mengakses data ini.');
         }
+                $id_karyawan = Auth::user()->id;
 
-        return view('user.show', compact('users', 'karyawan'));
+        $dataAuth = activityLog::with('karyawan')
+            ->where('user_id', $id_karyawan)
+            ->whereIn('status', ['Login', 'Logout'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $dataVisit = activityLog::with('karyawan')
+            ->where('user_id', $id_karyawan)
+            ->whereNotIn('status', ['Login', 'Logout'])
+            ->whereNotIn('status', ['Absen Masuk', 'Absen keluar'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $dataAbsen = activityLog::with('karyawan')
+            ->where('user_id', $id_karyawan)
+            ->whereIn('status', ['Absen Masuk', 'Absen Keluar'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('user.show', compact(['dataAuth', 'dataVisit', 'dataAbsen', 'users']));
     }
 
     public function editPassword($id)

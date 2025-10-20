@@ -124,7 +124,7 @@
             </a>
         </li>
 
-        @if(in_array($user->jabatan, ['GM', 'SPV Sales']))
+        @if(in_array($user->jabatan, ['GM', 'SPV Sales', 'Adm Sales']))
             <li class="menu-item {{ request()->routeIs('index.target') ? 'active open' : '' }}">
                 <a href="{{ route('index.target') }}" class="menu-link">
                     <i class='menu-icon tf-icons bx bx-bullseye'></i>

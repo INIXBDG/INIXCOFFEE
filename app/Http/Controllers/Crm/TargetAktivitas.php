@@ -7,12 +7,17 @@ use App\Models\TargetActivity;
 use App\Models\User;
 use Illuminate\Auth\Events\Validated;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class TargetAktivitas extends Controller
 {
 
     public function index()
     {
+        if (!in_array(Auth::user()->jabatan, ['GM', 'SPV Sales', 'Adm Sales'])) {
+            return abort(403, 'Kamu tidak punya akses ke halaman ini.');
+        }
+        
         $target = TargetActivity::all();
         $user = User::where('jabatan', 'Sales')
             ->where('status_akun', '1')
@@ -30,6 +35,12 @@ class TargetAktivitas extends Controller
             'Email' => 'required|integer',
             'Meet' => 'required|integer',
             'Incharge' => 'required|integer',
+            'PA' => 'required|integer',
+            'PI' => 'required|integer',
+            'DB' => 'required|integer',
+            'Telemarketing' => 'required|integer',
+            'FormM' => 'required|integer',
+            'FormK' => 'required|integer',
         ]);
 
         $data = new TargetActivity();
@@ -40,6 +51,12 @@ class TargetAktivitas extends Controller
         $data->Email = $validated['Email'];
         $data->Meet = $validated['Meet'];
         $data->Incharge = $validated['Incharge'];
+        $data->PA = $validated['PA'];
+        $data->PI = $validated['PI'];
+        $data->DB = $validated['DB'];
+        $data->Telemarketing = $validated['Telemarketing'];
+        $data->FormM = $validated['FormM'];
+        $data->FormK = $validated['FormK'];
         $data->save();
 
         return redirect()->back()->with('success', 'Target activity berhasil disimpan.');
@@ -55,6 +72,12 @@ class TargetAktivitas extends Controller
             'Email' => 'required|integer',
             'Meet' => 'required|integer',
             'Incharge' => 'required|integer',
+            'PA' => 'required|integer',
+            'PI' => 'required|integer',
+            'DB' => 'required|integer',
+            'Telemarketing' => 'required|integer',
+            'FormM' => 'required|integer',
+            'FormK' => 'required|integer',
         ]);
 
         $data = TargetActivity::findOrFail($id);
@@ -65,6 +88,12 @@ class TargetAktivitas extends Controller
         $data->Email = $validated['Email'];
         $data->Meet = $validated['Meet'];
         $data->Incharge = $validated['Incharge'];
+        $data->PA = $validated['PA'];
+        $data->PI = $validated['PI'];
+        $data->DB = $validated['DB'];
+        $data->Telemarketing = $validated['Telemarketing'];
+        $data->FormM = $validated['FormM'];
+        $data->FormK = $validated['FormK'];
         $data->save();
 
         return redirect()->back()->with('success', 'Target activity berhasil diperbarui.');
