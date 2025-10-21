@@ -52,19 +52,54 @@ class CRMController extends Controller
                 ];
             });
 
+
             // 2. Target dan aktivitas
+            $tahun = $request->input('tahun', Carbon::now()->year);
+            $bulan = $request->input('bulan', Carbon::now()->month);
+            $mingguKe = $request->input('minggu', null);
+
+            // 🔹 Ambil awal dan akhir bulan berdasarkan filter
+            $startDate = Carbon::create($tahun, $bulan, 1)->startOfMonth();
+            $endDate = (clone $startDate)->endOfMonth();
+
+            // Jika minggu ke-nya dipilih
+            if ($mingguKe) {
+                // Hitung tanggal awal dan akhir minggu ke-n
+                $startOfWeek = (clone $startDate)->addWeeks($mingguKe - 1)->startOfWeek(Carbon::MONDAY);
+                $endOfWeek = (clone $startOfWeek)->endOfWeek(Carbon::SUNDAY);
+
+                // Pastikan tidak lewat dari akhir bulan
+                if ($endOfWeek->gt($endDate)) {
+                    $endOfWeek = $endDate;
+                }
+            } else {
+                // Default: minggu berjalan
+                $startOfWeek = Carbon::now()->startOfWeek(Carbon::MONDAY);
+                $endOfWeek = Carbon::now()->endOfWeek(Carbon::SUNDAY);
+            }
+
+            // 🔹 Format rentang tanggal yang difilter
+            $tanggalRange = $startOfWeek->translatedFormat('d') . '–' . $endOfWeek->translatedFormat('d F Y');
+
+            // Contoh tambahan (opsional): jika kamu ingin juga menampilkan bulan dan tahun yang difilter
+            $bulanTahun = $startOfWeek->translatedFormat('F Y');
+
+            // 🔹 Ambil target sales
             $target = TargetActivity::all()->keyBy('id_sales');
 
-            $aktivitas = Aktivitas::with('contact.perusahaan', 'peserta')
-                ->whereMonth('waktu_aktivitas', Carbon::now()->month)
-                ->whereYear('waktu_aktivitas', Carbon::now()->year)
+            // 🔹 Ambil aktivitas berdasarkan filter waktu
+            $aktivitas = Aktivitas::with(['contact.perusahaan', 'peserta'])
+                ->whereBetween('waktu_aktivitas', [$startOfWeek, $endOfWeek])
+                ->whereYear('waktu_aktivitas', $tahun)
                 ->get();
 
+            // 🔹 Ambil sales aktif
             $sales = User::where('jabatan', 'Sales')
                 ->where('status_akun', '1')
                 ->pluck('id_sales')
                 ->toArray();
 
+            // 🔹 Hitung aktivitas per sales
             $activitysales = [];
 
             foreach ($sales as $id_sales) {
@@ -444,6 +479,11 @@ class CRMController extends Controller
                 'map',
                 'tanggal',
                 'mingguKeBulan',
+                'tahun',
+                'bulan',
+                'mingguKe',
+                'bulanTahun',
+                'tanggalRange',
             ));
         } else {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');

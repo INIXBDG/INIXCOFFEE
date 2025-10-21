@@ -22,7 +22,7 @@ class TargetActivity extends Model
         'Telemarketing',
         'FormM',
         'FormK',
-        'deadline',
+        // 'deadline',
     ];
 
     public function aktivitas()

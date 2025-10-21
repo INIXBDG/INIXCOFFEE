@@ -41,7 +41,7 @@ class TargetAktivitas extends Controller
             'Telemarketing'  => 'required|integer',
             'FormM'          => 'required|integer',
             'FormK'          => 'required|integer',
-            'deadline'       => 'required|date|after_or_equal:today', // 🟢 Tambahan
+            // 'deadline'       => 'required|date|after_or_equal:today',
         ]);
 
         $data = new TargetActivity();
@@ -58,7 +58,7 @@ class TargetAktivitas extends Controller
         $data->Telemarketing = $validated['Telemarketing'];
         $data->FormM = $validated['FormM'];
         $data->FormK = $validated['FormK'];
-        $data->deadline = $validated['deadline'];
+        // $data->deadline = $validated['deadline'];
         $data->save();
 
         return redirect()->back()->with('success', 'Target activity berhasil disimpan.');
@@ -80,7 +80,7 @@ class TargetAktivitas extends Controller
             'Telemarketing' => 'required|integer',
             'FormM' => 'required|integer',
             'FormK' => 'required|integer',
-            'deadline'       => 'required|date|after_or_equal:today',
+            // 'deadline'       => 'required|date|after_or_equal:today',
         ]);
 
         $data = TargetActivity::findOrFail($id);
@@ -97,7 +97,7 @@ class TargetAktivitas extends Controller
         $data->Telemarketing = $validated['Telemarketing'];
         $data->FormM = $validated['FormM'];
         $data->FormK = $validated['FormK'];
-        $data->deadline = $validated['deadline'];
+        // $data->deadline = $validated['deadline'];
         $data->save();
 
         return redirect()->back()->with('success', 'Target activity berhasil diperbarui.');
