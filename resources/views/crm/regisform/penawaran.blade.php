@@ -417,11 +417,15 @@
 </head>
 
 <body>
+    @php
+        $jabatanUser = auth()->user()->jabatan;
+        $isAdmin = in_array($jabatanUser, ['Adm Sales', 'SPV Sales']);
+    @endphp
     <h2>Input Data Surat Penawaran</h2>
     <form id="penawaran-form">
         <h3>Data Surat</h3>
         <label>No Surat:</label>
-        <input type="text" id="no-surat" value="{{$no}}" required>
+        <input type="text" id="no-surat" value="{{ $no }}" required>
         <label>Hal:</label>
         <input type="text" id="hal" value="Surat Penawaran Pelatihan">
         <label>Lampiran:</label>
@@ -431,10 +435,17 @@
         <label>Pilih Perusahaan:</label>
         <select id="perusahaan" required>
             <option value="">Pilih Perusahaan</option>
-            @foreach ($perusahaan as $p)
-                <option value="{{ $p->id }}" data-nama="{{ $p->nama_perusahaan }}">{{ $p->nama_perusahaan }}
-                </option>
-            @endforeach
+            @if ($isAdmin)
+                @foreach ($perusahaans as $p)
+                    <option value="{{ $p->id }}" data-nama="{{ $p->nama_perusahaan }}">{{ $p->nama_perusahaan }}
+                    </option>
+                @endforeach
+            @else
+                @foreach ($perusahaan as $p)
+                    <option value="{{ $p->id }}" data-nama="{{ $p->nama_perusahaan }}">{{ $p->nama_perusahaan }}
+                    </option>
+                @endforeach
+            @endif
         </select>
 
         <label>Nama Pimpinan/Perusahaan:</label>
@@ -468,16 +479,53 @@
         </select>
 
         <h3>Data Sales</h3>
-        <label>Nama Sales:</label>
-        <input type="text" id="nama-sales" class="readonly" value="{{ $sales->nama_lengkap }}" readonly>
-        <label>Jabatan:</label>
-        <input type="text" id="jabatan-sales" class="readonly" value="Account Executive" readonly>
-        <label>Whatsapp:</label>
-        <input type="text" id="wa-sales" value="{{ $sales->whatsapp }}" required>
-        <label>Telepon:</label>
-        <input type="text" id="telp-sales" value="{{ $sales->telepon }}" required>
-        <label>Email:</label>
-        <input type="text" id="email-sales" value="{{ $sales->email }}" required>
+        @php
+            $jabatanUser = auth()->user()->jabatan;
+            $isAdmin = in_array($jabatanUser, ['Adm Sales', 'SPV Sales']);
+        @endphp
+
+        @if ($isAdmin)
+            <label>Email:</label>
+            <select id="email-sales" required>
+                <option value="">-- Pilih Email --</option>
+                @foreach ($users as $user)
+                    <option value="{{ $user->email }}" data-nama="{{ $user->nama_lengkap }}"
+                        data-jabatan="{{ $user->jabatan }}" data-wa="{{ $user->whatsapp }}"
+                        data-telp="{{ $user->telepon }}">
+                        {{ $user->email }}
+                    </option>
+                @endforeach
+            </select>
+
+            <label>Nama Sales:</label>
+            <input type="text" id="nama-sales" class="readonly" readonly>
+
+            <label>Jabatan:</label>
+            <input type="text" id="jabatan-sales" class="readonly" readonly>
+
+            <label>Whatsapp:</label>
+            <input type="text" id="wa-sales" required>
+
+            <label>Telepon:</label>
+            <input type="text" id="telp-sales" required>
+        @else
+            <label>Nama Sales:</label>
+            <input type="text" id="nama-sales" class="readonly" value="{{ $sales->nama_lengkap }}" readonly>
+
+            <label>Jabatan:</label>
+            <input type="text" id="jabatan-sales" class="readonly"
+                value="{{ $sales->jabatan ?? 'Account Executive' }}" readonly>
+
+            <label>Whatsapp:</label>
+            <input type="text" id="wa-sales" value="{{ $sales->whatsapp }}" required>
+
+            <label>Telepon:</label>
+            <input type="text" id="telp-sales" value="{{ $sales->telepon }}" required>
+
+            <label>Email:</label>
+            <input type="text" id="email-sales" value="{{ $sales->email }}" readonly>
+        @endif
+
 
         <button type="button" id="preview-btn">Generate PDF</button>
     </form>
@@ -562,7 +610,7 @@
             const ppn = (price * ppnRate) / 100;
             return {
                 total: price + ppn,
-                ppnAmount: ppn
+                ppnAmount: ppn + price
             };
         }
 
@@ -688,6 +736,21 @@
         // Event listener untuk tombol tambah keuntungan
         document.getElementById('add-keuntungan').addEventListener('click', () => {
             addKeuntunganRow();
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const emailSelect = document.getElementById('email-sales');
+
+            if (emailSelect) {
+                emailSelect.addEventListener('change', function() {
+                    const selectedOption = this.options[this.selectedIndex];
+
+                    document.getElementById('nama-sales').value = selectedOption.dataset.nama || '';
+                    document.getElementById('jabatan-sales').value = selectedOption.dataset.jabatan || '';
+                    document.getElementById('wa-sales').value = selectedOption.dataset.wa || '';
+                    document.getElementById('telp-sales').value = selectedOption.dataset.telp || '';
+                });
+            }
         });
 
         // Pre-populate fasilitas dan keuntungan dengan data konstan

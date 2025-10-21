@@ -39,12 +39,17 @@ class RegisFormController extends Controller
         $user = Auth::user();
         $sales = karyawan::where('id', $user->id)->first();
         $perusahaan = Perusahaan::where('sales_key', $sales->kode_karyawan)->get();
+        $perusahaans = Perusahaan::all();
         $materi = Materi::all();
         $ketentuan = KetentuanForm::all();
         $deskripsi = Deskripsi::first();
+        $users = Karyawan::whereIn('jabatan', ['Sales', 'Adm Sales', 'Spv Sales'])
+            ->where('status_aktif', '1')
+            ->get();
+        // dd($users);
 
-        $month = Carbon::now()->month; 
-        $year  = Carbon::now()->year;  
+        $month = Carbon::now()->month;
+        $year  = Carbon::now()->year;
 
         // Daftar angka Romawi untuk bulan
         $romanMonths = [
@@ -68,7 +73,7 @@ class RegisFormController extends Controller
         // Gabungkan ke format nomormu
         $no = "000/MKT-" . Auth::user()->id_sales . "-INIX/BDG/" . $romanMonth . "/" . $year;
         // dd($deskripsi);
-        return view('crm.regisform.penawaran', compact('sales', 'perusahaan', 'materi', 'ketentuan', 'deskripsi', 'no'));
+        return view('crm.regisform.penawaran', compact('sales', 'perusahaan', 'materi', 'ketentuan', 'deskripsi', 'no', 'users', 'perusahaans'));
     }
 
     public function upload(Request $request)
