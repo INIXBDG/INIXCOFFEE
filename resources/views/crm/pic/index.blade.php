@@ -22,6 +22,7 @@
                         <table id="picTable" class="table table-bordered table-hover">
                             <thead class="table-primary">
                                 <tr>
+                                    <th style="text-align:center;">No</th>
                                     <th>Nama</th>
                                     <th>Perusahaan</th>
                                     <th>Sales</th>
@@ -194,6 +195,15 @@
                     type: 'GET'
                 },
                 columns: [
+                    {
+                        data: null,
+                        render: function (data, type, row, meta) {
+                            return meta.row + meta.settings._iDisplayStart + 1; // ✅ Nomor urut
+                        },
+                        className: "text-center",
+                        orderable: false,
+                        searchable: false
+                    },
                     { data: 'nama', name: 'nama' },
                     { data: 'perusahaan', name: 'perusahaan' },
                     { data: 'sales_key', name: 'sales_key' },

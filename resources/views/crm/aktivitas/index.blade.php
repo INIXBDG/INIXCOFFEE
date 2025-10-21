@@ -51,6 +51,18 @@
                             </div>
 
                         @if(in_array(Auth::user()->jabatan, $allowedUser))
+                            <div class="col-md-3">
+                                <label for="filter_sales" class="form-label">Filter Sales</label>
+                                <select id="filter_sales" class="form-select">
+                                    <option value="">-- Semua Sales --</option>
+                                    <option value="HW">Hera</option>
+                                    <option value="VN">Savana</option>
+                                    <option value="RR">Rara</option>
+                                    <option value="NA">Nabila</option>
+                                    <option value="AN">Alfasyiani</option>
+                                    <option value="RN">Reni</option>
+                                </select>
+                            </div>
                             <!-- Rentang Created At -->
                             <div class="col-md-3">
                                 <label for="filter_created_start" class="form-label">Dibuat Dari</label>
@@ -78,6 +90,7 @@
                         <table id="aktivitasTable" class="table table-bordered table-hover">
                             <thead class="table-primary">
                                 <tr>
+                                    <th style="text-align:center;">No</th>
                                     <th>Client</th>
                                     <th>Sales</th>
                                     <th style="text-align: center;">Jenis Aktivitas</th>
@@ -318,6 +331,7 @@
                     url: '{{ route('index.aktivitas.json') }}',
                     type: 'GET',
                     data: function(d) {
+                        d.filter_sales = $('#filter_sales').val(); // ✅ Tambahan filter sales
                         d.filter_aktivitas = $('#filter_aktivitas').val();
                         d.filter_waktu_start = $('#filter_waktu_start').val();
                         d.filter_waktu_end = $('#filter_waktu_end').val();
@@ -331,6 +345,15 @@
                     }
                 },
                 columns: [
+                    {
+                        data: null,
+                        render: function (data, type, row, meta) {
+                            return meta.row + meta.settings._iDisplayStart + 1; // ✅ Nomor urut
+                        },
+                        className: "text-center",
+                        orderable: false,
+                        searchable: false
+                    },
                     { data: 'kontak' },
                     { data: 'id_sales' },
                     { data: 'aktivitas' },
@@ -359,7 +382,7 @@
             // === Filter & Reset ===
             $('#btnFilter').on('click', () => $('#aktivitasTable').DataTable().ajax.reload());
             $('#btnResetFilter').on('click', function() {
-                $('#filter_aktivitas, #filter_waktu_start, #filter_waktu_end, #filter_created_start, #filter_created_end').val('');
+                $('#filter_sales, #filter_aktivitas, #filter_waktu_start, #filter_waktu_end, #filter_created_start, #filter_created_end').val('');
                 $('#aktivitasTable').DataTable().ajax.reload();
             });
 
@@ -511,9 +534,6 @@
                                 <div class="progress" style="height: 10px;">
                                     <div class="progress-bar" style="width:${percent}%; background-color:${color};"></div>
                                 </div>
-                                <div class="mt-1 fw-bold" style="font-size: 0.85rem; color:${deadlineColor}">
-                                    Deadline: ${deadline}
-                                </div>
                             </div>`;
                     }).join("");
 
@@ -591,12 +611,114 @@
             })
             .catch(() => alert('Terjadi kesalahan saat menghapus aktivitas.'));
         }
-
-        document.addEventListener("DOMContentLoaded", () => {
-            // Ganti nilai ini pakai variabel dari server
-            // contoh: let isAllowedUser = {{ in_array(auth()->user()->jabatan, $allowedUser) ? 'true' : 'false' }};
+        document.addEventListener("DOMContentLoaded", function() {
+            const contactSelect = document.getElementById("id_contact");
+            const contactTypeInput = document.getElementById("contact_type");
+            const newContactFields = document.getElementById("newContactFields");
+            const aktivitasOption = document.getElementById("aktivitas");
+            const hiddenContainer = document.getElementById("hidden-container");
+            const paxInput = document.getElementById("pax");
+            const hargaInput = document.getElementById("harga");
+            const editAktivitasOption = document.getElementById("edit_aktivitas");
+            const editHiddenContainer = document.getElementById("edit-hidden-container");
             const isAllowedUser = window.isAllowedUser || false;
             loadSemuaTargetAktivitas(isAllowedUser);
+
+            // Ambil kontak saat perusahaan dipilih
+            $('#id_perusahaan').on('change', function() {
+                const perusahaanId = $(this).val();
+                contactSelect.innerHTML = `
+                <option value="" disabled selected>Pilih Kontak</option>
+                <option value="new" data-type="contact">+ Tambahkan Kontak Baru</option>
+            `;
+
+                if (!perusahaanId) return;
+
+                fetch(`/crm/get-contacts-peserta/${perusahaanId}`)
+                    .then(response => {
+                        if (!response.ok) throw new Error("Gagal mengambil data kontak dan peserta");
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.length === 0) {
+                            const option = document.createElement("option");
+                            option.value = "";
+                            option.textContent = "Tidak ada kontak atau peserta tersedia";
+                            option.disabled = true;
+                            contactSelect.appendChild(option);
+                        } else {
+                            data.forEach(item => {
+                                const option = document.createElement("option");
+                                option.value = item.id;
+                                option.dataset.type = item.type;
+                                const nama = item.nama || "Tidak ada nama";
+                                const email = item.email || "Tidak ada email";
+                                const divisi = item.type === 'peserta' ?
+                                    'C-Peserta' :
+                                    (item.divisi || 'tidak ada divisi');
+                                option.textContent = `${nama} (${divisi}) - ${email}`;
+                                contactSelect.appendChild(option);
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Gagal mengambil data kontak dan peserta:", error);
+                        const option = document.createElement("option");
+                        option.value = "";
+                        option.textContent = "Terjadi kesalahan saat mengambil data";
+                        option.disabled = true;
+                        contactSelect.appendChild(option);
+                    });
+            });
+
+            // Tampilkan form kontak baru jika pilih "new"
+            $('#id_contact').on('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                const type = selectedOption ? (selectedOption.dataset.type || "contact") : "contact";
+                contactTypeInput.value = type;
+                if (this.value === "new") {
+                    newContactFields.style.display = "block";
+                } else {
+                    newContactFields.style.display = "none";
+                }
+            });
+
+            // Show/hide hidden container berdasarkan jenis aktivitas (create)
+            aktivitasOption.addEventListener('change', function() {
+                const selected = this.value;
+                if (['PA', 'Form_Masuk', 'Form_Keluar'].includes(selected)) {
+                    hiddenContainer.style.display = 'block';
+                } else {
+                    hiddenContainer.style.display = 'none';
+                    if (paxInput) paxInput.value = '';
+                    if (hargaInput) hargaInput.value = '';
+                }
+            });
+
+            // Show/hide hidden container berdasarkan jenis aktivitas (edit)
+            editAktivitasOption.addEventListener('change', function() {
+                let selected = this.value;
+
+                const aktivitasMap = {
+                    'Form Masuk': 'Form_Masuk',
+                    'Form Keluar': 'Form_Keluar',
+                    'Incharge Inhouse': 'Incharge'
+                };
+                selected = aktivitasMap[selected] || selected;
+
+                const editHiddenContainer = document.getElementById('edit-hidden-container');
+                const editPaxInput = document.getElementById('edit_pax');
+                const editHargaInput = document.getElementById('edit_harga');
+
+                if (['PA', 'Form_Masuk', 'Form_Keluar'].includes(selected)) {
+                    editHiddenContainer.style.display = 'block';
+                } else {
+                    editHiddenContainer.style.display = 'none';
+                    if (editPaxInput) editPaxInput.value = '';
+                    if (editHargaInput) editHargaInput.value = '';
+                }
+            });
+
         });
     </script>
 
