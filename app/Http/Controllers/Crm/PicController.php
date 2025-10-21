@@ -119,6 +119,7 @@ class PicController extends Controller
             $start = $request->get('start', 0);
             $length = $request->get('length', 10);
             $searchValue = $request->get('search')['value'] ?? '';
+            $salesFilterDropdown = $request->input('sales_filter');
             $orderColumnIndex = $request->get('order')[0]['column'] ?? 0;
             $orderDirection = $request->get('order')[0]['dir'] ?? 'desc';
 
@@ -149,6 +150,10 @@ class PicController extends Controller
                         ->orWhereRaw('LOWER(sales_key) LIKE ?', ["%{$searchValueLower}%"])
                         ->orWhereRaw('LOWER(status_text) LIKE ?', ["%{$searchValueLower}%"]);
                 });
+            }
+
+            if (!empty($salesFilterDropdown)) {
+                $masterQuery->where('sales_key', $salesFilterDropdown);
             }
 
             $totalFiltered = $masterQuery->count();
@@ -217,25 +222,34 @@ class PicController extends Controller
             'email'         => 'nullable|email|unique:contacts,email',
             'cp'            => 'nullable|string',
             'divisi'        => 'nullable|string',
+            'sales_key'     => 'nullable|string'
         ]);
 
-        // Simpan contact baru
+        $user = Auth::user();
+
+        if (in_array($user->jabatan, ['Adm Sales', 'SPV Sales']) && $request->filled('sales_key')) {
+            $validated['sales_key'] = $request->input('sales_key');
+        } else {
+            $validated['sales_key'] = $user->id_sales ?? null;
+        }
+
         $validated['status'] = '1';
-        $validated['sales_key'] = $request->input('sales_key', auth()->user()->id_sales ?? null);
 
-        $contact = Contact::create($validated); // simpan dan ambil objek Contact
+        // 🔹 Simpan kontak baru
+        $contact = Contact::create($validated);
 
-        // Simpan aktivitas dengan id_contact
-        $aktivitas = new Aktivitas();
-        $aktivitas->id_sales = Auth::user()->id_sales;
-        $aktivitas->id_contact = $contact->id; // tambahkan id_contact dari contact baru
-        $aktivitas->aktivitas = 'Contact';
-        $aktivitas->deskripsi = 'Contact baru berhasil ditambahkan';
-        $aktivitas->waktu_aktivitas = Carbon::now();
-        $aktivitas->save();
+        // 🔹 Simpan log aktivitas
+        Aktivitas::create([
+            'id_sales'        => $validated['sales_key'],
+            'id_contact'      => $contact->id,
+            'aktivitas'       => 'Contact',
+            'deskripsi'       => 'Contact baru berhasil ditambahkan',
+            'waktu_aktivitas' => Carbon::now(),
+        ]);
 
         return redirect()->route('index.pic')->with('success', 'Contact berhasil ditambahkan.');
     }
+
 
     public function updatePIC(Request $request){
         $contact = Contact::where('id', $request->contact_id)->first();
