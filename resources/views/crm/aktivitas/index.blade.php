@@ -3,6 +3,7 @@
 @section('crm_contents')
     @php
         $allowedUser = ['Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
+        $createNotAllowed = ['HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
         $sales = Auth::user()->id_sales;
         $isAllowedUser = in_array(Auth::user()->jabatan, $allowedUser);
     @endphp
@@ -12,7 +13,7 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="fw-bold">Activity Management</h4>
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#activityModal"
-                    onclick="resetForm()" @if (in_array(Auth::user()->jabatan, $allowedUser)) disabled @endif>
+                    onclick="resetForm()" @if (in_array(Auth::user()->jabatan, $createNotAllowed)) disabled @endif>
                     Tambah Aktivitas
                 </button>
             </div>
@@ -125,6 +126,21 @@
                             <form id="activityForm" action="{{ route('store.aktivitas.new') }}" method="POST">
                                 @csrf
                                 <input type="hidden" id="contact_type" name="contact_type" value="contact">
+
+                                @if (auth()->user()->jabatan === 'Adm Sales' || auth()->user()->jabatan === 'SPV Sales')
+                                    <div class="mb-3">
+                                        <label class="form-label" for="id_sales">Pilih Sales</label>
+                                        <select class="form-select" id="id_sales" name="id_sales" required>
+                                            <option value="">-- Pilih Sales --</option>
+                                            <option value="HW">Hera</option>
+                                            <option value="VN">Savana</option>
+                                            <option value="RR">Rara</option>
+                                            <option value="NA">Nabila</option>
+                                            <option value="AN">Alfasyiani</option>
+                                            <option value="RN">Reni</option>
+                                        </select>
+                                    </div>
+                                @endif
 
                                 {{-- Dropdown perusahaan Klien --}}
                                 <div class="mb-3">
@@ -308,15 +324,13 @@
         // ===============================
         // 🔹 Fungsi Format Angka (IDR)
         // ===============================
-        function formatNumber(value) {
-            if (!value) return '';
-            const number = parseFloat(value.toString().replace(/[^0-9.-]+/g, '')) || 0;
-            return number.toLocaleString('id-ID');
-        }
-
         function unformatNumber(value) {
             if (!value) return '';
-            return parseFloat(value.toString().replace(/[^0-9.-]+/g, '')) || '';
+            return parseFloat(value.toString().replace(/\./g, '').replace(/,/g, '')) || '';
+        }
+        function formatNumber(value) {
+            if (!value) return '';
+            return parseInt(value, 10).toLocaleString('id-ID');
         }
 
         // ===============================
@@ -390,19 +404,35 @@
             initPerusahaanSelect2();
             initContactSelect2();
 
-            // === Harga Input Formatting ===
-            $('#harga, #edit_harga').on('input change', function() {
-                const val = unformatNumber(this.value);
-                this.value = formatNumber(val);
+            $('#harga, #edit_harga').on('input', function(e) {
+                const input = e.target;
+                const cursorPos = input.selectionStart;
+
+                // Ambil hanya angka dari input
+                const raw = input.value.replace(/[^\d]/g, '');
+                if (!raw) {
+                    input.value = '';
+                    return;
+                }
+
+                // Format ke format IDR (tanpa simbol)
+                const formatted = parseInt(raw, 10).toLocaleString('id-ID');
+                input.value = formatted;
+
+                // Kembalikan posisi kursor ke akhir agar tidak loncat
+                input.setSelectionRange(formatted.length, formatted.length);
             });
 
             // === Form Submit (Create) ===
             $('#activityForm').on('submit', function(e) {
-                e.preventDefault();
-                const originalValue = $('#harga').val();
-                $('#harga').val(unformatNumber(originalValue));
-                this.submit();
-                $('#harga').val(formatNumber(originalValue));
+                // pastikan harga dikirim sebagai angka tanpa pemisah ribuan
+                const hargaEl = document.getElementById('harga');
+                if (hargaEl) {
+                    const raw = unformatNumber(hargaEl.value);
+                    // jika NaN, kosongkan agar validasi server menangani; jika angka gunakan nilai numerik
+                    hargaEl.value = isNaN(raw) ? '' : raw;
+                }
+                // biarkan form submit biasa
             });
 
             // === Form Submit (Edit) ===
@@ -410,6 +440,7 @@
                 e.preventDefault();
                 const id = $('#edit_id').val();
                 const url = `/crm/aktivitas/update/${id}`;
+                const hargaUnformatted = unformatNumber($('#edit_harga').val());
                 const data = {
                     id_perusahaan: $('#edit_id_perusahaan').val(),
                     id_contact: $('#edit_id_contact').val(),
@@ -417,7 +448,7 @@
                     deskripsi: $('#edit_deskripsi').val(),
                     waktu_aktivitas: $('#edit_waktu_aktivitas').val(),
                     pax: $('#edit_pax').val(),
-                    harga: unformatNumber($('#edit_harga').val())
+                    harga: isNaN(hargaUnformatted) ? null : hargaUnformatted
                 };
 
                 try {
@@ -561,6 +592,29 @@
             } catch (err) {
                 console.error("💥 ERROR:", err);
                 alert("Terjadi kesalahan saat memuat data target aktivitas.");
+            }
+        }
+
+        // ===============================
+        // 🔹 Helper untuk restore caret posisi saat formatting
+        // ===============================
+        function setFormattedInput(el) {
+            const start = el.selectionStart;
+            const end = el.selectionEnd;
+            const oldValue = el.value;
+            const unformatted = unformatNumber(oldValue);
+
+            // Simpan offset dari kanan untuk memperkirakan posisi setelah format
+            const rightOffset = oldValue.length - (end || oldValue.length);
+
+            el.value = formatNumber(unformatted);
+
+            // restore caret: perkirakan posisi baru berdasarkan offset kanan
+            try {
+                const newPos = Math.max(0, el.value.length - rightOffset);
+                el.setSelectionRange(newPos, newPos);
+            } catch (e) {
+                // ignore jika tidak mendukung
             }
         }
 
