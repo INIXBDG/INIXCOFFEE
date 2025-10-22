@@ -592,10 +592,10 @@
                                 <label for="cashback" class="form-label">Cashback</label>
                                 <input type="text" class="form-control rupiah" id="cashback" name="cashback">
                             </div>
-                            <div class="mb-3">
+                            {{-- <div class="mb-3">
                                 <label for="diskon" class="form-label">Diskon</label>
                                 <input type="text" class="form-control rupiah" id="diskon" name="diskon">
-                            </div>
+                            </div> --}}
                             <div class="mb-3">
                                 <label for="desc" class="form-label">Description</label>
                                 <textarea name="desc" id="desc" rows="4" class="form-control"></textarea>
@@ -646,7 +646,7 @@
                                             <th>Fresh Money</th>
                                             <th>Entertaint</th>
                                             <th>Souvenir</th>
-                                            <th>Diskon</th>
+                                            {{-- <th>Diskon</th> --}}
                                             <th>Cashback</th>
                                             <th>Tanggal PA</th>
                                             <th>Tipe Pembayaran</th>
@@ -675,9 +675,9 @@
                                                 <td>Rp
                                                     {{ $item->souvenir ? number_format($item->souvenir, 2, ',', '.') : '-' }}
                                                 </td>
-                                                <td>Rp
+                                                {{-- <td>Rp
                                                     {{ $item->diskon ? number_format($item->diskon, 2, ',', '.') : '-' }}
-                                                </td>
+                                                </td> --}}
                                                 <td>Rp
                                                     {{ $item->cashback ? number_format($item->cashback, 2, ',', '.') : '-' }}
                                                 </td>
