@@ -21,6 +21,7 @@
         "maatwebsite/excel": "^3.1",
         "pusher/pusher-php-server": "*",
         "rap2hpoutre/laravel-log-viewer": "^2.4",
+        "romanzipp/laravel-queue-monitor": "^5.4",
         "sentry/sentry-laravel": "^4.16",
         "spatie/laravel-image-optimizer": "^1.8",
         "spatie/laravel-permission": "^6.13",
