@@ -28,6 +28,14 @@ class CRMController extends Controller
         $user = Auth::user();
         $allowedUser = ['Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting', 'GM', 'Sales', 'Direktur Utama', 'Direktur', 'Programmer'];
 
+        $today = Carbon::now()->locale('id'); // Lokal Indonesia
+        $today->settings(['formatFunction' => 'translatedFormat']);
+
+        $tanggal = $today->translatedFormat('d F Y');
+
+        $firstDayOfMonth = $today->copy()->startOfMonth();
+        $mingguKeBulan = ceil(($today->day + $firstDayOfMonth->dayOfWeek) / 7);
+
         if (in_array($user->jabatan, $allowedUser)) {
 
             // 1. Kategori perusahaan chart
@@ -44,50 +52,98 @@ class CRMController extends Controller
                 ];
             });
 
+
             // 2. Target dan aktivitas
+            $tahun = $request->input('tahun', Carbon::now()->year);
+            $bulan = $request->input('bulan', Carbon::now()->month);
+            $mingguKe = $request->input('minggu', null);
+
+            // 🔹 Ambil awal dan akhir bulan berdasarkan filter
+            $startDate = Carbon::create($tahun, $bulan, 1)->startOfMonth();
+            $endDate = (clone $startDate)->endOfMonth();
+
+            // Jika minggu ke-nya dipilih
+            if ($mingguKe) {
+                // Hitung tanggal awal dan akhir minggu ke-n
+                $startOfWeek = (clone $startDate)->addWeeks($mingguKe - 1)->startOfWeek(Carbon::MONDAY);
+                $endOfWeek = (clone $startOfWeek)->endOfWeek(Carbon::SUNDAY);
+
+                // Pastikan tidak lewat dari akhir bulan
+                if ($endOfWeek->gt($endDate)) {
+                    $endOfWeek = $endDate;
+                }
+            } else {
+                // Default: minggu berjalan
+                $startOfWeek = Carbon::now()->startOfWeek(Carbon::MONDAY);
+                $endOfWeek = Carbon::now()->endOfWeek(Carbon::SUNDAY);
+            }
+
+            // 🔹 Format rentang tanggal yang difilter
+            $tanggalRange = $startOfWeek->translatedFormat('d') . '–' . $endOfWeek->translatedFormat('d F Y');
+
+            // Contoh tambahan (opsional): jika kamu ingin juga menampilkan bulan dan tahun yang difilter
+            $bulanTahun = $startOfWeek->translatedFormat('F Y');
+
+            // 🔹 Ambil target sales
             $target = TargetActivity::all()->keyBy('id_sales');
 
-            $aktivitas = Aktivitas::whereMonth('waktu_aktivitas', Carbon::now()->month)
-                ->whereYear('waktu_aktivitas', Carbon::now()->year)
+            // 🔹 Ambil aktivitas berdasarkan filter waktu
+            $aktivitas = Aktivitas::with(['contact.perusahaan', 'peserta'])
+                ->whereBetween('waktu_aktivitas', [$startOfWeek, $endOfWeek])
+                ->whereYear('waktu_aktivitas', $tahun)
                 ->get();
 
-            $sales = User::where('jabatan', 'Sales')->where('status_akun', '1')->pluck('id_sales')->toArray();
+            // 🔹 Ambil sales aktif
+            $sales = User::where('jabatan', 'Sales')
+                ->where('status_akun', '1')
+                ->pluck('id_sales')
+                ->toArray();
+
+            // 🔹 Hitung aktivitas per sales
             $activitysales = [];
 
             foreach ($sales as $id_sales) {
                 $userAktivitas = $aktivitas->where('id_sales', $id_sales);
 
-                $actualContact = $userAktivitas->where('aktivitas', 'Contact')->count();
-                $actualCall = $userAktivitas->where('aktivitas', 'Call')->count();
-                $actualEmail = $userAktivitas->where('aktivitas', 'Email')->count();
-                $actualVisit = $userAktivitas->where('aktivitas', 'Visit')->count();
-                $actualMeet = $userAktivitas->where('aktivitas', 'Meet')->count();
-                $actualIncharge = $userAktivitas->where('aktivitas', 'Incharge')->count();
-                $actualPA = $userAktivitas->where('aktivitas', 'PA')->count();
-                $actualPI = $userAktivitas->where('aktivitas', 'PI')->count();
-                $actualTelemarketing = $userAktivitas->where('aktivitas', 'Telemarketing')->count();
-                $actualForm_Masuk = $userAktivitas->where('aktivitas', 'Form_Masuk')->count();
-                $actualForm_Keluar = $userAktivitas->where('aktivitas', 'Form_Keluar')->count();
-                $actualDB = $userAktivitas->where('aktivitas', 'DB')->count();
-                $actualContact = $userAktivitas->where('aktivitas', 'Contact')->count();
+                // Ambil data berdasarkan jenis aktivitas
+                $contactData = $userAktivitas->where('aktivitas', 'Contact');
+                $callData = $userAktivitas->where('aktivitas', 'Call');
+                $emailData = $userAktivitas->where('aktivitas', 'Email');
+                $visitData = $userAktivitas->where('aktivitas', 'Visit');
+                $meetData = $userAktivitas->where('aktivitas', 'Meet');
+                $inchargeData = $userAktivitas->where('aktivitas', 'Incharge');
+                $paData = $userAktivitas->where('aktivitas', 'PA');
+                $piData = $userAktivitas->where('aktivitas', 'PI');
+                $teleData = $userAktivitas->where('aktivitas', 'Telemarketing');
+                $formMasukData = $userAktivitas->where('aktivitas', 'Form_Masuk');
+                $formKeluarData = $userAktivitas->where('aktivitas', 'Form_Keluar');
+                $dbData = $userAktivitas->where('aktivitas', 'DB');
 
                 $salesTarget = $target[$id_sales] ?? null;
 
                 $activitysales[] = [
                     'id_sales' => $id_sales,
-                    'contact' => $actualContact,
-                    'DB' => $actualDB,
-                    'call' => $actualCall,
-                    'email' => $actualEmail,
-                    'visit' => $actualVisit,
-                    'meet' => $actualMeet,
-                    'incharge' => $actualIncharge,
-                    'PA' => $actualPA,
-                    'PI' => $actualPI,
-                    'Telemarketing' => $actualTelemarketing,
-                    'Form_Masuk' => $actualForm_Masuk,
-                    'Form_Keluar' => $actualForm_Keluar,
-                    'target_DB' => $salesTarget->DB ?? 0,
+
+                    // 📊 Jumlah aktivitas
+                    'contact' => $contactData->count(),
+                    'call' => $callData->count(),
+                    'email' => $emailData->count(),
+                    'visit' => $visitData->count(),
+                    'meet' => $meetData->count(),
+                    'incharge' => $inchargeData->count(),
+                    'PA' => $paData->count(),
+                    'PI' => $piData->count(),
+                    'Telemarketing' => $teleData->count(),
+                    'Form_Masuk' => $formMasukData->count(),
+                    'Form_Keluar' => $formKeluarData->count(),
+                    'DB' => $dbData->count(),
+
+                    // 💰 Total nilai
+                    'total_PA' => $paData->sum('total'),
+                    'total_Form_Masuk' => $formMasukData->sum('total'),
+                    'total_Form_Keluar' => $formKeluarData->sum('total'),
+
+                    // 🎯 Target
                     'target_contact' => $salesTarget->Contact ?? 0,
                     'target_call' => $salesTarget->Call ?? 0,
                     'target_email' => $salesTarget->Email ?? 0,
@@ -99,6 +155,21 @@ class CRMController extends Controller
                     'target_Telemarketing' => $salesTarget->Telemarketing ?? 0,
                     'target_Form_Masuk' => $salesTarget->FormM ?? 0,
                     'target_Form_Keluar' => $salesTarget->FormK ?? 0,
+                    'target_DB' => $salesTarget->DB ?? 0,
+
+                    // 🗂️ Data aktivitas (detail)
+                    'data_contact' => $contactData->values(),
+                    'data_call' => $callData->values(),
+                    'data_email' => $emailData->values(),
+                    'data_visit' => $visitData->values(),
+                    'data_meet' => $meetData->values(),
+                    'data_incharge' => $inchargeData->values(),
+                    'data_PA' => $paData->values(),
+                    'data_PI' => $piData->values(),
+                    'data_Telemarketing' => $teleData->values(),
+                    'data_Form_Masuk' => $formMasukData->values(),
+                    'data_Form_Keluar' => $formKeluarData->values(),
+                    'data_DB' => $dbData->values(),
                 ];
             }
 
@@ -406,6 +477,13 @@ class CRMController extends Controller
                 'sales',
                 'prospek',
                 'map',
+                'tanggal',
+                'mingguKeBulan',
+                'tahun',
+                'bulan',
+                'mingguKe',
+                'bulanTahun',
+                'tanggalRange',
             ));
         } else {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');

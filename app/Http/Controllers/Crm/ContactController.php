@@ -233,7 +233,7 @@ class ContactController extends Controller
         $aktivitas = new Aktivitas();
         $aktivitas->id_sales = $id_sales;
         $aktivitas->aktivitas = 'DB';
-        $aktivitas->deskripsi = 'Database baru berhasil ditambahkan';
+        $aktivitas->deskripsi = 'Database baru "' . $perusahaan->nama_perusahaan . '" berhasil ditambahkan';
         $aktivitas->waktu_aktivitas = Carbon::now();
         $aktivitas->save();
 

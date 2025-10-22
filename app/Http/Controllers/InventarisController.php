@@ -12,6 +12,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\InventarisExport;
+use Carbon\Carbon;
+
 
 class InventarisController extends Controller
 {
@@ -147,5 +150,13 @@ class InventarisController extends Controller
 
         KodeBarangInventaris::create($validated);
         return back()->with('success', 'Kode barang berhasil dibuat');
+    }
+
+    public function export()
+    {
+        $tanggal = Carbon::now()->format('d-m-Y');
+        $namaFile = 'data_inventaris_' . $tanggal . '.xlsx';
+
+        return Excel::download(new InventarisExport, $namaFile);
     }
 }

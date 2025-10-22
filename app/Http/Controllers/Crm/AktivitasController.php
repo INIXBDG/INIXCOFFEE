@@ -7,6 +7,8 @@ use App\Models\Aktivitas;
 use App\Models\Perusahaan;
 use App\Models\Contact;
 use App\Models\Peserta;
+use App\Models\User;
+use App\Models\TargetActivity;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
@@ -102,16 +104,34 @@ class AktivitasController extends Controller
             if (!empty($searchValue)) {
                 $query->where(function ($q) use ($searchValue) {
                     $q->where('aktivitas', 'like', "%{$searchValue}%")
-                        ->orWhere('deskripsi', 'like', "%{$searchValue}%");
+                        ->orWhere('deskripsi', 'like', "%{$searchValue}%")
+                        ->orWhereHas('contact', function ($q2) use ($searchValue) {
+                            $q2->where('nama', 'like', "%{$searchValue}%")
+                                ->orWhereHas('perusahaan', function ($q3) use ($searchValue) {
+                                    $q3->where('nama_perusahaan', 'like', "%{$searchValue}%");
+                                });
+                        })
+                        ->orWhereHas('peserta', function ($q2) use ($searchValue) {
+                            $q2->where('nama', 'like', "%{$searchValue}%")
+                                ->orWhereHas('perusahaan', function ($q3) use ($searchValue) {
+                                    $q3->where('nama_perusahaan', 'like', "%{$searchValue}%");
+                                });
+                        });
                 });
             }
 
+
             // 🔹 Filter tambahan
+            $filterSales = request()->get('filter_sales');
             $filterAktivitas = request()->get('filter_aktivitas');
             $filterWaktuStart = request()->get('filter_waktu_start');
             $filterWaktuEnd = request()->get('filter_waktu_end');
             $filterCreatedStart = request()->get('filter_created_start');
             $filterCreatedEnd = request()->get('filter_created_end');
+
+            if (!empty($filterSales)) {
+                $query->where('id_sales', $filterSales);
+            }
 
             if ($filterAktivitas) {
                 $query->where('aktivitas', $filterAktivitas);
@@ -143,30 +163,51 @@ class AktivitasController extends Controller
                 ->limit($length)
                 ->get()
                 ->map(function ($item) {
-                    if ($item->id_peserta) {
+                    $namaKontak = null;
+                    $namaPerusahaan = null;
+
+                    // Cek apakah aktivitas terkait peserta
+                    if (!empty($item->id_peserta)) {
                         $namaKontak = $item->peserta?->nama;
                         $namaPerusahaan = $item->peserta?->perusahaan?->nama_perusahaan;
-                    } else {
+                    }
+
+                    // Jika tidak ada peserta, coba ambil dari contact
+                    else {
                         $namaKontak = $item->contact?->nama;
                         $namaPerusahaan = $item->contact?->perusahaan?->nama_perusahaan;
                     }
 
-                    if (empty($namaKontak)) {
-                        $kontak = '-';
-                    } else {
-                        $kontak = $namaKontak;
-                        if (!empty($namaPerusahaan) && $namaPerusahaan !== '-') {
-                            $kontak .= ' (' . $namaPerusahaan . ')';
-                        }
+                    // Fallback khusus untuk aktivitas "DB" (Database baru)
+                    if ($item->aktivitas === 'DB' && empty($namaPerusahaan)) {
+                        $namaPerusahaan = $item->deskripsi
+                            ? str_replace(['Database baru "', '" berhasil ditambahkan'], '', $item->deskripsi)
+                            : '-';
                     }
 
+                    // Tentukan kolom "kontak" untuk tampilan
+                    if (empty($namaKontak) && empty($namaPerusahaan)) {
+                        $kontak = '-';
+                    } elseif (!empty($namaKontak) && !empty($namaPerusahaan)) {
+                        $kontak = $namaKontak . ' (' . $namaPerusahaan . ')';
+                    } else {
+                        $kontak = $namaKontak ?: $namaPerusahaan;
+                    }
+
+                    //  Ubah nama aktivitas jadi lebih ramah tampil
                     $aktivitas = match ($item->aktivitas) {
-                        'Incharge' => 'Incharge Inhouse',
-                        'Form_Masuk' => 'Form Masuk',
+                        'Incharge'    => 'Incharge Inhouse',
+                        'Form_Masuk'  => 'Form Masuk',
                         'Form_Keluar' => 'Form Keluar',
-                        default => ucfirst($item->aktivitas),
+                        default       => ucfirst($item->aktivitas),
                     };
 
+                    // Bersihkan deskripsi untuk aktivitas DB
+                    $deskripsi = $item->aktivitas === 'DB'
+                        ? 'Database baru berhasil ditambahkan'
+                        : $item->deskripsi;
+
+                    // Format hasil akhir data
                     return [
                         'id' => $item->id,
                         'kontak' => $kontak,
@@ -175,10 +216,11 @@ class AktivitasController extends Controller
                         'pax' => $item->pax,
                         'harga' => $item->harga,
                         'total' => $item->total,
-                        'deskripsi' => $item->deskripsi,
+                        'deskripsi' => $deskripsi,
                         'waktu_aktivitas' => \Carbon\Carbon::parse($item->waktu_aktivitas)->format('d/m/Y'),
                     ];
                 });
+
 
             return response()->json([
                 'draw' => $draw,
@@ -194,6 +236,175 @@ class AktivitasController extends Controller
         }
     }
 
+    public function targetAktivitas($id_sales)
+    {
+        try {
+            $target = TargetActivity::where('id_sales', $id_sales)->first();
+
+            if (!$target) {
+                return response()->json(['message' => 'Target belum ditetapkan untuk sales ini.'], 404);
+            }
+
+            $aktivitas = Aktivitas::with(['contact.perusahaan', 'peserta'])
+                ->whereBetween('waktu_aktivitas', [
+                    Carbon::now()->startOfWeek(),  // Senin awal minggu
+                    Carbon::now()->endOfWeek()     // Minggu akhir minggu
+                ])
+                ->whereYear('waktu_aktivitas', Carbon::now()->year)
+                ->get();
+            $deadline = \Carbon\Carbon::parse($target->deadline)->format('d/m/Y');
+
+            // Daftar jenis aktivitas yang akan dibandingkan
+            $jenisAktivitas = [
+                'Contact', 'Call', 'Visit', 'Email', 'Meet',
+                'DB', 'PA', 'PI', 'Incharge', 'Telemarketing',
+                'FormM', 'FormK'
+            ];
+
+            $hasil = [];
+
+            foreach ($jenisAktivitas as $jenis) {
+                $targetJumlah = $target->$jenis ?? 0;
+
+                // Hitung realisasi aktual dari tabel Aktivitas
+                $realisasi = Aktivitas::where('id_sales', $id_sales)
+                    ->where(function($q) use ($jenis) {
+                        // Sesuaikan nama field dengan nilai di DB
+                        if ($jenis === 'FormM') {
+                            $q->where('aktivitas', 'Form_Masuk');
+                        } elseif ($jenis === 'FormK') {
+                            $q->where('aktivitas', 'Form_Keluar');
+                        } else {
+                            $q->where('aktivitas', $jenis);
+                        }
+                    })
+                    ->count();
+
+                // Tentukan status capaian
+                $status = match(true) {
+                    $realisasi >= $targetJumlah && $targetJumlah > 0 => '✅ Tercapai',
+                    $realisasi < $targetJumlah && $targetJumlah > 0 => '❌ Belum tercapai',
+                    default => '-',
+                };
+
+                $hasil[] = [
+                    'jenis' => $jenis,
+                    'target' => $targetJumlah,
+                    'realisasi' => $realisasi,
+                    'status' => $status,
+                    'deadline' => $deadline
+                ];
+            }
+
+            return response()->json([
+                'sales' => $id_sales,
+                'deadline' => $deadline,
+                'data' => $hasil
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Target Aktivitas Error: ' . $e->getMessage());
+            return response()->json(['error' => 'Gagal memuat target aktivitas.'], 500);
+        }
+    }
+
+    public function semuaTargetAktivitas()
+    {
+        try {
+            $allowedUser = ['Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
+            $user = auth()->user();
+
+            // 🔹 Jika user bukan role manajemen → tampilkan target miliknya sendiri
+            if (!in_array($user->jabatan, $allowedUser)) {
+                $target = TargetActivity::where('id_sales', $user->id_sales)->first();
+                if (!$target) {
+                    return response()->json(['message' => 'Belum ada target aktivitas.']);
+                }
+
+                $deadline = \Carbon\Carbon::parse($target->deadline)->format('d/m/Y');
+                $jenisAktivitas = [
+                    'Contact', 'Call', 'Visit', 'Email', 'Meet',
+                    'DB', 'PA', 'PI', 'Incharge', 'Telemarketing',
+                    'FormM', 'FormK'
+                ];
+
+                $hasil = [];
+                foreach ($jenisAktivitas as $jenis) {
+                    $targetJumlah = $target->$jenis ?? 0;
+                    $realisasi = Aktivitas::where('id_sales', $user->id_sales)
+                        ->where(function ($q) use ($jenis) {
+                            if ($jenis === 'FormM') $q->where('aktivitas', 'Form_Masuk');
+                            elseif ($jenis === 'FormK') $q->where('aktivitas', 'Form_Keluar');
+                            else $q->where('aktivitas', $jenis);
+                        })
+                        ->count();
+
+                    $hasil[] = [
+                        'jenis' => $jenis,
+                        'target' => $targetJumlah,
+                        'realisasi' => $realisasi,
+                        'percent' => $targetJumlah > 0 ? round(($realisasi / $targetJumlah) * 100) : 0,
+                        'deadline' => $deadline
+                    ];
+                }
+
+                return response()->json([
+                    'id_sales' => $user->id_sales,
+                    'deadline' => $deadline,
+                    'data' => $hasil
+                ]);
+            }
+
+            // 🔹 Jika role manajemen → tampilkan semua sales
+            $salesList = User::whereNotNull('id_sales')
+                ->whereNotIn('jabatan', $allowedUser)
+                ->get();
+
+            $data = [];
+            foreach ($salesList as $sales) {
+                $target = TargetActivity::where('id_sales', $sales->id_sales)->first();
+                if (!$target) continue;
+
+                $deadline = \Carbon\Carbon::parse($target->deadline)->format('d/m/Y');
+                $jenisAktivitas = [
+                    'Contact', 'Call', 'Visit', 'Email', 'Meet',
+                    'DB', 'PA', 'PI', 'Incharge', 'Telemarketing',
+                    'FormM', 'FormK'
+                ];
+
+                $hasil = [];
+                foreach ($jenisAktivitas as $jenis) {
+                    $targetJumlah = $target->$jenis ?? 0;
+                    $realisasi = Aktivitas::where('id_sales', $sales->id_sales)
+                        ->where(function ($q) use ($jenis) {
+                            if ($jenis === 'FormM') $q->where('aktivitas', 'Form_Masuk');
+                            elseif ($jenis === 'FormK') $q->where('aktivitas', 'Form_Keluar');
+                            else $q->where('aktivitas', $jenis);
+                        })
+                        ->count();
+
+                    $hasil[] = [
+                        'jenis' => $jenis,
+                        'target' => $targetJumlah,
+                        'realisasi' => $realisasi,
+                        'percent' => $targetJumlah > 0 ? round(($realisasi / $targetJumlah) * 100) : 0,
+                        'deadline' => $deadline
+                    ];
+                }
+
+                $data[] = [
+                    'id_sales' => $sales->id_sales,
+                    'deadline' => $deadline,
+                    'data' => $hasil
+                ];
+            }
+
+            return response()->json(['data' => $data]);
+        } catch (\Exception $e) {
+            \Log::error('Error Semua Target Aktivitas: ' . $e->getMessage());
+            return response()->json(['error' => 'Gagal memuat semua target aktivitas.'], 500);
+        }
+    }
 
     public function store(Request $request)
     {
@@ -216,19 +427,28 @@ class AktivitasController extends Controller
 
     public function storeNew(Request $request)
     {
+        $user = auth()->user();
+
         $validated = $request->validate([
             'id_perusahaan'   => 'required|integer',
             'id_contact'      => 'required|string',
             'id_peluang'      => 'nullable',
             'contact_type'    => 'nullable|string|in:contact,peserta',
-            'aktivitas' => 'required|in:Call,Email,Visit,Meet,Incharge,PA,PI,DB,Telemarketing,Form_Masuk,Form_Keluar',
+            'aktivitas'       => 'required|in:Call,Email,Visit,Meet,Incharge,PA,PI,DB,Telemarketing,Form_Masuk,Form_Keluar',
             'deskripsi'       => 'nullable|string',
             'waktu_aktivitas' => 'required|date',
         ]);
 
-        $validated['id_sales'] = $request->input('id_sales', auth()->user()->id_sales);
+        if (in_array($user->jabatan, ['Adm Sales', 'SPV Sales'])) {
+            $validated['id_sales'] = $request->input('id_sales');
+            if (empty($validated['id_sales'])) {
+                return back()->withErrors(['id_sales' => 'Sales harus dipilih.']);
+            }
+        } else {
+            $validated['id_sales'] = $user->id_sales;
+        }
 
-        // Jika user menambahkan kontak baru
+        // 🔹 Jika user menambahkan kontak baru
         if ($request->id_contact === 'new') {
             $contact = Contact::create([
                 'id_perusahaan' => (int) $request->id_perusahaan,
@@ -240,21 +460,23 @@ class AktivitasController extends Controller
                 'status'        => '1'
             ]);
 
-            $aktivitas = new Aktivitas();
-            $aktivitas->id_sales = Auth::user()->id_sales;
-            $aktivitas->aktivitas = 'Contact';
-            $aktivitas->deskripsi = 'Contact baru berhasil ditambahkan';
-            $aktivitas->waktu_aktivitas = Carbon::now();
-            $aktivitas->save();
-
+            // ✅ Simpan ID kontak baru ke aktivitas utama
             $validated['id_contact'] = $contact->id;
             $validated['id_peserta'] = null;
+
+            // 🔹 Tambahkan log aktivitas "Contact baru"
+            Aktivitas::create([
+                'id_sales'        => $validated['id_sales'],
+                'id_contact'      => $contact->id,
+                'aktivitas'       => 'Contact',
+                'deskripsi'       => 'Contact baru berhasil ditambahkan',
+                'waktu_aktivitas' => now(),
+            ]);
         } else {
+            // 🔹 Jika user memilih kontak atau peserta yang sudah ada
             $contactId = (int) $request->id_contact;
 
-            // Cek apakah tipe data adalah peserta → simpan ke id_peserta
             if ($request->contact_type === 'peserta') {
-                // Pastikan peserta ada di database
                 if (!Peserta::where('id', $contactId)->exists()) {
                     return back()->withErrors([
                         'id_contact' => 'Peserta yang dipilih tidak ditemukan.'
@@ -263,7 +485,6 @@ class AktivitasController extends Controller
                 $validated['id_peserta'] = $contactId;
                 $validated['id_contact'] = null;
             } else {
-                // Jika tipe contact → simpan ke id_contact
                 if (!Contact::where('id', $contactId)->exists()) {
                     return back()->withErrors([
                         'id_contact' => 'Kontak yang dipilih tidak valid.'
@@ -274,6 +495,7 @@ class AktivitasController extends Controller
             }
         }
 
+        // 🔹 Hitung total otomatis jika ada pax dan harga
         if ($request->filled('pax')) {
             $validated['pax'] = $request->pax;
         }
@@ -282,11 +504,11 @@ class AktivitasController extends Controller
             $validated['harga'] = $request->harga;
         }
 
-        if ($request->filled('pax')) {
+        if ($request->filled('pax') && $request->filled('harga')) {
             $validated['total'] = $request->pax * $request->harga;
         }
 
-
+        // 🔹 Simpan aktivitas utama
         $aktivitas = Aktivitas::create($validated);
 
         return back()->with([

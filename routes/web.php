@@ -34,6 +34,7 @@ use App\Http\Controllers\InvoiceRKMController;
 use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\MakananRkmController;
 use App\Http\Controllers\managementKelasController;
+use App\Http\Controllers\SouvenirController;
 use App\Http\Controllers\TicketController;
 
 
@@ -274,6 +275,7 @@ Route::get('/get-users', [App\Http\Controllers\UserController::class, 'getUsers'
 Route::get('/user-dropdown', [App\Http\Controllers\UserController::class, 'showUserDropdown'])->name('user.dropdown');
 
 Route::get('/rkm/{id}/souvenir', [App\Http\Controllers\SouvenirController::class, 'createSouvenirInhouse'])->name('createSouvenirInhouse');
+Route::get('/souvenir/filter/{keyword}', [SouvenirController::class, 'filterSouvenir'])->name('filterSouvenir');
 Route::post('/rkm/storesouvenir', [App\Http\Controllers\SouvenirController::class, 'storeSouvenirInhouse'])->name('storeSouvenirInhouse');
 Route::put('/rkm/{id}/updatesouvenir', [App\Http\Controllers\SouvenirController::class, 'updateSouvenirInhouse'])->name('updateSouvenirInhouse');
 
@@ -418,6 +420,7 @@ Route::delete('/inventaris/delete/data/{id}', [InventarisController::class, 'del
 Route::post('/inventaris/create/kode', [InventarisController::class, 'createKode'])->name('CreateKodeIinvetaris');
 
 Route::post('/inventaris/import', [InventarisController::class, 'import'])->name('ImportDataInventaris');
+Route::get('/inventaris/export', [InventarisController::class, 'export'])->name('inventaris.export');
 
 Route::get('/penilaian360/index/{id_karyawan}', [App\Http\Controllers\DatabaseKPIController::class, 'index360'])->name('penilaian360');
 Route::get('/penilaian360/get/{id_karyawan}', [App\Http\Controllers\DatabaseKPIController::class, 'get360'])->name('get360');
@@ -464,6 +467,8 @@ Route::prefix('crm')->group(function () {
     Route::delete('/aktivitas/delete/{id}', [AktivitasController::class, 'delete'])->name('delete.aktivitas');
     Route::put('/aktivitas/update/{id}', [AktivitasController::class, 'update'])->name('update.aktivitas');
     Route::get('/get-contacts-peserta/{id}', [AktivitasController::class, 'getContactsAndPeserta'])->name('get.contacts');
+    Route::get('/target-aktivitas/{id_sales}', [AktivitasController::class, 'targetAktivitas'])->name('get.target');
+    Route::get('/semua-target-aktivitas', [AktivitasController::class, 'semuaTargetAktivitas'])->name('getall.target');
 
 
     Route::get('/target/activity', [TargetAktivitas::class, 'index'])->name('index.target');

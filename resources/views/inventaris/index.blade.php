@@ -168,6 +168,9 @@
         <div class="row justify-content-center">
             <div class="col-md-12">
                 <div class="d-flex justify-content-end mb-3">
+                    <button id="exportExcel" class="btn btn-success mx-2" data-toggle="tooltip" data-placement="top" title="Export ke Excel">
+                        <img src="{{ asset('icon/excel.svg') }}" class="" width="30px"> Export ke Excel
+                    </button>
                     <a href="#" class="btn btn-md click-primary mx-2" data-bs-toggle="modal"
                         data-bs-target="#importModal" data-toggle="tooltip" data-placement="top"
                         title="Import Inventaris">
@@ -303,6 +306,15 @@
                 };
 
                 var table = $('#inventaristable').DataTable({
+                    dom: 'Bfrtip',
+                    buttons: [
+                        {
+                            extend: 'excelHtml5',
+                            title: 'Data Inventaris',
+                            text: '<i class="bi bi-file-earmark-excel"></i> Export Excel',
+                            className: 'btn btn-success'
+                        }
+                    ],
                     ajax: {
                         url: "{{ route('getInventaris') }}",
                         type: "GET",
@@ -476,6 +488,10 @@
                             console.error('AJAX Import Error:', xhr);
                         }
                     });
+                });
+
+                $('#exportExcel').on('click', function() {
+                    window.location.href = "{{ route('inventaris.export') }}";
                 });
             });
         </script>

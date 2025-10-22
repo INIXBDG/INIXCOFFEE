@@ -19,14 +19,52 @@
             </div>
 
             <!-- Target Aktivitas Sales -->
-            <div class="col-lg-6 col-md-12 mb-3">
-                <div class="card h-100 shadow-sm border-0 rounded-3">
-                    <div class="card-header bg-transparent border-0 pb-0">
-                        <h5 class="card-title mb-0 text-primary">Target Aktivitas Sales</h5>
+            <div class="col-lg-6 col-md-12 mb-4">
+                <div class="card h-100 shadow-sm border-0 rounded-4 overflow-hidden">
+                    <div class="card-header bg-light border-0 py-3 px-4">
+                        <h5 class="card-title mb-2 text-primary fw-bold">Target Aktivitas Sales | Tanggal ({{ $tanggalRange }})</h5>
+                        {{-- <div class="me-2">
+                            <span class="text-muted small fw-medium"></span>
+                        </div> --}}
                     </div>
-                    <div class="card-body p-3">
+                    <div class="card-body p-4">
+                    <form method="GET" class="d-flex flex-wrap align-items-center mb-4">
+                        <div class="me-2">
+                            <label class="form-label small text-muted mb-1">Tahun</label>
+                            <select name="tahun" class="form-select form-select-sm">
+                                @for ($t = now()->year; $t >= now()->year - 3; $t--)
+                                    <option value="{{ $t }}" {{ $tahun == $t ? 'selected' : '' }}>{{ $t }}</option>
+                                @endfor
+                            </select>
+                        </div>
+
+                        <div class="me-2">
+                            <label class="form-label small text-muted mb-1">Bulan</label>
+                            <select name="bulan" class="form-select form-select-sm">
+                                @for ($b = 1; $b <= 12; $b++)
+                                    <option value="{{ $b }}" {{ $bulan == $b ? 'selected' : '' }}>
+                                        {{ \Carbon\Carbon::create()->month($b)->locale('id')->translatedFormat('F') }}
+                                    </option>
+                                @endfor
+                            </select>
+                        </div>
+
+                        <div class="me-2">
+                            <label class="form-label small text-muted mb-1">Minggu Ke</label>
+                            <select name="minggu" class="form-select form-select-sm">
+                                <option value="">Semua</option>
+                                @for ($m = 1; $m <= 5; $m++)
+                                    <option value="{{ $m }}" {{ $mingguKe == $m ? 'selected' : '' }}>Minggu ke {{ $m }}</option>
+                                @endfor
+                            </select>
+                        </div>
+
+                        <div class="align-self-end">
+                            <button type="submit" class="btn btn-sm btn-primary">Filter</button>
+                        </div>
+                    </form>
                         <!-- Filter Section -->
-                        <div class="mb-3">
+                        <div class="mb-4">
                             <div class="btn-group btn-group-sm" role="group">
                                 <button type="button" class="btn btn-outline-primary filter-btn active"
                                     data-filter="all">All</button>
@@ -36,10 +74,11 @@
                                 @endforeach
                             </div>
                         </div>
-                        <div class="activity-container" style="max-height: 280px; overflow-y: auto;">
+                        <!-- Activity Container -->
+                        <div class="activity-container" style="max-height: 320px; overflow-y: auto; position: relative;">
                             @forelse ($activitysales as $sales)
-                                <div class="mb-3 sales-item" data-sales-id="{{ $sales['id_sales'] }}">
-                                    <strong class="text-dark d-block mb-2">{{ $sales['id_sales'] }}</strong>
+                                <div class="mb-4 sales-item" data-sales-id="{{ $sales['id_sales'] }}">
+                                    <strong class="text-dark d-block mb-3 fs-6">{{ $sales['id_sales'] }}</strong>
                                     @php
                                         $aktivitas = [
                                             'DB' => [
@@ -111,29 +150,96 @@
                                                     ? min(round(($data['jumlah'] / $data['target']) * 100), 100)
                                                     : 0;
                                         @endphp
-                                        <div class="mb-2 activity-item" data-activity="{{ $label }}">
-                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <div class="mb-3 activity-item" data-activity="{{ $label }}">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
                                                 <span class="small text-muted">{{ $label }}:
                                                     {{ $data['jumlah'] }}/{{ $data['target'] }}</span>
                                                 <span
-                                                    class="badge bg-{{ $data['warna'] }}-subtle text-dark">{{ $persen }}%</span>
+                                                    class="badge bg-{{ $data['warna'] }}-subtle text-{{ $data['warna'] }} rounded-pill px-3 py-1"
+                                                    style="cursor: pointer;" data-sales-id="{{ $sales['id_sales'] }}"
+                                                    data-activity="{{ $label }}">{{ $persen }}%</span>
                                             </div>
-                                            <div class="progress" style="height: 6px;">
-                                                <div class="progress-bar bg-{{ $data['warna'] }}"
-                                                    style="width: {{ $persen }}%;"></div>
+                                            <div class="progress rounded-pill" style="height: 8px;">
+                                                <div class="progress-bar bg-{{ $data['warna'] }} rounded-pill"
+                                                    role="progressbar"
+                                                    style="width: {{ $persen }}%; transition: width 0.3s ease-in-out;"
+                                                    aria-valuenow="{{ $persen }}" aria-valuemin="0"
+                                                    aria-valuemax="100"></div>
                                             </div>
                                         </div>
                                     @endforeach
                                     @if (!$loop->last)
-                                        <hr class="my-3 opacity-25">
+                                        <hr class="my-4 opacity-25">
                                     @endif
                                 </div>
                             @empty
-                                <div class="text-center py-3">
+                                <div class="text-center py-4">
                                     <p class="text-muted small mb-0">Tidak ada data aktivitas sales.</p>
                                 </div>
                             @endforelse
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal for Activity Details -->
+        <div id="detailAktivitas" class="w3-modal" style="display: none;">
+            <div class="w3-modal-content w3-animate-zoom" style="max-width: 700px; border-radius: 0.5rem;">
+                <div class="w3-container p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="modal-title text-primary mb-0">Detail Aktivitas Sales</h5>
+                        <button type="button" class="btn-close"
+                            onclick="document.getElementById('detailAktivitas').style.display='none'"
+                            aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <strong class="text-dark">Sales ID:</strong>
+                            <span id="modalSalesId" class="text-muted"></span>
+                        </div>
+                        <div class="mb-3">
+                            <strong class="text-dark">Aktivitas:</strong>
+                            <span id="modalActivity" class="text-muted"></span>
+                        </div>
+                        <div class="mb-3">
+                            <strong class="text-dark">Jumlah:</strong>
+                            <span id="modalJumlah" class="text-muted"></span>
+                        </div>
+                        <div class="mb-3">
+                            <strong class="text-dark">Target:</strong>
+                            <span id="modalTarget" class="text-muted"></span>
+                        </div>
+                        <div class="mb-3">
+                            <strong class="text-dark">Total:</strong>
+                            <span id="modalTotal" class="text-muted"></span>
+                        </div>
+                        <div class="mb-3">
+                            <strong class="text-dark">Persentase:</strong>
+                            <span id="modalPersen" class="badge bg-info-subtle text-info"></span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div id="modalProgressBar" class="progress-bar" style="width: 0%;"></div>
+                        </div>
+                    </div>
+
+                    <table class="table table-hover table-striped table-bordered align-middle">
+                        <thead>
+                            <tr>
+                                <th scope="col">Client</th>
+                                <th scope="col">Aktivitas</th>
+                                <th scope="col">Deskripsi</th>
+                                <th scope="col">Total</th>
+                                <th scope="col">Waktu Aktivitas</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+
+                    <div class="modal-footer d-flex justify-content-end">
+                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                            onclick="document.getElementById('detailAktivitas').style.display='none'">Tutup</button>
                     </div>
                 </div>
             </div>
@@ -144,7 +250,8 @@
             <!-- Total Win -->
             <div class="col-lg-6 col-md-12 mb-3">
                 <div class="card h-100 shadow-sm border-0 rounded-3">
-                    <div class="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
+                    <div
+                        class="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0 text-primary">Total Win</h5>
                         <select class="form-select form-select-sm win-year-filter" style="max-width: 120px;" hidden>
                             @for ($year = now()->year - 5; $year <= now()->year + 1; $year++)
@@ -164,7 +271,8 @@
             <!-- Total Lost -->
             <div class="col-lg-6 col-md-12 mb-3">
                 <div class="card h-100 shadow-sm border-0 rounded-3">
-                    <div class="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
+                    <div
+                        class="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0 text-primary">Total Lost</h5>
                         <select class="form-select form-select-sm lost-year-filter" style="max-width: 120px;">
                             @for ($year = now()->year - 5; $year <= now()->year + 1; $year++)
@@ -629,6 +737,188 @@
             // Initial map render
             updateMapMarkers('all');
 
+            // Activity data from PHP
+            const activityData = @json($activitysales);
+
+            // Function to show modal with activity details
+            function showActivityDetails(salesId, activityLabel) {
+                const sales = activityData.find(s => s.id_sales === salesId);
+                if (!sales) return;
+
+                const activityMap = {
+                    'DB': {
+                        jumlah: sales.DB,
+                        target: sales.target_DB,
+                        warna: 'info'
+                    },
+                    'Contact': {
+                        jumlah: sales.contact,
+                        target: sales.target_contact,
+                        warna: 'info'
+                    },
+                    'Call': {
+                        jumlah: sales.call,
+                        target: sales.target_call,
+                        warna: 'info'
+                    },
+                    'Email': {
+                        jumlah: sales.email,
+                        target: sales.target_email,
+                        warna: 'warning'
+                    },
+                    'Visit': {
+                        jumlah: sales.visit,
+                        target: sales.target_visit,
+                        warna: 'warning'
+                    },
+                    'Meet': {
+                        jumlah: sales.meet,
+                        target: sales.target_meet,
+                        warna: 'warning'
+                    },
+                    'Incharge': {
+                        jumlah: sales.incharge,
+                        target: sales.target_incharge,
+                        warna: 'success'
+                    },
+                    'Penawaran Awal': {
+                        jumlah: sales.PA,
+                        target: sales.target_PA,
+                        warna: 'success',
+                        total: sales.total_PA ?? 0
+                    },
+                    'Penawaran Internal': {
+                        jumlah: sales.PI,
+                        target: sales.target_PI,
+                        warna: 'success'
+                    },
+                    'Telemarketing': {
+                        jumlah: sales.Telemarketing,
+                        target: sales.target_Telemarketing,
+                        warna: 'danger'
+                    },
+                    'Form Masuk': {
+                        jumlah: sales.Form_Masuk,
+                        target: sales.target_Form_Masuk,
+                        warna: 'danger',
+                        total: sales.total_Form_Masuk ?? 0
+                    },
+                    'Form Keluar': {
+                        jumlah: sales.Form_Keluar,
+                        target: sales.target_Form_Keluar,
+                        warna: 'danger',
+                        total: sales.total_Form_Keluar ?? 0
+                    },
+                };
+
+                const activity = activityMap[activityLabel];
+                if (!activity) return;
+
+                const persen = activity.target > 0 ?
+                    Math.min(Math.round((activity.jumlah / activity.target) * 100), 100) :
+                    0;
+
+                // Populate modal
+                document.getElementById('modalSalesId').textContent = salesId;
+                document.getElementById('modalActivity').textContent = activityLabel;
+                document.getElementById('modalJumlah').textContent = activity.jumlah;
+                document.getElementById('modalTarget').textContent = activity.target;
+                document.getElementById('modalPersen').textContent = `${persen}%`;
+                document.getElementById('modalProgressBar').style.width = `${persen}%`;
+                document.getElementById('modalProgressBar').className = `progress-bar bg-${activity.warna}`;
+
+                // ✅ Jika aktivitas adalah PA / Form Masuk / Form Keluar → tampilkan total
+                const modalTotal = document.getElementById('modalTotal');
+                if (['Penawaran Awal', 'Form Masuk', 'Form Keluar'].includes(activityLabel)) {
+                    modalTotal.parentElement.style.display = 'block'; // pastikan group-nya muncul
+                    modalTotal.textContent = `Rp ${Number(activity.total || 0).toLocaleString('id-ID')}`;
+                } else {
+                    modalTotal.parentElement.style.display = 'none'; // sembunyikan jika bukan 3 jenis itu
+                    modalTotal.textContent = ''; // kosongkan agar bersih
+                }
+
+                // 🧩 Ambil data aktivitas detail dari struktur data PHP
+                let activityKey = '';
+                switch (activityLabel) {
+                    case 'Contact':
+                        activityKey = 'data_contact';
+                        break;
+                    case 'Call':
+                        activityKey = 'data_call';
+                        break;
+                    case 'Email':
+                        activityKey = 'data_email';
+                        break;
+                    case 'Visit':
+                        activityKey = 'data_visit';
+                        break;
+                    case 'Meet':
+                        activityKey = 'data_meet';
+                        break;
+                    case 'Incharge':
+                        activityKey = 'data_incharge';
+                        break;
+                    case 'Penawaran Awal':
+                        activityKey = 'data_PA';
+                        break;
+                    case 'Penawaran Internal':
+                        activityKey = 'data_PI';
+                        break;
+                    case 'Telemarketing':
+                        activityKey = 'data_Telemarketing';
+                        break;
+                    case 'Form Masuk':
+                        activityKey = 'data_Form_Masuk';
+                        break;
+                    case 'Form Keluar':
+                        activityKey = 'data_Form_Keluar';
+                        break;
+                    case 'DB':
+                        activityKey = 'data_DB';
+                        break;
+                    default:
+                        activityKey = '';
+                }
+
+                const tableBody = document.querySelector('#detailAktivitas tbody');
+                tableBody.innerHTML = ''; // kosongkan dulu
+
+                if (activityKey && Array.isArray(sales[activityKey])) {
+                    sales[activityKey].forEach(item => {
+                        const row = `
+            <tr>
+                <td>${item.contact?.perusahaan? `${item.contact.nama ?? '-'} (${item.contact.perusahaan.nama_perusahaan})` : item.contact ? `${item.contact.nama ?? '-'}` : item.peserta ? `${item.peserta.nama ?? '-'} (Peserta)` : '-'}</td>
+                <td>${item.aktivitas ?? '-'}</td>
+                <td>${item.deskripsi ?? '-'}</td>
+                <td>${item.total ? 'Rp ' + Number(item.total).toLocaleString('id-ID') : '-'}</td>
+                <td>${item.waktu_aktivitas ? new Date(item.waktu_aktivitas).toLocaleDateString('id-ID') : '-'}</td>
+            </tr>
+        `;
+                        tableBody.insertAdjacentHTML('beforeend', row);
+                    });
+                } else {
+                    tableBody.innerHTML = `
+        <tr>
+            <td colspan="5" class="text-center text-muted py-3">
+                Tidak ada data aktivitas untuk jenis ini.
+            </td>
+        </tr>
+    `;
+                }
+
+                // Show modal
+                document.getElementById('detailAktivitas').style.display = 'block';
+            }
+
+            // Attach click event to percentage badges
+            document.querySelectorAll('.badge[data-sales-id][data-activity]').forEach(badge => {
+                badge.addEventListener('click', () => {
+                    const salesId = badge.closest('.sales-item').dataset.salesId;
+                    const activityLabel = badge.closest('.activity-item').dataset.activity;
+                    showActivityDetails(salesId, activityLabel);
+                });
+            });
+
             const filterButtons = document.querySelectorAll('.filter-btn');
             filterButtons.forEach(button => {
                 button.addEventListener('click', () => {
@@ -667,7 +957,7 @@
             if (lostYearFilter) lostYearFilter.addEventListener('change', handleYearChange);
 
             // Initialize filters
-            applyActivityFilter();
+            applySalesFilter();
         });
     </script>
 
@@ -675,24 +965,17 @@
         /* Map container styling */
         #map {
             height: 400px;
-            /* Increased height since chart is removed */
             width: 100%;
-            /* Full width of card-body */
             border-radius: 0.5rem;
-            /* Match card's rounded-3 style */
             border: 1px solid #e3e6f0;
-            /* Subtle border */
             background-color: #f8f9fa;
-            /* Light background */
             z-index: 1;
-            /* Ensure below Leaflet controls */
         }
 
         /* Responsive map height */
         @media (max-width: 767.98px) {
             #map {
                 height: 300px;
-                /* Smaller height for mobile */
             }
 
             .card-body {
@@ -796,6 +1079,80 @@
             background: #fff;
             z-index: 1;
             border-bottom: 2px solid #dee2e6;
+        }
+
+        /* Modal Styling */
+        .w3-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .w3-modal-content {
+            background-color: #fff;
+            margin: 5% auto;
+            padding: 0;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            border-radius: 0.5rem;
+        }
+
+        .w3-animate-zoom {
+            animation: zoom 0.3s;
+        }
+
+        @keyframes zoom {
+            from {
+                transform: scale(0);
+            }
+
+            to {
+                transform: scale(1);
+            }
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .btn-close {
+            background: transparent;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: #6c757d;
+        }
+
+        .btn-close:hover {
+            color: #343a40;
+        }
+
+        /* Responsive modal */
+        @media (max-width: 576px) {
+            .w3-modal-content {
+                margin: 10% auto;
+                width: 95%;
+            }
+
+            .modal-body {
+                padding: 1rem;
+            }
+
+            .modal-footer {
+                padding: 0.75rem 1rem;
+            }
         }
     </style>
 @endsection

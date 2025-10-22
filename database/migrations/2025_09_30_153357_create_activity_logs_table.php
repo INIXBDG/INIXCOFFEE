@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('user_id');
             $table->string('status');
-            $table->string('url');
+            $table->text('url');
             $table->string('ip');
             $table->string('user_agent');
             $table->string('platform');
