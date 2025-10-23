@@ -13,15 +13,15 @@ return new class extends Migration
     {
         Schema::create('activity_logs', function (Blueprint $table) {
             $table->id();
-            $table->string('user_id');
-            $table->string('status');
-            $table->text('url');
-            $table->string('ip');
-            $table->string('user_agent');
-            $table->string('platform');
-            $table->string('browser');
-            $table->string('device');
-            $table->string('method');
+            $table->string('user_id')->nullable();
+            $table->string('status')->nullable();
+            $table->text('url')->nullable();
+            $table->string('ip')->nullable();
+            $table->string('user_agent')->nullable();
+            $table->string('platform')->nullable();
+            $table->string('browser')->nullable();
+            $table->string('device')->nullable();
+            $table->string('method')->nullable();
             $table->text('detail')->nullable();
             $table->timestamps();
         });
