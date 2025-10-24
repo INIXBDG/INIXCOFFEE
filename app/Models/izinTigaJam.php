@@ -10,7 +10,7 @@ class izinTigaJam extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['id_karyawan', 'jam_mulai', 'jam_selesai', 'alasan', 'durasi', 'alasan_approval', 'approval','tanggal_pengajuan'];
+    protected $fillable = ['id_karyawan', 'tanggal', 'jam_mulai', 'jam_selesai', 'alasan', 'durasi', 'alasan_approval', 'approval','tanggal_pengajuan'];
 
     public function karyawan()
     {
