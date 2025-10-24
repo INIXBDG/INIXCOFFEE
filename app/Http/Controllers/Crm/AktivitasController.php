@@ -122,11 +122,16 @@ class AktivitasController extends Controller
 
 
             // 🔹 Filter tambahan
+            $filterSales = request()->get('filter_sales');
             $filterAktivitas = request()->get('filter_aktivitas');
             $filterWaktuStart = request()->get('filter_waktu_start');
             $filterWaktuEnd = request()->get('filter_waktu_end');
             $filterCreatedStart = request()->get('filter_created_start');
             $filterCreatedEnd = request()->get('filter_created_end');
+
+            if (!empty($filterSales)) {
+                $query->where('id_sales', $filterSales);
+            }
 
             if ($filterAktivitas) {
                 $query->where('aktivitas', $filterAktivitas);
@@ -240,6 +245,13 @@ class AktivitasController extends Controller
                 return response()->json(['message' => 'Target belum ditetapkan untuk sales ini.'], 404);
             }
 
+            $aktivitas = Aktivitas::with(['contact.perusahaan', 'peserta'])
+                ->whereBetween('waktu_aktivitas', [
+                    Carbon::now()->startOfWeek(),  // Senin awal minggu
+                    Carbon::now()->endOfWeek()     // Minggu akhir minggu
+                ])
+                ->whereYear('waktu_aktivitas', Carbon::now()->year)
+                ->get();
             $deadline = \Carbon\Carbon::parse($target->deadline)->format('d/m/Y');
 
             // Daftar jenis aktivitas yang akan dibandingkan
@@ -415,6 +427,8 @@ class AktivitasController extends Controller
 
     public function storeNew(Request $request)
     {
+        $user = auth()->user();
+
         $validated = $request->validate([
             'id_perusahaan'   => 'required|integer',
             'id_contact'      => 'required|string',
@@ -425,7 +439,14 @@ class AktivitasController extends Controller
             'waktu_aktivitas' => 'required|date',
         ]);
 
-        $validated['id_sales'] = $request->input('id_sales', auth()->user()->id_sales);
+        if (in_array($user->jabatan, ['Adm Sales', 'SPV Sales'])) {
+            $validated['id_sales'] = $request->input('id_sales');
+            if (empty($validated['id_sales'])) {
+                return back()->withErrors(['id_sales' => 'Sales harus dipilih.']);
+            }
+        } else {
+            $validated['id_sales'] = $user->id_sales;
+        }
 
         // 🔹 Jika user menambahkan kontak baru
         if ($request->id_contact === 'new') {

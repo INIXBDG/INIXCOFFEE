@@ -22,13 +22,47 @@
             <div class="col-lg-6 col-md-12 mb-4">
                 <div class="card h-100 shadow-sm border-0 rounded-4 overflow-hidden">
                     <div class="card-header bg-light border-0 py-3 px-4">
-                        <h5 class="card-title mb-2 text-primary fw-bold">Target Aktivitas Sales</h5>
-                        <div class="d-flex">
-                            <span class="text-muted small fw-medium">{{ $tanggal }}  |</span>
-                            <span class="text-muted small fw-medium"> Minggu Ke {{ $mingguKeBulan }}</span>
-                        </div>
+                        <h5 class="card-title mb-2 text-primary fw-bold">Target Aktivitas Sales | Tanggal ({{ $tanggalRange }})</h5>
+                        {{-- <div class="me-2">
+                            <span class="text-muted small fw-medium"></span>
+                        </div> --}}
                     </div>
                     <div class="card-body p-4">
+                    <form method="GET" class="d-flex flex-wrap align-items-center mb-4">
+                        <div class="me-2">
+                            <label class="form-label small text-muted mb-1">Tahun</label>
+                            <select name="tahun" class="form-select form-select-sm">
+                                @for ($t = now()->year; $t >= now()->year - 3; $t--)
+                                    <option value="{{ $t }}" {{ $tahun == $t ? 'selected' : '' }}>{{ $t }}</option>
+                                @endfor
+                            </select>
+                        </div>
+
+                        <div class="me-2">
+                            <label class="form-label small text-muted mb-1">Bulan</label>
+                            <select name="bulan" class="form-select form-select-sm">
+                                @for ($b = 1; $b <= 12; $b++)
+                                    <option value="{{ $b }}" {{ $bulan == $b ? 'selected' : '' }}>
+                                        {{ \Carbon\Carbon::create()->month($b)->locale('id')->translatedFormat('F') }}
+                                    </option>
+                                @endfor
+                            </select>
+                        </div>
+
+                        <div class="me-2">
+                            <label class="form-label small text-muted mb-1">Minggu Ke</label>
+                            <select name="minggu" class="form-select form-select-sm">
+                                <option value="">Semua</option>
+                                @for ($m = 1; $m <= 5; $m++)
+                                    <option value="{{ $m }}" {{ $mingguKe == $m ? 'selected' : '' }}>Minggu ke {{ $m }}</option>
+                                @endfor
+                            </select>
+                        </div>
+
+                        <div class="align-self-end">
+                            <button type="submit" class="btn btn-sm btn-primary">Filter</button>
+                        </div>
+                    </form>
                         <!-- Filter Section -->
                         <div class="mb-4">
                             <div class="btn-group btn-group-sm" role="group">
@@ -853,7 +887,7 @@
                     sales[activityKey].forEach(item => {
                         const row = `
             <tr>
-                <td>${item.contact?.perusahaan? `${item.contact.nama ?? '-'} (${item.contact.perusahaan.nama_perusahaan})` : item.contact ? `${item.contact.nama ?? '-'}` : item.peserta ? `${item.peserta.nama ?? '-'} (Peserta)` : '-'}</td>                
+                <td>${item.contact?.perusahaan? `${item.contact.nama ?? '-'} (${item.contact.perusahaan.nama_perusahaan})` : item.contact ? `${item.contact.nama ?? '-'}` : item.peserta ? `${item.peserta.nama ?? '-'} (Peserta)` : '-'}</td>
                 <td>${item.aktivitas ?? '-'}</td>
                 <td>${item.deskripsi ?? '-'}</td>
                 <td>${item.total ? 'Rp ' + Number(item.total).toLocaleString('id-ID') : '-'}</td>

@@ -23,6 +23,7 @@
                         <table id="peluangTable" class="table table-bordered table-hover">
                             <thead class="table-primary">
                                 <tr>
+                                    <th style="text-align:center;">No</th>
                                     <th style="text-align: center;">Materi</th>
                                     <th style="text-align: center;">Client</th>
                                     <th style="text-align: center;">Harga (Rp)</th>
@@ -206,24 +207,21 @@
         });
 
         $(document).ready(function() {
-            $('#peluangTable').DataTable({
+            let table = $('#peluangTable').DataTable({
                 processing: true,
                 ajax: {
                     url: '{{ route('index.peluang.json') }}',
                     dataSrc: function(json) {
-                        console.log("Data dari server:", json); // log full JSON
-                        return json.data; // tetap return data array agar DataTable jalan
+                        console.log("Data dari server:", json);
+                        return json.data;
                     },
                     error: function(xhr, error, thrown) {
                         alert('Gagal memuat data peluang: ' + thrown);
                     }
                 },
-                columns: [{
-                        data: 'materi_relation.nama_materi',
-                        render: function(data) {
-                            return data || '-';
-                        }
-                    },
+                columns: [
+                    { data: null, className: "text-center", orderable: false, searchable: false }, // nomor urut
+                    { data: 'materi_relation.nama_materi', render: d => d || '-' },
                     {
                         data: 'rkm_data.perusahaan.nama_perusahaan',
                         render: function(data, type, row) {
@@ -232,76 +230,42 @@
                             return cp ? namaPerusahaan + ' (' + cp + ')' : namaPerusahaan;
                         }
                     },
-                    {
-                        data: 'harga',
-                        render: function(data) {
-                            return 'Rp ' + parseInt(data).toLocaleString('id-ID');
-                        }
-                    },
-                    {
-                        data: 'netsales',
-                        render: function(data) {
-                            if (data === null || data === '') {
-                                return 'Rp 0,00';
-                            }
-                            return 'Rp ' + parseInt(data).toLocaleString('id-ID');
-                        }
-                    },
-                    {
-                        data: 'pax'
-                    },
-                    {
-                        data: null,
-                        render: function(data, type, row) {
-                            const startDate = data.periode_mulai ? moment(data.periode_mulai)
-                                .format('DD-MM-YYYY') : '';
-                            const endDate = data.periode_selesai ? moment(data.periode_selesai)
-                                .format('DD-MM-YYYY') : '';
-                            return startDate && endDate ? `${startDate} s/d ${endDate}` :
-                                'Tentatif';
-                        }
-                    },
-                    {
-                        data: 'tahap',
-                        render: function(data) {
-                            return data.charAt(0).toUpperCase() + data.slice(1);
-                        }
-                    },
-                    {
-                        data: 'id_sales'
-                    },
-                    {
-                        data: 'created_at',
-                        render: function(data, type, row) {
-                            if (type === 'display' || type === 'filter') {
-                                return moment(data).format('DD-MM-YYYY'); // tampilkan rapi
-                            }
-                            return data; // sorting tetap pakai nilai asli dari DB
-                        }
-                    },
-                    {
-                        data: 'id',
-                        render: function(id, type, data, row) {
-                            const rkm = data.rkm_formatted;
-                            const isLost = data.tahap.toLowerCase() === 'lost';
-
-                            const rkmButton = isLost ?
-                                `<span class="btn btn-sm btn-info disabled w-100" style="pointer-events: none; opacity: 0.5;">RKM</span>` :
-                                `<a class="btn btn-sm btn-info w-100" target="_blank" href="/rkm/${rkm.materi_key}ixb${rkm.tanggal_awal_day}ie${rkm.tanggal_awal_year}ie${rkm.tanggal_awal_month}ixb${rkm.metode_kelas}">RKM</a>`;
-
-                            return `
-                                <div class="d-flex flex-column gap-2" style="min-width: 80px;">
-                                    <a href="/crm/peluang/detail/${id}" class="btn btn-sm btn-warning w-100">Detail</a>
-                                    ${rkmButton}
-                                    <button onclick="hapusPeluang(${id})" class="btn btn-sm btn-danger w-100">Hapus</button>
-                                </div>
-                            `;
-                        }
-                    }
+                    { data: 'harga', render: d => 'Rp ' + parseInt(d).toLocaleString('id-ID') },
+                    { data: 'netsales', render: d => d ? 'Rp ' + parseInt(d).toLocaleString('id-ID') : 'Rp 0,00' },
+                    { data: 'pax' },
+                    { data: null, render: function(data) {
+                        const startDate = data.periode_mulai ? moment(data.periode_mulai).format('DD-MM-YYYY') : '';
+                        const endDate = data.periode_selesai ? moment(data.periode_selesai).format('DD-MM-YYYY') : '';
+                        return startDate && endDate ? `${startDate} s/d ${endDate}` : 'Tentatif';
+                    }},
+                    { data: 'tahap', render: d => d.charAt(0).toUpperCase() + d.slice(1) },
+                    { data: 'id_sales' },
+                    { data: 'created_at', render: d => moment(d).format('DD-MM-YYYY') },
+                    { data: 'id', render: function(id, type, data) {
+                        const rkm = data.rkm_formatted;
+                        const isLost = data.tahap.toLowerCase() === 'lost';
+                        const rkmButton = isLost
+                            ? `<span class="btn btn-sm btn-info disabled w-100" style="pointer-events: none; opacity: 0.5;">RKM</span>`
+                            : `<a class="btn btn-sm btn-info w-100" target="_blank" href="/rkm/${rkm.materi_key}ixb${rkm.tanggal_awal_day}ie${rkm.tanggal_awal_year}ie${rkm.tanggal_awal_month}ixb${rkm.metode_kelas}">RKM</a>`;
+                        return `
+                            <div class="d-flex flex-column gap-2" style="min-width: 80px;">
+                                <a href="/crm/peluang/detail/${id}" class="btn btn-sm btn-warning w-100">Detail</a>
+                                ${rkmButton}
+                                <button onclick="hapusPeluang(${id})" class="btn btn-sm btn-danger w-100">Hapus</button>
+                            </div>
+                        `;
+                    }}
                 ],
                 order: [[7, 'desc']]
             });
 
+            // 🔹 Callback untuk nomor urut tetap mengikuti tampilan
+            table.on('order.dt search.dt draw.dt', function() {
+                table.column(0, { search: 'applied', order: 'applied' }).nodes().each(function(cell, i) {
+                    cell.innerHTML = i + 1;
+                });
+            }).draw();
+            
             initPerusahaanSelect2();
             initMateriSelect2();
 

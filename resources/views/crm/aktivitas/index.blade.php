@@ -3,6 +3,7 @@
 @section('crm_contents')
     @php
         $allowedUser = ['Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
+        $createNotAllowed = ['HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
         $sales = Auth::user()->id_sales;
         $isAllowedUser = in_array(Auth::user()->jabatan, $allowedUser);
     @endphp
@@ -12,7 +13,7 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="fw-bold">Activity Management</h4>
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#activityModal"
-                    onclick="resetForm()" @if (in_array(Auth::user()->jabatan, $allowedUser)) disabled @endif>
+                    onclick="resetForm()" @if (in_array(Auth::user()->jabatan, $createNotAllowed)) disabled @endif>
                     Tambah Aktivitas
                 </button>
             </div>
@@ -51,6 +52,18 @@
                             </div>
 
                         @if(in_array(Auth::user()->jabatan, $allowedUser))
+                            <div class="col-md-3">
+                                <label for="filter_sales" class="form-label">Filter Sales</label>
+                                <select id="filter_sales" class="form-select">
+                                    <option value="">-- Semua Sales --</option>
+                                    <option value="HW">Hera</option>
+                                    <option value="VN">Savana</option>
+                                    <option value="RR">Rara</option>
+                                    <option value="NA">Nabila</option>
+                                    <option value="AN">Alfasyiani</option>
+                                    <option value="RN">Reni</option>
+                                </select>
+                            </div>
                             <!-- Rentang Created At -->
                             <div class="col-md-3">
                                 <label for="filter_created_start" class="form-label">Dibuat Dari</label>
@@ -78,6 +91,7 @@
                         <table id="aktivitasTable" class="table table-bordered table-hover">
                             <thead class="table-primary">
                                 <tr>
+                                    <th style="text-align:center;">No</th>
                                     <th>Client</th>
                                     <th>Sales</th>
                                     <th style="text-align: center;">Jenis Aktivitas</th>
@@ -112,6 +126,21 @@
                             <form id="activityForm" action="{{ route('store.aktivitas.new') }}" method="POST">
                                 @csrf
                                 <input type="hidden" id="contact_type" name="contact_type" value="contact">
+
+                                @if (auth()->user()->jabatan === 'Adm Sales' || auth()->user()->jabatan === 'SPV Sales')
+                                    <div class="mb-3">
+                                        <label class="form-label" for="id_sales">Pilih Sales</label>
+                                        <select class="form-select" id="id_sales" name="id_sales" required>
+                                            <option value="">-- Pilih Sales --</option>
+                                            <option value="HW">Hera</option>
+                                            <option value="VN">Savana</option>
+                                            <option value="RR">Rara</option>
+                                            <option value="NA">Nabila</option>
+                                            <option value="AN">Alfasyiani</option>
+                                            <option value="RN">Reni</option>
+                                        </select>
+                                    </div>
+                                @endif
 
                                 {{-- Dropdown perusahaan Klien --}}
                                 <div class="mb-3">
@@ -295,15 +324,13 @@
         // ===============================
         // 🔹 Fungsi Format Angka (IDR)
         // ===============================
-        function formatNumber(value) {
-            if (!value) return '';
-            const number = parseFloat(value.toString().replace(/[^0-9.-]+/g, '')) || 0;
-            return number.toLocaleString('id-ID');
-        }
-
         function unformatNumber(value) {
             if (!value) return '';
-            return parseFloat(value.toString().replace(/[^0-9.-]+/g, '')) || '';
+            return parseFloat(value.toString().replace(/\./g, '').replace(/,/g, '')) || '';
+        }
+        function formatNumber(value) {
+            if (!value) return '';
+            return parseInt(value, 10).toLocaleString('id-ID');
         }
 
         // ===============================
@@ -318,6 +345,7 @@
                     url: '{{ route('index.aktivitas.json') }}',
                     type: 'GET',
                     data: function(d) {
+                        d.filter_sales = $('#filter_sales').val(); // ✅ Tambahan filter sales
                         d.filter_aktivitas = $('#filter_aktivitas').val();
                         d.filter_waktu_start = $('#filter_waktu_start').val();
                         d.filter_waktu_end = $('#filter_waktu_end').val();
@@ -331,6 +359,15 @@
                     }
                 },
                 columns: [
+                    {
+                        data: null,
+                        render: function (data, type, row, meta) {
+                            return meta.row + meta.settings._iDisplayStart + 1; // ✅ Nomor urut
+                        },
+                        className: "text-center",
+                        orderable: false,
+                        searchable: false
+                    },
                     { data: 'kontak' },
                     { data: 'id_sales' },
                     { data: 'aktivitas' },
@@ -359,7 +396,7 @@
             // === Filter & Reset ===
             $('#btnFilter').on('click', () => $('#aktivitasTable').DataTable().ajax.reload());
             $('#btnResetFilter').on('click', function() {
-                $('#filter_aktivitas, #filter_waktu_start, #filter_waktu_end, #filter_created_start, #filter_created_end').val('');
+                $('#filter_sales, #filter_aktivitas, #filter_waktu_start, #filter_waktu_end, #filter_created_start, #filter_created_end').val('');
                 $('#aktivitasTable').DataTable().ajax.reload();
             });
 
@@ -367,19 +404,35 @@
             initPerusahaanSelect2();
             initContactSelect2();
 
-            // === Harga Input Formatting ===
-            $('#harga, #edit_harga').on('input change', function() {
-                const val = unformatNumber(this.value);
-                this.value = formatNumber(val);
+            $('#harga, #edit_harga').on('input', function(e) {
+                const input = e.target;
+                const cursorPos = input.selectionStart;
+
+                // Ambil hanya angka dari input
+                const raw = input.value.replace(/[^\d]/g, '');
+                if (!raw) {
+                    input.value = '';
+                    return;
+                }
+
+                // Format ke format IDR (tanpa simbol)
+                const formatted = parseInt(raw, 10).toLocaleString('id-ID');
+                input.value = formatted;
+
+                // Kembalikan posisi kursor ke akhir agar tidak loncat
+                input.setSelectionRange(formatted.length, formatted.length);
             });
 
             // === Form Submit (Create) ===
             $('#activityForm').on('submit', function(e) {
-                e.preventDefault();
-                const originalValue = $('#harga').val();
-                $('#harga').val(unformatNumber(originalValue));
-                this.submit();
-                $('#harga').val(formatNumber(originalValue));
+                // pastikan harga dikirim sebagai angka tanpa pemisah ribuan
+                const hargaEl = document.getElementById('harga');
+                if (hargaEl) {
+                    const raw = unformatNumber(hargaEl.value);
+                    // jika NaN, kosongkan agar validasi server menangani; jika angka gunakan nilai numerik
+                    hargaEl.value = isNaN(raw) ? '' : raw;
+                }
+                // biarkan form submit biasa
             });
 
             // === Form Submit (Edit) ===
@@ -387,6 +440,7 @@
                 e.preventDefault();
                 const id = $('#edit_id').val();
                 const url = `/crm/aktivitas/update/${id}`;
+                const hargaUnformatted = unformatNumber($('#edit_harga').val());
                 const data = {
                     id_perusahaan: $('#edit_id_perusahaan').val(),
                     id_contact: $('#edit_id_contact').val(),
@@ -394,7 +448,7 @@
                     deskripsi: $('#edit_deskripsi').val(),
                     waktu_aktivitas: $('#edit_waktu_aktivitas').val(),
                     pax: $('#edit_pax').val(),
-                    harga: unformatNumber($('#edit_harga').val())
+                    harga: isNaN(hargaUnformatted) ? null : hargaUnformatted
                 };
 
                 try {
@@ -511,9 +565,6 @@
                                 <div class="progress" style="height: 10px;">
                                     <div class="progress-bar" style="width:${percent}%; background-color:${color};"></div>
                                 </div>
-                                <div class="mt-1 fw-bold" style="font-size: 0.85rem; color:${deadlineColor}">
-                                    Deadline: ${deadline}
-                                </div>
                             </div>`;
                     }).join("");
 
@@ -541,6 +592,29 @@
             } catch (err) {
                 console.error("💥 ERROR:", err);
                 alert("Terjadi kesalahan saat memuat data target aktivitas.");
+            }
+        }
+
+        // ===============================
+        // 🔹 Helper untuk restore caret posisi saat formatting
+        // ===============================
+        function setFormattedInput(el) {
+            const start = el.selectionStart;
+            const end = el.selectionEnd;
+            const oldValue = el.value;
+            const unformatted = unformatNumber(oldValue);
+
+            // Simpan offset dari kanan untuk memperkirakan posisi setelah format
+            const rightOffset = oldValue.length - (end || oldValue.length);
+
+            el.value = formatNumber(unformatted);
+
+            // restore caret: perkirakan posisi baru berdasarkan offset kanan
+            try {
+                const newPos = Math.max(0, el.value.length - rightOffset);
+                el.setSelectionRange(newPos, newPos);
+            } catch (e) {
+                // ignore jika tidak mendukung
             }
         }
 
@@ -591,12 +665,114 @@
             })
             .catch(() => alert('Terjadi kesalahan saat menghapus aktivitas.'));
         }
-
-        document.addEventListener("DOMContentLoaded", () => {
-            // Ganti nilai ini pakai variabel dari server
-            // contoh: let isAllowedUser = {{ in_array(auth()->user()->jabatan, $allowedUser) ? 'true' : 'false' }};
+        document.addEventListener("DOMContentLoaded", function() {
+            const contactSelect = document.getElementById("id_contact");
+            const contactTypeInput = document.getElementById("contact_type");
+            const newContactFields = document.getElementById("newContactFields");
+            const aktivitasOption = document.getElementById("aktivitas");
+            const hiddenContainer = document.getElementById("hidden-container");
+            const paxInput = document.getElementById("pax");
+            const hargaInput = document.getElementById("harga");
+            const editAktivitasOption = document.getElementById("edit_aktivitas");
+            const editHiddenContainer = document.getElementById("edit-hidden-container");
             const isAllowedUser = window.isAllowedUser || false;
             loadSemuaTargetAktivitas(isAllowedUser);
+
+            // Ambil kontak saat perusahaan dipilih
+            $('#id_perusahaan').on('change', function() {
+                const perusahaanId = $(this).val();
+                contactSelect.innerHTML = `
+                <option value="" disabled selected>Pilih Kontak</option>
+                <option value="new" data-type="contact">+ Tambahkan Kontak Baru</option>
+            `;
+
+                if (!perusahaanId) return;
+
+                fetch(`/crm/get-contacts-peserta/${perusahaanId}`)
+                    .then(response => {
+                        if (!response.ok) throw new Error("Gagal mengambil data kontak dan peserta");
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.length === 0) {
+                            const option = document.createElement("option");
+                            option.value = "";
+                            option.textContent = "Tidak ada kontak atau peserta tersedia";
+                            option.disabled = true;
+                            contactSelect.appendChild(option);
+                        } else {
+                            data.forEach(item => {
+                                const option = document.createElement("option");
+                                option.value = item.id;
+                                option.dataset.type = item.type;
+                                const nama = item.nama || "Tidak ada nama";
+                                const email = item.email || "Tidak ada email";
+                                const divisi = item.type === 'peserta' ?
+                                    'C-Peserta' :
+                                    (item.divisi || 'tidak ada divisi');
+                                option.textContent = `${nama} (${divisi}) - ${email}`;
+                                contactSelect.appendChild(option);
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Gagal mengambil data kontak dan peserta:", error);
+                        const option = document.createElement("option");
+                        option.value = "";
+                        option.textContent = "Terjadi kesalahan saat mengambil data";
+                        option.disabled = true;
+                        contactSelect.appendChild(option);
+                    });
+            });
+
+            // Tampilkan form kontak baru jika pilih "new"
+            $('#id_contact').on('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                const type = selectedOption ? (selectedOption.dataset.type || "contact") : "contact";
+                contactTypeInput.value = type;
+                if (this.value === "new") {
+                    newContactFields.style.display = "block";
+                } else {
+                    newContactFields.style.display = "none";
+                }
+            });
+
+            // Show/hide hidden container berdasarkan jenis aktivitas (create)
+            aktivitasOption.addEventListener('change', function() {
+                const selected = this.value;
+                if (['PA', 'Form_Masuk', 'Form_Keluar'].includes(selected)) {
+                    hiddenContainer.style.display = 'block';
+                } else {
+                    hiddenContainer.style.display = 'none';
+                    if (paxInput) paxInput.value = '';
+                    if (hargaInput) hargaInput.value = '';
+                }
+            });
+
+            // Show/hide hidden container berdasarkan jenis aktivitas (edit)
+            editAktivitasOption.addEventListener('change', function() {
+                let selected = this.value;
+
+                const aktivitasMap = {
+                    'Form Masuk': 'Form_Masuk',
+                    'Form Keluar': 'Form_Keluar',
+                    'Incharge Inhouse': 'Incharge'
+                };
+                selected = aktivitasMap[selected] || selected;
+
+                const editHiddenContainer = document.getElementById('edit-hidden-container');
+                const editPaxInput = document.getElementById('edit_pax');
+                const editHargaInput = document.getElementById('edit_harga');
+
+                if (['PA', 'Form_Masuk', 'Form_Keluar'].includes(selected)) {
+                    editHiddenContainer.style.display = 'block';
+                } else {
+                    editHiddenContainer.style.display = 'none';
+                    if (editPaxInput) editPaxInput.value = '';
+                    if (editHargaInput) editHargaInput.value = '';
+                }
+            });
+
         });
     </script>
 
