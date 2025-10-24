@@ -2180,6 +2180,27 @@
                                             </div>
                                         </div>
                                         @endcan
+                                        @can('Super Duper Admin')
+                                        <div class="col-sm-6 mt-2">
+                                            <div class="card" id="card-hover">
+                                                <div class="card-body d-flex">
+                                                    <div class="col-md-2">
+                                                        {{-- Ganti 'icon/activity.svg' dengan icon yang Anda miliki --}}
+                                                        <img src="{{ asset('icon/activity.svg') }}" 
+                                                            class="img-responsive" width="30px"> 
+                                                    </div>
+                                                    <div class="col-md-10" style="margin-left: 10px">
+                                                        {{-- Gunakan route() helper untuk link ke paketnya --}}
+                                                        <a href="{{ route('queue-monitor::index') }}"
+                                                        class="link stretched-link text-decoration-none">
+                                                            <h5 class="card-title">Queue Monitor</h5>
+                                                        </a>
+                                                        <p class="card-text">Monitoring jobs.</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @endcan
                                     </div>
                                 </div>
                             </div>

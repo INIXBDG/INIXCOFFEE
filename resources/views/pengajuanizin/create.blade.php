@@ -34,29 +34,12 @@
                             </div>
                         </div>
 
-                        <div class="row mb-3" id="tanggal-row">
-                            <label for="tanggal" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Pengajuan Izin') }}</label>
-                            <div class="col-md-6">
-                                <input id="tanggal" type="date" class="form-control @error('tanggal') is-invalid @enderror" 
-                                    value="{{ \Carbon\Carbon::now()->toDateString() }}" 
-                                    name="tanggal" autocomplete="tanggal" autofocus readonly>
-                                @error('tanggal')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                                @enderror
-                            </div>
-                        </div>
-
                         <div class="row mb-3" id="tanggal_pengajuan-row">
-                            <label for="tanggal_pengajuan" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Izin') }}</label>
+                            <label for="tanggal_pengajuan" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Pengajuan Izin') }}</label>
                             <div class="col-md-6">
-                                <input id="tanggal_pengajuan" type="date" name="tanggal_pengajuan"
-                                    class="form-control @error('tanggal_pengajuan') is-invalid @enderror"
-                                    value="{{ \Carbon\Carbon::now()->toDateString() }}"
-                                    min="{{ \Carbon\Carbon::now()->toDateString() }}"
-                                    max="{{ \Carbon\Carbon::now()->addDay()->toDateString() }}" required>
-
+                                <input id="tanggal_pengajuan" type="date" class="form-control @error('tanggal_pengajuan') is-invalid @enderror" 
+                                    value="{{ \Carbon\Carbon::now()->toDateString() }}" 
+                                    name="tanggal_pengajuan" autocomplete="tanggal_pengajuan" autofocus readonly>
                                 @error('tanggal_pengajuan')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -65,6 +48,21 @@
                             </div>
                         </div>
 
+                        <div class="row mb-3" id="tanggal-row">
+                            <label for="tanggal" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Izin') }}</label>
+                            <div class="col-md-6">
+                                <input id="tanggal" type="date" name="tanggal"
+                                    class="form-control @error('tanggal') is-invalid @enderror"
+                                    value="{{ \Carbon\Carbon::now()->toDateString() }}"
+                                    min="{{ \Carbon\Carbon::now()->subDay()->toDateString() }}"
+                                    max="{{ \Carbon\Carbon::now()->addDay()->toDateString() }}" required>
+                                @error('tanggal')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                                @enderror
+                            </div>
+                        </div>
 
                         <div class="row mb-3" id="jam_mulai-row">
                             <label for="jam_mulai" class="col-md-4 col-form-label text-md-start">{{ __('Jam Mulai') }}</label>
@@ -139,7 +137,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const jamMulaiInput = document.getElementById('jam_mulai');
     const jamSelesaiInput = document.getElementById('jam_selesai');
     const errorMessage = document.getElementById('jam_mulai-error');
-    const tanggalInput = document.getElementById('tanggal_pengajuan_izin');
+    const tanggalIzinInput = document.getElementById('tanggal');
 
     // Konstanta durasi dan waktu makan siang (dalam menit dari tengah malam)
     const DURASI_MENIT = 3 * 60; // 3 jam
@@ -154,8 +152,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function isTodaySelected() {
-        if (!tanggalInput) return false;
-        const selectedDate = tanggalInput.value; // format: YYYY-MM-DD
+        if (!tanggalIzinInput) return false;
+        const selectedDate = tanggalIzinInput.value; // format: YYYY-MM-DD
         const today = new Date().toISOString().split('T')[0]; // format: YYYY-MM-DD
         return selectedDate === today;
     }
@@ -201,6 +199,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const selectedTime = jamMulaiInput.value;
         const currentTime = getCurrentTime();
 
+        // Hanya validasi jam jika tanggal izin adalah HARI INI
         if (isTodaySelected()) {
             jamMulaiInput.setAttribute('min', currentTime);
 
@@ -213,6 +212,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 errorMessage.classList.add('d-none');
             }
         } else {
+            // Jika tanggal izin bukan hari ini (kemarin/besok), hapus batasan min
             jamMulaiInput.removeAttribute('min');
             jamMulaiInput.classList.remove('is-invalid');
             errorMessage.classList.add('d-none');
@@ -228,7 +228,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Event listeners
     jamMulaiInput.addEventListener('change', updateJamMulaiConstraint);
-    tanggalInput.addEventListener('change', updateJamMulaiConstraint);
+    tanggalIzinInput.addEventListener('change', function() {
+        updateJamMulaiConstraint();
+        
+        // Reset jam_mulai ketika ganti tanggal (opsional)
+        if (!isTodaySelected()) {
+            jamMulaiInput.value = '';
+            jamSelesaiInput.value = '';
+        }
+    });
 
     // Jalankan saat load awal
     setTimeout(updateJamMulaiConstraint, 500);
@@ -242,167 +250,161 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 
+document.getElementById('jam_mulai').addEventListener('change', function() {
+    const jamMulaiInput = this.value;
+    if (!jamMulaiInput) return;
+
+    const [jam, menit] = jamMulaiInput.split(':').map(Number);
+    let jamSelesai = jam + 3;
+    let menitSelesai = menit;
+
+    if (jamSelesai >= 24) {
+        jamSelesai = jamSelesai % 24;
+    }
+
+    const jamSelesaiStr = jamSelesai.toString().padStart(2, '0');
+    const menitSelesaiStr = menitSelesai.toString().padStart(2, '0');
+
+    document.getElementById('jam_selesai').value = `${jamSelesaiStr}:${menitSelesaiStr}`;
+
+    const durasiJam = 3;
+    document.getElementById('durasi').value = durasiJam;
+    document.getElementById('durasi_display').value = `${durasiJam} Jam`;
+});
 
 
+$(document).ready(function() {
+    $('#cuti-row, #surat_sakit-row').hide();
+    var jabatan = "{{auth()->user()->jabatan}}";
 
-    document.getElementById('jam_mulai').addEventListener('change', function() {
-        const jamMulaiInput = this.value;
-        if (!jamMulaiInput) return;
+    function calculateDuration() {
+        var startDate = new Date($('#tanggal_awal').val());
+        var endDate = new Date($('#tanggal_akhir').val());
 
-        const [jam, menit] = jamMulaiInput.split(':').map(Number);
-        let jamSelesai = jam + 3;
-        let menitSelesai = menit;
+        if (!isNaN(startDate) && !isNaN(endDate)) {
+            var daysDifference = 0;
+            var currentDate = startDate;
 
-        if (jamSelesai >= 24) {
-            jamSelesai = jamSelesai % 24;
-        }
+            while (currentDate <= endDate) {
+                var dayOfWeek = currentDate.getDay();
 
-        const jamSelesaiStr = jamSelesai.toString().padStart(2, '0');
-        const menitSelesaiStr = menitSelesai.toString().padStart(2, '0');
-
-        document.getElementById('jam_selesai').value = `${jamSelesaiStr}:${menitSelesaiStr}`;
-
-        const durasiJam = 3;
-        document.getElementById('durasi').value = durasiJam;
-        document.getElementById('durasi_display').value = `${durasiJam} Jam`;
-    });
-
-
-    $(document).ready(function() {
-        $('#cuti-row, #surat_sakit-row').hide();
-        var jabatan = "{{auth()->user()->jabatan}}";
-
-        function calculateDuration() {
-            var startDate = new Date($('#tanggal_awal').val());
-            var endDate = new Date($('#tanggal_akhir').val());
-
-            if (!isNaN(startDate) && !isNaN(endDate)) {
-                var daysDifference = 0;
-                var currentDate = startDate;
-
-                while (currentDate <= endDate) {
-                    var dayOfWeek = currentDate.getDay();
-
-                    if (jabatan === "Technical Support" || jabatan === "Driver") {
-                        if (dayOfWeek !== 0) {
-                            daysDifference++;
-                        }
-                    } else if (jabatan === "Office Boy") {
+                if (jabatan === "Technical Support" || jabatan === "Driver") {
+                    if (dayOfWeek !== 0) {
                         daysDifference++;
-                    } else {
+                    }
+                } else if (jabatan === "Office Boy") {
+                    daysDifference++;
+                } else {
+                    if (dayOfWeek !== 6 && dayOfWeek !== 0) {
+                        daysDifference++;
+                    }
+                }
+
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+
+            $('#durasi').val(daysDifference > 0 ? daysDifference : 0);
+        } else {
+            $('#durasi').val('');
+        }
+    }
+
+
+    $('#tanggal_awal, #tanggal_akhir').on('change', calculateDuration);
+
+    $('#tipe').on('change', function() {
+        var selectedType = $(this).val();
+
+        switch (selectedType) {
+            case 'Cuti':
+                $('#cuti-row').show();
+                $('#surat_sakit-row').hide();
+                $('#tanggal_awal').prop('readonly', false);
+                $('#tanggal_akhir').prop('readonly', false);
+                break;
+
+            case 'Sakit':
+                $('#surat_sakit-row').show();
+                $('#cuti-row').hide();
+                $('#tanggal_awal').prop('readonly', false);
+                $('#tanggal_akhir').prop('readonly', false);
+                break;
+
+            case 'Izin':
+                $('#cuti-row, #surat_sakit-row').hide();
+                $('#durasi').prop('readonly', true);
+                $('#tanggal_awal').prop('readonly', false);
+                $('#tanggal_akhir').prop('readonly', false);
+                $('#durasi').val('');
+                break;
+
+            case 'Menikah':
+                $('#cuti-row, #surat_sakit-row').hide();
+                $('#durasi').prop('readonly', true).val(3);
+                $('#tanggal_awal').prop('readonly', false);
+                $('#tanggal_akhir').prop('readonly', true);
+
+                $('#tanggal_awal').on('change', function() {
+                    var startDate = new Date($(this).val());
+                    var daysCounted = 0;
+                    var currentDate = new Date(startDate);
+
+                    while (daysCounted < 3) {
+                        var dayOfWeek = currentDate.getDay();
+
                         if (dayOfWeek !== 6 && dayOfWeek !== 0) {
-                            daysDifference++;
+                            daysCounted++;
+                        }
+
+                        if (daysCounted < 3) {
+                            currentDate.setDate(currentDate.getDate() + 1);
                         }
                     }
 
-                    currentDate.setDate(currentDate.getDate() + 1);
-                }
+                    $('#durasi').prop('readonly', true).val(3);
+                    $('#tanggal_akhir').val(currentDate.toISOString().split('T')[0]);
+                });
+                break;
+            case 'Hamil & Melahirkan':
+                $('#cuti-row, #surat_sakit-row').hide();
+                $('#durasi').prop('readonly', true).val(90);
+                $('#tanggal_awal').prop('readonly', false);
+                $('#tanggal_akhir').prop('readonly', true);
 
-                $('#durasi').val(daysDifference > 0 ? daysDifference : 0);
-            } else {
+                $('#tanggal_awal').off('change').on('change', function() {
+                    var startDateStr = $(this).val();
+                    if (!startDateStr) {
+                        alert('Tanggal awal harus diisi!');
+                        $('#tanggal_akhir').val('');
+                        return;
+                    }
+
+                    var startDate = new Date(startDateStr);
+                    var today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    if (startDate < today) {
+                        alert('Tanggal awal tidak boleh kurang dari hari ini!');
+                        $('#tanggal_akhir').val('');
+                        return;
+                    }
+
+                    var endDate = new Date(startDate);
+                    endDate.setDate(endDate.getDate() + 89);
+
+                    $('#durasi').val(90);
+                    $('#tanggal_akhir').val(endDate.toISOString().split('T')[0]);
+                });
+                break;
+
+
+            default:
+                $('#cuti-row, #surat_sakit-row').hide();
                 $('#durasi').val('');
-            }
+                break;
         }
 
-
-        $('#tanggal_awal, #tanggal_akhir').on('change', calculateDuration);
-
-        $('#tipe').on('change', function() {
-            var selectedType = $(this).val();
-
-            switch (selectedType) {
-                case 'Cuti':
-                    $('#cuti-row').show();
-                    $('#surat_sakit-row').hide();
-                    $('#tanggal_awal').prop('readonly', false);
-                    $('#tanggal_akhir').prop('readonly', false);
-                    break;
-
-                case 'Sakit':
-                    $('#surat_sakit-row').show();
-                    $('#cuti-row').hide();
-                    $('#tanggal_awal').prop('readonly', false);
-                    $('#tanggal_akhir').prop('readonly', false);
-                    break;
-
-                case 'Izin':
-                    $('#cuti-row, #surat_sakit-row').hide();
-                    $('#durasi').prop('readonly', true); // Allow editing the duration
-                    $('#tanggal_awal').prop('readonly', false);
-                    $('#tanggal_akhir').prop('readonly', false);
-                    $('#durasi').val('');
-                    break;
-
-                case 'Menikah':
-                    $('#cuti-row, #surat_sakit-row').hide();
-                    $('#durasi').prop('readonly', true).val(3); // Duration fixed to 3 days for marriage
-                    $('#tanggal_awal').prop('readonly', false);
-                    $('#tanggal_akhir').prop('readonly', true); // Prevent manual editing of the end date
-
-                    $('#tanggal_awal').on('change', function() {
-                        var startDate = new Date($(this).val());
-                        var daysCounted = 0;
-                        var currentDate = new Date(startDate); // Copy startDate to avoid mutating it
-
-                        while (daysCounted < 3) {
-                            var dayOfWeek = currentDate.getDay();
-
-                            // Only count the day if it's not Saturday (6) or Sunday (0)
-                            if (dayOfWeek !== 6 && dayOfWeek !== 0) {
-                                daysCounted++;
-                            }
-
-                            // Move to the next day, but only if the target days are not reached
-                            if (daysCounted < 3) {
-                                currentDate.setDate(currentDate.getDate() + 1);
-                            }
-                        }
-
-                        $('#durasi').prop('readonly', true).val(3); // Duration fixed to 3 days for marriage
-                        $('#tanggal_akhir').val(currentDate.toISOString().split('T')[0]); // Set end date based on calculated days
-                    });
-                    break;
-                case 'Hamil & Melahirkan':
-                    $('#cuti-row, #surat_sakit-row').hide();
-                    $('#durasi').prop('readonly', true).val(90); // Durasi cuti 90 hari
-                    $('#tanggal_awal').prop('readonly', false);
-                    $('#tanggal_akhir').prop('readonly', true);
-
-                    $('#tanggal_awal').off('change').on('change', function() {
-                        var startDateStr = $(this).val();
-                        if (!startDateStr) {
-                            alert('Tanggal awal harus diisi!');
-                            $('#tanggal_akhir').val('');
-                            return;
-                        }
-
-                        var startDate = new Date(startDateStr);
-                        var today = new Date();
-                        today.setHours(0, 0, 0, 0);
-                        if (startDate < today) {
-                            alert('Tanggal awal tidak boleh kurang dari hari ini!');
-                            $('#tanggal_akhir').val('');
-                            return;
-                        }
-
-                        // Hitung tanggal akhir dengan 90 hari kalender (termasuk Sabtu & Minggu)
-                        var endDate = new Date(startDate);
-                        endDate.setDate(endDate.getDate() + 89); // 89 karena tanggal mulai dihitung sebagai hari pertama
-
-                        $('#durasi').val(90);
-                        $('#tanggal_akhir').val(endDate.toISOString().split('T')[0]);
-                    });
-                    break;
-
-
-                default:
-                    $('#cuti-row, #surat_sakit-row').hide();
-                    $('#durasi').val('');
-                    break;
-            }
-
-        });
     });
+});
 </script>
 
 @endsection

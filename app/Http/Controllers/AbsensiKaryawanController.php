@@ -1223,4 +1223,5 @@ private function validateShiftWaktu($waktu, $shift, $jabatan, $keterangan = null
 
         return view('absensi.pembatalancuti', compact('karyawan', 'karyawanall', 'data_cuti'));
     }
+    
 }
