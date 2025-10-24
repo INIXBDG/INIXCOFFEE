@@ -7,10 +7,10 @@ use App\Models\Task;
 
 class TaskKanban extends Kanban
 {
-    public function scripts()
+public function scripts()
     {
         $data = $this->data();
-        $updateUrl = route('tasks.update-state');
+        $updateUrl = route('tasks.update-state'); // Pastikan Anda punya route ini
 
         return <<<HTML
         <script>
@@ -18,7 +18,7 @@ class TaskKanban extends Kanban
                 var kanban = new jKanban({
                     element: '.kanban-board',
                     gutter: '15px',
-                    widthBoard: '300px',
+
                     boards: [
                         { id: '_todo', title: 'To Do', class: 'info', item: {$this->toJson($data['todo'])} },
                         { id: '_inprogress', title: 'In Progress', class: 'warning', item: {$this->toJson($data['inprogress'])} },
@@ -55,12 +55,6 @@ class TaskKanban extends Kanban
         HTML;
     }
 
-    private function toJson($data)
-    {
-        return json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-    }
-
-
     public function data(): array
     {
         $tasks = Task::all();
@@ -96,6 +90,14 @@ class TaskKanban extends Kanban
                 ",
             ])->values()->toArray(),
         ];
+    }
+
+    /**
+     * (Tidak perlu diubah)
+     */
+    private function toJson($data)
+    {
+        return json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 
     public function getBoards(): array

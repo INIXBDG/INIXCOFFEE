@@ -37,6 +37,8 @@ use App\Http\Controllers\managementKelasController;
 use App\Http\Controllers\SouvenirController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\KanbanController;
+use App\Http\Controllers\DailyActivityController;
+
 
 
 /*
@@ -128,6 +130,7 @@ Route::resource('/rekapmengajarinstruktur', \App\Http\Controllers\rekapInstruktu
 Route::resource('/lembur', \App\Http\Controllers\LemburController::class);
 Route::resource('/overtime', \App\Http\Controllers\OvertimeController::class);
 Route::resource('/pengajuanlabsdansubs', \App\Http\Controllers\PengajuanLabdanSubsController::class);
+Route::resource('/daily-activities', \App\Http\Controllers\DailyActivityController::class);
 Route::resource('permissions', \App\Http\Controllers\PermissionController::class);
 Route::resource('roles', \App\Http\Controllers\RoleController::class);
 
@@ -612,4 +615,9 @@ Route::get('/test-error', function () {
 Route::get('/kanban', [KanbanController::class, 'index'])->name('kanban.index');
 Route::post('/tasks', [KanbanController::class, 'store'])->name('tasks.store');
 Route::post('/tasks/update-state', [KanbanController::class, 'updateState'])->name('tasks.update-state');
+Route::patch('/tasks/{id}', [KanbanController::class, 'update'])->name('tasks.update');
+Route::get('/tasks/{task}/activities', [KanbanController::class, 'getTaskActivities'])->name('tasks.activities');
 
+
+Route::patch('/daily-activities/{daily_activity}/update-status', [DailyActivityController::class, 'updateStatus'])->name('daily-activities.updateStatus');
+Route::get('/daily-activities/{daily_activity}', [DailyActivityController::class, 'show'])->name('daily-activities.show');

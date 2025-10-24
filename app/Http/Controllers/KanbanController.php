@@ -4,22 +4,44 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Task;
+use App\Models\DailyActivity;
 use App\Kanbans\TaskKanban;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
 
 class KanbanController extends Controller
 {
     /**
-     * 🗂️ Tampilkan halaman Kanban.
+     * Tampilkan halaman Kanban.
      */
     public function index()
     {
-        $kanban = new TaskKanban();
-        return view('kanban.index', compact('kanban'));
+        // 1. Definisikan kolom kita
+        $boards = [
+            ['title' => 'To Do', 'key' => 'todo', 'color' => 'gray'],
+            ['title' => 'In Progress', 'key' => 'inprogress', 'color' => 'blue'],
+            ['title' => 'Done', 'key' => 'done', 'color' => 'green'],
+        ];
+
+        $tasks = Task::with('user.karyawan')->get()->groupBy('state');
+
+        // dd($tasks);
+        return view('kanban.index', compact('boards', 'tasks'));
+    }
+
+    public function getTaskActivities(Task $task)
+    {
+        $activities = $task->dailyActivities()
+                           ->with('user.karyawan') // Load user dan karyawan terkait aktivitas
+                           ->latest('activity_date') // Urutkan tanggal terbaru
+                           ->latest('created_at')    // Urutkan waktu input terbaru
+                           ->get();
+
+        return response()->json($activities);
     }
 
     /**
-     * 🆕 Tambahkan task baru.
+     * Tambahkan task baru.
      */
     public function store(Request $request)
     {
@@ -42,7 +64,10 @@ class KanbanController extends Controller
                 'title' => $request->title,
                 'description' => $request->description,
                 'state' => $request->state,
+                'user_id' => Auth::id(),
             ]);
+
+            $task->load('user.karyawan');
 
             return response()->json([
                 'success' => true,
@@ -59,7 +84,7 @@ class KanbanController extends Controller
     }
 
     /**
-     * 🔄 Update status (state) task setelah drag & drop.
+     * Update status (state) task setelah drag & drop.
      */
     public function updateState(Request $request)
     {
@@ -93,4 +118,47 @@ class KanbanController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Update task.
+     */
+    public function update(Request $request, $id)
+    {
+        $task = Task::findOrFail($id);
+
+        // ✅ UBAH VALIDASI
+        $validator = Validator::make($request->all(), [
+            'title'       => 'sometimes|required|string|max:255',
+            'description' => 'sometimes|nullable|string',
+            'date_start'  => 'sometimes|nullable|date', // Tambahkan ini
+            'date_end'    => 'sometimes|nullable|date|after_or_equal:date_start', // Tambahkan ini
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $task->update($request->only('title', 'description', 'date_start', 'date_end'));
+
+            $task->load('user.karyawan');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Task berhasil diperbarui',
+                'data' => $task,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat memperbarui task',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }
+
