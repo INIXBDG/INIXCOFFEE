@@ -283,6 +283,7 @@ Route::post('/providers', [App\Http\Controllers\listexamController::class, 'stor
 Route::post('/vendors', [App\Http\Controllers\listexamController::class, 'storeVendor'])->name('vendors.store');
 
 Route::get('/detailfeedbacks', [App\Http\Controllers\feedbackController::class, 'detailfeedbacks'])->name('detailfeedbacks');
+Route::get('/paymantAdvance/edit/{id}', [App\Http\Controllers\netSalesController::class, 'edit'])->name('netSales.edit.index');
 
 // Route::get('nilaifeedback/export', [App\Http\Controllers\feedbackController::class, 'export'])->name('nilaifeedback.export');
 Route::get('nilaifeedbackexport/{year}/{month}', [App\Http\Controllers\nilaifeedbackController::class, 'export'])->name('nilaifeedbackexport');
@@ -511,6 +512,8 @@ Route::prefix('crm')->group(function () {
 
     // Laporan Penjualan
     Route::get('laporanPenjualan', [LaporanPenjualanController::class, 'index'])->name('crm.laporanPenjualan');
+    Route::get('/edit/{id}/pa', [LaporanPenjualanController::class, 'editPA'])->name('editPA');
+    Route::put('/update/pa/{id}', [LaporanPenjualanController::class, 'updatePA'])->name('updatePA');
 
     // Import Contact / Perusahaan
     Route::post('/perusahaan/import/perusahaan', [ImportPerusahaanAndContactController::class, 'importPerusahaan'])->name('perusahaan.import');
@@ -606,3 +609,6 @@ Route::get('/test-error', function () {
     // ini error manual
     throw new \Exception('Test error from Handler.php');
 });
+
+
+Route::get('laporan/penjualan', [LaporanPenjualanController::class, 'indexJson'])->name('jsonLaporan');
