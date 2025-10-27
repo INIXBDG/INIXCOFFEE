@@ -467,6 +467,9 @@
                         'X-HTTP-Method-Override': 'PUT'
                     },
                     success: function(response) {
+                        const modal = bootstrap.Modal.getInstance(document.getElementById(
+                            'editModal'));
+                        modal.hide();
                         Swal.fire('Berhasil!', 'Data berhasil diperbarui.', 'success').then(
                             () => {
                                 location.reload();
