@@ -19,7 +19,10 @@ class activityLog extends Model
         'browser',
         'device',
         'method',
-        'detail'
+        'detail',
+        'is_up',
+        'response_time_ms',
+        'checked_at'
     ];
 
     public function karyawan()
