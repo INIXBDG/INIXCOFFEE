@@ -317,7 +317,15 @@
                     }
                 },
                 columns: [
-                    { data: 'id', name: 'id', render: (data, type, row, meta) => meta.row + 1 },
+                    {
+                        data: null,
+                        render: function (data, type, row, meta) {
+                            return meta.row + meta.settings._iDisplayStart + 1; // ✅ Nomor urut
+                        },
+                        className: "text-center",
+                        orderable: false,
+                        searchable: false
+                    },
                     { data: 'nama_perusahaan', name: 'nama_perusahaan' },
                     { data: 'lokasi', name: 'lokasi' },
                     { data: 'status', name: 'status' },

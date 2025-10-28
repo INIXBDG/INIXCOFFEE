@@ -36,7 +36,7 @@
                     <th>Telemarketing</th>
                     <th>Form Masuk</th>
                     <th>Form Keluar</th>
-                    <th>Deadline</th>
+                    {{-- <th>Deadline</th> --}}
                     <th>Aksi</th>
                 </tr>
             </thead>
@@ -58,13 +58,13 @@
                     <td>{{ $activity->FormK }}</td>
 
                     {{-- ✅ Tambahan kolom deadline --}}
-                    <td>
+                    {{-- <td>
                         @if ($activity->deadline)
                             {{ \Carbon\Carbon::parse($activity->deadline)->format('d/m/Y') }}
                         @else
                             <span class="text-muted">Belum ditentukan</span>
                         @endif
-                    </td>
+                    </td> --}}
 
                     <td>
                         <div class="d-flex gap-2">
@@ -109,10 +109,10 @@
                                                 @endforeach
                                             </select>
                                         </div>
-                                        <div class="mb-3">
+                                        {{-- <div class="mb-3">
                                             <label for="deadline" class="form-label">Deadline</label>
                                             <input type="date" class="form-control" id="deadline" name="deadline" required>
-                                        </div>
+                                        </div> --}}
                                         <div class="mb-3">
                                             <label for="Contact{{ $activity->id }}" class="form-label">DB</label>
                                             <input type="number" class="form-control" id="Contact{{ $activity->id }}"
@@ -209,10 +209,10 @@
                                 </select>
                             </div>
 
-                            <div class="mb-3">
+                            {{-- <div class="mb-3">
                                 <label for="deadline" class="form-label">Deadline</label>
                                 <input type="date" class="form-control" id="deadline" name="deadline" required>
-                            </div>
+                            </div> --}}
 
                             <div class="mb-3">
                                 <label for="Contact" class="form-label">DB</label>

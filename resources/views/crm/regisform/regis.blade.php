@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registration Form</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -216,7 +218,7 @@
             margin: 10px 0;
             page-break-inside: avoid;
             border: 1px solid #ccc;
-            padding: 50px;
+            padding: 6pt;
         }
 
         .description h3 {
@@ -279,15 +281,17 @@
             text-align: center;
         }
 
-        .signature-preview {
-            max-width: 100px;
-            margin: 5px 0;
-        }
-
         #ppn-percentage {
             display: none;
             width: 100px;
             margin: 5px 0;
+        }
+
+        #pdf-container {
+            position: absolute;
+            left: -9999px;
+            top: -9999px;
+            width: 190mm;
         }
 
         @media print {
@@ -505,7 +509,7 @@
 
         <label>Materi dan Tanggal Pelatihan:</label>
         <input type="text" class="readonly" id="materi"
-            value="{{ $lead->materiRelation->nama_materi }} || {{ \Carbon\Carbon::parse($lead->periode_mulai)->format('d M Y') }} → {{ \Carbon\Carbon::parse($lead->periode_selesai)->format('d M Y') }}"
+            value="{{ $lead->materiRelation->nama_materi }} || {{ $lead->rkm->metode_kelas }} || {{ \Carbon\Carbon::parse($lead->periode_mulai)->format('d M Y') }} → {{ \Carbon\Carbon::parse($lead->periode_selesai)->format('d M Y') }}"
             readonly>
 
         <h3>Data Peserta</h3>
@@ -542,9 +546,6 @@
                 <label>Jabatan Penandatangan 2:</label>
                 <input type="text" placeholder="Jabatan Penandatangan 2" class="signature-position" required
                     value="Account Executive">
-                <label>Upload Tanda Tangan 2:</label>
-                <input type="file" accept="image/*" class="signature-image" onchange="previewSignature(this, 'signature-preview-2')">
-                <img id="signature-preview-2" class="signature-preview" style="display: none;">
             </div>
             <div class="signature-row">
                 <label>Nama Penandatangan 3:</label>
@@ -563,18 +564,19 @@
         <h3>Deskripsi Tambahan</h3>
         <textarea id="deskripsi-tambahan" placeholder="Masukkan deskripsi tambahan (opsional)"></textarea>
 
-        <button type="button" id="preview-btn">Generate Preview</button>
+        <button type="button" id="preview-btn">Generate PDF</button>
     </form>
 
-    <div id="preview-modal" style="display: none;">
-        <div id="preview-content"></div>
-    </div>
+    <div id="pdf-container"></div>
 
     <script>
         let pesertaCount = 0;
         const termsData = @json($ketentuan);
+        const signatureUrl = "{{ asset('storage/ttd/' . ($sales->ttd ?? '')) }}";
+        // const signatureUrl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAWcAAACMCAMAAACXkphKAAAAllBMVEX///8ZPGkAMGIAJl0AIFoVOmgAMmMAJFwALmEAK18AKl8AIlsAKF4AHlkAH1oAHFgMNmXs7vHg4+iEkKX19vh1g5uYorPU2N+8ws1abIqzusZQZIQAGVekrbxnd5Ll6OzAxtBygJk6U3jM0dmNmKsyTXSKlaknRW9db4xBWHyttcKhqrk+VnpJXoB9iqEtSXIAFFUABFFp3F5OAAAR5UlEQVR4nO1deWOiPhNWbgQ1eN/i0dra1v293//LvQrMZBISpGu30Orz3xZW4zCZPHPSaKixW56mr3+20/4s0tzxwM2IX6zQYLbdtG3Hs7bLqtfzOzGzQ9YkYF6wH1S9qF+H8Z+W3ZRgG+ZDp78W+0VOygla24ed/kJMW0opX6yHNal6cb8H74ZOzGfj0d5XvbzfgldHL+YzzFPVC/wdWBVoc4KwX/USfwOW5hUxN5vBg3bcjKibs8iG5zki/ViMq17mj8ecSVIOD/vZ7GQKgrabVS/zp2PnimJmdpz8PToIgvZG1S7zx+NDVGdjChciS1Bo6+GC34JeRxTzC790Etie8VDoWzASOB17Ipd2go/IXitb42/Aq2CFO2tyaSAYjmZQ2Rp/AwRSZzwL18QA3sNA34Ce4KO0RVE+CXJuV7TEX4GZT03wSrz4LlARp5oV/j2ijResarIJhWPQlyKgW6rP7EX9CbVF3HWatlMT/2pIuZu7Fi82qZy9Hxbi6C3SI2dY9UISrKhpcKWLArXu/rC8Criz3VpYjhciZ/tJvDYICmx33TED8u8dq17KBVSf2VS8JnCR7lr9AXUFciW2qXopF1DfmkmmbBcS6/zDIv1r9LHsbdVruYDyDUdKT425PrM/1Szvr3H0+NqrXssFMeHPzrN0sQt7z279sEOQ8iiv6rVcsCZnnSPbhlEWmmbeDzPOjcYrnjv2oeq1JCD22clRzf3ifJmZH7WgRp8CzwaxedVrSUA2mIK6rYeGP42/f1W3goQa68E3GhMeZGbvVS/my0AoqVGTKp8Ad5jdqnotXwaSoqiHn9JobLjhCMqxit0x/rdLuh0zTuv8uOrFpNjxLdbalbh/cHA98+n6fZXijcs5rEvlCY/KlUq1zi/679W84u6Zb1KzLpx0ic+efVy/O61esuXQXs0w5GGboDak1EWFbl9fUxb0cHvfsLC/BwlDWlWvBfGMMQ45oaLAxC97Z5X44BmKTtVrQQwwnl8iyBy3asWWNCA1a/XR50YfT43rxqyXxjxqnsUi0YQayZl7qSXU1PoJcibRMbdGoUa00HLqSoG0jLfmciaVVK246sUQoJvqXmX1KQ30Z9+xrL8FzWzWKrH5BuF+OUeYx6CdWL1a87o1rekOR9xyDKJoXakdQafwugAvkdSa57HEajbH7TiHw4G12pblntFtbipjpTFowPVtdvYI7f/qEjRQYxw2JdiX4QD4D+abVUVLsUule1Wh4/8dygScKsTEk+Wck7vXrMZ+YNfVdQtdc8RDwy+UcfY7K6q824MOWDVX1kKs+61WcXMvIqzISIP9YnUPLusxnrZLCvkMv6LQwQ7IfavesQst1tMOK5Qsgc2MygKmmMEKaxOy/Qz2Xa2UbccPXeuCIIXlbp8r49EDsNBOPVLxeYyPo35/f1SRyt5BzzE8uz8ZR4nyDFJ887olTMBdbRfS43VPt87e8TT9+Ni8/ZNU0W5jmp5zhhdaL7F0caZX5qb59kUrWO9mx+MszhPf9WzU3y/L8wdIQxR1c5+CwFx8KEj2YNR0PYfZzDEWX19Ev9u6jAeVmXmI6dVRVz11KNmdctmgAqPpdC8oR+/4Fou3jE8saHme57fM7lygKpN3yzccwzODYcloxAD8VUO7trl/+UUsXw795hr8t/pfHbxZWXK3v0t4/l7sUbcF0lEii3/wGTMWxEWctj0xqR9vXYc+Zp5JjT5Mht/bLWlxZyDorsZygH8ud8cOtmKz4eKzJnBQdCz1mIKuOVigOBM70cM/fXq7mGKLlvulvLZJ6qZbGOudJnFih7e6f7jSYzZAkXbiFceIS/3cKVgOTZUl1v+L8aa1J61j8anTfDA6tANrrlvirqO0CiCHiBoN23+Kxc4aofDr+J/neF1Jw7MicLSW43b2GzNlW7bzxj9TpN1C+rvdLlWRP4AdqCngx0PdoIfLwJME8Tm7sUxNDgvULr/wWxxSGN9J5TClPTapUtKZFjSQEP2X3CRRZyi2d6V/ZwW0K9W8nSAxnL3cjJiznSr124stB89wCWWYr/SXMsPrfkbM6y1mGZymwtyMibp6Rn/Ej8O0AYHOw2HN9NzYUAUkheZvqQSl4weK/8Ps3/i/LwWHg63SxUy7g5lqo5XjN/MiztHDA8cmNTVHHoZ03MNwP0ptynNrrj5/1zHZuAIjY3lzFYX8tyQT3iK+hqT1hFa8wtG1pGSalA1CFbJY45/l8FHOWP3hjhuDg5IwOokmbXBzMd8NApBcqYkDAyibMRS1XTywSw0438ruikt2aTXZIlZ8wbTbCtvw4X3aPEfPHsATr8w30y3GjUKy0XnrNH9KQgCaZAhBU8WiO0gL5PTZOzYEMduOd2ZwjDEvye5yq+G/zqLGAFQ0VPzqPNBytPOEiNa78v+Afwzo0W6fxWEr5lcdEp1qpXZnJc+BNKXgSh810zYyLskPg2SEQgTmmxGrQxkIKRuE9jKxkhCsoSvd1WQnOm2Hhc3+cbbsr15Wo+Sb8GBopUctVKmWTJ6i5bBzl4iceYUdfp0wQyntfLFz3U4wLC8Jv85zzrLtCiaaHDRhJmaSlErVcpRuCe+J/E86XIukiOCEk4LsdvrkLOmu833kY1pbSe/WGLLPWt/h+YTlPMMCy0HkzI0QkiiD3poViMn91fzU8sa9g4oWC1T/HXUXz+U9N1Neqjj7hXEma8LZRvv1yEkD7WW2KSwq0xQw5DNVnqCdO93wOzrp/4vABIbynRoctZyD2Gcs/kf9Evs84eF2xIdLfkMYKmkxdTVj1N0QnQiyBaBzqTc6LUXCPqZcjE8OwfYycWRAttbM/ivSi+dnkNdRGJsB+wVsDBD28fGas6blHHz5XM5wWouUGvaibDlGqhmbdsvl7iRljFvYt7xr6kiVTd8bSMfvmfxwBiImVvlnWwTtqjiwKHlUCpYLOzM7Z0+gAH72oQv/mssfQdOKJ8U5ego5T+CHe1TOY2RfhuDxqOTsv+4GuyaaQj4ZAT/E5tVbNt0E+rJVOiCgxe8CYid2B2WLwojTu8zlXEXqA2WRVqS+wVrd9NuW561j/xfr1pcCGbGU/SZnENpn5K/C2kmDvvAZs3yYuJ0cnwOM0zj4OXjw80d4FAiKvgmTNB5TdgFKIfaWZeX/DFrB99K5oZzxAvs43WoT0O6UWTfGCQu6WkcHtkbqQuc+Apczno30EB+TrcfoZ/RyTmw30zZui3FCkJH7S0PaDtoxkREJcdDGdVhXQA002MlOZlDH0iKVs0fgkSXqtUPukZpa0Jo8ZZOWaWXaJSYLSeEa1rvyIis+EWwgjIEN6WeY0uHXRrKJXBV4PnqfvCN6KDMUXWCRxgKoOsI+E6Ie8KuwXFb0p+VBDilAzherztXKjOhvuV51hBV3QrKQyJnzOqQN2Li8booGjh5X0pxNkyskzqGAkxC5CZ6wS2kY6hktTfJmyTWfGglsLwv5F+Npa0O0VzQcpvJZorfea4xBLOCXrTKr5V5n0uDvil3f3BxwOXNTnM7jHowsSWdp3EaIDTc9ypahsgHY7UguF96LTnp6zVGHYEl4SaBN6LWbm1SDjg5pGurl/nNT8gsQYAHZSx+kYmcR12km5jK95eiJCccYaerEv8UkjOSthvMgTynaXBZLelU8jlCumQLxR8Ke4mg9e1KmWhlT01QSLqWCmuBqHWve788DGtNFTrlyFH+UANLlSYhFImZ0v+xWmWxHH3xU2u3GRweSoBSlWozJnCj5K7dTdOKHbQgLwSEwmZ0kXYBnhm1ygYjbRdOOF6tiMQ1hWhxzHGm1cOKtiULryOOL/EuTMEB0gjiurT07RMBZRo0MVxLS9zFT+E8S+Kagzpa8kHfRo3rTvDeASSFhUy0IEqimf+7JKRAKpNAn/t2WJjc0EX+2zXbReDnvwNpsVbBS+TmZAaIkkM9Tov01ryodbjqmgyrFj/yIUBY5rgWkN+MX4/ypl3zWgUqhqVVoDEJLLHakfVcMbUDFrDLTDliSovy274YGcRviawKWxWfy/8HdOWrzIpVAwuGgEaNQeT4R7/VzqTEIUIKnokxXsMOAxkYv0PQIgpxldjXNh68YOuSwN5ARe9r0yKzgBRJMTVKU6GX5SFLZiE626MCM83myNMGIHUb8t4J9zIf0McIOD3ai4BfGuyCFIjmD75jrW3+S95+zhWfKfRqYWlQwIFHxwOADxfLq3YYFBVQaEgsmWmgenBNd0Z1cqAKdFXjqYRgu+1DlVJX0yfKujGFui5srUQrJ/bq+9Eye+ZEFT6LlN868uZemnUy+yZ6TxRS+O0ad1DoTU0E68cFktu3razuARhLnCTRMrvLpNQXS5YSZnViCoJGHp2ZT0+HyEhpGsOUs5CRScbuLm7hPQi2xZv0ZN/XzV6Y0JhskEoheum4gzOKaeGZrUVj5MvijOqqZGHZaZVG5gloLOPb43oFQQD43MzL9dO/Zjt89oajQxkLwYH1RE0N3uIz2b4L2xXYLdYaZW8Ll920wQHpv4BI0UxdXLa1MQrbHeVuuF2u3u1aHssrVArO2OAx5k/Nq84gyC+2ghYODsK1YwGzTvFS+HjYz8kUYL8aQz9R32p+oSJ3N2y3PMAzf2or8bWIlzNMr6v3qWzZTFzoP+qbpeZ7Jbny/w24bECttO+2paKX40VU0diPzqbnn2kspgXZmVb7mFRSapxtPw8+1Zgx2x9F+NMkFMgYnM3CvdE4dma09+HfLkbLG95MYD1tZIatvHfbyKomzVdBqDrEd3iebBl00roEKSGNLpic/hXU9psX0ZqP+qf8WKzb5lB8ERQLItJFTo4QSOyUmzyAgElqrDuBvAxkF4hRsvSyWQ2zLymStp8+Ug2I4qB4jr78ZRJ/tgpMEwj7Etiw3n2sU6mF4qNbN9/8IfcJHdJGSBnepzRsa598VOYy7gZCoLJimkeXZbhmIhF/VuUPD0SOOa1FaNrtNH025DhzAVPPpVf8GNFoe6K0ChNBuGRwPZ648Mf0uQOrUCob3QuDoJhHBGEpFZeTvR49WN3V0JyFWWN7SqoZRvpKTYn8X6CvxtC2wzpdseYiOte7RQE9ocFfTAot5qtvGVb+wr/iUnwp6Eqp9Fd6ZV0T9rkNT330nmFGFVrWjkOzQbeOqsZigFi8z+Xb8ocmKIOcVxyQZdduA3DUchDWaQvmN2AkF1XIifElynVKjwacBXyS/eu9OsBEStl3BBgttoLfGNLEUtN4D2f4ZhPrZZjhFdVv6wiO4dc4l1IvVatrnN2IsFkGxzstsvO5NTr5YMnjznHgouanL2x++HXJFMfNC08yNJtPN41jvT6NSB+RWLve5O5wKqs24QVEHNMcLwzH+K2NSoOr4bvX5fBZeF7Sl0cK0HKcMV4N6uFKvaPmlGBaU46XC0cQ2snaBEkELnCdxr3wjwdtCP8XpDFMXqsvCnfphSggM2NVpivv3Y8w0Fd1nsIU2kzIs21TE/e779Ac5Tpr5b8x91fOJrNauRLcLxJGKBrbdB9arriFZD5t57XnRuZWRtRJvFIZ2C2Vj6Z0hGj11fIfZZzDmeL5rTpfF1jRz8orKPzJASdJ9xp9ziCb71cf2sP1Y9d8m1/0PkPNVY4B9vHeZT7kZ4ORdfXMzdrUE9xmuuxHQQnyVRMADyU/xeaAEoOH42sRq7L/Mv7n6gRKAEuprTh6ajfuNIt0EqJu79vYx7Eu+dy/lL4Ed+8XmAPvsH+z5LwGRPqfwLuxKvtdkys3APs4iA73jE6m+bWG/DDiKqahNDUf9lXpt9QMqgOW19MwOpyfYBTc9UAxo8Skgxnwyd4n3ETygRqQc7kPBB+CYD3X+e0ChjW5gH44qbbbq/UbZmgMVWjVNgxZClghSP1AAfJ2eoXBCyFTG/AtXHvgUcB6cs5WzApM2ijn4oe+Aqw/4xHFmiQR5yKfueI9A3c04ojhto9UHzzAakULIgkkkD5RGn8xxc0LrfdN/Hj51SKWC8ZnpBg9oMRQG5rHLlENhXO4jTPdF2MuDWwns7iPH/WWYyK+t4zbDuePKxa9H9OEqVNp2ure0hT+gQPzHlMZUMt863XXZ4j/CbmOGRlLQdKlnCoPpPY6P+R6Mj/3Vx8fHfPX8FQPLfgP+DwXX+HbqAJZGAAAAAElFTkSuQmCC";
 
         console.log('Data ketentuan:', termsData);
+        console.log('Signature URL:', signatureUrl);
 
         const ppnCheckbox = document.getElementById('include-ppn');
         const ppnInput = document.getElementById('ppn-percentage');
@@ -594,40 +596,6 @@
             `;
             document.getElementById('peserta-list').appendChild(row);
         });
-
-        // Function to preview signature image and adjust alignment
-        function previewSignature(input, previewId) {
-            const file = input.files[0];
-            const preview = document.getElementById(previewId);
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    preview.src = e.target.result;
-                    preview.style.display = 'block';
-                    // Dynamically adjust alignment based on image height
-                    const img = new Image();
-                    img.src = e.target.result;
-                    img.onload = function() {
-                        const height = img.height;
-                        const nameElement = input.parentElement.querySelector('.signature-name');
-                        const positionElement = input.parentElement.querySelector('.signature-position');
-                        // Adjust padding to align with other signatures
-                        const basePadding = 20.4; // Default padding in mm for signatures without images
-                        const adjustedPadding = Math.max(basePadding - (height / 10), 5); // Convert px to mm, ensure minimum padding
-                        nameElement.style.paddingTop = `${adjustedPadding}mm`;
-                        positionElement.style.paddingTop = '2px';
-                    };
-                };
-                reader.readAsDataURL(file);
-            } else {
-                preview.style.display = 'none';
-                // Reset padding if no image
-                const nameElement = input.parentElement.querySelector('.signature-name');
-                const positionElement = input.parentElement.querySelector('.signature-position');
-                nameElement.style.paddingTop = '20.4mm';
-                positionElement.style.paddingTop = '2px';
-            }
-        }
 
         document.getElementById('preview-btn').addEventListener('click', () => {
             const namaPerusahaan = document.getElementById('nama-perusahaan').value;
@@ -702,23 +670,26 @@
                     extraText = '';
                     style = 'padding-top: 20.4mm;';
                 }
-                // Signature 2: Include uploaded signature image with dynamic alignment
+                // Signature 2: Use database-fetched signature
                 else if (index === 1) {
-                    const signaturePreview = document.getElementById('signature-preview-2');
-                    if (signaturePreview.src && signaturePreview.style.display !== 'none') {
-                        signatureImg = `<img class="signature-img" src="${signaturePreview.src}" alt="Signature 2">`;
+                    if (signatureUrl && signatureUrl !== '') {
+                        signatureImg =
+                            `<img class="signature-img" src="${signatureUrl}" alt="Signature ${name}">`;
                         // Dynamically calculate padding based on image height
                         const img = new Image();
-                        img.src = signaturePreview.src;
+                        img.src = signatureUrl;
                         img.onload = function() {
                             const height = img.height;
-                            const adjustedPadding = Math.max(20.4 - (height / 10), 5); // Convert px to mm, ensure minimum padding
-                            const signatureDiv = document.querySelector(`#preview-content .signature:nth-child(${index + 1}) div`);
+                            const adjustedPadding = Math.max(20.4 - (height / 10),
+                            5); // Convert px to mm, ensure minimum padding
+                            const signatureDiv = document.querySelector(
+                                `#pdf-container .signature:nth-child(${index + 1}) div`);
                             if (signatureDiv) {
                                 signatureDiv.style.paddingTop = `${adjustedPadding}mm`;
                             }
                         };
                     } else {
+                        signatureImg = `<p>Tanda Tangan Tidak Tersedia</p>`;
                         style = 'padding-top: 20.4mm;';
                     }
                 }
@@ -747,7 +718,7 @@
                 </div>
             `;
 
-            // Generate pratinjau
+            // Generate HTML untuk PDF
             const previewHTML = `
                 <div class="container">
                     <div class="header">
@@ -792,57 +763,89 @@
                 </div>
             `;
 
-            // Directly open print window instead of modal
-            const printWindow = window.open('', '', 'height=600, width=900');
-            printWindow.document.write('<html><head><title>Print Preview</title>');
-            printWindow.document.write('<style>');
-            printWindow.document.write(`
-                body { margin: 0; padding: 0; font-size: 12pt; font-family: Arial, sans-serif; }
-                .container { max-width: 190mm; width: 100%; margin: 0; padding: 5mm; }
-                .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2mm; }
-                .logo img { width: 200px; }
-                .office-info { font-size: 10pt; line-height: 12pt; max-width: 70mm; line-height: 1; }
-                .headertext { font-size: 14pt; margin: 2mm 0; padding: 1mm 0; text-decoration: underline; font-weight: bold; text-align: center; }
-                table { width: 100%; page-break-inside: avoid; margin: 2mm 0; border-collapse: collapse; }
-                caption { font-size: 12pt; margin-bottom: 1mm; }
-                th, td { font-size: 10pt; padding: 4pt 6pt; border: 1px solid #ccc; text-align: left; word-wrap: break-word; }
-                th { background-color: #f2f2f2; }
-                th.no-column, td.no-column { width: 5%; min-width: 6mm; }
-                th.name-column, td.name-column { width: 35%; }
-                th.contact-column, td.contact-column { width: 40%; }
-                th.price-column, td.price-column { width: 20%; }
-                .note { color: red; font-size: 10pt; margin: 1mm 0; text-align: left; }
-                .syarat { margin-top: 2mm; text-align: left; page-break-inside: avoid; }
-                .syarat h3 { font-size: 12pt; margin-bottom: 1mm; }
-                .syarat ol { font-size: 10pt; margin: 1mm 0; padding-left: 15px; }
-                .statement { font-size: 10pt; margin: 2mm 0; text-align: left; page-break-inside: avoid; }
-                .description { font-size: 10pt; margin: 2mm 0; text-align: left; page-break-inside: avoid; border: 1px solid #ccc; padding: 50pt; }
-                .description h3 { font-size: 12pt; margin-bottom: 1mm; }
-                .signature-section { margin-top: 10mm; display: flex; justify-content: flex-end; gap: 10mm; page-break-inside: avoid; align-items: flex-start; }
-                .signature { text-align: center; width: 30%; position: relative; min-height: 80pt; }
-                .signature img.signature-img { width: auto; height: 44pt; margin-top: 5mm; }
-                .signature img.cap-img { width: 60pt; height: auto; position: absolute; right: 0; top: 50%; transform: translateY(-50%); opacity: 0.4; }
-                .approval-text { font-size: 10pt; font-weight: bold; margin-bottom: 3mm; text-align: center; }
-                .signature p { font-size: 10pt; margin: 2pt 0; }
-                .signature .name { margin-top: 10mm; padding-top: 1mm; border-top: 1px solid #000; }
-                .signature .position { font-size: 9pt; color: #555; }
-                button { display: none; }
-                @page { size: A4; margin: 5mm; }
-            `);
-            printWindow.document.write('</style></head><body>');
-            printWindow.document.write(previewHTML);
-            printWindow.document.write('</body></html>');
-            printWindow.document.close();
-            printWindow.focus();
-            // Trigger print with 1000ms delay
-            setTimeout(() => {
-                printWindow.print();
-            }, 1000);
-        });
+            // Render HTML ke container tersembunyi
+            const pdfContainer = document.getElementById('pdf-container');
+            pdfContainer.innerHTML = `
+                <style>
+                    body { margin: 0; padding: 0; font-size: 12pt; font-family: Arial, sans-serif; }
+                    .container { max-width: 190mm; width: 100%; margin: 0; padding: 5mm; }
+                    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2mm; }
+                    .logo img { width: 200px; }
+                    .office-info { font-size: 10pt; line-height: 12pt; max-width: 70mm; line-height: 1; }
+                    .headertext { font-size: 14pt; margin: 2mm 0; padding: 1mm 0; text-decoration: underline; font-weight: bold; text-align: center; }
+                    table { width: 100%; page-break-inside: avoid; margin: 2mm 0; border-collapse: collapse; }
+                    caption { font-size: 12pt; margin-bottom: 1mm; }
+                    th, td { font-size: 10pt; padding: 4pt 6pt; border: 1px solid #ccc; text-align: left; word-wrap: break-word; }
+                    th { background-color: #f2f2f2; }
+                    th.no-column, td.no-column { width: 5%; min-width: 6mm; }
+                    th.name-column, td.name-column { width: 35%; }
+                    th.contact-column, td.contact-column { width: 40%; }
+                    th.price-column, td.price-column { width: 20%; }
+                    .note { color: red; font-size: 10pt; margin: 1mm 0; text-align: left; }
+                    .syarat { margin-top: 2mm; text-align: left; page-break-inside: avoid; }
+                    .syarat h3 { font-size: 12pt; margin-bottom: 1mm; }
+                    .syarat ol { font-size: 10pt; margin: 1mm 0; padding-left: 15px; }
+                    .statement { font-size: 10pt; margin: 2mm 0; text-align: left; page-break-inside: avoid; }
+                    .description { font-size: 10pt; margin: 2mm 0; text-align: left; page-break-inside: avoid; border: 1px solid #ccc; padding: 6pt; }
+                    .description h3 { font-size: 12pt; margin-bottom: 1mm; }
+                    .signature-section { margin-top: 10mm; display: flex; justify-content: flex-end; gap: 10mm; page-break-inside: avoid; align-items: flex-start; }
+                    .signature { text-align: center; width: 30%; position: relative; min-height: 80pt; }
+                    .signature img.signature-img { width: auto; height: 41pt; margin-top: 5mm; }
+                    .signature img.cap-img { width: 60pt; height: auto; position: absolute; right: 0; top: 50%; transform: translateY(-50%); opacity: 0.4; }
+                    .approval-text { font-size: 10pt; font-weight: bold; margin-bottom: 3mm; text-align: center; }
+                    .signature p { font-size: 10pt; margin: 2pt 0; }
+                    .signature .name { margin-top: 10mm; padding-top: 1mm; border-top: 1px solid #000; }
+                    .signature .position { font-size: 9pt; color: #555; }
+                </style>
+                ${previewHTML}
+            `;
 
-        function closeModal() {
-            document.getElementById('preview-modal').style.display = 'none';
-        }
+            // Gunakan html2canvas untuk merender ke canvas
+            html2canvas(pdfContainer, {
+                scale: 2, // Tingkatkan resolusi
+                useCORS: true, // Untuk mendukung gambar dari URL eksternal
+                width: 800, // 210mm * 3.78 pixels/mm (72 DPI)
+                backgroundColor: '#ffffff'
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const {
+                    jsPDF
+                } = window.jspdf;
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+
+                // Hitung dimensi gambar untuk PDF
+                const imgWidth = 213; // 210mm - 2 * 5mm margin
+                const pageHeight = 297; // A4 height in mm
+                const imgHeight = canvas.height * imgWidth / canvas.width;
+                let heightLeft = imgHeight;
+                let position = 0;
+
+                // Tambahkan halaman pertama
+                pdf.addImage(imgData, 'PNG', 5, 5, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+
+                // Tambahkan halaman tambahan jika konten lebih panjang
+                while (heightLeft >= 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 5, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+
+                // Simpan PDF
+                pdf.save('registration_form.pdf');
+
+                // Bersihkan container
+                pdfContainer.innerHTML = '';
+            }).catch(error => {
+                console.error('Error generating PDF:', error);
+                alert('Gagal menghasilkan PDF. Silakan coba lagi.');
+            });
+        });
     </script>
 </body>
 

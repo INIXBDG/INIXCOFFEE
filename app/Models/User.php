@@ -65,5 +65,6 @@ class User extends Authenticatable
     {
         return Hashids::encode($this->id);
     }
+    
 
 }

@@ -39,8 +39,12 @@
             <!-- Target Aktivitas Sales -->
             <div class="col-lg-6 col-md-12 mb-3">
                 <div class="card h-100 shadow-sm border-0 rounded-3">
-                    <div class="card-header bg-transparent border-0 pb-0">
-                        <h5 class="card-title mb-0 text-primary">Target Aktivitas Sales</h5>
+                    <div class="card-header bg-light border-0 py-3 px-4">
+                        <h5 class="card-title mb-2 text-primary fw-bold">Target Aktivitas Sales</h5>
+                        <div class="d-flex">
+                            <span class="text-muted small fw-medium">{{ $tanggal }}  |</span>
+                            <span class="text-muted small fw-medium"> Minggu Ke {{ $mingguKeBulan }}</span>
+                        </div>
                     </div>
                     <div class="card-body p-3">
                         <div class="activity-container" style="max-height: 355px; overflow-y: auto;">

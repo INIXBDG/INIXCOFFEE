@@ -19,14 +19,52 @@
             </div>
 
             <!-- Target Aktivitas Sales -->
-            <div class="col-lg-6 col-md-12 mb-3">
-                <div class="card h-100 shadow-sm border-0 rounded-3">
-                    <div class="card-header bg-transparent border-0 pb-0">
-                        <h5 class="card-title mb-0 text-primary">Target Aktivitas Sales</h5>
+            <div class="col-lg-6 col-md-12 mb-4">
+                <div class="card h-100 shadow-sm border-0 rounded-4 overflow-hidden">
+                    <div class="card-header bg-light border-0 py-3 px-4">
+                        <h5 class="card-title mb-2 text-primary fw-bold">Target Aktivitas Sales | Tanggal ({{ $tanggalRange }})</h5>
+                        {{-- <div class="me-2">
+                            <span class="text-muted small fw-medium"></span>
+                        </div> --}}
                     </div>
-                    <div class="card-body p-3">
+                    <div class="card-body p-4">
+                    <form method="GET" class="d-flex flex-wrap align-items-center mb-4">
+                        <div class="me-2">
+                            <label class="form-label small text-muted mb-1">Tahun</label>
+                            <select name="tahun" class="form-select form-select-sm">
+                                @for ($t = now()->year; $t >= now()->year - 3; $t--)
+                                    <option value="{{ $t }}" {{ $tahun == $t ? 'selected' : '' }}>{{ $t }}</option>
+                                @endfor
+                            </select>
+                        </div>
+
+                        <div class="me-2">
+                            <label class="form-label small text-muted mb-1">Bulan</label>
+                            <select name="bulan" class="form-select form-select-sm">
+                                @for ($b = 1; $b <= 12; $b++)
+                                    <option value="{{ $b }}" {{ $bulan == $b ? 'selected' : '' }}>
+                                        {{ \Carbon\Carbon::create()->month($b)->locale('id')->translatedFormat('F') }}
+                                    </option>
+                                @endfor
+                            </select>
+                        </div>
+
+                        <div class="me-2">
+                            <label class="form-label small text-muted mb-1">Minggu Ke</label>
+                            <select name="minggu" class="form-select form-select-sm">
+                                <option value="">Semua</option>
+                                @for ($m = 1; $m <= 5; $m++)
+                                    <option value="{{ $m }}" {{ $mingguKe == $m ? 'selected' : '' }}>Minggu ke {{ $m }}</option>
+                                @endfor
+                            </select>
+                        </div>
+
+                        <div class="align-self-end">
+                            <button type="submit" class="btn btn-sm btn-primary">Filter</button>
+                        </div>
+                    </form>
                         <!-- Filter Section -->
-                        <div class="mb-3">
+                        <div class="mb-4">
                             <div class="btn-group btn-group-sm" role="group">
                                 <button type="button" class="btn btn-outline-primary filter-btn active"
                                     data-filter="all">All</button>
@@ -36,10 +74,11 @@
                                 @endforeach
                             </div>
                         </div>
-                        <div class="activity-container" style="max-height: 280px; overflow-y: auto;">
+                        <!-- Activity Container -->
+                        <div class="activity-container" style="max-height: 320px; overflow-y: auto; position: relative;">
                             @forelse ($activitysales as $sales)
-                                <div class="mb-3 sales-item" data-sales-id="{{ $sales['id_sales'] }}">
-                                    <strong class="text-dark d-block mb-2">{{ $sales['id_sales'] }}</strong>
+                                <div class="mb-4 sales-item" data-sales-id="{{ $sales['id_sales'] }}">
+                                    <strong class="text-dark d-block mb-3 fs-6">{{ $sales['id_sales'] }}</strong>
                                     @php
                                         $aktivitas = [
                                             'DB' => [
@@ -111,26 +150,30 @@
                                                     ? min(round(($data['jumlah'] / $data['target']) * 100), 100)
                                                     : 0;
                                         @endphp
-                                        <div class="mb-2 activity-item" data-activity="{{ $label }}">
-                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <div class="mb-3 activity-item" data-activity="{{ $label }}">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
                                                 <span class="small text-muted">{{ $label }}:
                                                     {{ $data['jumlah'] }}/{{ $data['target'] }}</span>
-                                                <span class="badge bg-{{ $data['warna'] }}-subtle text-dark"
-                                                    style="cursor: pointer" data-sales-id="{{ $sales['id_sales'] }}"
+                                                <span
+                                                    class="badge bg-{{ $data['warna'] }}-subtle text-{{ $data['warna'] }} rounded-pill px-3 py-1"
+                                                    style="cursor: pointer;" data-sales-id="{{ $sales['id_sales'] }}"
                                                     data-activity="{{ $label }}">{{ $persen }}%</span>
                                             </div>
-                                            <div class="progress" style="height: 6px;">
-                                                <div class="progress-bar bg-{{ $data['warna'] }}"
-                                                    style="width: {{ $persen }}%;"></div>
+                                            <div class="progress rounded-pill" style="height: 8px;">
+                                                <div class="progress-bar bg-{{ $data['warna'] }} rounded-pill"
+                                                    role="progressbar"
+                                                    style="width: {{ $persen }}%; transition: width 0.3s ease-in-out;"
+                                                    aria-valuenow="{{ $persen }}" aria-valuemin="0"
+                                                    aria-valuemax="100"></div>
                                             </div>
                                         </div>
                                     @endforeach
                                     @if (!$loop->last)
-                                        <hr class="my-3 opacity-25">
+                                        <hr class="my-4 opacity-25">
                                     @endif
                                 </div>
                             @empty
-                                <div class="text-center py-3">
+                                <div class="text-center py-4">
                                     <p class="text-muted small mb-0">Tidak ada data aktivitas sales.</p>
                                 </div>
                             @endforelse
@@ -207,7 +250,8 @@
             <!-- Total Win -->
             <div class="col-lg-6 col-md-12 mb-3">
                 <div class="card h-100 shadow-sm border-0 rounded-3">
-                    <div class="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
+                    <div
+                        class="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0 text-primary">Total Win</h5>
                         <select class="form-select form-select-sm win-year-filter" style="max-width: 120px;" hidden>
                             @for ($year = now()->year - 5; $year <= now()->year + 1; $year++)
@@ -843,7 +887,7 @@
                     sales[activityKey].forEach(item => {
                         const row = `
             <tr>
-                <td>${item.contact?.perusahaan? `${item.contact.nama ?? '-'} (${item.contact.perusahaan.nama_perusahaan})` : item.contact ? `${item.contact.nama ?? '-'}` : item.peserta ? `${item.peserta.nama ?? '-'} (Peserta)` : '-'}</td>                
+                <td>${item.contact?.perusahaan? `${item.contact.nama ?? '-'} (${item.contact.perusahaan.nama_perusahaan})` : item.contact ? `${item.contact.nama ?? '-'}` : item.peserta ? `${item.peserta.nama ?? '-'} (Peserta)` : '-'}</td>
                 <td>${item.aktivitas ?? '-'}</td>
                 <td>${item.deskripsi ?? '-'}</td>
                 <td>${item.total ? 'Rp ' + Number(item.total).toLocaleString('id-ID') : '-'}</td>

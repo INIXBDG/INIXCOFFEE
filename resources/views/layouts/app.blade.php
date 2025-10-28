@@ -491,7 +491,7 @@
 </head>
 
 <body>
-    @if(session('success'))
+@if(session('success'))
     <div class="alert alert-success alert-dismissible fade show m-0 alert-custom" role="alert" id="success-alert">
         <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -513,7 +513,7 @@
             if (alert) {
                 alert.remove();
             }
-        }, 5000); 
+        }, 5000);
     </script>
     @endif
     @if(session('error'))

@@ -259,7 +259,8 @@
                                                                                 </div>
                                                                                 <div class="row mb-0">
                                                                                     <div class="col-md-12 offset-md-8">
-                                                                                        <button type="submit" class="btn click-primary" id="submitData" style="padding:8px" onclick="event.preventDefault(); if(confirm('Apakah Anda Yakin?')) { document.getElementById('form-tunjangan').submit(); }">
+                                                                                        <button type="submit" class="btn click-primary" id="submitData" style="padding:8px"
+                                                                                            onclick="event.preventDefault(); showConfirmSimpan();">
                                                                                             {{ __('Simpan') }}
                                                                                         </button>
                                                                                     </div>
@@ -1281,28 +1282,37 @@
 
     function approveTunjangan() {
         if (!currentKaryawan) return;
-        
-        if (confirm('Approve tunjangan untuk karyawan ini?')) {
-            $.ajax({
-                url: '/approveTunjangan',
-                type: 'POST',
-                data: {
-                    _token: '{{ csrf_token() }}',
-                    id_karyawan: currentKaryawan.id_karyawan,
-                    bulan: currentKaryawan.bulan,
-                    tahun: currentKaryawan.tahun,
-                    type: 'all'
-                },
-                success: function(response) {
-                    alert(response.message);
-                    $('#detailModal').modal('hide');
-                    loadPendingApproval();
-                },
-                error: function() {
-                    alert('Terjadi kesalahan');
-                }
-            });
-        }
+
+        Swal.fire({
+            title: 'Approve tunjangan?',
+            text: 'Approve tunjangan untuk karyawan ini?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Approve',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '/approveTunjangan',
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        id_karyawan: currentKaryawan.id_karyawan,
+                        bulan: currentKaryawan.bulan,
+                        tahun: currentKaryawan.tahun,
+                        type: 'all'
+                    },
+                    success: function(response) {
+                        Swal.fire('Berhasil!', response.message, 'success');
+                        $('#detailModal').modal('hide');
+                        loadPendingApproval();
+                    },
+                    error: function() {
+                        Swal.fire('Gagal!', 'Terjadi kesalahan', 'error');
+                    }
+                });
+            }
+        });
     }
 
     function rejectTunjangan() {
@@ -1312,31 +1322,42 @@
 
     function confirmReject() {
         var note = $('#rejection_note').val();
-        
+
         if (!note) {
-            alert('Alasan penolakan harus diisi');
+            Swal.fire('Alasan penolakan harus diisi', '', 'warning');
             return;
         }
-        
-        $.ajax({
-            url: '/rejectTunjangan',
-            type: 'POST',
-            data: {
-                _token: '{{ csrf_token() }}',
-                id_karyawan: currentKaryawan.id_karyawan,
-                bulan: currentKaryawan.bulan,
-                tahun: currentKaryawan.tahun,
-                type: 'all',
-                rejection_note: note
-            },
-            success: function(response) {
-                alert(response.message);
-                $('#rejectionModal').modal('hide');
-                $('#rejection_note').val('');
-                loadPendingApproval();
-            },
-            error: function() {
-                alert('Terjadi kesalahan');
+
+        Swal.fire({
+            title: 'Konfirmasi Penolakan',
+            text: 'Yakin ingin menolak tunjangan ini?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Tolak',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '/rejectTunjangan',
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        id_karyawan: currentKaryawan.id_karyawan,
+                        bulan: currentKaryawan.bulan,
+                        tahun: currentKaryawan.tahun,
+                        type: 'all',
+                        rejection_note: note
+                    },
+                    success: function(response) {
+                        Swal.fire('Ditolak!', response.message, 'success');
+                        $('#rejectionModal').modal('hide');
+                        $('#rejection_note').val('');
+                        loadPendingApproval();
+                    },
+                    error: function() {
+                        Swal.fire('Gagal!', 'Terjadi kesalahan', 'error');
+                    }
+                });
             }
         });
     }
@@ -1431,6 +1452,21 @@
             }
         });
     }
+    function showConfirmSimpan() {
+        Swal.fire({
+            title: 'Konfirmasi Simpan',
+            text: 'Apakah Anda Yakin ingin menyimpan data tunjangan?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Simpan',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('form-tunjangan').submit();
+            }
+        });
+    }
+
 </script>
 @endpush
 @endsection
