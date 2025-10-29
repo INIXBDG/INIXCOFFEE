@@ -874,5 +874,58 @@
                 </div>
             </div>
         @endif
+
+        @if ($notification->data['message']['tipe'] == 'Perubahan Payment Advance')
+            <div class="notification mb-3 p-3 border rounded bg-light">
+                <p>
+                    <strong style="text-transform: capitalize;">
+                        {{ $notification->data['message']['karyawan'] }}
+                    </strong>
+                    telah melakukan <strong>perubahan</strong> pada Payment Advance 
+                    untuk kelas <strong>{{ $notification->data['message']['rkm'] }}</strong>, 
+                    yang berjalan di <strong>{{ $notification->data['message']['waktu'] }}</strong>.<br>
+                    Data ini milik <strong>{{ $notification->data['message']['milik'] }}</strong>.
+                </p>
+
+                {{-- ✅ Tambahan bagian perubahan --}}
+                @if (!empty($notification->data['message']['perubahan']))
+                    <div class="mt-2">
+                        <strong>Detail perubahan:</strong>
+                        <ul class="mt-1 mb-0">
+                            @foreach ($notification->data['message']['perubahan'] as $field => $values)
+                                <li>
+                                    <strong>{{ ucfirst(str_replace('_', ' ', $field)) }}</strong>:
+                                    <span class="text-danger">
+                                        {{ number_format($values['before'] ?? 0, 0, ',', '.') }}
+                                    </span>
+                                    →
+                                    <span class="text-success">
+                                        {{ number_format($values['after'] ?? 0, 0, ',', '.') }}
+                                    </span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                <small class="text-muted">
+                    Pada {{ \Carbon\Carbon::parse($notification->data['message']['waktu_perubahan'])->locale('id')->translatedFormat('d F Y H:i') }}
+                </small>
+
+                <div class="mt-2">
+                    <a href="{{ $notification->data['path'] }}" class="btn btn-primary btn-sm me-2">
+                        Lihat Detail
+                    </a>
+                    <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
+                        @csrf
+                        @method('PUT')
+                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                            Tandai sebagai Dibaca
+                        </button>
+                    </form>
+                </div>
+            </div>
+        @endif
+
     <hr>
 @endforeach

@@ -51,6 +51,7 @@ class CheckUptime extends Command
             ActivityLog::create([
                 'status' => 'uptime',
                 'url' => $url,
+                'status' => 'UpTime',
                 'is_up' => $isUp,
                 'response_time_ms' => $responseTime,
                 'checked_at' => now(),

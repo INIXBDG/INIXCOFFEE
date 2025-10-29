@@ -10,8 +10,11 @@ use App\Models\Peluang;
 use App\Models\perhitunganNetSales;
 use App\Models\RKM;
 use App\Models\User;
+use App\Notifications\UpdateLaporanPenjualan;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 
 class LaporanPenjualanController extends Controller
 {
@@ -28,7 +31,7 @@ class LaporanPenjualanController extends Controller
     public function indexJson(Request $request)
     {
         $status = $request->query('status');
-        $query = RKM::with(['exam', 'perhitunganNetSales.peserta', 'materi', 'perusahaan'])
+        $query = RKM::with(['exam', 'perhitunganNetSales.peserta', 'materi', 'perusahaan','invoice'])
             ->orderByDesc('tanggal_awal');
 
         if ($status !== null) {
@@ -160,6 +163,7 @@ class LaporanPenjualanController extends Controller
                 'nama_materi' => $item->materi?->nama_materi ?? '-',
                 'nama_perusahaan' => $item->perusahaan?->nama_perusahaan ?? '-',
                 'perhitungannet' => $netsales,
+                'invoice' => $item->invoice,
             ];
         });
 
@@ -193,7 +197,6 @@ class LaporanPenjualanController extends Controller
 
     public function updatePA(Request $request, $id)
     {
-
         $fields = [
             'transportasi',
             'penginapan',
@@ -204,6 +207,7 @@ class LaporanPenjualanController extends Controller
             'harga_penawaran'
         ];
 
+        // Bersihkan angka dari format rupiah
         foreach ($fields as $field) {
             if ($request->has($field)) {
                 $request->merge([
@@ -225,8 +229,49 @@ class LaporanPenjualanController extends Controller
             'tipe_pembayaran'  => 'nullable|string|in:cash,transfer,credit',
         ]);
 
+        // Ambil data lama sebelum update
         $pa = perhitunganNetSales::findOrFail($id);
+        $oldData = $pa->only(array_keys($validated));
+
+        // Update data baru
         $pa->update($validated);
+        $newData = $pa->only(array_keys($validated));
+
+        // Deteksi perubahan
+        $changed = [];
+        foreach ($newData as $key => $value) {
+            if ($oldData[$key] != $value) {
+                $changed[$key] = [
+                    'before' => $oldData[$key],
+                    'after' => $value,
+                ];
+            }
+        }
+
+        // Ambil user penerima notifikasi
+        $users = User::whereIn('jabatan', ['GM', 'Adm Sales', 'Finance & Accounting'])->get();
+
+        // Ambil data RKM
+        $rkm = RKM::with('materi')->where('id', $pa->id_rkm)->first();
+
+        Carbon::setLocale('id');
+        date_default_timezone_set('Asia/Jakarta');
+
+        $data = [
+            'karyawan' => Auth::user()->karyawan->nama_lengkap ?? Auth::user()->username,
+            'id_rkm' => $rkm->id ?? null,
+            'rkm' => $rkm->materi?->nama_materi ?? 'Tidak diketahui',
+            'waktu' => ($rkm->tanggal_awal && $rkm->tanggal_akhir)
+                ? Carbon::parse($rkm->tanggal_awal)->translatedFormat('d F Y') . ' - ' . Carbon::parse($rkm->tanggal_akhir)->translatedFormat('d F Y')
+                : 'Tanggal belum ditentukan',
+            'milik' => $rkm->sales_key ?? 'Tidak diketahui',
+            'waktu_perubahan' => Carbon::now()->format('Y-m-d H:i:s'),
+            'perubahan' => $changed, 
+        ];
+
+        $path = "/crm/edit/{$pa->id_rkm}/pa";
+
+        Notification::send($users, new UpdateLaporanPenjualan($data, $path));
 
         return response()->json([
             'success' => true,
