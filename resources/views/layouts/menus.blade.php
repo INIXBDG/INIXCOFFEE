@@ -2180,6 +2180,39 @@
                                             </div>
                                         </div>
                                         @endcan
+                                @if (auth()->user()->jabatan === 'Koordinator ITSM')
+                                <div class="col mt-6">
+                                    <div class="mt-5 mb-3">
+                                        Uptime Monitoring
+                                    </div>
+                                    <div class="nav nav-tabs mt-3" role="tablist">
+                                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#nav-inixcoffee" type="button" role="tab" aria-controls="nav-inixcoffee" aria-selected="false">Inixcoffee</button>
+                                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#nav-inixlatte" type="button" role="tab" aria-controls="nav-inixlatte" aria-selected="false">Inixlatte</button>
+                                    </div>
+                                    <div class="tab-content">
+                                        <div class="tab-pane fade" id="nav-inixcoffee" role="tabpanel">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <div class="card-title">uptime monitoring INIXCOFFEE</div>
+                                                    <div class="p-4">
+                                                        <canvas id="uptimeChartInixcoffee" height="350"></canvas>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="tab-pane fade" id="nav-inixlatte" role="tabpanel">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <div class="card-title">uptime monitoring INIXLATTE</div>
+                                                    <div class="p-4">
+                                                        <canvas id="uptimeChartInixlatte" height="350"></canvas>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                @endif
                                     </div>
                                 </div>
                             </div>
@@ -2235,6 +2268,8 @@ Swal.fire({
 });
 </script>
     <script>
+        let chartDataCache = null;
+           
         $(document).ready(function() {
             handleNotificationDismissal();
             // initializeYearlySales();
@@ -2281,7 +2316,168 @@ Swal.fire({
                 });
             });
             // console.log(progress, carprogress);
+             $.ajax({
+                url: "{{ route('activity.log.chart') }}",
+                method: "GET",
+                dataType: "json",
+                success: function(response) {
+                    if (!response || typeof response !== 'object' || response.error) {
+                        console.error("Data tidak valid:", response);
+                        return;
+                    }
+                    chartDataCache = response;
+
+                    // Coba render chart yang aktif saat ini
+                    const activeTab = $('.nav-link.active').attr('data-bs-target');
+                    if (activeTab === '#nav-inixcoffee') {
+                        renderChartIfNeeded('uptimeChartInixcoffee', 'https://192.168.95.60:8001/');
+                    } else if (activeTab === '#nav-inixlatte') {
+                        renderChartIfNeeded('uptimeChartInixlatte', 'https://192.168.95.60:8002/');
+                    }
+                },
+                error: function(xhr) {
+                    console.error("AJAX error:", xhr.responseText);
+                    alert("Gagal memuat data chart: " + xhr.status + " - " + xhr.statusText);
+                }
+            });
+
+            // Saat tab berubah
+            $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
+                const target = $(e.target).attr('data-bs-target');
+                if (target === '#nav-inixcoffee') {
+                    renderChartIfNeeded('uptimeChartInixcoffee', 'https://192.168.95.60:8001/');
+                } else if (target === '#nav-inixlatte') {
+                    renderChartIfNeeded('uptimeChartInixlatte', 'https://192.168.95.60:8002/');
+                }
+            });
         });
+
+        function renderChartIfNeeded(canvasId, url) {
+            const ctx = document.getElementById(canvasId);
+            if (!ctx || !chartDataCache || !chartDataCache[url]) {
+                return;
+            }
+
+            if (ctx.chartInstance) return;
+
+            const data = chartDataCache[url];
+            if (!data || !Array.isArray(data.labels) || !Array.isArray(data.response_times) || !Array.isArray(data.statuses)) {
+                console.warn("Data tidak lengkap untuk URL:", url);
+                return;
+            }
+
+            const upData = data.statuses.map(s => s === true ? 1 : null);
+            const downData = data.statuses.map(s => s === false ? 1 : null);
+
+            const chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Response Time (ms)',
+                        data: data.response_times,
+                        backgroundColor: 'rgba(54,162,235,0.5)',
+                        borderColor: 'rgba(54,162,235,1)',
+                        borderWidth: 1,
+                        yAxisID: 'y'
+                    }, {
+                        label: 'UP',
+                        type: 'line',
+                        data: upData,
+                        borderColor: 'rgba(40,167,69,1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: false,
+                        yAxisID: 'y1'
+                    }, {
+                        label: 'DOWN',
+                        type: 'line',
+                        data: downData,
+                        borderColor: 'rgba(220,53,69,1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: false,
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Response Time (ms)'
+                            }
+                        },
+                        y1: {
+                            beginAtZero: true,
+                            position: 'right',
+                            grid: {
+                                drawOnChartArea: false
+                            },
+                            title: {
+                                display: true,
+                                text: 'Status'
+                            },
+                            ticks: {
+                                stepSize: 1,
+                                callback: v => v === 1 ? 'UP' : ''
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Waktu'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                generateLabels: function(chart) {
+                                    const datasets = chart.data.datasets;
+                                    return datasets.map((dataset, i) => {
+                                        const label = dataset.label || '';
+                                        let pointStyle = 'rect';
+
+                                        if (label === 'UP' || label === 'DOWN') {
+                                            pointStyle = 'circle';
+                                        }
+
+                                        return {
+                                            text: label,
+                                            fillStyle: dataset.backgroundColor || dataset.borderColor,
+                                            strokeStyle: dataset.borderColor,
+                                            lineWidth: 2,
+                                            hidden: !chart.isDatasetVisible(i),
+                                            index: i,
+                                            pointStyle: pointStyle,
+                                            fontColor: '#000',
+                                        };
+                                    });
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    if (ctx.dataset.label === 'Response Time (ms)') return `Response Time: ${ctx.parsed.y} ms`;
+                                    if (ctx.dataset.label === 'UP') return 'Status: UP';
+                                    if (ctx.dataset.label === 'DOWN') return 'Status: DOWN';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            ctx.chartInstance = chart;
+        }
 
                 /**
                  * loadDashboard({ force: boolean }) -> Promise

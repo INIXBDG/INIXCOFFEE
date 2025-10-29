@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "cc7e4628467ff97bbda83e285fc1b93c",
+    "content-hash": "c42636342a257c329d822c2f51f9d732",
     "packages": [
         {
             "name": "barryvdh/laravel-dompdf",
@@ -2576,6 +2576,55 @@
                 }
             ],
             "time": "2020-06-13T08:05:20+00:00"
+        },
+        {
+            "name": "jinoantony/laravel-kanban",
+            "version": "v1.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/jinoantony/laravel-kanban.git",
+                "reference": "7aff606dc0bbefe91de907b0d213d3630e6ceae5"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/jinoantony/laravel-kanban/zipball/7aff606dc0bbefe91de907b0d213d3630e6ceae5",
+                "reference": "7aff606dc0bbefe91de907b0d213d3630e6ceae5",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/filesystem": "5.5.*|^6|^7|^8|^9|^10",
+                "illuminate/view": "5.5.*|^6|^7|^8|^9|^10",
+                "php": "^7.0|^8.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "JinoAntony\\Kanban\\LaravelKanbanServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "JinoAntony\\Kanban\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Jino Antony",
+                    "email": "jinoantony99@gmail.com"
+                }
+            ],
+            "description": "Kanban boards for laravel",
+            "support": {
+                "issues": "https://github.com/jinoantony/laravel-kanban/issues",
+                "source": "https://github.com/jinoantony/laravel-kanban/tree/v1.0.1"
+            },
+            "time": "2023-10-26T16:14:45+00:00"
         },
         {
             "name": "laravel/framework",
@@ -6639,6 +6688,76 @@
                 }
             ],
             "time": "2024-06-11T12:45:25+00:00"
+        },
+        {
+            "name": "romanzipp/laravel-queue-monitor",
+            "version": "5.4.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/romanzipp/Laravel-Queue-Monitor.git",
+                "reference": "119e80879b0a3a78821cfafd81175a62573a2f28"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/romanzipp/Laravel-Queue-Monitor/zipball/119e80879b0a3a78821cfafd81175a62573a2f28",
+                "reference": "119e80879b0a3a78821cfafd81175a62573a2f28",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "ext-mbstring": "*",
+                "illuminate/database": ">=5.5",
+                "illuminate/queue": ">=5.5",
+                "illuminate/support": ">=5.5",
+                "nesbot/carbon": "^2.0|^3.0",
+                "php": "^8.0"
+            },
+            "require-dev": {
+                "doctrine/dbal": "^3.1|^4.2",
+                "friendsofphp/php-cs-fixer": "^3.0",
+                "laravel/framework": ">=5.5",
+                "mockery/mockery": "^1.3.2",
+                "orchestra/testbench": ">=3.8",
+                "phpstan/phpstan": "^0.12.99|^1.0|^2.1",
+                "phpunit/phpunit": ">=8.5.23",
+                "romanzipp/php-cs-fixer-config": "^3.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "romanzipp\\QueueMonitor\\Providers\\QueueMonitorProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "romanzipp\\QueueMonitor\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "romanzipp",
+                    "email": "ich@ich.wtf",
+                    "homepage": "https://ich.wtf"
+                }
+            ],
+            "description": "Queue Monitoring for Laravel Database Job Queue",
+            "support": {
+                "issues": "https://github.com/romanzipp/Laravel-Queue-Monitor/issues",
+                "source": "https://github.com/romanzipp/Laravel-Queue-Monitor/tree/5.4.2"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/romanzipp",
+                    "type": "github"
+                }
+            ],
+            "time": "2025-10-28T07:13:49+00:00"
         },
         {
             "name": "sabberworm/php-css-parser",
