@@ -31,7 +31,7 @@ class LaporanPenjualanController extends Controller
     public function indexJson(Request $request)
     {
         $status = $request->query('status');
-        $query = RKM::with(['exam', 'perhitunganNetSales.peserta', 'materi', 'perusahaan'])
+        $query = RKM::with(['exam', 'perhitunganNetSales.peserta', 'materi', 'perusahaan','invoice'])
             ->orderByDesc('tanggal_awal');
 
         if ($status !== null) {
@@ -163,6 +163,7 @@ class LaporanPenjualanController extends Controller
                 'nama_materi' => $item->materi?->nama_materi ?? '-',
                 'nama_perusahaan' => $item->perusahaan?->nama_perusahaan ?? '-',
                 'perhitungannet' => $netsales,
+                'invoice' => $item->invoice,
             ];
         });
 

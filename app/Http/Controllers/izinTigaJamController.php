@@ -83,7 +83,7 @@ public function store(Request $request)
 
     $karyawan = karyawan::findOrFail($request->id_karyawan);
 
-    $tanggal = $request->input('tanggal'); // Tanggal izin yang diajukan
+    $tanggal = $request->input('tanggal'); 
     $tanggalPengajuan = $request->input('tanggal_pengajuan');
     $hariIni = now()->toDateString();
 
