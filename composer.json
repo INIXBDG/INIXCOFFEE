@@ -20,7 +20,7 @@
         "laravel/tinker": "^2.8",
         "laravel/ui": "^4.5",
         "maatwebsite/excel": "^3.1",
-        "pusher/pusher-php-server": "*",
+        "pusher/pusher-php-server": "^7.2",
         "rap2hpoutre/laravel-log-viewer": "^2.4",
         "romanzipp/laravel-queue-monitor": "^5.4",
         "sentry/sentry-laravel": "^4.16",

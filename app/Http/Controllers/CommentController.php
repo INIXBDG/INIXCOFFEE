@@ -35,7 +35,7 @@ class CommentController extends Controller
         // Ambil koleksi karyawan (multiple), pastikan mereka berupa Laravel Collection
 		$CS = collect(karyawan::where('jabatan', 'Customer Care')->latest()->get());
 		$AH = collect(karyawan::where('jabatan', 'Admin Holding')->latest()->get());
-
+        $recieverId = $rkm->sales_key;
 		// Ekstrak kode_karyawan dari setiap model
 		$cs_codes = $CS->pluck('kode_karyawan')->filter()->all(); // array string
 		$ah_codes = $AH->pluck('kode_karyawan')->filter()->all(); // array string
@@ -73,9 +73,9 @@ class CommentController extends Controller
         $url = route('rkm.show', ['rkm' => $rkm->id]);
         $path = $request->path;
         // return $path;
-        // Mengirim notifikasi ke semua pengguna yang terlibat
+        // ✅ Kirim notifikasi ke semua user yang terlibat
         foreach ($users as $user) {
-            NotificationFacade::send($user, new CommentNotification($comment, $url, $path));
+            $user->notify(new CommentNotification($comment, $url, $path, $user->id));
         }
 
         return redirect()->back()->with('success', 'Komentar berhasil disimpan');

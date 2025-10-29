@@ -28,7 +28,10 @@ class LogActivity
         $browser = $agent->browser();
         $device = $agent->device();
         $currentUrl = $request->fullUrl();
-
+        $arrayUrl = explode('8001', $currentUrl);
+        if ($arrayUrl[1] == "/user-dropdown") {
+            return $response;
+        }
         $status = $request->get('activity_status', $this->getStatusFromMethod($request->method()));
 
         if ($request->routeIs('absensi.masuk')) {
