@@ -3,11 +3,12 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
+use romanzipp\QueueMonitor\Traits\IsMonitored;
 
 class noRecordExchangeNotification extends Notification
 {
-    use Queueable;
 
     protected $data;
     protected $path;

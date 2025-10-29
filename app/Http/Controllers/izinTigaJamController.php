@@ -68,9 +68,9 @@ class izinTigaJamController extends Controller
         return view('pengajuanizin.create', compact('karyawan', 'karyawanall'));
     }
 
-    public function store(Request $request)
+public function store(Request $request)
 {
-    // dd($request->all());
+    // Validasi input
     $this->validate($request, [
         'id_karyawan'   => 'required',
         'tanggal'        => 'required|date',
@@ -83,29 +83,54 @@ class izinTigaJamController extends Controller
 
     $karyawan = karyawan::findOrFail($request->id_karyawan);
 
+    $tanggal = $request->input('tanggal'); // Tanggal izin yang diajukan
     $tanggalPengajuan = $request->input('tanggal_pengajuan');
     $hariIni = now()->toDateString();
-    $besok   = now()->copy()->addDay()->toDateString();
 
-    // Logika aturan Pak Bos
-    if ($tanggalPengajuan === $hariIni) {
-        // Jika izin untuk hari ini, wajib sudah absen
-        $absensiKaryawan = AbsensiKaryawan::where('id_karyawan', $karyawan->id)
-            ->whereDate('tanggal', $hariIni)
-            ->first();
-
-        if (!$absensiKaryawan) {
-            return redirect()->route('pengajuanizin.index')->with(['error' => 'Anda harus absen terlebih dahulu jika mengajukan izin untuk hari ini.']);
-        }
-
+    // Cek apakah tanggal izin adalah hari ini
+    $isToday = $tanggal === $hariIni;
+    
+    // Validasi rentang tanggal izin: hanya kemarin, hari ini, atau besok
+    $tanggalIzin = \Carbon\Carbon::parse($tanggal)->startOfDay();
+    $today = \Carbon\Carbon::parse($hariIni)->startOfDay();
+    $kemarin = $today->copy()->subDay();
+    $besok = $today->copy()->addDay();
+    
+    // Cek apakah tanggal izin di luar rentang (kemarin s/d besok)
+    if ($tanggalIzin->lt($kemarin) || $tanggalIzin->gt($besok)) {
+        return redirect()->route('pengajuanizin.index')
+            ->with(['error' => 'Izin hanya dapat diajukan untuk kemarin, hari ini, atau besok.']);
+    }
+    
+    // Hanya lakukan validasi ketat jika mengajukan izin untuk HARI INI
+    if ($isToday) {
         $jamMulai = \Carbon\Carbon::createFromFormat('H:i', $request->jam_mulai);
         $sekarang = \Carbon\Carbon::now();
 
-        if ($jamMulai->lt(\Carbon\Carbon::createFromTime($sekarang->hour, $sekarang->minute))) {
-            return redirect()->route('pengajuanizin.index')->with(['error' => 'Jam mulai tidak boleh kurang dari waktu saat ini.']);
+        // Pengecualian untuk jam 08:00
+        $isJamDelapan = $jamMulai->format('H:i') === '08:00';
+
+        if (!$isJamDelapan) {
+            // Cek apakah sudah absen
+            $absensiKaryawan = AbsensiKaryawan::where('id_karyawan', $karyawan->id)
+                ->whereDate('tanggal', $hariIni)
+                ->first();
+
+            if (!$absensiKaryawan) {
+                return redirect()->route('pengajuanizin.index')
+                    ->with(['error' => 'Anda harus absen terlebih dahulu jika mengajukan izin untuk hari ini (kecuali izin jam 08:00).']);
+            }
+        }
+
+        // Validasi jam mulai tidak boleh kurang dari waktu sekarang
+        if ($jamMulai->lt($sekarang)) {
+            return redirect()->route('pengajuanizin.index')
+                ->with(['error' => 'Jam mulai tidak boleh kurang dari waktu saat ini.']);
         }
     }
 
+    // Untuk izin kemarin atau besok: TIDAK perlu validasi absensi dan jam
+    // Langsung simpan saja
 
     // Simpan izin
     izinTigaJam::create([
@@ -119,76 +144,73 @@ class izinTigaJamController extends Controller
         'approval'           => '0',
     ]);
 
+    // Ambil divisi dan jabatan karyawan
+    $divisi = $karyawan->divisi;
+    $jabatan = $karyawan->jabatan;
 
-        // Ambil divisi dan jabatan karyawan
-        $divisi = $karyawan->divisi;
-        $jabatan = $karyawan->jabatan;
+    // Ambil daftar atasan berdasarkan jabatan
+    $Offman    = karyawan::where('jabatan', 'Office Manager')->first();
+    $kooroff   = karyawan::where('jabatan', 'Koordinator Office')->first();
+    $koorSO    = karyawan::where('jabatan', 'Koordinator ITSM')->first();
+    $Eduman    = karyawan::where('jabatan', 'Education Manager')->first();
+    $SPVSales  = karyawan::where('jabatan', 'SPV Sales')->first();
+    $GM        = karyawan::where('jabatan', 'GM')->first();
 
-        // Ambil daftar atasan berdasarkan jabatan
-        $Offman    = karyawan::where('jabatan', 'Office Manager')->first();
-        $kooroff   = karyawan::where('jabatan', 'Koordinator Office')->first();
-        $koorSO    = karyawan::where('jabatan', 'Koordinator ITSM')->first();
-        $Eduman    = karyawan::where('jabatan', 'Education Manager')->first();
-        $SPVSales  = karyawan::where('jabatan', 'SPV Sales')->first();
-        $GM        = karyawan::where('jabatan', 'GM')->first();
+    $kodePenerima = [];
 
-        $kodePenerima = [];
+    switch ($jabatan) {
+        case 'SPV Sales':
+        case 'Office Manager':
+        case 'Education Manager':
+        case 'Koordinator Office':
+        case 'Koordinator ITSM':
+            if ($GM) $kodePenerima[] = $GM->kode_karyawan;
+            break;
 
-        switch ($jabatan) {
-            case 'SPV Sales':
-            case 'Office Manager':
-            case 'Education Manager':
-            case 'Koordinator Office':
-            case 'Koordinator ITSM':
-                if ($GM) $kodePenerima[] = $GM->kode_karyawan;
-                break;
-
-            default:
-                switch ($divisi) {
-                    case 'Education':
-                        if ($Eduman) $kodePenerima[] = $Eduman->kode_karyawan;
-                        break;
-                    case 'Sales & Marketing':
-                        if ($SPVSales) $kodePenerima[] = $SPVSales->kode_karyawan;
-                        break;
-                    case 'Office':
-                        if ($kooroff) $kodePenerima[] = $kooroff->kode_karyawan;
-                        // if ($koorSO)  $kodePenerima[] = $koorSO->kode_karyawan;
-                        break;
-                    case 'IT Service Management':
-                        if ($koorSO)  $kodePenerima[] = $koorSO->kode_karyawan;
-                        break;
-                }
-                break;
-        }
-
-        // Ambil user dari karyawan yang sesuai
-        $users = User::whereHas('karyawan', function ($query) use ($kodePenerima) {
-            $query->whereIn('kode_karyawan', $kodePenerima);
-        })->get();
-
-        // Siapkan data notifikasi
-        $notificationData = [
-            'tipe'         => 'Izin 3 Jam',
-            'jam_mulai'    => $request->jam_mulai,
-            'jam_selesai'  => $request->jam_selesai,
-            'durasi'       => $request->durasi,
-            'approval'     => 0,
-            'alasan_approval' => null,
-        ];
-
-        $type = 'Izin 3 Jam';
-        $path = '/pengajuanizin';
-        $to = $karyawan->nama_lengkap;
-
-        // Kirim notifikasi ke semua user atasan
-        foreach ($users as $user) {
-            NotificationFacade::send($user, new IzinExchangeNotification($notificationData, $path, $to, $type));
-        }
-
-        return redirect()->route('pengajuanizin.index')->with(['success' => 'Data Berhasil Disimpan!']);
+        default:
+            switch ($divisi) {
+                case 'Education':
+                    if ($Eduman) $kodePenerima[] = $Eduman->kode_karyawan;
+                    break;
+                case 'Sales & Marketing':
+                    if ($SPVSales) $kodePenerima[] = $SPVSales->kode_karyawan;
+                    break;
+                case 'Office':
+                    if ($kooroff) $kodePenerima[] = $kooroff->kode_karyawan;
+                    break;
+                case 'IT Service Management':
+                    if ($koorSO)  $kodePenerima[] = $koorSO->kode_karyawan;
+                    break;
+            }
+            break;
     }
 
+    // Ambil user dari karyawan yang sesuai
+    $users = User::whereHas('karyawan', function ($query) use ($kodePenerima) {
+        $query->whereIn('kode_karyawan', $kodePenerima);
+    })->get();
+
+    // Siapkan data notifikasi
+    $notificationData = [
+        'tipe'         => 'Izin 3 Jam',
+        'jam_mulai'    => $request->jam_mulai,
+        'jam_selesai'  => $request->jam_selesai,
+        'durasi'       => $request->durasi,
+        'approval'     => 0,
+        'alasan_approval' => null,
+    ];
+
+    $type = 'Izin 3 Jam';
+    $path = '/pengajuanizin';
+    $to = $karyawan->nama_lengkap;
+
+    // Kirim notifikasi ke semua user atasan
+    foreach ($users as $user) {
+        NotificationFacade::send($user, new IzinExchangeNotification($notificationData, $path, $to, $type));
+    }
+
+    return redirect()->route('pengajuanizin.index')->with(['success' => 'Data Berhasil Disimpan!']);
+}
     public function show($id)
     {
         $suratperjalanan = izinTigaJam::with('karyawan')->findOrFail($id);
@@ -260,7 +282,6 @@ public function update(Request $request, $id)
     }
     // ===== APPROVAL UNTUK KARYAWAN BIASA (FLOW NORMAL) =====
     else {
-        // Approval tingkat 1 oleh koordinator masing-masing
         if (
             in_array($jabatan, ['Koordinator Office', 'Office Manager', 'Education Manager', 'SPV Sales', 'Koordinator ITSM']) &&
             $currentApproval == 0 && $request->approval == 1

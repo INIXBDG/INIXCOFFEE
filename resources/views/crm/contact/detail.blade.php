@@ -649,16 +649,18 @@
         <!-- Modal: Tambah Aktivitas -->
         <div class="modal fade" id="tambahAktivitasModal" tabindex="-1" aria-labelledby="tambahAktivitasModalLabel"
             aria-hidden="true">
-            <div class="modal-dialog">
+            <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="tambahAktivitasModalLabel">Tambah Aktivitas</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <form action="{{ route('store.aktivitas.new') }}" method="POST">
+                        <form action="{{ route('store.aktivitas.new') }}" method="POST" id="aktivitasForm">
                             @csrf
                             <input type="hidden" name="id_perusahaan" value="{{ $data->id }}">
+                            <input type="hidden" name="contact_type" id="contact_type" value="contact">
+
                             <div class="mb-3">
                                 <label for="id_contact" class="form-label">Pilih Contact</label>
                                 <select name="id_contact" class="form-control" id="id_contact" required>
@@ -668,15 +670,13 @@
                                             {{ $contact['label'] }}
                                         </option>
                                     @endforeach
-                                    </option>
                                 </select>
-                                <input type="hidden" name="contact_type" id="contact_type" value="">
                             </div>
 
                             <div class="mb-3">
                                 <label for="aktivitas" class="form-label">Aktivitas</label>
-                                <select name="aktivitas" class="form-control" id="">
-                                    <option value=""> -- Pilih Aktivitas Anda -- </option>
+                                <select name="aktivitas" class="form-control" id="aktivitas" required>
+                                    <option value="">-- Pilih Aktivitas Anda --</option>
                                     <option value="Call">Call</option>
                                     <option value="Email">Email</option>
                                     <option value="Visit">Visit</option>
@@ -686,25 +686,35 @@
                                     <option value="PI">Penawaran Internal</option>
                                     <option value="Telemarketing">Telemarketing</option>
                                     <option value="Form_Masuk">Regis Form Masuk</option>
-                                    <option value="Form_Keluar">Regis Form Keluar</option>      
+                                    <option value="Form_Keluar">Regis Form Keluar</option>
                                 </select>
                             </div>
-                            <div class="mb-3">
-                                <label for="subject" class="form-label">Subject</label>
-                                <input type="text" class="form-control" id="subject" name="subject" required>
+
+                            {{-- Hidden fields untuk jenis aktivitas tertentu --}}
+                            <div id="hiddenContainer" style="display: none;">
+                                <div class="mb-3">
+                                    <label for="pax" class="form-label">Jumlah Pax</label>
+                                    <input type="number" name="pax" id="pax" class="form-control" min="1">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="harga" class="form-label">Harga per Pax</label>
+                                    <input type="text" name="harga" id="harga" class="form-control">
+                                </div>
                             </div>
+
                             <div class="mb-3">
                                 <label for="deskripsi" class="form-label">Deskripsi</label>
                                 <textarea class="form-control" id="deskripsi" name="deskripsi"></textarea>
                             </div>
+
                             <div class="mb-3">
                                 <label for="waktu_aktivitas" class="form-label">Waktu Aktivitas</label>
-                                <input type="date" class="form-control" id="waktu_aktivitas" name="waktu_aktivitas"
-                                    required>
+                                <input type="date" class="form-control" id="waktu_aktivitas" name="waktu_aktivitas" required>
                             </div>
+
                             <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary btn-sm"
-                                    data-bs-dismiss="modal">Batal</button>
+                                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
                                 <button type="submit" class="btn btn-primary btn-sm">Simpan</button>
                             </div>
                         </form>
@@ -765,15 +775,60 @@
 
         <script>
             document.addEventListener("DOMContentLoaded", function () {
-                // Init Select2
                 initMateriSelect2();
                 initContactSelect2();
 
-                // Format input harga
+                // --- Ambil data contact dari halaman detail ---
+                const currentContactId = "{{ $data->id_contact ?? '' }}"; // sesuaikan variabel Blade
+                const currentContactType = "{{ $data->type ?? '' }}";
+
+                const contactSelect = document.getElementById('id_contact');
+                const contactTypeInput = document.getElementById('contact_type');
+
+                if (currentContactId) {
+                    contactSelect.value = currentContactId;
+                    contactTypeInput.value = currentContactType;
+                    contactSelect.closest('.mb-3').style.display = 'none';
+
+                    const hiddenContact = document.createElement('input');
+                    hiddenContact.type = 'hidden';
+                    hiddenContact.name = 'id_contact';
+                    hiddenContact.value = currentContactId;
+                    formPrependHidden(hiddenContact);
+                } else {
+                    if (contactSelect) {
+                        contactSelect.addEventListener('change', function () {
+                            const selectedOption = this.options[this.selectedIndex];
+                            const type = selectedOption.getAttribute('data-type');
+                            contactTypeInput.value = type || '';
+                        });
+                    }
+                }
+
+                // --- Tampilkan hidden fields sesuai aktivitas ---
+                const aktivitasSelect = document.getElementById('aktivitas');
+                const hiddenContainer = document.getElementById('hiddenContainer');
+
+                if (aktivitasSelect && hiddenContainer) {
+                    aktivitasSelect.addEventListener('change', function() {
+                        const selected = this.value;
+                        // hanya tampil jika aktivitas termasuk PA, Form_Masuk, Form_Keluar
+                        if (["PA", "Form_Masuk", "Form_Keluar"].includes(selected)) {
+                            hiddenContainer.style.display = 'block';
+                        } else {
+                            hiddenContainer.style.display = 'none';
+                            // reset nilai jika disembunyikan
+                            document.getElementById('pax').value = '';
+                            document.getElementById('harga').value = '';
+                        }
+                    });
+                }
+
+                // --- Format harga ---
                 const hargaInput = document.getElementById("harga");
                 if (hargaInput) {
                     hargaInput.addEventListener("input", function () {
-                        let value = this.value.replace(/\D/g, ""); // ambil angka saja
+                        let value = this.value.replace(/\D/g, "");
                         if (value) {
                             this.value = new Intl.NumberFormat("id-ID", {
                                 style: "currency",
@@ -785,7 +840,6 @@
                         }
                     });
 
-                    // sebelum submit, ubah ke angka murni
                     if (hargaInput.form) {
                         hargaInput.form.addEventListener("submit", function () {
                             hargaInput.value = hargaInput.value.replace(/\D/g, "");
@@ -793,22 +847,11 @@
                     }
                 }
 
-                // Change listener untuk id_contact
-                const idContact = document.getElementById('id_contact');
-                if (idContact) {
-                    idContact.addEventListener('change', function () {
-                        const selectedOption = this.options[this.selectedIndex];
-                        const type = selectedOption.getAttribute('data-type');
-                        document.getElementById('contact_type').value = type || '';
-                    });
-                }
-
-                // Submit form via AJAX
+                // --- Submit AJAX edit aktivitas ---
                 const form = document.getElementById('editAktivitasForm');
                 if (form) {
                     form.addEventListener('submit', function(e) {
                         e.preventDefault();
-
                         const url = form.action;
                         const formData = new FormData(form);
 
@@ -835,7 +878,13 @@
                 }
             });
 
-            // Fungsi untuk edit aktivitas (dipanggil dari luar)
+            // --- Fungsi bantu untuk prepend hidden input ke form modal ---
+            function formPrependHidden(inputEl) {
+                const form = document.querySelector('#tambahAktivitasModal form');
+                if (form) form.prepend(inputEl);
+            }
+
+            // --- Fungsi edit aktivitas ---
             function editAktivitas(data) {
                 document.getElementById('edit_id').value = data.id;
                 document.getElementById('edit_id_contact').value = data.id_contact;
@@ -843,20 +892,16 @@
                 document.getElementById('edit_subject').value = data.subject;
                 document.getElementById('edit_deskripsi').value = data.deskripsi || '';
                 document.getElementById('edit_waktu_aktivitas').value = data.waktu_aktivitas.split(' ')[0];
-
-                // Set action form ke route update
                 document.getElementById('editAktivitasForm').action = `/crm/aktivitas/update/${data.id}`;
             }
 
-            // Init Select2 Materi
+            // --- Init Select2 functions ---
             function initMateriSelect2() {
                 var $select = $('#materi');
-
                 if (typeof $.fn.select2 !== 'function') {
                     console.error('Select2 belum ter-load!');
                     return;
                 }
-
                 var $closestModal = $select.closest('.modal');
                 $select.select2({
                     width: '100%',
@@ -867,12 +912,10 @@
 
             function initContactSelect2() {
                 var $select = $('#id_contact');
-
                 if (typeof $.fn.select2 !== 'function') {
                     console.error('Select2 belum ter-load!');
                     return;
                 }
-
                 var $closestModal = $select.closest('.modal');
                 $select.select2({
                     width: '100%',

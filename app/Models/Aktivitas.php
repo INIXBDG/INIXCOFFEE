@@ -36,4 +36,9 @@ class Aktivitas extends Model
     {
         return $this->belongsTo(Peserta::class, 'id_peserta');
     }
+    
+        public function target()
+    {
+        return $this->belongsTo(TargetActivity::class, 'id_sales', 'id_sales');
+    }
 }

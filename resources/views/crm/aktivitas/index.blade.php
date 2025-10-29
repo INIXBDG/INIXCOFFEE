@@ -3,6 +3,9 @@
 @section('crm_contents')
     @php
         $allowedUser = ['Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
+        $createNotAllowed = ['HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
+        $sales = Auth::user()->id_sales;
+        $isAllowedUser = in_array(Auth::user()->jabatan, $allowedUser);
     @endphp
     <div class="content-wrapper">
         <div class="container-xxl flex-grow-1 container-p-y">
@@ -10,12 +13,11 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="fw-bold">Activity Management</h4>
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#activityModal"
-                    onclick="resetForm()" @if (in_array(Auth::user()->jabatan, $allowedUser)) disabled @endif>
+                    onclick="resetForm()" @if (in_array(Auth::user()->jabatan, $createNotAllowed)) disabled @endif>
                     Tambah Aktivitas
                 </button>
             </div>
 
-            <!-- Filter Section -->
             <div class="card mb-4">
                 <div class="card-body">
                     <div class="row g-3 align-items-end">
@@ -49,16 +51,29 @@
                             <input type="date" id="filter_waktu_end" class="form-control">
                         </div>
 
-                        <!-- Rentang Created At -->
-                        <div class="col-md-3">
-                            <label for="filter_created_start" class="form-label">Dibuat Dari</label>
-                            <input type="date" id="filter_created_start" class="form-control">
-                        </div>
-                        <div class="col-md-3">
-                            <label for="filter_created_end" class="form-label">Dibuat Sampai</label>
-                            <input type="date" id="filter_created_end" class="form-control">
-                        </div>
-
+                        @if (in_array(Auth::user()->jabatan, $allowedUser))
+                            <div class="col-md-3">
+                                <label for="filter_sales" class="form-label">Filter Sales</label>
+                                <select id="filter_sales" class="form-select">
+                                    <option value="">-- Semua Sales --</option>
+                                    <option value="HW">Hera</option>
+                                    <option value="VN">Savana</option>
+                                    <option value="RR">Rara</option>
+                                    <option value="NA">Nabila</option>
+                                    <option value="AN">Alfasyiani</option>
+                                    <option value="RN">Reni</option>
+                                </select>
+                            </div>
+                            <!-- Rentang Created At -->
+                            <div class="col-md-3">
+                                <label for="filter_created_start" class="form-label">Dibuat Dari</label>
+                                <input type="date" id="filter_created_start" class="form-control">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="filter_created_end" class="form-label">Dibuat Sampai</label>
+                                <input type="date" id="filter_created_end" class="form-control">
+                            </div>
+                        @endif
                         <div class="col-md-2">
                             <button id="btnFilter" class="btn btn-primary w-100">Filter</button>
                         </div>
@@ -70,12 +85,13 @@
             </div>
 
             <!-- Tabel Aktivitas -->
-            <div class="card">
+            <div class="card mb-4">
                 <div class="card-body">
                     <div class="table-responsive">
                         <table id="aktivitasTable" class="table table-bordered table-hover">
                             <thead class="table-primary">
                                 <tr>
+                                    <th style="text-align:center;">No</th>
                                     <th>Client</th>
                                     <th>Sales</th>
                                     <th style="text-align: center;">Jenis Aktivitas</th>
@@ -93,6 +109,10 @@
                 </div>
             </div>
 
+            <div class="row g-3 mb-4" id="salesTargetWrapper">
+                <!-- Card sales akan muncul di sini -->
+            </div>
+
             <!-- Modal untuk Create Aktivitas -->
             <div class="modal fade" id="activityModal" tabindex="-1" aria-labelledby="activityModalLabel"
                 aria-hidden="true">
@@ -106,6 +126,21 @@
                             <form id="activityForm" action="{{ route('store.aktivitas.new') }}" method="POST">
                                 @csrf
                                 <input type="hidden" id="contact_type" name="contact_type" value="contact">
+
+                                @if (auth()->user()->jabatan === 'Adm Sales' || auth()->user()->jabatan === 'SPV Sales')
+                                    <div class="mb-3">
+                                        <label class="form-label" for="id_sales">Pilih Sales</label>
+                                        <select class="form-select" id="id_sales" name="id_sales" required>
+                                            <option value="">-- Pilih Sales --</option>
+                                            <option value="HW">Hera</option>
+                                            <option value="VN">Savana</option>
+                                            <option value="RR">Rara</option>
+                                            <option value="NA">Nabila</option>
+                                            <option value="AN">Alfasyiani</option>
+                                            <option value="RN">Reni</option>
+                                        </select>
+                                    </div>
+                                @endif
 
                                 {{-- Dropdown perusahaan Klien --}}
                                 <div class="mb-3">
@@ -215,6 +250,7 @@
                         @csrf
                         @method('PUT')
                         <input type="hidden" id="edit_id">
+                        <input type="hidden" id="edit_contact_type"> <!-- Simpan tipe contact -->
                         <div class="modal-content">
                             <div class="modal-header">
                                 <h5 class="modal-title" id="editActivityModalLabel">Edit Aktivitas</h5>
@@ -222,9 +258,25 @@
                                     aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
-                                <div class="mb-3">
-                                    <label class="form-label" for="edit_id_contact_display">Nama Kontak</label>
-                                    <input type="text" class="form-control" id="edit_id_contact_display" disabled>
+                                <!-- Select2 untuk tipe Contact -->
+                                <div class="mb-3" id="edit_contact_select_wrapper">
+                                    <label class="form-label" for="edit_id_contact">Nama Kontak</label>
+                                    <select class="form-select" id="edit_id_contact" name="id_contact" required>
+                                        <option value="">Pilih Kontak</option>
+                                        @foreach ($contact as $c)
+                                            <option value="{{ $c->id }}">
+                                                {{ $c->nama }} ({{ $c->divisi ?? 'Tidak ada divisi' }}) -
+                                                {{ $c->perusahaan->nama_perusahaan ?? 'N/A' }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <!-- Input readonly untuk selain Contact (DB, Peserta, dll) -->
+                                <div class="mb-3" id="edit_contact_readonly_wrapper" style="display: none;">
+                                    <label class="form-label" for="edit_contact_display">Nama Kontak</label>
+                                    <input type="text" class="form-control" id="edit_contact_display" readonly>
+                                    <input type="hidden" id="edit_id_contact_hidden" name="id_contact">
                                 </div>
 
                                 <div class="mb-3">
@@ -234,12 +286,14 @@
                                         <option value="Email">Email</option>
                                         <option value="Visit">Visit</option>
                                         <option value="Meet">Meeting</option>
+                                        <option value="Contact">Contact Baru</option>
                                         <option value="Incharge">Incharge Inhouse</option>
                                         <option value="PA">Penawaran Awal</option>
                                         <option value="PI">Penawaran Internal</option>
                                         <option value="Telemarketing">Telemarketing</option>
                                         <option value="Form_Masuk">Form Masuk</option>
                                         <option value="Form_Keluar">Form Keluar</option>
+                                        <option value="DB">DB</option>
                                     </select>
                                 </div>
 
@@ -281,27 +335,29 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- JS -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // Fungsi untuk format angka dengan pemisah ribuan (IDR style)
-        function formatNumber(value) {
-            if (!value) return '';
-            const number = parseFloat(value.replace(/[^0-9.-]+/g, '')) || 0;
-            return number.toLocaleString('id-ID', {
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0
-            });
-        }
-
-        // Fungsi untuk menghapus format angka
+        // ===============================
+        // 🔹 Fungsi Format Angka (IDR)
+        // ===============================
         function unformatNumber(value) {
             if (!value) return '';
-            return parseFloat(value.replace(/[^0-9.-]+/g, '')) || '';
+            return parseFloat(value.toString().replace(/\./g, '').replace(/,/g, '')) || '';
         }
 
+        function formatNumber(value) {
+            if (!value) return '';
+            return parseInt(value, 10).toLocaleString('id-ID');
+        }
+
+        // ===============================
+        // 🔹 DataTable & Form Events
+        // ===============================
         $(document).ready(function() {
-            // Initialize DataTable
+            // === DataTable ===
             $('#aktivitasTable').DataTable({
                 processing: true,
                 serverSide: true,
@@ -309,6 +365,7 @@
                     url: '{{ route('index.aktivitas.json') }}',
                     type: 'GET',
                     data: function(d) {
+                        d.filter_sales = $('#filter_sales').val();
                         d.filter_aktivitas = $('#filter_aktivitas').val();
                         d.filter_waktu_start = $('#filter_waktu_start').val();
                         d.filter_waktu_end = $('#filter_waktu_end').val();
@@ -322,6 +379,15 @@
                     }
                 },
                 columns: [{
+                        data: null,
+                        render: function(data, type, row, meta) {
+                            return meta.row + meta.settings._iDisplayStart + 1;
+                        },
+                        className: "text-center",
+                        orderable: false,
+                        searchable: false
+                    },
+                    {
                         data: 'kontak'
                     },
                     {
@@ -338,203 +404,296 @@
                     },
                     {
                         data: 'pax',
-                        render: data => data ? data : '-'
+                        render: d => d ? d : '-'
                     },
                     {
                         data: 'harga',
-                        render: data => data ? formatNumber(data) : '-'
+                        render: d => d ? formatNumber(d) : '-'
                     },
                     {
                         data: 'total',
-                        render: data => data ? formatNumber(data) : '-'
+                        render: d => d ? formatNumber(d) : '-'
                     },
                     {
                         data: 'id',
                         render: function(id, type, row) {
-                            const isDisabled = row.aktivitas === 'DB' || row.aktivitas ===
-                            'Contact';
-
+                            const isDisabled = row.aktivitas === 'DB';
                             return `
-                <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-warning"
-                        ${isDisabled ? 'disabled' : ''}
-                        onclick='editAktivitas(${JSON.stringify(row)})'>
-                        Edit
-                    </button>
-                    <button class="btn btn-sm btn-danger"
-                        onclick="hapusAktivitas(${id})">
-                        Hapus
-                    </button>
-                </div>`;
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-warning"
+                                    ${isDisabled ? 'disabled' : ''}
+                                    onclick='editAktivitas(${JSON.stringify(row)})'>Edit</button>
+                                <button class="btn btn-sm btn-danger"
+                                    onclick="hapusAktivitas(${id})">Hapus</button>
+                            </div>`;
                         }
                     }
                 ]
             });
 
-            // 🔹 Event filter
-            $('#btnFilter').on('click', function() {
-                $('#aktivitasTable').DataTable().ajax.reload();
-            });
-
-            // 🔹 Event reset filter
+            // === Filter & Reset ===
+            $('#btnFilter').on('click', () => $('#aktivitasTable').DataTable().ajax.reload());
             $('#btnResetFilter').on('click', function() {
-                $('#filter_aktivitas').val('');
-                $('#filter_waktu_start').val('');
-                $('#filter_waktu_end').val('');
-                $('#filter_created_start').val('');
-                $('#filter_created_end').val('');
+                $('#filter_sales, #filter_aktivitas, #filter_waktu_start, #filter_waktu_end, #filter_created_start, #filter_created_end')
+                    .val('');
                 $('#aktivitasTable').DataTable().ajax.reload();
             });
 
-
-            // Initialize Select2
+            // === Select2 Init ===
             initPerusahaanSelect2();
             initContactSelect2();
+            initEditContactSelect2();
 
-            // Format harga pada input create
-            const hargaInput = $('#harga');
-            hargaInput.on('input change', function() {
-                const value = unformatNumber(this.value);
-                this.value = formatNumber(value);
+            $('#harga, #edit_harga').on('input', function(e) {
+                const input = e.target;
+                const raw = input.value.replace(/[^\d]/g, '');
+                if (!raw) {
+                    input.value = '';
+                    return;
+                }
+                const formatted = parseInt(raw, 10).toLocaleString('id-ID');
+                input.value = formatted;
+                input.setSelectionRange(formatted.length, formatted.length);
             });
 
-            // Format harga pada input edit
-            const editHargaInput = $('#edit_harga');
-            editHargaInput.on('input change', function() {
-                const value = unformatNumber(this.value);
-                this.value = formatNumber(value);
-            });
-
-            // Handle form submission untuk create (unformat harga)
+            // === Form Submit (Create) ===
             $('#activityForm').on('submit', function(e) {
-                e.preventDefault();
-                const originalValue = hargaInput.val();
-                hargaInput.val(unformatNumber(originalValue)); // Remove formatting
-                this.submit(); // Proceed with form submission
-                hargaInput.val(formatNumber(originalValue)); // Restore formatting after submit
+                const hargaEl = document.getElementById('harga');
+                if (hargaEl) {
+                    const raw = unformatNumber(hargaEl.value);
+                    hargaEl.value = isNaN(raw) ? '' : raw;
+                }
             });
 
-            // Handle form submission untuk edit (unformat harga)
-            $('#editActivityForm').on('submit', function(e) {
+            // === Form Submit (Edit) ===
+            $('#editActivityForm').on('submit', async function(e) {
                 e.preventDefault();
-                const originalValue = editHargaInput.val();
-                editHargaInput.val(unformatNumber(originalValue)); // Remove formatting
-
                 const id = $('#edit_id').val();
                 const url = `/crm/aktivitas/update/${id}`;
+                const hargaUnformatted = unformatNumber($('#edit_harga').val());
+
+                // Ambil id_contact dari select2 atau hidden input tergantung tipe
+                const contactType = $('#edit_contact_type').val();
+                let idContact;
+
+                if (contactType === 'contact') {
+                    idContact = $('#edit_id_contact').val();
+                } else {
+                    idContact = $('#edit_id_contact_hidden').val();
+                }
+
                 const data = {
-                    id_perusahaan: $('#edit_id_perusahaan').val(),
-                    id_contact: $('#edit_id_contact').val(),
+                    id_contact: idContact,
                     aktivitas: $('#edit_aktivitas').val(),
                     deskripsi: $('#edit_deskripsi').val(),
                     waktu_aktivitas: $('#edit_waktu_aktivitas').val(),
                     pax: $('#edit_pax').val(),
-                    harga: unformatNumber($('#edit_harga').val())
+                    harga: isNaN(hargaUnformatted) ? null : hargaUnformatted
                 };
 
-                fetch(url, {
+                try {
+                    const res = await fetch(url, {
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',
-                            'Accept': 'application/json',
                             'X-CSRF-TOKEN': '{{ csrf_token() }}'
                         },
                         body: JSON.stringify(data)
-                    })
-                    .then(async (res) => {
-                        if (!res.ok) {
-                            const text = await res.text();
-                            throw new Error('Gagal update: ' + text);
-                        }
-                        return res.json();
-                    })
-                    .then(res => {
-                        alert(res.message || 'Aktivitas berhasil diperbarui.');
-                        const modal = bootstrap.Modal.getInstance(document.getElementById(
-                            'editActivityModal'));
-                        modal.hide();
-                        $('#aktivitasTable').DataTable().ajax.reload();
-                    })
-                    .catch(err => {
-                        console.error(err);
-                        alert('Terjadi kesalahan saat memperbarui aktivitas.');
-                    })
-                    .finally(() => {
-                        editHargaInput.val(formatNumber(originalValue)); // Restore formatting
                     });
+                    if (!res.ok) throw new Error(await res.text());
+                    const result = await res.json();
+                    alert(result.message || 'Aktivitas berhasil diperbarui.');
+                    bootstrap.Modal.getInstance(document.getElementById('editActivityModal')).hide();
+                    $('#aktivitasTable').DataTable().ajax.reload();
+                } catch (err) {
+                    console.error(err);
+                    alert('Terjadi kesalahan saat memperbarui aktivitas.');
+                }
             });
         });
 
+        // ===============================
+        // 🔹 Fungsi Select2
+        // ===============================
         function initPerusahaanSelect2() {
-            var $select = $('#id_perusahaan');
-            if (typeof $.fn.select2 !== 'function') {
-                console.error('Select2 belum ter-load!');
-                return;
-            }
-            var $closestModal = $select.closest('.modal');
+            const $select = $('#id_perusahaan');
+            if (!$.fn.select2) return console.error('Select2 belum ter-load!');
+            const $modal = $select.closest('.modal');
             $select.select2({
                 width: '100%',
                 theme: 'bootstrap-5',
-                dropdownParent: $closestModal.length ? $closestModal : $(document.body)
+                dropdownParent: $modal.length ? $modal : $(document.body)
             });
         }
 
         function initContactSelect2() {
-            var $select = $('#id_contact');
-            if (typeof $.fn.select2 !== 'function') {
-                console.error('Select2 belum ter-load!');
-                return;
-            }
-            var $closestModal = $select.closest('.modal');
+            const $select = $('#id_contact');
+            if (!$.fn.select2) return console.error('Select2 belum ter-load!');
+            const $modal = $select.closest('.modal');
             $select.select2({
                 width: '100%',
                 theme: 'bootstrap-5',
-                dropdownParent: $closestModal.length ? $closestModal : $(document.body)
+                dropdownParent: $modal.length ? $modal : $(document.body)
             });
         }
 
-        function editAktivitas(row) {
-            $('#edit_id').val(row.id);
-            $('#edit_id_perusahaan').val(row.id_perusahaan);
-            $('#edit_id_contact').val(row.id_contact);
-            $('#edit_id_perusahaan_display').val(row.nama_perusahaan || '');
-            $('#edit_id_contact_display').val(row.kontak || '');
+        function initEditContactSelect2() {
+            const $select = $('#edit_id_contact');
+            if (!$.fn.select2) return console.error('Select2 belum ter-load!');
+            const $modal = $select.closest('.modal');
 
-            // 🔹 Map tampilan ke value asli
-            let aktivitasValue = row.aktivitas;
-            switch (aktivitasValue) {
-                case 'Form Masuk':
-                    aktivitasValue = 'Form_Masuk';
-                    break;
-                case 'Form Keluar':
-                    aktivitasValue = 'Form_Keluar';
-                    break;
-                case 'Incharge Inhouse':
-                    aktivitasValue = 'Incharge';
-                    break;
+            if ($select.hasClass("select2-hidden-accessible")) {
+                $select.select2('destroy');
             }
 
-            // 🔹 Set value ke select
+            $select.select2({
+                width: '100%',
+                theme: 'bootstrap-5',
+                dropdownParent: $modal.length ? $modal : $(document.body),
+                placeholder: 'Pilih Kontak'
+            });
+        }
+
+        window.isAllowedUser = {{ $isAllowedUser ? 'true' : 'false' }};
+
+        // ===============================
+        // 🔹 Fungsi Load Semua Target Aktivitas
+        // ===============================
+        async function loadSemuaTargetAktivitas(isAllowedUser = false) {
+            try {
+                console.log("🚀 Memulai loadSemuaTargetAktivitas...");
+                const res = await fetch(`/crm/semua-target-aktivitas`);
+                if (!res.ok) throw new Error("Gagal mengambil data target aktivitas");
+
+                const response = await res.json();
+                console.log("🧩 Data dari API:", response);
+
+                const wrapper = document.getElementById("salesTargetWrapper");
+                if (!wrapper) {
+                    console.error("❌ Elemen #salesTargetWrapper tidak ditemukan!");
+                    return;
+                }
+
+                wrapper.innerHTML = "";
+                let list = [];
+
+                if (response.id_sales && Array.isArray(response.data)) {
+                    console.log("👤 Mode Sales Tunggal");
+                    list = [response];
+                } else if (Array.isArray(response.data)) {
+                    console.log("👥 Mode Multi Sales");
+                    list = response.data;
+                } else {
+                    console.warn("⚠️ Format data tidak dikenali:", response);
+                    return;
+                }
+
+                list.forEach((sales) => {
+                    const idSales = sales.id_sales || "(tanpa ID)";
+                    const items = sales.data || [];
+
+                    if (!items.length) {
+                        console.warn(`⚠️ Sales ${idSales} tidak punya data aktivitas.`);
+                        return;
+                    }
+
+                    const progressBars = items.map(row => {
+                        const jenis = row.jenis || "-";
+                        const target = row.target ?? 0;
+                        const realisasi = row.realisasi ?? 0;
+                        const percent = row.percent ?? 0;
+
+                        let color = "#e0e0e0";
+                        if (percent >= 100) color = "#4caf50";
+                        else if (percent >= 50) color = "#2196f3";
+                        else if (percent > 0) color = "#ffb300";
+
+                        return `
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1 small">
+                                <span>${jenis}: ${realisasi}/${target}</span>
+                                <span>${percent}%</span>
+                            </div>
+                            <div class="progress" style="height: 10px;">
+                                <div class="progress-bar" style="width:${percent}%; background-color:${color};"></div>
+                            </div>
+                        </div>`;
+                    }).join("");
+
+                    const colClass = isAllowedUser ? "col-xl-3 col-lg-4 col-md-6 col-sm-12" : "col-12";
+
+                    wrapper.innerHTML += `
+                    <div class="${colClass}">
+                        <div class="card shadow-sm border-0 rounded-3 h-100">
+                            <div class="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
+                                <h6 class="card-title mb-0 text-primary fw-semibold">
+                                    Sales: ${idSales}
+                                </h6>
+                            </div>
+                            <div class="card-body p-3" style="max-height: ${isAllowedUser ? '300px' : 'none'}; overflow-y: ${isAllowedUser ? 'auto' : 'visible'};">
+                                ${progressBars}
+                            </div>
+                        </div>
+                    </div>`;
+                });
+
+                console.log("✅ Render selesai.");
+            } catch (err) {
+                console.error("💥 ERROR:", err);
+                alert("Terjadi kesalahan saat memuat data target aktivitas.");
+            }
+        }
+
+        // ===============================
+        // 🔹 Fungsi Edit Aktivitas
+        // ===============================
+        function editAktivitas(row) {
+            console.log('🔍 Data row:', row);
+
+            $('#edit_id').val(row.id);
+
+            // Simpan tipe contact (dari backend harus mengirim field 'contact_type')
+            const contactType = row.contact_type || 'contact'; // default 'contact'
+            $('#edit_contact_type').val(contactType);
+
+            // Toggle tampilan berdasarkan tipe
+            if (contactType === 'contact') {
+                // Tampilkan Select2, sembunyikan readonly
+                $('#edit_contact_select_wrapper').show();
+                $('#edit_contact_readonly_wrapper').hide();
+
+                // Set value select2 dan trigger change untuk memilih option
+                $('#edit_id_contact').val(row.id_contact).trigger('change');
+            } else {
+                // Tampilkan readonly, sembunyikan Select2
+                $('#edit_contact_select_wrapper').hide();
+                $('#edit_contact_readonly_wrapper').show();
+
+                // Set value untuk readonly dan hidden input
+                $('#edit_contact_display').val(row.kontak || '-');
+                $('#edit_id_contact_hidden').val(row.id_contact);
+            }
+
+            // Set aktivitas
+            let aktivitasValue = row.aktivitas;
+            const map = {
+                'Form Masuk': 'Form_Masuk',
+                'Form Keluar': 'Form_Keluar',
+                'Incharge Inhouse': 'Incharge'
+            };
+            aktivitasValue = map[aktivitasValue] || aktivitasValue;
             $('#edit_aktivitas').val(aktivitasValue);
 
+            // Set fields lainnya
             $('#edit_deskripsi').val(row.deskripsi);
             $('#edit_pax').val(row.pax || '');
             $('#edit_harga').val(row.harga ? formatNumber(row.harga) : '');
 
-            // 🔹 Format tanggal
-            if (row.waktu_aktivitas) {
-                const parts = row.waktu_aktivitas.split('/');
-                if (parts.length === 3) {
-                    const formattedDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-                    $('#edit_waktu_aktivitas').val(formattedDate);
-                } else {
-                    $('#edit_waktu_aktivitas').val('');
-                }
-            } else {
-                $('#edit_waktu_aktivitas').val('');
-            }
+            const parts = (row.waktu_aktivitas || '').split('/');
+            $('#edit_waktu_aktivitas').val(parts.length === 3 ?
+                `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}` : '');
 
-            // 🔹 Gunakan aktivitasValue (BUKAN row.aktivitas)
+            // Toggle hidden container untuk pax & harga
             const editHiddenContainer = document.getElementById('edit-hidden-container');
             if (['PA', 'Form_Masuk', 'Form_Keluar'].includes(aktivitasValue)) {
                 editHiddenContainer.style.display = 'block';
@@ -544,39 +703,26 @@
                 $('#edit_harga').val('');
             }
 
-            const modal = new bootstrap.Modal(document.getElementById('editActivityModal'));
-            modal.show();
+            new bootstrap.Modal(document.getElementById('editActivityModal')).show();
         }
 
+        // ===============================
+        // 🔹 Fungsi Hapus Aktivitas
+        // ===============================
         function hapusAktivitas(id) {
             if (!confirm("Yakin ingin menghapus aktivitas ini?")) return;
-
             fetch(`{{ url('crm/aktivitas/delete') }}/${id}`, {
                     method: 'DELETE',
                     headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     }
                 })
-                .then(response => {
-                    if (response.ok) return response.json();
-                    throw new Error('Gagal menghapus aktivitas.');
-                })
+                .then(res => res.ok ? res.json() : Promise.reject(res))
                 .then(data => {
                     alert(data.message || 'Aktivitas berhasil dihapus.');
                     $('#aktivitasTable').DataTable().ajax.reload();
                 })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert(error.message || 'Terjadi kesalahan saat menghapus aktivitas.');
-                });
-        }
-
-        function resetForm() {
-            document.getElementById('activityForm').reset();
-            document.getElementById('hidden-container').style.display = 'none';
-            $('#harga').val('');
+                .catch(() => alert('Terjadi kesalahan saat menghapus aktivitas.'));
         }
 
         document.addEventListener("DOMContentLoaded", function() {
@@ -589,14 +735,16 @@
             const hargaInput = document.getElementById("harga");
             const editAktivitasOption = document.getElementById("edit_aktivitas");
             const editHiddenContainer = document.getElementById("edit-hidden-container");
+            const isAllowedUser = window.isAllowedUser || false;
+            loadSemuaTargetAktivitas(isAllowedUser);
 
             // Ambil kontak saat perusahaan dipilih
             $('#id_perusahaan').on('change', function() {
                 const perusahaanId = $(this).val();
                 contactSelect.innerHTML = `
-                <option value="" disabled selected>Pilih Kontak</option>
-                <option value="new" data-type="contact">+ Tambahkan Kontak Baru</option>
-            `;
+            <option value="" disabled selected>Pilih Kontak</option>
+            <option value="new" data-type="contact">+ Tambahkan Kontak Baru</option>
+        `;
 
                 if (!perusahaanId) return;
 
@@ -684,7 +832,12 @@
                     if (editHargaInput) editHargaInput.value = '';
                 }
             });
-
         });
     </script>
+    <style>
+        #salesTargetWrapper {
+            scroll-behavior: smooth;
+            scrollbar-width: thin;
+        }
+    </style>
 @endsection

@@ -141,10 +141,10 @@
                                     <span class="detail-value">{{ $users->karyawan->rekening_maybank ?? '-' }}</span>
                                 </div>
                                 @if ($users->karyawan->rekening_bca)
-                                  <div class="detail-row">
-                                      <span class="detail-label">BCA</span>
-                                      <span class="detail-value">{{ $users->karyawan->rekening_bca }}</span>
-                                  </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">BCA</span>
+                                    <span class="detail-value">{{ $users->karyawan->rekening_bca }}</span>
+                                </div>
                                 @endif
                             </div>
                         </div>
@@ -198,10 +198,10 @@
 
                                 </div>
                                 @if ($users->karyawan->akhir_tetap)
-                                  <div class="detail-row">
-                                      <span class="detail-label">Sampai Tanggal</span>
-                                      <span class="detail-value">{{ \Carbon\Carbon::parse($users->karyawan->akhir_tetap)->translatedFormat('d F Y') }}</span>
-                                  </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Sampai Tanggal</span>
+                                    <span class="detail-value">{{ \Carbon\Carbon::parse($users->karyawan->akhir_tetap)->translatedFormat('d F Y') }}</span>
+                                </div>
                                 @endif
                             </div>
                             @endif
@@ -229,7 +229,7 @@
                                 </li>
                             </ul>
 
-                            <div class="tab-content" id="myTabContent">
+                            <div class="tab-content mt-2" id="myTabContent">
                                 <div class="tab-pane fade show active" id="visitMonitoring" role="tabpanel">
                                     <h4 class="card-title">Data Kunjungan Anda</h4>
                                     <p class="card-description">Data dalam tabel ini terekam saat Anda membuka/melakukan sebuah aksi di Inixcoffee.</p>
@@ -313,7 +313,7 @@
 
                                 </div>
 
-                                <div class="tab-pane fade" id="loginMonitoring" role="tabpanel">
+                                <div class="tab-pane fade mt-2" id="loginMonitoring" role="tabpanel">
                                     <h4 class="card-title">Data Login-Logout Anda</h4>
                                     <p class="card-description">Data dalam tabel ini terekam saat Anda login atau logout ke Inixcoffee.</p>
                                     <div class="table-responsive max-table-height">
@@ -348,7 +348,7 @@
                                     </div>
                                 </div>
 
-                                <div class="tab-pane fade" id="attendanceMonitoring" role="tabpanel">
+                                <div class="tab-pane fade mt-2" id="attendanceMonitoring" role="tabpanel">
                                     <h4 class="card-title">Data Absen Anda</h4>
                                     <p class="card-description">Data dalam tabel ini terekam saat Anda absen di Inixcoffee.</p>
                                     <div class="table-responsive max-table-height">

@@ -34,7 +34,11 @@ use App\Http\Controllers\InvoiceRKMController;
 use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\MakananRkmController;
 use App\Http\Controllers\managementKelasController;
+use App\Http\Controllers\SouvenirController;
 use App\Http\Controllers\TicketController;
+use App\Http\Controllers\KanbanController;
+use App\Http\Controllers\DailyActivityController;
+
 
 
 /*
@@ -126,6 +130,7 @@ Route::resource('/rekapmengajarinstruktur', \App\Http\Controllers\rekapInstruktu
 Route::resource('/lembur', \App\Http\Controllers\LemburController::class);
 Route::resource('/overtime', \App\Http\Controllers\OvertimeController::class);
 Route::resource('/pengajuanlabsdansubs', \App\Http\Controllers\PengajuanLabdanSubsController::class);
+Route::resource('/daily-activities', \App\Http\Controllers\DailyActivityController::class);
 Route::resource('permissions', \App\Http\Controllers\PermissionController::class);
 Route::resource('roles', \App\Http\Controllers\RoleController::class);
 
@@ -274,6 +279,7 @@ Route::get('/get-users', [App\Http\Controllers\UserController::class, 'getUsers'
 Route::get('/user-dropdown', [App\Http\Controllers\UserController::class, 'showUserDropdown'])->name('user.dropdown');
 
 Route::get('/rkm/{id}/souvenir', [App\Http\Controllers\SouvenirController::class, 'createSouvenirInhouse'])->name('createSouvenirInhouse');
+Route::get('/souvenir/filter/{keyword}', [SouvenirController::class, 'filterSouvenir'])->name('filterSouvenir');
 Route::post('/rkm/storesouvenir', [App\Http\Controllers\SouvenirController::class, 'storeSouvenirInhouse'])->name('storeSouvenirInhouse');
 Route::put('/rkm/{id}/updatesouvenir', [App\Http\Controllers\SouvenirController::class, 'updateSouvenirInhouse'])->name('updateSouvenirInhouse');
 
@@ -281,6 +287,7 @@ Route::post('/providers', [App\Http\Controllers\listexamController::class, 'stor
 Route::post('/vendors', [App\Http\Controllers\listexamController::class, 'storeVendor'])->name('vendors.store');
 
 Route::get('/detailfeedbacks', [App\Http\Controllers\feedbackController::class, 'detailfeedbacks'])->name('detailfeedbacks');
+Route::get('/paymantAdvance/edit/{id}', [App\Http\Controllers\netSalesController::class, 'edit'])->name('netSales.edit.index');
 
 // Route::get('nilaifeedback/export', [App\Http\Controllers\feedbackController::class, 'export'])->name('nilaifeedback.export');
 Route::get('nilaifeedbackexport/{year}/{month}', [App\Http\Controllers\nilaifeedbackController::class, 'export'])->name('nilaifeedbackexport');
@@ -418,6 +425,7 @@ Route::delete('/inventaris/delete/data/{id}', [InventarisController::class, 'del
 Route::post('/inventaris/create/kode', [InventarisController::class, 'createKode'])->name('CreateKodeIinvetaris');
 
 Route::post('/inventaris/import', [InventarisController::class, 'import'])->name('ImportDataInventaris');
+Route::get('/inventaris/export', [InventarisController::class, 'export'])->name('inventaris.export');
 
 Route::get('/penilaian360/index/{id_karyawan}', [App\Http\Controllers\DatabaseKPIController::class, 'index360'])->name('penilaian360');
 Route::get('/penilaian360/get/{id_karyawan}', [App\Http\Controllers\DatabaseKPIController::class, 'get360'])->name('get360');
@@ -464,6 +472,8 @@ Route::prefix('crm')->group(function () {
     Route::delete('/aktivitas/delete/{id}', [AktivitasController::class, 'delete'])->name('delete.aktivitas');
     Route::put('/aktivitas/update/{id}', [AktivitasController::class, 'update'])->name('update.aktivitas');
     Route::get('/get-contacts-peserta/{id}', [AktivitasController::class, 'getContactsAndPeserta'])->name('get.contacts');
+    Route::get('/target-aktivitas/{id_sales}', [AktivitasController::class, 'targetAktivitas'])->name('get.target');
+    Route::get('/semua-target-aktivitas', [AktivitasController::class, 'semuaTargetAktivitas'])->name('getall.target');
 
 
     Route::get('/target/activity', [TargetAktivitas::class, 'index'])->name('index.target');
@@ -506,6 +516,8 @@ Route::prefix('crm')->group(function () {
 
     // Laporan Penjualan
     Route::get('laporanPenjualan', [LaporanPenjualanController::class, 'index'])->name('crm.laporanPenjualan');
+    Route::get('/edit/{id}/pa', [LaporanPenjualanController::class, 'editPA'])->name('editPA');
+    Route::put('/update/pa/{id}', [LaporanPenjualanController::class, 'updatePA'])->name('updatePA');
 
     // Import Contact / Perusahaan
     Route::post('/perusahaan/import/perusahaan', [ImportPerusahaanAndContactController::class, 'importPerusahaan'])->name('perusahaan.import');
@@ -608,3 +620,16 @@ Route::middleware('auth')->get('/notifications/unread-count', function () {
 })->name('notifications.unread-count');
 
 
+
+Route::get('laporan/penjualan', [LaporanPenjualanController::class, 'indexJson'])->name('jsonLaporan');
+
+// Kanban
+Route::get('/kanban', [KanbanController::class, 'index'])->name('kanban.index');
+Route::post('/tasks', [KanbanController::class, 'store'])->name('tasks.store');
+Route::post('/tasks/update-state', [KanbanController::class, 'updateState'])->name('tasks.update-state');
+Route::patch('/tasks/{id}', [KanbanController::class, 'update'])->name('tasks.update');
+Route::get('/tasks/{task}/activities', [KanbanController::class, 'getTaskActivities'])->name('tasks.activities');
+
+
+Route::patch('/daily-activities/{daily_activity}/update-status', [DailyActivityController::class, 'updateStatus'])->name('daily-activities.updateStatus');
+Route::get('/daily-activities/{daily_activity}', [DailyActivityController::class, 'show'])->name('daily-activities.show');

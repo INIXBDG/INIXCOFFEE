@@ -17,7 +17,7 @@ class TargetAktivitas extends Controller
         if (!in_array(Auth::user()->jabatan, ['GM', 'SPV Sales', 'Adm Sales'])) {
             return abort(403, 'Kamu tidak punya akses ke halaman ini.');
         }
-        
+
         $target = TargetActivity::all();
         $user = User::where('jabatan', 'Sales')
             ->where('status_akun', '1')
@@ -28,19 +28,20 @@ class TargetAktivitas extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'id_sales' => 'required',
-            'Contact' => 'required|integer',
-            'Call' => 'required|integer',
-            'Visit' => 'required|integer',
-            'Email' => 'required|integer',
-            'Meet' => 'required|integer',
-            'Incharge' => 'required|integer',
-            'PA' => 'required|integer',
-            'PI' => 'required|integer',
-            'DB' => 'required|integer',
-            'Telemarketing' => 'required|integer',
-            'FormM' => 'required|integer',
-            'FormK' => 'required|integer',
+            'id_sales'       => 'required',
+            'Contact'        => 'required|integer',
+            'Call'           => 'required|integer',
+            'Visit'          => 'required|integer',
+            'Email'          => 'required|integer',
+            'Meet'           => 'required|integer',
+            'Incharge'       => 'required|integer',
+            'PA'             => 'required|integer',
+            'PI'             => 'required|integer',
+            'DB'             => 'required|integer',
+            'Telemarketing'  => 'required|integer',
+            'FormM'          => 'required|integer',
+            'FormK'          => 'required|integer',
+            // 'deadline'       => 'required|date|after_or_equal:today',
         ]);
 
         $data = new TargetActivity();
@@ -57,6 +58,7 @@ class TargetAktivitas extends Controller
         $data->Telemarketing = $validated['Telemarketing'];
         $data->FormM = $validated['FormM'];
         $data->FormK = $validated['FormK'];
+        // $data->deadline = $validated['deadline'];
         $data->save();
 
         return redirect()->back()->with('success', 'Target activity berhasil disimpan.');
@@ -78,6 +80,7 @@ class TargetAktivitas extends Controller
             'Telemarketing' => 'required|integer',
             'FormM' => 'required|integer',
             'FormK' => 'required|integer',
+            // 'deadline'       => 'required|date|after_or_equal:today',
         ]);
 
         $data = TargetActivity::findOrFail($id);
@@ -94,6 +97,7 @@ class TargetAktivitas extends Controller
         $data->Telemarketing = $validated['Telemarketing'];
         $data->FormM = $validated['FormM'];
         $data->FormK = $validated['FormK'];
+        // $data->deadline = $validated['deadline'];
         $data->save();
 
         return redirect()->back()->with('success', 'Target activity berhasil diperbarui.');
