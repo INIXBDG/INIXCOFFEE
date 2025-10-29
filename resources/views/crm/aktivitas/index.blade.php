@@ -18,40 +18,40 @@
                 </button>
             </div>
 
-                <div class="card mb-4">
-                    <div class="card-body">
-                        <div class="row g-3 align-items-end">
-                            <!-- Jenis Aktivitas -->
-                            <div class="col-md-3">
-                                <label for="filter_aktivitas" class="form-label">Jenis Aktivitas</label>
-                                <select id="filter_aktivitas" class="form-select">
-                                    <option value="">Semua</option>
-                                    <option value="Call">Call</option>
-                                    <option value="Email">Email</option>
-                                    <option value="Visit">Visit</option>
-                                    <option value="Meet">Meeting</option>
-                                    <option value="Incharge">Incharge Inhouse</option>
-                                    <option value="PA">Penawaran Awal</option>
-                                    <option value="PI">Penawaran Internal</option>
-                                    <option value="Telemarketing">Telemarketing</option>
-                                    <option value="Form_Masuk">Form Masuk</option>
-                                    <option value="Form_Keluar">Form Keluar</option>
-                                    <option value="DB">DB</option>
-                                    <option value="Contact">Contact</option>
-                                </select>
-                            </div>
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row g-3 align-items-end">
+                        <!-- Jenis Aktivitas -->
+                        <div class="col-md-3">
+                            <label for="filter_aktivitas" class="form-label">Jenis Aktivitas</label>
+                            <select id="filter_aktivitas" class="form-select">
+                                <option value="">Semua</option>
+                                <option value="Call">Call</option>
+                                <option value="Email">Email</option>
+                                <option value="Visit">Visit</option>
+                                <option value="Meet">Meeting</option>
+                                <option value="Incharge">Incharge Inhouse</option>
+                                <option value="PA">Penawaran Awal</option>
+                                <option value="PI">Penawaran Internal</option>
+                                <option value="Telemarketing">Telemarketing</option>
+                                <option value="Form_Masuk">Form Masuk</option>
+                                <option value="Form_Keluar">Form Keluar</option>
+                                <option value="DB">DB</option>
+                                <option value="Contact">Contact</option>
+                            </select>
+                        </div>
 
-                            <!-- Rentang Waktu Aktivitas -->
-                            <div class="col-md-3">
-                                <label for="filter_waktu_start" class="form-label">Waktu Aktivitas (Mulai)</label>
-                                <input type="date" id="filter_waktu_start" class="form-control">
-                            </div>
-                            <div class="col-md-3">
-                                <label for="filter_waktu_end" class="form-label">Waktu Aktivitas (Selesai)</label>
-                                <input type="date" id="filter_waktu_end" class="form-control">
-                            </div>
+                        <!-- Rentang Waktu Aktivitas -->
+                        <div class="col-md-3">
+                            <label for="filter_waktu_start" class="form-label">Waktu Aktivitas (Mulai)</label>
+                            <input type="date" id="filter_waktu_start" class="form-control">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="filter_waktu_end" class="form-label">Waktu Aktivitas (Selesai)</label>
+                            <input type="date" id="filter_waktu_end" class="form-control">
+                        </div>
 
-                        @if(in_array(Auth::user()->jabatan, $allowedUser))
+                        @if (in_array(Auth::user()->jabatan, $allowedUser))
                             <div class="col-md-3">
                                 <label for="filter_sales" class="form-label">Filter Sales</label>
                                 <select id="filter_sales" class="form-select">
@@ -74,15 +74,15 @@
                                 <input type="date" id="filter_created_end" class="form-control">
                             </div>
                         @endif
-                            <div class="col-md-2">
-                                <button id="btnFilter" class="btn btn-primary w-100">Filter</button>
-                            </div>
-                            <div class="col-md-2">
-                                <button id="btnResetFilter" class="btn btn-outline-secondary w-100">Reset</button>
-                            </div>
+                        <div class="col-md-2">
+                            <button id="btnFilter" class="btn btn-primary w-100">Filter</button>
+                        </div>
+                        <div class="col-md-2">
+                            <button id="btnResetFilter" class="btn btn-outline-secondary w-100">Reset</button>
                         </div>
                     </div>
                 </div>
+            </div>
 
             <!-- Tabel Aktivitas -->
             <div class="card mb-4">
@@ -250,6 +250,7 @@
                         @csrf
                         @method('PUT')
                         <input type="hidden" id="edit_id">
+                        <input type="hidden" id="edit_contact_type"> <!-- Simpan tipe contact -->
                         <div class="modal-content">
                             <div class="modal-header">
                                 <h5 class="modal-title" id="editActivityModalLabel">Edit Aktivitas</h5>
@@ -257,9 +258,25 @@
                                     aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
-                                <div class="mb-3">
-                                    <label class="form-label" for="edit_id_contact_display">Nama Kontak</label>
-                                    <input type="text" class="form-control" id="edit_id_contact_display" disabled>
+                                <!-- Select2 untuk tipe Contact -->
+                                <div class="mb-3" id="edit_contact_select_wrapper">
+                                    <label class="form-label" for="edit_id_contact">Nama Kontak</label>
+                                    <select class="form-select" id="edit_id_contact" name="id_contact" required>
+                                        <option value="">Pilih Kontak</option>
+                                        @foreach ($contact as $c)
+                                            <option value="{{ $c->id }}">
+                                                {{ $c->nama }} ({{ $c->divisi ?? 'Tidak ada divisi' }}) -
+                                                {{ $c->perusahaan->nama_perusahaan ?? 'N/A' }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <!-- Input readonly untuk selain Contact (DB, Peserta, dll) -->
+                                <div class="mb-3" id="edit_contact_readonly_wrapper" style="display: none;">
+                                    <label class="form-label" for="edit_contact_display">Nama Kontak</label>
+                                    <input type="text" class="form-control" id="edit_contact_display" readonly>
+                                    <input type="hidden" id="edit_id_contact_hidden" name="id_contact">
                                 </div>
 
                                 <div class="mb-3">
@@ -269,12 +286,14 @@
                                         <option value="Email">Email</option>
                                         <option value="Visit">Visit</option>
                                         <option value="Meet">Meeting</option>
+                                        <option value="Contact">Contact Baru</option>
                                         <option value="Incharge">Incharge Inhouse</option>
                                         <option value="PA">Penawaran Awal</option>
                                         <option value="PI">Penawaran Internal</option>
                                         <option value="Telemarketing">Telemarketing</option>
                                         <option value="Form_Masuk">Form Masuk</option>
                                         <option value="Form_Keluar">Form Keluar</option>
+                                        <option value="DB">DB</option>
                                     </select>
                                 </div>
 
@@ -328,6 +347,7 @@
             if (!value) return '';
             return parseFloat(value.toString().replace(/\./g, '').replace(/,/g, '')) || '';
         }
+
         function formatNumber(value) {
             if (!value) return '';
             return parseInt(value, 10).toLocaleString('id-ID');
@@ -345,7 +365,7 @@
                     url: '{{ route('index.aktivitas.json') }}',
                     type: 'GET',
                     data: function(d) {
-                        d.filter_sales = $('#filter_sales').val(); // ✅ Tambahan filter sales
+                        d.filter_sales = $('#filter_sales').val();
                         d.filter_aktivitas = $('#filter_aktivitas').val();
                         d.filter_waktu_start = $('#filter_waktu_start').val();
                         d.filter_waktu_end = $('#filter_waktu_end').val();
@@ -358,36 +378,54 @@
                         alert('Gagal memuat data aktivitas: ' + thrown);
                     }
                 },
-                columns: [
-                    {
+                columns: [{
                         data: null,
-                        render: function (data, type, row, meta) {
-                            return meta.row + meta.settings._iDisplayStart + 1; // ✅ Nomor urut
+                        render: function(data, type, row, meta) {
+                            return meta.row + meta.settings._iDisplayStart + 1;
                         },
                         className: "text-center",
                         orderable: false,
                         searchable: false
                     },
-                    { data: 'kontak' },
-                    { data: 'id_sales' },
-                    { data: 'aktivitas' },
-                    { data: 'deskripsi' },
-                    { data: 'waktu_aktivitas' },
-                    { data: 'pax', render: d => d ? d : '-' },
-                    { data: 'harga', render: d => d ? formatNumber(d) : '-' },
-                    { data: 'total', render: d => d ? formatNumber(d) : '-' },
+                    {
+                        data: 'kontak'
+                    },
+                    {
+                        data: 'id_sales'
+                    },
+                    {
+                        data: 'aktivitas'
+                    },
+                    {
+                        data: 'deskripsi'
+                    },
+                    {
+                        data: 'waktu_aktivitas'
+                    },
+                    {
+                        data: 'pax',
+                        render: d => d ? d : '-'
+                    },
+                    {
+                        data: 'harga',
+                        render: d => d ? formatNumber(d) : '-'
+                    },
+                    {
+                        data: 'total',
+                        render: d => d ? formatNumber(d) : '-'
+                    },
                     {
                         data: 'id',
                         render: function(id, type, row) {
-                            const isDisabled = row.aktivitas === 'DB' || row.aktivitas === 'Contact';
+                            const isDisabled = row.aktivitas === 'DB';
                             return `
-                                <div class="d-flex gap-2">
-                                    <button class="btn btn-sm btn-warning"
-                                        ${isDisabled ? 'disabled' : ''}
-                                        onclick='editAktivitas(${JSON.stringify(row)})'>Edit</button>
-                                    <button class="btn btn-sm btn-danger"
-                                        onclick="hapusAktivitas(${id})">Hapus</button>
-                                </div>`;
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-warning"
+                                    ${isDisabled ? 'disabled' : ''}
+                                    onclick='editAktivitas(${JSON.stringify(row)})'>Edit</button>
+                                <button class="btn btn-sm btn-danger"
+                                    onclick="hapusAktivitas(${id})">Hapus</button>
+                            </div>`;
                         }
                     }
                 ]
@@ -396,43 +434,35 @@
             // === Filter & Reset ===
             $('#btnFilter').on('click', () => $('#aktivitasTable').DataTable().ajax.reload());
             $('#btnResetFilter').on('click', function() {
-                $('#filter_sales, #filter_aktivitas, #filter_waktu_start, #filter_waktu_end, #filter_created_start, #filter_created_end').val('');
+                $('#filter_sales, #filter_aktivitas, #filter_waktu_start, #filter_waktu_end, #filter_created_start, #filter_created_end')
+                    .val('');
                 $('#aktivitasTable').DataTable().ajax.reload();
             });
 
             // === Select2 Init ===
             initPerusahaanSelect2();
             initContactSelect2();
+            initEditContactSelect2();
 
             $('#harga, #edit_harga').on('input', function(e) {
                 const input = e.target;
-                const cursorPos = input.selectionStart;
-
-                // Ambil hanya angka dari input
                 const raw = input.value.replace(/[^\d]/g, '');
                 if (!raw) {
                     input.value = '';
                     return;
                 }
-
-                // Format ke format IDR (tanpa simbol)
                 const formatted = parseInt(raw, 10).toLocaleString('id-ID');
                 input.value = formatted;
-
-                // Kembalikan posisi kursor ke akhir agar tidak loncat
                 input.setSelectionRange(formatted.length, formatted.length);
             });
 
             // === Form Submit (Create) ===
             $('#activityForm').on('submit', function(e) {
-                // pastikan harga dikirim sebagai angka tanpa pemisah ribuan
                 const hargaEl = document.getElementById('harga');
                 if (hargaEl) {
                     const raw = unformatNumber(hargaEl.value);
-                    // jika NaN, kosongkan agar validasi server menangani; jika angka gunakan nilai numerik
                     hargaEl.value = isNaN(raw) ? '' : raw;
                 }
-                // biarkan form submit biasa
             });
 
             // === Form Submit (Edit) ===
@@ -441,9 +471,19 @@
                 const id = $('#edit_id').val();
                 const url = `/crm/aktivitas/update/${id}`;
                 const hargaUnformatted = unformatNumber($('#edit_harga').val());
+
+                // Ambil id_contact dari select2 atau hidden input tergantung tipe
+                const contactType = $('#edit_contact_type').val();
+                let idContact;
+
+                if (contactType === 'contact') {
+                    idContact = $('#edit_id_contact').val();
+                } else {
+                    idContact = $('#edit_id_contact_hidden').val();
+                }
+
                 const data = {
-                    id_perusahaan: $('#edit_id_perusahaan').val(),
-                    id_contact: $('#edit_id_contact').val(),
+                    id_contact: idContact,
                     aktivitas: $('#edit_aktivitas').val(),
                     deskripsi: $('#edit_deskripsi').val(),
                     waktu_aktivitas: $('#edit_waktu_aktivitas').val(),
@@ -479,25 +519,49 @@
             const $select = $('#id_perusahaan');
             if (!$.fn.select2) return console.error('Select2 belum ter-load!');
             const $modal = $select.closest('.modal');
-            $select.select2({ width: '100%', theme: 'bootstrap-5', dropdownParent: $modal.length ? $modal : $(document.body) });
+            $select.select2({
+                width: '100%',
+                theme: 'bootstrap-5',
+                dropdownParent: $modal.length ? $modal : $(document.body)
+            });
         }
 
         function initContactSelect2() {
             const $select = $('#id_contact');
             if (!$.fn.select2) return console.error('Select2 belum ter-load!');
             const $modal = $select.closest('.modal');
-            $select.select2({ width: '100%', theme: 'bootstrap-5', dropdownParent: $modal.length ? $modal : $(document.body) });
+            $select.select2({
+                width: '100%',
+                theme: 'bootstrap-5',
+                dropdownParent: $modal.length ? $modal : $(document.body)
+            });
+        }
+
+        function initEditContactSelect2() {
+            const $select = $('#edit_id_contact');
+            if (!$.fn.select2) return console.error('Select2 belum ter-load!');
+            const $modal = $select.closest('.modal');
+
+            if ($select.hasClass("select2-hidden-accessible")) {
+                $select.select2('destroy');
+            }
+
+            $select.select2({
+                width: '100%',
+                theme: 'bootstrap-5',
+                dropdownParent: $modal.length ? $modal : $(document.body),
+                placeholder: 'Pilih Kontak'
+            });
         }
 
         window.isAllowedUser = {{ $isAllowedUser ? 'true' : 'false' }};
 
         // ===============================
-        // 🔹 Fungsi Load Semua Target Aktivitas (Dengan Chart)
+        // 🔹 Fungsi Load Semua Target Aktivitas
         // ===============================
         async function loadSemuaTargetAktivitas(isAllowedUser = false) {
             try {
                 console.log("🚀 Memulai loadSemuaTargetAktivitas...");
-
                 const res = await fetch(`/crm/semua-target-aktivitas`);
                 if (!res.ok) throw new Error("Gagal mengambil data target aktivitas");
 
@@ -511,10 +575,8 @@
                 }
 
                 wrapper.innerHTML = "";
-
                 let list = [];
 
-                // 🧠 Deteksi format data
                 if (response.id_sales && Array.isArray(response.data)) {
                     console.log("👤 Mode Sales Tunggal");
                     list = [response];
@@ -526,7 +588,6 @@
                     return;
                 }
 
-                // 🔹 Render tiap sales
                 list.forEach((sales) => {
                     const idSales = sales.id_sales || "(tanpa ID)";
                     const items = sales.data || [];
@@ -541,51 +602,39 @@
                         const target = row.target ?? 0;
                         const realisasi = row.realisasi ?? 0;
                         const percent = row.percent ?? 0;
-                        const deadline = row.deadline || "-";
 
                         let color = "#e0e0e0";
                         if (percent >= 100) color = "#4caf50";
                         else if (percent >= 50) color = "#2196f3";
                         else if (percent > 0) color = "#ffb300";
 
-                        let deadlineColor = "#dc3545";
-                        const today = new Date();
-                        const [d, m, y] = deadline.split('/');
-                        if (d && m && y) {
-                            const deadlineDate = new Date(`${y}-${m}-${d}`);
-                            if (deadlineDate >= today) deadlineColor = "#28a745";
-                        }
-
                         return `
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between mb-1 small">
-                                    <span>${jenis}: ${realisasi}/${target}</span>
-                                    <span>${percent}%</span>
-                                </div>
-                                <div class="progress" style="height: 10px;">
-                                    <div class="progress-bar" style="width:${percent}%; background-color:${color};"></div>
-                                </div>
-                            </div>`;
-                    }).join("");
-
-                    // 🔹 Gunakan layout berbeda tergantung role
-                    const colClass = isAllowedUser
-                        ? "col-xl-3 col-lg-4 col-md-6 col-sm-12" // grid kecil utk allowed user
-                        : "col-12"; // full width utk masing2 sales
-
-                    wrapper.innerHTML += `
-                        <div class="${colClass}">
-                            <div class="card shadow-sm border-0 rounded-3 h-100">
-                                <div class="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
-                                    <h6 class="card-title mb-0 text-primary fw-semibold">
-                                        Sales: ${idSales}
-                                    </h6>
-                                </div>
-                                <div class="card-body p-3" style="max-height: ${isAllowedUser ? '300px' : 'none'}; overflow-y: ${isAllowedUser ? 'auto' : 'visible'};">
-                                    ${progressBars}
-                                </div>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1 small">
+                                <span>${jenis}: ${realisasi}/${target}</span>
+                                <span>${percent}%</span>
+                            </div>
+                            <div class="progress" style="height: 10px;">
+                                <div class="progress-bar" style="width:${percent}%; background-color:${color};"></div>
                             </div>
                         </div>`;
+                    }).join("");
+
+                    const colClass = isAllowedUser ? "col-xl-3 col-lg-4 col-md-6 col-sm-12" : "col-12";
+
+                    wrapper.innerHTML += `
+                    <div class="${colClass}">
+                        <div class="card shadow-sm border-0 rounded-3 h-100">
+                            <div class="card-header bg-transparent border-0 pb-0 d-flex justify-content-between align-items-center">
+                                <h6 class="card-title mb-0 text-primary fw-semibold">
+                                    Sales: ${idSales}
+                                </h6>
+                            </div>
+                            <div class="card-body p-3" style="max-height: ${isAllowedUser ? '300px' : 'none'}; overflow-y: ${isAllowedUser ? 'auto' : 'visible'};">
+                                ${progressBars}
+                            </div>
+                        </div>
+                    </div>`;
                 });
 
                 console.log("✅ Render selesai.");
@@ -596,50 +645,55 @@
         }
 
         // ===============================
-        // 🔹 Helper untuk restore caret posisi saat formatting
-        // ===============================
-        function setFormattedInput(el) {
-            const start = el.selectionStart;
-            const end = el.selectionEnd;
-            const oldValue = el.value;
-            const unformatted = unformatNumber(oldValue);
-
-            // Simpan offset dari kanan untuk memperkirakan posisi setelah format
-            const rightOffset = oldValue.length - (end || oldValue.length);
-
-            el.value = formatNumber(unformatted);
-
-            // restore caret: perkirakan posisi baru berdasarkan offset kanan
-            try {
-                const newPos = Math.max(0, el.value.length - rightOffset);
-                el.setSelectionRange(newPos, newPos);
-            } catch (e) {
-                // ignore jika tidak mendukung
-            }
-        }
-
-        // ===============================
-        // 🔹 Fungsi Edit & Hapus Aktivitas (Tetap Sama)
+        // 🔹 Fungsi Edit Aktivitas
         // ===============================
         function editAktivitas(row) {
+            console.log('🔍 Data row:', row);
+
             $('#edit_id').val(row.id);
-            $('#edit_id_perusahaan').val(row.id_perusahaan);
-            $('#edit_id_contact').val(row.id_contact);
-            $('#edit_id_perusahaan_display').val(row.nama_perusahaan || '');
-            $('#edit_id_contact_display').val(row.kontak || '');
 
+            // Simpan tipe contact (dari backend harus mengirim field 'contact_type')
+            const contactType = row.contact_type || 'contact'; // default 'contact'
+            $('#edit_contact_type').val(contactType);
+
+            // Toggle tampilan berdasarkan tipe
+            if (contactType === 'contact') {
+                // Tampilkan Select2, sembunyikan readonly
+                $('#edit_contact_select_wrapper').show();
+                $('#edit_contact_readonly_wrapper').hide();
+
+                // Set value select2 dan trigger change untuk memilih option
+                $('#edit_id_contact').val(row.id_contact).trigger('change');
+            } else {
+                // Tampilkan readonly, sembunyikan Select2
+                $('#edit_contact_select_wrapper').hide();
+                $('#edit_contact_readonly_wrapper').show();
+
+                // Set value untuk readonly dan hidden input
+                $('#edit_contact_display').val(row.kontak || '-');
+                $('#edit_id_contact_hidden').val(row.id_contact);
+            }
+
+            // Set aktivitas
             let aktivitasValue = row.aktivitas;
-            const map = { 'Form Masuk': 'Form_Masuk', 'Form Keluar': 'Form_Keluar', 'Incharge Inhouse': 'Incharge' };
+            const map = {
+                'Form Masuk': 'Form_Masuk',
+                'Form Keluar': 'Form_Keluar',
+                'Incharge Inhouse': 'Incharge'
+            };
             aktivitasValue = map[aktivitasValue] || aktivitasValue;
-
             $('#edit_aktivitas').val(aktivitasValue);
+
+            // Set fields lainnya
             $('#edit_deskripsi').val(row.deskripsi);
             $('#edit_pax').val(row.pax || '');
             $('#edit_harga').val(row.harga ? formatNumber(row.harga) : '');
 
             const parts = (row.waktu_aktivitas || '').split('/');
-            $('#edit_waktu_aktivitas').val(parts.length === 3 ? `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}` : '');
+            $('#edit_waktu_aktivitas').val(parts.length === 3 ?
+                `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}` : '');
 
+            // Toggle hidden container untuk pax & harga
             const editHiddenContainer = document.getElementById('edit-hidden-container');
             if (['PA', 'Form_Masuk', 'Form_Keluar'].includes(aktivitasValue)) {
                 editHiddenContainer.style.display = 'block';
@@ -652,19 +706,25 @@
             new bootstrap.Modal(document.getElementById('editActivityModal')).show();
         }
 
+        // ===============================
+        // 🔹 Fungsi Hapus Aktivitas
+        // ===============================
         function hapusAktivitas(id) {
             if (!confirm("Yakin ingin menghapus aktivitas ini?")) return;
             fetch(`{{ url('crm/aktivitas/delete') }}/${id}`, {
-                method: 'DELETE',
-                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
-            })
-            .then(res => res.ok ? res.json() : Promise.reject(res))
-            .then(data => {
-                alert(data.message || 'Aktivitas berhasil dihapus.');
-                $('#aktivitasTable').DataTable().ajax.reload();
-            })
-            .catch(() => alert('Terjadi kesalahan saat menghapus aktivitas.'));
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    }
+                })
+                .then(res => res.ok ? res.json() : Promise.reject(res))
+                .then(data => {
+                    alert(data.message || 'Aktivitas berhasil dihapus.');
+                    $('#aktivitasTable').DataTable().ajax.reload();
+                })
+                .catch(() => alert('Terjadi kesalahan saat menghapus aktivitas.'));
         }
+
         document.addEventListener("DOMContentLoaded", function() {
             const contactSelect = document.getElementById("id_contact");
             const contactTypeInput = document.getElementById("contact_type");
@@ -682,9 +742,9 @@
             $('#id_perusahaan').on('change', function() {
                 const perusahaanId = $(this).val();
                 contactSelect.innerHTML = `
-                <option value="" disabled selected>Pilih Kontak</option>
-                <option value="new" data-type="contact">+ Tambahkan Kontak Baru</option>
-            `;
+            <option value="" disabled selected>Pilih Kontak</option>
+            <option value="new" data-type="contact">+ Tambahkan Kontak Baru</option>
+        `;
 
                 if (!perusahaanId) return;
 
@@ -772,15 +832,12 @@
                     if (editHargaInput) editHargaInput.value = '';
                 }
             });
-
         });
     </script>
-
     <style>
         #salesTargetWrapper {
             scroll-behavior: smooth;
             scrollbar-width: thin;
         }
-
     </style>
 @endsection

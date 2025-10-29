@@ -9,6 +9,7 @@ use App\Models\kategoriKPI;
 use App\Models\NilaiKPI;
 use App\Models\nilaiKPI as ModelsNilaiKPI;
 use App\Models\pengajuancuti;
+use App\Models\RKM;
 use App\Models\shareForm;
 use App\Models\tipeKategoriTabel;
 use App\Models\User;
@@ -27,10 +28,13 @@ use Illuminate\Validation\Rules\Unique;
 use App\Mail\mailPenilaian;
 use App\Models\AbsensiKaryawan;
 use App\Models\izinTigaJam;
+use App\Models\Nilaifeedback;
 use App\Models\PengajuanBarang;
 use App\Models\SuratPerjalanan;
+use App\Models\targetKPI;
 use Illuminate\Support\Facades\Mail;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Log;
 
 use function Laravel\Prompts\error;
 
@@ -56,7 +60,7 @@ class DatabaseKPIController extends Controller
         $dataVisit = activityLog::with('karyawan')
             ->where('user_id', $id_karyawan)
             ->whereNotIn('status', ['Login', 'Logout'])
-            ->whereNotIn('status', ['Absen Masuk', 'Absen keluar'])
+            ->whereNotIn('status', ['Absen Masuk', 'Absen Keluar'])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -66,9 +70,74 @@ class DatabaseKPIController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('databasekpi.activityLog', compact(['dataAuth', 'dataVisit', 'dataAbsen']));
+        $dataUptimeInformasional = activityLog::whereBetween('status', [100, 199])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $dataUptimeSuccess = activityLog::whereBetween('status', [200, 299])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $dataUptimeRedirect = activityLog::whereBetween('status', [300, 399])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $dataUptimeClientError = activityLog::whereBetween('status', [400, 499])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $dataUptimeServerError = activityLog::whereBetween('status', [500, 599])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('databasekpi.activityLog', compact(
+            'dataAuth',
+            'dataVisit',
+            'dataAbsen',
+            'dataUptimeInformasional',
+            'dataUptimeSuccess',
+            'dataUptimeRedirect',
+            'dataUptimeClientError',
+            'dataUptimeServerError'
+        ));
     }
 
+    public function getActivityChart()
+    {
+        try {
+            $rawUrls = config('uptime.urls');
+            if (empty($rawUrls)) {
+                return response()->json(['error' => 'UPTIME_URLS not configured'], 500);
+            }
+
+            $urls = is_array($rawUrls) ? $rawUrls : array_filter(array_map('trim', explode(',', $rawUrls)));
+
+            $result = [];
+
+            foreach ($urls as $url) {
+                $checks = ActivityLog::where('url', $url)
+                    ->orderBy('created_at', 'asc')
+                    ->limit(100)
+                    ->get();
+
+                $labels = $checks->map(fn($log) => $log->created_at->format('d M H:i'))->values();
+                $responseTimes = $checks->map(fn($log) => $log->response_time_ms ?? 0)->values();
+                $statuses = $checks->map(fn($log) => (bool) $log->is_up)->values();
+
+                $result[$url] = [
+                    'labels' => $labels,
+                    'response_times' => $responseTimes,
+                    'statuses' => $statuses,
+                ];
+            }
+
+            return response()->json($result, 200, [], JSON_UNESCAPED_SLASHES);
+        } catch (\Throwable $e) {
+            Log::error('getActivityChart failed: ' . $e->getMessage());
+            return response()->json(['error' => 'Internal server error'], 500);
+        }
+    }
+    
     public function downloadDivisi(Request $request)
     {
         $request->validate([
@@ -631,13 +700,25 @@ class DatabaseKPIController extends Controller
         }
 
         $form = $formPenilaians->first();
+
+        $quartal = $form->quartal;
+        $semesterLabel = '';
+
+        if (in_array($quartal, ['Q1', 'Q2'])) {
+            $semesterLabel = 'S1';
+        } elseif (in_array($quartal, ['Q3', 'Q4'])) {
+            $semesterLabel = 'S2';
+        } else {
+            $semesterLabel = $quartal;
+        }
+
         $evaluated = [
-            'nama'              => optional($form->karyawan)->nama_lengkap . ' - ' . optional($form->karyawan)->divisi ?? '-',
-            'id_karyawan'       => $form->id_karyawan,
-            'quartal'           => $form->quartal,
-            'tahun'             => $form->tahun,
-            'catatan'           => $form->catatan,
-            'kode_form'         => $form->kode_form
+            'nama'        => optional($form->karyawan)->nama_lengkap . ' - ' . (optional($form->karyawan)->divisi ?? '-'),
+            'id_karyawan' => $form->id_karyawan,
+            'quartal'     => $semesterLabel,
+            'tahun'       => $form->tahun,
+            'catatan'     => $form->catatan,
+            'kode_form'   => $form->kode_form
         ];
 
         $currentMonth = now()->month;
@@ -1233,10 +1314,9 @@ class DatabaseKPIController extends Controller
                 })->get();
 
                 $quarterLabel = match (true) {
-                    $month >= 1 && $month <= 3 => 'Q1',
-                    $month >= 4 && $month <= 6 => 'Q2',
-                    $month >= 7 && $month <= 9 => 'Q3',
-                    default => 'Q4',
+                    $month >= 1 && $month <= 6 => 'S1',
+                    $month >= 7 && $month <= 12 => 'S2',
+                    default => 'S2',
                 };
 
                 foreach ($users as $user) {
@@ -1602,13 +1682,20 @@ class DatabaseKPIController extends Controller
     {
         $user_id = Auth::user()->id;
 
-        $filterQuartal = request()->get('quartal');
+        $exchangeSemester = '';
+        if (request()->get('quartal') === 'S1') {
+            $exchangeSemester = ['Q1', 'Q2'];
+        } else if (request()->get('quartal') === 'S2') {
+            $exchangeSemester = ['Q3', 'Q4'];
+        }
+
+        $filterQuartal = $exchangeSemester;
         $filterTahun = request()->get('tahun');
         $filterDivisi = request()->get('divisi');
         $jenisForm = request()->get('jenis_form');
 
         $dataFormPenilaianCollection = formPenilaian::with('karyawan')
-            ->when($filterQuartal, fn($q) => $q->where('quartal', $filterQuartal))
+            ->when($filterQuartal, fn($q) => $q->whereIn('quartal', $exchangeSemester))
             ->when($filterTahun, fn($q) => $q->where('tahun', $filterTahun))
             ->where('jenis_form', $jenisForm)
             ->get();
@@ -1630,7 +1717,14 @@ class DatabaseKPIController extends Controller
 
             $evaluatedName = $formPenilaian->karyawan->nama_lengkap;
             $evaluatedDivisi = $formPenilaian->karyawan->divisi;
-            $quartal = $formPenilaian->quartal;
+            $exchangeQuartal = '';
+            if ($formPenilaian->quartal === 'Q1' || $formPenilaian->quartal === 'Q2') {
+                $exchangeQuartal = 'S1';
+            }
+            if ($formPenilaian->quartal === 'Q3' || $formPenilaian->quartal === 'Q4') {
+                $exchangeQuartal = 'S2';
+            }
+            $quartal = $exchangeQuartal;
             $tahun = $formPenilaian->tahun;
             $kriteriaNama = $formPenilaian->nama_penilaian;
             $kodeFormGlobal = $formPenilaian->kode_form;
@@ -1899,13 +1993,27 @@ class DatabaseKPIController extends Controller
         $kode_form = $request->input('kode_form');
         $id_karyawan = $request->input('id_karyawan');
         $jenis_penilaian = $request->input('jenis_penilaian');
-        $quartal = $request->input('quartal');
+        $quartalInput = $request->input('quartal');
         $tahun = $request->input('tahun');
         $jenis_form = $request->input('jenis_form');
+        $quartalList = [];
+
+        if ($quartalInput === 'S1') {
+            $quartalList = ['Q1', 'Q2'];
+        } elseif ($quartalInput === 'S2') {
+            $quartalList = ['Q3', 'Q4'];
+        } else {
+            $quartalList = [$quartalInput];
+        }
 
         $data_evaluated = formPenilaian::where('kode_form', $kode_form)
             ->where('id_karyawan', $id_karyawan)
-            ->where('quartal', $quartal)
+            ->where(function ($query) use ($quartalList) {
+                // ini memastikan orWhere, jadi kalau Q1 gak ada tapi Q2 ada, tetap masuk
+                foreach ($quartalList as $q) {
+                    $query->orWhere('quartal', $q);
+                }
+            })
             ->where('tahun', $tahun)
             ->where('jenis_form', $jenis_form)
             ->get();
@@ -2341,93 +2449,94 @@ class DatabaseKPIController extends Controller
 
     public function contentDashboard()
     {
-        $totalKaryawan = karyawan::where('status_aktif', '1')
-            ->whereNot('divisi', 'Direksi')
-            ->count();
-
         $year = date('Y');
         $month = date('m');
 
-        if ($month >= 1 && $month <= 3) {
+        if ($month >= 1 && $month <= 6) {
             $startMonth = 1;
-            $endMonth = 3;
-        } elseif ($month >= 4 && $month <= 6) {
-            $startMonth = 4;
             $endMonth = 6;
-        } elseif ($month >= 7 && $month <= 9) {
-            $startMonth = 7;
-            $endMonth = 9;
+            $semesterLabel = 'S1';
         } else {
-            $startMonth = 10;
+            $startMonth = 7;
             $endMonth = 12;
+            $semesterLabel = 'S2';
         }
 
-        $startDate = date("$year-$startMonth-01 00:00:00");
-        $endDate   = date("$year-$endMonth-" . date("t", strtotime("$year-$endMonth-01")) . " 23:59:59");
+        $startDate = "$year-$startMonth-01 00:00:00";
+        $endDate   = "$year-$endMonth-" . date("t", strtotime("$year-$endMonth-01")) . " 23:59:59";
 
-        $AbsenCuti = pengajuancuti::with('karyawan')
-            ->where('tipe', 'Cuti')
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->where('approval_manager', '1')
-            ->get();
+        $jabatanUserLogin = auth()->user()->jabatan;
+        $idUserLogin = auth()->user()->id;
+        $isPrivileged = in_array($jabatanUserLogin, ['HRD', 'GM', 'Direktur Utama']);
+
+        $totalKaryawan = Karyawan::where('status_aktif', '1')
+            ->whereNot('divisi', 'Direksi')
+            ->count();
+
+        $applyUserFilter = function ($query) use ($isPrivileged, $idUserLogin) {
+            if (!$isPrivileged) {
+                $query->where('id_karyawan', $idUserLogin);
+            }
+            return $query;
+        };
+
+        $AbsenCuti = $applyUserFilter(
+            pengajuancuti::with('karyawan')
+                ->where('tipe', 'Cuti')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->where('approval_manager', '1')
+        )->get();
 
         $totalAbsensiCuti = $AbsenCuti->pluck('id_karyawan')->unique()->count();
-
-        $arrayAbsenCuti = $AbsenCuti->map(function ($cuti) {
-            return [
-                'id_karyawan'  => $cuti->id_karyawan,
-                'namaKaryawan' => $cuti->karyawan->nama_lengkap,
-                'divisi'       => $cuti->karyawan->divisi,
-                'alasan'       => $cuti->alasan,
-                'tanggalAwal'  => $cuti->tanggal_awal,
-                'tanggalAkhir' => $cuti->tanggal_akhir
-            ];
-        });
+        $arrayAbsenCuti = $AbsenCuti->map(fn($cuti) => [
+            'id_karyawan'  => $cuti->id_karyawan,
+            'namaKaryawan' => $cuti->karyawan->nama_lengkap,
+            'divisi'       => $cuti->karyawan->divisi,
+            'alasan'       => $cuti->alasan,
+            'tanggalAwal'  => $cuti->tanggal_awal,
+            'tanggalAkhir' => $cuti->tanggal_akhir
+        ]);
 
         $dataAbsensiCuti = [
             'totalAbsenCuti' => $totalAbsensiCuti,
             'dataCuti'       => $arrayAbsenCuti
         ];
 
-        $AbsenSakit = pengajuancuti::with('karyawan')
-            ->where('tipe', 'Sakit')
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->where('approval_manager', '1')
-            ->get();
+        $AbsenSakit = $applyUserFilter(
+            pengajuancuti::with('karyawan')
+                ->where('tipe', 'Sakit')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->where('approval_manager', '1')
+        )->get();
 
         $totalAbsensiSakit = $AbsenSakit->pluck('id_karyawan')->unique()->count();
-
-        $arrayAbsensiSakit = $AbsenSakit->map(function ($sakit) {
-            return [
-                'id_karyawan'  => $sakit->id_karyawan,
-                'namaKaryawan' => $sakit->karyawan->nama_lengkap,
-                'divisi'       => $sakit->karyawan->divisi,
-                'alasan'       => $sakit->alasan,
-                'tanggalAwal'  => $sakit->tanggal_awal,
-                'tanggalAkhir' => $sakit->tanggal_akhir
-            ];
-        });
+        $arrayAbsensiSakit = $AbsenSakit->map(fn($sakit) => [
+            'id_karyawan'  => $sakit->id_karyawan,
+            'namaKaryawan' => $sakit->karyawan->nama_lengkap,
+            'divisi'       => $sakit->karyawan->divisi,
+            'alasan'       => $sakit->alasan,
+            'tanggalAwal'  => $sakit->tanggal_awal,
+            'tanggalAkhir' => $sakit->tanggal_akhir
+        ]);
 
         $dataAbsensiSakit = [
             'totalAbsenSakit' => $totalAbsensiSakit,
             'dataSakit'       => $arrayAbsensiSakit
         ];
 
-        $AbsenIzin = izinTigaJam::with('karyawan')
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->get();
+        $AbsenIzin = $applyUserFilter(
+            izinTigaJam::with('karyawan')
+                ->whereBetween('created_at', [$startDate, $endDate])
+        )->get();
 
         $totalAbsenIzin = $AbsenIzin->pluck('id_karyawan')->unique()->count();
-
-        $arrayAbsensiIzin = $AbsenIzin->map(function ($izin) {
-            return [
-                'id_karyawan'      => $izin->id_karyawan,
-                'namaKaryawan'     => $izin->karyawan->nama_lengkap,
-                'divisi'           => $izin->karyawan->divisi,
-                'alasan'           => $izin->alasan,
-                'tanggalPengajuan' => $izin->tanggal_pengajuan,
-            ];
-        });
+        $arrayAbsensiIzin = $AbsenIzin->map(fn($izin) => [
+            'id_karyawan'      => $izin->id_karyawan,
+            'namaKaryawan'     => $izin->karyawan->nama_lengkap,
+            'divisi'           => $izin->karyawan->divisi,
+            'alasan'           => $izin->alasan,
+            'tanggalPengajuan' => $izin->tanggal_pengajuan,
+        ]);
 
         $dataAbsensiIzin = [
             'totalAbsenIzin' => $totalAbsenIzin,
@@ -2441,85 +2550,78 @@ class DatabaseKPIController extends Controller
             'dataIzin'       => $dataAbsensiIzin
         ];
 
-        $totalSemua = shareForm::whereBetween('created_at', [$startDate, $endDate])
-            ->count();
+        $totalSemua = shareForm::whereBetween('created_at', [$startDate, $endDate]);
+        if (!$isPrivileged) $totalSemua->where('id_evaluated', $idUserLogin);
+        $totalSemua = $totalSemua->count();
 
         $totalDilaksanakan = NilaiKPI::whereBetween('created_at', [$startDate, $endDate])
             ->where('status', '1')
             ->selectRaw('COUNT(*) as jumlah')
-            ->groupBy('id_evaluator', 'id_evaluated', 'kode_form', 'jenis_penilaian')
-            ->get()
-            ->count();
+            ->groupBy('id_evaluator', 'id_evaluated', 'kode_form', 'jenis_penilaian');
+        if (!$isPrivileged) $totalDilaksanakan->where('id_evaluated', $idUserLogin);
+        $totalDilaksanakan = $totalDilaksanakan->get()->count();
 
         $totalBelumDilaksanakan = NilaiKPI::whereBetween('created_at', [$startDate, $endDate])
             ->where('status', '0')
             ->selectRaw('COUNT(*) as jumlah')
-            ->groupBy('id_evaluator', 'id_evaluated', 'kode_form', 'jenis_penilaian')
-            ->get()
-            ->count();
+            ->groupBy('id_evaluator', 'id_evaluated', 'kode_form', 'jenis_penilaian');
+        if (!$isPrivileged) $totalBelumDilaksanakan->where('id_evaluated', $idUserLogin);
+        $totalBelumDilaksanakan = $totalBelumDilaksanakan->get()->count();
 
         $dataChartJumlahPenilaianBerjalan = [
-            'totalSemua' => $totalSemua,
-            'totalDilaksanakan' => $totalDilaksanakan,
+            'totalSemua'          => $totalSemua,
+            'totalDilaksanakan'   => $totalDilaksanakan,
             'totalBelumDilaksanakan' => $totalBelumDilaksanakan
         ];
 
-        $dataTotalFormulir = formPenilaian::whereBetween('created_at', [$startDate, $endDate])
-            ->selectRaw('COUNT(*) as jumlah')
-            ->groupBy('kode_form', 'id_karyawan')
-            ->get()
-            ->count();
+        $buildFormQuery = function ($jenis = null) use ($startDate, $endDate, $isPrivileged, $idUserLogin) {
+            $query = formPenilaian::whereBetween('created_at', [$startDate, $endDate])
+                ->selectRaw('COUNT(*) as jumlah')
+                ->groupBy('kode_form', 'id_karyawan');
 
-        $dataFormulirRutin = formPenilaian::whereBetween('created_at', [$startDate, $endDate])
-            ->where('jenis_form', 'Rutin')
-            ->selectRaw('COUNT(*) as jumlah')
-            ->groupBy('kode_form', 'id_karyawan')
-            ->get()
-            ->count();
+            if ($jenis) {
+                $query->where('jenis_form', $jenis);
+            }
 
-        $dataFormulirProbation = formPenilaian::whereBetween('created_at', [$startDate, $endDate])
-            ->where('jenis_form', 'Probation')
-            ->selectRaw('COUNT(*) as jumlah')
-            ->groupBy('kode_form', 'id_karyawan')
-            ->get()
-            ->count();
+            if (!$isPrivileged) {
+                $query->where('id_karyawan', $idUserLogin);
+            }
 
-        $dataFormulirKontrak = formPenilaian::whereBetween('created_at', [$startDate, $endDate])
-            ->where('jenis_form', 'Kontrak')
-            ->selectRaw('COUNT(*) as jumlah')
-            ->groupBy('kode_form', 'id_karyawan')
-            ->get()
-            ->count();
-
-        $dataFormulir = [
-            'totalFormulir' => $dataTotalFormulir,
-            'totalRutin'    => $dataFormulirRutin,
-            'totalProbation' => $dataFormulirProbation,
-            'totalKontrak'  => $dataFormulirKontrak
-        ];
-
-        $dataDivisi = Karyawan::whereNot('divisi', 'Direksi')
-            ->select('divisi')
-            ->distinct()
-            ->get();
-
-        $bulan = now()->month;
-        $quarterLabel = match (true) {
-            $bulan >= 1 && $bulan <= 3 => 'Q1',
-            $bulan >= 4 && $bulan <= 6 => 'Q2',
-            $bulan >= 7 && $bulan <= 9 => 'Q3',
-            default => 'Q4',
+            return $query->get()->count();
         };
 
+        $dataTotalFormulir    = $buildFormQuery();
+        $dataFormulirRutin    = $buildFormQuery('Rutin');
+        $dataFormulirProbation = $buildFormQuery('Probation');
+        $dataFormulirKontrak  = $buildFormQuery('Kontrak');
+
+        $dataFormulir = [
+            'totalFormulir'   => $dataTotalFormulir,
+            'totalRutin'      => $dataFormulirRutin,
+            'totalProbation'  => $dataFormulirProbation,
+            'totalKontrak'    => $dataFormulirKontrak
+        ];
+
+        $dataDivisi = Karyawan::whereNot('divisi', 'Direksi')->select('divisi')->distinct();
+        if (!$isPrivileged) {
+            $dataDivisi->where('id', $idUserLogin);
+        }
+        $dataDivisi = $dataDivisi->get();
+
+        $quartalList = $semesterLabel === 'S1' ? ['Q1', 'Q2'] : ['Q3', 'Q4'];
+
         $formPenilaian = formPenilaian::with('karyawan')
-            ->where('quartal', $quarterLabel)
+            ->where(function ($query) use ($quartalList) {
+                foreach ($quartalList as $q) {
+                    $query->orWhere('quartal', $q);
+                }
+            })
             ->where('tahun', $year)
             ->where('jenis_form', 'Rutin')
             ->select('id_karyawan', 'kode_form', 'quartal', 'tahun')
             ->groupBy('id_karyawan', 'kode_form', 'quartal', 'tahun')
             ->get();
 
-        $hasilPenilaian = [];
         $persentaseJenis = [
             'General Manager' => 35,
             'Manager/SPV/Team Leader (Atasan Langsung)' => 30,
@@ -2527,6 +2629,8 @@ class DatabaseKPIController extends Controller
             'Pekerja (Beda Divisi)' => 10,
             'Self Apprisial' => 5
         ];
+
+        $hasilPenilaian = [];
 
         foreach ($formPenilaian as $form) {
             $evaluatedId = $form->id_karyawan;
@@ -2538,9 +2642,10 @@ class DatabaseKPIController extends Controller
                 ->where('tahun', $form->tahun)
                 ->get();
 
-            $allKategori = $formsForEvaluated->flatMap(function ($f) {
-                return kategoriKPI::where('kode_kategori', $f->kode_kategori)->get();
-            })->unique('judul_kategori')->values();
+            $allKategori = $formsForEvaluated->flatMap(
+                fn($f) =>
+                kategoriKPI::where('kode_kategori', $f->kode_kategori)->get()
+            )->unique('judul_kategori')->values();
 
             $evaluators = shareForm::where('id_evaluated', $evaluatedId)
                 ->where('kode_form', $kodeForm)
@@ -2558,9 +2663,10 @@ class DatabaseKPIController extends Controller
                 $totalNilaiEvaluator = 0;
 
                 foreach ($allKategori as $kategori) {
-                    $item = $nilaiCollection->first(function ($it) use ($kategori) {
-                        return isset($it->name_variabel) && trim($it->name_variabel) === trim($kategori->judul_kategori);
-                    });
+                    $item = $nilaiCollection->first(
+                        fn($it) =>
+                        isset($it->name_variabel) && trim($it->name_variabel) === trim($kategori->judul_kategori)
+                    );
 
                     if ($item && is_numeric($item->nilai) && is_numeric($kategori->bobot)) {
                         $totalNilaiEvaluator += ((float)$item->nilai) * (((float)$kategori->bobot) / 100);
@@ -2600,11 +2706,12 @@ class DatabaseKPIController extends Controller
         }
 
         return response()->json([
-            'dataCard_first' => $dataCard_utama,
-            'dataChartPenilaian' => $dataChartJumlahPenilaianBerjalan,
-            'dataDivisi' => $dataDivisi,
-            'dataRangking' => $hasilPenilaian,
-            'dataFormulir'  => $dataFormulir
+            'semester'             => $semesterLabel,
+            'dataCard_first'       => $dataCard_utama,
+            'dataChartPenilaian'   => $dataChartJumlahPenilaianBerjalan,
+            'dataDivisi'           => $dataDivisi,
+            'dataRangking'         => $hasilPenilaian,
+            'dataFormulir'         => $dataFormulir
         ]);
     }
 
@@ -2617,5 +2724,383 @@ class DatabaseKPIController extends Controller
         return response()->json([
             'data' => $karyawan
         ]);
+    }
+
+    public function indexProject()
+    {
+        return view('KPIproject.index');
+    }
+
+    public function controlProject()
+    {
+        $idUser = auth()->user()->id;
+
+        $dataUser = user::where('id', $idUser)->first();
+        return view('KPIproject.createTugas', compact('dataUser'));
+    }
+
+    public function kpiIndex()
+    {
+        $daftarKaryawan = Karyawan::all();
+
+        $labels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun'];
+        $targets = [10000000, 12000000, 11000000, 13000000, 12500000, 14000000];
+        $realisasi = [9500000, 11000000, 9000000, 12500000, 10000000, 13500000];
+
+        $karyawanPerluPerhatian = collect([
+            (object)['nama' => 'Andi', 'target' => 10000000, 'pencapaian' => 7500000],
+            (object)['nama' => 'Budi', 'target' => 12000000, 'pencapaian' => 9000000],
+        ]);
+
+        $karyawanGagalTarget = collect([
+            (object)['nama' => 'Cici', 'target' => 10000000, 'pencapaian' => 5000000],
+        ]);
+
+        return view('KPIdata.index', compact(
+            'daftarKaryawan',
+            'karyawanPerluPerhatian',
+            'karyawanGagalTarget'
+        ))->with('chartData', [
+            'labels' => $labels,
+            'targets' => $targets,
+            'realisasi' => $realisasi
+        ]);
+    }
+
+    public function kpiOverview()
+    {
+        return view('kpidata.overview');
+    }
+
+    public function createTarget(Request $request)
+    {
+        $validated = $request->validate([
+            'id_pembuat'        => 'required',
+            'judul_kpi'         => 'required',
+            'jabatan'           => 'required|string',
+            'jangka_target'     => 'required|string',
+            'detail_jangka'     => 'nullable',
+            'tipe_target'       => 'required|string',
+            'nilai_target'      => 'required',
+            'assistant_route'   => 'required'
+        ]);
+
+        $dataDivisi = karyawan::where('jabatan', $validated['jabatan'])->first();
+
+        targetKPI::create([
+            'id_assistant'   => null,
+            'id_pembuat'     => $validated['id_pembuat'],
+            'judul'          => $validated['judul_kpi'],
+            'deskripsi'      => $request->input('deskripsi_kpi'),
+            'assistant_route' => $validated['assistant_route'],
+            'jabatan'        => $validated['jabatan'],
+            'divisi'         => $dataDivisi->divisi,
+            'jangka_target'  => $validated['jangka_target'],
+            'detail_jangka'  => $validated['detail_jangka'],
+            'tipe_target'    => $validated['tipe_target'],
+            'nilai_target'   => $validated['nilai_target'],
+            'status'         => '0',
+        ]);
+
+        return response()->json([
+            'message' => 'Target berhasil dibuat',
+        ], 201);
+    }
+
+
+    public function getDataTarget()
+    {
+        $user = auth()->user();
+        $id_pembuat = $user->id;
+        $jabatan_pembuat = $user->jabatan;
+
+        $karyawan = karyawan::find($id_pembuat);
+        if (!$karyawan) {
+            return response()->json(['message' => 'Karyawan tidak ditemukan'], 404);
+        }
+
+        $divisi = $karyawan->divisi;
+
+        $dataJabatan = $jabatan_pembuat === 'HRD'
+            ? karyawan::whereNotIn('jabatan', ['Direktur Utama', 'Direktur'])->distinct()->pluck('jabatan')
+            : karyawan::where('divisi', $divisi)->distinct()->pluck('jabatan');
+
+        $detailList = targetKPI::with('karyawan')
+            ->where('id_pembuat', $id_pembuat)
+            ->whereYear('created_at', now()->year)
+            ->get();
+
+        $data = [
+            'detail' => $detailList->map(function ($item) {
+                $tenggat_waktu = null;
+
+
+
+                switch (strtolower($item->jangka_target)) {
+                    case 'tahunan':
+                        $year = (int) $item->detail_jangka;
+                        $tenggat_waktu = date('Y-m-d', strtotime("last day of December $year"));
+                        break;
+
+                    case 'bulanan':
+                        [$bulan, $tahun] = array_map('trim', explode('-', str_replace(' ', '', $item->detail_jangka)));
+                        $tenggat_waktu = date('Y-m-d', strtotime("last day of $tahun-$bulan"));
+                        break;
+
+                    case 'quartal':
+                        if (preg_match('/Q\s*(\d)\s*-\s*(\d{4})/i', trim($item->detail_jangka), $matches)) {
+                            $quartal = (int) $matches[1];
+                            $tahun = (int) $matches[2];
+
+                            switch ($quartal) {
+                                case 1:
+                                    $bulan_akhir = 3;
+                                    break;
+                                case 2:
+                                    $bulan_akhir = 6;
+                                    break;
+                                case 3:
+                                    $bulan_akhir = 9;
+                                    break;
+                                case 4:
+                                    $bulan_akhir = 12;
+                                    break;
+                                default:
+                                    $bulan_akhir = 12;
+                            }
+
+                            $tenggat_waktu = date('Y-m-t', strtotime("$tahun-$bulan_akhir-01"));
+                        }
+                        break;
+
+                    case 'mingguan':
+                        if (preg_match('/(\d{2})-(\d{2})\s*-\s*(\d{2})-(\d{2})\s*-\s*(\d{4})/', str_replace(' ', '', $item->detail_jangka), $matches)) {
+                            $tgl = $matches[3];
+                            $bulan = $matches[4];
+                            $tahun = $matches[5];
+                            $tenggat_waktu = sprintf('%04d-%02d-%02d', $tahun, $bulan, $tgl);
+                        }
+                        break;
+                }
+
+                return [
+                    'id'              => $item->id,
+                    'pembuat'         => $item->karyawan->nama_lengkap ?? null,
+                    'id_pembuat'      => $item->id_pembuat,
+                    'judul'           => $item->judul,
+                    'deskripsi'       => $item->deskripsi,
+                    'jabatan'         => $item->jabatan,
+                    'divisi'          => $item->divisi,
+                    'assistant_route' => $item->assistant_route,
+                    'jangka_target'   => $item->jangka_target,
+                    'detail_jangka'   => $item->detail_jangka,
+                    'tipe_target'     => $item->tipe_target,
+                    'nilai_target'    => $item->nilai_target,
+                    'status'          => $item->status,
+                    'created_at'      => $item->created_at,
+                    'tenggat_waktu'   => $tenggat_waktu,
+                ];
+            }),
+            'jabatan_list' => $dataJabatan,
+        ];
+
+        return response()->json($data);
+    }
+
+    public function hapusTarget($id)
+    {
+        $hapusTarget = targetKPI::where('id', $id)->first();
+        $hapusTarget->delete();
+
+        return response()->json(['message' => 'berhasil menghapus target!']);
+    }
+
+    public function updateTarget(Request $request)
+    {
+        $validated = $request->validate([
+            'id' => 'required|integer',
+            'judul_kpi' => 'required|string|max:255',
+            'deskripsi_kpi' => 'nullable|string',
+            'tipe_target' => 'required',
+            'jangka_target' => 'required|string|in:Tahunan,Quartal,Bulanan,Mingguan',
+            'detail_jangka' => 'required|string',
+            'nilai_target' => 'required|string',
+        ]);
+
+        $cleanNilai = preg_replace('/[^0-9]/', '', $validated['nilai_target']);
+        $cleanNilai = $cleanNilai === '' ? 0 : (int) $cleanNilai;
+
+        $data = targetKPI::where('id', $validated['id'])->first();
+        $data->update([
+            'judul' => $validated['judul_kpi'],
+            'deskripsi' => $validated['deskripsi_kpi'],
+            'tipe_target' => $validated['tipe_target'],
+            'jangka_target' => $validated['jangka_target'],
+            'detail_jangka' => $validated['detail_jangka'],
+            'nilai_target' => $cleanNilai,
+        ]);
+
+        return response()->json([
+            'message' => 'Target berhasil diperbarui!',
+        ]);
+    }
+
+    public function detailData(Request $request)
+    {
+        $id = $request->input('id');
+
+        $dataFindTarget = targetKPI::where('id', $id)->first();
+
+        if ($dataFindTarget->assistant_route === 'Kepuasan Pelanggan') {
+            $jangkaFilter = $dataFindTarget->jangka_target;
+            $detailJangka = $dataFindTarget->detail_jangka;
+
+            if ($jangkaFilter === 'Tahunan') {
+                $tahun = (int) $detailJangka;
+                $start = "$tahun-01-01";
+                $end = "$tahun-12-31";
+
+                $feedbacks = Nilaifeedback::with('rkm')
+                    ->whereBetween('created_at', [$start, $end])
+                    ->get();
+            } elseif ($jangkaFilter === 'Bulanan') {
+                if (preg_match('/(\d{2})\s*-\s*(\d{4})/', $detailJangka, $matches)) {
+                    $bulan = (int) $matches[1];
+                    $tahun = (int) $matches[2];
+                    $start = date('Y-m-01', strtotime("$tahun-$bulan-01"));
+                    $end = date('Y-m-t', strtotime("$tahun-$bulan-01"));
+                }
+
+                $feedbacks = Nilaifeedback::with('rkm')
+                    ->whereBetween('created_at', [$start, $end])
+                    ->get();
+            } elseif ($jangkaFilter === 'Kuartal' || $jangkaFilter === 'Quartal') {
+                if (preg_match('/Q(\d)\s*-\s*(\d{4})/i', $detailJangka, $matches)) {
+                    $kuartal = (int) $matches[1];
+                    $tahun = (int) $matches[2];
+
+                    $bulanAwal = ($kuartal - 1) * 3 + 1;
+                    $bulanAkhir = $kuartal * 3;
+
+                    $start = date('Y-m-01', strtotime("$tahun-$bulanAwal-01"));
+                    $end = date('Y-m-t', strtotime("$tahun-$bulanAkhir-01"));
+                }
+
+                $feedbacks = Nilaifeedback::with('rkm')
+                    ->whereBetween('created_at', [$start, $end])
+                    ->get();
+            } elseif ($jangkaFilter === 'Mingguan') {
+                if (preg_match('/(\d{2})-(\d{2})\s*-\s*(\d{2})-(\d{2})\s*-\s*(\d{4})/', $detailJangka, $matches)) {
+                    $start = date('Y-m-d', strtotime("{$matches[5]}-{$matches[2]}-{$matches[1]}"));
+                    $end = date('Y-m-d', strtotime("{$matches[5]}-{$matches[4]}-{$matches[3]}"));
+                }
+
+                $feedbacks = Nilaifeedback::with('rkm')
+                    ->whereBetween('created_at', [$start, $end])
+                    ->get();
+            }
+
+
+            $groupedFeedbacks = $feedbacks->groupBy(function ($feedback) {
+                return $feedback->rkm->materi->nama_materi . '/' . $feedback->rkm->tanggal_awal;
+            });
+
+            $averageFeedbacks = [];
+
+            foreach ($groupedFeedbacks as $materi_key => $feedbackGroup) {
+                $materi_key = $feedbackGroup->first()->rkm->materi_key;
+                $nama_materi = $feedbackGroup->first()->rkm->materi->nama_materi;
+                $instruktur_key = $feedbackGroup->first()->rkm->instruktur_key;
+                $sales_key = $feedbackGroup->first()->rkm->sales_key;
+                $created_at = $feedbackGroup->first()->created_at;
+                $tanggal_awal = Carbon::parse($feedbackGroup->first()->rkm->tanggal_awal)->format('Y-m-d');
+                $tanggal_akhir = $feedbackGroup->first()->rkm->tanggal_akhir;
+                $totalFeedbacks = $feedbackGroup->count();
+
+                $totalM1 = $feedbackGroup->sum('M1');
+                $totalM2 = $feedbackGroup->sum('M2');
+                $totalM3 = $feedbackGroup->sum('M3');
+                $totalM4 = $feedbackGroup->sum('M4');
+                $totalP1 = $feedbackGroup->sum('P1');
+                $totalP2 = $feedbackGroup->sum('P2');
+                $totalP3 = $feedbackGroup->sum('P3');
+                $totalP4 = $feedbackGroup->sum('P4');
+                $totalP5 = $feedbackGroup->sum('P5');
+                $totalP6 = $feedbackGroup->sum('P6');
+                $totalP7 = $feedbackGroup->sum('P7');
+                $totalF1 = $feedbackGroup->sum('F1');
+                $totalF2 = $feedbackGroup->sum('F2');
+                $totalF3 = $feedbackGroup->sum('F3');
+                $totalF4 = $feedbackGroup->sum('F4');
+                $totalF5 = $feedbackGroup->sum('F5');
+                $totalI1 = $feedbackGroup->sum('I1');
+                $totalI2 = $feedbackGroup->sum('I2');
+                $totalI3 = $feedbackGroup->sum('I3');
+                $totalI4 = $feedbackGroup->sum('I4');
+                $totalI5 = $feedbackGroup->sum('I5');
+                $totalI6 = $feedbackGroup->sum('I6');
+                $totalI7 = $feedbackGroup->sum('I7');
+                $totalI8 = $feedbackGroup->sum('I8');
+                $totalI1b = $feedbackGroup->sum('I1b');
+                $totalI2b = $feedbackGroup->sum('I2b');
+                $totalI3b = $feedbackGroup->sum('I3b');
+                $totalI4b = $feedbackGroup->sum('I4b');
+                $totalI5b = $feedbackGroup->sum('I5b');
+                $totalI6b = $feedbackGroup->sum('I6b');
+                $totalI7b = $feedbackGroup->sum('I7b');
+                $totalI8b = $feedbackGroup->sum('I8b');
+                $totalI1as = $feedbackGroup->sum('I1as');
+                $totalI2as = $feedbackGroup->sum('I2as');
+                $totalI3as = $feedbackGroup->sum('I3as');
+                $totalI4as = $feedbackGroup->sum('I4as');
+                $totalI5as = $feedbackGroup->sum('I5as');
+                $totalI6as = $feedbackGroup->sum('I6as');
+                $totalI7as = $feedbackGroup->sum('I7as');
+                $totalI8as = $feedbackGroup->sum('I8as');
+
+                $averageM = round(($totalM1 + $totalM2 + $totalM3 + $totalM4) / ($totalFeedbacks * 4), 1);
+                $averageP = round(($totalP1 + $totalP2 + $totalP3 + $totalP4 + $totalP5 + $totalP6 + $totalP7) / ($totalFeedbacks * 7), 1);
+                $averageF = round(($totalF1 + $totalF2 + $totalF3 + $totalF4 + $totalF5) / ($totalFeedbacks * 5), 1);
+                $averageI = round(($totalI1 + $totalI2 + $totalI3 + $totalI4 + $totalI5 + $totalI6 + $totalI7 + $totalI8) / ($totalFeedbacks * 8), 1);
+                $averageIb = round(($totalI1b + $totalI2b + $totalI3b + $totalI4b + $totalI5b + $totalI6b + $totalI7b + $totalI8b) / ($totalFeedbacks * 8), 1);
+                $averageIas = round(($totalI1as + $totalI2as + $totalI3as + $totalI4as + $totalI5as + $totalI6as + $totalI7as + $totalI8as) / ($totalFeedbacks * 8), 1);
+
+                $averageValues = [$averageM, $averageP, $averageF, $averageI];
+                if ($averageIb > 0) $averageValues[] = $averageIb;
+                if ($averageIas > 0) $averageValues[] = $averageIas;
+                $averageTotal = round(array_sum($averageValues) / count($averageValues), 1);
+
+                $averageFeedbacks[] = [
+                    'nama_materi' => $nama_materi,
+                    'materi_key' => $materi_key,
+                    'instruktur_key' => $instruktur_key,
+                    'sales_key' => $sales_key,
+                    'tanggal_awal' => $tanggal_awal,
+                    'tanggal_akhir' => $tanggal_akhir,
+                    'created_at' => $created_at,
+                    'averageTotal' => $averageTotal,
+                ];
+            }
+
+            $sortedFeedbacks = collect($averageFeedbacks)->sortByDesc('created_at')->values()->all();
+
+            $totalAllFeedbacks = count($sortedFeedbacks);
+            $totalBelow35 = collect($sortedFeedbacks)->where('averageTotal', '<', 3.5)->count();
+            $totalAbove35 = collect($sortedFeedbacks)->where('averageTotal', '>=', 3.5)->count();
+
+            $data = [
+                'detailData' => $sortedFeedbacks,
+                'totalFeedback' => $totalAllFeedbacks,
+                'totalKurang' => $totalBelow35,
+                'totalLebih' => $totalAbove35,
+                'nilaiTarget' => $dataFindTarget->nilai_target,
+            ];
+
+            return response()->json($data);
+        } else if ($dataFindTarget->assistant_route === 'Pemasukan Kotor') {
+        } else if ($dataFindTarget->assistant_route === 'Pemasukan Bersih') {
+        } else if ($dataFindTarget->assistant_route === 'Rasio Biaya Operasional') {
+        } else if ($dataFindTarget->assistant_route === 'Rata Rata Pencapaian Departement') {
+        }
     }
 }

@@ -36,6 +36,9 @@ use App\Http\Controllers\MakananRkmController;
 use App\Http\Controllers\managementKelasController;
 use App\Http\Controllers\SouvenirController;
 use App\Http\Controllers\TicketController;
+use App\Http\Controllers\KanbanController;
+use App\Http\Controllers\DailyActivityController;
+
 
 
 /*
@@ -127,6 +130,7 @@ Route::resource('/rekapmengajarinstruktur', \App\Http\Controllers\rekapInstruktu
 Route::resource('/lembur', \App\Http\Controllers\LemburController::class);
 Route::resource('/overtime', \App\Http\Controllers\OvertimeController::class);
 Route::resource('/pengajuanlabsdansubs', \App\Http\Controllers\PengajuanLabdanSubsController::class);
+Route::resource('/daily-activities', \App\Http\Controllers\DailyActivityController::class);
 Route::resource('permissions', \App\Http\Controllers\PermissionController::class);
 Route::resource('roles', \App\Http\Controllers\RoleController::class);
 
@@ -283,6 +287,7 @@ Route::post('/providers', [App\Http\Controllers\listexamController::class, 'stor
 Route::post('/vendors', [App\Http\Controllers\listexamController::class, 'storeVendor'])->name('vendors.store');
 
 Route::get('/detailfeedbacks', [App\Http\Controllers\feedbackController::class, 'detailfeedbacks'])->name('detailfeedbacks');
+Route::get('/paymantAdvance/edit/{id}', [App\Http\Controllers\netSalesController::class, 'edit'])->name('netSales.edit.index');
 
 // Route::get('nilaifeedback/export', [App\Http\Controllers\feedbackController::class, 'export'])->name('nilaifeedback.export');
 Route::get('nilaifeedbackexport/{year}/{month}', [App\Http\Controllers\nilaifeedbackController::class, 'export'])->name('nilaifeedbackexport');
@@ -511,6 +516,8 @@ Route::prefix('crm')->group(function () {
 
     // Laporan Penjualan
     Route::get('laporanPenjualan', [LaporanPenjualanController::class, 'index'])->name('crm.laporanPenjualan');
+    Route::get('/edit/{id}/pa', [LaporanPenjualanController::class, 'editPA'])->name('editPA');
+    Route::put('/update/pa/{id}', [LaporanPenjualanController::class, 'updatePA'])->name('updatePA');
 
     // Import Contact / Perusahaan
     Route::post('/perusahaan/import/perusahaan', [ImportPerusahaanAndContactController::class, 'importPerusahaan'])->name('perusahaan.import');
@@ -606,3 +613,16 @@ Route::get('/test-error', function () {
     // ini error manual
     throw new \Exception('Test error from Handler.php');
 });
+
+Route::get('laporan/penjualan', [LaporanPenjualanController::class, 'indexJson'])->name('jsonLaporan');
+
+// Kanban
+Route::get('/kanban', [KanbanController::class, 'index'])->name('kanban.index');
+Route::post('/tasks', [KanbanController::class, 'store'])->name('tasks.store');
+Route::post('/tasks/update-state', [KanbanController::class, 'updateState'])->name('tasks.update-state');
+Route::patch('/tasks/{id}', [KanbanController::class, 'update'])->name('tasks.update');
+Route::get('/tasks/{task}/activities', [KanbanController::class, 'getTaskActivities'])->name('tasks.activities');
+
+
+Route::patch('/daily-activities/{daily_activity}/update-status', [DailyActivityController::class, 'updateStatus'])->name('daily-activities.updateStatus');
+Route::get('/daily-activities/{daily_activity}', [DailyActivityController::class, 'show'])->name('daily-activities.show');

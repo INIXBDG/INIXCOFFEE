@@ -33,7 +33,9 @@ class AktivitasController extends Controller
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 
-        return view('crm.aktivitas.index', compact('data', 'perusahaan'));
+        $contact = Contact::with('perusahaan')->get();
+
+        return view('crm.aktivitas.index', compact('data', 'perusahaan', 'contact'));
     }
 
     public function getContactsAndPeserta($id)
@@ -75,7 +77,7 @@ class AktivitasController extends Controller
             $user = Auth::user();
             $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'SPV Sales'];
 
-            $query = Aktivitas::with(['contact', 'peserta'])
+            $query = Aktivitas::with(['contact.perusahaan', 'peserta.perusahaan'])
                 ->select('id', 'id_sales', 'id_contact', 'id_peserta', 'aktivitas', 'pax', 'total', 'harga', 'deskripsi', 'waktu_aktivitas', 'created_at');
 
             if ($user->jabatan === 'Sales') {
@@ -99,7 +101,6 @@ class AktivitasController extends Controller
             // Hitung total semua data sebelum filter
             $totalRecords = $query->count();
 
-
             // 🔍 Filter pencarian umum
             if (!empty($searchValue)) {
                 $query->where(function ($q) use ($searchValue) {
@@ -119,7 +120,6 @@ class AktivitasController extends Controller
                         });
                 });
             }
-
 
             // 🔹 Filter tambahan
             $filterSales = request()->get('filter_sales');
@@ -153,10 +153,8 @@ class AktivitasController extends Controller
                 $query->whereDate('created_at', '<=', $filterCreatedEnd);
             }
 
-            // Hitung total setelah filter
             $totalFiltered = $query->count();
 
-            // Ambil data dengan paginasi
             $data = $query->orderBy('created_at', 'desc')
                 ->orderBy($orderColumn, $orderDirection)
                 ->offset($start)
@@ -165,27 +163,27 @@ class AktivitasController extends Controller
                 ->map(function ($item) {
                     $namaKontak = null;
                     $namaPerusahaan = null;
+                    $idContact = null;
 
-                    // Cek apakah aktivitas terkait peserta
                     if (!empty($item->id_peserta)) {
                         $namaKontak = $item->peserta?->nama;
                         $namaPerusahaan = $item->peserta?->perusahaan?->nama_perusahaan;
+                        $idContact = $item->id_peserta;
                     }
-
-                    // Jika tidak ada peserta, coba ambil dari contact
                     else {
                         $namaKontak = $item->contact?->nama;
                         $namaPerusahaan = $item->contact?->perusahaan?->nama_perusahaan;
+                        $idContact = $item->id_contact;
                     }
 
-                    // Fallback khusus untuk aktivitas "DB" (Database baru)
-                    if ($item->aktivitas === 'DB' && empty($namaPerusahaan)) {
-                        $namaPerusahaan = $item->deskripsi
-                            ? str_replace(['Database baru "', '" berhasil ditambahkan'], '', $item->deskripsi)
-                            : '-';
+                    if ($item->aktivitas === 'DB') {
+                        if (empty($namaPerusahaan)) {
+                            $namaPerusahaan = $item->deskripsi
+                                ? str_replace(['Database baru "', '" berhasil ditambahkan'], '', $item->deskripsi)
+                                : '-';
+                        }
                     }
 
-                    // Tentukan kolom "kontak" untuk tampilan
                     if (empty($namaKontak) && empty($namaPerusahaan)) {
                         $kontak = '-';
                     } elseif (!empty($namaKontak) && !empty($namaPerusahaan)) {
@@ -194,7 +192,6 @@ class AktivitasController extends Controller
                         $kontak = $namaKontak ?: $namaPerusahaan;
                     }
 
-                    //  Ubah nama aktivitas jadi lebih ramah tampil
                     $aktivitas = match ($item->aktivitas) {
                         'Incharge'    => 'Incharge Inhouse',
                         'Form_Masuk'  => 'Form Masuk',
@@ -202,12 +199,10 @@ class AktivitasController extends Controller
                         default       => ucfirst($item->aktivitas),
                     };
 
-                    // Bersihkan deskripsi untuk aktivitas DB
                     $deskripsi = $item->aktivitas === 'DB'
                         ? 'Database baru berhasil ditambahkan'
                         : $item->deskripsi;
 
-                    // Format hasil akhir data
                     return [
                         'id' => $item->id,
                         'kontak' => $kontak,
@@ -218,9 +213,9 @@ class AktivitasController extends Controller
                         'total' => $item->total,
                         'deskripsi' => $deskripsi,
                         'waktu_aktivitas' => \Carbon\Carbon::parse($item->waktu_aktivitas)->format('d/m/Y'),
+                        'id_contact' => $idContact, 
                     ];
                 });
-
 
             return response()->json([
                 'draw' => $draw,
@@ -256,9 +251,18 @@ class AktivitasController extends Controller
 
             // Daftar jenis aktivitas yang akan dibandingkan
             $jenisAktivitas = [
-                'Contact', 'Call', 'Visit', 'Email', 'Meet',
-                'DB', 'PA', 'PI', 'Incharge', 'Telemarketing',
-                'FormM', 'FormK'
+                'Contact',
+                'Call',
+                'Visit',
+                'Email',
+                'Meet',
+                'DB',
+                'PA',
+                'PI',
+                'Incharge',
+                'Telemarketing',
+                'FormM',
+                'FormK'
             ];
 
             $hasil = [];
@@ -268,7 +272,7 @@ class AktivitasController extends Controller
 
                 // Hitung realisasi aktual dari tabel Aktivitas
                 $realisasi = Aktivitas::where('id_sales', $id_sales)
-                    ->where(function($q) use ($jenis) {
+                    ->where(function ($q) use ($jenis) {
                         // Sesuaikan nama field dengan nilai di DB
                         if ($jenis === 'FormM') {
                             $q->where('aktivitas', 'Form_Masuk');
@@ -281,7 +285,7 @@ class AktivitasController extends Controller
                     ->count();
 
                 // Tentukan status capaian
-                $status = match(true) {
+                $status = match (true) {
                     $realisasi >= $targetJumlah && $targetJumlah > 0 => '✅ Tercapai',
                     $realisasi < $targetJumlah && $targetJumlah > 0 => '❌ Belum tercapai',
                     default => '-',
@@ -301,7 +305,6 @@ class AktivitasController extends Controller
                 'deadline' => $deadline,
                 'data' => $hasil
             ]);
-
         } catch (\Exception $e) {
             \Log::error('Target Aktivitas Error: ' . $e->getMessage());
             return response()->json(['error' => 'Gagal memuat target aktivitas.'], 500);
@@ -323,9 +326,18 @@ class AktivitasController extends Controller
 
                 $deadline = \Carbon\Carbon::parse($target->deadline)->format('d/m/Y');
                 $jenisAktivitas = [
-                    'Contact', 'Call', 'Visit', 'Email', 'Meet',
-                    'DB', 'PA', 'PI', 'Incharge', 'Telemarketing',
-                    'FormM', 'FormK'
+                    'Contact',
+                    'Call',
+                    'Visit',
+                    'Email',
+                    'Meet',
+                    'DB',
+                    'PA',
+                    'PI',
+                    'Incharge',
+                    'Telemarketing',
+                    'FormM',
+                    'FormK'
                 ];
 
                 $hasil = [];
@@ -367,9 +379,18 @@ class AktivitasController extends Controller
 
                 $deadline = \Carbon\Carbon::parse($target->deadline)->format('d/m/Y');
                 $jenisAktivitas = [
-                    'Contact', 'Call', 'Visit', 'Email', 'Meet',
-                    'DB', 'PA', 'PI', 'Incharge', 'Telemarketing',
-                    'FormM', 'FormK'
+                    'Contact',
+                    'Call',
+                    'Visit',
+                    'Email',
+                    'Meet',
+                    'DB',
+                    'PA',
+                    'PI',
+                    'Incharge',
+                    'Telemarketing',
+                    'FormM',
+                    'FormK'
                 ];
 
                 $hasil = [];
@@ -549,6 +570,7 @@ class AktivitasController extends Controller
 
         // Data dasar yang selalu diupdate
         $updateData = [
+            'id_contact' => $request->id_contact,
             'aktivitas' => $request->aktivitas,
             'deskripsi' => $request->deskripsi,
             'waktu_aktivitas' => $request->waktu_aktivitas,
