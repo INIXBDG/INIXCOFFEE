@@ -28,8 +28,7 @@ class CleanActivityLogJob implements ShouldQueue
             ActivityLog::whereNotIn('status', [
                 'login',
                 'logout',
-                'Absen Masuk',
-                'Absen Keluar',
+                'visit',
             ])->delete();
 
             Log::info('Job CleanActivityLogJob: Data ActivityLog berhasil dihapus.');

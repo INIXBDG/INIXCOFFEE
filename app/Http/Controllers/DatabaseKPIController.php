@@ -116,6 +116,7 @@ class DatabaseKPIController extends Controller
 
             foreach ($urls as $url) {
                 $checks = ActivityLog::where('url', $url)
+                    ->where('status', 'uptime')
                     ->orderBy('created_at', 'asc')
                     ->limit(100)
                     ->get();
