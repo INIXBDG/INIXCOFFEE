@@ -243,6 +243,7 @@
     $(document).ready(function() {
         moment.locale('id');
 
+
         // Format Rupiah
         function formatRupiah(angka) {
             return 'Rp ' + (parseFloat(angka) || 0).toLocaleString('id-ID');
@@ -378,6 +379,8 @@
                             // Row Click
                             $(tableId + ' tbody').off('click', 'tr').on('click', 'tr', function() {
                                 const rowData = $(tableId).DataTable().row(this).data();
+
+                                console.log(rowData.invoice);
                                 if (!rowData) return;
 
                                 let html = `
@@ -396,7 +399,36 @@
                                             <p><strong>NetSales:</strong> ${formatRupiah(rowData.netsales)}</p>
                                             <p><strong>Grand Total:</strong> ${formatRupiah(rowData.grandtotal)}</p>
                                         </div>
-                                    </div>`;
+</div>
+
+                                    <hr class="my-3">
+                                    <h6 class="mb-3">Informasi Invoice</h6>
+                                    `;
+                                    
+                                    if (rowData.invoice) {
+                                        html += `
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <p><strong>Nomor Invoice:</strong> ${rowData.invoice.invoice_number}</p>
+                                                <p><strong>Tanggal Invoice:</strong> ${rowData.invoice.tanggal_invoice}</p>
+                                                <p><strong>Jumlah Total:</strong> ${formatRupiah(rowData.invoice.amount)}</p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <p><strong>Bank Tujuan:</strong> ${rowData.invoice.bank_name}</p>
+                                                <p><strong>Rekening Tujuan:</strong> ${rowData.invoice.account_number}</p>
+                                            </div>
+                                        </div>`;
+                                    } else {
+                                        html += `
+                                        <p><strong>Status Invoice:</strong> <span class="badge bg-warning text-dark">Belum ada invoice</span></p>
+                                        @if(auth()->user()->jabatan === 'Finance & Accounting')
+                                        <a class="btn btn-primary btn-sm mt-2" href="/invoice/create/${rowData.id}" target="_blank">
+                                            <i class="bi bi-file-earmark-plus"></i> Generate Invoice
+                                        </a>
+                                        @endif
+                                        `;
+                                    }
+                                    
 
                                 if (rowData.perhitungannet && rowData.perhitungannet.length > 0) {
                                     html += `<h6 class="mt-3">Detail NetSales</h6>
