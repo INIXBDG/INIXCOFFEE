@@ -1528,7 +1528,7 @@ class DatabaseKPIController extends Controller
         ]);
     }
 
-    public function getFromPenilaianUser(Request $request, $id_evaluator)
+        public function getFromPenilaianUser(Request $request, $id_evaluator)
     {
         $evaluatorEmploye = Karyawan::find($id_evaluator);
         if (!$evaluatorEmploye) {
@@ -1546,11 +1546,13 @@ class DatabaseKPIController extends Controller
 
         $sharedForms = shareForm::where('id_evaluator', $id_evaluator)->get();
 
+        $isEvaluator = $sharedForms->isNotEmpty();
+
         if ($sharedForms->isEmpty()) {
             return view('databasekpi.formPenilaian', [
-                'data' => [],
-                'evaluatorEmployeName' => $evaluatorEmploye->nama_lengkap,
-                'status' => 'Belum Ditunjuk',
+                'outputData' => [],
+                'evaluatorEmploye' => $evaluatorEmploye,
+                'isEvaluator' => false,
             ]);
         }
 
@@ -1574,7 +1576,7 @@ class DatabaseKPIController extends Controller
                     ->count();
 
                 $filledItems = nilaiKPI::where('kode_form', $share->kode_form)
-                    ->where('id_evaluator', operator: $id_evaluator)
+                    ->where('id_evaluator', $id_evaluator)
                     ->where('id_evaluated', $evaluatedEmployee->id)
                     ->where('jenis_penilaian', $share->jenis_penilaian)
                     ->whereNotNull('pesan')
@@ -1640,11 +1642,10 @@ class DatabaseKPIController extends Controller
         }
 
         $outputData = array_values($groupedOutputData);
-        $status = count($outputData) > 0 ? true : false;
 
-        return view('databasekpi.formPenilaian', compact('outputData', 'evaluatorEmploye', 'status'));
+        return view('databasekpi.formPenilaian', compact('outputData', 'evaluatorEmploye', 'isEvaluator'));
     }
-
+    
     public function createKategori()
     {
         $data = karyawan::all();
