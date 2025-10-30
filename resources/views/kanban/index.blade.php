@@ -11,7 +11,7 @@
     {{-- Header --}}
     <div class="flex justify-between items-center mb-6">
         <h4 class="text-2xl font-bold text-gray-800">
-            <i class="fas fa-columns mr-2 text-blue-500"></i> Activity
+            <i class="fas fa-columns mr-2 text-blue-500"></i>Papan Kanban ({{ $userDivisionName }})
         </h4>
     </div>
 
@@ -39,7 +39,6 @@
                             $authorPhoto = (optional(optional($task->user)->karyawan)->foto)
                                 ? asset('storage/posts/' . $task->user->karyawan->foto)
                                 : $defaultAvatarUrl;
-                            // Anda tidak perlu mendefinisikan $latestActivity di sini lagi
                         @endphp
 
                         {{-- Kartu Task --}}
@@ -76,12 +75,10 @@
                                 @endif
                             </div>
 
-                            {{-- ✅ TIMELINE AKTIVITAS TERAKHIR (KONDISI DIPERBAIKI) --}}
-                            {{-- Periksa langsung relasi pada $task --}}
+                            {{-- Timeline Aktivitas Terakhir --}}
                             @if($task->latestActivity)
                             <div class="task-timeline mt-2 pt-2 border-t border-gray-200 text-xs text-gray-500 space-y-1">
                                 @php
-                                    // Definisikan variabel lokal di sini setelah @if
                                     $latestActivity = $task->latestActivity;
                                     $timelineEvents = [];
                                     if ($latestActivity->on_progress_at) $timelineEvents[] = ['label' => 'Mulai', 'time' => \Carbon\Carbon::parse($latestActivity->on_progress_at), 'color' => 'blue'];
@@ -96,7 +93,6 @@
                                         <span>{{ $event['label'] }} - {{ $event['time']->isoFormat('D MMM, HH:mm') }}</span>
                                     </div>
                                 @endforeach
-                                {{-- Fallback ke status saat ini --}}
                                 @if(empty($timelineEvents) && $latestActivity->status)
                                     @php
                                         $fallbackColor = 'gray';
@@ -110,7 +106,6 @@
                                 @endif
                             </div>
                             @endif
-                            {{-- AKHIR TIMELINE --}}
 
                         </div>
                     @endforeach
@@ -159,9 +154,7 @@
         <div>
           <label class="block text-gray-700 text-sm font-bold mb-2">Dibuat oleh</label>
           <div class="flex items-center space-x-3">
-            {{-- JavaScript akan mengisi 'src' gambar ini --}}
             <img class="task-author-photo w-10 h-10 rounded-full bg-gray-200 object-cover" src="https://placehold.co/40x40/E2E8F0/94A3B8?text=AV" alt="Author photo">
-            {{-- JavaScript akan mengisi nama lengkap di sini --}}
             <p class="task-author-name text-gray-800 font-medium">N/A</p>
           </div>
         </div>
@@ -195,7 +188,15 @@
             <p class="text-gray-500 text-sm italic">Memuat aktivitas...</p>
         </div>
         </div>
-      <div class="flex justify-end pt-4 border-t mt-4">
+
+      {{-- (DIUBAH) Footer modal sekarang pakai justify-between --}}
+      <div class="flex justify-between items-center pt-4 border-t mt-4">
+        {{-- (BARU) Tombol Hapus --}}
+        <button type="button" id="deleteTaskBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-sm transition duration-150">
+          <i class="fas fa-trash-alt mr-1"></i> Hapus
+        </button>
+
+        {{-- Tombol Simpan --}}
         <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-sm transition duration-150">
           Simpan Perubahan
         </button>
@@ -224,18 +225,17 @@
         const tasksBaseUrl = "{{ url('tasks') }}"; // Untuk update /tasks/{id}
 
         // === Inisialisasi SortableJS ===
+        // ... (kode sortable tidak berubah) ...
         document.querySelectorAll('.kanban-task-list').forEach(list => {
             new Sortable(list, {
                 group: 'kanban', // Memungkinkan drag antar list
                 animation: 150,
                 onEnd: function (evt) {
-                    // Fungsi ini dipanggil setelah drag-and-drop selesai
                     const taskEl = evt.item;
                     const targetListEl = evt.to;
                     const taskId = taskEl.dataset.id;
                     const newState = targetListEl.dataset.state;
 
-                    // Kirim perubahan state ke server
                     fetch(updateStateUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
@@ -252,6 +252,7 @@
         });
 
         // === FUNGSI HELPER ===
+        // ... (fungsi createCardElement tidak berubah) ...
         function createCardElement(task) {
             const card = document.createElement('div');
             card.className = 'kanban-task bg-white p-3 rounded-lg shadow cursor-grab active:cursor-grabbing';
@@ -316,7 +317,6 @@
             card.appendChild(topRowDiv); // Masukkan baris atas ke card
 
             // ✅ TAMBAHKAN TIMELINE AKTIVITAS TERAKHIR (jika ada)
-            // Laravel defaultnya mengubah camelCase ke snake_case di JSON, jadi akses latest_activity
             const latestActivity = task.latest_activity;
             if (latestActivity) {
                 const timelineDiv = document.createElement('div');
@@ -333,7 +333,6 @@
                 if (timelineEvents.length > 0) {
                     timelineEvents.forEach(event => {
                         const eventTime = new Date(event.time);
-                        // Format: 24 Okt, 10:48
                         const formattedTime = eventTime.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour:'2-digit', minute: '2-digit'});
                         timelineDiv.innerHTML += `
                             <div class="flex items-center">
@@ -353,14 +352,12 @@
                         </div>
                     `;
                 }
-                card.appendChild(timelineDiv); // Tambahkan timeline ke card
+                card.appendChild(timelineDiv);
             }
 
             return card;
         }
-        /**
-         * Mereset dan menyembunyikan form quick-add.
-         */
+        // ... (fungsi resetQuickAddForm tidak berubah) ...
         function resetQuickAddForm(form) {
             const footer = form.closest('.kanban-footer');
             form.classList.add('hidden');
@@ -369,8 +366,7 @@
         }
 
         // === Logika Quick-Add ===
-
-        // Tampilkan form
+        // ... (logika quick-add tidak berubah) ...
         document.querySelectorAll('.add-card-btn').forEach(btn => {
             btn.addEventListener('click', e => {
                 const footer = e.currentTarget.closest('.kanban-footer');
@@ -380,16 +376,12 @@
                 form.querySelector('input[name="title"]').focus();
             });
         });
-
-        // Tombol "Cancel" (X)
         document.querySelectorAll('.cancel-add-btn').forEach(btn => {
             btn.addEventListener('click', e => {
                 const form = e.currentTarget.closest('.add-card-form');
                 resetQuickAddForm(form);
             });
         });
-
-        // Submit form quick-add
         document.querySelectorAll('.add-card-form').forEach(form => {
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
@@ -417,9 +409,9 @@
             });
         });
 
-        // === Logika Edit Judul Inline ===
 
-        // Double-click untuk edit
+        // === Logika Edit Judul Inline ===
+        // ... (logika edit inline tidak berubah) ...
         document.addEventListener('dblclick', function(e) {
             if (e.target.matches('.task-title')) {
                 const wrapper = e.target.closest('.task-title-wrapper');
@@ -434,15 +426,11 @@
                 inputEl.select();
             }
         });
-
-        // Klik di luar (blur) untuk simpan
         document.addEventListener('blur', function(e) {
             if (e.target.matches('.task-title-input')) {
                 saveTitleChange(e.target);
             }
         }, true);
-
-        // Tombol Enter/Escape
         document.addEventListener('keydown', function(e) {
             if (e.target.matches('.task-title-input')) {
                 if (e.key === 'Enter') {
@@ -452,7 +440,6 @@
                 }
             }
         });
-
         function cancelTitleChange(inputEl) {
             const wrapper = inputEl.closest('.task-title-wrapper');
             const titleEl = wrapper.querySelector('.task-title');
@@ -460,7 +447,6 @@
             inputEl.classList.add('hidden');
             titleEl.classList.remove('hidden');
         }
-
         function saveTitleChange(inputEl) {
             const wrapper = inputEl.closest('.task-title-wrapper');
             const titleEl = wrapper.querySelector('.task-title');
@@ -475,11 +461,10 @@
                 return;
             }
 
-            // Optimistic UI Update
             titleEl.textContent = newTitle;
             inputEl.classList.add('hidden');
             titleEl.classList.remove('hidden');
-            card.dataset.title = newTitle; // Update data-attribute juga
+            card.dataset.title = newTitle;
 
             const updateTitleUrl = `${tasksBaseUrl}/${taskId}`;
 
@@ -497,24 +482,23 @@
                     card.dataset.title = res.data.title;
                 } else {
                     alert('Gagal memperbarui judul.');
-                    titleEl.textContent = originalTitle; // Revert
+                    titleEl.textContent = originalTitle;
                     card.dataset.title = originalTitle;
                 }
             })
             .catch(err => {
                 alert('Terjadi kesalahan.');
-                titleEl.textContent = originalTitle; // Revert
+                titleEl.textContent = originalTitle;
                 card.dataset.title = originalTitle;
             });
         }
 
         // === Logika Modal Detail Task ===
-
+        // ... (logika modal tidak berubah, KECUALI submit & delete) ...
         const taskModal = document.getElementById('taskDetailModal');
         const taskForm = document.getElementById('taskDetailForm');
         const closeTaskModalBtn = document.getElementById('closeTaskModalBtn');
 
-        // Buka Modal (Klik sekali)
         document.addEventListener('click', function(e) {
             const card = e.target.closest('.kanban-task');
             if (card && !e.target.closest('.task-title-wrapper') && !e.target.matches('.task-title-input')) {
@@ -522,11 +506,8 @@
             }
         });
 
-        // Mengisi data modal
         function openTaskModal(card) {
             taskForm.dataset.taskId = card.dataset.id;
-
-            // Isi form task
             taskForm.querySelector('input[name="title"]').value = card.dataset.title;
             taskForm.querySelector('textarea[name="description"]').value = card.dataset.description;
             taskForm.querySelector('input[name="date_start"]').value = card.dataset.dateStart;
@@ -534,7 +515,6 @@
             taskModal.querySelector('.task-author-name').textContent = card.dataset.authorName;
             taskModal.querySelector('.task-author-photo').src = card.dataset.authorPhoto;
 
-            // === Bagian Daily Activity ===
             const dailyContainer = document.getElementById('dailyActivityContainer');
             dailyContainer.innerHTML = `<p class="text-gray-500 text-sm italic">Memuat aktivitas...</p>`;
 
@@ -542,13 +522,6 @@
             fetch(`${tasksBaseUrl}/${taskId}/activities`)
                 .then(res => res.json())
                 .then(activities => {
-                    if (!activities || activities.length === 0) {
-                        dailyContainer.innerHTML = `<p class="text-gray-500 text-sm italic">Belum ada aktivitas harian.</p>`;
-                        return;
-                    }
-
-                    dailyContainer.innerHTML = '';
-
                     renderDailyActivities(
                         activities,
                         dailyContainer,
@@ -560,25 +533,21 @@
                     dailyContainer.innerHTML = `<p class="text-red-500 text-sm">Gagal memuat aktivitas.</p>`;
                 });
 
-            // Tampilkan modal
             taskModal.classList.remove('hidden');
         }
 
         function renderDailyActivities(activities, container, emptyHTML) {
-            container.innerHTML = ''; // Hapus loading/pesan lama
-
+            container.innerHTML = '';
             if (!activities || activities.length === 0) {
-                container.innerHTML = emptyHTML; // Tampilkan pesan kosong
+                container.innerHTML = emptyHTML;
                 return;
             }
-
-            const storageBase = AppConfig.storageBaseUrl.replace('/posts/', ''); // Hapus /posts/ jika perlu
+            const storageBase = AppConfig.storageBaseUrl.replace('/posts/', '');
 
             activities.forEach(activity => {
                 const activityItem = document.createElement('div');
                 activityItem.className = 'flex space-x-3 border-b border-gray-200 pb-3 mb-3 last:border-b-0 last:pb-0 last:mb-0';
 
-                // --- Foto Kiri ---
                 let activityAuthor = 'N/A';
                 let activityAuthorPhoto = AppConfig.defaultAvatarUrl;
                 if (activity.user) {
@@ -596,22 +565,27 @@
                     </div>
                 `;
 
-                // --- Konten Kanan ---
                 const contentDiv = document.createElement('div');
                 contentDiv.className = 'flex-1 min-w-0';
-
-                // Info Tanggal & Status Badge
                 const dateObj = new Date(activity.activity_date);
                 const formattedDate = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year:'numeric' });
+
                 let statusClass = 'bg-gray-100 text-gray-600';
-                switch (activity.status) { /* ... logika switch status ... */ }
+                switch (activity.status) {
+                    case 'Selesai': statusClass = 'bg-green-100 text-green-700'; break;
+                    case 'Gagal': statusClass = 'bg-red-100 text-red-700'; break;
+                    case 'On Progres Dilanjutkan Besok': statusClass = 'bg-yellow-100 text-yellow-700'; break;
+                    case 'On Progres': statusClass = 'bg-blue-100 text-blue-700'; break;
+                }
                 const statusBadge = `<span class="py-0.5 px-2 rounded-full text-xs font-medium ${statusClass}">${activity.status || 'N/A'}</span>`;
 
-                // Link Dokumen
                 let docLink = '';
-                if (activity.doc) { /* ... logika buat docLink ... */ }
+                if (activity.doc) {
+                    const fileUrl = `${storageBase}/${activity.doc}`; // Asumsi storage_path
+                    docLink = `<a href="${fileUrl}" target="_blank" class="text-blue-500 hover:underline text-xs mt-1 inline-block"><i class="fas fa-file-alt mr-1"></i>Lihat Dokumen</a>`;
+                }
 
-                // --- Bangun Timeline Status ---
+
                 let timelineHtml = '';
                 const timelineEvents = [];
                 if (activity.on_progress_at) timelineEvents.push({ label: 'Mulai', time: activity.on_progress_at, color: 'blue' });
@@ -621,7 +595,7 @@
                 timelineEvents.sort((a, b) => new Date(a.time) - new Date(b.time));
 
                 if (timelineEvents.length > 0) {
-                    timelineHtml = '<div class="mt-2 pt-2 border-t border-gray-200 text-xs text-gray-500 space-y-1">'; // Div pembungkus timeline
+                    timelineHtml = '<div class="mt-2 pt-2 border-t border-gray-200 text-xs text-gray-500 space-y-1">';
                     timelineEvents.forEach(event => {
                         const eventTime = new Date(event.time);
                         const formattedTime = eventTime.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour:'2-digit', minute: '2-digit'});
@@ -634,9 +608,7 @@
                     });
                     timelineHtml += '</div>';
                 }
-                // --- Akhir Timeline Status ---
 
-                // ✅ Gabungkan HTML Konten Kanan secara Eksplisit
                 contentDiv.innerHTML = `
                     <div class="flex justify-between items-start mb-1">
                         <div>
@@ -648,18 +620,14 @@
                     <p class="text-sm text-gray-700 mt-1">${activity.activity || '(Tidak ada aktivitas)'}</p>
                     ${activity.description ? `<p class="text-xs text-gray-500 mt-1 italic">${activity.description}</p>` : ''}
                     ${docLink}
-                    ${timelineHtml} {{-- Pastikan variabel ini dimasukkan --}}
+                    ${timelineHtml}
                 `;
-
-                // Gabungkan Foto (Kiri) dan Konten (Kanan)
                 activityItem.innerHTML = authorHtml;
                 activityItem.appendChild(contentDiv);
-
                 container.appendChild(activityItem);
             });
         }
 
-        // Menutup modal
         function closeTaskModal() {
             taskModal.classList.add('hidden');
             taskForm.reset();
@@ -672,19 +640,16 @@
         // Submit form modal (simpan perubahan)
         taskForm.addEventListener('submit', function(e) {
             e.preventDefault();
-
             const taskId = this.dataset.taskId;
             if (!taskId) return;
-
+            // ... (logika submit/simpan tidak berubah) ...
             const updateData = {
                 title: this.querySelector('input[name="title"]').value,
                 description: this.querySelector('textarea[name="description"]').value,
                 date_start: this.querySelector('input[name="date_start"]').value || null,
                 date_end: this.querySelector('input[name="date_end"]').value || null
             };
-
             const updateTaskUrl = `${tasksBaseUrl}/${taskId}`;
-
             fetch(updateTaskUrl, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
@@ -697,8 +662,6 @@
                     if (card) {
                         const newCard = createCardElement(res.data);
                         card.innerHTML = newCard.innerHTML;
-
-                        // Update data attributes di card utamanya
                         let authorName = 'N/A';
                         let authorPhoto = AppConfig.defaultAvatarUrl;
                         if (res.data.user) {
@@ -710,7 +673,6 @@
                                 }
                             }
                         }
-
                         card.dataset.title = res.data.title;
                         card.dataset.description = res.data.description || '';
                         card.dataset.dateStart = res.data.date_start ? res.data.date_start.split('T')[0] : '';
@@ -727,6 +689,50 @@
             .catch(err => {
                 console.error('Fetch error:', err);
                 alert('Terjadi kesalahan.');
+            });
+        });
+
+        // === (BARU) LOGIKA HAPUS TASK ===
+        const deleteBtn = document.getElementById('deleteTaskBtn');
+
+        deleteBtn.addEventListener('click', function() {
+            const taskId = taskForm.dataset.taskId;
+            if (!taskId) {
+                alert('Tidak ada task ID yang ditemukan.');
+                return;
+            }
+
+            // Konfirmasi
+            if (!confirm('Apakah Anda yakin ingin menghapus task ini? Semua aktivitas harian terkait juga akan dihapus.')) {
+                return;
+            }
+
+            const deleteTaskUrl = `${tasksBaseUrl}/${taskId}`;
+
+            fetch(deleteTaskUrl, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                }
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.success) {
+                    const card = document.querySelector(`.kanban-task[data-id="${taskId}"]`);
+                    if (card) {
+                        card.remove();
+                    }
+
+                    closeTaskModal();
+
+                } else {
+                    alert('Gagal menghapus task: ' + (res.message || 'Terjadi kesalahan.'));
+                }
+            })
+            .catch(err => {
+                console.error('Fetch error:', err);
+                alert('Terjadi kesalahan saat menghubungi server.');
             });
         });
 
