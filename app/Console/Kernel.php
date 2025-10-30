@@ -169,7 +169,8 @@ class Kernel extends ConsoleKernel
 
         $schedule->command('app:update-status')->dailyAt('23:00');
 
-        $schedule->command('uptime:check')->everySecond();
+        $schedule->command('uptime:check')->everySixHours();
+
     }
     /**
      * Register the commands for the application.
@@ -184,4 +185,5 @@ class Kernel extends ConsoleKernel
     // protected $commands = [
     //     \App\Console\Commands\CheckUptime::class,
     // ];
+  
 }

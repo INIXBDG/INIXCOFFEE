@@ -509,8 +509,7 @@
                                 }
                             }
                         }
-                        const editUrlBase = "{{ url('/paymantAdvance/edit') }}/";
-                        html += `<a class="dropdown-item" href="${editUrlBase}${sales.id}" data-toggle="tooltip" title="Edit Data"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Edit Data</a>`;
+                        html += `<a class="dropdown-item" href="{{ url('/paymantAdvance/edit') }}/${sales.id}" data-toggle="tooltip" title="Edit Data"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Edit Data</a>`;
                     }
                     html += '</div></div></td>';
                 }

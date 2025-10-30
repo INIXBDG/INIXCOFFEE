@@ -122,6 +122,17 @@
                                 @if ($data['kode_form'])
                                 <input type="hidden" name="kode_form" value="{{ $data['kode_form'] }}">
                                 @endif
+                                @if ($data['kode_form'])
+                                <div class="mb-5">
+                                    <label class="form-label">Jenis Form</label>
+                                    <select name="jenis_form" id="jenis_form" class="form-select select-form" required>
+                                        <option value="">Pilih Jenis Form</option>
+                                        <option value="Kontrak" {{ $data['jenis_form'] === 'Kontrak' ? 'selected' : '' }}>Kontrak</option>
+                                        <option value="Probation"  {{ $data['jenis_form'] === 'Probation' ? 'selected' : '' }}>Probation</option>
+                                        <option value="Rutin"  {{ $data['jenis_form'] === 'Rutin' ? 'selected' : '' }}>Rutin</option>
+                                    </select>
+                                </div>
+                                @endif
                                 <div id="kriteria-container">
                                     @foreach ($data['result'] as $kIndex => $item)
                                     <div class="form-kriteria-block border rounded p-3 mb-4 bg-theme" data-kriteria-index="{{ $kIndex }}">

@@ -96,7 +96,7 @@ Route::get('/notifications/fetch', function () {
     );
 })->name('notifications.fetch');
 
-
+Route::get('/paymantAdvance/edit/{id}', [netSalesController::class, 'edit'])->name('netSales.edit.index');
 Route::get('paymantAdvance/{year}/{month}', [App\Http\Controllers\netSalesController::class, 'getRkmDataPerBulanPerMinggu']);
 Route::resource('/comment', \App\Http\Controllers\CommentController::class);
 
@@ -295,12 +295,24 @@ Route::get('RekapitulasiAbsenperKaryawanExport/{year}/{month}', [App\Http\Contro
 Route::get('RekapitulasiAbsenperBulanExport/{year}/{month}', [App\Http\Controllers\RekapitulasiAbsenController::class, 'exportperBulan'])->name('RekapitulasiAbsenperBulanExport');
 Route::get('RekapitulasiWaktuKeterlambatanExport/{year}', [App\Http\Controllers\RekapitulasiAbsenController::class, 'exportKeterlambatan'])->name('RekapitulasiWaktuKeterlambatanExport');
 
+route::get('kpi-data/overview', [App\Http\Controllers\DatabaseKPIController::class, 'kpiOverview'])->name('kpi.overview');
+route::get('kpi-data/table-data', [App\Http\Controllers\DatabaseKPIController::class, 'kpiIndex'])->name('kpi.index');
+route::post('kpi-data/create-target', [App\Http\Controllers\DatabaseKPIController::class, 'createTarget'])->name('kpi.createTarget');
+route::get('kpi-data/get-data-target', [App\Http\Controllers\DatabaseKPIController::class, 'getDataTarget'])->name('kpi.getDataTarget');
+Route::get('kpi-data/detail-data-target', [App\Http\Controllers\DatabaseKPIController::class, 'detailData'])->name('kpi.detail');
+route::delete('kpi-data/hapus-data-target/{id}', [App\Http\Controllers\DatabaseKPIController::class, 'hapusTarget'])->name('kpi.hapus');
+route::post('kpi-data/update-data-target', [App\Http\Controllers\DatabaseKPIController::class, 'updateTarget'])->name('kpi.update');
+route::get('project/table-data', [App\Http\Controllers\DatabaseKPIController::class, 'indexProject'])->name('project.index');
+route::get('project/control-project', [App\Http\Controllers\DatabaseKPIController::class, 'controlProject'])->name('project.control');
 route::get('penilaian/data-form/edit/{kode_form}', [App\Http\Controllers\DatabaseKPIController::class, 'formPenilaianEdit']);
+route::get('actifity-log', [App\Http\Controllers\DatabaseKPIController::class, 'activityLog'])->name('activity.log');
+route::get('activity-log/data', [App\Http\Controllers\DatabaseKPIController::class, 'getActivityChart'])->name('activity.log.chart');
 route::post('penilaian/data-form/update', [App\Http\Controllers\DatabaseKPIController::class, 'formPenilaianUpdate'])->name('penilaian.form.update');
 Route::get('/penilaian/form', [App\Http\Controllers\DatabaseKPIController::class, 'formPenilaianData'])->name('penilaian.form.data');
 Route::get('/penilaian/form/get', [App\Http\Controllers\DatabaseKPIController::class, 'getFormPenilaianData'])->name('penilaian.form.get');
 Route::post('/penilaian/clean', [App\Http\Controllers\DatabaseKPIController::class, 'clean']);
 Route::post('/penilaian/hapus', [App\Http\Controllers\DatabaseKPIController::class, 'hapus']);
+Route::post('/penilaian/hapus-evaluator/{kodeJenis}/{id_evaluator}/{kodeFormGlobal}', [App\Http\Controllers\DatabaseKPIController::class, 'hapusEvaluator']);
 Route::get('/penilaian/content/dahsboardKPI/get', [App\Http\Controllers\DatabaseKPIController::class, 'contentDashboard'])->name('databaseKPI.dashboardContent');
 Route::post('/penilaian/content/dahsboardKPI/download-penilaian-perDivisi', [App\Http\Controllers\DatabaseKPIController::class, 'downloadDivisi'])->name('databaseKPI.downloadDivisi');
 Route::post('/penilaian/detail/send/catatan', [App\Http\Controllers\DatabaseKPIController::class, 'sendCatatan'])->name('penilaian.sendCatatan');
@@ -409,7 +421,6 @@ Route::post('/rkm/update-makanan', [App\Http\Controllers\RkmController::class, '
 Route::get('/paymantAdvance/detail/{id}/view', [netSalesController::class, 'detail'])->name('netsales.detail');
 Route::post('/paymantAdvance/detail/data/get', [netSalesController::class, 'dataDetail'])->name('netsales.data.detail.get');
 Route::post('/paymantAdvance/approved', [approvedNetSalesController::class, 'approve'])->name('netsales.approved');
-Route::get('/paymantAdvance/edit/{id}', [netSalesController::class, 'edit'])->name('netSales.edit.index');
 Route::post('/paymantAdvance/data/get/', [netSalesController::class, 'dataEdit'])->name('netSales.edit.get');
 Route::post('/paymantAdvance/data/update', [netSalesController::class, 'updateNetSales'])->name('netSales.update');
 

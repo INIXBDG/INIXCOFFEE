@@ -2263,7 +2263,7 @@
     </script>
     <script>
         let chartDataCache = null;
-           
+
         $(document).ready(function() {
             handleNotificationDismissal();
             // initializeYearlySales();
@@ -2310,7 +2310,7 @@
                 });
             });
             // console.log(progress, carprogress);
-            
+
             // Saat tab berubah
             $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
                 const target = $(e.target).attr('data-bs-target');
@@ -2830,9 +2830,6 @@
             }
         }
         $('#modalPemberitahuan').on('click', '.btn-danger', handleNotificationDismissal);
-
-
-        
     </script>
 </body>
 

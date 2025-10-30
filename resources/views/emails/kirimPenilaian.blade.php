@@ -50,7 +50,11 @@
 <body>
     <div class="section">
         <h3>Rekap Penilaian - {{ $evaluated['nama'] }}</h3>
-        <p>Quartal: {{ $evaluated['quartal'] }} | Tahun: {{ $evaluated['tahun'] }}</p>
+        <p>
+            Semester:
+            {{ in_array($evaluated['quartal'], ['Q1', 'Q2']) ? 'S1' : (in_array($evaluated['quartal'], ['Q3', 'Q4']) ? 'S2' : $evaluated['quartal']) }}
+            | Tahun: {{ $evaluated['tahun'] }}
+        </p>
 
         @php
         $persentaseJenis = [

@@ -24,7 +24,7 @@ class feedbackController extends Controller
         $jmlInstruktur = RKM::with('instruktur');
         $umum = Feedback::where('kategori_feedback', 'Umum')->get();
         $souvenir = souvenir::get();
-        return view('feedback', compact('materi', 'pelayanan','fasilitas','instruktur','umum', 'souvenir'));
+        return view('feedback.index', compact('materi', 'pelayanan','fasilitas','instruktur','umum', 'souvenir'));
     }
 
     public function cekFeedback(Request $request)
