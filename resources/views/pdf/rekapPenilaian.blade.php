@@ -109,7 +109,18 @@
     @foreach ($data as $formGroup)
     <div class="section">
         <h3>Rekap Penilaian - {{ $formGroup['evaluated']['nama'] ?? '-' }}</h3>
-        <p>Quartal: {{ $formGroup['evaluated']['quartal'] ?? '-' }} | Tahun: {{ $formGroup['evaluated']['tahun'] ?? '-' }}</p>
+        @php
+        $quartal = $formGroup['evaluated']['quartal'] ?? '-';
+        if (in_array($quartal, ['Q1', 'Q2'])) {
+        $quartalLabel = 'S1';
+        } elseif (in_array($quartal, ['Q3', 'Q4'])) {
+        $quartalLabel = 'S2';
+        } else {
+        $quartalLabel = $quartal;
+        }
+        @endphp
+
+        <p>Semester: {{ $quartalLabel }} | Tahun: {{ $formGroup['evaluated']['tahun'] ?? '-' }}</p>
 
         @php
         $persentaseJenis = [

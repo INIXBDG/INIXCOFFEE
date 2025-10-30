@@ -133,6 +133,11 @@
         background: #ccc;
         border-radius: 10px;
     }
+
+    .chart-container canvas {
+        width: 100% !important;
+        height: 400px !important;
+    }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <div class="content-wrapper">
@@ -157,57 +162,103 @@
     </div>
     <div class="row mb-3">
         <div class="col-md-6 col-lg-3 mb-3 stretch-card d-flex">
-            <div class="card bg-gradient-danger card-img-holder text-white shadow-lg rounded-4 flex-fill p-4">
-                <img src="{{ asset('template_KPI/dist/assets/images/dashboard/circle.svg') }}"
-                    class="card-img-absolute" alt="circle-image" />
+            <div class="card bg-gradient-danger card-img-holder text-white shadow-sm rounded-4 flex-fill p-4">
+                <img src="{{ asset('template_KPI/dist/assets/images/dashboard/circle.svg') }}" class="card-img-absolute" alt="circle-image" />
                 <h6 class="font-weight-normal mb-3">Jumlah Karyawan Aktif</h6>
                 <h3 class="mb-5">
-                    <span id="content_JK"><small class="loading-text">memuat...</small></span>
+                    <span id="content_JK">
+                        <div class="loader">
+                            <div class="bubble"></div>
+                            <div class="bubble"></div>
+                            <div class="bubble"></div>
+                            <div class="bubble"></div>
+                        </div>
+                    </span>
                 </h3>
             </div>
         </div>
 
+        {{-- Card Sakit --}}
         <div class="col-md-6 col-lg-3 mb-3 stretch-card d-flex">
-            <div class="card bg-gradient-info card-img-holder text-white shadow-lg rounded-4 flex-fill p-3"
-                data-bs-toggle="modal" data-bs-target="#modalSakit" style="cursor:pointer;">
-                <img src="{{ asset('template_KPI/dist/assets/images/dashboard/circle.svg') }}"
-                    class="card-img-absolute" alt="circle-image" />
-                <h6 class="font-weight-normal mb-3">Sakit Dalam Triwulan Ini</h6>
+            <div class="card bg-gradient-info shadow-sm card-img-holder text-white rounded-4 flex-fill p-3" data-bs-toggle="modal" data-bs-target="#modalSakit" style="cursor:pointer;">
+                <img src="{{ asset('template_KPI/dist/assets/images/dashboard/circle.svg') }}" class="card-img-absolute" alt="circle-image" />
+                <h6 class="font-weight-normal mb-3">
+                    @if (auth()->user()->jabatan === 'HRD' || auth()->user()->jabatan === 'GM' || auth()->user()->jabatan === 'Direktur Utama')
+                    Sakit Dalam Semester Ini
+                    @else
+                    Data Sakit Anda Semester Ini
+                    @endif
+                </h6>
                 <h3 class="mb-5">
-                    <span id="content_KS"><small class="loading-text">memuat...</small></span>
+                    <span id="content_KS">
+                        <div class="loader">
+                            <div class="bubble"></div>
+                            <div class="bubble"></div>
+                            <div class="bubble"></div>
+                            <div class="bubble"></div>
+                        </div>
+                    </span>
                 </h3>
             </div>
         </div>
 
+        {{-- Card Izin --}}
         <div class="col-md-6 col-lg-3 mb-3 stretch-card d-flex">
-            <div class="card bg-gradient-success card-img-holder text-white shadow-lg rounded-4 flex-fill p-3"
-                data-bs-toggle="modal" data-bs-target="#modalIzin" style="cursor:pointer;">
-                <img src="{{ asset('template_KPI/dist/assets/images/dashboard/circle.svg') }}"
-                    class="card-img-absolute" alt="circle-image" />
-                <h6 class="font-weight-normal mb-3">Izin Dalam Triwulan Ini</h6>
+            <div class="card bg-gradient-success shadow-sm card-img-holder text-white rounded-4 flex-fill p-3" data-bs-toggle="modal" data-bs-target="#modalIzin" style="cursor:pointer;">
+                <img src="{{ asset('template_KPI/dist/assets/images/dashboard/circle.svg') }}" class="card-img-absolute" alt="circle-image" />
+                <h6 class="font-weight-normal mb-3">
+                    @if (auth()->user()->jabatan === 'HRD' || auth()->user()->jabatan === 'GM' || auth()->user()->jabatan === 'Direktur Utama')
+                    Izin Dalam Triwulan Ini
+                    @else
+                    Data Izin Anda Semester Ini
+                    @endif
+                </h6>
                 <h3 class="mb-5">
-                    <span id="content_KI"><small class="loading-text">memuat...</small></span>
+                    <span id="content_KI">
+                        <div class="loader">
+                            <div class="bubble"></div>
+                            <div class="bubble"></div>
+                            <div class="bubble"></div>
+                            <div class="bubble"></div>
+                        </div>
+                    </span>
                 </h3>
             </div>
         </div>
 
+        {{-- Card Cuti --}}
         <div class="col-md-6 col-lg-3 mb-3 stretch-card d-flex">
-            <div class="card bg-gradient-warning card-img-holder text-white shadow-lg rounded-4 flex-fill p-3"
-                data-bs-toggle="modal" data-bs-target="#modalCuti" style="cursor:pointer;">
-                <img src="{{ asset('template_KPI/dist/assets/images/dashboard/circle.svg') }}"
-                    class="card-img-absolute" alt="circle-image" />
-                <h6 class="font-weight-normal mb-3">Cuti Dalam Triwulan Ini</h6>
+            <div class="card bg-gradient-warning shadow-sm card-img-holder text-white rounded-4 flex-fill p-3" data-bs-toggle="modal" data-bs-target="#modalCuti" style="cursor:pointer;">
+                <img src="{{ asset('template_KPI/dist/assets/images/dashboard/circle.svg') }}" class="card-img-absolute" alt="circle-image" />
+                <h6 class="font-weight-normal mb-3">
+                    @if (auth()->user()->jabatan === 'HRD' || auth()->user()->jabatan === 'GM' || auth()->user()->jabatan === 'Direktur Utama')
+                    Cuti Dalam Triwulan Ini
+                    @else
+                    Data Cuti Anda Semester Ini
+                    @endif
+                </h6>
                 <h3 class="mb-5">
-                    <span id="content_KC"><small class="loading-text">memuat...</small></span>
+                    <span id="content_KC">
+                        <div class="loader">
+                            <div class="bubble"></div>
+                            <div class="bubble"></div>
+                            <div class="bubble"></div>
+                            <div class="bubble"></div>
+                        </div>
+                    </span>
                 </h3>
             </div>
         </div>
 
         <div class="modal fade" id="modalCuti" tabindex="-1" aria-labelledby="modalCutiLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content modal-themed modal-themed-warning shadow-lg">
+                <div class="modal-content modal-themed modal-themed-warning">
                     <div class="modal-header">
+                        @if (auth()->user()->jabatan === 'HRD' ||auth()->user()->jabatan === 'GM' || auth()->user()->jabatan === 'Direktur Utama')
                         <h5 class="modal-title fw-bold" id="modalCutiLabel">Daftar Karyawan Cuti</h5>
+                        @else
+                        <h5 class="modal-title fw-bold" id="modalCutiLabel">Data Cuti Anda</h5>
+                        @endif
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
@@ -224,9 +275,13 @@
 
         <div class="modal fade" id="modalIzin" tabindex="-1" aria-labelledby="modalIzinLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content modal-themed modal-themed-success shadow-lg">
+                <div class="modal-content modal-themed modal-themed-success">
                     <div class="modal-header">
-                        <h5 class="modal-title fw-bold" id="modalIzinLabel">Daftar Karyawan Izin</h5>
+                        @if (auth()->user()->jabatan === 'HRD' ||auth()->user()->jabatan === 'GM' || auth()->user()->jabatan === 'Direktur Utama')
+                        <h5 class="modal-title fw-bold" id="modalIzinLabel">Daftar Karyawan Cuti</h5>
+                        @else
+                        <h5 class="modal-title fw-bold" id="modalIzinLabel">Data Cuti Anda</h5>
+                        @endif
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
@@ -243,9 +298,13 @@
 
         <div class="modal fade" id="modalSakit" tabindex="-1" aria-labelledby="modalSakitLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content modal-themed modal-themed-info shadow-lg">
+                <div class="modal-content modal-themed modal-themed-info">
                     <div class="modal-header">
+                        @if (auth()->user()->jabatan === 'HRD' ||auth()->user()->jabatan === 'GM' || auth()->user()->jabatan === 'Direktur Utama')
                         <h5 class="modal-title fw-bold" id="modalSakitLabel">Daftar Karyawan Sakit</h5>
+                        @else
+                        <h5 class="modal-title fw-bold" id="modalSakitLabel">Data Sakit Anda</h5>
+                        @endif
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
@@ -260,9 +319,11 @@
             </div>
         </div>
     </div>
+
     <div class="row d-flex align-items-stretch">
+        @if (auth()->user()->jabatan === 'HRD' || auth()->user()->jabatan === 'GM' || auth()->user()->jabatan === 'Direktur Utama')
         <div class="col-md-7 grid-margin d-flex">
-            <div class="card shadow-lg border-0 card-rounded bg-light text-dark w-100 h-100">
+            <div class="card border-0 card-rounded bg-light shadow-sm text-dark w-100 h-100">
                 <div class="card-body d-flex flex-column">
                     <div class="card-header bg-transparent border-0 py-2 px-0">
                         <div class="d-flex justify-content-between align-items-center">
@@ -305,6 +366,12 @@
 
                     <div class="card-body h-100 px-0">
                         <div class="row justify-content-center align-items-end text-center row-ranking" style="min-height:300px;">
+                            <div class="loader" id="loader">
+                                <div class="bubble"></div>
+                                <div class="bubble"></div>
+                                <div class="bubble"></div>
+                                <div class="bubble"></div>
+                            </div>
                         </div>
                         <div class="text-center mt-3">
                             <small class="text-dark-50 fst-italic">
@@ -320,7 +387,7 @@
                 </div>
                 <div class="modal fade" id="modalPeringkatPenilaian360" tabindex="-1" aria-labelledby="modalPeringkatPenilaian360Label" aria-hidden="true">
                     <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content modal-themed modal-themed-warning shadow-lg">
+                        <div class="modal-content modal-themed modal-themed-warning">
                             <div class="modal-header">
                                 <h5 class="modal-title fw-bold" id="modalPeringkatPenilaian360Label">Peringkat</h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -334,161 +401,312 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-5 grid-margin d-flex flex-column"">
-            <div class=" card shadow-lg border-0 card-rounded bg-light text-dark w-100 mb-4 h-100">
-            <div class="card-body">
-                <h4 class="card-title">Chart Penilaian 360°</h4>
-                <p id="title_chartPenilaian" class="text-center">
-                    memuat....
-                </p>
 
-                <div class="doughnutjs-wrapper d-flex justify-content-center">
-                    <canvas id="myChart"></canvas>
-                </div>
+        <div class="col-md-5 grid-margin d-flex flex-column">
+            <div class=" card border-0 shadow-sm card-rounded bg-light text-dark w-100 mb-4 h-100">
+                <div class="card-body">
+                    <h4 class="card-title">Chart Penilaian 360°</h4>
+                    <p id="title_chartPenilaian" class="text-center">
+                        memuat....
+                    </p>
 
-                <div id="traffic-chart-legend"
-                    class="rounded-legend legend-vertical legend-bottom-left pt-4">
+                    <div class="doughnutjs-wrapper d-flex justify-content-center">
+                        <canvas id="myChart"></canvas>
+                    </div>
+
+                    <div id="traffic-chart-legend"
+                        class="rounded-legend legend-vertical legend-bottom-left pt-4">
+                    </div>
                 </div>
             </div>
-        </div>
+            <!-- <div class="card shadow-sm card-rounded bg-light w-100 h-100">
+                <div class="card-body">
+                    <h4 class="card-title card-title-dash mb-4">Target Manager/Koordinator</h4>
 
-         <div class="card card-rounded w-100 h-100">
-            <div class="card-body">
-                <h4 class="card-title card-title-dash mb-4">Target Manager/Koordinator</h4>
-
-                <div class="scroll-wrapper">
-                    <div class="d-flex justify-content-start flex-nowrap">
-                        <div class="bar-container">
-                            <div class="bar-value">35%</div>
-                            <div class="progress progress-vertical" style="width: 40px; height: 150px; background-color: #e9ecef;">
-                                <div class="progress-bar bg-gradient-danger" role="progressbar" style="width: 100%; height: 35%;" aria-valuenow="35"></div>
+                    <div class="scroll-wrapper">
+                        <div class="d-flex justify-content-start flex-nowrap">
+                            <div class="bar-container">
+                                <div class="bar-value">35%</div>
+                                <div class="progress progress-vertical" style="width: 40px; height: 150px; background-color: #e9ecef;">
+                                    <div class="progress-bar bg-gradient-danger" role="progressbar" style="width: 100%; height: 35%;" aria-valuenow="35"></div>
+                                </div>
+                                <div class="bar-label">Manager<br>Education</div>
                             </div>
-                            <div class="bar-label">Manager<br>Education</div>
+
+                            <div class="bar-container me-4">
+                                <div class="bar-value">47%</div>
+                                <div class="progress progress-vertical" style="width: 40px; height: 150px; background-color: #e9ecef;">
+                                    <div class="progress-bar bg-gradient-success" role="progressbar" style="width: 100%; height: 47%;" aria-valuenow="47"></div>
+                                </div>
+                                <div class="bar-label">Manager<br>Sales & Marketing</div>
+                            </div>
+
+                            <div class="bar-container me-4">
+                                <div class="bar-value">53%</div>
+                                <div class="progress progress-vertical" style="width: 40px; height: 150px; background-color: #e9ecef;">
+                                    <div class="progress-bar bg-gradient-primary" role="progressbar" style="width: 100%; height: 53%;" aria-valuenow="53"></div>
+                                </div>
+                                <div class="bar-label">Koordinator<br>ITSM</div>
+                            </div>
+
+                            <div class="bar-container me-4">
+                                <div class="bar-value">40%</div>
+                                <div class="progress progress-vertical" style="width: 40px; height: 150px; background-color: #e9ecef;">
+                                    <div class="progress-bar bg-gradient-info" role="progressbar" style="width: 100%; height: 40%;" aria-valuenow="40"></div>
+                                </div>
+                                <div class="bar-label">Koordinator<br>Office</div>
+                            </div>
                         </div>
+                    </div>
+                </div>
+            </div> -->
 
-                        <div class="bar-container me-4">
-                            <div class="bar-value">47%</div>
-                            <div class="progress progress-vertical" style="width: 40px; height: 150px; background-color: #e9ecef;">
-                                <div class="progress-bar bg-gradient-success" role="progressbar" style="width: 100%; height: 47%;" aria-valuenow="47"></div>
+            <div class="card card-rounded bg-light shadow-sm flex-fill">
+                <div class="card-body">
+                    <h4 class="card-title card-title-dash">Data Formulir</h4>
+                    <div class="pt-3">
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <canvas id="doughnutCharthr" height="200"></canvas>
                             </div>
-                            <div class="bar-label">Manager<br>Sales & Marketing</div>
-                        </div>
-
-                        <div class="bar-container me-4">
-                            <div class="bar-value">53%</div>
-                            <div class="progress progress-vertical" style="width: 40px; height: 150px; background-color: #e9ecef;">
-                                <div class="progress-bar bg-gradient-primary" role="progressbar" style="width: 100%; height: 53%;" aria-valuenow="53"></div>
+                            <div class="col-sm-6">
+                                <div class="row doughnut-hr-legend mb-4">
+                                    <div class="col-6" id="totalFormulir"></div>
+                                    <div class="col-6" id="totalRutin"></div>
+                                </div>
+                                <div class="row doughnut-hr-legend">
+                                    <div class="col-6" id="totalProbation"></div>
+                                    <div class="col-6" id="totalKontrak"></div>
+                                </div>
                             </div>
-                            <div class="bar-label">Koordinator<br>ITSM</div>
-                        </div>
-
-                        <div class="bar-container me-4">
-                            <div class="bar-value">40%</div>
-                            <div class="progress progress-vertical" style="width: 40px; height: 150px; background-color: #e9ecef;">
-                                <div class="progress-bar bg-gradient-info" role="progressbar" style="width: 100%; height: 40%;" aria-valuenow="40"></div>
-                            </div>
-                            <div class="bar-label">Koordinator<br>Office</div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-</div>
-<div class="row">
-    <div class="col-lg-6 d-flex flex-column">
-        <div class="card card-rounded flex-fill">
-            <div class="card-body">
-                <h4 class="card-title card-title-dash">Data Formulir</h4>
-                <div class="pt-3">
-                    <div class="row">
-                        <div class="col-sm-6">
-                            <canvas id="doughnutCharthr" height="200"></canvas>
+        <!-- @else
+        <div class="col-md-5 grid-margin d-flex flex-column">
+            <div class=" card border-0 card-rounded bg-light shadow-sm text-dark w-100 mb-4 h-100">
+                <div class="card-body">
+                    <h4 class="card-title">Chart Penilaian 360°</h4>
+                    <p id="title_chartPenilaian" class="text-center">
+                        memuat....
+                    </p>
+
+                    <div class="doughnutjs-wrapper d-flex justify-content-center">
+                        <canvas id="myChart"></canvas>
+                    </div>
+
+                    <div id="traffic-chart-legend"
+                        class="rounded-legend legend-vertical legend-bottom-left pt-4">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7 grid-margin d-flex">
+            <div class="card border-0 shadow-sm card-rounded bg-light text-dark w-100 h-100">
+                <div class="card-body d-flex flex-column">
+                    <h4 class="card-title">Recomended Task</h4>
+                    <div class="mt-1">
+                        <div class="alert alert-info" role="alert">
+                            Anda baru saja dinilai! apakah anda ingin melihat hasil penilaian anda?
                         </div>
-                        <div class="col-sm-6">
-                            <div class="row doughnut-hr-legend mb-4">
-                                <div class="col-6" id="totalFormulir"></div>
-                                <div class="col-6" id="totalRutin"></div>
+                    </div>
+                    <div class="mt-1">
+                        <div class="alert alert-warning" role="alert">
+                            Pemberitahuan! jangan sampai lupa deadline tugas anda sekitar 6 hari lagi, jangan lupa di tuntaskan!
+                        </div>
+                    </div>
+                    <div class="mt-1">
+                        <div class="alert alert-success" role="alert">
+                            KPI anda tahun ini sangat memuaskan! anda direkomendasikan untuk naik gaji 10%.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div> -->
+        @endif
+    </div>
+    <div class="row mb-4">
+        @if (auth()->user()->jabatan === 'HRD' || auth()->user()->jabatan === 'GM' || auth()->user()->jabatan === 'Direktur Utama')
+        <div class="col-lg-6 d-flex flex-column">
+            <div class="card card-rounded shadow-sm bg-light flex-fill">
+                <div class="card-body">
+                    <h4 class="card-title card-title-dash">Data Formulir</h4>
+                    <div class="pt-3">
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <canvas id="doughnutCharthr" height="200"></canvas>
                             </div>
-                            <div class="row doughnut-hr-legend">
-                                <div class="col-6" id="totalProbation"></div>
-                                <div class="col-6" id="totalKontrak"></div>
+                            <div class="col-sm-6">
+                                <div class="row doughnut-hr-legend mb-4">
+                                    <div class="col-6" id="totalFormulir"></div>
+                                    <div class="col-6" id="totalRutin"></div>
+                                </div>
+                                <div class="row doughnut-hr-legend">
+                                    <div class="col-6" id="totalProbation"></div>
+                                    <div class="col-6" id="totalKontrak"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+        <div class="col d-flex flex-column">
+            <div class="card card-rounded bg-light shadow-sm flex-fill">
+                <div class="card-body">
+                    <div class="d-sm-flex justify-content-between align-items-start mb-3">
+                        <h4 class="card-title card-title-dash">Target Karyawan</h4>
+                    </div>
 
-    <div class="col d-flex flex-column">
-        <div class="card card-rounded flex-fill">
-            <div class="card-body">
-                <div class="d-sm-flex justify-content-between align-items-start mb-3">
-                    <h4 class="card-title card-title-dash">Target Karyawan</h4>
-                </div>
+                    <div class="list-group">
+                        <button class="list-group-item list-group-item-action d-flex align-items-center border-0 mb-2">
+                            <img class="img-sm rounded-2 me-3" src="{{ asset('template_KPI/dist/assets/images/screenshots/user-profile.jpg') }}" alt="profile">
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between">
+                                    <h6 class="mb-1">Xepi - Finance & Accounting</h6>
+                                    <small class="text-muted">78%</small>
+                                </div>
+                                <div class="progress progress-sm mt-1">
+                                    <div class="progress-bar bg-danger" role="progressbar" style="width: 78%"></div>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-chevron-right ms-4"></i>
+                        </button>
 
-                <div class="list-group">
-                    <button class="list-group-item list-group-item-action d-flex align-items-center border-0 mb-2">
-                        <img class="img-sm rounded-2 me-3" src="{{ asset('template_KPI/dist/assets/images/screenshots/user-profile.jpg') }}" alt="profile">
-                        <div class="flex-grow-1">
-                            <div class="d-flex justify-content-between">
-                                <h6 class="mb-1">Xepi - Finance & Accounting</h6>
-                                <small class="text-muted">78%</small>
+                        <button class="list-group-item list-group-item-action d-flex align-items-center border-0 mb-2">
+                            <img class="img-sm rounded-2 me-3" src="{{ asset('template_KPI/dist/assets/images/screenshots/user-profile.jpg') }}" alt="profile">
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between">
+                                    <h6 class="mb-1">Riffa - Finance & Accounting</h6>
+                                    <small class="text-muted">62%</small>
+                                </div>
+                                <div class="progress progress-sm mt-1">
+                                    <div class="progress-bar bg-danger" role="progressbar" style="width: 62%"></div>
+                                </div>
                             </div>
-                            <div class="progress progress-sm mt-1">
-                                <div class="progress-bar bg-danger" role="progressbar" style="width: 78%"></div>
-                            </div>
-                        </div>
-                        <i class="fa-solid fa-chevron-right ms-4"></i>
-                    </button>
+                            <i class="fa-solid fa-chevron-right ms-4"></i>
+                        </button>
 
-                    <button class="list-group-item list-group-item-action d-flex align-items-center border-0 mb-2">
-                        <img class="img-sm rounded-2 me-3" src="{{ asset('template_KPI/dist/assets/images/screenshots/user-profile.jpg') }}" alt="profile">
-                        <div class="flex-grow-1">
-                            <div class="d-flex justify-content-between">
-                                <h6 class="mb-1">Riffa - Finance & Accounting</h6>
-                                <small class="text-muted">62%</small>
+                        <button class="list-group-item list-group-item-action d-flex align-items-center border-0 mb-2">
+                            <img class="img-sm rounded-2 me-3" src="{{ asset('template_KPI/dist/assets/images/screenshots/user-profile.jpg') }}" alt="profile">
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between">
+                                    <h6 class="mb-1">Amanda - HRD</h6>
+                                    <small class="text-muted">60%</small>
+                                </div>
+                                <div class="progress progress-sm mt-1">
+                                    <div class="progress-bar bg-danger" role="progressbar" style="width: 60%"></div>
+                                </div>
                             </div>
-                            <div class="progress progress-sm mt-1">
-                                <div class="progress-bar bg-danger" role="progressbar" style="width: 62%"></div>
-                            </div>
-                        </div>
-                        <i class="fa-solid fa-chevron-right ms-4"></i>
-                    </button>
+                            <i class="fa-solid fa-chevron-right ms-4"></i>
+                        </button>
 
-                    <button class="list-group-item list-group-item-action d-flex align-items-center border-0 mb-2">
-                        <img class="img-sm rounded-2 me-3" src="{{ asset('template_KPI/dist/assets/images/screenshots/user-profile.jpg') }}" alt="profile">
-                        <div class="flex-grow-1">
-                            <div class="d-flex justify-content-between">
-                                <h6 class="mb-1">Amanda - HRD</h6>
-                                <small class="text-muted">60%</small>
+                        <button class="list-group-item list-group-item-action d-flex align-items-center border-0 mb-2">
+                            <img class="img-sm rounded-2 me-3" src="{{ asset('template_KPI/dist/assets/images/screenshots/user-profile.jpg') }}" alt="profile">
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between">
+                                    <h6 class="mb-1">Security</h6>
+                                    <small class="text-muted">56%</small>
+                                </div>
+                                <div class="progress progress-sm mt-1">
+                                    <div class="progress-bar bg-danger" role="progressbar" style="width: 56%"></div>
+                                </div>
                             </div>
-                            <div class="progress progress-sm mt-1">
-                                <div class="progress-bar bg-danger" role="progressbar" style="width: 60%"></div>
-                            </div>
-                        </div>
-                        <i class="fa-solid fa-chevron-right ms-4"></i>
-                    </button>
-
-                    <button class="list-group-item list-group-item-action d-flex align-items-center border-0 mb-2">
-                        <img class="img-sm rounded-2 me-3" src="{{ asset('template_KPI/dist/assets/images/screenshots/user-profile.jpg') }}" alt="profile">
-                        <div class="flex-grow-1">
-                            <div class="d-flex justify-content-between">
-                                <h6 class="mb-1">Security</h6>
-                                <small class="text-muted">56%</small>
-                            </div>
-                            <div class="progress progress-sm mt-1">
-                                <div class="progress-bar bg-danger" role="progressbar" style="width: 56%"></div>
-                            </div>
-                        </div>
-                        <i class="fa-solid fa-chevron-right ms-4"></i>
-                    </button>
+                            <i class="fa-solid fa-chevron-right ms-4"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
+        @else
+        <div class="col-lg-6 d-flex flex-column">
+            <div class="container-fluid">
+                <div class="card border-0 shadow-sm bg-light rounded" style="padding: 24px;">
+                    <div class="text-center mb-3">
+                        <div style="font-size: 3rem; font-weight: 700; color: #333;">85%</div>
+                        <div class="text-success" style="font-size: 0.9rem; font-weight: 500;">
+                            <i class="fas fa-arrow-up"></i> +2.5% dari bulan lalu
+                        </div>
+                        <div class="mt-2" style="font-size: 0.85rem; color: #666;">
+                            Pencapaian Anda meningkat secara konsisten.
+                        </div>
+                    </div>
+
+                    <div class="mt-4 mb-4"
+                        style="border: 2px solid #3498db; border-radius: 8px; padding: 16px; background-color: #f8fafc;">
+                        <div>
+                            <span style="font-weight: 600; color: #2c3e50;">Deadline:</span>
+                            <span style="font-size: 0.9rem; color: #555;">31 Oktober 2025</span>
+                        </div>
+                    </div>
+                    <div class="nt-4">
+                        <div class="row">
+                            <div class="col-lg-4">
+                                <span>Progress KPI anda </span>
+
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="progress">
+                                    <div class="progress-bar bg-gradient-success" role="progressbar" style="width: 85%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <div class="text-secondary" style="font-size: 0.85rem; margin-bottom: 10px;">Riwayat Bulanan</div>
+                        <div>
+                            <span style="display: inline-block; margin-right: 30px; font-size: 0.9rem;">Jul: 78%</span>
+                            <span style="display: inline-block; margin-right: 30px; font-size: 0.9rem;">Agt: 80%</span>
+                            <span style="display: inline-block; margin-right: 30px; font-size: 0.9rem;">Sep: 82%</span>
+                            <span style="display: inline-block; font-size: 0.9rem;">Okt: 85%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6 d-flex flex-column">
+            <div class="card card-rounded bg-light shadow-sm flex-fill">
+                <div class="card-body">
+                    <h4 class="card-title card-title-dash">Data Formulir</h4>
+                    <div class="pt-3">
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <canvas id="doughnutCharthr" height="200"></canvas>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="row doughnut-hr-legend mb-4">
+                                    <div class="col-6" id="totalFormulir"></div>
+                                    <div class="col-6" id="totalRutin"></div>
+                                </div>
+                                <div class="row doughnut-hr-legend">
+                                    <div class="col-6" id="totalProbation"></div>
+                                    <div class="col-6" id="totalKontrak"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
     </div>
-</div>
+
+    <!-- <div class="card card-rounded bg-light flex-fill shadow-sm mt-4">
+        <div class="card-body">
+            <div class="chart-container" style="height: 500px;">
+                <div class="filter-buttons mb-5">
+                    <button onclick="updateChart('monthly', event)" class="btn btn-gradient-info active">Bulanan</button>
+                    <button onclick="updateChart('quarterly', event)" class="btn btn-gradient-info">Kuartalan</button>
+                </div>
+                <canvas id="tradingChart"></canvas>
+            </div>
+        </div>
+    </div> -->
+
 </div>
 @endsection
 
@@ -583,12 +801,13 @@
                         }]
                     },
                     options: {
-                        cutout: '70%',
                         plugins: {
                             legend: {
                                 display: false
                             }
-                        }
+                        },
+                        responsive: true,
+                        maintainAspectRatio: false,
                     }
                 });
 
@@ -639,15 +858,37 @@
                 const dataCardFirst = response.dataCard_first ?? {};
 
                 content_JK.text(`${dataCardFirst.karyawan_aktif ?? 0} Karyawan`);
-                content_KS.text(`${dataCardFirst.dataSakit?.totalAbsenSakit ?? 0} Karyawan`);
-                content_KC.text(`${dataCardFirst.dataCuti?.totalAbsenCuti ?? 0} Karyawan`);
-                content_KI.text(`${dataCardFirst.dataIzin?.totalAbsenIzin ?? 0} Karyawan`);
+                const idUserLogin = "{{ auth()->user()->jabatan }}";
+
+                if (idUserLogin === 'HRD' || idUserLogin === 'GM' || idUserLogin === 'Direktur Utama') {
+                    content_KS.text(`${dataCardFirst.dataSakit?.totalAbsenSakit ?? 0} Karyawan`);
+                    content_KC.text(`${dataCardFirst.dataCuti?.totalAbsenCuti ?? 0} Karyawan`);
+                    content_KI.text(`${dataCardFirst.dataIzin?.totalAbsenIzin ?? 0} Karyawan`);
+                } else {
+                    content_KS.text(`${dataCardFirst.dataSakit?.totalAbsenSakit ?? 0} Data`);
+                    content_KC.text(`${dataCardFirst.dataCuti?.totalAbsenCuti ?? 0} Data`);
+                    content_KI.text(`${dataCardFirst.dataIzin?.totalAbsenIzin ?? 0} Data`);
+                }
 
                 const bgClasses = ["cl-yellow", "cl-red", "cl-green", "cl-blue", "cl-grey"];
 
                 contentModalBodyKC.empty();
                 if (dataCuti.length === 0) {
-                    contentModalBodyKC.append(`<div class="list-group-item border-0 d-flex align-items-center rounded-3 shadow-sm mb-3 p-3">Tidak ada karyawan yang cuti di quartal ini</div>`);
+                    const idUserLogin = "{{ auth()->user()->jabatan }}";
+                    let textUser = '';
+
+                    if (idUserLogin === 'HRD' || idUserLogin === 'GM' || idUserLogin === 'Direktur Utama') {
+                        textUser = 'Tidak ada karyawan yang cuti di quartal ini.';
+                    } else {
+                        textUser = 'Tidak ada data cuti anda di quartal ini.';
+                    }
+
+                    contentModalBodyKC.append(`
+                        <div class="list-group-item border-0 d-flex align-items-center rounded-3 shadow-sm mb-3 p-3">
+                            ${textUser}
+                        </div>
+                    `);
+
                 } else {
                     let accordionHtml = `<div class="accordion" id="accordionCuti">`;
                     const groupedCuti = {};
@@ -699,7 +940,16 @@
 
                 contentModalBodyKS.empty();
                 if (dataSakit.length === 0) {
-                    contentModalBodyKS.append(`<div class="list-group-item border-0 d-flex align-items-center rounded-3 shadow-sm mb-3 p-3">Tidak ada karyawan yang sakit di quartal ini</div>`);
+                    const idUserLogin = "{{ auth()->user()->jabatan }}";
+                    let textUser = '';
+
+                    if (idUserLogin === 'HRD' || idUserLogin === 'GM' || idUserLogin === 'Direktur Utama') {
+                        textUser = 'Tidak ada karyawan yang sakit di quartal ini.';
+                    } else {
+                        textUser = 'Tidak ada data sakit anda di quartal ini.';
+                    }
+
+                    contentModalBodyKS.append(`<div class="list-group-item border-0 d-flex align-items-center rounded-3 shadow-sm mb-3 p-3">${textUser}</div>`);
                 } else {
                     let accordionHtml = `<div class="accordion" id="accordionSakit">`;
                     const groupedSakit = {};
@@ -751,7 +1001,16 @@
 
                 contentModalBodyKI.empty();
                 if (dataIzin.length === 0) {
-                    contentModalBodyKI.append(`<div class="list-group-item border-0 d-flex align-items-center rounded-3 shadow-sm mb-3 p-3">Tidak ada karyawan yang izin di quartal ini</div>`);
+                    const idUserLogin = "{{ auth()->user()->jabatan }}";
+                    let textUser = '';
+
+                    if (idUserLogin === 'HRD' || idUserLogin === 'GM' || idUserLogin === 'Direktur Utama') {
+                        textUser = 'Tidak ada karyawan yang izin di quartal ini.';
+                    } else {
+                        textUser = 'Tidak ada data izin anda di quartal ini.';
+                    }
+
+                    contentModalBodyKI.append(`<div class="list-group-item border-0 d-flex align-items-center rounded-3 shadow-sm mb-3 p-3">${textUser}</div>`);
                 } else {
                     let accordionHtml = `<div class="accordion" id="accordionIzin">`;
                     const groupedIzin = {};
@@ -856,12 +1115,12 @@
 
                             cardContainer.append(`
                             <div class="${colClass} text-center mb-4">
-                                <div class="ranking-card p-4 rounded-4 shadow-lg text-white position-relative overflow-hidden h-100" style="background:${gradient}; transition: transform 0.3s ease, box-shadow 0.3s ease;">
+                                <div class="ranking-card p-4 rounded-4 text-white position-relative overflow-hidden h-100" style="background:${gradient}; transition: transform 0.3s ease, box-shadow 0.3s ease;">
                                     <div class="position-absolute top-0 end-0 opacity-25" style="width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,0.2);"></div>
                                     <div class="position-absolute bottom-0 start-0 opacity-25" style="width:80px; height:80px; border-radius:50%; background:rgba(255,255,255,0.15);"></div>
                                     <div class="position-relative">
                                         ${posisi === 1 ? `<img src="{{ asset('css/doodle-crown.png') }}" class="position-absolute top-0 start-50 translate-middle-x" style="width:70px; margin-top:-55px; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.4));">` : ""}
-                                        <img src="${foto}" class="rounded-circle border border-4 border-white shadow-lg my-3" style="width: 110px; height: 110px; object-fit:cover;">
+                                        <img src="${foto}" class="rounded-circle border border-4 border-white my-3" style="width: 110px; height: 110px; object-fit:cover;">
                                     </div>
                                     <h6 class="fw-bold mb-1" style="font-size:1rem;">${item.nama_karyawan}</h6>
                                     <small class="text-light opacity-75 d-block mb-2">${item.divisi}</small>
@@ -911,6 +1170,127 @@
                 console.error('Gagal load data:', err);
             }
         });
+    }
+</script>
+<script>
+    const ctx = document.getElementById('tradingChart').getContext('2d');
+
+    // Gradient biru lembut
+    let gradient = ctx.createLinearGradient(0, 0, 0, 300);
+    gradient.addColorStop(0, 'rgba(59,130,246,0.4)');
+    gradient.addColorStop(1, 'rgba(59,130,246,0)');
+
+    // Fungsi buat data dummy random
+    function generateRandomData(points) {
+        let data = [];
+        for (let i = 0; i < points; i++) {
+            data.push((Math.random() * 100 + 20).toFixed(2)); // angka 20–120
+        }
+        return data;
+    }
+
+    function generateLabels(type, points) {
+        switch (type) {
+            case 'weekly':
+                return ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+            case 'monthly':
+                return Array(points).fill('').map((_, i) => (i === Math.floor(points / 2) ? 'Oktober' : ''));
+            case 'quarterly':
+                return Array(points).fill('').map((_, i) => {
+                    if (i === 10) return 'Q1';
+                    if (i === 40) return 'Q2';
+                    if (i === 70) return 'Q3';
+                    if (i === 90) return 'Q4';
+                    return '';
+                });
+            case 'yearly':
+                return Array(points).fill('').map((_, i) => (i === Math.floor(points / 2) ? '2025' : ''));
+        }
+    }
+
+    let chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: generateLabels('weekly', 7),
+            datasets: [{
+                label: 'Nilai Kinerja',
+                data: generateRandomData(7),
+                fill: true,
+                backgroundColor: gradient,
+                borderColor: '#3b82f6',
+                borderWidth: 2,
+                pointRadius: 0,
+                tension: 0.4,
+                hoverBorderWidth: 3,
+                hoverBorderColor: '#60a5fa',
+            }]
+        },
+        options: {
+            responsive: true,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: '#1e293b',
+                    titleColor: '#fff',
+                    bodyColor: '#60a5fa',
+                    displayColors: false,
+                    padding: 10,
+                    callbacks: {
+                        title: function(context) {
+                            return 'Data ke-' + context[0].label;
+                        },
+                        label: function(context) {
+                            return 'Nilai: ' + context.parsed.y;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: '#94a3b8',
+                        maxRotation: 0,
+                        autoSkip: true
+                    }
+                },
+                y: {
+                    grid: {
+                        color: 'rgba(148,163,184,0.1)'
+                    },
+                    ticks: {
+                        color: '#94a3b8'
+                    }
+                }
+            }
+        }
+    });
+
+    function updateChart(type, event) {
+        document.querySelectorAll('.filter-buttons button').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+
+        let points;
+        switch (type) {
+            case 'monthly':
+                points = 31;
+                break;
+            case 'quarterly':
+                points = 93;
+                break;
+        }
+
+        chart.data.labels = generateLabels(type, points);
+        chart.data.datasets[0].data = generateRandomData(points);
+        chart.update();
     }
 </script>
 @endsection

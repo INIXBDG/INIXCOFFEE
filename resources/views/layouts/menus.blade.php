@@ -2156,8 +2156,30 @@
                                         </div>
                                     </div>
                                 </div>
+                                @endcan
+                                @can('Super Duper Admin')
+                                <div class="col-sm-6 mt-2">
+                                    <div class="card" id="card-hover">
+                                        <div class="card-body d-flex">
+                                            <div class="col-md-2">
+                                                <img src="{{ asset('icon/bell.svg') }}"
+                                                    class="img-responsive" width="30px">
+                                            </div>
+                                            <div class="col-md-10" style="margin-left: 10px">
+                                                <a href="/user-dropdown"
+                                                    class="link stretched-link text-decoration-none">
+                                                    <h5 class="card-title">Shortcut</h5>
+                                                </a>
+                                                <p class="card-text">shortcut.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                @endcan
+                            </div>
+                            <div class="row">
                                 @if (auth()->user()->jabatan === 'Koordinator ITSM')
-                                <div class="col mt-6">
+                                <div class="col mt-12">
                                     <div class="mt-5 mb-3">
                                         Uptime Monitoring
                                     </div>
@@ -2189,26 +2211,6 @@
                                     </div>
                                 </div>
                                 @endif
-                                @endcan
-                                @can('Super Duper Admin')
-                                <div class="col-sm-6 mt-2">
-                                    <div class="card" id="card-hover">
-                                        <div class="card-body d-flex">
-                                            <div class="col-md-2">
-                                                <img src="{{ asset('icon/bell.svg') }}"
-                                                    class="img-responsive" width="30px">
-                                            </div>
-                                            <div class="col-md-10" style="margin-left: 10px">
-                                                <a href="/user-dropdown"
-                                                    class="link stretched-link text-decoration-none">
-                                                    <h5 class="card-title">Shortcut</h5>
-                                                </a>
-                                                <p class="card-text">shortcut.</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                @endcan
                             </div>
                         </div>
                     </div>
@@ -2218,7 +2220,7 @@
         <div class="tab-pane fade" id="pills-dashboard" role="tabpanel" aria-labelledby="pills-dashboard-tab">
             @include('partials.dashboard')
         </div>
-        </div>
+        {{-- </div> --}}
     </main>
     </div>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -2260,6 +2262,8 @@
         });
     </script>
     <script>
+        let chartDataCache = null;
+
         $(document).ready(function() {
             handleNotificationDismissal();
             // initializeYearlySales();
@@ -2306,7 +2310,177 @@
                 });
             });
             // console.log(progress, carprogress);
+
+            // Saat tab berubah
+            $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
+                const target = $(e.target).attr('data-bs-target');
+                if (target === '#nav-inixcoffee') {
+                    ajaxUptime(target, 'https://192.168.95.60:8001/');
+                } else if (target === '#nav-inixlatte') {
+                    ajaxUptime(target, 'http://192.168.95.60:8002/');
+                }
+            });
         });
+
+        function ajaxUptime(target, url) {
+            $.ajax({
+                url: "{{ route('activity.log.chart') }}",
+                method: "GET",
+                dataType: "json",
+                success: function(response) {
+                    console.log("Data mentah dari server:", response); // Tambahkan ini
+                    if (!response || typeof response !== 'object' || response.error) {
+                        console.error("Data tidak valid:", response);
+                        return;
+                    }
+                    chartDataCache = response;
+
+                    // Coba render chart yang aktif saat ini
+                    const activeTab = $('.nav-link.active').attr('data-bs-target');
+                    if (activeTab === '#nav-inixcoffee') {
+                        renderChartIfNeeded('uptimeChartInixcoffee', 'https://192.168.95.60:8001/');
+                    } else if (activeTab === '#nav-inixlatte') {
+                        renderChartIfNeeded('uptimeChartInixlatte', 'http://192.168.95.60:8002/');
+                    }
+                },
+                error: function(xhr) {
+                    console.error("AJAX error:", xhr.responseText);
+                    alert("Gagal memuat data chart: " + xhr.status + " - " + xhr.statusText);
+                }
+            });
+        }
+
+        function renderChartIfNeeded(canvasId, url) {
+            const ctx = document.getElementById(canvasId);
+            console.log(ctx);
+            console.log(chartDataCache);
+            console.log(chartDataCache[url]);
+            if (!ctx || !chartDataCache || !chartDataCache[url]) {
+                return;
+            }
+
+            if (ctx.chartInstance) return;
+
+            const data = chartDataCache[url];
+            console.log("Data untuk URL:", url, data); // Tambahkan ini
+            if (!data || !Array.isArray(data.labels) || !Array.isArray(data.response_times) || !Array.isArray(data.statuses)) {
+                console.warn("Data tidak lengkap untuk URL:", url);
+                return;
+            }
+            console.log("Status asli:", data.statuses); // Tambahkan ini
+            const upData = data.statuses.map(s => s === true ? 1 : null);
+            const downData = data.statuses.map(s => s === false ? 1 : null);
+            console.log("downData yang dihasilkan:", downData); // Tambahkan ini
+            console.log(data.statuses);
+            const chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Response Time (ms)',
+                        data: data.response_times,
+                        backgroundColor: 'rgba(54,162,235,0.5)',
+                        borderColor: 'rgba(54,162,235,1)',
+                        borderWidth: 1,
+                        yAxisID: 'y'
+                    }, {
+                        label: 'UP',
+                        type: 'line',
+                        data: upData,
+                        borderColor: 'rgba(40,167,69,1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: false,
+                        yAxisID: 'y1'
+                    }, {
+                        label: 'DOWN',
+                        type: 'line',
+                        data: downData,
+                        borderColor: 'rgba(220,53,69,1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: false,
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Response Time (ms)'
+                            }
+                        },
+                        y1: {
+                            beginAtZero: true,
+                            position: 'right',
+                            grid: {
+                                drawOnChartArea: false
+                            },
+                            title: {
+                                display: true,
+                                text: 'Status'
+                            },
+                            ticks: {
+                                stepSize: 1,
+                                callback: v => v === 1 ? 'UP' : ''
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Waktu'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                generateLabels: function(chart) {
+                                    const datasets = chart.data.datasets;
+                                    return datasets.map((dataset, i) => {
+                                        const label = dataset.label || '';
+                                        let pointStyle = 'rect';
+
+                                        if (label === 'UP' || label === 'DOWN') {
+                                            pointStyle = 'circle';
+                                        }
+
+                                        return {
+                                            text: label,
+                                            fillStyle: dataset.backgroundColor || dataset.borderColor,
+                                            strokeStyle: dataset.borderColor,
+                                            lineWidth: 2,
+                                            hidden: !chart.isDatasetVisible(i),
+                                            index: i,
+                                            pointStyle: pointStyle,
+                                            fontColor: '#000',
+                                        };
+                                    });
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    if (ctx.dataset.label === 'Response Time (ms)') return `Response Time: ${ctx.parsed.y} ms`;
+                                    if (ctx.dataset.label === 'UP') return 'Status: UP';
+                                    if (ctx.dataset.label === 'DOWN') return 'Status: DOWN';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            ctx.chartInstance = chart;
+        }
 
         /**
          * loadDashboard({ force: boolean }) -> Promise
@@ -2656,174 +2830,6 @@
             }
         }
         $('#modalPemberitahuan').on('click', '.btn-danger', handleNotificationDismissal);
-
-
-        let chartDataCache = null;
-
-        $(document).ready(function() {
-            // Muat data chart
-            $.ajax({
-                url: "{{ route('activity.log.chart') }}",
-                method: "GET",
-                dataType: "json",
-                success: function(response) {
-                    if (!response || typeof response !== 'object' || response.error) {
-                        console.error("Data tidak valid:", response);
-                        return;
-                    }
-                    chartDataCache = response;
-
-                    // Coba render chart yang aktif saat ini
-                    const activeTab = $('.nav-link.active').attr('data-bs-target');
-                    if (activeTab === '#nav-inixcoffee') {
-                        renderChartIfNeeded('uptimeChartInixcoffee', 'https://192.168.95.60:8001/');
-                    } else if (activeTab === '#nav-inixlatte') {
-                        renderChartIfNeeded('uptimeChartInixlatte', 'https://192.168.95.60:8002/');
-                    }
-                },
-                error: function(xhr) {
-                    console.error("AJAX error:", xhr.responseText);
-                    alert("Gagal memuat data chart: " + xhr.status + " - " + xhr.statusText);
-                }
-            });
-
-            // Saat tab berubah
-            $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
-                const target = $(e.target).attr('data-bs-target');
-                if (target === '#nav-inixcoffee') {
-                    renderChartIfNeeded('uptimeChartInixcoffee', 'https://192.168.95.60:8001/');
-                } else if (target === '#nav-inixlatte') {
-                    renderChartIfNeeded('uptimeChartInixlatte', 'https://192.168.95.60:8002/');
-                }
-            });
-        });
-
-        function renderChartIfNeeded(canvasId, url) {
-            const ctx = document.getElementById(canvasId);
-            if (!ctx || !chartDataCache || !chartDataCache[url]) {
-                return;
-            }
-
-            if (ctx.chartInstance) return;
-
-            const data = chartDataCache[url];
-            if (!data || !Array.isArray(data.labels) || !Array.isArray(data.response_times) || !Array.isArray(data.statuses)) {
-                console.warn("Data tidak lengkap untuk URL:", url);
-                return;
-            }
-
-            const upData = data.statuses.map(s => s === true ? 1 : null);
-            const downData = data.statuses.map(s => s === false ? 1 : null);
-
-            const chart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: data.labels,
-                    datasets: [{
-                        label: 'Response Time (ms)',
-                        data: data.response_times,
-                        backgroundColor: 'rgba(54,162,235,0.5)',
-                        borderColor: 'rgba(54,162,235,1)',
-                        borderWidth: 1,
-                        yAxisID: 'y'
-                    }, {
-                        label: 'UP',
-                        type: 'line',
-                        data: upData,
-                        borderColor: 'rgba(40,167,69,1)',
-                        borderWidth: 2,
-                        tension: 0.3,
-                        fill: false,
-                        yAxisID: 'y1'
-                    }, {
-                        label: 'DOWN',
-                        type: 'line',
-                        data: downData,
-                        borderColor: 'rgba(220,53,69,1)',
-                        borderWidth: 2,
-                        tension: 0.3,
-                        fill: false,
-                        yAxisID: 'y1'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Response Time (ms)'
-                            }
-                        },
-                        y1: {
-                            beginAtZero: true,
-                            position: 'right',
-                            grid: {
-                                drawOnChartArea: false
-                            },
-                            title: {
-                                display: true,
-                                text: 'Status'
-                            },
-                            ticks: {
-                                stepSize: 1,
-                                callback: v => v === 1 ? 'UP' : ''
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Waktu'
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'top',
-                            labels: {
-                                usePointStyle: true,
-                                generateLabels: function(chart) {
-                                    const datasets = chart.data.datasets;
-                                    return datasets.map((dataset, i) => {
-                                        const label = dataset.label || '';
-                                        let pointStyle = 'rect'; 
-
-                                        if (label === 'UP' || label === 'DOWN') {
-                                            pointStyle = 'circle'; 
-                                        }
-
-                                        return {
-                                            text: label,
-                                            fillStyle: dataset.backgroundColor || dataset.borderColor,
-                                            strokeStyle: dataset.borderColor,
-                                            lineWidth: 2,
-                                            hidden: !chart.isDatasetVisible(i),
-                                            index: i,
-                                            pointStyle: pointStyle,
-                                            fontColor: '#000', 
-                                        };
-                                    });
-                                }
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(ctx) {
-                                    if (ctx.dataset.label === 'Response Time (ms)') return `Response Time: ${ctx.parsed.y} ms`;
-                                    if (ctx.dataset.label === 'UP') return 'Status: UP';
-                                    if (ctx.dataset.label === 'DOWN') return 'Status: DOWN';
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-            ctx.chartInstance = chart;
-        }
     </script>
 </body>
 

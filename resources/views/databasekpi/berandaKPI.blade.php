@@ -130,6 +130,81 @@
         left: 0;
       }
     }
+
+    .loader {
+      position: relative;
+      width: 100px;
+      height: 30px;
+    }
+
+    .bubble {
+      text-align: center;
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(240, 240, 240, 0.7));
+      border-radius: 50%;
+      bottom: 0;
+      transform-origin: center;
+    }
+
+    .bubble:nth-child(1) {
+      left: 0;
+    }
+
+    .bubble:nth-child(2) {
+      left: 20px;
+    }
+
+    .bubble:nth-child(3) {
+      left: 40px;
+    }
+
+    .bubble:nth-child(4) {
+      left: 60px;
+    }
+
+    @keyframes bounce {
+
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(-30px);
+      }
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes merge {
+      0% {
+        transform: translateX(0) translateY(0);
+      }
+
+      100% {
+        transform: translateX(calc((100px - var(--targetX)) * 1px)) translateY(-20px);
+      }
+    }
+
+    @keyframes split {
+      0% {
+        transform: translateX(calc((100px - var(--targetX)) * 1px)) translateY(-20px);
+      }
+
+      100% {
+        transform: translateX(0) translateY(0);
+      }
+    }
   </style>
 </head>
 
@@ -215,11 +290,41 @@
               <i class="mdi mdi-home menu-icon"></i>
             </a>
           </li>
+          <!-- <li class="nav-item">
+            <a class="nav-link" style="margin-left: -10px;">
+              <span class="menu-title">KPI</span>
+            </a>
+          </li>
+          @if (auth()->user()->jabatan === 'HRD' || auth()->user()->jabatan === 'GM' || auth()->user()->jabatan === 'Direktur Utama')
+          <li class="nav-item {{ Request::routeIs('kpi.index') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('kpi.index') }}">
+              <span class="menu-title">Target Divisi</span>
+              <i class="fa-solid fa-bullseye menu-icon"></i>
+            </a>
+          </li>
+          @endif
+
+          <li class="nav-item {{ Request::routeIs('kpi.index') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('kpi.index') }}">
+              <span class="menu-title">Target KPI</span>
+              <i class="fa-solid fa-bullseye menu-icon"></i>
+            </a>
+          </li>
+
+          @if (auth()->user()->jabatan === 'HRD' || auth()->user()->jabatan === 'GM' || auth()->user()->jabatan === 'Direktur Utama')
+          <li class="nav-item {{ Request::routeIs('kpi.overview') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('kpi.overview') }}">
+              <span class="menu-title">Overview KPI</span>
+              <i class="fa-solid fa-users-viewfinder menu-icon"></i>
+            </a>
+          </li>
+          @endif -->
           <li class="nav-item">
             <a class="nav-link" style="margin-left: -10px;">
               <span class="menu-title">Penilaian 360°</span>
             </a>
           </li>
+          @if (auth()->user()->jabatan === 'HRD' || auth()->user()->jabatan === 'GM' || auth()->user()->jabatan === 'Direktur Utama')
           <li class="nav-item">
             <a class="nav-link" data-bs-toggle="collapse" href="#forms" aria-expanded="true" aria-controls="forms">
               <span class="menu-title">Table Penilaian</span>
@@ -260,6 +365,57 @@
               <i class="mdi mdi-file-document menu-icon"></i>
             </a>
           </li>
+          <!-- @else
+          @php
+          $id_karyawan = Auth()->user()->karyawan_id;
+          $month = \Carbon\Carbon::now()->month;
+          $year = \Carbon\Carbon::now()->year;
+
+          if ($month >= 1 && $month <= 3) {
+            $Q='Q1' ;
+            } elseif ($month>= 4 && $month <= 6) {
+              $Q='Q2' ;
+              } elseif ($month>= 7 && $month <= 9) {
+                $Q='Q3' ;
+                } else {
+                $Q='Q4' ;
+                }
+                @endphp
+
+                <li class="nav-item {{ Request::is('penilaian360/index*') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ url('/penilaian360/index/' . $id_karyawan) }}">
+                  <span class="menu-title">Hasil Penilaian Anda</span>
+                  <i class="mdi mdi-file-document menu-icon"></i>
+                </a>
+                </li>
+
+                <li class="nav-item {{ Request::is('getFormPenilaianUser*') ? 'active' : '' }}">
+                  <a class="nav-link" href="{{ url('/getFormPenilaianUser/' . $id_karyawan) }}">
+                    <span class="menu-title">Form Penilaian</span>
+                    <i class="fa-solid fa-align-justify menu-icon"></i>
+                  </a>
+                </li>
+                @endif
+
+                <li class="nav-item">
+                  <a class="nav-link" style="margin-left: -10px;">
+                    <span class="menu-title">Project</span>
+                  </a>
+                </li>
+                @if (auth()->user()->jabatan === 'HRD' || auth()->user()->jabatan === 'GM' || auth()->user()->jabatan === 'Direktur Utama')
+                <li class="nav-item {{ Request::routeIs('project.index') ? 'active' : '' }}">
+                  <a class="nav-link" href="{{ route('project.index') }}">
+                    <span class="menu-title">Tabel Data</span>
+                    <i class="fa-solid fa-table menu-icon"></i>
+                  </a>
+                </li>
+                @endif
+                <li class="nav-item {{ Request::routeIs('project.control') ? 'active' : '' }}">
+                  <a class="nav-link" href="{{ route('project.control') }}">
+                    <span class="menu-title">Control Tugas</span>
+                    <i class="fa-solid fa-list-check menu-icon"></i>
+                  </a>
+                </li> -->
         </ul>
       </nav>
       <div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
@@ -295,7 +451,7 @@
         </div>
 
         @yield('contentKPI')
-        <footer class="footer">
+        <footer class="footer mb-3">
           <div class="d-sm-flex justify-content-center justify-content-sm-between">
             <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Database KPI Inixindo Bandung.</span>
             <span class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center">By ITSM Inixindo <i class="mdi mdi-heart text-danger"></i></span>
@@ -368,6 +524,63 @@
         }
       });
     });
+
+    const bubbles = document.querySelectorAll('.bubble');
+    const loader = document.getElementById('loader');
+    const positions = [0, 50, 100, 150];
+
+    function animateBubble(index, animation, duration, delay = 0) {
+      const bubble = bubbles[index];
+      bubble.style.animation = 'none';
+      void bubble.offsetWidth;
+      bubble.style.animation = `${animation} ${duration}ms ease-in-out ${delay}ms forwards`;
+    }
+
+    function defaultBounce() {
+      bubbles.forEach((b, i) => {
+        b.style.animation = `bounce 1200ms infinite ${i * 150}ms`;
+      });
+    }
+
+    function playRandomBehavior() {
+      const behaviors = ['spin', 'merge-split', 'chaos'];
+      const choice = behaviors[Math.floor(Math.random() * behaviors.length)];
+
+      if (choice === 'spin') {
+        const idx = Math.floor(Math.random() * 4);
+        animateBubble(idx, 'spin', 1000);
+
+      } else if (choice === 'merge-split') {
+        bubbles.forEach(b => b.style.animation = 'none');
+
+        const centerX = 75;
+        bubbles.forEach((b, i) => {
+          b.style.setProperty('--targetX', positions[i]);
+          animateBubble(i, 'merge', 800);
+        });
+
+        setTimeout(() => {
+          bubbles.forEach((b, i) => {
+            b.style.setProperty('--targetX', positions[i]);
+            animateBubble(i, 'split', 800);
+          });
+          setTimeout(defaultBounce, 800);
+        }, 800);
+
+      } else if (choice === 'chaos') {
+        bubbles.forEach((b, i) => {
+          const randDelay = Math.random() * 300;
+          const randDur = 800 + Math.random() * 400;
+          b.style.animation = `bounce ${randDur}ms infinite ${randDelay}ms`;
+        });
+      }
+
+      const nextDelay = 3000 + Math.random() * 4000;
+      setTimeout(playRandomBehavior, nextDelay);
+    }
+    defaultBounce();
+
+    setTimeout(playRandomBehavior, 2000);
   </script>
 
   @yield('script')

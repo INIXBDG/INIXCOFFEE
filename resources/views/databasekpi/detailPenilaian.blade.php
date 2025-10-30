@@ -500,7 +500,7 @@
                         <ul class="list-group ms-2"><li class="list-group-item">${globalEvaluated.nama}</li></ul>
                     </div>
                     <div class="form-group mb-3 text-start">
-                        <label class="mb-2">Quartal</label>
+                        <label class="mb-2">Semester</label>
                         <ul class="list-group ms-2"><li class="list-group-item">${globalEvaluated.quartal}</li></ul>
                     </div>
                     <div class="form-group mb-3 text-start">

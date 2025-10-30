@@ -74,6 +74,11 @@
         box-shadow: 0 6px 16px rgba(41, 128, 185, 0.5);
     }
 
+    .styled-form .is-invalid {
+        border-color: #e74c3c !important;
+        box-shadow: 0 0 0 0.15rem rgba(231, 76, 60, 0.25) !important;
+    }
+
     @media (max-width: 768px) {
         .styled-form {
             padding: 10px;
@@ -124,7 +129,48 @@
             gap: 8px;
         }
     }
+
+    .styled-form .btn-outline-secondary.is-invalid {
+        border-color: #e74c3c !important;
+        color: #e74c3c !important;
+        box-shadow: 0 0 0 0.15rem rgba(231, 76, 60, 0.25) !important;
+    }
+
+    .styled-form .form-check-label.is-invalid {
+        color: #e74c3c;
+        font-weight: 500;
+    }
+
+    .styled-form .form-control.is-invalid,
+    .styled-form .form-select.is-invalid,
+    .styled-form .btn-check.is-invalid,
+    .styled-form .form-check-input.is-invalid {
+        animation: shake 0.5s ease-in-out;
+    }
+
+    @keyframes shake {
+        0% {
+            transform: translateX(0);
+        }
+
+        25% {
+            transform: translateX(-5px);
+        }
+
+        50% {
+            transform: translateX(5px);
+        }
+
+        75% {
+            transform: translateX(-5px);
+        }
+
+        100% {
+            transform: translateX(0);
+        }
+    }
 </style>
+
 <form method="POST" action="{{ route('penilaianEvaluator') }}" class="mb-2 styled-form" novalidate>
     @csrf
     <input type="hidden" name="kode_form" value="{{ $data['kode_form_global'] }}">
@@ -136,7 +182,7 @@
         PENILAIAN KINERJA {{ strtoupper($data['evaluated']) }}<br>
         <small>Penilaian {{ $data['jenis_penilaian'] }}</small>
     </h5>
-    @foreach ($data['detail_kategori'] as $kategori)
+    @foreach ($data['detail_kategori'] as $index => $kategori)
     <div class="card-kriteria">
         <h5 class="mb-3">{{ $kategori['kriteria_utama'] }}</h5>
         @foreach ($kategori['isi_kriteria'] as $i => $sub)
@@ -144,7 +190,6 @@
         $fieldKey = "field_{$index}_{$i}";
         $fieldName = "{$fieldKey}[{$sub['sub_kriteria_judul']}]";
         $fieldId = Str::slug($sub['sub_kriteria_judul']) . "_{$index}_{$i}";
-        $nilaiKey = "nilai_{$fieldKey}";
         @endphp
         <div class="row mb-3 ms-3">
             <label id="label_{{ $fieldId }}" class="col-md-4 col-form-label text-md-start">
@@ -162,7 +207,7 @@
                             id="{{ $id }}"
                             value="{{ $option['nilai'] ?? $option['ket'] }}"
                             data-group="{{ $fieldId }}"
-                            @if($sub['level']==='required' ) required data-required="true" @endif>
+                            @if($sub['level']==='required' ) data-required="true" @endif>
                         <label class="btn btn-outline-secondary rounded-pill" for="{{ $id }}">
                             {{ $option['ket'] }}
                         </label>
@@ -179,7 +224,7 @@
                             id="{{ $id }}"
                             value="{{ $option['nilai'] ?? $option['ket'] }}"
                             data-group="{{ $fieldId }}"
-                            @if($sub['level']==='required' ) required data-required="true" @endif>
+                            @if($sub['level']==='required' ) data-required="true" @endif>
                         <label class="form-check-label" for="{{ $id }}">{{ $option['ket'] }}</label>
                     </div>
                     @endforeach
@@ -188,7 +233,7 @@
                 <select class="form-select"
                     name="{{ $fieldName }}"
                     id="select_{{ $fieldId }}"
-                    @if($sub['level']==='required' ) required @endif>
+                    @if($sub['level']==='required' ) data-required="true" @endif>
                     <option selected disabled>Pilih {{ $sub['sub_kriteria_judul'] }}</option>
                     @foreach ($sub['keterangan_tipe'] as $option)
                     <option value="{{ $option['nilai'] ?? $option['ket'] }}">{{ $option['ket'] }}</option>
@@ -199,7 +244,7 @@
                     class="form-control"
                     rows="8"
                     id="textarea_{{ $fieldId }}"
-                    @if($sub['level']==='required' ) required @endif></textarea>
+                    @if($sub['level']==='required' ) data-required="true" @endif></textarea>
                 @elseif ($sub['tipe_kategori'] === 'range')
                 <div class="d-flex align-items-center gap-3">
                     <input type="range"
@@ -207,7 +252,7 @@
                         name="{{ $fieldName }}"
                         id="range_{{ $fieldId }}"
                         min="0" max="100" value="0"
-                        @if($sub['level']==='required' ) required @endif
+                        @if($sub['level']==='required' ) data-required="true" @endif
                         oninput="updateRangeValue(this)">
                     <span class="range-value fw-bold" id="val_range_{{ $fieldId }}">0</span>
                 </div>
@@ -219,7 +264,7 @@
                             id="input_{{ $fieldId }}"
                             class="form-control"
                             placeholder="Masukkan {{ $sub['sub_kriteria_judul'] }}"
-                            @if($sub['level']==='required' ) required @endif>
+                            @if($sub['level']==='required' ) data-required="true" @endif>
                     </div>
                     <div class="col-md-4">
                         <input type="number"
@@ -230,7 +275,7 @@
                             min="0"
                             max="100"
                             step="1"
-                            @if($sub['level']==='required' ) required @endif>
+                            @if($sub['level']==='required' ) data-required="true" @endif>
                     </div>
                 </div>
                 @else
@@ -240,7 +285,7 @@
                     class="form-control"
                     placeholder="Masukkan {{ $sub['sub_kriteria_judul'] }}"
                     autocomplete="off"
-                    @if($sub['level']==='required' ) required @endif>
+                    @if($sub['level']==='required' ) data-required="true" @endif>
                 @endif
             </div>
         </div>
@@ -251,15 +296,145 @@
         <button type="submit" class="btn btn-primary">Kirim</button>
     </div>
 </form>
+{{-- Letakkan ini DI LUAR loop, hanya sekali --}}
 <script>
     function updateRangeValue(rangeInput) {
         const valueDisplay = document.getElementById('val_' + rangeInput.id);
         if (valueDisplay) {
             valueDisplay.textContent = rangeInput.value;
+            let val = parseInt(rangeInput.value);
+            if (val < 30) valueDisplay.style.color = "red";
+            else if (val < 70) valueDisplay.style.color = "orange";
+            else valueDisplay.style.color = "green";
         }
-        let val = parseInt(rangeInput.value);
-        if (val < 30) valueDisplay.style.color = "red";
-        else if (val < 70) valueDisplay.style.color = "orange";
-        else valueDisplay.style.color = "green";
     }
+
+    function validateForm(form) {
+        let isValid = true;
+        form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+
+        // Radio
+        const radioGroups = {};
+        form.querySelectorAll('input[type="radio"][data-group]').forEach(radio => {
+            const group = radio.dataset.group;
+            if (!radioGroups[group]) radioGroups[group] = [];
+            radioGroups[group].push(radio);
+        });
+
+        Object.entries(radioGroups).forEach(([group, radios]) => {
+            const isRequired = radios.some(r => r.hasAttribute('data-required'));
+            if (isRequired && !radios.some(r => r.checked)) {
+                isValid = false;
+                radios.forEach(r => {
+                    r.classList.add('is-invalid');
+                    const label = document.querySelector(`label[for="${r.id}"]`);
+                    if (label) label.classList.add('is-invalid');
+                });
+                const firstRadio = radios[0];
+                const firstLabel = document.querySelector(`label[for="${firstRadio.id}"]`);
+                (firstLabel || firstRadio)?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+            } else {
+                radios.forEach(r => {
+                    r.classList.remove('is-invalid');
+                    const label = document.querySelector(`label[for="${r.id}"]`);
+                    if (label) label.classList.remove('is-invalid');
+                });
+            }
+        });
+
+        // Checkbox
+        const checkboxGroups = {};
+        form.querySelectorAll('input[type="checkbox"].checkbox-group[data-group]').forEach(cb => {
+            const group = cb.dataset.group;
+            if (!checkboxGroups[group]) checkboxGroups[group] = [];
+            checkboxGroups[group].push(cb);
+        });
+
+        Object.entries(checkboxGroups).forEach(([group, checkboxes]) => {
+            const isRequired = checkboxes.some(cb => cb.hasAttribute('data-required'));
+            if (isRequired && !checkboxes.some(cb => cb.checked)) {
+                isValid = false;
+                checkboxes.forEach(cb => {
+                    cb.classList.add('is-invalid');
+                    const label = document.querySelector(`label[for="${cb.id}"]`);
+                    if (label) label.classList.add('is-invalid');
+                });
+                const firstCb = checkboxes[0];
+                const firstLabel = document.querySelector(`label[for="${firstCb.id}"]`);
+                (firstLabel || firstCb)?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+            } else {
+                checkboxes.forEach(cb => {
+                    cb.classList.remove('is-invalid');
+                    const label = document.querySelector(`label[for="${cb.id}"]`);
+                    if (label) label.classList.remove('is-invalid');
+                });
+            }
+        });
+
+        // Input biasa
+        form.querySelectorAll('input[data-required], select[data-required], textarea[data-required]').forEach(el => {
+            if (el.type === 'radio' || el.type === 'checkbox') return;
+            if (!el.value.trim()) {
+                isValid = false;
+                el.classList.add('is-invalid');
+                el.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+            } else {
+                el.classList.remove('is-invalid');
+            }
+        });
+
+        // Range
+        form.querySelectorAll('input[type="range"][data-required]').forEach(range => {
+            if (parseInt(range.value) === 0) {
+                isValid = false;
+                range.classList.add('is-invalid');
+                range.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+            } else {
+                range.classList.remove('is-invalid');
+            }
+        });
+
+        return isValid;
+    }
+
+    // Hanya bind sekali
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('.styled-form');
+        if (!form) return;
+
+        // Hapus listener lama jika ada (opsional, tapi aman)
+        const submitHandler = function(e) {
+            e.preventDefault();
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (!submitBtn) return;
+
+            const isValid = validateForm(form);
+            if (!isValid) {
+                alert('Harap lengkapi semua field yang wajib diisi.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Kirim';
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Mengirim...';
+            form.submit();
+        };
+
+        // Pastikan hanya ada satu listener
+        form.removeEventListener('submit', submitHandler);
+        form.addEventListener('submit', submitHandler);
+    });
 </script>

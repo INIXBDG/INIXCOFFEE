@@ -126,6 +126,46 @@
     #targetContainer {
         justify-content: center;
     }
+
+    .stat-card {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        transition: transform 0.2s;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .progress-bar-modern {
+        height: 10px;
+        border-radius: 5px;
+        background-color: #e9ecef;
+    }
+
+    .progress-fill {
+        height: 100%;
+        border-radius: 5px;
+        background: linear-gradient(90deg, #4361ee, #3a0ca3);
+    }
+
+    .metric-value {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #2b2d42;
+    }
+
+    .metric-label {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+
+    .custom-modal {
+        max-width: 800px;
+        /* default md = 500px, lg = 800px */
+    }
 </style>
 
 <div class="content-wrapper">
@@ -202,14 +242,13 @@
                             <select name="assistant_route" id="assistant_route" class="form-select" required>
                                 <option selected disabled>-- Pilih Assistant Route --</option>
                                 <option value="Pemasukan Kotor">Pemasukan Kotor (PK * Pengeluaran)</option>
-                                <option value="Pemasukan Bersih">Pemasukan Bersih (PK * 9%)</option>
-                                <option value="Kepuasan Pelangan">Kepuasan Pelangan (> 95%)</option>
+                                <option value="Pemasukan Bersih">Pemasukan Bersih</option>
+                                <option value="Kepuasan Pelanggan">Feedback Peserta</option>
                                 <option value="Rasio Biaya Operasional">Rasio Biaya Operasional (40% =< PK)</option>
-                                <option value="Rata Rata Pencapaian Departement">Rata Rata Pencapaian Per Departement</option>
+                                <option value="Rata Rata Pencapaian Per Departement">Rata Rata Pencapaian Per Departement</option>
                             </select>
                         </div>
 
-                        <!-- Jabatan -->
                         <div class="col-md-6 mb-3">
                             <label for="jabatan" class="form-label">Pilih Jabatan <span class="text-danger">*</span></label>
                             <select name="jabatan" id="jabatan" class="form-select" required>
@@ -217,7 +256,6 @@
                             </select>
                         </div>
 
-                        <!-- Tipe Target -->
                         <div class="col-md-6 mb-3">
                             <label for="tipeTarget" class="form-label">Tipe Target <span class="text-danger">*</span></label>
                             <select name="tipe_target" id="tipeTarget" class="form-select" required>
@@ -228,7 +266,6 @@
                             </select>
                         </div>
 
-                        <!-- Nilai Target -->
                         <div class="col-md-6 mb-3">
                             <label for="nilaiTarget" class="form-label">Nilai Target <span class="text-danger">*</span></label>
                             <input type="text" name="nilai_target" id="nilaiTarget" class="form-control"
@@ -273,7 +310,6 @@
                     </div>
                 </div>
 
-                <!-- Footer -->
                 <div class="modal-footer">
                     <button type="button" class="btn btn-danger me-2" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-primary">
@@ -284,6 +320,111 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="modalEditTarget" tabindex="-1" role="dialog" aria-labelledby="modalEditTargetLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md" role="document">
+        <div class="modal-content">
+            <form id="editTargetForm">
+                @csrf
+                <input type="hidden" name="id" id="edit_id">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title" id="modalEditTargetLabel">
+                        <i class="fas fa-edit me-2"></i> Edit Target
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="edit_judul_kpi" class="form-label">Judul KPI <span class="text-danger">*</span></label>
+                            <input type="text" name="judul_kpi" id="edit_judul_kpi" class="form-control" required>
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label for="edit_deskripsi_kpi" class="form-label">Deskripsi KPI</label>
+                            <textarea name="deskripsi_kpi" id="edit_deskripsi_kpi" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label for="edit_assistant_route" class="form-label">Pilih Assistant Route <span class="text-danger">*</span></label>
+                            <select name="assistant_route" id="edit_assistant_route" class="form-select" required disabled>
+                                <option selected disabled>-- Pilih Assistant Route --</option>
+                                <option value="Pemasukan Kotor">Pemasukan Kotor (PK * Pengeluaran)</option>
+                                <option value="Pemasukan Bersih">Pemasukan Bersih (PK * 9%)</option>
+                                <option value="Kepuasan Pelanggan">Feedback Peserta</option>
+                                <option value="Rasio Biaya Operasional">Rasio Biaya Operasional (40% =< PK)</option>
+                                <option value="Rata Rata Pencapaian Departement">Rata Rata Pencapaian Per Departement</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_jabatan_hidden" class="form-label">Pilih Jabatan <span class="text-danger">*</span></label>
+                            <input type="text" name="jabatan" id="edit_jabatan_hidden" class="form-control" readonly>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_tipe_target" class="form-label">Tipe Target <span class="text-danger">*</span></label>
+                            <select name="tipe_target" id="edit_tipe_target" class="form-select" required>
+                                <option selected disabled>-- Pilih Tipe --</option>
+                                <option value="angka">Angka (Unit, Jumlah, dll)</option>
+                                <option value="rupiah">Rupiah (Nilai Keuangan)</option>
+                                <option value="persen">Persen (%)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_nilai_target" class="form-label">Nilai Target <span class="text-danger">*</span></label>
+                            <input type="text" name="nilai_target" id="edit_nilai_target" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_jangka_target" class="form-label">Jangka Target <span class="text-danger">*</span></label>
+                            <select name="jangka_target" id="edit_jangka_target" class="form-select" required>
+                                <option selected disabled>-- Pilih Jangka --</option>
+                                <option value="Tahunan">Tahunan</option>
+                                <option value="Quartal">Kuartal</option>
+                                <option value="Bulanan">Bulanan</option>
+                                <option value="Mingguan">Mingguan</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12 mb-3" id="edit_detailJangkaGroup" style="display: none;">
+                            <label for="edit_detailJangka" class="form-label" id="edit_detailJangkaLabel">
+                                Detail Jangka <span class="text-danger">*</span>
+                            </label>
+                            <div id="edit_detailJangkaField"></div>
+                        </div>
+                        <div class="col-md-12 mb-3" id="edit_konversiGroup"
+                            style="display: none; background-color: #f8f9fa; padding: 15px; border-radius: 8px;">
+                            <h6 class="mb-2">
+                                <i class="fas fa-calculator me-2"></i> Estimasi Distribusi Target Tahunan:
+                            </h6>
+                            <div class="row text-center">
+                                <div class="col-md-4">
+                                    <small class="text-muted">Per Bulan</small>
+                                    <p class="mb-0 fw-bold" id="edit_hasilBulanan">-</p>
+                                </div>
+                                <div class="col-md-4">
+                                    <small class="text-muted">Per Kuartal</small>
+                                    <p class="mb-0 fw-bold" id="edit_hasilKuartal">-</p>
+                                </div>
+                                <div class="col-md-4">
+                                    <small class="text-muted">Per Minggu</small>
+                                    <p class="mb-0 fw-bold" id="edit_hasilMingguan">-</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger me-2" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalDetailTarget" tabindex="-1" role="dialog" aria-labelledby="modalDetailTargetLabel" aria-hidden="true">
+    <div class="modal-dialog custom-modal" role="document">
+        <div class="modal-content p-3" id="bodyContentDetailTarget">
+        </div>
+    </div>
+</div>
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
@@ -351,6 +492,7 @@
         const $tipeTarget = $form.find(`#${prefix}tipe_target`);
         const $nilaiTarget = $form.find(`#${prefix}nilai_target`);
         const $jangkaTarget = $form.find(`#${prefix}jangka_target`);
+        const $assistantRoute = $form.find(`#${prefix}assistant_route`);
         const $detailJangkaGroup = $form.find(`#${prefix}detailJangkaGroup`);
         const $detailJangkaField = $form.find(`#${prefix}detailJangkaField`);
         const $konversiGroup = $form.find(`#${prefix}konversiGroup`);
@@ -374,6 +516,26 @@
                 $konversiGroup.hide();
             }
         }
+
+        $assistantRoute.off('change').on('change', function() {
+            const value = $(this).val();
+            const $tipeTarget = $form.find(`#${prefix}tipeTarget`);
+
+            if (value === 'Kepuasan Pelanggan') {
+                $tipeTarget.html(`
+                    <option value="persen" selected>Persen (%)</option>
+                `);
+                $tipeTarget.attr('disabled', true);
+            } else {
+                $tipeTarget.html(`
+                    <option selected disabled>-- Pilih Tipe --</option>
+                    <option value="angka">Angka (Unit, Jumlah, dll)</option>
+                    <option value="rupiah">Rupiah (Nilai Keuangan)</option>
+                    <option value="persen">Persen (%)</option>
+                `);
+                $tipeTarget.removeAttr('disabled');
+            }
+        });
 
         $nilaiTarget.off('input').on('input', function() {
             const tipe = $tipeTarget.val();
@@ -654,7 +816,6 @@
                                 deadlineDate = new Date(year, month - 1, lastDay);
                             }
                         } else if (item.jangka_target === 'kuartalan') {
-                            // format bisa "2025Q1" atau "2025-Q1"
                             const match = detail.match(/(\d{4})\D?Q?(\d)/i);
                             if (match) {
                                 const year = match[1];
@@ -681,23 +842,29 @@
 
                         let statusText = '';
                         let badgeClass = 'bg-secondary';
-                        const nowTime = now.getTime();
-                        const deadlineTime = deadlineDate ? deadlineDate.getTime() : null;
+                        
+                        const now = new Date();
+                        const year = now.getFullYear();
+                        const month = String(now.getMonth() + 1).padStart(2, '0');
+                        const day = String(now.getDate()).padStart(2, '0');
+                        const nowTime = `${year}-${month}-${day}`;
 
-                        if (item.status == 1) {
+                        let progressValue = item.progress ?? 45;
+                        const progress = Math.min(progressValue, 100);
+
+                        if (progress === 0) {
+                            statusText = 'Belum Dimulai';
+                            badgeClass = 'bg-warning text-dark';
+                        } else if (nowTime > item.tenggat_waktu && progress < item.nilai_target) {
+                            statusText = 'Gagal';
+                            badgeClass = 'bg-danger';
+                        } else if (progress >= item.nilai_target) {
                             statusText = 'Selesai';
                             badgeClass = 'bg-success';
                         } else {
-                            if (deadlineTime && nowTime > deadlineTime) {
-                                statusText = 'Gagal';
-                                badgeClass = 'bg-danger';
-                            } else {
-                                statusText = 'Dalam Proses';
-                                badgeClass = 'bg-warning text-dark';
-                            }
+                            statusText = 'Dalam Proses';
+                            badgeClass = 'bg-warning text-dark';
                         }
-
-                        let progressValue = item.progress ?? 45;
 
                         content_target.append(`
                             <div class="target-card rounded-4 border-0 shadow-sm position-relative overflow-hidden"
@@ -711,19 +878,26 @@
                                 <!-- Action buttons -->
                                 <div class="action-buttons d-flex gap-1 position-absolute top-0 end-0 p-2" 
                                     style="opacity: 0; transform: translateY(-8px); transition: all 0.3s ease; z-index: 10;">
-                                    <button class="btn btn-sm btn-info rounded-circle p-2" style="width: 36px; height: 36px;">
+                                    <button class="btn btn-sm btn-info rounded-circle p-2" 
+                                            style="width: 36px; height: 36px;" 
+                                            id="tombolDetailTarget" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#modalDetailTarget" 
+                                            data-id="${item.id}">
                                         <i class="fa-solid fa-eye" style="font-size: 1rem;"></i>
                                     </button>
                                     <button class="btn btn-sm btn-warning rounded-circle d-flex align-items-center justify-content-center btnEditTarget"
                                             title="Edit"
                                             style="width: 36px; height: 36px; font-size: 0.9rem;"
                                             data-id="${item.id}"
-                                            data-judul_kpi="${item.judul_kpi}"
-                                            data-deskripsi_kpi="${item.deskripsi_kpi}"
+                                            data-judul_kpi="${item.judul}"
+                                            data-deskripsi_kpi="${item.deskripsi}"
                                             data-tipe_target="${item.tipe_target}"
                                             data-nilai_target="${item.nilai_target}"
                                             data-jangka_target="${item.jangka_target}"
-                                            data-detail_jangka="${item.detail_jangka}">
+                                            data-detail_jangka="${item.detail_jangka}"
+                                            data-assistant_route="${item.assistant_route}"
+                                            data-jabatan="${item.jabatan}">
                                         <i class="fa-solid fa-pen-to-square"></i>
                                     </button>
                                     <button type="button" class="btn btn-sm btn-danger rounded-circle d-flex align-items-center justify-content-center buttonHapusTarget"
@@ -773,21 +947,20 @@
                                     </div>
 
                                     <div class="mt-2 mb-1">
-                                        <div class="progress rounded-pill" style="height: 8px; background-color: #e9ecef; overflow: visible;">
+                                        <div class="progress rounded-pill" style="height: 12px; background-color: #e9ecef; overflow: visible; position: relative;">
                                             <div class="progress-bar bg-success rounded-pill position-relative" 
                                                 role="progressbar" 
                                                 style="width: ${Math.min(progressValue, 100)}%;"
                                                 aria-valuenow="${progressValue}" 
                                                 aria-valuemin="0" aria-valuemax="100">
-                                                <span class="position-absolute top-0 start-0 translate-middle-y ms-1" 
-                                                    style="font-size: 0.65rem; color: white; text-shadow: 0 0 2px rgba(0,0,0,0.5);">
-                                                    ${progressValue}%
-                                                </span>
                                             </div>
+                                            <span class="position-absolute top-50 start-50 translate-middle" 
+                                                style="font-size: 0.7rem; color: black; text-shadow: 0 0 2px rgba(0,0,0,0.5); pointer-events: none;">
+                                                ${progressValue}%
+                                            </span>
                                         </div>
                                     </div>
 
-                                    <!-- Deadline -->
                                     <div class="d-flex align-items-center justify-content-between mt-1">
                                         <small class="text-muted">
                                             <i class="fa-solid fa-calendar-days me-1" style="font-size: 0.8rem;"></i>
@@ -842,7 +1015,6 @@
                     `);
                 });
 
-                // === 2. JANGKA TARGET: SEMUA SELALU AKTIF (tanpa batas) ===
                 jangkaSelect.append(`<option value="Tahunan">Tahunan (${tahunIni})</option>`);
                 jangkaSelect.append(`<option value="Quartal">Kuartal</option>`);
                 jangkaSelect.append(`<option value="Bulanan">Bulanan</option>`);
@@ -928,10 +1100,286 @@
         });
     });
 
+    $(document).on('submit', '#editTargetForm', function() {
+        const formData = new FormData(this);
+
+        $.ajax({
+            url: "{{ route('kpi.update') }}",
+            type: 'post',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: response.message
+                });
+
+                loadContentForm();
+            },
+            error: function(xhr) {
+                console.error(xhr.responseText);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal!',
+                    text: xhr.responseJSON?.message || 'Terjadi kesalahan pada server.'
+                });
+            }
+
+        })
+    })
+
+    $(document).on('click', '.btnEditTarget', function(e) {
+        const id = $(this).data('id');
+        const judul = $(this).data('judul_kpi');
+        const deskripsi = $(this).data('deskripsi_kpi');
+        const tipe_target = $(this).data('tipe_target');
+        const nilai_target = $(this).data('nilai_target');
+        const jangka_target = $(this).data('jangka_target');
+        const detail_jangka = $(this).data('detail_jangka');
+        const assistant_route = $(this).data('assistant_route');
+        const jabatan = $(this).data('jabatan');
+
+        $('#edit_id').val(id);
+        $('#edit_judul_kpi').val(judul);
+        $('#edit_deskripsi_kpi').val(deskripsi);
+        $('#edit_assistant_route').val(assistant_route);
+        $('#edit_jabatan').val(jabatan).prop('disabled', true);
+        $('#edit_jabatan_hidden').val(jabatan);
+        $('#edit_jangka_target').val(jangka_target);
+        $('#edit_tipe_target').val(tipe_target);
+        $('#edit_nilai_target').val(nilai_target);
+
+        $('#edit_detailJangkaGroup').hide();
+        $('#edit_detailJangkaField').empty();
+        $('#edit_konversiGroup').hide();
+
+        const $form = $('#editTargetForm');
+        const $tipeTarget = $form.find('#edit_tipe_target');
+        const $nilaiTarget = $form.find('#edit_nilai_target');
+        const $jangkaTarget = $form.find('#edit_jangka_target');
+        const $assistantRoute = $form.find('#edit_assistant_route');
+        const $detailJangkaGroup = $form.find('#edit_detailJangkaGroup');
+        const $detailJangkaField = $form.find('#edit_detailJangkaField');
+        const $konversiGroup = $form.find('#edit_konversiGroup');
+        const $hasilBulanan = $form.find('#edit_hasilBulanan');
+        const $hasilKuartal = $form.find('#edit_hasilKuartal');
+        const $hasilMingguan = $form.find('#edit_hasilMingguan');
+
+        function parseRawNilai() {
+            const raw = $nilaiTarget.val() ? $nilaiTarget.val().toString().replace(/\D/g, '') : '';
+            return raw ? parseFloat(raw) : 0;
+        }
+
+        function updateKonversiIfNeeded() {
+            const nilai = parseRawNilai();
+            const tipe = $tipeTarget.val();
+            if (nilai > 0 && $jangkaTarget.val() === 'Tahunan' && tipe !== 'persen') {
+                $hasilBulanan.text(formatNumber(nilai / 12));
+                $hasilKuartal.text(formatNumber(nilai / 4));
+                $hasilMingguan.text(formatNumber(nilai / 52));
+                $konversiGroup.show();
+            } else {
+                $konversiGroup.hide();
+            }
+        }
+
+        function formatNumber(num) {
+            return new Intl.NumberFormat('id-ID').format(Math.round(num));
+        }
+
+        $assistantRoute.off('change');
+        $nilaiTarget.off('input');
+        $jangkaTarget.off('change');
+
+        $assistantRoute.on('change', function() {
+            const value = $(this).val();
+            if (value === 'Kepuasan Pelanggan') {
+                $tipeTarget.html(`<option value="persen" selected>Persen (%)</option>`);
+            } else {
+                $tipeTarget.html(`
+            <option selected disabled>-- Pilih Tipe --</option>
+            <option value="angka">Angka (Unit, Jumlah, dll)</option>
+            <option value="rupiah">Rupiah (Nilai Keuangan)</option>
+            <option value="persen">Persen (%)</option>
+        `);
+                $tipeTarget.removeAttr('disabled');
+            }
+        });
+
+        $nilaiTarget.on('input', function() {
+            const tipe = $tipeTarget.val();
+            let value = $(this).val().replace(/\D/g, '');
+            if (!value) {
+                $(this).val('');
+                updateKonversiIfNeeded();
+                return;
+            }
+            let formatted;
+            if (tipe === 'rupiah') {
+                formatted = new Intl.NumberFormat('id-ID', {
+                    style: 'currency',
+                    currency: 'IDR',
+                    minimumFractionDigits: 0
+                }).format(parseInt(value));
+            } else if (tipe === 'persen') {
+                formatted = new Intl.NumberFormat('id-ID').format(parseInt(value)) + ' %';
+            } else {
+                formatted = new Intl.NumberFormat('id-ID').format(parseInt(value));
+            }
+            $(this).val(formatted);
+            updateKonversiIfNeeded();
+        });
+
+        $jangkaTarget.on('change', function() {
+            const jangka = $(this).val();
+            $detailJangkaGroup.hide();
+            $detailJangkaField.empty();
+            $konversiGroup.hide();
+            if (!jangka) return;
+            const tahunIni = new Date().getFullYear();
+
+            if (jangka === 'Tahunan') {
+                let html = `<select class="form-select" name="detail_jangka" required>`;
+                for (let y = tahunIni; y <= tahunIni + 1; y++) {
+                    const selected = (y === tahunIni) ? 'selected' : '';
+                    html += `<option value="${y}" ${selected}>${y}</option>`;
+                }
+                html += `</select>`;
+                $detailJangkaField.html(html);
+                $detailJangkaGroup.show();
+                updateKonversiIfNeeded();
+                return;
+            }
+
+            if (jangka === 'Quartal') {
+                const now = new Date();
+                const bulanSekarang = now.getMonth() + 1;
+                const quartalSekarang = Math.ceil(bulanSekarang / 3);
+                const tahunIni = now.getFullYear();
+                const tahunDepan = tahunIni + 1;
+                let html = `<select class="form-select" name="detail_jangka" required>`;
+                html += `<optgroup label="Tahun ${tahunIni}">`;
+                for (let q = quartalSekarang; q <= 4; q++) {
+                    const selected = (q === quartalSekarang) ? 'selected' : '';
+                    const value = `Q${q} - ${tahunIni}`;
+                    const label = `Kuartal ${q} (${tahunIni})`;
+                    html += `<option value="${value}" ${selected}>${label}</option>`;
+                }
+                html += `</optgroup>`;
+                html += `<optgroup label="Tahun ${tahunDepan}">`;
+                html += `<option value="Q1 - ${tahunDepan}">Kuartal 1 (${tahunDepan})</option>`;
+                html += `</optgroup>`;
+                html += `</select>`;
+                $detailJangkaField.html(html);
+                $detailJangkaGroup.show();
+                return;
+            }
+
+            if (jangka === 'Bulanan') {
+                const now = new Date();
+                const bulanSekarangIndex = now.getMonth();
+                const tahunSekarang = now.getFullYear();
+                const tahunDepan = tahunSekarang + 1;
+                const namaBulan = ["Januari", "Februari", "Maret", "April", "Mei", "Juni",
+                    "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+                ];
+                let html = `<select class="form-select" name="detail_jangka" required>`;
+                html += `<optgroup label="Tahun ${tahunSekarang}">`;
+                for (let i = bulanSekarangIndex; i < 12; i++) {
+                    const selected = (i === bulanSekarangIndex) ? 'selected' : '';
+                    const value = `${i + 1} - ${tahunSekarang}`;
+                    const label = `${namaBulan[i]} ${tahunSekarang}`;
+                    html += `<option value="${value}" ${selected}>${label}</option>`;
+                }
+                html += `</optgroup>`;
+                html += `<optgroup label="Tahun ${tahunDepan}">`;
+                html += `<option value="1 - ${tahunDepan}">Januari ${tahunDepan}</option>`;
+                html += `</optgroup>`;
+                html += `</select>`;
+                $detailJangkaField.html(html);
+                $detailJangkaGroup.show();
+                return;
+            }
+
+            if (jangka === 'Mingguan') {
+                const today = new Date();
+                const currentYear = today.getFullYear();
+                const currentMonth = today.getMonth();
+                const nextYear = currentYear + 1;
+
+                const formatDateNumeric = (date) => {
+                    const d = date.getDate().toString().padStart(2, '0');
+                    const m = (date.getMonth() + 1).toString().padStart(2, '0');
+                    return `${d}-${m}`;
+                };
+
+                const getWeeksInMonth = (year, month) => {
+                    const weeks = [];
+                    const firstDay = new Date(year, month, 1);
+                    const lastDay = new Date(year, month + 1, 0);
+                    let current = new Date(firstDay);
+                    while (current <= lastDay) {
+                        const start = new Date(current);
+                        const end = new Date(current);
+                        end.setDate(end.getDate() + 6);
+                        if (end > lastDay) end.setDate(lastDay.getDate());
+                        weeks.push([start.getTime(), end.getTime()]);
+                        current.setDate(current.getDate() + 7);
+                    }
+                    return weeks;
+                };
+
+                let html = `<select class="form-select" name="detail_jangka" required>`;
+                html += `<optgroup label="Tahun ${currentYear}">`;
+                const weeksThisMonth = getWeeksInMonth(currentYear, currentMonth);
+                weeksThisMonth.forEach((week, idx) => {
+                    const [startMs, endMs] = week;
+                    const startDate = new Date(startMs);
+                    const endDate = new Date(endMs);
+                    if (endDate < today) return;
+                    const value = `${formatDateNumeric(startDate)} - ${formatDateNumeric(endDate)} - ${currentYear}`;
+                    const label = `Minggu ${idx + 1} (${formatDateNumeric(startDate)} - ${formatDateNumeric(endDate)} ${currentYear})`;
+                    html += `<option value="${value}">${label}</option>`;
+                });
+                html += `</optgroup>`;
+                html += `<optgroup label="Tahun ${nextYear}">`;
+                const janWeeksNextYear = getWeeksInMonth(nextYear, 0);
+                janWeeksNextYear.forEach((week, idx) => {
+                    const [startMs, endMs] = week;
+                    const startDate = new Date(startMs);
+                    const endDate = new Date(endMs);
+                    const value = `${formatDateNumeric(startDate)} - ${formatDateNumeric(endDate)} - ${nextYear}`;
+                    const label = `Minggu ${idx + 1} (${formatDateNumeric(startDate)} - ${formatDateNumeric(endDate)} ${nextYear})`;
+                    html += `<option value="${value}">${label}</option>`;
+                });
+                html += `</optgroup>`;
+                html += `</select>`;
+                $detailJangkaField.html(html);
+                $detailJangkaGroup.show();
+                return;
+            }
+        });
+
+        $('#edit_assistant_route').trigger('change');
+        $('#edit_jangka_target').trigger('change');
+        $('#edit_nilai_target').trigger('input');
+
+        setTimeout(() => {
+            if (detail_jangka) {
+                $(`#edit_detailJangkaField select`).val(detail_jangka);
+            }
+        }, 100);
+
+        $('#modalEditTarget').modal('show');
+    });
+
     function setupFormListeners() {
         const $tipeTarget = $('#tipeTarget');
         const $nilaiTarget = $('#nilaiTarget');
         const $jangkaTarget = $('#jangkaTarget');
+        const $assistantRoute = $(`#assistant_route`);
         const $detailJangkaGroup = $('#detailJangkaGroup');
         const $detailJangkaField = $('#detailJangkaField');
         const $konversiGroup = $('#konversiGroup');
@@ -958,6 +1406,29 @@
                 $konversiGroup.hide();
             }
         }
+
+        $assistantRoute.off('change').on('change', function() {
+            const value = $(this).val();
+            const tipe = $tipeTarget.val();
+
+            if (value === 'Kepuasan Pelanggan') {
+                $tipeTarget.html(`
+                    <option selected disabled>-- Pilih Tipe --</option>
+                    <option value="angka" disabled>Angka (Unit, Jumlah, dll)</option>
+                    <option value="rupiah" disabled>Rupiah (Nilai Keuangan)</option>
+                    <option value="persen">Persen (%)</option>
+                `);
+                $tipeTarget.removeAttr('disabled');
+            } else {
+                $tipeTarget.html(`
+                    <option selected disabled>-- Pilih Tipe --</option>
+                    <option value="angka">Angka (Unit, Jumlah, dll)</option>
+                    <option value="rupiah">Rupiah (Nilai Keuangan)</option>
+                    <option value="persen">Persen (%)</option>
+                `);
+                $tipeTarget.removeAttr('disabled');
+            }
+        });
 
         $nilaiTarget.off('input').on('input', function() {
             const tipe = $tipeTarget.val();
@@ -1138,5 +1609,271 @@
             return weeks;
         }
     }
+
+    // === simpan instance chart di global ===
+    let doughnutChartInstance = null;
+    let lineChartInstance = null;
+
+    $(document).on('click', '#tombolDetailTarget', function() {
+        let id = $(this).data('id');
+
+        $.ajax({
+            url: "{{ route('kpi.detail') }}",
+            method: 'GET',
+            data: {
+                id: id
+            },
+            success: function(response) {
+                const bodyContentDetailTarget = $('#bodyContentDetailTarget');
+                bodyContentDetailTarget.empty();
+
+                const totalFeedback = response.totalFeedback || 0;
+                const totalLebih = response.totalLebih || 0;
+                const totalKurang = response.totalKurang || 0;
+                const nilaiTarget = response.nilaiTarget || 0;
+                const detailData = response.detailData || null;
+
+                const persen = totalFeedback > 0 ? ((totalLebih / totalFeedback) * 100).toFixed(1) : 0;
+                const statusTarget = persen >= nilaiTarget ?
+                    `<span class="badge bg-success ms-2">Target Terpenuhi <i class="fa-solid fa-check"></i></span>` :
+                    `<span class="badge bg-danger ms-2">Target Gagal Terpenuhi <i class="fa-solid fa-xmark"></i></span>`;
+
+                // tampilkan isi modal
+                if (totalFeedback === 0) {
+                    bodyContentDetailTarget.append(`
+                    <div class="modal-header">
+                        <h5 class="modal-title">Statistik Performa</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        Tidak Menemukan Data
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Tutup</button>
+                    </div>
+                `);
+                    return;
+                }
+
+                bodyContentDetailTarget.append(`
+                <div class="modal-header">
+                    <h5 class="modal-title">Statistik Performa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="stat-card h-100 d-flex flex-column justify-content-center">
+                                <div class="text-center mb-4">
+                                    <h2 class="display-5 fw-bold text-primary mb-2">${persen}% ${statusTarget}</h2>
+                                    <p class="text-muted mb-1">Persentase Feedback ≥ 3.5</p>
+                                    <small class="text-muted">Berdasarkan ${totalFeedback} feedback terakhir</small>
+                                </div>
+
+                                <div class="d-flex justify-content-around text-center mt-3">
+                                    <div>
+                                        <div class="metric-value fw-bold">${totalFeedback}</div>
+                                        <div class="metric-label">Total Feedback</div>
+                                    </div>
+                                    <div>
+                                        <div class="metric-value text-success fw-bold">${totalLebih}</div>
+                                        <div class="metric-label">Feedback ≥ 3.5</div>
+                                    </div>
+                                    <div>
+                                        <div class="metric-value text-warning fw-bold">${totalKurang}</div>
+                                        <div class="metric-label">Feedback < 3.5</div>
+                                    </div>
+                                </div>
+
+                                <div class="progress mt-4" style="height: 20px; border-radius: 10px;">
+                                    <div class="progress-bar ${persen >= 95 ? 'bg-success' : 'bg-danger'}" 
+                                         role="progressbar" 
+                                         style="width: ${persen}%;" 
+                                         aria-valuenow="${persen}" aria-valuemin="0" aria-valuemax="100">
+                                         ${persen}%
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 d-flex align-items-center justify-content-center">
+                            <canvas id="doughnutChart" style="max-height:250px;"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="stat-card p-3">
+                                <h6 class="text-muted mb-2">Tren Performa Feedback Harian</h6>
+                                <div style="height: 250px;">
+                                    <canvas id="lineChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            `);
+
+                if (doughnutChartInstance) {
+                    doughnutChartInstance.destroy();
+                    doughnutChartInstance = null;
+                }
+                if (lineChartInstance) {
+                    lineChartInstance.destroy();
+                    lineChartInstance = null;
+                }
+                const ctxDoughnut = document.getElementById('doughnutChart').getContext('2d');
+
+                const gradientBlue = ctxDoughnut.createLinearGradient(0, 0, 0, 300);
+                gradientBlue.addColorStop(0, '#8F87F1');
+                gradientBlue.addColorStop(0.33, '#C68EFD');
+                gradientBlue.addColorStop(0.66, '#E9A5F1');
+                gradientBlue.addColorStop(1, '#FED2E2');
+
+                const gradientWarning = ctxDoughnut.createLinearGradient(0, 0, 0, 300);
+                gradientWarning.addColorStop(0, '#EA907A');
+                gradientWarning.addColorStop(0.33, '#FBC687');
+                gradientWarning.addColorStop(0.66, '#F4F7C5');
+                gradientWarning.addColorStop(1, '#AACDBE');
+
+                doughnutChartInstance = new Chart(ctxDoughnut, {
+                    type: 'doughnut',
+                    data: {
+                        options: {
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        generateLabels: (chart) => {
+                                            const ctx = chart.ctx;
+                                            const gradientBlue = ctx.createLinearGradient(0, 0, 50, 0);
+                                            gradientBlue.addColorStop(0, '#8F87F1');
+                                            gradientBlue.addColorStop(1, '#FED2E2');
+
+                                            const gradientWarning = ctx.createLinearGradient(0, 0, 50, 0);
+                                            gradientWarning.addColorStop(0, '#EA907A');
+                                            gradientWarning.addColorStop(1, '#AACDBE');
+
+                                            return [{
+                                                    text: 'Feedback ≥ 3.5',
+                                                    fillStyle: gradientBlue,
+                                                    strokeStyle: gradientBlue,
+                                                    hidden: false,
+                                                    index: 0
+                                                },
+                                                {
+                                                    text: 'Feedback < 3.5',
+                                                    fillStyle: gradientWarning,
+                                                    strokeStyle: gradientWarning,
+                                                    hidden: false,
+                                                    index: 1
+                                                }
+                                            ];
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        datasets: [{
+                            data: [totalLebih, totalKurang],
+                            backgroundColor: [gradientBlue, gradientWarning],
+                            borderWidth: 0,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+
+                const groupedByDate = {};
+
+                detailData.forEach(item => {
+                    const date = new Date(item.created_at);
+                    const label = date.toLocaleDateString('en-CA', {
+                        month: '2-digit',
+                        day: '2-digit'
+                    });
+
+                    if (!groupedByDate[label]) {
+                        groupedByDate[label] = [];
+                    }
+                    groupedByDate[label].push(item.averageTotal);
+                });
+
+                const labels = [];
+                const averagePerDay = [];
+
+                Object.entries(groupedByDate).forEach(([label, values]) => {
+                    const avg = values.reduce((a, b) => a + b, 0) / values.length;
+                    labels.push(label);
+                    averagePerDay.push(avg.toFixed(2));
+                });
+
+                const combined = labels.map((label, i) => ({
+                        label,
+                        avg: averagePerDay[i]
+                    }))
+                    .sort((a, b) => new Date(`2025-${a.label}`) - new Date(`2025-${b.label}`));
+
+                const sortedLabels = combined.map(item => item.label);
+                const sortedAverages = combined.map(item => item.avg);
+
+                const ctxLine = document.getElementById('lineChart').getContext('2d');
+                if (window.lineChartInstance) {
+                    window.lineChartInstance.destroy();
+                }
+
+                window.lineChartInstance = new Chart(ctxLine, {
+                    type: 'line',
+                    data: {
+                        labels: sortedLabels,
+                        datasets: [{
+                            label: 'Rata-rata Feedback per Hari',
+                            data: sortedAverages,
+                            borderColor: '#4361ee',
+                            backgroundColor: 'rgba(67,97,238,0.2)',
+                            tension: 0.3,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 5
+                            }
+                        }
+                    }
+                });
+            },
+            error: function() {
+                Swal.fire('Error', 'Gagal memuat detail target.', 'error');
+            }
+        });
+    });
+
+    $('#modalDetailTarget').on('hidden.bs.modal', function() {
+        if (doughnutChartInstance) {
+            doughnutChartInstance.destroy();
+            doughnutChartInstance = null;
+        }
+        if (lineChartInstance) {
+            lineChartInstance.destroy();
+            lineChartInstance = null;
+        }
+    });
 </script>
 @endsection

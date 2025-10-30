@@ -119,12 +119,10 @@
                                     <div class="col-md">
                                         <div class="mt-1 mb-1">
                                             <div class="form-group">
-                                                <label for="quartalSelectUtama">Pilih Quartal</label>
+                                                <label for="quartalSelectUtama">Pilih Semester</label>
                                                 <select name="quartalSelectUtama" id="quartalSelectUtama" class="form-select w-100">
-                                                    <option value="Q1">Q1</option>
-                                                    <option value="Q2">Q2</option>
-                                                    <option value="Q3">Q3</option>
-                                                    <option value="Q4">Q4</option>
+                                                    <option value="S1">S1</option>
+                                                    <option value="S2">S2</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -151,7 +149,7 @@
                                             <th>Divisi</th>
                                             <th>Tanggal Pembuatan</th>
                                             <th>Kode Form</th>
-                                            <th>Quartal</th>
+                                            <th>Semester</th>
                                             <th>Tahun</th>
                                             <th>Action</th>
                                         </tr>
@@ -421,7 +419,7 @@
 <script>
     $(document).ready(function() {
         const month = new Date().getMonth() + 1;
-        let selectedQuarter = month <= 3 ? 'Q1' : month <= 6 ? 'Q2' : month <= 9 ? 'Q3' : 'Q4';
+        let selectedQuarter = month <= 6 ? 'S1' : 'S2';
         $('#quartalSelectUtama').val(selectedQuarter);
 
         const tahunSelect = document.getElementById('tahunSelectUtama');
@@ -486,10 +484,12 @@
 
                         let button_evaluatorShow = (
                                 item.evaluator_by_jenis &&
-                                ((Array.isArray(item.evaluator_by_jenis) && item.evaluator_by_jenis.length > 0) ||
-                                    (typeof item.evaluator_by_jenis === 'object' && Object.keys(item.evaluator_by_jenis).length > 0))
+                                (typeof item.evaluator_by_jenis === 'object' && Object.keys(item.evaluator_by_jenis).length > 0)
                             ) ?
-                            `<a href="javascript:void(0)" class="btn btn-sm btn-gradient-primary btn-show-evaluator" data-evaluator='${JSON.stringify(item.evaluator_by_jenis)}' style="">...</a>` :
+                            `<a href="javascript:void(0)" 
+                                class="btn btn-sm btn-gradient-primary btn-show-evaluator" 
+                                data-evaluator='${encodeURIComponent(JSON.stringify(item.evaluator_by_jenis))}'
+                                data-kode-form="${item.kode_form}">...</a>` :
                             '';
 
                         return [
@@ -645,35 +645,112 @@
     });
 
     $(document).on('click', '.btn-show-evaluator', function() {
-        let evaluatorByJenis = $(this).data('evaluator');
+        const rawEvaluator = $(this).attr('data-evaluator');
+        const kodeFormGlobal = $(this).attr('data-kode-form');
+
+        const evaluatorByJenis = JSON.parse(decodeURIComponent(rawEvaluator));
+
+        const jenisPenilaianToKode = {
+            'General Manager': 'JP01',
+            'Manager/SPV/Team Leader (Atasan Langsung)': 'JP02',
+            'Rekan Kerja (Satu Divisi)': 'JP03',
+            'Pekerja (Beda Divisi)': 'JP04',
+            'Self Appraisal': 'JP05',
+            'Self Apprisial': 'JP05'
+        };
 
         let html = '';
         Object.keys(evaluatorByJenis).forEach(function(jenis) {
+            const kodeJenis = jenisPenilaianToKode[jenis] || jenis;
+
             html += `
-                <div class="card mb-3 shadow-sm">
-                    <div class="card-header bg-light">
-                        <strong><i class="fa-solid fa-users me-2 text-primary"></i> ${jenis}</strong>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">`;
+        <div class="card mb-3 shadow-sm">
+            <div class="card-header bg-light">
+                <strong><i class="fa-solid fa-users me-2 text-primary"></i> ${jenis}</strong>
+            </div>
+            <div class="card-body">
+                <div class="row">`;
 
             evaluatorByJenis[jenis].forEach(function(ev, index) {
                 const badgeClass = ev.is_red ? 'bg-gradient-danger' : 'bg-gradient-success';
                 html += `
-                    <div class="col-6 mb-2 p-2 card-rounded ${badgeClass}">
-                        <span class="badge me-2">${index+1}</span> ${ev.name}
-                    </div>`;
+            <div class="col-12 mb-2 p-2 card-rounded ${badgeClass} d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="badge me-2">${index + 1}</span> ${ev.name}
+                </div>
+                <button 
+                    class="btn btn-sm btn-danger btn-action-hapus-evaluator"
+                    data-jenis-penilaian="${kodeJenis}"
+                    data-id-evaluator="${ev.id}"
+                    data-kode-form="${kodeFormGlobal}">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>`;
             });
 
             html += `
-                        </div>
-                    </div>
                 </div>
-            `;
+            </div>
+        </div>`;
         });
 
         $('#evaluatorModalContent').html(html);
         $('#evaluatorModal').modal('show');
+    });
+
+    $(document).on('click', '.btn-action-hapus-evaluator', function() {
+        const $button = $(this);
+        const jenisPenilaian = $button.data('jenis-penilaian');
+        const idEvaluator = $button.data('id-evaluator');
+        const kodeForm = $button.data('kode-form');
+
+        Swal.fire({
+            title: 'Yakin hapus evaluator ini?',
+            text: "Tindakan ini tidak bisa dibatalkan!",
+            icon: 'warning',
+            showCancelButton: true,
+            customClass: {
+                confirmButton: 'btn btn-gradient-info me-3',
+                cancelButton: 'btn btn-gradient-danger'
+            },
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: `/penilaian/hapus-evaluator/${jenisPenilaian}/${idEvaluator}/${kodeForm}`,
+                    type: 'POST',
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function(response) {
+                        Swal.fire({
+                            title: 'Terhapus!',
+                            text: response.message || 'Evaluator berhasil dihapus.',
+                            icon: 'success',
+                            customClass: {
+                                confirmButton: 'btn btn-gradient-info'
+                            },
+                            buttonsStyling: false
+                        });
+                        
+                        loadData();
+
+                        $('#evaluatorModal').modal('hide');
+
+                        if (window.activeEvaluatorButton) {
+                            window.activeEvaluatorButton.click();
+                        }
+                    },
+                    error: function(xhr) {
+                        let msg = 'Gagal menghapus evaluator.';
+                        if (xhr.responseJSON?.message) {
+                            msg = xhr.responseJSON.message;
+                        }
+                        Swal.fire('Gagal!', msg, 'error');
+                    }
+                });
+            }
+        });
     });
 
     $(document).on('click', '#btn-clean', function(e) {

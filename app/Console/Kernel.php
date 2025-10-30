@@ -35,9 +35,8 @@ class Kernel extends ConsoleKernel
                     Notification::send($financeUsers, new OutstandingNotification($outstanding, $path));
                 }
             } catch (\Exception $e) {
-                    Log::error('Failed to send notifications: ' . $e->getMessage());
+                Log::error('Failed to send notifications: ' . $e->getMessage());
             }
-
         })->weeklyOn(1, '8:00');
 
         $schedule->call(function () {
@@ -65,6 +64,7 @@ class Kernel extends ConsoleKernel
                     'logout',
                     'Absen Masuk',
                     'Absen Keluar',
+                    'UpTime'
                 ])->delete();
 
                 Log::info("Data activityLog dengan status 'visit' berhasil dihapus oleh scheduler.");
@@ -168,15 +168,20 @@ class Kernel extends ConsoleKernel
         })->dailyAt('08:00');
 
         $schedule->command('app:update-status')->dailyAt('23:00');
-    }
 
+        $schedule->command('uptime:check')->everySixHours();
+    }
     /**
      * Register the commands for the application.
      */
     protected function commands(): void
     {
-        $this->load(__DIR__.'/Commands');
+        $this->load(__DIR__ . '/Commands');
 
         require base_path('routes/console.php');
     }
+
+    // protected $commands = [
+    //     \App\Console\Commands\CheckUptime::class,
+    // ];
 }
