@@ -14,11 +14,31 @@ class DailyActivityController extends Controller
 {
     public function index()
     {
-        $activities = DailyActivity::with(['user.karyawan', 'task'])
-                                ->latest('activity_date') // Urutkan dari tanggal terbaru
-                                ->latest('created_at')    // Urutkan lagi by waktu pembuatan
-                                ->get(); // Gunakan get() BUKAN paginate()
-        return view('daily_activities.index', compact('activities'));
+        $currentUser = Auth::user();
+
+        $karyawan = $currentUser->karyawan;
+
+        $divisionName = 'Tidak Terdaftar'; // Teks default jika user/karyawan tidak ada
+        $activities = collect(); // Kumpulan data kosong by default
+
+        if ($karyawan) {
+            $userDivisionName = $karyawan->divisi;
+            if (!empty($userDivisionName)) {
+                $divisionName = $userDivisionName;
+                $activities = DailyActivity::with(['user.karyawan', 'task'])
+                                        ->whereHas('user.karyawan', function ($query) use ($userDivisionName) {
+                                            $query->where('divisi', $userDivisionName);
+
+                                        })
+                                        ->latest('activity_date') // Urutkan dari tanggal terbaru
+                                        ->latest('created_at')    // Urutkan lagi by waktu pembuatan
+                                        ->get();
+            } else {
+                $divisionName = 'Karyawan Tanpa Divisi';
+            }
+
+        }
+        return view('daily_activities.index', compact('activities', 'divisionName'));
     }
 
     public function store(Request $request)
@@ -165,6 +185,22 @@ class DailyActivityController extends Controller
             return redirect()->back()
                              ->with('error', 'Terjadi kesalahan saat memperbarui aktivitas.')
                              ->withInput();
+        }
+    }
+
+    public function destroy(DailyActivity $dailyActivity) // Route Model Binding
+    {
+        try {
+            $docPath = $dailyActivity->doc;
+            $dailyActivity->delete();
+            if ($docPath && Storage::disk('public')->exists($docPath)) {
+                Storage::disk('public')->delete($docPath);
+            }
+            return redirect()->route('daily-activities.index')
+                             ->with('success', 'Aktivitas harian berhasil dihapus.');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                             ->with('error', 'Gagal menghapus aktivitas: ' . $e->getMessage());
         }
     }
 }

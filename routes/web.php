@@ -639,10 +639,8 @@ Route::post('/tasks', [KanbanController::class, 'store'])->name('tasks.store');
 Route::post('/tasks/update-state', [KanbanController::class, 'updateState'])->name('tasks.update-state');
 Route::patch('/tasks/{id}', [KanbanController::class, 'update'])->name('tasks.update');
 Route::get('/tasks/{task}/activities', [KanbanController::class, 'getTaskActivities'])->name('tasks.activities');
-
-
+Route::delete('tasks/{task}', [KanbanController::class, 'destroy'])->name('tasks.destroy');
 Route::patch('/daily-activities/{daily_activity}/update-status', [DailyActivityController::class, 'updateStatus'])->name('daily-activities.updateStatus');
-Route::get('/daily-activities/{daily_activity}', [DailyActivityController::class, 'show'])->name('daily-activities.show');
 
 route::get('activity-log', [App\Http\Controllers\DatabaseKPIController::class, 'activityLog'])->name('activity.log');
 route::get('activity-log/data', [App\Http\Controllers\DatabaseKPIController::class, 'getActivityChart'])->name('activity.log.chart');

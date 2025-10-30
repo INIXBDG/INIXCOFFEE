@@ -1,45 +1,18 @@
 @extends('layouts.app')
 
 @section('content')
-{{-- Memuat Font Awesome untuk Ikon --}}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-{{-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"> --}}
-
-{{-- ✅ CSS DataTables & Integrasi Bootstrap 5 --}}
 <link rel="stylesheet" href="https://cdn.datatables.net/2.0.8/css/dataTables.bootstrap5.min.css">
 
-<div class="container py-4"> {{-- Container Bootstrap --}}
-    {{-- Header --}}
+<div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-bold mb-0">
-            <i class="fas fa-clipboard-list me-2 text-primary"></i> Daily Activities
+            <i class="fas fa-clipboard-list me-2 text-primary"></i> Aktivitas Harian {{ $divisionName ?? 'N/A' }}
         </h4>
         <a href="{{ route('daily-activities.create') }}" class="btn btn-primary btn-sm shadow-sm">
             <i class="fas fa-plus-circle me-1"></i> Tambah Aktivitas
         </a>
     </div>
-
-    {{-- Pesan Sukses --}}
-    @if (session('success'))
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-             {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-    {{-- Pesan Error --}}
-     @if (session('error'))
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-             {{ session('error') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-    {{-- Menampilkan error validasi jika ada --}}
-    @if ($errors->any())
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-             Gagal memperbarui status. Periksa input Anda.
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
 
     {{-- Tabel Aktivitas dengan style Bootstrap --}}
     <div class="card shadow-sm">
@@ -50,6 +23,7 @@
                         <th>Tanggal</th>
                         <th>Task</th>
                         <th>User</th>
+                        <th>Jabatan</th>
                         <th>Aktivitas</th>
                         <th>Status</th>
                         <th>Dokumen</th>
@@ -70,9 +44,10 @@
                                  {{ optional(optional($activity->user)->karyawan)->nama_lengkap ?? (optional($activity->user)->name ?? 'N/A') }}
                             </td>
                             <td>
-                                <span data-bs-toggle="tooltip" data-bs-placement="top" title="{{ $activity->activity }}">
-                                    {{ \Illuminate\Support\Str::limit($activity->activity, 50) }}
-                                </span>
+                                {{ optional(optional($activity->user)->karyawan)->jabatan ?? 'N/A' }}
+                            </td>
+                            <td>
+                                {{ $activity->activity }}
                             </td>
                             <td class="text-center">
                                 @php
@@ -96,72 +71,78 @@
                                 @else - @endif
                             </td>
                             <td class="text-center">
-                                 {{-- Dropdown Aksi Bootstrap --}}
-                                 <div class="dropdown">
-                                    <button class="btn btn-sm btn-primary dropdown-toggle" type="button" id="dropdownMenuButton-{{ $activity->id }}" data-bs-toggle="dropdown" aria-expanded="false">
-                                        Actions
+                                @if (Auth::id() == $activity->user_id)
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-primary dropdown-toggle" type="button" id="dropdownMenuButton-{{ $activity->id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                            Actions
+                                        </button>
+                                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton-{{ $activity->id }}">
+                                            {{-- Item Lihat Detail --}}
+                                            <li>
+                                                <button class="dropdown-item show-detail-btn" type="button" data-id="{{ $activity->id }}">
+                                                    <i class="fas fa-eye me-2"></i>Lihat Detail
+                                                </button>
+                                            </li>
+                                            {{-- Item Edit --}}
+                                            <li>
+                                                <a class="dropdown-item" href="{{ route('daily-activities.edit', $activity->id) }}">
+                                                    <i class="fas fa-pencil-alt me-2"></i>Edit
+                                                </a>
+                                            </li>
+
+                                            @if ($activity->status != 'Selesai')
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <form action="{{ route('daily-activities.updateStatus', $activity->id) }}" method="POST" style="display: block;">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <input type="hidden" name="status" value="Selesai">
+                                                    <button type="submit" class="dropdown-item text-success">
+                                                        <i class="fas fa-check-circle me-2"></i>Tandai Selesai
+                                                    </button>
+                                                </form>
+                                            </li>
+                                            @endif
+
+                                            {{-- Opsi: Lanjutkan Besok --}}
+                                            @if ($activity->status != 'On Progres Dilanjutkan Besok')
+                                            @if($activity->status == 'Selesai' || $activity->status == 'Gagal') <li><hr class="dropdown-divider"></li> @endif {{-- Tambah divider jika perlu --}}
+                                            <li>
+                                                <form action="{{ route('daily-activities.updateStatus', $activity->id) }}" method="POST" style="display: block;">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <input type="hidden" name="status" value="On Progres Dilanjutkan Besok">
+                                                    <button type="submit" class="dropdown-item text-warning">
+                                                        <i class="fas fa-history me-2"></i>Lanjutkan Besok
+                                                    </button>
+                                                </form>
+                                            </li>
+                                            @endif
+
+                                            {{-- Item Hapus --}}
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <form action="{{ route('daily-activities.destroy', $activity->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus aktivitas ini?');" style="display: block;">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="dropdown-item text-danger">
+                                                        <i class="fas fa-trash-alt me-2"></i>Hapus
+                                                    </button>
+                                                </form>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                @else
+                                    {{-- JIKA BUKAN: Tampilkan HANYA tombol Lihat Detail --}}
+                                    <button class="btn btn-sm btn-outline-secondary show-detail-btn" type="button" data-id="{{ $activity->id }}" title="Lihat Detail">
+                                        <i class="fas fa-eye"></i>
                                     </button>
-                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton-{{ $activity->id }}">
-                                        {{-- Item Lihat Detail --}}
-                                        <li>
-                                            <button class="dropdown-item show-detail-btn" type="button" data-id="{{ $activity->id }}">
-                                                <i class="fas fa-eye me-2"></i>Lihat Detail
-                                            </button>
-                                        </li>
-                                        {{-- Item Edit --}}
-                                        <li>
-                                            <a class="dropdown-item" href="{{ route('daily-activities.edit', $activity->id) }}">
-                                                <i class="fas fa-pencil-alt me-2"></i>Edit
-                                            </a>
-                                        </li>
-
-                                        @if ($activity->status != 'Selesai')
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li>
-                                            <form action="{{ route('daily-activities.updateStatus', $activity->id) }}" method="POST" style="display: block;">
-                                                @csrf
-                                                @method('PATCH')
-                                                <input type="hidden" name="status" value="Selesai">
-                                                <button type="submit" class="dropdown-item text-success">
-                                                    <i class="fas fa-check-circle me-2"></i>Tandai Selesai
-                                                </button>
-                                            </form>
-                                        </li>
-                                        @endif
-
-                                        {{-- Opsi: Lanjutkan Besok --}}
-                                        @if ($activity->status != 'On Progres Dilanjutkan Besok')
-                                        @if($activity->status == 'Selesai' || $activity->status == 'Gagal') <li><hr class="dropdown-divider"></li> @endif {{-- Tambah divider jika perlu --}}
-                                        <li>
-                                            <form action="{{ route('daily-activities.updateStatus', $activity->id) }}" method="POST" style="display: block;">
-                                                @csrf
-                                                @method('PATCH')
-                                                <input type="hidden" name="status" value="On Progres Dilanjutkan Besok">
-                                                <button type="submit" class="dropdown-item text-warning">
-                                                    <i class="fas fa-history me-2"></i>Lanjutkan Besok
-                                                </button>
-                                            </form>
-                                        </li>
-                                        @endif
-
-                                        {{-- Item Hapus --}}
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li>
-                                            <form action="{{ route('daily-activities.destroy', $activity->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus aktivitas ini?');" style="display: block;">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="dropdown-item text-danger">
-                                                    <i class="fas fa-trash-alt me-2"></i>Hapus
-                                                </button>
-                                            </form>
-                                        </li>
-                                    </ul>
-                                </div>
+                                @endif
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center text-muted p-4">
+                            <td colspan="8" class="text-center text-muted p-4">
                                 Belum ada aktivitas harian yang dicatat.
                             </td>
                         </tr>
@@ -212,11 +193,9 @@
                                     <dd class="col-sm-8 modal-activity-doc">-</dd>
                                 </dl>
                             </div>
-                            <div class="col-md-4"> {{-- Kolom Kanan: Timeline --}}
+                            <div class="col-md-4">
                                 <h6 class="fw-semibold mb-3 border-bottom pb-2">Timeline Status</h6>
-                                {{-- Timeline akan dirender di sini oleh JS --}}
                                 <div class="modal-timeline-area position-relative ps-3 border-start">
-                                {{-- Konten Timeline --}}
                                 </div>
                             </div>
                         </div>
@@ -236,16 +215,13 @@
 <script src="https://cdn.datatables.net/2.0.8/js/dataTables.bootstrap5.min.js"></script>
 <script>
     $(document).ready(function() {
-        // Inisialisasi DataTables
         const activitiesTable = $('#activitiesTable').DataTable({
-            language: { /* ... bahasa indonesia ... */ },
             order: [[ 0, "desc" ]],
             lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Semua"]],
             pageLength: 10,
             columnDefs: [ { orderable: false, targets: 6 } ]
         });
 
-        // Inisialisasi Tooltip Bootstrap
         function initializeTooltips() {
             var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
             tooltipTriggerList.map(function (tooltipTriggerEl) {
@@ -264,16 +240,14 @@
         const modalLoadingIndicator = detailModalElement.querySelector('.modal-loading-indicator');
         const modalTimelineArea = detailModalElement.querySelector('.modal-timeline-area');
 
-        // Event listener untuk tombol "Lihat Detail" (gunakan event delegation)
         $('#activitiesTable tbody').on('click', '.show-detail-btn', function() {
             const activityId = $(this).data('id');
             const detailUrl = "{{ route('daily-activities.show', ':id') }}".replace(':id', activityId);
 
-            // Tampilkan loading, sembunyikan konten
             modalLoadingIndicator.style.display = 'block';
             modalContentArea.style.display = 'none';
-            modalTimelineArea.innerHTML = ''; // Kosongkan timeline lama
-            detailModal.show(); // Tampilkan modal
+            modalTimelineArea.innerHTML = '';
+            detailModal.show();
 
             // Fetch data detail dari server
             fetch(detailUrl)
