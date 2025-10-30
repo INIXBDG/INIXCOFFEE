@@ -985,8 +985,9 @@ class DatabaseKPIController extends Controller
         return view('databasekpi.detailPenilaian', compact('kodeForm', 'id_karyawan', 'tipe'));
     }
 
-    public function penilaianEvaluator(Request $request)
+       public function penilaianEvaluator(Request $request)
     {
+        $id_evaluator = Auth::user()->karyawan->id;
         $kode_form = $request->input('kode_form');
         $id_evaluated = $request->input('id_evaluated');
         $id_evaluator = Auth::user()->karyawan->id;
@@ -994,17 +995,15 @@ class DatabaseKPIController extends Controller
         $quartal = $request->input('quartal');
         $tahun = $request->input('tahun');
 
-        $jenis_penilaian = shareForm::where('kode_form', $kode_form)
-            ->where('id_evaluator', $id_evaluator)
-            ->where('id_evaluated', $id_evaluated)
-            ->where('jenis_penilaian', $jenis_penilaian)
-            ->value('jenis_penilaian');
-
         $sharedForm = shareForm::where('kode_form', $kode_form)
             ->where('id_evaluator', $id_evaluator)
             ->where('id_evaluated', $id_evaluated)
             ->where('jenis_penilaian', $jenis_penilaian)
             ->first();
+
+        if (!$sharedForm) {
+            return redirect()->back()->with('error', 'Data penilaian tidak valid.');
+        }
 
         $formInfo = formPenilaian::where('kode_form', $kode_form)
             ->where('id_karyawan', $sharedForm->id_evaluated)
@@ -1013,7 +1012,7 @@ class DatabaseKPIController extends Controller
             ->select('kode_kategori')
             ->get();
 
-        if (!$jenis_penilaian || $formInfo->isEmpty()) {
+        if ($formInfo->isEmpty()) {
             return redirect()->back()->with('error', 'Data penilaian tidak valid.');
         }
 
@@ -1045,7 +1044,6 @@ class DatabaseKPIController extends Controller
             foreach ($allFields as $fieldKey => $fieldGroup) {
                 foreach ($fieldGroup as $label => $value) {
                     $labelReadable = str_replace('_', ' ', $label);
-
                     $nilai = null;
                     $valueToSave = null;
 
@@ -1094,16 +1092,48 @@ class DatabaseKPIController extends Controller
             }
 
             DB::commit();
-            return view('databasekpi.formPenilaian', [
-                'kode_form' => $kode_form,
-                'id_evaluated' => $id_evaluated,
-                'status' => false,
-            ]);
+
+            $allForms = shareForm::where('kode_form', $kode_form)
+                ->where('id_evaluator', $id_evaluator)
+                ->where('id_evaluated', $id_evaluated)
+                ->orderBy('id')
+                ->get();
+
+            $currentIndex = $allForms->search(function ($item) use ($jenis_penilaian) {
+                return $item->jenis_penilaian === $jenis_penilaian;
+            });
+
+            $completedCount = nilaiKPI::where('kode_form', $kode_form)
+                ->where('id_evaluator', $id_evaluator)
+                ->where('id_evaluated', $id_evaluated)
+                ->whereNotNull('finished_at')
+                ->distinct('jenis_penilaian')
+                ->count();
+
+            $evaluatedEmployee = Karyawan::find($id_evaluated);
+            $evaluatedName = $evaluatedEmployee ? $evaluatedEmployee->nama_lengkap : 'Pegawai';
+
+            if ($completedCount >= $allForms->count()) {
+                return redirect()->route('penilaian.shareUser', [
+                    'id_evaluator' => $id_evaluator,
+                ])->with('completed_all', true)
+                    ->with('evaluated_name', $evaluatedName);
+            } else {
+                $nextIndex = min($currentIndex + 1, $allForms->count() - 1);
+                return redirect()->route('penilaian.shareUser', [
+                    'id_evaluator' => $id_evaluator,
+                    'kode_form' => $kode_form,
+                    'id_evaluated' => $id_evaluated,
+                    'status' => 'lanjut',
+                    'active_tab' => $nextIndex,
+                ])->with('success', "Penilaian untuk {$evaluatedName} berhasil disimpan. Terima kasih atas penilaian Anda!");
+            }
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', 'Terjadi kesalahan saat menyimpan: ' . $e->getMessage());
         }
     }
+
     public function getAveragePenilaian($kode_form, $id_evaluated)
     {
         $result = nilaiKPI::select('name_variabel', DB::raw('AVG(nilai) as average'))
