@@ -294,7 +294,9 @@ function getDataRKM() {
                             }
                             html += '</td>';
                             html += '<td>';
-                            if (rkm.exam == 0 || rkm.exam == '0') {
+                            const examArray = rkm.exam.split(',').map(item => item.trim());
+                            const exam = Number(examArray[0]);
+                            if (exam == 0 || exam == '0') {
                                 html += 'Tidak';
                             } else {
                                 html += 'Ya';

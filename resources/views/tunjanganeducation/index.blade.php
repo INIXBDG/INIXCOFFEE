@@ -381,6 +381,7 @@
                                                     <th scope="col">Total Tunjangan</th>
                                                     <th scope="col">Status</th>
                                                     <th scope="col">Detail</th>
+													
                                                     <th scope="col">Aksi</th>
                                                 </tr>
                                             </thead>
@@ -644,7 +645,7 @@
         var tahun = $("#tahun").val();
         var bulan = $("#bulan").val();
         var idInstruktur = "{{auth()->user()->id_instruktur}}";
-
+		console.log(idInstruktur);
         if(idInstruktur == 'AD'){
             var idInstruktur = "";
         }
@@ -749,9 +750,8 @@
                             }
                             
                             actions += '@endcan';
-                            actions += '@can('Approval TunjanganEducation')';
+                            actions += '@if(can('Approval TunjanganEducation'))';
                             actions += '<button type="button" class="btn btn-sm btn-primary" onclick="approvalModal('+data.id+')" > Approve</button>';
-                            actions += '@endcan';
                             var destroyUrlTemplate = "{{ route('rekapmengajarinstruktur.destroy', ':id') }}";
                             var url = destroyUrlTemplate.replace(':id', data.id);
                             actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="' + url + '" method="POST">';
@@ -759,6 +759,14 @@
                             actions += '@method('DELETE')';
                             actions += '<button type="submit" class="btn btn-sm btn-danger mt-2"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
                             actions += '</form>';
+							actions += '@endcan';
+							actions += '@else';
+                            actions += '<div class="dropdown">';
+                            actions += '<button class="btn dropdown-toggle disabled" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
+                            actions += '</div>';
+                            actions += '@endif';
+
+
 
                         return actions;
                     }
@@ -767,7 +775,7 @@
             // "columnDefs": [{"targets": [10],}],
             "order": [[10, 'desc']],
             "initComplete": function() {
-                this.api().columns(2).search(idInstruktur).draw();
+                this.api().columns(3).search(idInstruktur).draw();
             }
         });
     }

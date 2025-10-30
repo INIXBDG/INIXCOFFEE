@@ -11,6 +11,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <link rel="apple-touch-icon" sizes="180x180" href="{{asset('icon/apple-touch-icon-180x180.png')}}" /> --}}
 
+    <meta name="user-id" content="{{ auth()->id() }}">
 
     <title>INIXCOFFEE</title>
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
@@ -491,7 +492,7 @@
 </head>
 
 <body>
-    @if(session('success'))
+@if(session('success'))
     <div class="alert alert-success alert-dismissible fade show m-0 alert-custom" role="alert" id="success-alert">
         <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -513,7 +514,7 @@
             if (alert) {
                 alert.remove();
             }
-        }, 5000); 
+        }, 5000);
     </script>
     @endif
     @if(session('error'))
@@ -585,19 +586,24 @@
             <div class="col-md-4 col-sm-4 col-xs-4 d-flex justify-content-start" id="navbarkiri">
                 <ul class="navbar-nav">
                     <li class="nav-item d-flex">
+                        <!-- Tombol Home -->
                         <a class="nav-link" style="margin: 7px 3px 0px 3px" href="{{ url('/home') }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Home">
                             <img src="{{ asset('icon/home.svg') }}" class="img-responsive" width="30px">
                         </a>
+
+                        <!-- Tombol Notifikasi -->
                         <a class="nav-link position-relative" style="margin: 7px 3px 0px 3px" href="#" data-bs-toggle="modal" data-bs-target="#notificationModal">
                             <img src="{{ asset('icon/whitebell.svg') }}" class="img-responsive" width="30px">
-                            @if(auth()->user()->unreadNotifications->count() > 0)
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+
+                            <!-- 🔔 Badge jumlah notifikasi -->
+                           <span id="notifBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
                                 {{ auth()->user()->unreadNotifications->count() }}
                                 <span class="visually-hidden">unread notifications</span>
                             </span>
-                            @endif
+
                         </a>
                     </li>
+
                     <li class="nav-item order-0 order-md-1" style="margin-left: 10px" id="auth">
                         <h6 class="nav-link mt-1" style="text-transform: capitalize; color:#fff; margin:0px; padding:8px;">
                             <p class="p-0 m-0"> Selamat Datang {{ auth()->user()->username }}, Anda Login Sebagai</p>
@@ -606,6 +612,7 @@
                     </li>
                 </ul>
             </div>
+
             <div class="col-md-4 col-sm-4 col-xs-4 d-flex justify-content-center" id="navbartengah">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item text-left">
@@ -615,11 +622,11 @@
                     </li>
                 </ul>
             </div>
+
             <div class="col-md-1 col-sm-1 col-xs-1 d-flex justify-content-end" id="navbarpalingkanan">
                 <ul class="navbar-nav">
                     <li class="nav-item mx-1">
-                        <a class="nav-link" href="#" id="logout-link" data-bs-toggle="tooltip"
-                            data-bs-placement="top" title="Logout">
+                        <a class="nav-link" href="#" id="logout-link" data-bs-toggle="tooltip" data-bs-placement="top" title="Logout">
                             <img src="{{ asset('icon/power.svg') }}" class="img-responsive" width="30px">
                         </a>
                         <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
@@ -630,13 +637,17 @@
             </div>
         </div>
     </nav>
+
+    <!-- 🔊 Suara notifikasi -->
     <audio id="notifSound" src="{{ asset('bell.mp3') }}" preload="auto"></audio>
+
 
     <main class="py-2" id="bgsvg">
         @yield('content')
     </main>
 
     </div>
+
     @stack('js')
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/locale/id.min.js"></script>
@@ -644,87 +655,43 @@
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <script>
+        // === Script Logout (tidak perlu diubah) ===
         document.getElementById('logout-link').addEventListener('click', function (e) {
             e.preventDefault();
-
-        Swal.fire({
-            title: 'Apakah Anda yakin?',
-            text: "Anda akan keluar dari aplikasi",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Ya, keluar',
-            cancelButtonText: 'Batal',
-            showClass: {
-                popup: 'animate__animated animate__fadeInDown animate__faster'
-            },
-            hideClass: {
-                popup: 'animate__animated animate__fadeOutUp animate__faster'
-            }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                document.getElementById('logout-form').submit();
-            }
-        });
-
+            Swal.fire({
+                title: 'Apakah Anda yakin?',
+                text: "Anda akan keluar dari aplikasi",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya, keluar',
+                cancelButtonText: 'Batal',
+                showClass: { popup: 'animate__animated animate__fadeInDown animate__faster' },
+                hideClass: { popup: 'animate__animated animate__fadeOutUp animate__faster' }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('logout-form').submit();
+                }
+            });
         });
     </script>
-    {{-- <script>
-        window.addEventListener("message", (ev) => {
-            if (ev.data?.source === "EXT_NOTIF") {
-                console.log("Window terima notif:", ev.data.payload);
-                updateDOM(ev.data.payload);
-            }
-        });
+
+    <script src="https://js.pusher.com/8.2/pusher.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/laravel-echo/1.15.0/echo.iife.js"></script>
+
+<script>
+    window.NOTIF_COUNT_URL = "{{ route('notifications.unread-count') }}";
+    window.USER_ID = "{{ auth()->id() }}";
+    window.PUSHER_KEY = "{{ config('broadcasting.connections.pusher.key') }}";
+    window.PUSHER_CLUSTER = "{{ config('broadcasting.connections.pusher.options.cluster') }}";
+</script>
+
+<script src="{{ asset('js/echo.js') }}"></script>
 
 
-        let lastNotifCount = 0;
-
-        function playNotif() {
-            const audio = document.getElementById("notifSound");
-            if (audio) audio.play();
-        }
-
-        function updateDOM(data) {
-            const badgeContainer = document.querySelector('.nav-link.position-relative');
-            if (!badgeContainer) return;
-
-            let badge = badgeContainer.querySelector('.badge');
-            const count = data.length;
-
-            // Hapus hasil lama
-            const existingItems = document.querySelectorAll('.notif-item');
-            existingItems.forEach(item => item.remove());
-
-            // Tambahkan data baru
-            data.forEach(notif => {
-                const notifElem = document.createElement('div');
-                notifElem.className = 'notif-item';
-                notifElem.textContent = notif.message;
-                badgeContainer.appendChild(notifElem);
-            });
-
-            // Update badge
-            if (!badge && count > 0) {
-                badge = document.createElement('span');
-                badge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger';
-                badgeContainer.appendChild(badge);
-            }
-
-            if (badge) {
-                badge.innerHTML = count + '<span class="visually-hidden">unread notifications</span>';
-            }
-
-            // Play audio jika ada notif baru
-            if (count > lastNotifCount) {
-                playNotif();
-            }
-
-            lastNotifCount = count;
-        }
-    </script> --}}
 
 </body>
 

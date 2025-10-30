@@ -3,6 +3,7 @@
 @section('crm_contents')
     @php
         $allowedUser = ['Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
+        $createNotAllowed = ['HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
     @endphp
 
     <div class="content-wrapper">
@@ -11,17 +12,34 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="fw-bold">Contact Client</h4>
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#clientModal"
-                    onclick="resetForm()" @if (in_array(Auth::user()->jabatan, $allowedUser)) disabled @endif>
+                    onclick="resetForm()" @if (in_array(Auth::user()->jabatan, $createNotAllowed)) disabled @endif>
                     Tambah Client
                 </button>
             </div>
 
             <div class="card">
                 <div class="card-body">
+                    @if(in_array(Auth::user()->jabatan, $allowedUser))
+                        <div class="row mb-3">
+                            <div class="col-md-2">
+                                <label for="filter_sales" class="form-label fw-semibold">Filter Sales</label>
+                                <select id="filter_sales" class="form-select">
+                                    <option value="">Semua Sales</option>
+                                    <option value="HW">Hera</option>
+                                    <option value="VN">Savana</option>
+                                    <option value="RR">Rara</option>
+                                    <option value="NA">Nabila</option>
+                                    <option value="AN">Alfasyiani</option>
+                                    <option value="RN">Reni</option>
+                                </select>
+                            </div>
+                        </div>
+                    @endif
                     <div class="table-responsive">
                         <table id="picTable" class="table table-bordered table-hover">
                             <thead class="table-primary">
                                 <tr>
+                                    <th style="text-align:center;">No</th>
                                     <th>Nama</th>
                                     <th>Perusahaan</th>
                                     <th>Sales</th>
@@ -61,6 +79,22 @@
                                     </select>
                                     <div class="invalid-feedback">Perusahaan wajib dipilih.</div>
                                 </div>
+
+                                @if (in_array(Auth::user()->jabatan, ['Adm Sales', 'SPV Sales']))
+                                    <div class="mb-3">
+                                        <label for="sales_key" class="form-label">Sales</label>
+                                        <select name="sales_key" id="sales_key" class="form-select">
+                                            <option value="">-- Pilih Sales --</option>
+                                            <option value="HW">Hera</option>
+                                            <option value="VN">Savana</option>
+                                            <option value="RR">Rara</option>
+                                            <option value="NA">Nabila</option>
+                                            <option value="AN">Alfasyiani</option>
+                                            <option value="RN">Reni</option>
+                                        </select>
+                                        <div class="form-text">Pilih sales yang bertanggung jawab atas kontak ini.</div>
+                                    </div>
+                                @endif
 
                                 <div class="mb-3">
                                     <label for="nama" class="form-label">Nama Contact</label>
@@ -191,9 +225,21 @@
                 serverSide: true,
                 ajax: {
                     url: "{{ route('index.json.pic') }}",
-                    type: 'GET'
+                    type: 'GET',
+                    data: function (d) {
+                        d.sales_filter = $('#filter_sales').val(); // 🔹 Kirim filter sales ke backend
+                    }
                 },
                 columns: [
+                    {
+                        data: null,
+                        render: function (data, type, row, meta) {
+                            return meta.row + meta.settings._iDisplayStart + 1;
+                        },
+                        className: "text-center",
+                        orderable: false,
+                        searchable: false
+                    },
                     { data: 'nama', name: 'nama' },
                     { data: 'perusahaan', name: 'perusahaan' },
                     { data: 'sales_key', name: 'sales_key' },
@@ -206,7 +252,7 @@
                         name: 'action',
                         orderable: false,
                         searchable: false,
-                        render: function(data, type, row) {
+                        render: function (data, type, row) {
                             if (row.status === 'Contact' || row.status === 'Contact Baru') {
                                 return `
                                     <div class="d-flex flex-column gap-2">
@@ -220,17 +266,13 @@
                                             data-divisi="${row.divisi}"
                                             data-id_perusahaan="${row.id_perusahaan}"
                                             ${isRestricted ? 'disabled' : ''}
-                                        >
-                                            Edit
-                                        </button>
+                                        >Edit</button>
 
                                         <button
                                             class="btn btn-sm btn-danger delete-btn"
                                             data-id="${row.contact_id}"
                                             ${isRestricted ? 'disabled' : ''}
-                                        >
-                                            Delete
-                                        </button>
+                                        >Delete</button>
                                     </div>
                                 `;
                             }
@@ -239,6 +281,11 @@
                     }
                 ],
                 order: [[0, 'asc']]
+            });
+
+            // 🔹 Event filter dropdown
+            $('#filter_sales').on('change', function() {
+                table.ajax.reload();
             });
 
             // Reset form untuk Tambah Client

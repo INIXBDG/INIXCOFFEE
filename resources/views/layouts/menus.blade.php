@@ -2088,128 +2088,128 @@
                             <h5 class="text-center card-title">Fitur Menu Development</h5>
                             <div class="row">
                                 @can('Akses Development')
-                                <div class="col-sm-6 mt-2">
-                                    <div class="card" id="card-hover">
-                                        <div class="card-body d-flex">
-                                            <div class="col-md-2">
-                                                <img src="{{ asset('icon/bell.svg') }}"
-                                                    class="img-responsive" width="30px">
-                                            </div>
-                                            <div class="col-md-10" style="margin-left: 10px">
-                                                <a href="/inixcoffeeloglarapelixb95"
-                                                    class="link stretched-link text-decoration-none">
-                                                    <h5 class="card-title">logs</h5>
-                                                </a>
-                                                <p class="card-text">logs prod.</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-sm-6 mt-2">
-                                    <div class="card" id="card-hover">
-                                        <div class="card-body d-flex">
-                                            <div class="col-md-2">
-                                                <img src="{{ asset('icon/target.svg') }}"
-                                                    class="img-responsive" width="30px">
-                                            </div>
-                                            <div class="col-md-10" style="margin-left: 10px">
-                                                <a href="/permissions"
-                                                    class="link stretched-link text-decoration-none">
-                                                    <h5 class="card-title">Setting Permission</h5>
-                                                </a>
-                                                <p class="card-text">Permissions.</p>
+                                    <div class="col-sm-6 mt-2">
+                                        <div class="card" id="card-hover">
+                                            <div class="card-body d-flex">
+                                                <div class="col-md-2">
+                                                    <img src="{{ asset('icon/bell.svg') }}"
+                                                        class="img-responsive" width="30px">
+                                                </div>
+                                                <div class="col-md-10" style="margin-left: 10px">
+                                                    <a href="/inixcoffeeloglarapelixb95"
+                                                        class="link stretched-link text-decoration-none">
+                                                        <h5 class="card-title">logs</h5>
+                                                    </a>
+                                                    <p class="card-text">logs prod.</p>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                                <div class="col-sm-6 mt-2">
-                                    <div class="card" id="card-hover">
-                                        <div class="card-body d-flex">
-                                            <div class="col-md-2">
-                                                <img src="{{ asset('icon/target.svg') }}"
-                                                    class="img-responsive" width="30px">
-                                            </div>
-                                            <div class="col-md-10" style="margin-left: 10px">
-                                                <a href="/roles"
-                                                    class="link stretched-link text-decoration-none">
-                                                    <h5 class="card-title">Setting Role</h5>
-                                                </a>
-                                                <p class="card-text">Roles.</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-sm-6 mt-2">
-                                    <div class="card" id="card-hover">
-                                        <div class="card-body d-flex">
-                                            <div class="col-md-2">
-                                                <img src="{{ asset('icon/target.svg') }}"
-                                                    class="img-responsive" width="30px">
-                                            </div>
-                                            <div class="col-md-10" style="margin-left: 10px">
-                                                <a href="/userRolePermissions"
-                                                    class="link stretched-link text-decoration-none">
-                                                    <h5 class="card-title">Setting User</h5>
-                                                </a>
-                                                <p class="card-text">Users.</p>
+                                    <div class="col-sm-6 mt-2">
+                                        <div class="card" id="card-hover">
+                                            <div class="card-body d-flex">
+                                                <div class="col-md-2">
+                                                    <img src="{{ asset('icon/target.svg') }}"
+                                                        class="img-responsive" width="30px">
+                                                </div>
+                                                <div class="col-md-10" style="margin-left: 10px">
+                                                    <a href="/permissions"
+                                                        class="link stretched-link text-decoration-none">
+                                                        <h5 class="card-title">Setting Permission</h5>
+                                                    </a>
+                                                    <p class="card-text">Permissions.</p>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                    <div class="col-sm-6 mt-2">
+                                        <div class="card" id="card-hover">
+                                            <div class="card-body d-flex">
+                                                <div class="col-md-2">
+                                                    <img src="{{ asset('icon/target.svg') }}"
+                                                        class="img-responsive" width="30px">
+                                                </div>
+                                                <div class="col-md-10" style="margin-left: 10px">
+                                                    <a href="/roles"
+                                                        class="link stretched-link text-decoration-none">
+                                                        <h5 class="card-title">Setting Role</h5>
+                                                    </a>
+                                                    <p class="card-text">Roles.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6 mt-2">
+                                        <div class="card" id="card-hover">
+                                            <div class="card-body d-flex">
+                                                <div class="col-md-2">
+                                                    <img src="{{ asset('icon/target.svg') }}"
+                                                        class="img-responsive" width="30px">
+                                                </div>
+                                                <div class="col-md-10" style="margin-left: 10px">
+                                                    <a href="/userRolePermissions"
+                                                        class="link stretched-link text-decoration-none">
+                                                        <h5 class="card-title">Setting User</h5>
+                                                    </a>
+                                                    <p class="card-text">Users.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 @endcan
                                 @can('Super Duper Admin')
-                                <div class="col-sm-6 mt-2">
-                                    <div class="card" id="card-hover">
-                                        <div class="card-body d-flex">
-                                            <div class="col-md-2">
-                                                <img src="{{ asset('icon/bell.svg') }}"
-                                                    class="img-responsive" width="30px">
-                                            </div>
-                                            <div class="col-md-10" style="margin-left: 10px">
-                                                <a href="/user-dropdown"
-                                                    class="link stretched-link text-decoration-none">
-                                                    <h5 class="card-title">Shortcut</h5>
-                                                </a>
-                                                <p class="card-text">shortcut.</p>
+                                    <div class="col-sm-6 mt-2">
+                                        <div class="card" id="card-hover">
+                                            <div class="card-body d-flex">
+                                                <div class="col-md-2">
+                                                    <img src="{{ asset('icon/bell.svg') }}"
+                                                        class="img-responsive" width="30px">
+                                                </div>
+                                                <div class="col-md-10" style="margin-left: 10px">
+                                                    <a href="/user-dropdown"
+                                                        class="link stretched-link text-decoration-none">
+                                                        <h5 class="card-title">Shortcut</h5>
+                                                    </a>
+                                                    <p class="card-text">shortcut.</p>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
                                 @endcan
                             </div>
                             <div class="row">
-                                @if (auth()->user()->jabatan === 'Koordinator ITSM')
-                                <div class="col mt-12">
-                                    <div class="mt-5 mb-3">
-                                        Uptime Monitoring
-                                    </div>
-                                    <div class="nav nav-tabs mt-3" role="tablist">
-                                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#nav-inixcoffee" type="button" role="tab" aria-controls="nav-inixcoffee" aria-selected="false">Inixcoffee</button>
-                                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#nav-inixlatte" type="button" role="tab" aria-controls="nav-inixlatte" aria-selected="false">Inixlatte</button>
-                                    </div>
-                                    <div class="tab-content">
-                                        <div class="tab-pane fade" id="nav-inixcoffee" role="tabpanel">
-                                            <div class="card">
-                                                <div class="card-body">
-                                                    <div class="card-title">uptime monitoring INIXCOFFEE</div>
-                                                    <div class="p-4">
-                                                        <canvas id="uptimeChartInixcoffee" height="350"></canvas>
+                                 @if (auth()->user()->jabatan === 'Koordinator ITSM')
+                                    <div class="col mt-12">
+                                        <div class="mt-5 mb-3">
+                                            Uptime Monitoring
+                                        </div>
+                                        <div class="nav nav-tabs mt-3" role="tablist">
+                                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#nav-inixcoffee" type="button" role="tab" aria-controls="nav-inixcoffee" aria-selected="false">Inixcoffee</button>
+                                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#nav-inixlatte" type="button" role="tab" aria-controls="nav-inixlatte" aria-selected="false">Inixlatte</button>
+                                        </div>
+                                        <div class="tab-content">
+                                            <div class="tab-pane fade" id="nav-inixcoffee" role="tabpanel">
+                                                <div class="card">
+                                                    <div class="card-body">
+                                                        <div class="card-title">uptime monitoring INIXCOFFEE</div>
+                                                        <div class="p-4">
+                                                            <canvas id="uptimeChartInixcoffee" height="350"></canvas>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="tab-pane fade" id="nav-inixlatte" role="tabpanel">
+                                                <div class="card">
+                                                    <div class="card-body">
+                                                        <div class="card-title">uptime monitoring INIXLATTE</div>
+                                                        <div class="p-4">
+                                                            <canvas id="uptimeChartInixlatte" height="350"></canvas>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="tab-pane fade" id="nav-inixlatte" role="tabpanel">
-                                            <div class="card">
-                                                <div class="card-body">
-                                                    <div class="card-title">uptime monitoring INIXLATTE</div>
-                                                    <div class="p-4">
-                                                        <canvas id="uptimeChartInixlatte" height="350"></canvas>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
                                     </div>
-                                </div>
                                 @endif
                             </div>
                         </div>
@@ -2322,7 +2322,7 @@
             });
         });
 
-        function ajaxUptime(target, url) {
+        function ajaxUptime (target, url){
             $.ajax({
                 url: "{{ route('activity.log.chart') }}",
                 method: "GET",
