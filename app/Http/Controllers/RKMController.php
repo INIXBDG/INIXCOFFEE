@@ -27,7 +27,7 @@ use App\Notifications\RKMUpdateNotification;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\RKMExport;
-
+use App\Models\Peluang;
 // use Carbon\CarbonImmutable;
 use Carbon\Carbon;
 
@@ -737,10 +737,11 @@ class RKMController extends Controller
         $feedback = Nilaifeedback::where('id_rkm', $id);
         $exam = eksam::where('id_rkm', $id);
         $comment = comment::where('rkm_key', $id);
-
+        $peluang = Peluang::Where('id_rkm', $id);
 
         // Storage::delete('public/npwp/'. $post->foto_npwp);
 
+        $peluang->delete();
         $post->delete();
         $registrasi->delete();
         $feedback->delete();

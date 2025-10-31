@@ -106,6 +106,7 @@
                             <tbody></tbody>
                         </table>
                     </div>
+                    <div id="totalContainer" class="mt-3 fw-bold"></div>
                 </div>
             </div>
 
@@ -145,7 +146,7 @@
                                 {{-- Dropdown perusahaan Klien --}}
                                 <div class="mb-3">
                                     <label class="form-label" for="id_perusahaan">Nama Perusahaan</label>
-                                    <select class="form-select" id="id_perusahaan" name="id_perusahaan" required>
+                                    <select class="form-select" id="id_perusahaan" name="id_perusahaan">
                                         <option value="">Pilih Perusahaan</option>
                                         @foreach ($perusahaan as $p)
                                             <option value="{{ $p->id }}">{{ $p->nama_perusahaan }}</option>
@@ -155,7 +156,7 @@
 
                                 <div class="mb-3">
                                     <label class="form-label" for="id_contact">Nama Kontak</label>
-                                    <select class="form-select" id="id_contact" name="id_contact" required>
+                                    <select class="form-select" id="id_contact" name="id_contact">
                                     </select>
                                 </div>
 
@@ -261,7 +262,7 @@
                                 <!-- Select2 untuk tipe Contact -->
                                 <div class="mb-3" id="edit_contact_select_wrapper">
                                     <label class="form-label" for="edit_id_contact">Nama Kontak</label>
-                                    <select class="form-select" id="edit_id_contact" name="id_contact" required>
+                                    <select class="form-select" id="edit_id_contact" name="id_contact">
                                         <option value="">Pilih Kontak</option>
                                         @foreach ($contact as $c)
                                             <option value="{{ $c->id }}">
@@ -372,7 +373,17 @@
                         d.filter_created_start = $('#filter_created_start').val();
                         d.filter_created_end = $('#filter_created_end').val();
                     },
-                    dataSrc: 'data',
+                    dataSrc: function(json) {
+                        // tampilkan total di bawah tabel
+                        if (json.total !== undefined) {
+                            $('#totalContainer').html(
+                                `Total Keseluruhan: <span class="text-success">Rp ${formatNumber(json.total)}</span>`
+                            );
+                        } else {
+                            $('#totalContainer').empty();
+                        }
+                        return json.data; // ini tetap untuk isi tabel
+                    },
                     error: function(xhr, error, thrown) {
                         console.error('Error:', xhr.responseText);
                         alert('Gagal memuat data aktivitas: ' + thrown);
@@ -419,17 +430,18 @@
                         render: function(id, type, row) {
                             const isDisabled = row.aktivitas === 'DB';
                             return `
-                            <div class="d-flex gap-2">
-                                <button class="btn btn-sm btn-warning"
-                                    ${isDisabled ? 'disabled' : ''}
-                                    onclick='editAktivitas(${JSON.stringify(row)})'>Edit</button>
-                                <button class="btn btn-sm btn-danger"
-                                    onclick="hapusAktivitas(${id})">Hapus</button>
-                            </div>`;
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-warning"
+                            ${isDisabled ? 'disabled' : ''}
+                            onclick='editAktivitas(${JSON.stringify(row)})'>Edit</button>
+                        <button class="btn btn-sm btn-danger"
+                            onclick="hapusAktivitas(${id})">Hapus</button>
+                    </div>`;
                         }
                     }
                 ]
             });
+
 
             // === Filter & Reset ===
             $('#btnFilter').on('click', () => $('#aktivitasTable').DataTable().ajax.reload());
