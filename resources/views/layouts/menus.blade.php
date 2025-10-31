@@ -1170,6 +1170,25 @@
                                                 </div>
                                             </div>
                                             @endcan
+                                            {{-- @can('View DataKaryawan') --}}
+                                            <div class="col-sm-6 mt-2">
+                                                <div class="card" id="card-hover">
+                                                    <div class="card-body d-flex">
+                                                        <div class="col-md-2">
+                                                            <img src="{{ asset('icon/list-check.svg') }}"
+                                                                class="img-responsive" width="30px">
+                                                        </div>
+                                                        <div class="col-md-10" style="margin-left: 10px">
+                                                            <a href="/daily-activities"
+                                                                class="link stretched-link text-decoration-none">
+                                                                <h5 class="card-title">Aktivitas Harian</h5>
+                                                            </a>
+                                                            <p class="card-text">aktivitas per hari untuk masing-masing divisi</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {{-- @endcan --}}
                                             @can('View Jabatan')
                                             <div class="col-sm-6 mt-2">
                                                 <div class="card" id="card-hover">
@@ -1504,6 +1523,24 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                            <div class="col-sm-6 mt-2">
+                                                <div class="card" id="card-hover">
+                                                    <div class="card-body d-flex">
+                                                        <div class="col-md-2">
+                                                            <img src="{{ asset('icon/calendar.svg') }}"
+                                                                class="img-responsive" width="30px">
+                                                        </div>
+                                                        <div class="col-md-10" style="margin-left: 10px">
+                                                            <a href="/kanban"
+                                                                class="link stretched-link text-decoration-none">
+                                                                <h5 class="card-title">Papan Kanban</h5>
+                                                            </a>
+                                                            <p class="card-text">untuk menejemen projek.
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                             @endif
                                             <div class="col-sm-6 mt-2">
                                                 <div class="card" id="card-hover">
@@ -1521,6 +1558,7 @@
                                                     </div>
                                                 </div>
                                             </div>
+
                                         </div>
                                     </div>
                                 </div>
@@ -1688,6 +1726,24 @@
                                         <div class="card-body">
                                             <h5 class="text-center card-title">Finance</h5>
                                             <div class="row">
+                                                <div class="col-sm-6 mt-2">
+                                                    <div class="card" id="card-hover">
+                                                        <div class="card-body d-flex">
+                                                            <div class="col-md-2">
+                                                                <img src="{{ asset('icon/calendar.svg') }}"
+                                                                    class="img-responsive" width="30px">
+                                                            </div>
+                                                            <div class="col-md-10" style="margin-left: 10px">
+                                                                <a href="/kanban"
+                                                                    class="link stretched-link text-decoration-none">
+                                                                    <h5 class="card-title">Papan Kanban</h5>
+                                                                </a>
+                                                                <p class="card-text">untuk menejemen projek.
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                                 @can('View CC')
                                                 <div class="col-sm-6 mt-2">
                                                     <div class="card" id="card-hover">
@@ -1899,6 +1955,24 @@
                                     <div class="card-body">
                                         <h5 class="text-center card-title">Education</h5>
                                         <div class="row">
+                                            <div class="col-sm-6 mt-2">
+                                                <div class="card" id="card-hover">
+                                                    <div class="card-body d-flex">
+                                                        <div class="col-md-2">
+                                                            <img src="{{ asset('icon/calendar.svg') }}"
+                                                                class="img-responsive" width="30px">
+                                                        </div>
+                                                        <div class="col-md-10" style="margin-left: 10px">
+                                                            <a href="/kanban"
+                                                                class="link stretched-link text-decoration-none">
+                                                                <h5 class="card-title">Papan Kanban</h5>
+                                                            </a>
+                                                            <p class="card-text">untuk menejemen projek.
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                             @can('View TunjanganEducation')
                                             <div class="col-sm-6 mt-2">
                                                 <div class="card" id="card-hover">

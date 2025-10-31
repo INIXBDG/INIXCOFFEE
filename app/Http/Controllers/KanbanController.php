@@ -16,17 +16,37 @@ class KanbanController extends Controller
      */
     public function index()
     {
-        // 1. Definisikan kolom kita
         $boards = [
             ['title' => 'To Do', 'key' => 'todo', 'color' => 'gray'],
             ['title' => 'In Progress', 'key' => 'inprogress', 'color' => 'blue'],
             ['title' => 'Done', 'key' => 'done', 'color' => 'green'],
         ];
 
-        $tasks = Task::with('user.karyawan')->get()->groupBy('state');
+        $currentUser = Auth::user();
+        $karyawan = $currentUser->karyawan;
+
+        $userDivisionName = null;
+        $tasks = collect();
+
+        if ($karyawan) {
+            $userDivisionName = $karyawan->divisi;
+        }
+
+        if (!empty($userDivisionName)) {
+            $tasksQuery = Task::with([
+                                'user.karyawan',
+                                'dailyActivities.user.karyawan'
+                            ])
+                            ->whereHas('user.karyawan', function ($query) use ($userDivisionName) {
+                                $query->where('divisi', $userDivisionName);
+                            });
+            $tasks = $tasksQuery->get()->groupBy('state');
+
+        } else {
+        }
 
         // dd($tasks);
-        return view('kanban.index', compact('boards', 'tasks'));
+        return view('kanban.index', compact('boards', 'tasks', 'userDivisionName' ));
     }
 
     public function getTaskActivities(Task $task)
@@ -115,6 +135,27 @@ class KanbanController extends Controller
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat memperbarui status',
                 'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Hapus task dari database.
+     */
+    public function destroy(Task $task)
+    {
+        try {
+            $task->dailyActivities()->delete();
+
+            $task->delete();
+
+            return response()->json(['success' => true, 'message' => 'Task berhasil dihapus.']);
+
+        } catch (\Exception $e) {
+            // Tangani jika ada error
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus task: ' . $e->getMessage()
             ], 500);
         }
     }
