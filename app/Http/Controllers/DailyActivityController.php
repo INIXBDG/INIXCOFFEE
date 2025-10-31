@@ -82,7 +82,24 @@ class DailyActivityController extends Controller
 
     public function create()
     {
-        $tasks = Task::whereIn('state', ['todo', 'inprogress'])->orderBy('title')->get();
+        $currentUser = Auth::user();
+        $karyawan = $currentUser->karyawan;
+
+        $userDivisionName = null;
+        $tasks = collect(); // Default: koleksi kosong
+
+        if ($karyawan) {
+            $userDivisionName = $karyawan->divisi;
+        }
+
+        if (!empty($userDivisionName)) {
+            $tasks = Task::whereIn('state', ['todo', 'inprogress'])
+                           ->whereHas('user.karyawan', function ($query) use ($userDivisionName) {
+                               $query->where('divisi', $userDivisionName);
+                           })
+                           ->orderBy('title')
+                           ->get();
+        }
         return view('daily_activities.create', compact('tasks'));
     }
 
