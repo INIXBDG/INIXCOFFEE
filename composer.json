@@ -84,5 +84,11 @@
         }
     },
     "minimum-stability": "stable",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "repositories": {
+        "jinoantony/kanban": {
+            "type": "git",
+            "url": "https://github.com/jinoantony/laravel-kanban.git"
+        }
+    }
 }
