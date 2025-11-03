@@ -49,45 +49,45 @@ class LemburController extends Controller
     }
 
 
-public function getLemburKaryawan()
-{
-    $user = auth()->user()->karyawan_id;
-    $karyawan = karyawan::findOrFail($user);
-    $jabatan = $karyawan->jabatan;
-    $divisi = $karyawan->divisi;
+	public function getLemburKaryawan()
+	{
+		$user = auth()->user()->karyawan_id;
+		$karyawan = karyawan::findOrFail($user);
+		$jabatan = $karyawan->jabatan;
+		$divisi = $karyawan->divisi;
 
-    if ($jabatan == 'GM') {
-        // GM hanya melihat semua lembur dari divisi Office (tanpa peduli jabatannya)
-        $lembur = Lembur::with('karyawan')
-            ->whereHas('karyawan', function ($query) {
-                $query->where('divisi', 'Office');
-            })
-            ->latest()
-            ->get();
-    } elseif ($jabatan == 'HRD') {
-        // GM hanya melihat semua lembur dari divisi Office (tanpa peduli jabatannya)
-        $lembur = Lembur::with('karyawan')
-            ->whereHas('karyawan', function ($query) {
-                $query->whereIn('jabatan', ['Office Boy', 'Driver']);
-            })
-            ->latest()
-            ->get();
-    }elseif (in_array($jabatan, ['Office Manager', 'Koordinator Office', 'Education Manager', 'SPV Sales', 'Koordinator ITSM'])) {
-        $lembur = Lembur::with('karyawan')->whereHas('karyawan', function($query) use ($divisi) {
-            $query->where('divisi', $divisi);
-        })->latest()->get();
-    } else {
-        $lembur = Lembur::with('karyawan')->whereHas('karyawan', function($query) use ($user) {
-            $query->where('id', $user);
-        })->latest()->get();
-    }
+		if ($jabatan == 'GM') {
+			// GM hanya melihat semua lembur dari divisi Office (tanpa peduli jabatannya)
+			$lembur = Lembur::with('karyawan')
+				->whereHas('karyawan', function ($query) {
+					$query->where('divisi', 'Office');
+				})
+				->latest()
+				->get();
+		} elseif ($jabatan == 'HRD') {
+			// GM hanya melihat semua lembur dari divisi Office (tanpa peduli jabatannya)
+			$lembur = Lembur::with('karyawan')
+				->whereHas('karyawan', function ($query) {
+					$query->whereIn('jabatan', ['Office Boy', 'Driver', 'HRD']);
+				})
+				->latest()
+				->get();
+		}elseif (in_array($jabatan, ['Office Manager', 'Koordinator Office', 'Education Manager', 'SPV Sales', 'Koordinator ITSM'])) {
+			$lembur = Lembur::with('karyawan')->whereHas('karyawan', function($query) use ($divisi) {
+				$query->where('divisi', $divisi);
+			})->latest()->get();
+		} else {
+			$lembur = Lembur::with('karyawan')->whereHas('karyawan', function($query) use ($user) {
+				$query->where('id', $user);
+			})->latest()->get();
+		}
 
-    return response()->json([
-        'success' => true,
-        'message' => 'List Lembur Karyawan',
-        'data' => $lembur,
-    ]);
-}
+		return response()->json([
+			'success' => true,
+			'message' => 'List Lembur Karyawan',
+			'data' => $lembur,
+		]);
+	}
  
 
      /**

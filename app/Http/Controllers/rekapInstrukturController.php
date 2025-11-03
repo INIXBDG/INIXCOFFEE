@@ -61,37 +61,53 @@ class rekapInstrukturController extends Controller
         $endOfMonth = Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth()->endOfDay()->toDateString();
 
         $data = RKM::with('materi')
-                ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
-                // Ambil RKM yang overlapping dengan bulan target:
-                ->where(function ($q) use ($startOfMonth, $endOfMonth) {
-                    $q->where('r_k_m_s.tanggal_awal', '<=', $endOfMonth)
-                    ->where('r_k_m_s.tanggal_akhir', '>=', $startOfMonth);
-                })
-                ->whereNotIn('r_k_m_s.id', $id_rkm)
-                ->select(
-                    'r_k_m_s.materi_key',
-                    'r_k_m_s.ruang',
-                    'r_k_m_s.event',
-                    DB::raw('GROUP_CONCAT(r_k_m_s.instruktur_key SEPARATOR ", ") AS instruktur_all'),
-                    DB::raw('GROUP_CONCAT(r_k_m_s.perusahaan_key SEPARATOR ", ") AS perusahaan_all'),
-                    DB::raw('GROUP_CONCAT(r_k_m_s.sales_key SEPARATOR ", ") AS sales_all'),
-                    DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id_all'),
-                    DB::raw('CASE WHEN SUM(r_k_m_s.status = 0) > 0 THEN 0 ELSE MIN(r_k_m_s.status) END AS status_all'),
-                    DB::raw('SUM(r_k_m_s.pax) AS total_pax'),
-                    DB::raw('MIN(r_k_m_s.tanggal_awal) AS tanggal_awal'),
-                    DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir')
-                )
-                ->groupBy(
-                    'r_k_m_s.materi_key',
-                    'r_k_m_s.ruang',
-                    'r_k_m_s.event',
-                    'r_k_m_s.tanggal_awal'
-                )
-                ->orderBy('status_all', 'asc')
-                ->orderBy('r_k_m_s.tanggal_awal', 'asc')
-                ->orderBy('r_k_m_s.tanggal_akhir', 'asc')
-                ->get();
+            ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
+            ->where(function ($q) use ($startOfMonth, $endOfMonth) {
+                $q->where('r_k_m_s.tanggal_awal', '<=', $endOfMonth)
+                ->where('r_k_m_s.tanggal_akhir', '>=', $startOfMonth);
+            })
+            ->whereNotIn('r_k_m_s.id', $id_rkm)
+            ->select(
+                'r_k_m_s.materi_key',
+                // kita tidak men-select ruang langsung — kita akan hitung ruang_result di bawah
+                'r_k_m_s.event',
+                DB::raw('GROUP_CONCAT(DISTINCT r_k_m_s.instruktur_key SEPARATOR ",") AS instruktur_all'),
+                DB::raw('GROUP_CONCAT(DISTINCT r_k_m_s.perusahaan_key SEPARATOR ",") AS perusahaan_all'),
+                DB::raw('GROUP_CONCAT(DISTINCT r_k_m_s.sales_key SEPARATOR ",") AS sales_all'),
+                DB::raw('GROUP_CONCAT(DISTINCT r_k_m_s.id SEPARATOR ",") AS id_all'),
+                DB::raw('CASE WHEN SUM(CASE WHEN r_k_m_s.status = 0 THEN 1 ELSE 0 END) > 0 THEN 0 ELSE MIN(r_k_m_s.status) END AS status_all'),
+                DB::raw('SUM(r_k_m_s.pax) AS total_pax'),
+                DB::raw('MIN(r_k_m_s.tanggal_awal) AS tanggal_awal'),
+                DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir'),
+                // Prioritaskan metode_kelas: Offline > Virtual > gabungan distinct
+                DB::raw("
+                    CASE
+                        WHEN SUM(CASE WHEN LOWER(r_k_m_s.metode_kelas) = 'offline' THEN 1 ELSE 0 END) > 0 THEN 'Offline'
+                        WHEN SUM(CASE WHEN LOWER(r_k_m_s.metode_kelas) = 'virtual' THEN 1 ELSE 0 END) > 0 THEN 'Virtual'
+                        ELSE GROUP_CONCAT(DISTINCT r_k_m_s.metode_kelas SEPARATOR ', ')
+                    END AS metode_kelas_all
+                "),
+                // Pilih ruang: ambil ruang dari baris Offline jika ada, else ruang dari Virtual, else gabungkan distinct
+                DB::raw("
+                    CASE
+                        WHEN SUM(CASE WHEN LOWER(r_k_m_s.metode_kelas) = 'offline' THEN 1 ELSE 0 END) > 0
+                            THEN MIN(CASE WHEN LOWER(r_k_m_s.metode_kelas) = 'offline' THEN r_k_m_s.ruang ELSE NULL END)
+                        WHEN SUM(CASE WHEN LOWER(r_k_m_s.metode_kelas) = 'virtual' THEN 1 ELSE 0 END) > 0
+                            THEN MIN(CASE WHEN LOWER(r_k_m_s.metode_kelas) = 'virtual' THEN r_k_m_s.ruang ELSE NULL END)
+                        ELSE GROUP_CONCAT(DISTINCT r_k_m_s.ruang SEPARATOR ', ')
+                    END AS ruang_prefered
+                ")
+            )
+            ->groupBy(
+                'r_k_m_s.materi_key',
+                'r_k_m_s.event'
+            )
+            ->orderBy('status_all', 'asc')
+            ->orderBy('tanggal_awal', 'asc')
+            ->orderBy('tanggal_akhir', 'asc')
+            ->get();
 
+        // return $data;
         // Ambil relasi instruktur/sales/perusahaan seperti sebelumnya
         foreach ($data as $row) {
             $sales_ids = $row->sales_all ? explode(', ', $row->sales_all) : [];
