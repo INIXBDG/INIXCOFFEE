@@ -193,7 +193,7 @@
                                 {{-- Jenis Aktivitas --}}
                                 <div class="mb-3">
                                     <label class="form-label" for="aktivitas">Jenis Aktivitas</label>
-                                    <select class="form-select" id="aktivitas" name="aktivitas" required>
+                                    <select class="form-select" id="aktivitas" name="aktivitas">
                                         <option value="" disabled selected>Pilih Jenis Aktivitas</option>
                                         <option value="Call">Call</option>
                                         <option value="Email">Email</option>
