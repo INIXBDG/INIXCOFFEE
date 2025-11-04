@@ -227,9 +227,9 @@ class TicketController extends Controller
 
     public function accept(Request $request, Tickets $ticket)
     {
-        $tanggal_response = \Carbon\Carbon::now()->format('Y-m-d');
-        $jam_response = \Carbon\Carbon::now()->format('H:i:s');
-
+        $tanggal_response = $request->tanggal_response;
+        $jam_response = $request->jam_response;
+        // dd($request->all());
         $ticket->update([
             'penanganan' => 'Sedang Diperbaiki',
             'status' => 'Di Proses',
@@ -270,8 +270,8 @@ class TicketController extends Controller
     public function finish(Request $request, Tickets $ticket)
     {
         // dd($request->all());
-        $tanggal_selesai = \Carbon\Carbon::now()->format('Y-m-d');
-        $jam_selesai = \Carbon\Carbon::now()->format('H:i:s');
+        $tanggal_selesai = $request->tanggal_selesai;
+        $jam_selesai = $request->jam_selesai;
 
         $ticket->update([
             'status' => 'Selesai',
@@ -316,8 +316,8 @@ class TicketController extends Controller
     public function block(Request $request, Tickets $ticket)
     {
         // dd($request->all());
-        $tanggal_selesai = \Carbon\Carbon::now()->format('Y-m-d');
-        $jam_selesai = \Carbon\Carbon::now()->format('H:i:s');
+        $tanggal_selesai = $request->tanggal_selesai;
+        $jam_selesai = $request->jam_selesai;
 
         $ticket->update([
             'status' => 'Terkendala',
