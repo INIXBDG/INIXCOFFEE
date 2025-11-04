@@ -459,7 +459,7 @@ class AktivitasController extends Controller
 
         $rules = [
             'id_perusahaan'   => 'nullable|integer',
-            'id_contact'      => 'nullable|integer',
+            'id_contact'      => 'nullable',
             'id_peluang'      => 'nullable',
             'contact_type'    => 'nullable|string|in:contact,peserta',
             'aktivitas'       => 'required|in:Call,Email,Visit,Meet,Incharge,PA,PI,DB,Telemarketing,Form_Masuk,Form_Keluar',
@@ -469,7 +469,7 @@ class AktivitasController extends Controller
 
         // Hanya aktivitas BUKAN Visit yang WAJIB punya kontak
         if ($request->filled('aktivitas') && $request->aktivitas !== 'Visit') {
-            $rules['id_contact'] = 'required|integer';
+            $rules['id_contact'] = 'required';
         }
 
         $validated = $request->validate($rules);
@@ -501,13 +501,12 @@ class AktivitasController extends Controller
 
             $aktivitasData['id_contact'] = $contact->id;
             $aktivitasData['id_peserta'] = null;
-
             Aktivitas::create([
                 'id_sales'        => $validated['id_sales'],
                 'id_contact'      => $contact->id,
                 'aktivitas'       => 'Contact',
                 'deskripsi'       => 'Contact baru berhasil ditambahkan',
-                'waktu_aktivitas' => now(),
+                'waktu_aktivitas' => $validated['waktu_aktivitas'],
             ]);
 
             Log::info('Kontak baru dibuat', ['id' => $contact->id]);
