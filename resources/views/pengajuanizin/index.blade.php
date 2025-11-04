@@ -217,9 +217,10 @@
                 },
                 //fix
                 {
-                    "data": "created_at",
+                    "data": null,
                     "render": function(data, type, row) {
-                        return moment(data).format('DD MMMM YYYY');
+                        let tgl = data.tanggal ? data.tanggal : data.created_at;
+                        return moment(tgl).format('DD MMMM YYYY');
                     }
                 },
                 {
