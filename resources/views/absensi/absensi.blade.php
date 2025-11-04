@@ -296,7 +296,7 @@
                     <div class="card">
                         <div class="card-body">
                             <h2>Total Keterlambatan Bulan ini :
-                                {{ $totalketerlambatan->total_keterlambatan ?? '0 menit' }}
+                                {{ $totalketerlambatan ?? '0 menit' }}
                             </h2>
                         </div>
                     </div>
