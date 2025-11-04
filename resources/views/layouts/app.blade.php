@@ -683,7 +683,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/laravel-echo/1.15.0/echo.iife.js"></script>
 
 <script>
-    window.NOTIF_COUNT_URL = "{{ route('notifications.unread-count') }}";
     window.USER_ID = "{{ auth()->id() }}";
     window.PUSHER_KEY = "{{ config('broadcasting.connections.pusher.key') }}";
     window.PUSHER_CLUSTER = "{{ config('broadcasting.connections.pusher.options.cluster') }}";
