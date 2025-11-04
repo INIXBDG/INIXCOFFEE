@@ -36,6 +36,8 @@
                             </select>
                             <textarea class="form-control" id="keteranganBlock" name="keterangan" rows="3" placeholder="Keterangan"></textarea>
                             <textarea class="form-control" id="penangananFinish" name="penanganan" rows="3" placeholder="Update Penanganan"></textarea>
+                            <input type="date" value="{{ now()->toDateString() }}" class="form-control" name="tanggal_selesai" id="tanggal_selesai">
+                            <input type="time" value="{{ now()->toTimeString() }}" class="form-control" name="jam_selesai" id="jam_selesai">
                         </div>
                         <button type="submit" class="btn btn-danger mb-2 w-100">Tolak Tiket</button>
                     </form>
@@ -57,8 +59,34 @@
                             </select>
                             <textarea class="form-control" id="keteranganFinish" name="keterangan" rows="3" placeholder="Keterangan"></textarea>
                             <textarea class="form-control" id="penangananFinish" name="penanganan" rows="3" placeholder="Update Penanganan"></textarea>
+                            <input type="date" value="{{ now()->toDateString() }}" class="form-control" name="tanggal_selesai" id="tanggal_selesai">
+                            <input type="time" value="{{ now()->toTimeString() }}" class="form-control" name="jam_selesai" id="jam_selesai">
                         </div>
                         <button type="submit" class="btn btn-success w-100">Selesaikan Tiket</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="terimatiketModal" tabindex="-1" aria-labelledby="terimatiketModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="terimatiketModalLabel">Terima Tiket</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Form Tolak Tiket -->
+                    <form id="formTerima" action="" method="POST">
+                        @csrf
+                        @method("POST")
+                        <input type="hidden" name="pic" id="terimaPic" value="">
+                        <input type="hidden" name="row" id="terimaRow" value="">
+                        <div class="mb-3">
+                            <input type="date" value="{{ now()->toDateString() }}" class="form-control" name="tanggal_response" id="tanggal_response">
+                            <input type="time" value="{{ now()->toTimeString() }}" class="form-control" name="jam_response" id="jam_response">
+                        </div>
+                        <button type="submit" class="btn btn-success mb-2 w-100">Terima Tiket</button>
                     </form>
                 </div>
             </div>
@@ -89,7 +117,7 @@
                     <table class="table table-striped" id="jabatantable">
                         <thead>
                             <tr>
-                                {{-- <th scope="col">No</th> --}}
+                                <th scope="col">No</th>
                                 <th scope="col">Timestamp</th>
                                 <th scope="col">Nama Karyawan</th>
                                 <th scope="col">Divisi</th>
@@ -193,7 +221,10 @@
                 }
             },
             "columns": [
-                // {"data": "id"},
+                {
+                    "data": "created_at",
+                    "visible": false,
+                },
                 {
                     "data": "timestamp",
                     "render": function(data){
@@ -284,13 +315,15 @@
                             }else if(data.status == 'Selesai' && divisi == 'IT Service Management' || data.status == 'Terkendala' && divisi == 'IT Service Management'){
                                 actions += '<button type="submit" disabled class="dropdown-item"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Terima</button>';
                             }else if(divisi == 'IT Service Management'){
-                                actions += '<form onsubmit="return confirm(\'Anda akan menerima tiket ini ?\');" action="{{ url('/tickets') }}/' + row.id + '/accept" method="POST">';
-                                actions += '@csrf';
-                                actions += '<input type="hidden" name="pic" value="'+pic+'">';
-                                actions += '<input type="hidden" name="row" value="'+data.row+'">';
-                                actions += '@method('POST')';
-                                actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Terima</button>';
-                                actions += '</form>';
+                                actions += '<button type="button" class="dropdown-item" onclick="terimatiketModal(\'' + data.id + '\', \'' + pic + '\', \'' + data.row + '\')"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Terima</button>';
+                                
+                                // actions += '<form onsubmit="return confirm(\'Anda akan menerima tiket ini ?\');" action="{{ url('/tickets') }}/' + row.id + '/accept" method="POST">';
+                                // actions += '@csrf';
+                                // actions += '<input type="hidden" name="pic" value="'+pic+'">';
+                                // actions += '<input type="hidden" name="row" value="'+data.row+'">';
+                                // actions += '@method('POST')';
+                                // actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Terima</button>';
+                                // actions += '</form>';
                             }
                             actions += '<button type="button" class="dropdown-item" onclick=\'openDetailModal(' + JSON.stringify(data) + ')\'><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Detail</button>';
                             actions += '</div>';
@@ -300,7 +333,10 @@
                     }
                     
                 }
-            ]
+            ],
+            "order": [[0, 'desc']], // Ubah urutan menjadi descending untuk kolom ke-6
+            "columnDefs" : [{"targets":[0], "type":"date"}],
+
         });
     });
     function formatRupiah(angka, prefix) {
@@ -339,6 +375,15 @@
         // Tampilkan modal
         $('#approveModal').modal('show');
     }
+    function terimatiketModal(ticketId, picValue, rowValue) {
+        console.log(ticketId, picValue, rowValue);
+        var terimaUrl = "{{ url('/tickets') }}/" + ticketId + "/accept";
+        $('#formTerima').attr('action', terimaUrl);
+        $('#terimaPic').val(picValue);
+        $('#terimaRow').val(rowValue);
+        $('#terimatiketModal').modal('show');
+    }
+
     function openDetailModal(data) {
         console.log(data);
         // Tampilkan modal
