@@ -44,7 +44,7 @@ class DailyActivityController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'id_task' => 'required|exists:tasks,id',
+            'id_task' => 'nullable|exists:tasks,id',
             'activity' => 'required|string',
             'description' => 'nullable|string',
             'doc' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png|max:2048',
@@ -93,8 +93,7 @@ class DailyActivityController extends Controller
         }
 
         if (!empty($userDivisionName)) {
-            $tasks = Task::whereIn('state', ['todo', 'inprogress'])
-                           ->whereHas('user.karyawan', function ($query) use ($userDivisionName) {
+            $tasks = Task::whereHas('user.karyawan', function ($query) use ($userDivisionName) {
                                $query->where('divisi', $userDivisionName);
                            })
                            ->orderBy('title')
@@ -138,9 +137,25 @@ class DailyActivityController extends Controller
         return response()->json($dailyActivity);
     }
 
-    public function edit(DailyActivity $dailyActivity) // Route Model Binding
+    public function edit(DailyActivity $dailyActivity)
     {
-        $tasks = Task::whereIn('state', ['todo', 'inprogress'])->orderBy('title')->get();
+        $currentUser = Auth::user();
+        $karyawan = $currentUser->karyawan;
+
+        $userDivisionName = null;
+        $tasks = collect(); // Default: kosong
+
+        if ($karyawan) {
+            $userDivisionName = $karyawan->divisi;
+        }
+
+        if (!empty($userDivisionName)) {
+            $tasks = Task::whereHas('user.karyawan', function ($query) use ($userDivisionName) {
+                            $query->where('divisi', $userDivisionName);
+                        })
+                        ->orderBy('title')
+                        ->get();
+        }
 
         $statuses = ['On Progres', 'On Progres Dilanjutkan Besok', 'Gagal', 'Selesai'];
 
@@ -151,7 +166,7 @@ class DailyActivityController extends Controller
     {
         // Validasi data yang masuk
          $validator = Validator::make($request->all(), [
-            'id_task'       => 'required|exists:tasks,id',
+            'id_task'       => 'nullable|exists:tasks,id',
             'activity'      => 'required|string',
             'description'   => 'nullable|string',
             'doc'           => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png|max:2048', // Validasi file baru
