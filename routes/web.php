@@ -38,8 +38,7 @@ use App\Http\Controllers\SouvenirController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\KanbanController;
 use App\Http\Controllers\DailyActivityController;
-
-
+use App\Http\Controllers\office\OfficeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -536,7 +535,6 @@ Route::prefix('crm')->group(function () {
     // Import Contact / Perusahaan
     Route::post('/perusahaan/import/perusahaan', [ImportPerusahaanAndContactController::class, 'importPerusahaan'])->name('perusahaan.import');
     Route::post('/perusahaan/import/contacts', [ImportPerusahaanAndContactController::class, 'importContacts'])->name('contact.import');
-
 });
 
 //INVOICE
@@ -548,9 +546,9 @@ Route::get('/invoice/{id}/edit', [InvoiceRKMController::class, 'edit'])->name('i
 Route::put('/invoice/{id}', [InvoiceRKMController::class, 'update'])->name('invoice.update');
 Route::delete('/invoice/{id}', [InvoiceRKMController::class, 'destroy'])->name('invoice.destroy');
 Route::get('/invoices/{id}/export-pdf', [InvoiceRKMController::class, 'exportPdf'])
-     ->name('invoices.export-pdf');
+    ->name('invoices.export-pdf');
 Route::get('/invoices/{id}/export-excel', [InvoiceRKMController::class, 'exportExcel'])
-     ->name('invoices.export-excel');
+    ->name('invoices.export-excel');
 Route::get('/invoice/download/{id}', [InvoiceRKMController::class, 'downloadPDF'])->name('download.pdf');
 
 //Kwitansi
@@ -560,7 +558,7 @@ Route::get('/invoice/{invoiceId}/kwitansi/create', [InvoiceRKMController::class,
     ->name('kwitansi.create');
 Route::post('/kwitansi/store', [InvoiceRKMController::class, 'storeKwitansi'])
     ->name('kwitansi.store');
-    // Contoh rute untuk menampilkan detail kwitansi
+// Contoh rute untuk menampilkan detail kwitansi
 Route::get('/kwitansi/{id}', [InvoiceRKMController::class, 'showKwitansi'])->name('kwitansi.show');
 
 //laporan-insiden-route
@@ -589,7 +587,7 @@ Route::get('/management-kelas/get', [managementKelasController::class, 'get'])
     ->name('managementKelas.get');
 Route::post('/management-kelas/store', [managementKelasController::class, 'store'])
     ->name('managementKelas.store');
-    // di web.php atau routes file
+// di web.php atau routes file
 Route::post('/exam/process-room-assignment', [examController::class, 'processRoomAssignment'])->name('exam.processRoomAssignment');
 
 //rekapexam
@@ -648,3 +646,8 @@ Route::patch('/daily-activities/{daily_activity}/update-status', [DailyActivityC
 
 route::get('activity-log', [App\Http\Controllers\DatabaseKPIController::class, 'activityLog'])->name('activity.log');
 route::get('activity-log/data', [App\Http\Controllers\DatabaseKPIController::class, 'getActivityChart'])->name('activity.log.chart');
+
+
+Route::prefix('office')->group(function () {
+    Route::get('/dashboard', [OfficeController::class, 'dashboard'])->name('office.dashboard');
+});
