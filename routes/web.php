@@ -39,6 +39,7 @@ use App\Http\Controllers\TicketController;
 use App\Http\Controllers\KanbanController;
 use App\Http\Controllers\DailyActivityController;
 use App\Http\Controllers\office\OfficeController;
+use App\Http\Controllers\Office\CertificateController;
 
 /*
 |--------------------------------------------------------------------------
@@ -650,4 +651,19 @@ route::get('activity-log/data', [App\Http\Controllers\DatabaseKPIController::cla
 
 Route::prefix('office')->group(function () {
     Route::get('/dashboard', [OfficeController::class, 'dashboard'])->name('office.dashboard');
+});
+Route::prefix('office')->name('office.')->middleware(['auth'])->group(function () {
+    
+    // Certificate Routes
+    Route::prefix('certificate')->name('certificate.')->group(function () {
+        Route::get('/', [CertificateController::class, 'index'])->name('index');
+        Route::get('/detail/{rkm_id}', [CertificateController::class, 'detail'])->name('detail');
+        Route::get('/create/{rkm_id}/{peserta_id}', [CertificateController::class, 'create'])->name('create');
+        Route::post('/store', [CertificateController::class, 'store'])->name('store');
+        Route::get('/show/{id}', [CertificateController::class, 'show'])->name('show');
+        Route::get('/download/{id}', [CertificateController::class, 'download'])->name('download');
+        Route::get('/download-by-peserta/{rkm_id}/{peserta_id}', [CertificateController::class, 'downloadByPeserta'])->name('downloadByPeserta');
+        Route::get('/preview/{id}', [CertificateController::class, 'preview'])->name('preview');
+    });
+
 });

@@ -142,6 +142,8 @@ public function store(Request $request): RedirectResponse
     $request->validate([
         'invoice_number' => 'required|string|max:255|unique:invoices',
         'tanggal_invoice' => 'required|date',
+        'due_date' => 'nullable|date|after or equal:tanggal_invoice',
+        'purchase_order' => 'nullable|string|max:255',
         'id_rkm' => 'required|exists:r_k_m_s,id',
         'amount' => 'required|numeric',
         'unit_price' => 'nullable|numeric',
@@ -154,6 +156,8 @@ public function store(Request $request): RedirectResponse
     Invoice::create([
         'invoice_number' => $request->input('invoice_number'),
         'tanggal_invoice' => $request->input('tanggal_invoice'),
+        'due_date' => $request->input('due_date'), 
+        'purchase_order' => $request->input('purchase_order'), 
         'id_rkm' => $request->input('id_rkm'),
         'amount' => $request->input('amount'),
         'unit_price' => $request->input('unit_price'), // Opsional, dari form
@@ -264,6 +268,8 @@ public function update(Request $request, Invoice $invoice): RedirectResponse
     $request->validate([
         'invoice_number' => 'required|string|max:255|unique:invoices,invoice_number,' . $invoice->id,
         'tanggal_invoice' => 'required|date',
+        'due_date' => 'nullable|date|after_or_equal:tanggal_invoice', 
+        'purchase_order' => 'nullable|string|max:255', 
         'id_rkm' => 'required|exists:r_k_m_s,id',
         'amount' => 'required|numeric',
         'bank_name' => 'nullable|string|max:255', // Tambahan untuk bank_name
@@ -273,6 +279,8 @@ public function update(Request $request, Invoice $invoice): RedirectResponse
     $invoice->update([
         'invoice_number' => $request->input('invoice_number'),
         'tanggal_invoice' => $request->input('tanggal_invoice'),
+        'due_date' => $request->input('due_date'), 
+        'purchase_order' => $request->input('purchase_order'),
         'id_rkm' => $request->input('id_rkm'),
         'amount' => $request->input('amount'),
         'bank_name' => $request->input('bank_name'), // Perbarui bank_name

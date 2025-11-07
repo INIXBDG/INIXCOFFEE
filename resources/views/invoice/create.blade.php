@@ -69,31 +69,17 @@
                             <td colspan="3" class="fw-bold">Nomor Invoice:</td>
                             <td colspan="2">
                                 @php
-                                // ambil id_rkm
                                 $idRkm = $rkm->id;
                                 $kodeInvoice = "INXBDG-INV";
                                 $bulanRomawi = [
-                                1 => 'I',
-                                2 => 'II',
-                                3 => 'III',
-                                4 => 'IV',
-                                5 => 'V',
-                                6 => 'VI',
-                                7 => 'VII',
-                                8 => 'VIII',
-                                9 => 'IX',
-                                10 => 'X',
-                                11 => 'XI',
-                                12 => 'XII'
+                                1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI',
+                                7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII'
                                 ];
-
                                 $bulan = (int) date('m');
                                 $tahun = date('Y');
                                 $bulanRomawiNow = $bulanRomawi[$bulan];
-
                                 $invoiceNumber = $idRkm . '/' . $kodeInvoice . '/' . $bulanRomawiNow . '/' . $tahun;
                                 @endphp
-
                                 <input type="text" class="form-control" name="invoice_number"
                                     value="{{ old('invoice_number', $invoiceNumber) }}" readonly>
                             </td>
@@ -102,10 +88,31 @@
                         <tr>
                             <td colspan="3" class="fw-bold">Tanggal Invoice:</td>
                             <td colspan="2">
-                                <input type="date" class="form-control" name="tanggal_invoice"
+                                <input type="date" class="form-control" name="tanggal_invoice" id="tanggal_invoice"
                                     value="{{ old('tanggal_invoice', date('Y-m-d')) }}" required>
                             </td>
                         </tr>
+
+                        <!-- ✅ Purchase Order Number -->
+                        <tr>
+                            <td colspan="3" class="fw-bold">Purchase Order No.:</td>
+                            <td colspan="2">
+                                <input type="text" class="form-control" name="purchase_order" 
+                                    placeholder="Masukkan nomor PO (opsional)"
+                                    value="{{ old('purchase_order') }}">
+                            </td>
+                        </tr>
+
+                        <!-- ✅ Due Date -->
+                        <tr>
+                            <td colspan="3" class="fw-bold">Due Date:</td>
+                            <td colspan="2">
+                                <input type="date" class="form-control" name="due_date" id="due_date"
+                                    value="{{ old('due_date') }}">
+                                <small class="text-muted">Otomatis 30 hari dari tanggal invoice</small>
+                            </td>
+                        </tr>
+
                         <tr>
                             <td colspan="5" class="bg-light fw-bold text-center">Detail RKM</td>
                         </tr>
@@ -184,7 +191,7 @@
                                 <select name="bank_name" id="bank_name" class="form-control mb-2">
                                     <option value="">Pilih Nama Bank</option>
                                     <option value="BANK MANDIRI KK BANDUNG CIHAMPELAS">BANK MANDIRI KK BANDUNG CIHAMPELAS</option>
-                                <option value="BANK BCA KK BANDUNG ABDUL RIVAI">BANK BCA KK BANDUNG ABDUL RIVAI</option>
+                                    <option value="BANK BCA KK BANDUNG ABDUL RIVAI">BANK BCA KK BANDUNG ABDUL RIVAI</option>
                                     <option value="BANK BJB KCP CIHAMPELAS BANDUNG">BANK BJB KCP CIHAMPELAS BANDUNG</option>
                                 </select>
 
@@ -249,7 +256,6 @@
                                 </div>
                             </td>
                         </tr>
-
 
                         <tr class="bg-secondary text-white fw-bold text-center">
                             <td colspan="5">
@@ -368,11 +374,10 @@
             const ppn = totalAmount * 0.11;
             let grandTotal = totalAmount + ppn;
 
-            // ✅ Cek apakah PPh23 diaktifkan
             let pph23 = 0;
             if (pph23Check.checked) {
                 pph23Row.style.display = '';
-                pph23 = totalAmount * 0.02; // 2%
+                pph23 = totalAmount * 0.02;
                 grandTotal -= pph23;
             } else {
                 pph23Row.style.display = 'none';
@@ -390,9 +395,7 @@
             terbilangHidden.value = terbilangValue;
         }
 
-        // Trigger kalkulasi ulang kalau checkbox PPh23 diklik
         document.getElementById('pph23_check').addEventListener('change', recalculateTotals);
-
 
         document.addEventListener('DOMContentLoaded', (event) => {
             recalculateTotals();
@@ -413,10 +416,23 @@
             unitPriceInput.value = unformatNumber(unitPriceInput.value);
         });
 
+        // ✅ Auto-fill Due Date (30 hari dari tanggal invoice)
+        document.getElementById('tanggal_invoice').addEventListener('change', function() {
+            const invoiceDate = new Date(this.value);
+            if (!isNaN(invoiceDate)) {
+                invoiceDate.setDate(invoiceDate.getDate() + 30);
+                const year = invoiceDate.getFullYear();
+                const month = String(invoiceDate.getMonth() + 1).padStart(2, '0');
+                const day = String(invoiceDate.getDate()).padStart(2, '0');
+                document.getElementById('due_date').value = `${year}-${month}-${day}`;
+            }
+        });
+
+        // ✅ Trigger saat halaman load
+        document.getElementById('tanggal_invoice').dispatchEvent(new Event('change'));
+
         function exportToExcel() {
-            alert(
-                'Fungsi Export Excel akan diimplementasikan di sini. Anda perlu menambahkan library seperti SheetJS atau TableExport.js.'
-            );
+            alert('Fungsi Export Excel akan diimplementasikan di sini.');
         }
 
         function exportToPdf() {
@@ -424,45 +440,34 @@
             const options = {
                 margin: [10, 10, 10, 10],
                 filename: 'invoice_' + document.querySelector('input[name="invoice_number"]').value + '.pdf',
-                image: {
-                    type: 'jpeg',
-                    quality: 0.98
-                },
-                html2canvas: {
-                    scale: 2
-                },
-                jsPDF: {
-                    unit: 'mm',
-                    format: 'a4',
-                    orientation: 'portrait'
-                }
+                image: {type: 'jpeg', quality: 0.98},
+                html2canvas: {scale: 2},
+                jsPDF: {unit: 'mm', format: 'a4', orientation: 'portrait'}
             };
-
             html2pdf().set(options).from(element).save();
         }
 
-            // Mapping Bank dengan Nomor Rekening
-    const bankAccounts = {
-        "BANK MANDIRI KK BANDUNG CIHAMPELAS": "131-00-0734797-6",
-        "BANK BCA KK BANDUNG ABDUL RIVAI": "5170583738",
-        "BANK BJB KCP CIHAMPELAS BANDUNG": "0142016095100"
-    };
+        const bankAccounts = {
+            "BANK MANDIRI KK BANDUNG CIHAMPELAS": "131-00-0734797-6",
+            "BANK BCA KK BANDUNG ABDUL RIVAI": "5170583738",
+            "BANK BJB KCP CIHAMPELAS BANDUNG": "0142016095100"
+        };
 
-    const bankSelect = document.getElementById("bank_name");
-    const accountSelect = document.getElementById("account_number");
+        const bankSelect = document.getElementById("bank_name");
+        const accountSelect = document.getElementById("account_number");
 
-    bankSelect.addEventListener("change", function () {
-        const selectedBank = this.value;
-        accountSelect.innerHTML = '<option value="">Pilih Nomor Rekening</option>'; // reset dulu
+        bankSelect.addEventListener("change", function () {
+            const selectedBank = this.value;
+            accountSelect.innerHTML = '<option value="">Pilih Nomor Rekening</option>';
 
-        if (selectedBank && bankAccounts[selectedBank]) {
-            const option = document.createElement("option");
-            option.value = bankAccounts[selectedBank];
-            option.textContent = bankAccounts[selectedBank];
-            option.selected = true; // otomatis terpilih
-            accountSelect.appendChild(option);
-        }
-    });
+            if (selectedBank && bankAccounts[selectedBank]) {
+                const option = document.createElement("option");
+                option.value = bankAccounts[selectedBank];
+                option.textContent = bankAccounts[selectedBank];
+                option.selected = true;
+                accountSelect.appendChild(option);
+            }
+        });
     </script>
 </body>
 
