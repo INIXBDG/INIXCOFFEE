@@ -65,6 +65,9 @@ class User extends Authenticatable
     {
         return Hashids::encode($this->id);
     }
-    
 
+    public function surveyKepuasan()
+    {
+        return $this->hasMany(SurveyKepuasan::class, 'id_user');
+    }
 }

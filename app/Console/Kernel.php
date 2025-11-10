@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Notification;
 use App\Models\Outstanding;
 use App\Models\User;
 use App\Models\RKM;
+use App\Notifications\SurveyReminderNotification;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -22,40 +23,143 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
+        // $schedule->call(function () {
+        //     $outstandings = Outstanding::where('status_pembayaran', '0')
+        //         ->whereDate('due_date', '>=', now())
+        //         ->get();
+
+        //     $financeUsers = User::where('jabatan', 'Finance & Accounting')->get();
+        //     $path = '/outstanding';
+
+        //     try {
+        //         foreach ($outstandings as $outstanding) {
+        //             Notification::send($financeUsers, new OutstandingNotification($outstanding, $path));
+        //         }
+        //     } catch (\Exception $e) {
+        //         Log::error('Failed to send notifications: ' . $e->getMessage());
+        //     }
+        // })->weeklyOn(1, '8:00');
+
+        // $schedule->call(function () {
+        //     $outstandings = Outstanding::where('status_pembayaran', '1')->get();
+
+        //     foreach ($outstandings as $outstanding) {
+        //         $rkm = RKM::where('id', $outstanding->id_rkm)->with('perusahaan', 'materi')->first();
+
+        //         if ($rkm && $rkm->perusahaan && $rkm->materi) {
+        //             // Tandai notifikasi terkait sebagai dibaca (set read_at)
+        //             DB::table('notifications')
+        //                 ->where('type', 'App\Notifications\OutstandingNotification')
+        //                 ->whereJsonContains('data->message->nama_perusahaan', $rkm->perusahaan->nama_perusahaan) // Sesuaikan dengan struktur data Anda
+        //                 ->whereJsonContains('data->message->nama_materi', $rkm->materi->nama_materi) // Sesuaikan dengan struktur data Anda
+        //                 ->whereJsonContains('data->message->due_date', $outstanding->due_date) // Sesuaikan dengan struktur data Anda
+        //                 ->update(['read_at' => Carbon::now()]);
+        //         }
+        //     }
+        // })->dailyAt('23:00');
+
+        // $schedule->call(function () {
+        //     try {
+        //         $now = now();
+
+        //         // Ambil user beserta survey terakhir
+        //         $users = User::with(['surveyKepuasan' => fn($q) => $q->latest('created_at')])->get();
+
+        //         $notifications = [];
+
+        //         foreach ($users as $user) {
+        //             $lastSurvey = $user->surveyKepuasan->first();
+
+        //             // Belum pernah atau sudah >= 3 bulan
+        //             if (!$lastSurvey || $now->diffInMonths($lastSurvey->created_at) >= 3) {
+        //                 $notifications[] = [
+        //                     'id' => \Illuminate\Support\Str::uuid(),
+        //                     'type' => 'App\\Notifications\\SurveyReminderNotification',
+        //                     'notifiable_type' => 'App\\Models\\User',
+        //                     'notifiable_id' => $user->id,
+        //                     'data' => json_encode([
+        //                         'user' => 'System',
+        //                         'message' => [
+        //                             'tipe' => 'survey_reminder',
+        //                             'judul' => 'Survey Kepuasan ITSM!',
+        //                             'deskripsi' => 'Dimohon untuk anda dapat mengisi survey kepuasan pelayanan ITSM.',
+        //                         ],
+        //                         'path' => route('surveyKepuasan.create'),
+        //                         'status' => 'unread',
+        //                         'data' => [
+        //                             'id_user' => $user->id,
+        //                             'terakhir_survey' => $lastSurvey ? $lastSurvey->created_at->format('d/m/Y') : 'Belum Pernah',
+        //                         ]
+        //                     ]),
+        //                     'created_at' => $now,
+        //                     'updated_at' => $now,
+        //                 ];
+        //             }
+        //         }
+
+        //         // Insert batch hanya jika ada notifikasi
+        //         if (!empty($notifications)) {
+        //             DB::table('notifications')->insert($notifications);
+        //             Log::info('Survey reminder executed successfully. Total: ' . count($notifications));
+        //         } else {
+        //             Log::info('Survey reminder executed, no pending notifications.');
+        //         }
+        //     } catch (\Throwable $e) {
+        //         Log::error('Survey reminder failed: ' . $e->getMessage());
+        //     }
+        // })->dailyAt('14:04');
+
         $schedule->call(function () {
-            $outstandings = Outstanding::where('status_pembayaran', '0')
-                ->whereDate('due_date', '>=', now())
-                ->get();
-
-            $financeUsers = User::where('jabatan', 'Finance & Accounting')->get();
-            $path = '/outstanding';
-
             try {
-                foreach ($outstandings as $outstanding) {
-                    Notification::send($financeUsers, new OutstandingNotification($outstanding, $path));
+                $now = now();
+
+                $users = User::with(['surveyKepuasan' => fn($q) => $q->latest('created_at')])->get();
+
+                $notifications = [];
+
+                foreach ($users as $user) {
+                    $lastSurvey = $user->surveyKepuasan->first();
+
+                    // Belum pernah atau sudah >= 20 detik
+                    if (!$lastSurvey || $now->diffInSeconds($lastSurvey->created_at) >= 20) {
+                        $notifications[] = [
+                            'id' => \Illuminate\Support\Str::uuid(),
+                            'type' => 'App\\Notifications\\SurveyReminderNotification',
+                            'notifiable_type' => 'App\\Models\\User',
+                            'notifiable_id' => $user->id,
+                            'data' => json_encode([
+                                'user' => 'System',
+                                'message' => [
+                                    'tipe' => 'survey_reminder',
+                                    'judul' => 'Survey Kepuasan ITSM!',
+                                    'deskripsi' => 'Dimohon untuk anda dapat mengisi survey kepuasan pelayanan ITSM.',
+                                ],
+                                'path' => route('surveyKepuasan.create'),
+                                'status' => 'unread',
+                                'data' => [
+                                    'id_user' => $user->id,
+                                    'terakhir_survey' => $lastSurvey ? $lastSurvey->created_at->format('d/m/Y H:i:s') : 'Belum Pernah',
+                                ]
+                            ]),
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ];
+                    }
                 }
-            } catch (\Exception $e) {
-                Log::error('Failed to send notifications: ' . $e->getMessage());
-            }
-        })->weeklyOn(1, '8:00');
 
-        $schedule->call(function () {
-            $outstandings = Outstanding::where('status_pembayaran', '1')->get();
-
-            foreach ($outstandings as $outstanding) {
-                $rkm = RKM::where('id', $outstanding->id_rkm)->with('perusahaan', 'materi')->first();
-
-                if ($rkm && $rkm->perusahaan && $rkm->materi) {
-                    // Tandai notifikasi terkait sebagai dibaca (set read_at)
-                    DB::table('notifications')
-                        ->where('type', 'App\Notifications\OutstandingNotification')
-                        ->whereJsonContains('data->message->nama_perusahaan', $rkm->perusahaan->nama_perusahaan) // Sesuaikan dengan struktur data Anda
-                        ->whereJsonContains('data->message->nama_materi', $rkm->materi->nama_materi) // Sesuaikan dengan struktur data Anda
-                        ->whereJsonContains('data->message->due_date', $outstanding->due_date) // Sesuaikan dengan struktur data Anda
-                        ->update(['read_at' => Carbon::now()]);
+                // Insert batch hanya jika ada notifikasi
+                if (!empty($notifications)) {
+                    DB::table('notifications')->insert($notifications);
+                    Log::info('Survey reminder executed successfully. Total: ' . count($notifications));
+                } else {
+                    Log::info('Survey reminder executed, no pending notifications.');
                 }
+            } catch (\Throwable $e) {
+                Log::error('Survey reminder failed: ' . $e->getMessage());
             }
-        })->dailyAt('23:00');
+        })
+            ->everyMinute(); 
+
 
         $schedule->call(function () {
             try {
@@ -167,10 +271,9 @@ class Kernel extends ConsoleKernel
             }
         })->dailyAt('08:00');
 
-        $schedule->command('app:update-status')->dailyAt('23:00');
+        // $schedule->command('app:update-status')->dailyAt('23:00');
 
-        $schedule->command('uptime:check')->everySixHours();
-
+        // $schedule->command('uptime:check')->everySixHours();
     }
     /**
      * Register the commands for the application.
@@ -185,5 +288,5 @@ class Kernel extends ConsoleKernel
     // protected $commands = [
     //     \App\Console\Commands\CheckUptime::class,
     // ];
-  
+
 }
