@@ -137,6 +137,7 @@ Route::resource('/lembur', \App\Http\Controllers\LemburController::class);
 Route::resource('/overtime', \App\Http\Controllers\OvertimeController::class);
 Route::resource('/pengajuanlabsdansubs', \App\Http\Controllers\PengajuanLabdanSubsController::class);
 Route::resource('/daily-activities', \App\Http\Controllers\DailyActivityController::class);
+Route::resource('/registry', \App\Http\Controllers\RegistryFeatureController::class)->parameters(['registry' => 'tugas']);
 Route::resource('permissions', \App\Http\Controllers\PermissionController::class);
 Route::resource('roles', \App\Http\Controllers\RoleController::class);
 
@@ -645,6 +646,12 @@ Route::patch('/tasks/{id}', [KanbanController::class, 'update'])->name('tasks.up
 Route::get('/tasks/{task}/activities', [KanbanController::class, 'getTaskActivities'])->name('tasks.activities');
 Route::delete('tasks/{task}', [KanbanController::class, 'destroy'])->name('tasks.destroy');
 Route::patch('/daily-activities/{daily_activity}/update-status', [DailyActivityController::class, 'updateStatus'])->name('daily-activities.updateStatus');
+
+// RegistryFeature
+Route::patch('/registry/{tugas}/start', [App\Http\Controllers\RegistryFeatureController::class, 'startTask'])
+     ->name('registry.start');
+Route::patch('/registry/{tugas}/finish', [App\Http\Controllers\RegistryFeatureController::class, 'finishTask'])
+->name('registry.finish');
 
 route::get('activity-log', [App\Http\Controllers\DatabaseKPIController::class, 'activityLog'])->name('activity.log');
 route::get('activity-log/data', [App\Http\Controllers\DatabaseKPIController::class, 'getActivityChart'])->name('activity.log.chart');
