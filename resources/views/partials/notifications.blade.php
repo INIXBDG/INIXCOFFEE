@@ -20,6 +20,24 @@
             </div>
         </div>
     @endif
+     @if ($notification->data['message']['tipe'] == 'survey_reminder')
+        <div class="notification mb-3">
+            <p><strong style="text-transform: capitalize;">{{ $notification->data['message']['judul'] }}
+            <br>
+            {{ $notification->data['message']['deskripsi'] }}
+            </p>
+            <div class="d-flex">
+                <a href="{{ $notification->data['path'] }}" class="btn btn-primary btn-sm" style="margin-right:8px;">Lihat
+                    Selengkapnya</a>
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai
+                        Dibaca</button>
+                </form>
+            </div>
+        </div>
+    @endif
     @if ($notification->data['message']['tipe'] == 'no_record')
         <div class="notification mb-3">
             <p><strong style="text-transform: capitalize;">{{ $notification->data['message']['status'] }}</strong> Atas

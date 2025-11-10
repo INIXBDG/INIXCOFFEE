@@ -131,7 +131,6 @@
         'Self Apprisial' => 5
         ];
 
-        // Kumpulkan semua nilai per jenis -> untuk hitung rata-rata per jenis
         $groupRata2 = [];
         foreach ($formGroup['data']['evaluator'] ?? [] as $ev) {
         $nilaiIndex = 0;
@@ -153,7 +152,6 @@
         }
         }
 
-        // buat peta bobot supaya non-office bisa akses bobot dengan mudah
         $bobotMap = [];
         foreach ($formGroup['data']['dataKriteria'] ?? [] as $kriteria) {
         foreach ($kriteria['detailKriteria'] as $sub) {
@@ -162,26 +160,22 @@
         }
 
         $jenisTotalRaw = [];
-        @endphp
-
-        {{-- ambil mode dari tipe_pdf (controller) dulu, fallback ke evaluated.mode --}}
-        @php
         $mode = $formGroup['tipe_pdf'] ?? ($formGroup['evaluated']['mode'] ?? 'office');
         @endphp
 
-        {{-- MODE OFFICE --}}
         @if ($mode === 'office')
         @foreach ($formGroup['data']['evaluator'] ?? [] as $ev)
         @php
         $nilaiList = $ev['nilai'];
         $nilaiIndex = 0;
         $totalSkorEvaluator = 0;
+        $validNilaiCount = 0;
         @endphp
 
         <table>
             <thead>
                 <tr style="background-color: #e0e0e0;">
-                    <th colspan="6">
+                    <th colspan="5">
                         Evaluator: {{ $ev['nama'] ?? '-' }} - Penilaian {{ $ev['jenis_penilaian'] }}
                     </th>
                 </tr>
@@ -190,7 +184,6 @@
                     <th>Sub Kriteria</th>
                     <th>Bobot</th>
                     <th>Nilai</th>
-                    <th>Rata-rata</th>
                     <th>Skor</th>
                 </tr>
             </thead>
@@ -199,11 +192,16 @@
                 @php $jumlahSub = count($kriteria['detailKriteria']); @endphp
                 @foreach ($kriteria['detailKriteria'] as $iDetail => $sub)
                 @php
-                $nilaiData = $nilaiList[$nilaiIndex++] ?? ['nilai' => 0, 'pesan' => '-'];
-                $nilai = is_numeric($nilaiData['nilai']) ? floatval($nilaiData['nilai']) : 0;
-                $rata = $rata2Hasil[$ev['jenis_penilaian']][$kriteria['kriteria']][$sub['sub_kriteria']] ?? $nilai;
-                $skor = ($rata * $sub['bobot']) / 100;
+                $nilaiData = $nilaiList[$nilaiIndex] ?? ['nilai' => null, 'pesan' => '-'];
+                $nilaiRaw = $nilaiData['nilai'];
+                $nilai = is_numeric($nilaiRaw) ? floatval($nilaiRaw) : 0;
+                $tampilkanNilai = is_numeric($nilaiRaw) ? number_format($nilai, 2, ',', '.') : '-';
+                $skor = is_numeric($nilaiRaw) ? ($nilai * $sub['bobot']) / 100 : 0;
+                if (is_numeric($nilaiRaw)) {
                 $totalSkorEvaluator += $skor;
+                $validNilaiCount++;
+                }
+                $nilaiIndex++;
                 @endphp
                 <tr>
                     @if ($iDetail === 0)
@@ -211,15 +209,14 @@
                     @endif
                     <td>{{ $sub['sub_kriteria'] }}</td>
                     <td>{{ $sub['bobot'] }}%</td>
-                    <td>{{ $nilai }}</td>
-                    <td>{{ number_format($rata, 2, ',', '.') }}</td>
-                    <td>{{ number_format($skor, 2, ',', '.') }}</td>
+                    <td>{{ $tampilkanNilai }}</td>
+                    <td>{{ is_numeric($nilaiRaw) ? number_format($skor, 2, ',', '.') : '-' }}</td>
                 </tr>
                 @endforeach
                 @endforeach
 
                 <tr class="summary-row">
-                    <td colspan="5" class="text-right">Total {{ $ev['nama'] }}</td>
+                    <td colspan="4" class="text-right">Total {{ $ev['nama'] }}</td>
                     <td>{{ number_format($totalSkorEvaluator, 2, ',', '.') }}</td>
                 </tr>
             </tbody>
@@ -283,7 +280,6 @@
         @endforeach
         @endif
 
-        {{-- Rekap Global --}}
         @php
         $jenisTotalPost = [];
         $totalSemuaSkor = 0;

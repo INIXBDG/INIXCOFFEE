@@ -648,3 +648,9 @@ Route::patch('/daily-activities/{daily_activity}/update-status', [DailyActivityC
 
 route::get('activity-log', [App\Http\Controllers\DatabaseKPIController::class, 'activityLog'])->name('activity.log');
 route::get('activity-log/data', [App\Http\Controllers\DatabaseKPIController::class, 'getActivityChart'])->name('activity.log.chart');
+
+// survey kepuasan
+Route::get('/survey/kepuasan', [App\Http\Controllers\SurveyKepuasanController::class, 'index'])->name('surveykepuasan.index');
+Route::post('/survey/kepuasan/send', [App\Http\Controllers\SurveyKepuasanController::class, 'store'])->name('surveykepuasan.store');   
+Route::get('/survey/kepuasan/table', [App\Http\Controllers\SurveyKepuasanController::class, 'indexTable'])->name('surveyKepuasan.indexTable');
+Route::get('/survey/kepuasan/destroy/{id}', [App\Http\Controllers\SurveyKepuasanController::class, 'destroy']);
