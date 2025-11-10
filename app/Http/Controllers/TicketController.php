@@ -121,7 +121,7 @@ class TicketController extends Controller
                 $detail_kendala_td,
             ]
         ];
-        // $message = $this->appendValues($spreadsheetId, $range, $values);
+        $message = $this->appendValues($spreadsheetId, $range, $values);
         $ticket->update([
             'row' => $message
         ]);
@@ -229,7 +229,7 @@ class TicketController extends Controller
     {
         $tanggal_response = $request->tanggal_response;
         $jam_response = $request->jam_response;
-        // dd($request->all());
+        dd($request->all());
         $ticket->update([
             'penanganan' => 'Sedang Diperbaiki',
             'status' => 'Di Proses',
