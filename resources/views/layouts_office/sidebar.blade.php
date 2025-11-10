@@ -27,10 +27,16 @@
             ];
         @endphp
 
-        <li class="menu-item {{ request()->is('office*') ? 'active' : '' }}">
+        <li class="menu-item {{ request()->is('office/dashboard') ? 'active' : '' }}">
             <a href="{{ route('office.dashboard') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-home-smile"></i>
                 <div class="text-truncate">Dashboard Office</div>
+            </a>
+        </li>
+        <li class="menu-item {{ request()->is('office/certificate*') ? 'active' : '' }}">
+            <a href="{{ route('office.certificate.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-award"></i>
+                <div class="text-truncate">Generate Sertifikat</div>
             </a>
         </li>
 
