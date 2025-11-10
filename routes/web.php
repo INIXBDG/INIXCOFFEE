@@ -38,8 +38,8 @@ use App\Http\Controllers\SouvenirController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\KanbanController;
 use App\Http\Controllers\DailyActivityController;
-
-
+use App\Http\Controllers\office\OfficeController;
+use App\Http\Controllers\Office\CertificateController;
 
 /*
 |--------------------------------------------------------------------------
@@ -137,6 +137,7 @@ Route::resource('/lembur', \App\Http\Controllers\LemburController::class);
 Route::resource('/overtime', \App\Http\Controllers\OvertimeController::class);
 Route::resource('/pengajuanlabsdansubs', \App\Http\Controllers\PengajuanLabdanSubsController::class);
 Route::resource('/daily-activities', \App\Http\Controllers\DailyActivityController::class);
+Route::resource('/registry', \App\Http\Controllers\RegistryFeatureController::class)->parameters(['registry' => 'tugas']);
 Route::resource('permissions', \App\Http\Controllers\PermissionController::class);
 Route::resource('roles', \App\Http\Controllers\RoleController::class);
 
@@ -536,7 +537,6 @@ Route::prefix('crm')->group(function () {
     // Import Contact / Perusahaan
     Route::post('/perusahaan/import/perusahaan', [ImportPerusahaanAndContactController::class, 'importPerusahaan'])->name('perusahaan.import');
     Route::post('/perusahaan/import/contacts', [ImportPerusahaanAndContactController::class, 'importContacts'])->name('contact.import');
-
 });
 
 //INVOICE
@@ -548,9 +548,9 @@ Route::get('/invoice/{id}/edit', [InvoiceRKMController::class, 'edit'])->name('i
 Route::put('/invoice/{id}', [InvoiceRKMController::class, 'update'])->name('invoice.update');
 Route::delete('/invoice/{id}', [InvoiceRKMController::class, 'destroy'])->name('invoice.destroy');
 Route::get('/invoices/{id}/export-pdf', [InvoiceRKMController::class, 'exportPdf'])
-     ->name('invoices.export-pdf');
+    ->name('invoices.export-pdf');
 Route::get('/invoices/{id}/export-excel', [InvoiceRKMController::class, 'exportExcel'])
-     ->name('invoices.export-excel');
+    ->name('invoices.export-excel');
 Route::get('/invoice/download/{id}', [InvoiceRKMController::class, 'downloadPDF'])->name('download.pdf');
 
 //Kwitansi
@@ -560,7 +560,7 @@ Route::get('/invoice/{invoiceId}/kwitansi/create', [InvoiceRKMController::class,
     ->name('kwitansi.create');
 Route::post('/kwitansi/store', [InvoiceRKMController::class, 'storeKwitansi'])
     ->name('kwitansi.store');
-    // Contoh rute untuk menampilkan detail kwitansi
+// Contoh rute untuk menampilkan detail kwitansi
 Route::get('/kwitansi/{id}', [InvoiceRKMController::class, 'showKwitansi'])->name('kwitansi.show');
 
 //laporan-insiden-route
@@ -589,7 +589,7 @@ Route::get('/management-kelas/get', [managementKelasController::class, 'get'])
     ->name('managementKelas.get');
 Route::post('/management-kelas/store', [managementKelasController::class, 'store'])
     ->name('managementKelas.store');
-    // di web.php atau routes file
+// di web.php atau routes file
 Route::post('/exam/process-room-assignment', [examController::class, 'processRoomAssignment'])->name('exam.processRoomAssignment');
 
 //rekapexam
@@ -646,6 +646,12 @@ Route::get('/tasks/{task}/activities', [KanbanController::class, 'getTaskActivit
 Route::delete('tasks/{task}', [KanbanController::class, 'destroy'])->name('tasks.destroy');
 Route::patch('/daily-activities/{daily_activity}/update-status', [DailyActivityController::class, 'updateStatus'])->name('daily-activities.updateStatus');
 
+// RegistryFeature
+Route::patch('/registry/{tugas}/start', [App\Http\Controllers\RegistryFeatureController::class, 'startTask'])
+     ->name('registry.start');
+Route::patch('/registry/{tugas}/finish', [App\Http\Controllers\RegistryFeatureController::class, 'finishTask'])
+->name('registry.finish');
+
 route::get('activity-log', [App\Http\Controllers\DatabaseKPIController::class, 'activityLog'])->name('activity.log');
 route::get('activity-log/data', [App\Http\Controllers\DatabaseKPIController::class, 'getActivityChart'])->name('activity.log.chart');
 
@@ -654,3 +660,22 @@ Route::get('/survey/kepuasan', [App\Http\Controllers\SurveyKepuasanController::c
 Route::post('/survey/kepuasan/send', [App\Http\Controllers\SurveyKepuasanController::class, 'store'])->name('surveykepuasan.store');   
 Route::get('/survey/kepuasan/table', [App\Http\Controllers\SurveyKepuasanController::class, 'indexTable'])->name('surveyKepuasan.indexTable');
 Route::get('/survey/kepuasan/destroy/{id}', [App\Http\Controllers\SurveyKepuasanController::class, 'destroy']);
+
+Route::prefix('office')->group(function () {
+    Route::get('/dashboard', [OfficeController::class, 'dashboard'])->name('office.dashboard');
+});
+Route::prefix('office')->name('office.')->middleware(['auth'])->group(function () {
+    
+    // Certificate Routes
+    Route::prefix('certificate')->name('certificate.')->group(function () {
+        Route::get('/', [CertificateController::class, 'index'])->name('index');
+        Route::get('/detail/{rkm_id}', [CertificateController::class, 'detail'])->name('detail');
+        Route::get('/create/{rkm_id}/{peserta_id}', [CertificateController::class, 'create'])->name('create');
+        Route::post('/store', [CertificateController::class, 'store'])->name('store');
+        Route::get('/show/{id}', [CertificateController::class, 'show'])->name('show');
+        Route::get('/download/{id}', [CertificateController::class, 'download'])->name('download');
+        Route::get('/download-by-peserta/{rkm_id}/{peserta_id}', [CertificateController::class, 'downloadByPeserta'])->name('downloadByPeserta');
+        Route::get('/preview/{id}', [CertificateController::class, 'preview'])->name('preview');
+    });
+
+});

@@ -195,8 +195,8 @@ public function getSuratPerjalanan()
         $user = auth()->user()->karyawan_id;
         $karyawan = Karyawan::findOrFail($user);
 
-        $today = now()->startOfDay();
-        $twoWeeksFromNow = now()->addDays(14)->endOfDay();
+        $today = now()->startOfWeek();
+        $twoWeeksFromNow = $today->copy()->addDays(14)->endOfDay();
 
         $data_rkm = RKM::with(['materi', 'perusahaan'])
             ->whereBetween('tanggal_awal', [$today, $twoWeeksFromNow])
@@ -205,7 +205,7 @@ public function getSuratPerjalanan()
             ->groupBy(function ($item) {
                 return \Carbon\Carbon::parse($item->tanggal_awal)->translatedFormat('d F Y');
             });
-
+        
         return view('suratperjalanan.create', compact('karyawan', 'data_rkm'));
     }
 

@@ -38,7 +38,7 @@
                                 {{ optional($activity->activity_date)->format('d M Y') ?? '-' }}
                             </td>
                             <td>
-                                {{ $activity->task->title ?? 'N/A' }}
+                                {{ $activity->task->title ?? 'Belum di Assign' }}
                             </td>
                             <td>
                                  {{ optional(optional($activity->user)->karyawan)->nama_lengkap ?? (optional($activity->user)->name ?? 'N/A') }}

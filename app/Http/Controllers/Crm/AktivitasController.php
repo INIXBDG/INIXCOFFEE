@@ -445,97 +445,122 @@ class AktivitasController extends Controller
         ]);
     }
 
+
+
     public function storeNew(Request $request)
     {
-        try {
-            $user = Auth::user();
-            $aktivitas = $request->input('aktivitas');
+        Log::info('StoreNew called', [
+            'user_id' => auth()->id(),
+            'jabatan' => auth()->user()->jabatan ?? null,
+            'input' => $request->all()
+        ]);
 
-            // === Validasi Dinamis ===
-            $rules = [
-                'aktivitas' => 'required|in:Call,Email,Visit,Meet,Incharge,PA,PI,Telemarketing,Form_Masuk,Form_Keluar',
-                'waktu_aktivitas' => 'required|date',
-                'deskripsi' => 'nullable|string|max:1000',
-                'pax' => 'nullable|integer|min:1',
-                'harga' => 'nullable|numeric|min:0',
-            ];
+        $user = auth()->user();
 
-            // id_sales: wajib jika Adm Sales / SPV Sales
-            if (in_array($user->jabatan, ['Adm Sales', 'SPV Sales'])) {
-                $rules['id_sales'] = 'required|in:HW,VN,RR,NA,AN,RN';
-            }
+        $rules = [
+            'id_perusahaan'   => 'nullable|integer',
+            'id_contact'      => 'nullable',
+            'id_peluang'      => 'nullable',
+            'contact_type'    => 'nullable|string|in:contact,peserta',
+            'aktivitas'       => 'required|in:Call,Email,Visit,Meet,Incharge,PA,PI,DB,Telemarketing,Form_Masuk,Form_Keluar',
+            'deskripsi'       => 'nullable|string',
+            'waktu_aktivitas' => 'required|date',
+        ];
 
-            // === Kontak Baru? ===
-            if ($request->input('id_contact') === 'new') {
-                $rules += [
-                    'nama_perusahaan'     => 'required|string|max:255',
-                    'email_perusahaan'    => 'required|email|max:255',
-                    'divisi_perusahaan'   => 'nullable|string|max:100',
-                    'cp_perusahaan'       => 'nullable|string|max:20',
-                ];
-            }
-
-            // === Validasi Perusahaan & Kontak ===
-            if ($aktivitas !== 'Visit') {
-                $rules['id_perusahaan'] = 'required|exists:perusahaan,id';
-                $rules['id_contact'] = $request->input('id_contact') === 'new'
-                    ? 'nullable'
-                    : 'required|exists:contact,id';
-            } else {
-                $rules['id_perusahaan'] = 'nullable|exists:perusahaan,id';
-                $rules['id_contact'] = 'nullable|exists:contact,id';
-            }
-
-            $validated = $request->validate($rules);
-
-            // === Siapkan Data ===
-            $data = [
-                'id_sales' => $request->input('id_sales', $user->id_sales ?? null),
-                'aktivitas' => $validated['aktivitas'],
-                'deskripsi' => $validated['deskripsi'] ?? null,
-                'waktu_aktivitas' => $validated['waktu_aktivitas'],
-                'pax' => $validated['pax'] ?? null,
-                'harga' => !empty($validated['harga']) ? (float)str_replace(['.', ','], ['', '.'], $validated['harga']) : null,
-                'total' => null,
-                'created_by' => $user->id,
-            ];
-
-            // Hitung total
-            if ($data['pax'] && $data['harga']) {
-                $data['total'] = $data['pax'] * $data['harga'];
-            }
-
-            // === Tambah Kontak Baru ===
-            if ($request->input('id_contact') === 'new') {
-                $perusahaan = Perusahaan::firstOrCreate(
-                    ['nama_perusahaan' => $request->nama_perusahaan],
-                    ['email' => $request->email_perusahaan]
-                );
-
-                $contact = Contact::create([
-                    'id_perusahaan' => $perusahaan->id,
-                    'nama' => $request->nama_perusahaan,
-                    'email' => $request->email_perusahaan,
-                    'divisi' => $request->divisi_perusahaan,
-                    'cp' => $request->cp_perusahaan,
-                ]);
-
-                $data['id_contact'] = $contact->id;
-                $data['id_peserta'] = null;
-            } else {
-                $data['id_contact'] = $request->filled('id_contact') ? $request->id_contact : null;
-                $data['id_peserta'] = null;
-            }
-
-            // === Simpan ===
-            Aktivitas::create($data);
-
-            return back()->with('success', 'Aktivitas berhasil disimpan.');
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return back()->withErrors($e->errors())->withInput();
-        } catch (\Exception $e) {
-            return back()->with('error', 'Terjadi kesalahan saat menyimpan aktivitas.')->withInput();
+        // Hanya aktivitas BUKAN Visit yang WAJIB punya kontak
+        if ($request->filled('aktivitas') && $request->aktivitas !== 'Visit') {
+            $rules['id_contact'] = 'required';
         }
+
+        $validated = $request->validate($rules);
+        Log::info('Validated', $validated);
+
+        if (in_array($user->jabatan, ['Adm Sales', 'SPV Sales'])) {
+            $validated['id_sales'] = $request->input('id_sales');
+            if (empty($validated['id_sales'])) {
+                return back()->withErrors(['id_sales' => 'Sales harus dipilih.']);
+            }
+        } else {
+            $validated['id_sales'] = $user->id_sales;
+        }
+
+        $aktivitasData = $validated;
+
+        if ($request->id_contact === 'new') {
+            Log::info('Memblage kontak baru');
+
+            $contact = Contact::create([
+                'id_perusahaan' => (int) $request->id_perusahaan,
+                'sales_key'     => $validated['id_sales'],
+                'nama'          => trim($request->nama_perusahaan),
+                'email'         => trim($request->email_perusahaan),
+                'cp'            => trim($request->cp_perusahaan),
+                'divisi'        => trim($request->divisi_perusahaan),
+                'status'        => '1'
+            ]);
+
+            $aktivitasData['id_contact'] = $contact->id;
+            $aktivitasData['id_peserta'] = null;
+            Aktivitas::create([
+                'id_sales'        => $validated['id_sales'],
+                'id_contact'      => $contact->id,
+                'aktivitas'       => 'Contact',
+                'deskripsi'       => 'Contact baru berhasil ditambahkan',
+                'waktu_aktivitas' => $validated['waktu_aktivitas'],
+            ]);
+
+            Log::info('Kontak baru dibuat', ['id' => $contact->id]);
+        }
+        elseif ($request->filled('id_contact') && $request->id_contact !== 'new') {
+            $contactId = (int) $request->id_contact;
+
+            if ($contactId <= 0) {
+                return back()->withErrors(['id_contact' => 'Pilih kontak/peserta yang valid.']);
+            }
+
+            if ($request->contact_type === 'peserta') {
+                if (!Peserta::where('id', $contactId)->exists()) {
+                    return back()->withErrors(['id_contact' => 'Peserta tidak ditemukan.']);
+                }
+                $aktivitasData['id_peserta'] = $contactId;
+                $aktivitasData['id_contact'] = null;
+                Log::info('Peserta dipilih', ['id_peserta' => $contactId]);
+            } else {
+                if (!Contact::where('id', $contactId)->exists()) {
+                    return back()->withErrors(['id_contact' => 'Kontak tidak ditemukan.']);
+                }
+                $aktivitasData['id_contact'] = $contactId;
+                $aktivitasData['id_peserta'] = null;
+                Log::info('Kontak dipilih', ['id_contact' => $contactId]);
+            }
+        }
+        // ---------- JIKA TIDAK ADA KONTAK (hanya boleh untuk Visit) ----------
+        else {
+            // Jika bukan Visit → error
+            if ($validated['aktivitas'] !== 'Visit') {
+                return back()->withErrors(['id_contact' => 'Kontak wajib diisi.']);
+            }
+            // Jika Visit → boleh kosong
+            $aktivitasData['id_contact'] = null;
+            $aktivitasData['id_peserta'] = null;
+            Log::info('Visit tanpa kontak → NULL');
+        }
+
+        if ($request->filled('pax')) $aktivitasData['pax'] = $request->pax;
+        if ($request->filled('harga')) $aktivitasData['harga'] = $request->harga;
+        if ($request->filled('pax') && $request->filled('harga')) {
+            $aktivitasData['total'] = $request->pax * $request->harga;
+        }
+
+        try {
+            $aktivitas = Aktivitas::create($aktivitasData);
+            Log::info('Aktivitas berhasil disimpan', ['id' => $aktivitas->id]);
+        } catch (\Exception $e) {
+            Log::error('Gagal insert', ['error' => $e->getMessage()]);
+            return back()->withErrors(['db' => 'Gagal menyimpan data.']);
+        }
+
+        return back()->with(['message' => 'Aktivitas berhasil direkam.', 'data' => $aktivitas]);
     }
 
     public function delete($id)

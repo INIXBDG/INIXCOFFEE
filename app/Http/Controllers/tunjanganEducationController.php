@@ -151,7 +151,7 @@ class tunjanganEducationController extends Controller
             }
             if ($data->feedback !== $request->feedback) {
                 $feedback = $data->feedback;
-                if($feedback >= '3.3'){
+                if($feedback >= '3.30'){
                     if($level === '1'){
                         $tunjangan_feedback = 80000;
                     }else if($level === '2'){
@@ -166,12 +166,18 @@ class tunjanganEducationController extends Controller
                 $feedback = $data->feedback;
                 $tunjangan_feedback = $request->tunjangan_feedback;
             }
+
+            $tunjangan_durasi = $poin_durasi * 15000;
+            $tunjangan_pax = $poin_pax * 15000;
+            $total_tunjangan = $tunjangan_durasi + $tunjangan_pax + $tunjangan_feedback;
+            // dd($request->all());
+
             $data->update([
                 'status' => 'Diajukan',
                 'poin_durasi' => $poin_durasi,
                 'poin_pax' => $poin_pax,
                 'tunjangan_feedback' => $tunjangan_feedback,
-                'total_tunjangan' => $request->total_tunjangan,
+                'total_tunjangan' => $total_tunjangan,
             ]); 
         }
         if ($request->approval == '1') {
