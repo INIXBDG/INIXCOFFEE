@@ -9,11 +9,13 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 use Vinkla\Hashids\Facades\Hashids;
+use Waterhole\Auth\AuthenticatesWaterhole;
+use Waterhole\Auth\HasWaterholeUser;
 
 
-class User extends Authenticatable
+class User extends Authenticatable implements AuthenticatesWaterhole
 {
-    use HasApiTokens, HasFactory, Notifiable, HasRoles;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles, HasWaterholeUser;
     protected $appends = ['hashids'];
 
     /**
