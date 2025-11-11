@@ -27,14 +27,13 @@
             ];
         @endphp
 
-        <li class="menu-item {{ request()->is('office*') ? 'active' : '' }}">
+        <li class="menu-item {{ request()->is('office/dashboard') ? 'active' : '' }}">
             <a href="{{ route('office.dashboard') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-home-smile"></i>
                 <div class="text-truncate">Dashboard Office</div>
             </a>
         </li>
 
-        <!-- Tambahkan menu lain di sini -->
     </ul>
 
     <!-- Sticky Footer di Sidebar -->

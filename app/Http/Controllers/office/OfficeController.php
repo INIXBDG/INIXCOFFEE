@@ -19,13 +19,13 @@ class OfficeController extends Controller
         $total_karyawan = Karyawan::where('status_aktif', '1')
             ->where('divisi', '!=', 'Direksi')
             ->where('jabatan', '!=', 'GM')
-            ->where('id', '!=',  ['36', '38', '45', '46', '47', '48', '49', '52', '53', '54'])
+            ->where('id', '!=',  ['36', '38', '45', '43', '46', '47', '48', '49', '52', '53', '54', '61'])
             ->count();
 
         $karyawan = Karyawan::where('status_aktif', '1')
             ->where('divisi', '!=', 'Direksi')
             ->where('jabatan', '!=', 'GM')
-            ->where('id', '!=', ['36', '38', '45', '46', '47', '48', '49', '52', '53', '54'])
+            ->where('id', '!=', ['36', '38', '45', '43', '46', '47', '48', '49', '52', '53', '54', '61'])
             ->get();
 
         $statsFromDB = $karyawan->groupBy('divisi')->map(function ($items) {

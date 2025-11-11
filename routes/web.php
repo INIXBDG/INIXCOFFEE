@@ -38,6 +38,7 @@ use App\Http\Controllers\SouvenirController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\KanbanController;
 use App\Http\Controllers\DailyActivityController;
+use App\Http\Controllers\office\ModulController;
 use App\Http\Controllers\office\OfficeController;
 
 /*
@@ -649,5 +650,10 @@ route::get('activity-log/data', [App\Http\Controllers\DatabaseKPIController::cla
 
 
 Route::prefix('office')->group(function () {
-    Route::get('/dashboard', [OfficeController::class, 'dashboard'])->name('office.dashboard');
+    Route::get('/', [OfficeController::class, 'dashboard'])->name('office.dashboard');
+
+    Route::get('/modul', [ModulController::class, 'index'])->name('modul.index');
+    Route::get('/modul/{nomor}', [ModulController::class, 'index'])->name('modul.show');
+    Route::post('/modul', [ModulController::class, 'store'])->name('modul.store');
+    Route::delete('/modul/{id}', [ModulController::class, 'deleteNomor'])->name('modul.delete.nomor');
 });

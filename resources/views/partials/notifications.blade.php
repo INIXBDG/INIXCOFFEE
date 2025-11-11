@@ -927,5 +927,36 @@
             </div>
         @endif
 
+         @if ($notification->data['message']['tipe'] == 'Pengajuan Pembelian Modul')
+            <div class="notification mb-3 p-3 border rounded bg-light">
+                <p>
+                    <strong style="text-transform: capitalize;">
+                        {{ $notification->data['user'] }}
+                    </strong>
+                    telah melakukan <strong>pengajuan pembelian modul</strong>
+                    dengan nomor <strong>{{ $notification->data['message']['nomor'] }}</strong>,
+                    bertipe <strong>{{ $notification->data['message']['modul'] }}</strong>.
+                </p>
+
+                <small class="text-muted d-block mb-2">
+                    Dibuat pada 
+                    {{ \Carbon\Carbon::parse($notification->data['message']['created'])->locale('id')->translatedFormat('d F Y H:i') }}
+                </small>
+
+                <div class="mt-2">
+                    <a href="/office/modul" class="btn btn-primary btn-sm me-2">
+                        Lihat Detail
+                    </a>
+                    <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
+                        @csrf
+                        @method('PUT')
+                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                            Tandai sebagai Dibaca
+                        </button>
+                    </form>
+                </div>
+            </div>
+        @endif
+
     <hr>
 @endforeach

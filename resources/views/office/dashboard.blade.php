@@ -143,6 +143,7 @@
                                 <span class="badge bg-primary-subtle text-primary">{{ count($rkm) }} Data</span>
                             </div>
                         </div>
+
                         <div class="card-body p-0">
                             <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
                                 <table class="table table-hover align-middle mb-0">
@@ -156,14 +157,36 @@
                                             <th class="border-0 text-center pe-4" style="min-width: 100px;">Exam</th>
                                         </tr>
                                     </thead>
+
                                     <tbody>
                                         @forelse($rkm as $index => $item)
-                                            <tr class="border-bottom">
+                                            @php
+                                                $startDate = $item->tanggal_awal
+                                                    ? \Carbon\Carbon::parse($item->tanggal_awal)
+                                                    : null;
+                                                $tanggal = $startDate?->format('d') ?? '00';
+                                                $bulan = $startDate?->format('m') ?? '00';
+                                                $tahun = $startDate?->format('y') ?? '00';
+
+                                                $kelas = match ($item->metode_kelas) {
+                                                    'Offline' => 'off',
+                                                    'Inhouse Bandung' => 'inhb',
+                                                    'Inhouse Luar Bandung' => 'inhlb',
+                                                    'Exam Only' => 'exam',
+                                                    default => 'vir',
+                                                };
+
+                                                $url = "/rkm/{$item->materi_key}ixb{$tanggal}ie{$tahun}ie{$bulan}ixb{$kelas}";
+                                            @endphp
+
+                                            <tr class="border-bottom clickable-row" data-href="{{ $url }}"
+                                                style="cursor: pointer;">
                                                 <td class="ps-4">
                                                     <div class="d-flex align-items-center">
                                                         <span class="fw-medium">{{ $item->sales_key }}</span>
                                                     </div>
                                                 </td>
+
                                                 <td>
                                                     <div class="text-truncate" style="max-width: 250px;"
                                                         data-bs-toggle="tooltip"
@@ -172,27 +195,26 @@
                                                         {{ $item->materi->nama_materi }}
                                                     </div>
                                                 </td>
+
                                                 <td>
                                                     <span class="text-success fw-semibold">
                                                         Rp {{ number_format($item->harga_jual, 0, ',', '.') }}
                                                     </span>
                                                 </td>
+
                                                 <td>
                                                     <div class="d-flex flex-column small">
-                                                        <span class="text-muted">
-                                                            {{ \Carbon\Carbon::parse($item->tanggal_awal)->format('d M Y') }}
-                                                        </span>
-                                                        <span class="text-muted">
-                                                            <i class="bx bx-right-arrow-alt me-1"></i>
-                                                            {{ \Carbon\Carbon::parse($item->tanggal_akhir)->format('d M Y') }}
-                                                        </span>
+                                                        <span class="text-muted">{{ $item->tanggal_awal }} •
+                                                            {{ $item->tanggal_akhir }}</span>
                                                     </div>
                                                 </td>
+
                                                 <td class="text-center">
                                                     <span class="badge bg-info-subtle text-info px-3 py-2">
                                                         {{ number_format($item->pax, 0, ',', '.') }}
                                                     </span>
                                                 </td>
+
                                                 <td class="text-center pe-4">
                                                     @if ($item->exam == '1')
                                                         <span class="badge bg-success-subtle text-success px-3 py-2">
@@ -207,7 +229,7 @@
                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="7" class="text-center py-5">
+                                                <td colspan="6" class="text-center py-5">
                                                     <div class="d-flex flex-column align-items-center">
                                                         <i class="bx bx-calendar-x text-muted"
                                                             style="font-size: 3rem;"></i>
@@ -651,6 +673,15 @@
                         easing: 'easeOutQuart'
                     }
                 }
+            });
+
+            document.querySelectorAll('.clickable-row').forEach(row => {
+                row.addEventListener('click', function(e) {
+                    const url = this.dataset.href;
+                    if (url) {
+                        window.open(url, '_blank', 'noopener,noreferrer');
+                    }
+                });
             });
         });
     </script>
