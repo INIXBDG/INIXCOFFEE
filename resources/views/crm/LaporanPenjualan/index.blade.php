@@ -95,6 +95,8 @@
                         </div>
 
                         <div class="mt-4 d-flex justify-content-end gap-2">
+                            <button type="button" id="pdfBtn" class="btn btn-outline-danger">Export to PDF</button> 
+                            <button type="button" id="excelBtn" class="btn btn-outline-success">Export to Excel</button>
                             <button type="button" id="resetBtn" class="btn btn-outline-secondary">Reset</button>
                             <button type="button" id="filterBtn" class="btn btn-primary" disabled>
                                 <span id="filterText">Terapkan Filter</span>
@@ -240,310 +242,386 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-    $(document).ready(function() {
-        moment.locale('id');
+        $(document).ready(function() {
+            moment.locale('id');
 
 
-        // Format Rupiah
-        function formatRupiah(angka) {
-            return 'Rp ' + (parseFloat(angka) || 0).toLocaleString('id-ID');
-        }
+            // Format Rupiah
+            function formatRupiah(angka) {
+                return 'Rp ' + (parseFloat(angka) || 0).toLocaleString('id-ID');
+            }
 
-        // Select2
-        $('.select2-materi, .select2-sales').each(function() {
-            $(this).select2({
-                placeholder: $(this).attr('id') === 'materi_key' ? "Cari Materi..." : "Cari Sales Key...",
-                allowClear: true,
-                theme: "bootstrap-5",
-                width: '100%'
+            // Select2
+            $('.select2-materi, .select2-sales').each(function() {
+                $(this).select2({
+                    placeholder: $(this).attr('id') === 'materi_key' ? "Cari Materi..." : "Cari Sales Key...",
+                    allowClear: true,
+                    theme: "bootstrap-5",
+                    width: '100%'
+                });
             });
-        });
 
-        // Toggle Triwulan & Bulan
-        function toggleTriwulanBulan() {
-            const tahun = $('#tahun').val();
-            if (!tahun) {
-                $('#triwulan, #bulan').prop('disabled', true).val('');
-                $('#triwulan option:first').text('Pilih Tahun Dulu');
-                $('#bulan option:first').text('Pilih Tahun Dulu');
-                $('#minggu').empty().append('<option value="" selected>Pilih Bulan & Tahun Dulu</option>').prop('disabled', true);
-            } else {
-                $('#triwulan, #bulan').prop('disabled', false);
-                $('#triwulan option:first').text('Pilih Triwulan');
-                $('#bulan option:first').text('Pilih Bulan');
-            }
-        }
-
-        // Populate Minggu
-        function populateWeeksDropdown() {
-            const month = $('#bulan').val();
-            const year = $('#tahun').val();
-            const $minggu = $('#minggu');
-
-            if (!month || !year) {
-                $minggu.empty().append('<option value="" selected>Pilih Bulan & Tahun Dulu</option>').prop('disabled', true);
-                return;
+            // Toggle Triwulan & Bulan
+            function toggleTriwulanBulan() {
+                const tahun = $('#tahun').val();
+                if (!tahun) {
+                    $('#triwulan, #bulan').prop('disabled', true).val('');
+                    $('#triwulan option:first').text('Pilih Tahun Dulu');
+                    $('#bulan option:first').text('Pilih Tahun Dulu');
+                    $('#minggu').empty().append('<option value="" selected>Pilih Bulan & Tahun Dulu</option>').prop('disabled', true);
+                } else {
+                    $('#triwulan, #bulan').prop('disabled', false);
+                    $('#triwulan option:first').text('Pilih Triwulan');
+                    $('#bulan option:first').text('Pilih Bulan');
+                }
             }
 
-            $minggu.empty().prop('disabled', false).append('<option value="" selected>Pilih Minggu</option>');
-            const start = moment([year, month - 1, 1]);
-            const end = start.clone().endOf('month');
-            let week = 1;
-            let date = start.clone();
+            // Populate Minggu
+            function populateWeeksDropdown() {
+                const month = $('#bulan').val();
+                const year = $('#tahun').val();
+                const $minggu = $('#minggu');
 
-            while (date.isSameOrBefore(end)) {
-                let weekStart = date.clone().startOf('isoWeek');
-                let weekEnd = date.clone().endOf('isoWeek');
-                let from = weekStart.isBefore(start) ? start.clone() : weekStart;
-                let to = weekEnd.isAfter(end) ? end.clone() : weekEnd;
-                const label = `Minggu ${week} (${from.format('DD MMM')} - ${to.format('DD MMM')})`;
-                const value = `${from.format('YYYY-MM-DD')}_${to.format('YYYY-MM-DD')}`;
-                $minggu.append(`<option value="${value}">${label}</option>`);
-                date.add(1, 'week').startOf('isoWeek');
-                week++;
+                if (!month || !year) {
+                    $minggu.empty().append('<option value="" selected>Pilih Bulan & Tahun Dulu</option>').prop('disabled', true);
+                    return;
+                }
+
+                $minggu.empty().prop('disabled', false).append('<option value="" selected>Pilih Minggu</option>');
+                const start = moment([year, month - 1, 1]);
+                const end = start.clone().endOf('month');
+                let week = 1;
+                let date = start.clone();
+
+                while (date.isSameOrBefore(end)) {
+                    let weekStart = date.clone().startOf('isoWeek');
+                    let weekEnd = date.clone().endOf('isoWeek');
+                    let from = weekStart.isBefore(start) ? start.clone() : weekStart;
+                    let to = weekEnd.isAfter(end) ? end.clone() : weekEnd;
+                    const label = `Minggu ${week} (${from.format('DD MMM')} - ${to.format('DD MMM')})`;
+                    const value = `${from.format('YYYY-MM-DD')}_${to.format('YYYY-MM-DD')}`;
+                    $minggu.append(`<option value="${value}">${label}</option>`);
+                    date.add(1, 'week').startOf('isoWeek');
+                    week++;
+                }
             }
-        }
 
-        // Toggle Filter Button
-        function toggleFilterButton() {
-            const hasValue = $('[name]:not(#tahun):not(#triwulan):not(#bulan):not(#minggu)').filter(function() {
-                return this.value;
-            }).length > 0 || $('#tahun').val();
-            $('#filterBtn').prop('disabled', !hasValue);
-        }
+            // Toggle Filter Button
+            function toggleFilterButton() {
+                const hasValue = $('[name]:not(#tahun):not(#triwulan):not(#bulan):not(#minggu)').filter(function() {
+                    return this.value;
+                }).length > 0 || $('#tahun').val();
+                $('#filterBtn').prop('disabled', !hasValue);
+            }
 
-        // Debounce
-        const debounce = (func, wait) => {
-            let timeout;
-            return (...args) => {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => func.apply(this, args), wait);
-            };
-        };
-
-        // Load Table
-        function loadTable(status, tableId, summaryId) {
-            if ($.fn.DataTable.isDataTable(tableId)) $(tableId).DataTable().destroy();
-
-            const params = {
-                status,
-                sales_key: $('#sales_key').val(),
-                materi_key: $('#materi_key').val(),
-                tahun: $('#tahun').val(),
-                bulan: $('#bulan').val(),
-                triwulan: $('#triwulan').val(),
-                tanggal_awal_mulai: $('#tanggal_awal_mulai').val(),
-                tanggal_awal_akhir: $('#tanggal_awal_akhir').val()
+            // Debounce
+            const debounce = (func, wait) => {
+                let timeout;
+                return (...args) => {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(this, args), wait);
+                };
             };
 
-            const url = "{{ route('jsonLaporan') }}?" + $.param(params);
+            // Load Table
+            function loadTable(status, tableId, summaryId) {
+                if ($.fn.DataTable.isDataTable(tableId)) $(tableId).DataTable().destroy();
 
-            $.ajax({
-                url, method: 'GET', dataType: 'json',
-                beforeSend: () => {
-                    $('#filterBtn, #resetBtn').prop('disabled', true);
-                    $('#filterText').addClass('d-none');
-                    $('#loadingText').removeClass('d-none');
-                },
-                success: (response) => {
-                    const { data, summary } = response;
+                const params = {
+                    status,
+                    sales_key: $('#sales_key').val(),
+                    materi_key: $('#materi_key').val(),
+                    tahun: $('#tahun').val(),
+                    bulan: $('#bulan').val(),
+                    triwulan: $('#triwulan').val(),
+                    tanggal_awal_mulai: $('#tanggal_awal_mulai').val(),
+                    tanggal_awal_akhir: $('#tanggal_awal_akhir').val()
+                };
 
-                    const prefix = status === 0 ? 'win' : 'lost';
+                const url = "{{ route('jsonLaporan') }}?" + $.param(params);
 
-                    $(tableId).DataTable({
-                        data: data,
-                        columns: [
-                            { data: 'id', className: 'text-center' },
-                            { data: 'sales_key', className: 'text-center' },
-                            { data: 'nama_materi', className: 'text-center' },
-                            { data: 'nama_perusahaan', className: 'text-center' },
-                            { data: 'pax', className: 'text-center' },
-                            { data: 'harga', render: d => formatRupiah(d), className: 'text-end' },
-                            { data: 'total_exam', render: d => formatRupiah(d), className: 'text-end' },
-                            { data: 'netsales', render: d => formatRupiah(d), className: 'text-end' },
-                            { data: 'grandtotal', render: d => formatRupiah(d), className: 'text-end fw-bold' },
-                            { data: 'tanggal_awal', render: d => d ? moment(d).format('DD-MM-YYYY') : '-', className: 'text-center' },
-                            { data: 'tanggal_akhir', render: d => d ? moment(d).format('DD-MM-YYYY') : '-', className: 'text-center' }
-                        ],
-                        pageLength: 10,
-                        responsive: true,
-                        language: { url: '//cdn.datatables.net/plug-ins/1.13.8/i18n/id.json' },
-                        drawCallback: () => {
-                            // Update Summary
-                            $(`#${prefix}HargaJual`).text(formatRupiah(summary.total_harga_jual || 0));
-                            $(`#${prefix}NetSales`).text(formatRupiah(summary.total_netsales || 0));
-                            $(`#${prefix}Exam`).text(formatRupiah(summary.total_exam || 0));
-                            $(`#${prefix}GrandTotal`).text(formatRupiah(summary.total_grand || 0));
-                            $(summaryId).removeClass('d-none');
+                $.ajax({
+                    url, method: 'GET', dataType: 'json',
+                    beforeSend: () => {
+                        $('#filterBtn, #resetBtn').prop('disabled', true);
+                        $('#filterText').addClass('d-none');
+                        $('#loadingText').removeClass('d-none');
+                    },
+                    success: (response) => {
+                        const { data, summary } = response;
 
-                            // Row Click
-                            $(tableId + ' tbody').off('click', 'tr').on('click', 'tr', function() {
-                                const rowData = $(tableId).DataTable().row(this).data();
+                        const prefix = status === 0 ? 'win' : 'lost';
 
-                                console.log(rowData.invoice);
-                                if (!rowData) return;
+                        $(tableId).DataTable({
+                            data: data,
+                            columns: [
+                                { data: 'id', className: 'text-center' },
+                                { data: 'sales_key', className: 'text-center' },
+                                { data: 'nama_materi', className: 'text-center' },
+                                { data: 'nama_perusahaan', className: 'text-center' },
+                                { data: 'pax', className: 'text-center' },
+                                { data: 'harga', render: d => formatRupiah(d), className: 'text-end' },
+                                { data: 'total_exam', render: d => formatRupiah(d), className: 'text-end' },
+                                { data: 'netsales', render: d => formatRupiah(d), className: 'text-end' },
+                                { data: 'grandtotal', render: d => formatRupiah(d), className: 'text-end fw-bold' },
+                                { data: 'tanggal_awal', render: d => d ? moment(d).format('DD-MM-YYYY') : '-', className: 'text-center' },
+                                { data: 'tanggal_akhir', render: d => d ? moment(d).format('DD-MM-YYYY') : '-', className: 'text-center' }
+                            ],
+                            pageLength: 10,
+                            responsive: true,
+                            language: { url: '//cdn.datatables.net/plug-ins/1.13.8/i18n/id.json' },
+                            drawCallback: () => {
+                                // Update Summary
+                                $(`#${prefix}HargaJual`).text(formatRupiah(summary.total_harga_jual || 0));
+                                $(`#${prefix}NetSales`).text(formatRupiah(summary.total_netsales || 0));
+                                $(`#${prefix}Exam`).text(formatRupiah(summary.total_exam || 0));
+                                $(`#${prefix}GrandTotal`).text(formatRupiah(summary.total_grand || 0));
+                                $(summaryId).removeClass('d-none');
 
-                                let html = `
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <p><strong>ID:</strong> ${rowData.id}</p>
-                                            <p><strong>Sales:</strong> ${rowData.sales_key}</p>
-                                            <p><strong>Materi:</strong> ${rowData.nama_materi}</p>
-                                            <p><strong>Perusahaan:</strong> ${rowData.nama_perusahaan}</p>
-                                            <p><strong>Pax:</strong> ${rowData.pax}</p>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <p><strong>Harga:</strong> ${formatRupiah(rowData.harga)}</p>
-                                            <p><strong>Total Penjualan:</strong> ${formatRupiah(rowData.total_penjualan)}</p>
-                                            <p><strong>Exam:</strong> ${formatRupiah(rowData.total_exam)}</p>
-                                            <p><strong>NetSales:</strong> ${formatRupiah(rowData.netsales)}</p>
-                                            <p><strong>Grand Total:</strong> ${formatRupiah(rowData.grandtotal)}</p>
-                                        </div>
-</div>
+                                // Row Click
+                                $(tableId + ' tbody').off('click', 'tr').on('click', 'tr', function() {
+                                    const rowData = $(tableId).DataTable().row(this).data();
 
-                                    <hr class="my-3">
-                                    <h6 class="mb-3">Informasi Invoice</h6>
-                                    `;
-                                    
-                                    if (rowData.invoice) {
-                                        html += `
+                                    console.log(rowData);
+                                    if (!rowData) return;
+
+                                    let html = `
                                         <div class="row">
                                             <div class="col-md-6">
-                                                <p><strong>Nomor Invoice:</strong> ${rowData.invoice.invoice_number}</p>
-                                                <p><strong>Tanggal Invoice:</strong> ${rowData.invoice.tanggal_invoice}</p>
-                                                <p><strong>Jumlah Total:</strong> ${formatRupiah(rowData.invoice.amount)}</p>
+                                                <p><strong>Tanggal Running Class:</strong> 
+                                                    ${moment(rowData.tanggal_awal).format('dddd, DD-MM-YYYY')} - 
+                                                    ${moment(rowData.tanggal_akhir).format('dddd, DD-MM-YYYY')}
+                                                </p>
+                                                <p><strong>Sales:</strong> ${rowData.sales_key}</p>
+                                                <p><strong>Materi:</strong> ${rowData.nama_materi}</p>
+                                                <p><strong>Perusahaan:</strong> ${rowData.nama_perusahaan}</p>
+                                                <p><strong>Pax:</strong> ${rowData.pax}</p>
                                             </div>
                                             <div class="col-md-6">
-                                                <p><strong>Bank Tujuan:</strong> ${rowData.invoice.bank_name}</p>
-                                                <p><strong>Rekening Tujuan:</strong> ${rowData.invoice.account_number}</p>
+                                                <p><strong>Harga:</strong> ${formatRupiah(rowData.harga)}</p>
+                                                <p><strong>Total Penjualan:</strong> ${formatRupiah(rowData.total_penjualan)}</p>
+                                                <p><strong>Exam:</strong> ${formatRupiah(rowData.total_exam)}</p>
+                                                <p><strong>NetSales:</strong> ${formatRupiah(rowData.netsales)}</p>
+                                                <p><strong>Grand Total:</strong> ${formatRupiah(rowData.grandtotal)}</p>
                                             </div>
-                                        </div>`;
-                                    } else {
-                                        html += `
-                                        <p><strong>Status Invoice:</strong> <span class="badge bg-warning text-dark">Belum ada invoice</span></p>
-                                        @if(auth()->user()->jabatan === 'Finance & Accounting')
-                                        <a class="btn btn-primary btn-sm mt-2" href="/invoice/create/${rowData.id}" target="_blank">
-                                            <i class="bi bi-file-earmark-plus"></i> Generate Invoice
-                                        </a>
-                                        @endif
+                                        </div>
+                                        <hr class="my-3">
+                                        <h6 class="mb-3">Informasi Invoice</h6>
                                         `;
+                                        
+                                        if (rowData.invoice) {
+                                            html += `
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <p><strong>Nomor Invoice:</strong> ${rowData.invoice.invoice_number}</p>
+                                                    <p><strong>Tanggal Invoice:</strong> ${rowData.invoice.tanggal_invoice}</p>
+                                                    <p><strong>Jumlah Total:</strong> ${formatRupiah(rowData.invoice.amount)}</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <p><strong>Bank Tujuan:</strong> ${rowData.invoice.bank_name}</p>
+                                                    <p><strong>Rekening Tujuan:</strong> ${rowData.invoice.account_number}</p>
+                                                </div>
+                                            </div>`;
+                                        } else {
+                                            html += `
+                                            <p><strong>Status Invoice:</strong> <span class="badge bg-warning text-dark">Belum ada invoice</span></p>
+                                            @if(auth()->user()->jabatan === 'Finance & Accounting')
+                                            <a class="btn btn-primary btn-sm mt-2" href="/invoice/create/${rowData.id}" target="_blank">
+                                                <i class="bi bi-file-earmark-plus"></i> Generate Invoice
+                                            </a>
+                                            @endif
+                                            `;
+                                        }
+                                        
+
+                                    if (rowData.perhitungannet && rowData.perhitungannet.length > 0) {
+                                        html += `<h6 class="mt-3">Detail NetSales</h6>
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-bordered">
+                                                    <thead><tr>
+                                                        <th>Peserta</th><th>Trans</th><th>Penginapan</th><th>Fresh</th><th>Cashback</th><th>Diskon</th><th>Entertaint</th><th>Souvenir</th><th>Pembayaran</th>
+                                                    </tr></thead><tbody>`;
+                                        rowData.perhitungannet.forEach(n => {
+                                            const peserta = n.peserta?.nama || '-';
+                                            html += `<tr>
+                                                <td>${peserta}</td>
+                                                <td>${formatRupiah(n.transportasi)}</td>
+                                                <td>${formatRupiah(n.penginapan)}</td>
+                                                <td>${formatRupiah(n.fresh_money)}</td>
+                                                <td>${formatRupiah(n.cashback)}</td>
+                                                <td>${formatRupiah(n.diskon)}</td>
+                                                <td>${formatRupiah(n.entertaint)}</td>
+                                                <td>${formatRupiah(n.souvenir)}</td>
+                                                <td>${(n.tipe_pembayaran || '-').toUpperCase()}</td>
+                                            </tr>`;
+                                        });
+                                        html += `</tbody></table></div>
+                                            <a href="/crm/edit/${rowData.id}/pa" class="btn btn-primary btn-sm mt-2" target="_blank">Edit PA</a>`;
+                                    } else {
+                                        html += `<p class="text-muted mt-3">Tidak ada detail NetSales.</p>`;
                                     }
-                                    
 
-                                if (rowData.perhitungannet && rowData.perhitungannet.length > 0) {
-                                    html += `<h6 class="mt-3">Detail NetSales</h6>
-                                        <div class="table-responsive">
-                                            <table class="table table-sm table-bordered">
-                                                <thead><tr>
-                                                    <th>Peserta</th><th>Trans</th><th>Penginapan</th><th>Fresh</th><th>Cashback</th><th>Diskon</th><th>Entertaint</th><th>Souvenir</th><th>Pembayaran</th>
-                                                </tr></thead><tbody>`;
-                                    rowData.perhitungannet.forEach(n => {
-                                        const peserta = n.peserta?.nama || '-';
-                                        html += `<tr>
-                                            <td>${peserta}</td>
-                                            <td>${formatRupiah(n.transportasi)}</td>
-                                            <td>${formatRupiah(n.penginapan)}</td>
-                                            <td>${formatRupiah(n.fresh_money)}</td>
-                                            <td>${formatRupiah(n.cashback)}</td>
-                                            <td>${formatRupiah(n.diskon)}</td>
-                                            <td>${formatRupiah(n.entertaint)}</td>
-                                            <td>${formatRupiah(n.souvenir)}</td>
-                                            <td>${(n.tipe_pembayaran || '-').toUpperCase()}</td>
-                                        </tr>`;
-                                    });
-                                    html += `</tbody></table></div>
-                                        <a href="/crm/edit/${rowData.id}/pa" class="btn btn-primary btn-sm mt-2" target="_blank">Edit PA</a>`;
-                                } else {
-                                    html += `<p class="text-muted mt-3">Tidak ada detail NetSales.</p>`;
-                                }
+                                    $('#detailContent').html(html);
+                                    $('#detailModalLabel').text(`Detail ${status === 0 ? 'Win' : 'Lost'}`);
+                                    new bootstrap.Modal('#detailModal').show();
+                                });
+                            }
+                        });
+                    },
+                    error: () => {
+                        alert('Gagal memuat data.');
+                    },
+                    complete: () => {
+                        $('#filterBtn, #resetBtn').prop('disabled', false);
+                        $('#filterText').removeClass('d-none');
+                        $('#loadingText').addClass('d-none');
+                        toggleFilterButton();
+                    }
+                });
+            }
 
-                                $('#detailContent').html(html);
-                                $('#detailModalLabel').text(`Detail ${status === 0 ? 'Win' : 'Lost'}`);
-                                new bootstrap.Modal('#detailModal').show();
-                            });
-                        }
-                    });
-                },
-                error: () => {
-                    alert('Gagal memuat data.');
-                },
-                complete: () => {
-                    $('#filterBtn, #resetBtn').prop('disabled', false);
-                    $('#filterText').removeClass('d-none');
-                    $('#loadingText').addClass('d-none');
-                    toggleFilterButton();
+            const loadBoth = debounce(() => {
+                loadTable(0, '#tableStatus0', '#summaryWin');
+                loadTable(2, '#tableStatus2', '#summaryLost');
+            }, 300);
+
+            function resetFilters() {
+                $('#filterForm')[0].reset();
+                $('.select2-materi, .select2-sales').val(null).trigger('change');
+                toggleTriwulanBulan();
+                $('#minggu').empty().append('<option value="" selected>Pilih Bulan & Tahun Dulu</option>').prop('disabled', true);
+
+                // Reset Summary
+                ['win', 'lost'].forEach(prefix => {
+                    $(`#${prefix}HargaJual, #${prefix}NetSales, #${prefix}Exam, #${prefix}GrandTotal`).text('Rp 0');
+                    $(`#summary${prefix === 'win' ? 'Win' : 'Lost'}`).addClass('d-none');
+                });
+
+                toggleFilterButton();
+                loadBoth();
+            }
+
+            // Events
+            $('#tahun').on('change', function() {
+                toggleTriwulanBulan();
+                populateWeeksDropdown();
+                toggleFilterButton();
+            });
+
+            $('#bulan').on('change', function() {
+                if ($(this).val()) $('#triwulan').val('');
+                populateWeeksDropdown();
+                toggleFilterButton();
+            });
+
+            $('#triwulan').on('change', function() {
+                if ($(this).val()) {
+                    $('#bulan').val('');
+                    $('#minggu').empty().append('<option value="" selected>Pilih Bulan & Tahun Dulu</option>').prop('disabled', true);
                 }
+                toggleFilterButton();
             });
-        }
 
-        const loadBoth = debounce(() => {
-            loadTable(0, '#tableStatus0', '#summaryWin');
-            loadTable(2, '#tableStatus2', '#summaryLost');
-        }, 300);
+            $('#minggu').on('change', function() {
+                const val = $(this).val();
+                if (val) {
+                    const [start, end] = val.split('_');
+                    $('#tanggal_awal_mulai').val(start);
+                    $('#tanggal_awal_akhir').val(end);
+                    $('#triwulan').val('');
+                } else {
+                    $('#tanggal_awal_mulai, #tanggal_awal_akhir').val('');
+                }
+                toggleFilterButton();
+            });
 
-        function resetFilters() {
-            $('#filterForm')[0].reset();
-            $('.select2-materi, .select2-sales').val(null).trigger('change');
+            $('#tanggal_awal_mulai, #tanggal_awal_akhir').on('input', function() {
+                if ($(this).val()) $('#minggu').val('');
+                toggleFilterButton();
+            });
+
+            $('#filterForm').on('change', 'select, input', toggleFilterButton);
+            $('#filterBtn').on('click', loadBoth);
+            $('#resetBtn').on('click', resetFilters);
+
+            // Initial Load
             toggleTriwulanBulan();
-            $('#minggu').empty().append('<option value="" selected>Pilih Bulan & Tahun Dulu</option>').prop('disabled', true);
-
-            // Reset Summary
-            ['win', 'lost'].forEach(prefix => {
-                $(`#${prefix}HargaJual, #${prefix}NetSales, #${prefix}Exam, #${prefix}GrandTotal`).text('Rp 0');
-                $(`#summary${prefix === 'win' ? 'Win' : 'Lost'}`).addClass('d-none');
-            });
-
             toggleFilterButton();
             loadBoth();
-        }
 
-        // Events
-        $('#tahun').on('change', function() {
-            toggleTriwulanBulan();
-            populateWeeksDropdown();
-            toggleFilterButton();
+            $('#pdfBtn').on('click', function () {
+                const formData = $('#filterForm').serializeArray();
+                const params = {};
+                formData.forEach(item => {
+                    params[item.name] = item.value;
+                });
+
+                // Tambahkan type = pdf
+                params.type = 'pdf';
+
+                $.ajax({
+                    url: '{{ route("export.winlose") }}',
+                    method: 'POST',
+                    data: params,
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    xhrFields: {
+                        responseType: 'blob' // Untuk file binary
+                    },
+                    success: function (data, status, xhr) {
+                        const filename = xhr.getResponseHeader('Content-Disposition')
+                            ?.split('filename=')[1]
+                            ?.replace(/"/g, '') || 'laporan.pdf';
+
+                        const blob = new Blob([data], { type: 'application/pdf' });
+                        const link = document.createElement('a');
+                        link.href = window.URL.createObjectURL(blob);
+                        link.download = filename;
+                        link.click();
+                    },
+                    error: function (xhr) {
+                        console.log(xhr);
+                        alert('Gagal mengunduh PDF: Coba atur lagi rentang tanggal nya');
+                    }
+                });
+            });
+            
+            $('#excelBtn').on('click', function () {
+                const formData = $('#filterForm').serializeArray();
+                const params = {};
+                formData.forEach(item => {
+                    params[item.name] = item.value;
+                });
+
+                params.type = 'excel';
+
+                $.ajax({
+                    url: '{{ route("export.winlose") }}',
+                    method: 'POST',
+                    data: params,
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    xhrFields: {
+                        responseType: 'blob'
+                    },
+                    success: function (data, status, xhr) {
+                        const filename = xhr.getResponseHeader('Content-Disposition')
+                            ?.split('filename=')[1]
+                            ?.replace(/"/g, '') || 'laporan.xlsx';
+
+                        const blob = new Blob([data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                        const link = document.createElement('a');
+                        link.href = window.URL.createObjectURL(blob);
+                        link.download = filename;
+                        link.click();
+                    },
+                    error: function (xhr) {
+                        alert('Gagal mengunduh Excel: ' + xhr.responseText);
+                    }
+                });
+            });
         });
-
-        $('#bulan').on('change', function() {
-            if ($(this).val()) $('#triwulan').val('');
-            populateWeeksDropdown();
-            toggleFilterButton();
-        });
-
-        $('#triwulan').on('change', function() {
-            if ($(this).val()) {
-                $('#bulan').val('');
-                $('#minggu').empty().append('<option value="" selected>Pilih Bulan & Tahun Dulu</option>').prop('disabled', true);
-            }
-            toggleFilterButton();
-        });
-
-        $('#minggu').on('change', function() {
-            const val = $(this).val();
-            if (val) {
-                const [start, end] = val.split('_');
-                $('#tanggal_awal_mulai').val(start);
-                $('#tanggal_awal_akhir').val(end);
-                $('#triwulan').val('');
-            } else {
-                $('#tanggal_awal_mulai, #tanggal_awal_akhir').val('');
-            }
-            toggleFilterButton();
-        });
-
-        $('#tanggal_awal_mulai, #tanggal_awal_akhir').on('input', function() {
-            if ($(this).val()) $('#minggu').val('');
-            toggleFilterButton();
-        });
-
-        $('#filterForm').on('change', 'select, input', toggleFilterButton);
-        $('#filterBtn').on('click', loadBoth);
-        $('#resetBtn').on('click', resetFilters);
-
-        // Initial Load
-        toggleTriwulanBulan();
-        toggleFilterButton();
-        loadBoth();
-    });
     </script>
 @endsection

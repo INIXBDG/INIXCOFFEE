@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Crm;
 
+use App\Exports\LaporanWinLostExcel;
 use App\Http\Controllers\Controller;
 use App\Models\karyawan;
 use App\Models\Materi;
@@ -15,6 +16,8 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\LaporanWinLostPdf;
 
 class LaporanPenjualanController extends Controller
 {
@@ -278,5 +281,45 @@ class LaporanPenjualanController extends Controller
             'message' => 'Data penawaran acara berhasil diperbarui.',
             'data' => $pa
         ]);
+    }
+
+    public function export(Request $request)
+    {
+        // Ambil filter dari request
+        $filters = $request->only([
+            'sales_key', 'materi_key', 'tahun', 'triwulan', 'bulan', 'minggu',
+            'tanggal_awal_mulai', 'tanggal_awal_akhir'
+        ]);
+
+        // Panggil indexJson untuk dapatkan data yang sudah difilter
+        $response = $this->indexJson($request);
+        $data = $response->getData()->data; // Ambil data dari indexJson
+
+        // Konversi ke koleksi
+        $collection = collect($data);
+
+        // Tentukan status Win / Lost berdasarkan logic
+        // Asumsi: Jika grandtotal > 0 → Win, jika grandtotal <= 0 → Lost
+        $allData = $collection->map(function ($item) {
+            $status = $item->grandtotal > 0 ? 'Win' : 'Lost';
+            $item->status = $status;
+            return $item;
+        });
+
+        $type = $request->type; // 'pdf' atau 'excel'
+        dd($allData);
+        if ($type === 'excel') {
+            return Excel::download(new LaporanWinLostExcel($allData), 'Laporan_Win_Lost.xlsx');
+        } elseif ($type === 'pdf') {
+            if ($allData->count() > 500) {
+                return response()->json([
+                    'error' => 'Data terlalu banyak. Coba atur di Rentang Tanggal'
+                ], 400);
+            }
+            $pdfExporter = new LaporanWinLostPdf($allData);
+            return $pdfExporter->download('Laporan_Win_Lost.pdf'); // ✅ Sekarang method ini ada
+        }
+
+        return response()->json(['error' => 'Tipe ekspor tidak valid (pdf atau excel)'], 400);
     }
 }

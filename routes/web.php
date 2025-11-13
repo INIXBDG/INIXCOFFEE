@@ -537,6 +537,9 @@ Route::prefix('crm')->group(function () {
     // Import Contact / Perusahaan
     Route::post('/perusahaan/import/perusahaan', [ImportPerusahaanAndContactController::class, 'importPerusahaan'])->name('perusahaan.import');
     Route::post('/perusahaan/import/contacts', [ImportPerusahaanAndContactController::class, 'importContacts'])->name('contact.import');
+
+    Route::post('/export/win-lose', [LaporanPenjualanController::class, 'export'])->name('export.winlose');
+
 });
 
 //INVOICE
