@@ -450,7 +450,7 @@ private function validateShiftWaktu($waktu, $shift, $jabatan, $keterangan = null
         $remainingLeaderboard = $leaderboard->slice(3)->values();
 
 
-        $totalketerlambatan = AbsensiKaryawan::select('id_karyawan', DB::raw('SUM(TIME_TO_SEC(waktu_keterlambatan)) as total_keterlambatan'))
+        $totalketerlambatans = AbsensiKaryawan::select('id_karyawan', DB::raw('SUM(TIME_TO_SEC(waktu_keterlambatan)) as total_keterlambatan'))
             ->whereMonth('tanggal', $month)
             ->whereYear('tanggal', $year)
             ->where('id_karyawan', auth()->user()->karyawan_id) // Menggunakan Auth::user()
@@ -458,32 +458,10 @@ private function validateShiftWaktu($waktu, $shift, $jabatan, $keterangan = null
             ->orderBy('total_keterlambatan', 'desc')
             ->first(); // Tidak perlu with('karyawan') jika hanya mengambil total_keterlambatan
 
-        // Jika tidak ada data keterlambatan, atau totalnya 0
-        if (!$totalketerlambatan || $totalketerlambatan->total_keterlambatan == '0') {
-            $formattedTime = '0 menit'; // Set ke '0 menit'
-        } else {
-            $totalSeconds = (int)$totalketerlambatan->total_keterlambatan; // Pastikan ini integer
+        $totalSeconds = $totalketerlambatans->total_keterlambatan ?? 0;
 
-            // Menghitung jam, menit, dan detik
-            $hours = floor($totalSeconds / 3600);
-            $minutes = floor(($totalSeconds % 3600) / 60);
-            $seconds = $totalSeconds % 60;
-
-            // Format ke dalam string manusiawi
-            $formattedTime = '';
-            if ($hours > 0) {
-                $formattedTime .= $hours . ' jam ';
-            }
-            if ($minutes > 0) {
-                $formattedTime .= $minutes . ' menit ';
-            }
-            if ($seconds > 0) {
-                $formattedTime .= $seconds . ' detik';
-            }
-
-            // Hapus spasi ekstra di akhir jika ada
-            $formattedTime = trim($formattedTime);
-        }
+        // ✅ Panggil private function
+        $totalketerlambatan = $this->formatKeterlambatan($totalSeconds);
         // return $totalketerlambatan;
         // return $leaderboard;
 
@@ -492,7 +470,7 @@ private function validateShiftWaktu($waktu, $shift, $jabatan, $keterangan = null
             ->whereMonth('tanggal_pengajuan', $month)
             ->orderBy('tanggal_pengajuan', 'desc')
             ->get();
-
+        // return $totalketerlambatan;
         return view('absensi.absensi', compact(
             'absen',
             'leaderboard',
@@ -505,6 +483,37 @@ private function validateShiftWaktu($waktu, $shift, $jabatan, $keterangan = null
             'izinTigaJam' // <-- tambahkan ini
         ));
     }
+
+        /**
+     * Format waktu keterlambatan dalam jam & menit
+     */
+    private function formatKeterlambatan($totalSeconds)
+    {
+        if (!$totalSeconds || $totalSeconds == 0) {
+            return '0 menit';
+        }
+
+        $hours = floor($totalSeconds / 3600);
+        $minutes = floor(($totalSeconds % 3600) / 60);
+
+        $formattedTime = '';
+
+        if ($hours > 0) {
+            $formattedTime .= $hours . ' jam ';
+        }
+
+        if ($minutes > 0) {
+            $formattedTime .= $minutes . ' menit';
+        }
+
+        // Jika detiknya kecil tapi ada keterlambatan
+        if ($hours == 0 && $minutes == 0) {
+            $formattedTime = '1 menit';
+        }
+
+        return trim($formattedTime);
+    }
+
 
     public function storeKeluar(Request $request)
     {

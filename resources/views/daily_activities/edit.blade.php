@@ -26,17 +26,25 @@
 
         {{-- 1. Pilih Task --}}
         <div>
-            <label for="id_task_display" class="block text-gray-700 text-sm font-bold mb-2">Task Terkait</label>
-            {{-- Tampilkan sebagai input biasa yang disabled --}}
-            <input type="text" id="id_task_display" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 bg-gray-100 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
-                   value="{{ $dailyActivity->task->title ?? 'N/A' }}" readonly disabled>
+            <label for="id_task" class="block text-gray-700 text-sm font-bold mb-2">Task Terkait</label>
 
-            {{-- Simpan ID task asli dalam input tersembunyi --}}
-            <input type="hidden" name="id_task" value="{{ $dailyActivity->id_task }}">
+            <select name="id_task" id="id_task"
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">— Tidak Ada Task —</option>
 
-            {{-- Tampilkan error jika ada (meskipun seharusnya tidak terjadi karena disabled) --}}
-            @error('id_task') <p class="text-red-500 text-xs italic mt-2">{{ $message }}</p> @enderror
+                @foreach ($tasks as $task)
+                    <option value="{{ $task->id }}"
+                        {{ $dailyActivity->id_task == $task->id ? 'selected' : '' }}>
+                        {{ $task->title }}
+                    </option>
+                @endforeach
+            </select>
+
+            @error('id_task')
+                <p class="text-red-500 text-xs italic mt-2">{{ $message }}</p>
+            @enderror
         </div>
+
 
         {{-- 2. Aktivitas Utama --}}
         <div>

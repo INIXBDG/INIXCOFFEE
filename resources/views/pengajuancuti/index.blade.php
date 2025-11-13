@@ -318,7 +318,7 @@
 
             ],
             "order": [[0, 'desc']], // Ubah urutan menjadi descending untuk kolom ke-6
-                "columnDefs" : [{"targets":[0], "type":"date"}],
+            "columnDefs" : [{"targets":[0], "type":"date"}],
         });
 
         function reloadTableKeepPage() {

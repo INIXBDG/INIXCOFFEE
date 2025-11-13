@@ -127,8 +127,12 @@
                             <td style="border:1px solid #000; padding:6px; font-weight:bold;">Due Date</td>
                         </tr>
                         <tr>
-                            <td style="border:1px solid #000; padding:6px;"></td>
-                            <td style="border:1px solid #000; padding:6px;"></td>
+                            <td style="border:1px solid #000; padding:6px;">
+                                {{ $invoice->purchase_order ?? '-' }}
+                            </td>
+                            <td style="border:1px solid #000; padding:6px;">
+                                {{ $invoice->due_date ? \Carbon\Carbon::parse($invoice->due_date)->translatedFormat('l, d F Y') : '-' }}
+                            </td>
                         </tr>
                     </table>
                 </td>

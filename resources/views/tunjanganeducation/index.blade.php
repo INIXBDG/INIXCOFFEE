@@ -619,7 +619,7 @@
         }
         var poin_durasi = durasi_inst * level_inst;
         var poin_pax = pax * level_inst;
-        if(feedback >= '3.3'){
+        if(feedback >= '3.30'){
             if(level === '1'){
                 var feedback_inst = 80000;
             }else if(level === '2'){
@@ -740,31 +740,40 @@
                     "render": function(data, type, row) {
                         var userRole = '{{ auth()->user()->jabatan}}';
                         var actions = '';
-                            actions += '@can('Hitung TunjanganEducation')';
-                            if(data.status == 'Belum Dihitung'){
-                                actions += '<button type="button" class="btn btn-sm btn-primary" onclick="ajukanModal('+data.id +', \''+ data.level +'\', \''+ data.durasi +'\', \''+ data.pax +'\', \''+ data.feedback +'\', \''+ data.rkm.metode_kelas +'\')" > Hitung Tunjangan</button>';
-                            }else if(data.status == 'Revisi'){
-                                actions += '<button type="button" class="btn btn-sm btn-primary" onclick="ajukanModal('+data.id +', \''+ data.level +'\', \''+ data.durasi +'\', \''+ data.pax +'\', \''+ data.feedback +'\', \''+ data.rkm.metode_kelas +'\')" > Hitung Tunjangan</button>';
-                            }else{
-                                actions += '<button type="button" class="btn btn-sm btn-primary disabled" onclick="ajukanModal('+data.id +', \''+ data.level +'\', \''+ data.durasi +'\', \''+ data.pax +'\', \''+ data.feedback +'\', \''+ data.rkm.metode_kelas +'\')" > Hitung Tunjangan</button>';
-                            }
-                            
-                            actions += '@endcan';
-                            actions += '@if(can('Approval TunjanganEducation'))';
-                            actions += '<button type="button" class="btn btn-sm btn-primary" onclick="approvalModal('+data.id+')" > Approve</button>';
-                            var destroyUrlTemplate = "{{ route('rekapmengajarinstruktur.destroy', ':id') }}";
-                            var url = destroyUrlTemplate.replace(':id', data.id);
-                            actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="' + url + '" method="POST">';
-                            actions += '@csrf';
-                            actions += '@method('DELETE')';
-                            actions += '<button type="submit" class="btn btn-sm btn-danger mt-2"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
-                            actions += '</form>';
-							actions += '@endcan';
-							actions += '@else';
-                            actions += '<div class="dropdown">';
-                            actions += '<button class="btn dropdown-toggle disabled" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
-                            actions += '</div>';
-                            actions += '@endif';
+
+                        actions += `@can("Hitung TunjanganEducation")`;
+                        if(data.status == 'Belum Dihitung'){
+                            actions += `<button type="button" class="btn btn-sm btn-primary" onclick="ajukanModal(${data.id}, '${data.level}', '${data.durasi}', '${data.pax}', '${data.feedback}', '${data.rkm.metode_kelas}')"> Hitung Tunjangan</button>`;
+                        }else if(data.status == 'Revisi'){
+                            actions += `<button type="button" class="btn btn-sm btn-primary" onclick="ajukanModal(${data.id}, '${data.level}', '${data.durasi}', '${data.pax}', '${data.feedback}', '${data.rkm.metode_kelas}')"> Hitung Tunjangan</button>`;
+                        }else{
+                            actions += `<button type="button" class="btn btn-sm btn-primary disabled"> Hitung Tunjangan</button>`;
+                        }
+                        actions += `@endcan`;
+
+                        // APPROVAL & DELETE
+                        actions += `@can("Approval TunjanganEducation")`;
+                        actions += `<button type="button" class="btn btn-sm btn-primary" onclick="approvalModal(${data.id})"> Approve</button>`;
+                        var destroyUrlTemplate = "{{ route('rekapmengajarinstruktur.destroy', ':id') }}";
+                        var url = destroyUrlTemplate.replace(':id', data.id);
+                        actions += `<form onsubmit="return confirm('Apakah Anda Yakin ?');" action="${url}" method="POST">
+                        @csrf
+                        @method("DELETE")
+                        <button type="submit" class="btn btn-sm btn-danger mt-2">
+                        <img src="{{ asset('icon/trash-danger.svg') }}"> Hapus
+                        </button>
+                        </form>`;
+                        actions += `@endcan`;
+
+                        // ELSE (no permission)
+                        actions += `@cannot("Approval TunjanganEducation")`;
+                        actions += `<div class="dropdown">
+                        <button class="btn dropdown-toggle disabled" type="button">Actions</button>
+                        </div>`;
+                        actions += `@endcannot`;
+
+                        return actions;
+
 
 
 

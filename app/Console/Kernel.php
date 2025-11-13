@@ -219,9 +219,9 @@ class Kernel extends ConsoleKernel
             }
         })->dailyAt('08:00');
 
-        // $schedule->command('app:update-status')->dailyAt('23:00');
+        $schedule->command('app:update-status')->dailyAt('23:00');
 
-        // $schedule->command('uptime:check')->everySixHours();
+        $schedule->command('uptime:check')->everySixHours();
     }
     /**
      * Register the commands for the application.

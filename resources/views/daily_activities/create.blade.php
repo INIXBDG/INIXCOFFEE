@@ -20,7 +20,7 @@
 
         <div>
             <label for="id_task" class="block text-gray-700 text-sm font-bold mb-2">Pilih Task Terkait <span class="text-red-500">*</span></label>
-            <select name="id_task" id="id_task" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 @error('id_task') border-red-500 @enderror" required>
+            <select name="id_task" id="id_task" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 @error('id_task') border-red-500 @enderror">
                 <option value="">-- Pilih Task --</option>
                 @foreach ($tasks as $task)
                     <option value="{{ $task->id }}" {{ old('id_task') == $task->id ? 'selected' : '' }}>

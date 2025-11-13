@@ -12,6 +12,8 @@ class Invoice extends Model
     protected $fillable = [
         'invoice_number',
         'tanggal_invoice',
+        'due_date',
+        'purchase_order',
         'id_rkm',
         'amount',
         'catatan_pembayaran',
