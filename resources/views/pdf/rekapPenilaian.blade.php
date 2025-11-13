@@ -202,15 +202,21 @@
                 $validNilaiCount++;
                 }
                 $nilaiIndex++;
+
+                $tipeKategori = $sub['tipe_kriteria'];
                 @endphp
                 <tr>
                     @if ($iDetail === 0)
                     <td rowspan="{{ $jumlahSub }}">{{ $kriteria['kriteria'] }}</td>
                     @endif
                     <td>{{ $sub['sub_kriteria'] }}</td>
+                    @if ($tipeKategori === 'textarea')
+                    <td colspan="3" class="text-center">{{ $nilaiData['pesan'] }}</td>
+                    @else
                     <td>{{ $sub['bobot'] }}%</td>
                     <td>{{ $tampilkanNilai }}</td>
                     <td>{{ is_numeric($nilaiRaw) ? number_format($skor, 2, ',', '.') : '-' }}</td>
+                    @endif
                 </tr>
                 @endforeach
                 @endforeach

@@ -661,6 +661,19 @@ Route::post('/survey/kepuasan/send', [App\Http\Controllers\SurveyKepuasanControl
 Route::get('/survey/kepuasan/table', [App\Http\Controllers\SurveyKepuasanController::class, 'indexTable'])->name('surveyKepuasan.indexTable');
 Route::get('/survey/kepuasan/destroy/{id}', [App\Http\Controllers\SurveyKepuasanController::class, 'destroy']);
 
+// expense-hub
+Route::get('/expense-hub/index', [App\Http\Controllers\ExpenseHubController::class, 'index'])->name('expensehub.index');
+Route::get('/expense-hub/get', [App\Http\Controllers\ExpenseHubController::class, 'get'])->name('expensehub.get');
+Route::get('/expense-hub/create', [App\Http\Controllers\ExpenseHubController::class, 'create'])->name('expensehub.create');
+Route::post('/expense-hub/store', [App\Http\Controllers\ExpenseHubController::class, 'store'])->name('expensehub.store');
+Route::post('/expense-hub/export-pdf', [App\Http\Controllers\ExpenseHubController::class, 'PDF'])->name('expensehub.pdf');
+Route::put('/expense-hub/approved', [App\Http\Controllers\ExpenseHubController::class, 'approved'])->name('expensehub.approved');
+Route::get('/expense-hub/show/{id}', [App\Http\Controllers\ExpenseHubController::class, 'show'])->name('expensehub.show');
+Route::get('/expense-hub/destroy/{id}', [App\Http\Controllers\ExpenseHubController::class, 'destroy'])->name('expensehub.destroy');
+Route::get('/expense-hub/invoice/{id}', [App\Http\Controllers\ExpenseHubController::class, 'invoice'])->name('expensehub.invoice');
+Route::put('/expense-hub/updateinvoice/{id}', [App\Http\Controllers\ExpenseHubController::class, 'updateInvoice'])->name('expensehub.updateInvoice');
+Route::put('/expense-hub/update/{id}', [App\Http\Controllers\ExpenseHubController::class, 'update'])->name('expensehub.update');
+
 Route::prefix('office')->group(function () {
     Route::get('/dashboard', [OfficeController::class, 'dashboard'])->name('office.dashboard');
 });
