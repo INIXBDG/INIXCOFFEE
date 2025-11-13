@@ -421,7 +421,7 @@ class DatabaseKPIController extends Controller
 
                 $listNilaiEvaluator[] = [
                     'pesan' => $item->pesan ?? '-',
-                    'nilai' => $item->nilai ?? '-'
+                    'nilai' => $item->nilai
                 ];
             }
 
@@ -440,6 +440,7 @@ class DatabaseKPIController extends Controller
 
                 return [
                     'sub_kriteria' => $kategori->judul_kategori,
+                    'tipe_kriteria' => $kategori->tipe_kategori,
                     'bobot' => $kategori->bobot,
                     'detailTipeSubKriteria' => $tipeDetails->map(fn($tipe) => [
                         'ket_sub_tipe' => $tipe->ket_tipe,
@@ -985,7 +986,7 @@ class DatabaseKPIController extends Controller
         return view('databasekpi.detailPenilaian', compact('kodeForm', 'id_karyawan', 'tipe'));
     }
 
-       public function penilaianEvaluator(Request $request)
+    public function penilaianEvaluator(Request $request)
     {
         $id_evaluator = Auth::user()->karyawan->id;
         $kode_form = $request->input('kode_form');
@@ -1559,7 +1560,7 @@ class DatabaseKPIController extends Controller
         ]);
     }
 
-        public function getFromPenilaianUser(Request $request, $id_evaluator)
+    public function getFromPenilaianUser(Request $request, $id_evaluator)
     {
         $evaluatorEmploye = Karyawan::find($id_evaluator);
         if (!$evaluatorEmploye) {
@@ -1676,7 +1677,7 @@ class DatabaseKPIController extends Controller
 
         return view('databasekpi.formPenilaian', compact('outputData', 'evaluatorEmploye', 'isEvaluator'));
     }
-    
+
     public function createKategori()
     {
         $data = karyawan::all();

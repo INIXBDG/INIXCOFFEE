@@ -2128,11 +2128,31 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                            <div class="col-sm-6 mt-2">
+                                                <div class="card" id="card-hover">
+                                                    <div class="card-body d-flex">
+                                                        <div class="col-md-2">
+                                                            <i class="fa-solid fa-basket-shopping" style="font-size: 30px;"></i>
+                                                        </div>
+                                                        <div class="col-md-10"
+                                                            style="margin-left: 10px">
+                                                            <a href="{{ route('expensehub.index') }}"
+                                                                class="link stretched-link text-decoration-none">
+                                                                <h5 class="card-title">Pengajuan Diluar PA
+                                                                </h5>
+                                                            </a>
+                                                            <p class="card-text">Pengajuan entertaint, reimburst, dan oleh-oleh.
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
+
                         @endcan
                         @can('Fitur Menu Manajemen')
                         <div class="row">
