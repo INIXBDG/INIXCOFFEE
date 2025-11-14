@@ -39,6 +39,7 @@ use App\Http\Controllers\TicketController;
 use App\Http\Controllers\KanbanController;
 use App\Http\Controllers\DailyActivityController;
 use App\Http\Controllers\office\OfficeController;
+use App\Http\Controllers\DashboardSLAController;
 
 /*
 |--------------------------------------------------------------------------
@@ -657,4 +658,21 @@ route::get('activity-log/data', [App\Http\Controllers\DatabaseKPIController::cla
 
 Route::prefix('office')->group(function () {
     Route::get('/dashboard', [OfficeController::class, 'dashboard'])->name('office.dashboard');
+});
+
+Route::prefix('dashboard-sla/{team}')->group(function () {
+    // Memastikan {team} hanya 'programmer' atau 'tech-support'
+    Route::whereIn('team', ['programmer', 'tech-support']);
+
+    // Saat URL-nya: /dashboard-sla/programmer/tim
+    // $team akan bernilai "programmer"
+    Route::get('/tim', [DashboardSLAController::class, 'dashboardTim']);
+
+    // Saat URL-nya: /dashboard-sla/tech-support/user
+    // $team akan bernilai "tech-support"
+    Route::get('/user', [DashboardSLAController::class, 'dashboardUser']);
+
+    // Saat URL-nya: /dashboard-sla/programmer/kritis
+    // $team akan bernilai "programmer"
+    Route::get('/kritis', [DashboardSLAController::class, 'dashboardKritis']);
 });

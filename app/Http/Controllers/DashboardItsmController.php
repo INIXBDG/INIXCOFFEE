@@ -1,279 +1,172 @@
 <?php
 
 namespace App\Http\Controllers;
-use Google\Client as GoogleClient;
-use Google\Service\Sheets;
+
+use App\Models\Tickets;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class DashboardItsmController extends Controller
 {
-    private $spreadsheetId = '1w_xAH-peVcIYhgnVDw6jiycw4bjXdPZlcMOzhYe3n7w'; // Ganti dengan spreadsheet ID Anda
-    private $range = "'Pivot Table 1'!A2:G";
-
-    private function getGoogleClient()
+    /**
+     * Helper untuk menambahkan filter bulan ke query Eloquent.
+     */
+    private function applyMonthFilter($query, $month)
     {
-        $client = new GoogleClient();
-        $client->setAuthConfig(storage_path('app/google/credentials.json'));
-        $client->addScope(Sheets::SPREADSHEETS_READONLY);
-        return $client;
+        if ($month && $month !== 'all') {
+            // Asumsi 'created_at' adalah kolom tanggal tiket
+            $query->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$month]);
+        }
+        return $query;
     }
 
+    /**
+     * Mengambil daftar bulan unik dari data tiket.
+     */
     public function getListBulan()
     {
-        $data = $this->fetchDataFromSpreadsheet();
-
-        $bulanList = [];
-
-        foreach ($data as $row) {
-            $bulan = $row[0] ?? null;  // Asumsi kolom 0 adalah "BULAN TAHUN"
-            if ($bulan && !in_array($bulan, $bulanList)) {
-                $bulanList[] = $bulan;
-            }
-        }
-
-        // Urutkan bulan jika perlu, misal berdasarkan urutan munculnya
-        sort($bulanList);
+        $bulanList = Tickets::selectRaw("DISTINCT DATE_FORMAT(created_at, '%Y-%m') as bulan_tahun")
+            ->whereNotNull('created_at')
+            ->orderBy('bulan_tahun', 'desc')
+            ->pluck('bulan_tahun');
 
         return response()->json($bulanList);
     }
 
-
-    private function fetchDataFromSpreadsheet()
-    {
-        $client = $this->getGoogleClient();
-        $service = new Sheets($client);
-        $response = $service->spreadsheets_values->get($this->spreadsheetId, $this->range);
-        return $response->getValues() ?? [];
-    }
-
-    // 1. Jumlah Permintaan (total permintaan per bulan, divisi, kategori, dll)
+    /**
+     * 1. Jumlah Permintaan (Ticketing) per Divisi.
+     */
     public function getJumlahPermintaan(Request $request)
     {
-        $data = $this->fetchDataFromSpreadsheet();
+        $query = Tickets::select('divisi', DB::raw('COUNT(*) as total'))
+            ->groupBy('divisi');
 
-        $filterMonth = $request->query('filterMonth', 'all'); // Filter bulan, default 'all'
+        $this->applyMonthFilter($query, $request->query('filterMonth'));
 
-        $result = [];
+        $result = $query->pluck('total', 'divisi');
 
-        foreach ($data as $row) {
-            $bulan = $row[0] ?? '';         // Asumsi kolom 0 adalah "BULAN TAHUN"
-            $divisi = $row[2] ?? '';        // Asumsi kolom 2 adalah "Divisi"
-            $countStatus = isset($row[6]) ? (int) $row[6] : 0;
-
-            // Filter bulan jika filter aktif
-            if ($filterMonth !== 'all' && $filterMonth !== $bulan) {
-                continue; // skip jika bukan bulan yg dipilih
-            }
-
-            // Group berdasarkan divisi
-            $key = $divisi;
-
-            if (!isset($result[$key])) {
-                $result[$key] = 0;
-            }
-            $result[$key] += $countStatus;
-        }
-
-        $labels = array_keys($result);
-        $values = array_values($result);
-
-        return response()->json(['labels' => $labels, 'values' => $values]);
+        return response()->json([
+            'labels' => $result->keys(),
+            'values' => $result->values()
+        ]);
     }
 
+    /**
+     * Menghitung jumlah tiket berdasarkan kategori PIC dari kolom 'keperluan'.
+     */
     public function getJumlahPIC(Request $request)
     {
-        // Asumsikan ini data keseluruhan dari spreadsheet, perlu ganti sesuai method fetch aktual
-        $data = $this->fetchDataFromSpreadsheet();
+        $query = Tickets::selectRaw("
+                CASE
+                    WHEN LOWER(keperluan) LIKE '%programming%' THEN 'Programming'
+                    WHEN LOWER(keperluan) LIKE '%digital%' THEN 'Digital'
+                    WHEN LOWER(keperluan) LIKE '%technical support%' THEN 'Technical Support'
+                    ELSE 'Lainnya'
+                END as pic_category,
+                COUNT(*) as total
+            ")
+            ->groupBy('pic_category');
 
-        $filterMonth = $request->query('filterMonth', 'all');
+        $this->applyMonthFilter($query, $request->query('filterMonth'));
 
-        // Inisialisasi hitungan PIC untuk ketiga kategori
+        $result = $query->get()
+                       ->where('pic_category', '!=', 'Lainnya')
+                       ->pluck('total', 'pic_category');
+
         $picCountByCategory = [
-            'Programming' => 0,
-            'Digital' => 0,
-            'Technical Support' => 0,
+            'Programming' => $result->get('Programming', 0),
+            'Digital' => $result->get('Digital', 0),
+            'Technical Support' => $result->get('Technical Support', 0),
         ];
 
-        foreach ($data as $index => $row) {
-            $bulan = $row[0] ?? '';           // Kolom Bulan Tahun (format: YYYY-MM)
-            $keperluan = strtolower($row[1] ?? ''); // Kolom Keperluan, diubah ke lowercase untuk pengecekan
-            $countStatus = intval($row[6] ?? 0);    // Kolom COUNTA of Status (jumlah pekerjaan)
-
-            // Filter bulan jika ada filter selain all
-            if ($filterMonth !== 'all' && $filterMonth !== $bulan) {
-                continue;
-            }
-
-            // Tentukan kategori PIC berdasarkan isi kolom keperluan
-            if (strpos($keperluan, 'programming') !== false) {
-                $picCountByCategory['Programming'] += $countStatus;
-            } elseif (strpos($keperluan, 'digital') !== false) {
-                $picCountByCategory['Digital'] += $countStatus;
-            } elseif (strpos($keperluan, 'technical support') !== false) {
-                $picCountByCategory['Technical Support'] += $countStatus;
-            }
-            // Jika keperluan tidak mengandung ketiganya, maka abaikan
-        }
-
-        $labels = array_keys($picCountByCategory);
-        $values = array_values($picCountByCategory);
-
-        return response()->json(['labels' => $labels, 'values' => $values]);
+        return response()->json([
+            'labels' => array_keys($picCountByCategory),
+            'values' => array_values($picCountByCategory)
+        ]);
     }
 
+    /**
+     * Menghitung Rata-rata Durasi Pengerjaan per Keperluan (dalam detik).
+     */
     public function getRerataDurasi(Request $request)
     {
-        $data = $this->fetchDataFromSpreadsheet(); // Data array baris
+        // PERUBAHAN 2: Menggunakan CONCAT untuk menggabungkan tanggal dan jam selesai
+        $query = Tickets::select(
+                'keperluan',
+                DB::raw('AVG(TIMESTAMPDIFF(SECOND, created_at, CONCAT(tanggal_selesai, " ", jam_selesai))) as avg_duration')
+            )
+            // Pastikan 'tanggal_selesai' tidak null
+            ->whereNotNull('tanggal_selesai')
+            ->whereNotNull('jam_selesai')
+            ->groupBy('keperluan');
 
-        $toSeconds = function($timeString) {
-            if (!$timeString) return 0;
-            $parts = explode(':', $timeString);
-            if (count($parts) == 2) {
-                return ((int)$parts[0] * 60) + (int)$parts[1];
-            } elseif (count($parts) == 3) {
-                return ((int)$parts[0] * 3600) + ((int)$parts[1] * 60) + (int)$parts[2];
-            }
-            return 0;
-        };
+        $this->applyMonthFilter($query, $request->query('filterMonth'));
 
-        $filterMonth = $request->query('filterMonth', 'all');
+        $result = $query->pluck('avg_duration', 'keperluan');
 
-        $durasiPerKeperluan = [];
-
-        foreach ($data as $row) {
-            $bulan = $row[0] ?? '';
-            $keperluan = $row[1] ?? '';
-            $durasiStr = $row[5] ?? '';
-
-            if ($filterMonth !== 'all' && $filterMonth !== $bulan) {
-                continue;
-            }
-
-            if ($bulan && $keperluan && $durasiStr) {
-                $durasiDetik = $toSeconds($durasiStr);
-                if (!isset($durasiPerKeperluan[$keperluan])) {
-                    $durasiPerKeperluan[$keperluan] = [];
-                }
-                $durasiPerKeperluan[$keperluan][] = $durasiDetik;
-            }
-        }
-
-        $labels = [];
-        $values = [];
-        foreach ($durasiPerKeperluan as $keperluan => $durasiArray) {
-            $labels[] = $keperluan;
-            $values[] = round(array_sum($durasiArray) / count($durasiArray));
-        }
-
-        return response()->json(['labels' => $labels, 'values' => $values]);
+        return response()->json([
+            'labels' => $result->keys(),
+            'values' => $result->values()->map(fn($val) => round($val))
+        ]);
     }
 
-    // 4. Jumlah Permintaan Per Bulan (singkat dari no 1)
+    /**
+     * 4. Jumlah Permintaan Per Bulan (total semua tiket per bulan).
+     */
     public function getJumlahPermintaanPerBulan()
     {
-        $data = $this->fetchDataFromSpreadsheet();
-
-        $result = [];
-
-        foreach ($data as $row) {
-            $bulan = $row[0] ?? '';
-            $countStatus = isset($row[6]) ? (int) $row[6] : 0;
-
-            if (!isset($result[$bulan])) {
-                $result[$bulan] = 0;
-            }
-            $result[$bulan] += $countStatus;
-        }
-
-        ksort($result);
-
-        $labels = array_keys($result);
-        $values = array_values($result);
+        $result = Tickets::selectRaw("DATE_FORMAT(created_at, '%Y-%m') as bulan_tahun, COUNT(*) as total")
+            ->groupBy('bulan_tahun')
+            ->orderBy('bulan_tahun', 'asc')
+            ->pluck('total', 'bulan_tahun');
 
         return response()->json([
-            'labels' => $labels,
-            'values' => $values,
+            'labels' => $result->keys(),
+            'values' => $result->values(),
         ]);
     }
 
-    // 5. Rata-rata Ketepatan Respon Ticketing
+    /**
+     * 5. Rata-rata Ketepatan (Kecepatan) Respon per Keperluan (dalam detik).
+     */
     public function getRerataKetepatanResponse(Request $request)
     {
-        $data = $this->fetchDataFromSpreadsheet(); // Data array baris
+        // PERUBAHAN 3: Menggunakan CONCAT untuk menggabungkan tanggal dan jam response
+        $query = Tickets::select(
+                'keperluan',
+                DB::raw('AVG(TIMESTAMPDIFF(SECOND, created_at, CONCAT(tanggal_response, " ", jam_response))) as avg_response')
+            )
+            // Pastikan 'tanggal_response' tidak null
+            ->whereNotNull('tanggal_response')
+            ->whereNotNull('jam_response')
+            ->groupBy('keperluan');
 
-        $toSeconds = function($timeString) {
-            if (!$timeString) return 0;
-            $parts = explode(':', $timeString);
-            if (count($parts) == 2) {
-                return ((int)$parts[0] * 60) + (int)$parts[1];
-            } elseif (count($parts) == 3) {
-                return ((int)$parts[0] * 3600) + ((int)$parts[1] * 60) + (int)$parts[2];
-            }
-            return 0;
-        };
+        $this->applyMonthFilter($query, $request->query('filterMonthKetepatan'));
 
-        $filterMonth = $request->query('filterMonth', 'all');
-
-        $ketepatanPerKeperluan = [];
-
-        foreach ($data as $row) {
-            $bulan = $row[0] ?? '';
-            $keperluan = $row[1] ?? '';
-            $ketepatanStr = $row[4] ?? ''; // kolom 4: ketepatan response
-
-            if ($filterMonth !== 'all' && $filterMonth !== $bulan) {
-                continue;
-            }
-
-            if ($bulan && $keperluan && $ketepatanStr) {
-                $ketepatanDetik = $toSeconds($ketepatanStr);
-                if (!isset($ketepatanPerKeperluan[$keperluan])) {
-                    $ketepatanPerKeperluan[$keperluan] = [];
-                }
-                $ketepatanPerKeperluan[$keperluan][] = $ketepatanDetik;
-            }
-        }
-
-        $labels = [];
-        $values = [];
-        foreach ($ketepatanPerKeperluan as $keperluan => $ketepatanArray) {
-            $labels[] = $keperluan;
-            $values[] = round(array_sum($ketepatanArray) / count($ketepatanArray));
-        }
-
-        return response()->json(['labels' => $labels, 'values' => $values]);
-    }
-
-
-    public function getPermintaanSeringDiajukan(Request $request)
-    {
-        $data = $this->fetchDataFromSpreadsheet(); // Ambil data dari sumber sesuai implementasi Anda
-
-        $result = [];
-
-        foreach ($data as $row) {
-            $kategori = $row[3] ?? ''; // Asumsikan kategori ada di index 3
-            $status = $row[6] ?? '';   // Asumsikan status ada di index 6
-
-            if (!empty($kategori) && $status !== '') {
-                if (!isset($result[$kategori])) {
-                    $result[$kategori] = 0;
-                }
-                $result[$kategori] += 1; // hitung 1 per baris dengan kategori dan status valid
-            }
-        }
-
-        arsort($result); // Urutkan descending berdasarkan jumlah permintaan
-
-        $labels = array_keys($result);
-        $values = array_values($result);
+        $result = $query->pluck('avg_response', 'keperluan');
 
         return response()->json([
-            'labels' => $labels,
-            'values' => $values
+            'labels' => $result->keys(),
+            'values' => $result->values()->map(fn($val) => round($val))
         ]);
     }
 
-}
+    /**
+     * Menghitung kategori permintaan yang paling sering diajukan.
+     */
+    public function getPermintaanSeringDiajukan(Request $request)
+    {
+        $result = Tickets::select('kategori', DB::raw('COUNT(*) as total'))
+            ->whereNotNull('kategori')
+            ->groupBy('kategori')
+            ->orderByDesc('total')
+            ->pluck('total', 'kategori');
 
+        return response()->json([
+            'labels' => $result->keys(),
+            'values' => $result->values()
+        ]);
+    }
+
+    
+}
