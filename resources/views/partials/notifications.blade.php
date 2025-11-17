@@ -945,5 +945,42 @@
             </div>
         @endif
 
+@if ($notification->data['message']['tipe'] == 'Pembayaran Outstanding Selesai')
+    <div class="alert alert-success d-flex justify-content-between align-items-start shadow-sm p-3 mb-3 border-start border-4 border-success">
+        <div>
+            <h6 class="fw-bold mb-2 text-success">
+                <i class="bi bi-check-circle-fill me-2"></i>Pembayaran Outstanding Selesai
+            </h6>
+            <p class="mb-1">
+                <strong>{{ $notification->data['message']['perusahaan'] }}</strong> telah menyelesaikan pembayaran untuk
+                <strong>{{ $notification->data['message']['materi'] }}</strong>
+                <span class="text-primary">({{ $notification->data['message']['periode'] }})</span>.
+            </p>
+            <p class="mb-2 small text-muted">
+                No. Invoice: <strong>{{ $notification->data['message']['no_invoice'] ?? '-' }}</strong> |
+                Tanggal Bayar:
+                <strong>
+                    {{ $notification->data['message']['tgl_bayar'] 
+                        ? \Carbon\Carbon::parse($notification->data['message']['tgl_bayar'])->locale('id')->translatedFormat('d F Y') 
+                        : '-' }}
+                </strong>
+            </p>
+            <small class="text-muted">
+                Dikirim: {{ \Carbon\Carbon::parse($notification->created_at)->locale('id')->translatedFormat('d F Y H:i') }} WIB
+            </small>
+
+            <div class="mt-2">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-check2"></i> Tandai Dibaca
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+@endif
+
     <hr>
 @endforeach
