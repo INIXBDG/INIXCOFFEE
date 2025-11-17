@@ -40,6 +40,7 @@ use App\Http\Controllers\KanbanController;
 use App\Http\Controllers\DailyActivityController;
 use App\Http\Controllers\office\OfficeController;
 use App\Http\Controllers\Office\CertificateController;
+use App\Http\Controllers\Office\vendorOfficeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -689,6 +690,12 @@ Route::prefix('office')->name('office.')->middleware(['auth'])->group(function (
         Route::get('/download/{id}', [CertificateController::class, 'download'])->name('download');
         Route::get('/download-by-peserta/{rkm_id}/{peserta_id}', [CertificateController::class, 'downloadByPeserta'])->name('downloadByPeserta');
         Route::get('/preview/{id}', [CertificateController::class, 'preview'])->name('preview');
+    });
+    Route::prefix('vendor')->name('vendor.')->group(function () {
+        Route::resource('/souvenir', vendorOfficeController::class);
+        Route::resource('/makansiang', vendorOfficeController::class);
+        Route::resource('/coffeebreak',vendorOfficeController::class);
+        Route::resource('/bengkel', vendorOfficeController::class);
     });
 
 });
