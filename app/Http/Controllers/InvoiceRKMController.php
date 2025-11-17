@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Invoice;
 use App\Models\karyawan;
 use App\Models\Kwitansi;
+use App\Models\outstanding;
 use App\Models\RKM;
 use App\Models\Perusahaan;
+use App\Models\trackingOutstanding;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\JsonResponse;
@@ -166,6 +168,17 @@ public function store(Request $request): RedirectResponse
         'account_number' => $request->input('account_number'),
         'terbilang' => $request->input('terbilang'), // Simpan terbilang
     ]);
+
+    $outstanding = Outstanding::where('id_rkm', $request->input('id_rkm'))->first();
+
+
+    if ($outstanding) {
+        trackingOutstanding::where('id_outstanding', $outstanding->id)
+            ->update(['invoice' => 1]);
+
+        $outstanding->no_invoice = $request->input('invoice_number');
+        $outstanding->update();
+    }
 
     return redirect()->route('invoice.index')->with(['success' => 'Invoice berhasil dibuat!']);
 }

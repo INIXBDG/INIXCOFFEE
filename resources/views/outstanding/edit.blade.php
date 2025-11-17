@@ -10,7 +10,7 @@
                         <img src="{{ asset('icon/arrow-left.svg') }}" class="img-responsive" width="20px"> Back
                     </a>
                     <h5 class="card-title text-center mb-4">{{ __('Edit Outstanding') }}</h5>
-                    <form method="POST" action="{{ route('outstanding.update', $outstanding->id) }}" id="formOutstanding">
+                    <form method="POST" action="{{ route('outstanding.update', $outstanding->id) }}" id="formOutstanding" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
 
@@ -132,6 +132,52 @@
                                 </select>                                   
                             </div>  
                         </div>  
+
+                        <div class="row mb-3" id="faktur_pajak_row" style="display:none;">
+                            <label for="faktur_pajak" class="col-md-4 col-form-label text-md-start">{{ __('Upload Faktur Pajak (PDF)') }}</label>
+                            <div class="col-md-6">
+                                <input type="file" name="faktur_pajak" id="faktur_pajak" class="form-control" accept="application/pdf">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3" id="dokumen_tambahan_row" style="display:none;">
+                            <label for="dokumen_tambahan_files" class="col-md-4 col-form-label text-md-start">{{ __('Upload Dokumen Tambahan (PDF)') }}</label>
+                            <div class="col-md-6">
+                                <input type="file" name="dokumen_tambahan_files[]" id="dokumen_tambahan_files" class="form-control" accept="application/pdf" multiple>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3" id="pembayaran" style="display:none;">
+                            <label for="pembayaran" class="col-md-4 col-form-label text-md-start">{{ __('Upload Bukti Pembayaran (PDF)') }}</label>
+                            <div class="col-md-6">
+                                <input type="file" name="pembayaran" id="pembayaran" class="form-control" accept="application/pdf">
+                            </div>
+                        </div>
+
+                        @if(!empty($outstanding['path_faktur_pajak']))
+                            <div class="row mb-3">
+                                <label class="col-md-4 col-form-label text-md-start">{{ __('File Faktur Pajak') }}</label>
+                                <div class="col-md-6">
+                                    <small class="text-muted">
+                                        <a href="{{ asset('storage/' . $outstanding['path_faktur_pajak']) }}" target="_blank">Lihat PDF</a>
+                                    </small>
+                                </div>
+                            </div>
+                        @endif
+
+                        @if(!empty($outstanding['path_dokumen_tambahan']))
+                            <div class="row mb-3">
+                                <label class="col-md-4 col-form-label text-md-start">{{ __('File Dokumen Tambahan') }}</label>
+                                <div class="col-md-6">
+                                    <small class="text-muted">
+                                        <a href="{{ asset('storage/' . str_replace('public/', '', $outstanding['path_dokumen_tambahan'])) }}" target="_blank">
+                                            Lihat PDF
+                                        </a>
+                                    </small>
+                                </div>
+                            </div>
+                        @endif
+
                         <div class="row mb-3">
                             <label for="status_resi" class="col-md-4 col-form-label text-md-start">{{ __('Nomor Resi') }}</label>
                             <div class="col-md-6">
@@ -211,6 +257,24 @@
     function statusTracking() {
         const selectedValue = $('#status_tracking').val();
         console.log(selectedValue);
+        if (selectedValue === "faktur_pajak") {
+                $('#faktur_pajak_row').show();
+                $('#dokumen_tambahan_row').hide(); 
+                $('#pembayaran').hide(); 
+            } else if (selectedValue === "dokumen_tambahan") {
+                $('#dokumen_tambahan_row').show();
+                $('#faktur_pajak_row').hide(); 
+                $('#pembayaran').hide(); 
+            } else if (selectedValue === "pembayaran") {
+                $('#pembayaran').show();
+                $('#dokumen_tambahan_row').hide();
+                $('#faktur_pajak_row').hide(); 
+            } else {
+                $('#faktur_pajak_row').hide();
+                $('#pembayaran').hide();
+                $('#dokumen_tambahan_row').hide();
+            }
+
         if (selectedValue === "no_resi") {
             $('#no_resi').closest('.row').show(); // Tampilkan elemen no_resi
         } else {

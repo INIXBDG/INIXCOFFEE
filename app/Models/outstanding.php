@@ -18,6 +18,8 @@ class outstanding extends Model
         'no_invoice',
         'no_regist',
         'tanggal_bayar',
+        'path_faktur_pajak',
+        'path_dokumen_tambahan',
     ];
 
     public function rkm()
