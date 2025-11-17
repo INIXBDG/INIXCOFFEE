@@ -41,6 +41,7 @@ use App\Http\Controllers\DailyActivityController;
 use App\Http\Controllers\office\OfficeController;
 use App\Http\Controllers\Office\CertificateController;
 use App\Http\Controllers\OutstandingController;
+use App\Http\Controllers\Office\vendorOfficeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -137,6 +138,7 @@ Route::resource('/rekapmengajarinstruktur', \App\Http\Controllers\rekapInstruktu
 Route::resource('/lembur', \App\Http\Controllers\LemburController::class);
 Route::resource('/overtime', \App\Http\Controllers\OvertimeController::class);
 Route::resource('/pengajuanlabsdansubs', \App\Http\Controllers\PengajuanLabdanSubsController::class);
+Route::resource('/pengajuansouvenir', \App\Http\Controllers\PengajuanSouvenirController::class);
 Route::resource('/daily-activities', \App\Http\Controllers\DailyActivityController::class);
 Route::resource('/registry', \App\Http\Controllers\RegistryFeatureController::class)->parameters(['registry' => 'tugas']);
 Route::resource('permissions', \App\Http\Controllers\PermissionController::class);
@@ -659,15 +661,28 @@ route::get('activity-log/data', [App\Http\Controllers\DatabaseKPIController::cla
 
 // survey kepuasan
 Route::get('/survey/kepuasan', [App\Http\Controllers\SurveyKepuasanController::class, 'index'])->name('surveykepuasan.index');
-Route::post('/survey/kepuasan/send', [App\Http\Controllers\SurveyKepuasanController::class, 'store'])->name('surveykepuasan.store');   
+Route::post('/survey/kepuasan/send', [App\Http\Controllers\SurveyKepuasanController::class, 'store'])->name('surveykepuasan.store');
 Route::get('/survey/kepuasan/table', [App\Http\Controllers\SurveyKepuasanController::class, 'indexTable'])->name('surveyKepuasan.indexTable');
 Route::get('/survey/kepuasan/destroy/{id}', [App\Http\Controllers\SurveyKepuasanController::class, 'destroy']);
+
+// expense-hub
+Route::get('/expense-hub/index', [App\Http\Controllers\ExpenseHubController::class, 'index'])->name('expensehub.index');
+Route::get('/expense-hub/get', [App\Http\Controllers\ExpenseHubController::class, 'get'])->name('expensehub.get');
+Route::get('/expense-hub/create', [App\Http\Controllers\ExpenseHubController::class, 'create'])->name('expensehub.create');
+Route::post('/expense-hub/store', [App\Http\Controllers\ExpenseHubController::class, 'store'])->name('expensehub.store');
+Route::post('/expense-hub/export-pdf', [App\Http\Controllers\ExpenseHubController::class, 'PDF'])->name('expensehub.pdf');
+Route::put('/expense-hub/approved', [App\Http\Controllers\ExpenseHubController::class, 'approved'])->name('expensehub.approved');
+Route::get('/expense-hub/show/{id}', [App\Http\Controllers\ExpenseHubController::class, 'show'])->name('expensehub.show');
+Route::get('/expense-hub/destroy/{id}', [App\Http\Controllers\ExpenseHubController::class, 'destroy'])->name('expensehub.destroy');
+Route::get('/expense-hub/invoice/{id}', [App\Http\Controllers\ExpenseHubController::class, 'invoice'])->name('expensehub.invoice');
+Route::put('/expense-hub/updateinvoice/{id}', [App\Http\Controllers\ExpenseHubController::class, 'updateInvoice'])->name('expensehub.updateInvoice');
+Route::put('/expense-hub/update/{id}', [App\Http\Controllers\ExpenseHubController::class, 'update'])->name('expensehub.update');
 
 Route::prefix('office')->group(function () {
     Route::get('/dashboard', [OfficeController::class, 'dashboard'])->name('office.dashboard');
 });
 Route::prefix('office')->name('office.')->middleware(['auth'])->group(function () {
-    
+
     // Certificate Routes
     Route::prefix('certificate')->name('certificate.')->group(function () {
         Route::get('/', [CertificateController::class, 'index'])->name('index');
@@ -678,6 +693,12 @@ Route::prefix('office')->name('office.')->middleware(['auth'])->group(function (
         Route::get('/download/{id}', [CertificateController::class, 'download'])->name('download');
         Route::get('/download-by-peserta/{rkm_id}/{peserta_id}', [CertificateController::class, 'downloadByPeserta'])->name('downloadByPeserta');
         Route::get('/preview/{id}', [CertificateController::class, 'preview'])->name('preview');
+    });
+    Route::prefix('vendor')->name('vendor.')->group(function () {
+        Route::resource('/souvenir', vendorOfficeController::class);
+        Route::resource('/makansiang', vendorOfficeController::class);
+        Route::resource('/coffeebreak',vendorOfficeController::class);
+        Route::resource('/bengkel', vendorOfficeController::class);
     });
 
 });
