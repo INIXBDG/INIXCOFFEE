@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\RKMController;
 use App\Http\Controllers\approvedNetSalesController;
+use App\Http\Controllers\CateringController;
 use App\Http\Controllers\Crm\CatatanSalesController;
 use App\Http\Controllers\Crm\ContactController;
 use App\Http\Controllers\Crm\CRMController;
@@ -648,16 +649,16 @@ Route::patch('/daily-activities/{daily_activity}/update-status', [DailyActivityC
 
 // RegistryFeature
 Route::patch('/registry/{tugas}/start', [App\Http\Controllers\RegistryFeatureController::class, 'startTask'])
-     ->name('registry.start');
+    ->name('registry.start');
 Route::patch('/registry/{tugas}/finish', [App\Http\Controllers\RegistryFeatureController::class, 'finishTask'])
-->name('registry.finish');
+    ->name('registry.finish');
 
 route::get('activity-log', [App\Http\Controllers\DatabaseKPIController::class, 'activityLog'])->name('activity.log');
 route::get('activity-log/data', [App\Http\Controllers\DatabaseKPIController::class, 'getActivityChart'])->name('activity.log.chart');
 
 // survey kepuasan
 Route::get('/survey/kepuasan', [App\Http\Controllers\SurveyKepuasanController::class, 'index'])->name('surveykepuasan.index');
-Route::post('/survey/kepuasan/send', [App\Http\Controllers\SurveyKepuasanController::class, 'store'])->name('surveykepuasan.store');   
+Route::post('/survey/kepuasan/send', [App\Http\Controllers\SurveyKepuasanController::class, 'store'])->name('surveykepuasan.store');
 Route::get('/survey/kepuasan/table', [App\Http\Controllers\SurveyKepuasanController::class, 'indexTable'])->name('surveyKepuasan.indexTable');
 Route::get('/survey/kepuasan/destroy/{id}', [App\Http\Controllers\SurveyKepuasanController::class, 'destroy']);
 
@@ -678,7 +679,7 @@ Route::prefix('office')->group(function () {
     Route::get('/dashboard', [OfficeController::class, 'dashboard'])->name('office.dashboard');
 });
 Route::prefix('office')->name('office.')->middleware(['auth'])->group(function () {
-    
+
     // Certificate Routes
     Route::prefix('certificate')->name('certificate.')->group(function () {
         Route::get('/', [CertificateController::class, 'index'])->name('index');
@@ -690,5 +691,15 @@ Route::prefix('office')->name('office.')->middleware(['auth'])->group(function (
         Route::get('/download-by-peserta/{rkm_id}/{peserta_id}', [CertificateController::class, 'downloadByPeserta'])->name('downloadByPeserta');
         Route::get('/preview/{id}', [CertificateController::class, 'preview'])->name('preview');
     });
-
 });
+
+// catering
+Route::get('/catering/index', [CateringController::class, 'index'])->name('catering.index');
+Route::get('/catering/get', [CateringController::class, 'get'])->name('catering.get');
+Route::get('/catering/create', [CateringController::class, 'create'])->name('catering.create');
+Route::post('/catering/store', [CateringController::class, 'store'])->name('catering.store');
+Route::get('/catering/show/{id}', [CateringController::class, 'show'])->name('catering.show');
+Route::put('/catering/update/{id}', [CateringController::class, 'update'])->name('catering.update');
+Route::post('/catering/export-pdf', [CateringController::class, 'PDF'])->name('catering.pdf');
+Route::put('/catering/approved', [CateringController::class, 'approved'])->name('catering.approved');
+Route::get('/catering/destroy/{id}', [CateringController::class, 'destroy'])->name('catering.destroy');
