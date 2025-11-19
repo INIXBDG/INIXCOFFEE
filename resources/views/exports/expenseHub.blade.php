@@ -55,14 +55,14 @@
                         <div class="panel panel-default text-right">
                             <div class="panel-body d-print-none mt-4">
                                 <a href="javascript:void(0);" class="btn btn-success me-1" id="printInvoiceBTN"><i
-                                        class="fa fa-print"></i> Print Form Permintaan</a>
+                                        class="fa fa-print"></i> Print Form Pengajuan</a>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="container mt-4">
-                    <h3 class="text-center">Form Permintaan Barang</h3>
+                    <h3 class="text-center">Form Pengajuan Entertaint, Reimburst, dan Oleh-Oleh</h3>
                     @if ($data)
                     <table class="table table-bordered my-4">
                         <tbody>

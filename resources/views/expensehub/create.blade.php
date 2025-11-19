@@ -3,8 +3,8 @@
 @section('content')
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <style>
-    .select2-single {
-        padding: 14px;
+    .select2-single option {
+        padding: 18px;
     }
 </style>
 <div class="container">
@@ -13,7 +13,7 @@
             <div class="card">
                 <div class="card-body" id="card">
                     <a href="{{ route('expensehub.index') }}" class="btn click-primary my-2"><img src="{{ asset('icon/arrow-left.svg') }}" class="img-responsive" width="20px"> Back</a>
-                    <h5 class="card-title text-center mb-4">{{ __('Pengajuan Entertaint, Rimburst & Oleh-Oleh') }}</h5>
+                    <h5 class="card-title text-center mb-4">{{ __('Pengajuan Entertaint, Reimburst & Oleh-Oleh') }}</h5>
                     <form method="POST" action="{{ route('expensehub.store') }}" enctype="multipart/form-data">
                         @csrf
                         <!-- ID Karyawan -->
@@ -47,9 +47,15 @@
                             <label for="id_rkm" class="col-md-4 col-form-label text-md-start">{{ __('ID RKM') }}</label>
                             <div class="col-md-6">
                                 <select name="id_rkm" id="id_rkm" class="form-select select2-single" required>
-                                    <option selected disabled>pilih ID RKM</option>
+                                    <option selected disabled>pilih RKM</option>
                                     @foreach ($rkm as $rkm)
-                                    <option value="{{ $rkm }}">{{ $rkm }}</option>
+                                    <option value="{{ $rkm->id }}">
+                                        {{ $rkm->materi->nama_materi }}
+                                        - {{ $rkm->perusahaan->nama_perusahaan }}
+                                        / {{ \Carbon\Carbon::parse($rkm->tanggal_awal)->translatedFormat('d F Y') }}
+                                        s/d
+                                        {{ \Carbon\Carbon::parse($rkm->tanggal_akhir)->translatedFormat('d F Y') }}
+                                    </option>
                                     @endforeach
                                 </select>
                                 @error('id_rkm')
@@ -59,7 +65,6 @@
                                 @enderror
                             </div>
                         </div>
-
 
                         <div class="row mb-3">
                             <label for="tipe" class="col-md-4 col-form-label text-md-start">{{ __('Tipe') }}</label>

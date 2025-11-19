@@ -72,7 +72,7 @@
                 </div>
                 <div class="modal-body">
                     @if (auth()->user()->jabatan === 'Finance & Accounting')
-                    <div class="mb-3">
+                    <div class="mb-3" id="statusFinanceContainer">
                         <select name="status_finance" id="status" class="form-select">
                             <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager">Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager</option>
                             <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi">Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi</option>
@@ -175,18 +175,6 @@
 <script>
     $(document).ready(function() {
         loadData();
-
-        $('#exampleModal').on('click', '.btn-outline-primary, .btn-outline-danger', function() {
-            const status = $(this).data('status');
-            $('#statusInput').val(status);
-
-            if (status == '0') {
-                $('#keteranganContainer').show();
-            } else {
-                $('#keteranganContainer').hide();
-                $('#keterangan').val('');
-            }
-        });
 
         $('#statusForm').on('submit', function(e) {
             const status = $('#statusInput').val();
@@ -297,7 +285,7 @@
                                     Actions
                                 </button>
                                 <ul class="dropdown-menu" id="action-menu-${item.id}">
-                                    <li><a class="dropdown-item approved-button" data-bs-toggle="modal" data-id="${item.id}" data-bs-target="#exampleModal"><span class="me-2"><img src="{{ asset('icon/check-circle.svg') }}" class=""></span> Approved</a></li>
+                                    <li><a class="dropdown-item approved-button" data-bs-toggle="modal" data-id="${item.id}" data-current-tracking="${item.tracking}" data-bs-target="#exampleModal"><span class="me-2"><img src="{{ asset('icon/check-circle.svg') }}" class=""></span> Approved</a></li>
                                     <li><a class="dropdown-item" href="/expense-hub/show/${item.id}"><span class="me-2"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""></span> Detail</a></li>
                                     <li>
                                         <a href="#" class="dropdown-item btn-delete" data-id="${item.id}">
@@ -319,7 +307,7 @@
                                     Actions
                                 </button>
                                 <ul class="dropdown-menu" id="action-menu-${item.id}">
-                                    <li><a class="dropdown-item approved-button" data-bs-toggle="modal" data-id="${item.id}" data-bs-target="#exampleModal"><span class="me-2"><img src="{{ asset('icon/check-circle.svg') }}" class=""></span> Approved</a></li>
+                                    <li><a class="dropdown-item approved-button" data-bs-toggle="modal" data-id="${item.id}" data-current-tracking="${item.tracking}" data-bs-target="#exampleModal"><span class="me-2"><img src="{{ asset('icon/check-circle.svg') }}" class=""></span> Approved</a></li>
                                     <li><a class="dropdown-item" href="/expense-hub/show/${item.id}"><span class="me-2"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""></span> Detail</a></li>
                                     <li>
                                         <a href="#" class="dropdown-item btn-delete" data-id="${item.id}">
@@ -414,6 +402,47 @@
         });
     }
 
+    const financeStatusOrder = [
+        "Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager",
+        "Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi",
+        "Finance Menunggu Approve Direksi",
+        "Membuat Permintaan Ke Direktur Utama",
+        "Pengajuan sedang dalam proses Pencairan",
+        "Pencairan Sudah Selesai",
+        "Selesai"
+    ];
+
+    $('#exampleModal').on('show.bs.modal', function(event) {
+        const button = $(event.relatedTarget);
+        const currentTracking = button.data('current-tracking');
+        const modal = $(this);
+
+        const id = button.data('id');
+        modal.find('#idExpense').val(id);
+
+        const statusSelect = modal.find('#status');
+        const options = statusSelect.find('option');
+        const statusFinanceContainer = modal.find('#statusFinanceContainer');
+
+        options.prop('disabled', false);
+        statusFinanceContainer.show();
+
+        const currentIndex = financeStatusOrder.indexOf(currentTracking);
+
+        if (currentIndex > -1) {
+            for (let i = 0; i <= currentIndex; i++) {
+                const statusToDisable = financeStatusOrder[i];
+                options.filter(`[value="${statusToDisable}"]`).prop('disabled', true);
+            }
+        }
+
+        if (currentTracking === financeStatusOrder[financeStatusOrder.length - 1]) {
+            options.prop('disabled', true);
+        }
+
+        statusSelect.trigger('change');
+    });
+
     $(document).on('click', '.approved-button', function() {
         const id = $(this).data('id');
         $('#idExpense').val(id);
@@ -437,6 +466,53 @@
             if (result.isConfirmed) {
                 window.location.href = url;
             }
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const buttons = document.querySelectorAll('[data-status]');
+        const statusInput = document.getElementById('statusInput');
+        const keteranganContainer = document.getElementById('keteranganContainer');
+        const keteranganTextarea = document.getElementById('keterangan');
+        const statusFinanceContainer = document.getElementById('statusFinanceContainer');
+
+        buttons.forEach(button => {
+            button.addEventListener('click', function() {
+                const status = this.getAttribute('data-status');
+                statusInput.value = status;
+
+                buttons.forEach(btn => {
+                    if (btn === this) {
+                        btn.classList.remove('btn-outline-primary', 'btn-outline-danger');
+                        if (status === '1') {
+                            btn.classList.add('btn-primary');
+                        } else {
+                            btn.classList.add('btn-danger');
+                        }
+                    } else {
+                        if (btn.getAttribute('data-status') === '1') {
+                            btn.classList.remove('btn-primary');
+                            btn.classList.add('btn-outline-primary');
+                        } else {
+                            btn.classList.remove('btn-danger');
+                            btn.classList.add('btn-outline-danger');
+                        }
+                    }
+                });
+
+                if (status === '0') {
+                    keteranganContainer.style.display = 'block';
+                    if (statusFinanceContainer) {
+                        statusFinanceContainer.style.display = 'none';
+                    }
+                } else {
+                    keteranganContainer.style.display = 'none';
+                    keteranganTextarea.value = '';
+                    if (statusFinanceContainer) {
+                        statusFinanceContainer.style.display = 'block';
+                    }
+                }
+            });
         });
     });
 </script>
