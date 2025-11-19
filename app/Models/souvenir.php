@@ -23,4 +23,9 @@ class souvenir extends Model
     {
         return $this->hasMany(catatansouvenir::class, 'id_souvenir', 'id')->orderBy('created_at', 'desc');
     }
+
+    public function pengajuanSouvenir()
+    {
+        return $this->hasMany(PengajuanSouvenir::class, 'id_souvenir', 'id');
+    }
 }

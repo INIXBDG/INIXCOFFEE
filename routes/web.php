@@ -41,7 +41,7 @@ use App\Http\Controllers\DailyActivityController;
 use App\Http\Controllers\office\OfficeController;
 use App\Http\Controllers\Office\CertificateController;
 use App\Http\Controllers\OutstandingController;
-use App\Http\Controllers\Office\vendorOfficeController;
+use App\Http\Controllers\office\vendorOfficeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -253,6 +253,10 @@ Route::get('getTotalMengajarPerbulan/{year}/{month}', [App\Http\Controllers\Char
 Route::get('getTotalMateriPerbulan/{year}/{month}', [App\Http\Controllers\ChartController::class, 'getTotalMateriPerbulan'])->name('getTotalMateriPerbulan');
 Route::get('getTotalMengajarPerJenisMateriPerTahun/{year}/{month}', [App\Http\Controllers\ChartController::class, 'getTotalMengajarPerJenisMateriPerTahun'])->name('getTotalMengajarPerJenisMateriPerTahun');
 Route::get('getAbsenPerbulan/{year}/{month}', [App\Http\Controllers\ChartController::class, 'getAbsenPerbulan'])->name('getAbsenPerbulan');
+Route::get('/getPengajuanSouvenir/{month}/{year}',[App\Http\Controllers\PengajuanSouvenirController::class, 'getPengajuanSouvenir'])->name('getPengajuanSouvenir');
+Route::put('/pengajuansouvenir/{id}/updateitems',[App\Http\Controllers\PengajuanSouvenirController::class, 'updateItems'])->name('pengajuansouvenir.updateItems');
+Route::put('/pengajuansouvenir/{id}/upload-invoice',[App\Http\Controllers\PengajuanSouvenirController::class, 'updateInvoice'])->name('pengajuansouvenir.updateInvoice');
+Route::get('/pengajuansouvenir/{id}/export-pdf', [App\Http\Controllers\PengajuanSouvenirController::class, 'exportPDF'])->name('pengajuansouvenir.exportpdf');
 
 Route::get('/create-only', [App\Http\Controllers\examController::class, 'createOnly'])->name('exam.createOnly');
 Route::post('/store-only', [App\Http\Controllers\examController::class, 'storeOnly'])->name('exam.storeOnly');

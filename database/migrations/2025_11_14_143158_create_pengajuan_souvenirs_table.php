@@ -13,11 +13,11 @@ return new class extends Migration
     {
         Schema::create('pengajuan_souvenirs', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('id_karyawan');
             $table->unsignedBigInteger('id_vendor');
-            $table->unsignedBigInteger('id_souvenir');
-            $table->string('pax');
-            $table->decimal('harga_satuan', 15);
-            $table->decimal('harga_total', 15);
+            $table->unsignedBigInteger('id_tracking')->nullable();
+            $table->decimal('total_keseluruhan', 15, 2)->nullable();
+            $table->string('invoice')->nullable();
             $table->timestamps();
         });
     }
