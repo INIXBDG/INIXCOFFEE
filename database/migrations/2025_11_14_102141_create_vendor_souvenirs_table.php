@@ -11,13 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tracking_caterings', function (Blueprint $table) {
+        Schema::create('vendor_souvenirs', function (Blueprint $table) {
             $table->id();
-            $table->integer('id_catering');
-            $table->integer('id_karyawan')->nullable();
-            $table->string('tracking');
-            $table->date('tanggal');
-            $table->text('keterangan')->nullable();
+            $table->string('nama');
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
     }
@@ -27,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('tracking_caterings');
+        Schema::dropIfExists('vendor_souvenirs');
     }
 };

@@ -9,7 +9,7 @@ class DetailCatering extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['id_catering', 'id_vendor', 'nama_makanan', 'jumlah', 'harga', 'keterangan'];
+    protected $fillable = ['id_catering', 'id_vendor', 'nama_makanan', 'jumlah', 'harga', 'tipe_detail', 'keterangan'];
 
     public function vendor()
     {

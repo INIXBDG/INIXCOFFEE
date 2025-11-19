@@ -189,10 +189,10 @@
 
                 if (data.length === 0) {
                     content.append(`
-                        <tr>
-                            <td colspan="11" class="text-center text-muted p-2">Tidak ada data!</td>
-                        </tr>
-                    `);
+                    <tr>
+                        <td colspan="11" class="text-center text-muted p-2">Tidak ada data!</td>
+                    </tr>
+                `);
                     return;
                 }
 
@@ -239,70 +239,75 @@
                     }
 
                     const userJabatan = "{{ auth()->user()->jabatan }}".trim();
+                    const statusTracking = item.tracking;
+
+                    const financeStatusOrder = [
+                        "Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager",
+                        "Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi",
+                        "Finance Menunggu Approve Direksi",
+                        "Membuat Permintaan Ke Direktur Utama",
+                        "Pengajuan sedang dalam proses Pencairan",
+                        "Pencairan Sudah Selesai",
+                        "Selesai"
+                    ];
+
+                    const isFinanceStatus = financeStatusOrder.includes(statusTracking);
+                    const isFinalStatus = ['Selesai', 'Pengajuan anda tidak disetujui.'].includes(statusTracking);
+                    const showApprovedButton = userJabatan === 'Finance &amp; Accounting' && isFinanceStatus && !isFinalStatus;
+
                     let actionMenu = `
-                        <div class="dropdown">
-                            <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" style="background: transparent;" aria-expanded="false">
-                                Actions
-                            </button>
-                            <ul class="dropdown-menu" id="action-menu-${item.id}">
-                                <li><a class="dropdown-item" href="/catering/show/${item.id}"><span class="me-2"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""></span> Detail</a></li>
-                                    <li>
-                                        <a href="#" class="dropdown-item btn-delete" data-id="${item.id}">
-                                            <span class="me-2">
-                                                <img src="{{ asset('icon/trash-danger.svg') }}">
-                                            </span> Delete
-                                        </a>
-                                    </li>
-                                <li><a class="dropdown-item" href="/expense-hub/invoice/${item.id}"><span class="me-2"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""></span> Upload Invoice</a></li>
-                            </ul>
-                        </div>
+                    <div class="dropdown">
+                        <button class="btn btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" style="background: transparent;" aria-expanded="false">
+                            Actions
+                        </button>
+                        <ul class="dropdown-menu" id="action-menu-${item.id}">
+                            <li><a class="dropdown-item" href="/catering/show/${item.id}">
+                                <span class="me-2"><img src="{{ asset('icon/clipboard-primary.svg') }}"></span> Detail
+                            </a></li>
+                            <li>
+                                <a href="#" class="dropdown-item btn-delete" data-id="${item.id}">
+                                    <span class="me-2"><img src="{{ asset('icon/trash-danger.svg') }}"></span> Delete
+                                </a>
+                            </li>
+                            <li><a class="dropdown-item" href="/catering/invoice/${item.id}">
+                                <span class="me-2"><img src="{{ asset('icon/clipboard-primary.svg') }}"></span> Upload Invoice
+                            </a></li>
+                `;
+
+                    if (showApprovedButton) {
+                        actionMenu += `
+                            <li>
+                                <a class="dropdown-item approved-button"
+                                   data-bs-toggle="modal"
+                                   data-bs-target="#exampleModal"
+                                   data-id="${item.id}"
+                                   data-current-tracking="${item.tracking}">
+                                    <span class="me-2"><img src="{{ asset('icon/check-circle.svg') }}" alt="Approved"></span> Approved
+                                </a>
+                            </li>
                     `;
-
-                    const status = parseInt(item.status, 10);
-
-                    console.log('DEBUG:', item.status, typeof item.status, userJabatan);
-
-
-                    if (
-                        (userJabatan === 'Finance &amp; Accounting')
-                    ) {
-                        actionMenu = `
-                            <div class="dropdown">
-                                <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" style="background: transparent;" aria-expanded="false">
-                                    Actions
-                                </button>
-                                <ul class="dropdown-menu" id="action-menu-${item.id}">
-                                    <li><a class="dropdown-item approved-button" data-bs-toggle="modal" data-id="${item.id}" data-bs-target="#exampleModal"><span class="me-2"><img src="{{ asset('icon/check-circle.svg') }}" class=""></span> Approved</a></li>
-                                    <li><a class="dropdown-item" href="/catering/show/${item.id}"><span class="me-2"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""></span> Detail</a></li>
-                                    <li>
-                                        <a href="#" class="dropdown-item btn-delete" data-id="${item.id}">
-                                            <span class="me-2">
-                                                <img src="{{ asset('icon/trash-danger.svg') }}">
-                                            </span> Delete
-                                        </a>
-                                    </li>
-                                    <li><a class="dropdown-item" href="/expense-hub/invoice/${item.id}"><span class="me-2"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""></span> Upload Invoice</a></li>
-                                </ul>
-                            </div>
-                        `;
                     }
 
+                    actionMenu += `
+                        </ul>
+                    </div>
+                `;
 
                     content.append(`
-                        <tr class="${stripeClass}">
-                            <td>${no++}</td>
-                            <td>${item.tanggal_pengajuan}</td>
-                            <td>${item.nama_karyawan}</td>
-                            <td>${item.divisi}</td>
-                            <td>${item.tipe}</td>
-                            <td>${item.tracking}</td>
-                            <td class="detail-cell">${namaContent}</td>
-                            <td class="detail-cell">${jumlahContent}</td>
-                            <td class="detail-cell">${hargaContent}</td>
-                            <td>${formattedTotalHargaPerItem}</td>
-                            <td>${actionMenu}</td>
-                        </tr>
-                    `);
+                    <tr class="${stripeClass}">
+                        <td>${no++}</td>
+                        <td>${item.tanggal_pengajuan}</td>
+                        <td>${item.nama_karyawan}</td>
+                        <td>${item.divisi}</td>
+                        <td>${item.tipe}</td>
+                        <td>${item.tracking}</td>
+                        <td class="detail-cell">${namaContent}</td>
+                        <td class="detail-cell">${jumlahContent}</td>
+                        <td class="detail-cell">${hargaContent}</td>
+                        <td>${formattedTotalHargaPerItem}</td>
+                        <td>${actionMenu}</td>
+                    </tr>
+                `);
 
                     rowCounter++;
                 });
@@ -352,6 +357,45 @@
         });
     });
 
+    const financeStatusOrder = [
+        "Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager",
+        "Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi",
+        "Finance Menunggu Approve Direksi",
+        "Membuat Permintaan Ke Direktur Utama",
+        "Pengajuan sedang dalam proses Pencairan",
+        "Pencairan Sudah Selesai",
+        "Selesai"
+    ];
+
+    $('#exampleModal').on('show.bs.modal', function(event) {
+        const button = $(event.relatedTarget);
+        const currentTracking = button.data('current-tracking');
+        const modal = $(this);
+
+        const id = button.data('id');
+        modal.find('#id_catering').val(id);
+
+        const statusSelect = modal.find('#status');
+        const options = statusSelect.find('option');
+
+        options.prop('disabled', false);
+
+        const currentIndex = financeStatusOrder.indexOf(currentTracking);
+
+        if (currentIndex > -1) {
+            for (let i = 0; i <= currentIndex; i++) {
+                const statusToDisable = financeStatusOrder[i];
+                options.filter(`[value="${statusToDisable}"]`).prop('disabled', true);
+            }
+        }
+
+        if (currentTracking === financeStatusOrder[financeStatusOrder.length - 1]) {
+            options.prop('disabled', true);
+        }
+
+        statusSelect.trigger('change');
+    });
+
     document.addEventListener('DOMContentLoaded', function() {
         const buttons = document.querySelectorAll('[data-status]');
         const statusInput = document.getElementById('statusInput');
@@ -362,6 +406,25 @@
             button.addEventListener('click', function() {
                 const status = this.getAttribute('data-status');
                 statusInput.value = status;
+
+                buttons.forEach(btn => {
+                    if (btn === this) {
+                        btn.classList.remove('btn-outline-primary', 'btn-outline-danger');
+                        if (status === '1') {
+                            btn.classList.add('btn-primary');
+                        } else {
+                            btn.classList.add('btn-danger');
+                        }
+                    } else {
+                        if (btn.getAttribute('data-status') === '1') {
+                            btn.classList.remove('btn-primary');
+                            btn.classList.add('btn-outline-primary');
+                        } else {
+                            btn.classList.remove('btn-danger');
+                            btn.classList.add('btn-outline-danger');
+                        }
+                    }
+                });
 
                 if (status === '0') {
                     keteranganContainer.style.display = 'block';

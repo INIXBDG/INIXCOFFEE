@@ -41,6 +41,8 @@ use App\Http\Controllers\KanbanController;
 use App\Http\Controllers\DailyActivityController;
 use App\Http\Controllers\office\OfficeController;
 use App\Http\Controllers\Office\CertificateController;
+use App\Http\Controllers\OutstandingController;
+use App\Http\Controllers\Office\vendorOfficeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -137,6 +139,7 @@ Route::resource('/rekapmengajarinstruktur', \App\Http\Controllers\rekapInstruktu
 Route::resource('/lembur', \App\Http\Controllers\LemburController::class);
 Route::resource('/overtime', \App\Http\Controllers\OvertimeController::class);
 Route::resource('/pengajuanlabsdansubs', \App\Http\Controllers\PengajuanLabdanSubsController::class);
+Route::resource('/pengajuansouvenir', \App\Http\Controllers\PengajuanSouvenirController::class);
 Route::resource('/daily-activities', \App\Http\Controllers\DailyActivityController::class);
 Route::resource('/registry', \App\Http\Controllers\RegistryFeatureController::class)->parameters(['registry' => 'tugas']);
 Route::resource('permissions', \App\Http\Controllers\PermissionController::class);
@@ -199,6 +202,7 @@ Route::get('getOutstandingLunas', [App\Http\Controllers\OutstandingController::c
 Route::get('getOutstandingHutang', [App\Http\Controllers\OutstandingController::class, 'getOutstandingHutang'])->name('getOutstandingHutang');
 Route::get('getOutstandingRKM/{year}/{month}', [App\Http\Controllers\OutstandingController::class, 'getOutstandingRKM'])->name('getOutstandingRKM');
 Route::get('singkronDataOutstandingRKM', [App\Http\Controllers\OutstandingController::class, 'singkronDataOutstanding'])->name('outstanding.singkronDataOutstanding');
+Route::get('/download/dokumen/{id}', [OutstandingController::class, 'dokumenGabungan'])->name('dokumenGabungan');
 Route::get('cekregisform/{id}', [App\Http\Controllers\RKMController::class, 'cekregisform'])->name('cekregisform');
 Route::get('getMateri/{id}', [App\Http\Controllers\MateriController::class, 'getMateriById'])->name('getMateriById');
 Route::get('getNilaiFeedbackInstRKM/{id}', [App\Http\Controllers\feedbackController::class, 'getNilaiFeedbackInstRKM'])->name('getNilaiFeedbackInstRKM');
@@ -691,6 +695,13 @@ Route::prefix('office')->name('office.')->middleware(['auth'])->group(function (
         Route::get('/download-by-peserta/{rkm_id}/{peserta_id}', [CertificateController::class, 'downloadByPeserta'])->name('downloadByPeserta');
         Route::get('/preview/{id}', [CertificateController::class, 'preview'])->name('preview');
     });
+
+    Route::prefix('vendor')->name('vendor.')->group(function () {
+        Route::resource('/souvenir', vendorOfficeController::class);
+        Route::resource('/makansiang', vendorOfficeController::class);
+        Route::resource('/coffeebreak', vendorOfficeController::class);
+        Route::resource('/bengkel', vendorOfficeController::class);
+    });
 });
 
 // catering
@@ -703,3 +714,5 @@ Route::put('/catering/update/{id}', [CateringController::class, 'update'])->name
 Route::post('/catering/export-pdf', [CateringController::class, 'PDF'])->name('catering.pdf');
 Route::put('/catering/approved', [CateringController::class, 'approved'])->name('catering.approved');
 Route::get('/catering/destroy/{id}', [CateringController::class, 'destroy'])->name('catering.destroy');
+Route::get('/catering/invoice/{id}', [CateringController::class, 'invoice'])->name('catering.invoice');
+Route::put('/catering/updateinvoice/{id}', [CateringController::class, 'updateInvoice'])->name('catering.updateInvoice');

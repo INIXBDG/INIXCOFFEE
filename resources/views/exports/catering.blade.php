@@ -55,14 +55,14 @@
                         <div class="panel panel-default text-right">
                             <div class="panel-body d-print-none mt-4">
                                 <a href="javascript:void(0);" class="btn btn-success me-1" id="printInvoiceBTN"><i
-                                        class="fa fa-print"></i> Print Form Permintaan</a>
+                                        class="fa fa-print"></i> Print Form Pengajuan</a>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="container mt-4">
-                    <h3 class="text-center">Form Pengajuan Catering</h3>
+                    <h3 class="text-center">Pengajuan Catering</h3>
                     @if ($data)
                     <table class="table table-bordered my-4">
                         <tbody>
@@ -85,6 +85,7 @@
                                 <th>Qty</th>
                                 <th>Nama Makanan</th>
                                 <th>Harga (Rp.)</th>
+                                <th>Tipe Catering</th>
                                 <th>Vendor</th>
                                 <th>Keterangan</th>
                             </tr>
@@ -95,6 +96,7 @@
                                 <td>{{ $detail['jumlah'] }}</td>
                                 <td>{{ $detail['nama_makanan'] }}</td>
                                 <td>{{ $detail['harga'] }}</td>
+                                <td>{{ $detail['tipe_detail'] }}</td>
                                 <td>{{ $detail['vendor'] }}</td>
                                 <td>{{ $detail['keterangan'] }}</td>
                             </tr>

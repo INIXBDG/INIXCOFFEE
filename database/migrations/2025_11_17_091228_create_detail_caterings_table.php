@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('nama_makanan');
             $table->integer('jumlah');
             $table->decimal('harga');
+            $table->enum('tipe_detail', ['Coffee Break', 'Makan Siang']);
             $table->text('keterangan')->nullable();
             $table->timestamps();
         });
