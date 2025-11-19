@@ -756,29 +756,35 @@ class DatabaseKPIController extends Controller
                 ->get();
         });
 
+        $allNilaiKPI = nilaiKPI::where('id_evaluated', $id_karyawan)
+            ->where('kode_form', $kodeForm)
+            ->get();
+
+        $groupedNilaiKPI = $allNilaiKPI->groupBy(['jenis_penilaian', 'name_variabel']);
+
         $evaluatorList = [];
 
         foreach ($allEvaluatorData as $evaluatorItem) {
-            $nilaiCollection = nilaiKPI::where('id_evaluated', $evaluatorItem->id_evaluated)
-                ->where('kode_form', $kodeForm)
-                ->where('jenis_penilaian', $evaluatorItem->jenis_penilaian)
-                ->orderBy('id')
-                ->get();
-
-            $nilaiMap = $nilaiCollection->keyBy(function ($item) {
-                return $item->kode_kategori . '|' . $item->name_variabel;
-            });
+            $jenis_penilaian = $evaluatorItem->jenis_penilaian;
 
             $listNilaiEvaluator = [];
 
             foreach ($allKategoriKPIs as $kategori) {
-                $key = $kategori->kode_kategori . '|' . $kategori->judul_kategori;
-                $item = $nilaiMap->get($key);
+                $judul_kategori = $kategori->judul_kategori;
+                $nilaiItem = $groupedNilaiKPI->get($jenis_penilaian, collect())->get($judul_kategori);
 
-                $listNilaiEvaluator[] = [
-                    'pesan' => $item->pesan ?? '-',
-                    'nilai' => $item->nilai ?? '-'
-                ];
+                if ($nilaiItem && $nilaiItem->count() > 0) {
+                    $firstItem = $nilaiItem->first(); 
+                    $listNilaiEvaluator[] = [
+                        'pesan' => $firstItem->pesan ?? '-',
+                        'nilai' => $firstItem->nilai ?? '-'
+                    ];
+                } else {
+                    $listNilaiEvaluator[] = [
+                        'pesan' => '-',
+                        'nilai' => '-'
+                    ];
+                }
             }
 
             $evaluatorList[] = [

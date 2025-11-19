@@ -117,8 +117,8 @@ class ExpenseHubController extends Controller
         $id_user = auth()->user()->id;
         $karyawan = karyawan::where('id', $id_user)->first();
 
-        $startWeek = Carbon::parse('2024-02-01')->startOfWeek();
-        $endWeek = Carbon::parse('2024-02-11')->endOfWeek();
+        $startWeek = Carbon::now()->startOfWeek();
+        $endWeek   = Carbon::now()->endOfWeek();
 
         $rkm = RKM::with(['perusahaan', 'materi'])->where(function ($q) use ($startWeek, $endWeek) {
             $q->whereBetween('tanggal_awal', [$startWeek, $endWeek])

@@ -623,10 +623,23 @@
                         <td>${pengubahFormat(rata)}</td>
                         <td>${pengubahFormat(skor)}</td>`;
                     }
+
+                    const kriteriaText = kriteria.kriteria;
+                    const subKriteriaText = sub.sub_kriteria;
+
+                    const isKriteriaLong = kriteriaText.length > 30;
+                    const isSubKriteriaLong = subKriteriaText.length > 30;
+
+                    const displayKriteria = isKriteriaLong ? kriteriaText.substring(0, 30) + '...' : kriteriaText;
+                    const displaySubKriteria = isSubKriteriaLong ? subKriteriaText.substring(0, 30) + '...' : subKriteriaText;
+
+                    const fullKriteriaContent = isKriteriaLong ? `<span class="full-text" style="display:none;">${kriteriaText}</span><span class="short-text">${displayKriteria}</span><button class="btn btn-sm btn-link text-primary read-more-btn" type="button" onclick="toggleText(this)">...</button>` : kriteriaText;
+                    const fullSubKriteriaContent = isSubKriteriaLong ? `<span class="full-text" style="display:none;">${subKriteriaText}</span><span class="short-text">${displaySubKriteria}</span><button class="btn btn-sm btn-link text-primary read-more-btn" type="button" onclick="toggleText(this)">...</button>` : subKriteriaText;
+
                     content.append(`
                     <tr>
-                        ${idxSub === 0 ? `<td rowspan="${rowspan}" class="text-left">${kriteria.kriteria}</td>` : ''}
-                        <td style="text-align: left;">${sub.sub_kriteria}</td>
+                        ${idxSub === 0 ? `<td rowspan="${rowspan}" class="text-left">${fullKriteriaContent}</td>` : ''}
+                        <td style="text-align: left;">${fullSubKriteriaContent}</td>
                         ${dataNilai}
                     </tr>
                 `);
@@ -697,6 +710,23 @@
 
         tampilkanChartTahunIni(globalChart.quartal);
         tampilkanChartSemuaTahun(globalChart.all);
+    }
+
+    function toggleText(button) {
+        const container = $(button).closest('td');
+        const fullText = container.find('.full-text');
+        const shortText = container.find('.short-text');
+        const dots = button;
+
+        if (fullText.is(':visible')) {
+            fullText.hide();
+            shortText.show();
+            dots.text('...');
+        } else {
+            fullText.show();
+            shortText.hide();
+            dots.text('Sembunyikan');
+        }
     }
 
     $(document).on('click', '.evaluator-list .list-group-item', function() {
