@@ -12,4 +12,9 @@ class vendorSouvenir extends Model
         'nama',
         'is_active'
     ];
+
+    public function pengajuanSouvenir()
+    {
+        return $this->hasMany(PengajuanSouvenir::class, 'id_vendor', 'id');
+    }
 }
