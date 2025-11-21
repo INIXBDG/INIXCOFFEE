@@ -127,7 +127,7 @@
                                     <p class="mb-1">{{ $data['tanggal_mulai'] }} s/d {{ $data['tanggal_selesai'] }}</p>
                                 </div>
                                 <div class="col-md-4 mb-2">
-                                    <p class="mb-1">Tanggal Selesai</p>
+                                    <p class="mb-1">Invoice</p>
                                 </div>
                                 <div class="col-md-8 mb-2">
                                     @if($data['invoice'])

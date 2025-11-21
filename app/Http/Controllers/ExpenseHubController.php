@@ -117,7 +117,16 @@ class ExpenseHubController extends Controller
         $id_user = auth()->user()->id;
         $karyawan = karyawan::where('id', $id_user)->first();
 
-        $rkm = RKM::pluck('id');
+        $startWeek = Carbon::now()->startOfWeek();
+        $endWeek   = Carbon::now()->endOfWeek();
+
+        $rkm = RKM::with(['perusahaan', 'materi'])->where(function ($q) use ($startWeek, $endWeek) {
+            $q->whereBetween('tanggal_awal', [$startWeek, $endWeek])
+                ->orWhereBetween('tanggal_akhir', [$startWeek, $endWeek])
+                ->orWhere(function ($q2) use ($startWeek, $endWeek) {
+                    $q2->where('tanggal_awal', '<=', $startWeek)->where('tanggal_akhir', '>=', $endWeek);
+                });
+        })->get();
 
         return view('expensehub.create', compact('karyawan', 'rkm'));
     }
@@ -373,7 +382,10 @@ class ExpenseHubController extends Controller
             abort(404);
         }
 
-        $dataTerabruTracking = $dataExpenseHub->trackingExpenseHub->sortByDesc('tanggal')->first();
+        $dataTerabruTracking = $dataExpenseHub->trackingExpenseHub()
+            ->orderBy('created_at', 'desc')
+            ->first();
+
         $data = [
             'id' => $dataExpenseHub->id,
             'tanggal_pengajuan' => Carbon::parse($dataExpenseHub->created_at)->locale('id')->translatedFormat('l, d F Y'),
@@ -386,8 +398,8 @@ class ExpenseHubController extends Controller
             'invoice' => $dataExpenseHub->invoice,
             'materi' => $dataExpenseHub->rkm->materi->nama_materi,
             'perusahaan' => $dataExpenseHub->rkm->perusahaan->nama_perusahaan,
-            'tanggal_mulai' =>Carbon::parse($dataExpenseHub->rkm->tanggal_awal)->locale('id')->translatedFormat('l, d F Y'),
-            'tanggal_selesai' =>Carbon::parse($dataExpenseHub->rkm->tanggal_akhir)->locale('id')->translatedFormat('l, d F Y'),
+            'tanggal_mulai' => Carbon::parse($dataExpenseHub->rkm->tanggal_awal)->locale('id')->translatedFormat('l, d F Y'),
+            'tanggal_selesai' => Carbon::parse($dataExpenseHub->rkm->tanggal_akhir)->locale('id')->translatedFormat('l, d F Y'),
             'detail' => $dataExpenseHub->detailExpenseHub->map(function ($detail) {
                 return [
                     'id' => $detail->id,

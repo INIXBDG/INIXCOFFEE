@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\RKMController;
 use App\Http\Controllers\approvedNetSalesController;
+use App\Http\Controllers\CateringController;
 use App\Http\Controllers\Crm\CatatanSalesController;
 use App\Http\Controllers\Crm\ContactController;
 use App\Http\Controllers\Crm\CRMController;
@@ -656,9 +657,9 @@ Route::patch('/daily-activities/{daily_activity}/update-status', [DailyActivityC
 
 // RegistryFeature
 Route::patch('/registry/{tugas}/start', [App\Http\Controllers\RegistryFeatureController::class, 'startTask'])
-     ->name('registry.start');
+    ->name('registry.start');
 Route::patch('/registry/{tugas}/finish', [App\Http\Controllers\RegistryFeatureController::class, 'finishTask'])
-->name('registry.finish');
+    ->name('registry.finish');
 
 route::get('activity-log', [App\Http\Controllers\DatabaseKPIController::class, 'activityLog'])->name('activity.log');
 route::get('activity-log/data', [App\Http\Controllers\DatabaseKPIController::class, 'getActivityChart'])->name('activity.log.chart');
@@ -705,4 +706,23 @@ Route::prefix('office')->name('office.')->middleware(['auth'])->group(function (
         Route::resource('/bengkel', vendorOfficeController::class);
     });
 
+    Route::prefix('vendor')->name('vendor.')->group(function () {
+        Route::resource('/souvenir', vendorOfficeController::class);
+        Route::resource('/makansiang', vendorOfficeController::class);
+        Route::resource('/coffeebreak', vendorOfficeController::class);
+        Route::resource('/bengkel', vendorOfficeController::class);
+    });
 });
+
+// catering
+Route::get('/catering/index', [CateringController::class, 'index'])->name('catering.index');
+Route::get('/catering/get', [CateringController::class, 'get'])->name('catering.get');
+Route::get('/catering/create', [CateringController::class, 'create'])->name('catering.create');
+Route::post('/catering/store', [CateringController::class, 'store'])->name('catering.store');
+Route::get('/catering/show/{id}', [CateringController::class, 'show'])->name('catering.show');
+Route::put('/catering/update/{id}', [CateringController::class, 'update'])->name('catering.update');
+Route::post('/catering/export-pdf', [CateringController::class, 'PDF'])->name('catering.pdf');
+Route::put('/catering/approved', [CateringController::class, 'approved'])->name('catering.approved');
+Route::get('/catering/destroy/{id}', [CateringController::class, 'destroy'])->name('catering.destroy');
+Route::get('/catering/invoice/{id}', [CateringController::class, 'invoice'])->name('catering.invoice');
+Route::put('/catering/updateinvoice/{id}', [CateringController::class, 'updateInvoice'])->name('catering.updateInvoice');

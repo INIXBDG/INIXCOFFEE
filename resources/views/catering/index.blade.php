@@ -21,13 +21,11 @@
 <div class="row justify-content-center">
     <div class="col-md-12">
         <div class="d-flex justify-content-end">
-            @if (auth()->user()->jabatan === "SPV Sales" || auth()->user()->jabatan === "Sales")
-            <a href="{{ route('expensehub.create') }}" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Ajukan Izin"><img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> Tambah Pengajuan</a>
-            @endif
+            <a href="{{ route('catering.create') }}" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Ajukan Izin"><img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> Tambah Pengajuan</a>
         </div>
         <div class="card m-4 p-4">
             <div class="card-body table-responsive">
-                <h3 class="card-title text-center my-1 mb-3">{{ __('Data Pengajuan Entertaint, Reimburst, & Oleh-Oleh') }}</h3>
+                <h3 class="card-title text-center my-1 mb-3">{{ __('Data Pengajuan Catering') }}</h3>
                 <table class="table" id="jabatantable">
                     <thead>
                         <tr>
@@ -37,9 +35,9 @@
                             <th scope="col">Divisi</th>
                             <th scope="col">Tipe</th>
                             <th scope="col">Status</th>
-                            <th scope="col">Nama Pengajuan</th>
+                            <th scope="col">Nama Makanan</th>
                             <th scope="col">Jumlah</th>
-                            <th scope="col">Harga Pengajuan</th>
+                            <th scope="col">Harga</th>
                             <th scope="col">Total Pengajuan</th>
                             <th scope="col">Aksi</th>
                         </tr>
@@ -61,18 +59,18 @@
 <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form id="statusForm" action="{{ route('expensehub.approved') }}" method="POST">
+            <form id="statusForm" action="{{ route('catering.approved') }}" method="POST">
                 @csrf
                 @method('PUT')
                 <input type="hidden" name="status_input" id="statusInput" value="">
-                <input type="hidden" name="id_expense" id="idExpense" value="">
+                <input type="hidden" name="id_catering" id="id_catering" value="">
                 <div class="modal-header">
                     <h1 class="modal-title fs-5" id="exampleModalLabel">Konfirmasi Status</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     @if (auth()->user()->jabatan === 'Finance & Accounting')
-                    <div class="mb-3" id="statusFinanceContainer">
+                    <div class="mb-3">
                         <select name="status_finance" id="status" class="form-select">
                             <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager">Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager</option>
                             <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi">Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi</option>
@@ -175,22 +173,11 @@
 <script>
     $(document).ready(function() {
         loadData();
-
-        $('#statusForm').on('submit', function(e) {
-            const status = $('#statusInput').val();
-            const keterangan = $('#keterangan').val();
-
-            if (status == '0' && keterangan.trim() === '') {
-                alert('Keterangan wajib diisi jika status Tidak.');
-                e.preventDefault();
-                return false;
-            }
-        });
     });
 
     function loadData() {
         $.ajax({
-            url: "{{ route('expensehub.get') }}",
+            url: "{{ route('catering.get') }}",
             type: 'get',
             success: function(response) {
                 const content = $('#content_table');
@@ -202,10 +189,10 @@
 
                 if (data.length === 0) {
                     content.append(`
-                        <tr>
-                            <td colspan="11" class="text-center text-muted p-2">Tidak ada data!</td>
-                        </tr>
-                    `);
+                    <tr>
+                        <td colspan="11" class="text-center text-muted p-2">Tidak ada data!</td>
+                    </tr>
+                `);
                     return;
                 }
 
@@ -215,7 +202,7 @@
                     let totalHargaPerItem = 0;
                     detail.forEach(d => {
                         const jumlah = parseInt(d.jumlah) || 0;
-                        const harga = parseFloat(d.harga_pengajuan) || 0;
+                        const harga = parseFloat(d.harga) || 0;
                         totalHargaPerItem += jumlah * harga;
                     });
 
@@ -234,14 +221,14 @@
                     if (detail.length > 0) {
                         detail.forEach(d => {
                             const jumlah = parseInt(d.jumlah) || 0;
-                            const harga = parseFloat(d.harga_pengajuan) || 0;
+                            const harga = parseFloat(d.harga) || 0;
                             const formattedHarga = new Intl.NumberFormat('id-ID', {
                                 style: 'currency',
                                 currency: 'IDR',
                                 minimumFractionDigits: 2
                             }).format(harga);
 
-                            namaContent += `<div class="detail-item detail-name">${d.nama_pengajuan}</div>`;
+                            namaContent += `<div class="detail-item detail-name">${d.nama_makanan}</div>`;
                             jumlahContent += `<div class="detail-item detail-jumlah">${jumlah}</div>`;
                             hargaContent += `<div class="detail-item detail-harga">${formattedHarga}</div>`;
                         });
@@ -252,133 +239,75 @@
                     }
 
                     const userJabatan = "{{ auth()->user()->jabatan }}".trim();
+                    const statusTracking = item.tracking;
+
+                    const financeStatusOrder = [
+                        "Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager",
+                        "Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi",
+                        "Finance Menunggu Approve Direksi",
+                        "Membuat Permintaan Ke Direktur Utama",
+                        "Pengajuan sedang dalam proses Pencairan",
+                        "Pencairan Sudah Selesai",
+                        "Selesai"
+                    ];
+
+                    const isFinanceStatus = financeStatusOrder.includes(statusTracking);
+                    const isFinalStatus = ['Selesai', 'Pengajuan anda tidak disetujui.'].includes(statusTracking);
+                    const showApprovedButton = userJabatan === 'Finance &amp; Accounting' && isFinanceStatus && !isFinalStatus;
+
                     let actionMenu = `
-                        <div class="dropdown">
-                            <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" style="background: transparent;" aria-expanded="false">
-                                Actions
-                            </button>
-                            <ul class="dropdown-menu" id="action-menu-${item.id}">
-                                <li><a class="dropdown-item" href="/expense-hub/show/${item.id}"><span class="me-2"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""></span> Detail</a></li>
-                                    <li>
-                                        <a href="#" class="dropdown-item btn-delete" data-id="${item.id}">
-                                            <span class="me-2">
-                                                <img src="{{ asset('icon/trash-danger.svg') }}">
-                                            </span> Delete
-                                        </a>
-                                    </li>
-                                <li><a class="dropdown-item" href="/expense-hub/invoice/${item.id}"><span class="me-2"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""></span> Upload Invoice</a></li>
-                            </ul>
-                        </div>
+                    <div class="dropdown">
+                        <button class="btn btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" style="background: transparent;" aria-expanded="false">
+                            Actions
+                        </button>
+                        <ul class="dropdown-menu" id="action-menu-${item.id}">
+                            <li><a class="dropdown-item" href="/catering/show/${item.id}">
+                                <span class="me-2"><img src="{{ asset('icon/clipboard-primary.svg') }}"></span> Detail
+                            </a></li>
+                            <li>
+                                <a href="#" class="dropdown-item btn-delete" data-id="${item.id}">
+                                    <span class="me-2"><img src="{{ asset('icon/trash-danger.svg') }}"></span> Delete
+                                </a>
+                            </li>
+                            <li><a class="dropdown-item" href="/catering/invoice/${item.id}">
+                                <span class="me-2"><img src="{{ asset('icon/clipboard-primary.svg') }}"></span> Upload Invoice
+                            </a></li>
+                `;
+
+                    if (showApprovedButton) {
+                        actionMenu += `
+                            <li>
+                                <a class="dropdown-item approved-button"
+                                   data-bs-toggle="modal"
+                                   data-bs-target="#exampleModal"
+                                   data-id="${item.id}"
+                                   data-current-tracking="${item.tracking}">
+                                    <span class="me-2"><img src="{{ asset('icon/check-circle.svg') }}" alt="Approved"></span> Approved
+                                </a>
+                            </li>
                     `;
-
-                    const status = parseInt(item.status, 10);
-
-                    console.log('DEBUG:', item.status, typeof item.status, userJabatan);
-
-
-                    if (
-                        (status === 0 && userJabatan === 'SPV Sales')
-                    ) {
-                        actionMenu = `
-                            <div class="dropdown">
-                                <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" style="background: transparent;" aria-expanded="false">
-                                    Actions
-                                </button>
-                                <ul class="dropdown-menu" id="action-menu-${item.id}">
-                                    <li><a class="dropdown-item approved-button" data-bs-toggle="modal" data-id="${item.id}" data-current-tracking="${item.tracking}" data-bs-target="#exampleModal"><span class="me-2"><img src="{{ asset('icon/check-circle.svg') }}" class=""></span> Approved</a></li>
-                                    <li><a class="dropdown-item" href="/expense-hub/show/${item.id}"><span class="me-2"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""></span> Detail</a></li>
-                                    <li>
-                                        <a href="#" class="dropdown-item btn-delete" data-id="${item.id}">
-                                            <span class="me-2">
-                                                <img src="{{ asset('icon/trash-danger.svg') }}">
-                                            </span> Delete
-                                        </a>
-                                    </li>
-                                    <li><a class="dropdown-item" href="/expense-hub/invoice/${item.id}"><span class="me-2"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""></span> Upload Invoice</a></li>
-                                </ul>
-                            </div>
-                        `;
-                    } else if (
-                        ((status === 1 || status === 2) && userJabatan === 'Finance &amp; Accounting')
-                    ) {
-                        actionMenu = `
-                            <div class="dropdown">
-                                <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" style="background: transparent;" aria-expanded="false">
-                                    Actions
-                                </button>
-                                <ul class="dropdown-menu" id="action-menu-${item.id}">
-                                    <li><a class="dropdown-item approved-button" data-bs-toggle="modal" data-id="${item.id}" data-current-tracking="${item.tracking}" data-bs-target="#exampleModal"><span class="me-2"><img src="{{ asset('icon/check-circle.svg') }}" class=""></span> Approved</a></li>
-                                    <li><a class="dropdown-item" href="/expense-hub/show/${item.id}"><span class="me-2"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""></span> Detail</a></li>
-                                    <li>
-                                        <a href="#" class="dropdown-item btn-delete" data-id="${item.id}">
-                                            <span class="me-2">
-                                                <img src="{{ asset('icon/trash-danger.svg') }}">
-                                            </span> Delete
-                                        </a>
-                                    </li>
-                                    <li><a class="dropdown-item" href="/expense-hub/invoice/${item.id}"><span class="me-2"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""></span> Upload Invoice</a></li>
-                                </ul>
-                            </div>
-                        `;
-                    } else if (
-                        (status === 4)
-                    ) {
-                        actionMenu = `
-                            <div class="dropdown">
-                                <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" style="background: transparent;" aria-expanded="false">
-                                    Actions
-                                </button>
-                                <ul class="dropdown-menu" id="action-menu-${item.id}">
-                                    <li><a class="dropdown-item" href="/expense-hub/show/${item.id}"><span class="me-2"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""></span> Detail</a></li>
-                                    <li>
-                                        <a href="#" class="dropdown-item btn-delete" data-id="${item.id}">
-                                            <span class="me-2">
-                                                <img src="{{ asset('icon/trash-danger.svg') }}">
-                                            </span> Delete
-                                        </a>
-                                    </li> 
-                                    </ul>
-                            </div>
-                        `;
-                    } else if (
-                        (status === 3)
-                    ) {
-                        actionMenu = `
-                            <div class="dropdown">
-                                <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" style="background: transparent;" aria-expanded="false">
-                                    Actions
-                                </button>
-                                <ul class="dropdown-menu" id="action-menu-${item.id}">
-                                    <li><a class="dropdown-item" href="/expense-hub/show/${item.id}"><span class="me-2"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""></span> Detail</a></li>
-                                    <li>
-                                        <a href="#" class="dropdown-item btn-delete" data-id="${item.id}">
-                                            <span class="me-2">
-                                                <img src="{{ asset('icon/trash-danger.svg') }}">
-                                            </span> Delete
-                                        </a>
-                                    </li>     
-                                   <li><a class="dropdown-item" href="/expense-hub/invoice/${item.id}"><span class="me-2"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""></span> Upload Invoice</a></li>
-                                </ul>
-                            </div>
-                        `;
                     }
 
+                    actionMenu += `
+                        </ul>
+                    </div>
+                `;
 
                     content.append(`
-                        <tr class="${stripeClass}">
-                            <td>${no++}</td>
-                            <td>${item.tanggal_pengajuan}</td>
-                            <td>${item.nama_karyawan}</td>
-                            <td>${item.divisi}</td>
-                            <td>${item.tipe}</td>
-                            <td>${item.tracking}</td>
-                            <td class="detail-cell">${namaContent}</td>
-                            <td class="detail-cell">${jumlahContent}</td>
-                            <td class="detail-cell">${hargaContent}</td>
-                            <td>${formattedTotalHargaPerItem}</td>
-                            <td>${actionMenu}</td>
-                        </tr>
-                    `);
+                    <tr class="${stripeClass}">
+                        <td>${no++}</td>
+                        <td>${item.tanggal_pengajuan}</td>
+                        <td>${item.nama_karyawan}</td>
+                        <td>${item.divisi}</td>
+                        <td>${item.tipe}</td>
+                        <td>${item.tracking}</td>
+                        <td class="detail-cell">${namaContent}</td>
+                        <td class="detail-cell">${jumlahContent}</td>
+                        <td class="detail-cell">${hargaContent}</td>
+                        <td>${formattedTotalHargaPerItem}</td>
+                        <td>${actionMenu}</td>
+                    </tr>
+                `);
 
                     rowCounter++;
                 });
@@ -402,56 +331,15 @@
         });
     }
 
-    const financeStatusOrder = [
-        "Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager",
-        "Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi",
-        "Finance Menunggu Approve Direksi",
-        "Membuat Permintaan Ke Direktur Utama",
-        "Pengajuan sedang dalam proses Pencairan",
-        "Pencairan Sudah Selesai",
-        "Selesai"
-    ];
-
-    $('#exampleModal').on('show.bs.modal', function(event) {
-        const button = $(event.relatedTarget);
-        const currentTracking = button.data('current-tracking');
-        const modal = $(this);
-
-        const id = button.data('id');
-        modal.find('#idExpense').val(id);
-
-        const statusSelect = modal.find('#status');
-        const options = statusSelect.find('option');
-        const statusFinanceContainer = modal.find('#statusFinanceContainer');
-
-        options.prop('disabled', false);
-        statusFinanceContainer.show();
-
-        const currentIndex = financeStatusOrder.indexOf(currentTracking);
-
-        if (currentIndex > -1) {
-            for (let i = 0; i <= currentIndex; i++) {
-                const statusToDisable = financeStatusOrder[i];
-                options.filter(`[value="${statusToDisable}"]`).prop('disabled', true);
-            }
-        }
-
-        if (currentTracking === financeStatusOrder[financeStatusOrder.length - 1]) {
-            options.prop('disabled', true);
-        }
-
-        statusSelect.trigger('change');
-    });
-
     $(document).on('click', '.approved-button', function() {
         const id = $(this).data('id');
-        $('#idExpense').val(id);
+        $('#id_catering').val(id);
     });
 
     $(document).on('click', '.btn-delete', function(e) {
         e.preventDefault();
         const id = $(this).data('id');
-        const url = `/expense-hub/destroy/${id}`;
+        const url = `/catering/destroy/${id}`;
 
         Swal.fire({
             title: 'Apakah kamu yakin?',
@@ -469,12 +357,50 @@
         });
     });
 
+    const financeStatusOrder = [
+        "Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager",
+        "Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi",
+        "Finance Menunggu Approve Direksi",
+        "Membuat Permintaan Ke Direktur Utama",
+        "Pengajuan sedang dalam proses Pencairan",
+        "Pencairan Sudah Selesai",
+        "Selesai"
+    ];
+
+    $('#exampleModal').on('show.bs.modal', function(event) {
+        const button = $(event.relatedTarget);
+        const currentTracking = button.data('current-tracking');
+        const modal = $(this);
+
+        const id = button.data('id');
+        modal.find('#id_catering').val(id);
+
+        const statusSelect = modal.find('#status');
+        const options = statusSelect.find('option');
+
+        options.prop('disabled', false);
+
+        const currentIndex = financeStatusOrder.indexOf(currentTracking);
+
+        if (currentIndex > -1) {
+            for (let i = 0; i <= currentIndex; i++) {
+                const statusToDisable = financeStatusOrder[i];
+                options.filter(`[value="${statusToDisable}"]`).prop('disabled', true);
+            }
+        }
+
+        if (currentTracking === financeStatusOrder[financeStatusOrder.length - 1]) {
+            options.prop('disabled', true);
+        }
+
+        statusSelect.trigger('change');
+    });
+
     document.addEventListener('DOMContentLoaded', function() {
         const buttons = document.querySelectorAll('[data-status]');
         const statusInput = document.getElementById('statusInput');
         const keteranganContainer = document.getElementById('keteranganContainer');
         const keteranganTextarea = document.getElementById('keterangan');
-        const statusFinanceContainer = document.getElementById('statusFinanceContainer');
 
         buttons.forEach(button => {
             button.addEventListener('click', function() {
@@ -502,15 +428,9 @@
 
                 if (status === '0') {
                     keteranganContainer.style.display = 'block';
-                    if (statusFinanceContainer) {
-                        statusFinanceContainer.style.display = 'none';
-                    }
                 } else {
                     keteranganContainer.style.display = 'none';
                     keteranganTextarea.value = '';
-                    if (statusFinanceContainer) {
-                        statusFinanceContainer.style.display = 'block';
-                    }
                 }
             });
         });

@@ -62,7 +62,7 @@
                 </div>
 
                 <div class="container mt-4">
-                    <h3 class="text-center">Form Pengajuan Entertaint, Reimburst, dan Oleh-Oleh</h3>
+                    <h3 class="text-center">Pengajuan Catering</h3>
                     @if ($data)
                     <table class="table table-bordered my-4">
                         <tbody>
@@ -83,8 +83,10 @@
                         <thead>
                             <tr>
                                 <th>Qty</th>
-                                <th>Nama Barang</th>
-                                <th>Besarnya (Rp.)</th>
+                                <th>Nama Makanan</th>
+                                <th>Harga (Rp.)</th>
+                                <th>Tipe Catering</th>
+                                <th>Vendor</th>
                                 <th>Keterangan</th>
                             </tr>
                         </thead>
@@ -92,8 +94,10 @@
                             @foreach ($data['detail'] as $detail)
                             <tr>
                                 <td>{{ $detail['jumlah'] }}</td>
-                                <td>{{ $detail['nama_pengajuan'] }}</td>
-                                <td>{{ $detail['harga_pengajuan'] }}</td>
+                                <td>{{ $detail['nama_makanan'] }}</td>
+                                <td>{{ $detail['harga'] }}</td>
+                                <td>{{ $detail['tipe_detail'] }}</td>
+                                <td>{{ $detail['vendor'] }}</td>
                                 <td>{{ $detail['keterangan'] }}</td>
                             </tr>
                             @endforeach

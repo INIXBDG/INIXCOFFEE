@@ -756,30 +756,36 @@ class DatabaseKPIController extends Controller
                 ->get();
         });
 
+        $allNilaiKPI = nilaiKPI::where('id_evaluated', $id_karyawan)
+            ->where('kode_form', $kodeForm)
+            ->get();
+
+        $groupedNilaiKPI = $allNilaiKPI->groupBy(['jenis_penilaian', 'name_variabel']);
+
         $evaluatorList = [];
 
         foreach ($allEvaluatorData as $evaluatorItem) {
-            $nilaiCollection = nilaiKPI::where('id_evaluator', $evaluatorItem->id_evaluator)
-                ->where('id_evaluated', $evaluatorItem->id_evaluated)
-                ->where('kode_form', $kodeForm)
-                ->where('jenis_penilaian', $evaluatorItem->jenis_penilaian)
-                ->get();
+            $jenis_penilaian = $evaluatorItem->jenis_penilaian;
 
             $listNilaiEvaluator = [];
 
             foreach ($allKategoriKPIs as $kategori) {
-                $item = $nilaiCollection->first(function ($nilai) use ($evaluatorItem, $kategori) {
-                    return $nilai->id_evaluator === $evaluatorItem->id_evaluator &&
-                        $nilai->kode_kategori === $kategori->kode_kategori &&
-                        $nilai->name_variabel === $kategori->judul_kategori;
-                });
+                $judul_kategori = $kategori->judul_kategori;
+                $nilaiItem = $groupedNilaiKPI->get($jenis_penilaian, collect())->get($judul_kategori);
 
-                $listNilaiEvaluator[] = [
-                    'pesan' => $item->pesan ?? '-',
-                    'nilai' => $item->nilai ?? '-'
-                ];
+                if ($nilaiItem && $nilaiItem->count() > 0) {
+                    $firstItem = $nilaiItem->first(); 
+                    $listNilaiEvaluator[] = [
+                        'pesan' => $firstItem->pesan ?? '-',
+                        'nilai' => $firstItem->nilai ?? '-'
+                    ];
+                } else {
+                    $listNilaiEvaluator[] = [
+                        'pesan' => '-',
+                        'nilai' => '-'
+                    ];
+                }
             }
-
 
             $evaluatorList[] = [
                 'nama'            => optional($evaluatorItem->evaluator)->nama_lengkap . ' - ' . optional($evaluatorItem->evaluator)->divisi ?? '-',
@@ -787,6 +793,10 @@ class DatabaseKPIController extends Controller
                 'nilai'           => $listNilaiEvaluator
             ];
         }
+
+        $evaluatorList = collect($evaluatorList)
+            ->unique(fn($item) => $item['nama'] . $item['jenis_penilaian'])
+            ->values();
 
         $dataKriteria = $formPenilaians
             ->groupBy(fn($item) => $item->kode_form . '|' . $item->nama_penilaian)
@@ -819,10 +829,6 @@ class DatabaseKPIController extends Controller
             })
             ->values()
             ->toArray();
-
-        $evaluatorList = collect($evaluatorList)
-            ->unique(fn($item) => $item['nama'] . $item['jenis_penilaian'])
-            ->values();
 
         return response()->json([
             'data' => [[
