@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -19,15 +20,18 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <style>
         .table-outer-border {
-            border: 1px solid black; /* Border di luar tabel */
+            border: 1px solid black;
+            /* Border di luar tabel */
         }
 
         .table-outer-border tbody tr,
         .table-outer-border tbody td {
-            border: none; /* Menghapus border dalam tabel */
+            border: none;
+            /* Menghapus border dalam tabel */
         }
     </style>
 </head>
+
 <body>
     <div class="container bootstrap snippets bootdey">
         <div class="panel panel-default">
@@ -66,7 +70,7 @@
                                                     <p>Tanggal Awal:</p>
                                                 </td>
                                                 <td>
-                                                    <input type="date" name="custom_tanggal_awal" class="form-control" value="{{$rkm->tanggal_awal}}" id="custom_tanggal_awal"> 
+                                                    <input type="date" name="custom_tanggal_awal" class="form-control" value="{{$rkm->tanggal_awal}}" id="custom_tanggal_awal">
                                                 </td>
                                             </tr>
                                             <tr>
@@ -117,10 +121,10 @@
                                 @foreach($rkm->registrasi as $r)
                                 <tr>
                                     <td>{{ $loop->iteration }}</td>
-                                    <td>{{$r->peserta->nama}}</td>
+                                    <td>{{ ucwords(strtolower($r->peserta->nama)) }}</td>
                                     <td>{{$rkm->perusahaan->nama_perusahaan}}</td>
                                     {{-- @foreach($period as $date) --}}
-                                        <td></td>
+                                    <td></td>
                                     {{-- @endforeach --}}
                                 </tr>
                                 @endforeach
@@ -134,7 +138,7 @@
                                     @endforeach --}}
                                 </tr>
                             </tfoot>
-                        </table> 
+                        </table>
                     </div>
                 </div>
             </div>
@@ -146,7 +150,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/locale/id.min.js"></script>
-    
+
     <script>
         $(document).ready(function() {
             $('#printInvoiceBTN ').on('click', function() {
@@ -180,6 +184,7 @@
                 generateTableBody(tanggalAwal, tanggalAkhir);
                 generateTableFooter(tanggalAwal, tanggalAkhir);
             });
+
             function generateTableHeaders(startDate, endDate) {
                 var start = moment(startDate);
                 var end = moment(endDate);
@@ -232,8 +237,9 @@
             generateTableHeaders($('#custom_tanggal_awal').val(), $('#custom_tanggal_akhir').val());
             generateTableBody($('#custom_tanggal_awal').val(), $('#custom_tanggal_akhir').val());
             generateTableFooter($('#custom_tanggal_awal').val(), $('#custom_tanggal_akhir').val());
-        
+
         });
     </script>
 </body>
+
 </html>

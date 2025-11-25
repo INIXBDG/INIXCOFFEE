@@ -20,6 +20,11 @@ class PengajuanBarangController extends Controller
     /**
      * Menampilkan daftar Pengajuan Barang.
      */
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     public function index()
     {
         $user = auth()->user();
@@ -640,23 +645,20 @@ class PengajuanBarangController extends Controller
         // return $pdf->download('Data_pengajuan_barang.pdf');
     }
     public function getHold()
-{
-    $data = PengajuanBarang::with(['karyawan', 'tracking'])
-        ->whereNull('invoice')
-        ->get();
+    {
+        $data = PengajuanBarang::with(['karyawan', 'tracking'])
+            ->whereNull('invoice')
+            ->get();
 
-    return response()->json($data);
-}
+        return response()->json($data);
+    }
 
-public function getHasInvoice()
-{
-    $data = PengajuanBarang::with(['karyawan', 'tracking'])
-        ->whereNotNull('invoice')
-        ->get();
+    public function getHasInvoice()
+    {
+        $data = PengajuanBarang::with(['karyawan', 'tracking'])
+            ->whereNotNull('invoice')
+            ->get();
 
-    return response()->json($data);
-}
-
-
-    
+        return response()->json($data);
+    }
 }
