@@ -297,9 +297,9 @@ class DatabaseKPIController extends Controller
         $id_karyawan = $request->input('id_karyawan');
         $kodeForm = $request->input('kodeForm');
 
-        $email = karyawan::where('id', $id_karyawan)->first();
+        $karyawan = karyawan::where('id', $id_karyawan)->first();
 
-        if (!$email) {
+        if (!$karyawan) {
             return back()->with('error', 'Data karyawan tidak ditemukan');
         }
 
@@ -318,7 +318,7 @@ class DatabaseKPIController extends Controller
             $month >= 1 && $month <= 3 => [1, 2, 3],
             $month >= 4 && $month <= 6 => [4, 5, 6],
             $month >= 7 && $month <= 9 => [7, 8, 9],
-            $month >= 10 && $month <= 12 => [10, 11, 12],
+            default => [10, 11, 12],
         };
 
         $formPenilaiansTahun = formPenilaian::where('id_karyawan', $id_karyawan)
@@ -349,10 +349,10 @@ class DatabaseKPIController extends Controller
             ->get();
 
         $getNilaiFinal = fn($data) => collect($data)
-            ->filter(fn($item) => is_numeric($item->nilai))
+            ->filter(fn($item) => is_numeric($item?->nilai))
             ->map(function ($item) {
-                $bobot = kategoriKPI::where('kode_kategori', $item->kode_kategori)->value('bobot') ?? 0;
-                return ($item->nilai * $bobot) / 100;
+                $bobot = kategoriKPI::where('kode_kategori', $item?->kode_kategori)->value('bobot') ?? 0;
+                return (($item?->nilai ?? 0) * $bobot) / 100;
             })->sum();
 
         $dataNilaiTahunCount = $getNilaiFinal($dataNilaiTahun);
@@ -409,19 +409,18 @@ class DatabaseKPIController extends Controller
                 ->where('jenis_penilaian', $evaluatorItem->jenis_penilaian)
                 ->get();
 
-
             $listNilaiEvaluator = [];
 
             foreach ($allKategoriKPIs as $kategori) {
                 $item = $nilaiCollection->first(
-                    fn($item) =>
-                    $item->id_evaluator === $evaluatorItem->id_evaluator &&
-                        $item->name_variabel === $kategori->judul_kategori
+                    fn($i) =>
+                    $i->id_evaluator === $evaluatorItem->id_evaluator &&
+                        $i->name_variabel === $kategori->judul_kategori
                 );
 
                 $listNilaiEvaluator[] = [
-                    'pesan' => $item->pesan ?? '-',
-                    'nilai' => $item->nilai
+                    'pesan' => $item?->pesan ?? '-',
+                    'nilai' => $item?->nilai ?? 0,
                 ];
             }
 
@@ -474,16 +473,6 @@ class DatabaseKPIController extends Controller
         ];
 
         return view('pdf.rekapPenilaian', $data);
-
-        // $pdf = Pdf::loadView('pdf.rekapPenilaian', $data);
-
-        // $evaluatedName = preg_replace('/[^a-zA-Z0-9_]/', '_', $evaluated['nama'] ?? 'nama');
-        // $quartal = $evaluated['quartal'] ?? 'Q';
-        // $tahun = $evaluated['tahun'] ?? 'tahun';
-
-        // $filename = "{$tipe_button}-Rekap_Penilaian_{$evaluatedName}_{$quartal}_{$tahun}.pdf";
-
-        // return $pdf->download($filename);
     }
 
     public function indexKategori(Request $request)
@@ -774,7 +763,7 @@ class DatabaseKPIController extends Controller
                 $nilaiItem = $groupedNilaiKPI->get($jenis_penilaian, collect())->get($judul_kategori);
 
                 if ($nilaiItem && $nilaiItem->count() > 0) {
-                    $firstItem = $nilaiItem->first(); 
+                    $firstItem = $nilaiItem->first();
                     $listNilaiEvaluator[] = [
                         'pesan' => $firstItem->pesan ?? '-',
                         'nilai' => $firstItem->nilai ?? '-'
