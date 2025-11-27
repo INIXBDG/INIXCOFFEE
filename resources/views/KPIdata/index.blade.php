@@ -519,22 +519,43 @@
 
         $assistantRoute.off('change').on('change', function() {
             const value = $(this).val();
-            const $tipeTarget = $form.find(`#${prefix}tipeTarget`);
+            const $tipeTarget = $form.find(`#${prefix}tipe_target`);
+            const $jangkaTarget = $form.find(`#${prefix}jangka_target`);
 
             if (value === 'Kepuasan Pelanggan') {
-                $tipeTarget.html(`
-                    <option value="persen" selected>Persen (%)</option>
-                `);
+                // Lock tipe ke persen
+                $tipeTarget.html(`<option value="persen" selected>Persen (%)</option>`);
                 $tipeTarget.attr('disabled', true);
+
+                // Lock jangka ke Tahunan
+                $jangkaTarget.empty().append(`
+            <option value="Tahunan" selected>Tahunan</option>
+        `);
+                $jangkaTarget.attr('disabled', true);
             } else {
+                // Normal behavior
                 $tipeTarget.html(`
-                    <option selected disabled>-- Pilih Tipe --</option>
-                    <option value="angka">Angka (Unit, Jumlah, dll)</option>
-                    <option value="rupiah">Rupiah (Nilai Keuangan)</option>
-                    <option value="persen">Persen (%)</option>
-                `);
+            <option selected disabled>-- Pilih Tipe --</option>
+            <option value="angka">Angka (Unit, Jumlah, dll)</option>
+            <option value="rupiah">Rupiah (Nilai Keuangan)</option>
+            <option value="persen">Persen (%)</option>
+        `);
                 $tipeTarget.removeAttr('disabled');
+
+                // Restore jangka options
+                const tahunIni = new Date().getFullYear();
+                $jangkaTarget.empty().append(`
+            <option selected disabled>-- Pilih Jangka --</option>
+            <option value="Tahunan">Tahunan (${tahunIni})</option>
+            <option value="Quartal">Kuartal</option>
+            <option value="Bulanan">Bulanan</option>
+            <option value="Mingguan">Mingguan</option>
+        `);
+                $jangkaTarget.removeAttr('disabled');
             }
+
+            $detailJangkaGroup.hide();
+            $konversiGroup.hide();
         });
 
         $nilaiTarget.off('input').on('input', function() {
@@ -842,7 +863,7 @@
 
                         let statusText = '';
                         let badgeClass = 'bg-secondary';
-                        
+
                         const now = new Date();
                         const year = now.getFullYear();
                         const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -1197,15 +1218,32 @@
             const value = $(this).val();
             if (value === 'Kepuasan Pelanggan') {
                 $tipeTarget.html(`<option value="persen" selected>Persen (%)</option>`);
+                $tipeTarget.attr('disabled', true);
+
+                $jangkaTarget.empty().append(`<option value="Tahunan" selected>Tahunan</option>`);
+                $jangkaTarget.attr('disabled', true);
             } else {
                 $tipeTarget.html(`
-            <option selected disabled>-- Pilih Tipe --</option>
-            <option value="angka">Angka (Unit, Jumlah, dll)</option>
-            <option value="rupiah">Rupiah (Nilai Keuangan)</option>
-            <option value="persen">Persen (%)</option>
-        `);
+                    <option selected disabled>-- Pilih Tipe --</option>
+                    <option value="angka">Angka (Unit, Jumlah, dll)</option>
+                    <option value="rupiah">Rupiah (Nilai Keuangan)</option>
+                    <option value="persen">Persen (%)</option>
+                `);
                 $tipeTarget.removeAttr('disabled');
+
+                const tahunIni = new Date().getFullYear();
+                $jangkaTarget.empty().append(`
+                    <option selected disabled>-- Pilih Jangka --</option>
+                    <option value="Tahunan">Tahunan (${tahunIni})</option>
+                    <option value="Quartal">Kuartal</option>
+                    <option value="Bulanan">Bulanan</option>
+                    <option value="Mingguan">Mingguan</option>
+                `);
+                $jangkaTarget.removeAttr('disabled');
             }
+
+            $detailJangkaGroup.hide();
+            $konversiGroup.hide();
         });
 
         $nilaiTarget.on('input', function() {
@@ -1610,7 +1648,6 @@
         }
     }
 
-    // === simpan instance chart di global ===
     let doughnutChartInstance = null;
     let lineChartInstance = null;
 
@@ -1638,7 +1675,6 @@
                     `<span class="badge bg-success ms-2">Target Terpenuhi <i class="fa-solid fa-check"></i></span>` :
                     `<span class="badge bg-danger ms-2">Target Gagal Terpenuhi <i class="fa-solid fa-xmark"></i></span>`;
 
-                // tampilkan isi modal
                 if (totalFeedback === 0) {
                     bodyContentDetailTarget.append(`
                     <div class="modal-header">

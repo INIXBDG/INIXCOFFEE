@@ -645,7 +645,10 @@ Route::middleware('auth')->get('/notifications/unread-count', function () {
 
 
 Route::get('laporan/penjualan', [LaporanPenjualanController::class, 'indexJson'])->name('jsonLaporan');
-
+Route::get('/laporan/penjualan/win/excel', [LaporanPenjualanController::class, 'downloadWinExcel'])->name('laporan.win.excel');
+Route::get('/laporan/penjualan/lost/excel', [LaporanPenjualanController::class, 'downloadLostExcel'])->name('laporan.lost.excel');
+Route::get('/laporan/penjualan/win/pdf', [LaporanPenjualanController::class, 'downloadPdfWin'])->name('laporan.win.pdf');
+Route::get('/laporan/penjualan/lost/pdf', [LaporanPenjualanController::class, 'downloadPdfLost'])->name('laporan.lost.pdf');
 // Kanban
 Route::get('/kanban', [KanbanController::class, 'index'])->name('kanban.index');
 Route::post('/tasks', [KanbanController::class, 'store'])->name('tasks.store');

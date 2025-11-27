@@ -19,7 +19,12 @@ use Illuminate\Support\Facades\Notification as NotificationFacade;
 // use Google_Service_Sheets_ValueRange;
 class TicketController extends Controller
 {
-    private function normalizeTimestamp($timestamp) 
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    private function normalizeTimestamp($timestamp)
     {
         // Jika sudah objek DateTime
         if ($timestamp instanceof DateTime) {
@@ -69,7 +74,7 @@ class TicketController extends Controller
             'timestamp' => $request->datetime
             // nilai default lainnya tetap
         ]);
-        
+
         $todayCount = Tickets::whereDate('created_at', today())->count();
         $char = chr(96 + $todayCount); // a untuk tiket pertama, b untuk kedua, dst.
         $ticketId = 'NIX' . now()->format('ymd') . $char;
@@ -77,15 +82,15 @@ class TicketController extends Controller
         $ticket->save();
 
 
-       $message = "Ada Ticketing Masuk:\n"
-        . "ID Tiket: *{$ticket->ticket_id}*\n\n"
-        . "Nama Karyawan: {$ticket->nama_karyawan}\n"
-        . "Divisi: {$ticket->divisi}\n"
-        . "Kategori: {$ticket->kategori}\n"
-        . "Keperluan: {$ticket->keperluan}\n"
-        . "Detail Kendala: {$ticket->detail_kendala}\n\n"
-        . "Balas dengan format:\n"
-        . "`/terima {$ticket->ticket_id}` untuk memproses.";
+        $message = "Ada Ticketing Masuk:\n"
+            . "ID Tiket: *{$ticket->ticket_id}*\n\n"
+            . "Nama Karyawan: {$ticket->nama_karyawan}\n"
+            . "Divisi: {$ticket->divisi}\n"
+            . "Kategori: {$ticket->kategori}\n"
+            . "Keperluan: {$ticket->keperluan}\n"
+            . "Detail Kendala: {$ticket->detail_kendala}\n\n"
+            . "Balas dengan format:\n"
+            . "`/terima {$ticket->ticket_id}` untuk memproses.";
 
 
         $spreadsheetId = '1k_NRI52B-alnGVeLTGB8cecL3f1G-C7_WCVGnQQGe9Y';
@@ -204,11 +209,10 @@ class TicketController extends Controller
 
         $lembur = collect();
 
-        if($divisi == 'IT Service Management'){
+        if ($divisi == 'IT Service Management') {
             $lembur = Tickets::with('karyawan')->latest()->get();
-        }
-        else{
-            $lembur = Tickets::with('karyawan')->whereHas('karyawan', function($query) use ($user) {
+        } else {
+            $lembur = Tickets::with('karyawan')->whereHas('karyawan', function ($query) use ($user) {
                 $query->where('id', $user);
             })->latest()->get();
         }
@@ -239,7 +243,7 @@ class TicketController extends Controller
         ]);
 
         $spreadsheetId = '1k_NRI52B-alnGVeLTGB8cecL3f1G-C7_WCVGnQQGe9Y';
-        $range = 'Form Responses 1!I'.$ticket->row.':M'.$ticket->row;
+        $range = 'Form Responses 1!I' . $ticket->row . ':M' . $ticket->row;
         $values = [
             [
                 $tanggal_response,
@@ -283,7 +287,7 @@ class TicketController extends Controller
         ]);
 
         $spreadsheetId = '1k_NRI52B-alnGVeLTGB8cecL3f1G-C7_WCVGnQQGe9Y';
-        $range = 'Form Responses 1!L'.$ticket->row.':S'.$ticket->row;
+        $range = 'Form Responses 1!L' . $ticket->row . ':S' . $ticket->row;
         $values = [
             [
                 $ticket->penanganan,
@@ -328,7 +332,7 @@ class TicketController extends Controller
         ]);
 
         $spreadsheetId = '1k_NRI52B-alnGVeLTGB8cecL3f1G-C7_WCVGnQQGe9Y';
-        $range = 'Form Responses 1!L'.$ticket->row.':S'.$ticket->row;
+        $range = 'Form Responses 1!L' . $ticket->row . ':S' . $ticket->row;
         $values = [
             [
                 $ticket->penanganan,
@@ -393,5 +397,4 @@ class TicketController extends Controller
             return null;
         }
     }
-
 }

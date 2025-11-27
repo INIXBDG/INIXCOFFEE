@@ -22,6 +22,11 @@ use Carbon\CarbonImmutable;
 
 class feedbackController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     public function index()
     {
         $materi = Feedback::where('kategori_feedback', 'Materi')->get();

@@ -17,7 +17,7 @@ class SessionTimeout
      */
     public function handle($request, Closure $next)
     {
-        $timeout = 1800; // 30 minutes
+        $timeout = 600; // 30 minutes
 
         if (Auth::check() && (time() - session('last_activity') > $timeout)) {
             $agent = new Agent();
