@@ -168,7 +168,8 @@ class PengajuanSouvenirController extends Controller
         $path = '/pengajuansouvenir';
 
         foreach ($users as $user) {
-            NotificationFacade::send($user, new PengajuanSouvenirNotification($data, $path, $type));
+            $receiverId = $user->id;
+            NotificationFacade::send($user, new PengajuanSouvenirNotification($data, $path, $type, $receiverId));
         }
 
         return redirect()->route('pengajuansouvenir.index')->with('success', 'Pengajuan Souvenir berhasil dibuat.');
@@ -303,7 +304,8 @@ class PengajuanSouvenirController extends Controller
             $uniqueUsers = array_filter(array_unique($usersToNotify));
             foreach ($uniqueUsers as $user) {
                 if($user) {
-                    NotificationFacade::send($user, new ApprovalSouvenirNotification($notifData, $path, $to, $notifType));
+                    $receiverId = $user->id;
+                    NotificationFacade::send($user, new ApprovalSouvenirNotification($notifData, $path, $to, $notifType, $receiverId));
                 }
             }
         }

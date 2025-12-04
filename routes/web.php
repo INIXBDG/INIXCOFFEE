@@ -43,6 +43,9 @@ use App\Http\Controllers\office\OfficeController;
 use App\Http\Controllers\Office\CertificateController;
 use App\Http\Controllers\OutstandingController;
 use App\Http\Controllers\Office\vendorOfficeController;
+use App\Events\ServerTimeUpdate;
+use App\Http\Controllers\BroadcastAuthController;
+use App\Http\Controllers\PusherAuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -58,6 +61,9 @@ use App\Http\Controllers\Office\vendorOfficeController;
 // Route::get('/', function () {
 //     return view('auth.login');
 // });
+
+Route::post('/pusher/auth', [PusherAuthController::class, 'auth'])->middleware('web');
+
 Route::get('/partials/dashboard', function () {
     return view('partials.dashboard');
 });

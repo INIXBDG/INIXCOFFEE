@@ -2,57 +2,105 @@
 
 namespace App\Notifications;
 
+use App\Models\Karyawan;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 
-class penilaianExcangheNotifikasi extends Notification
+class penilaianExcangheNotifikasi extends Notification implements ShouldBroadcast
 {
-    use Queueable;
+    use Queueable, InteractsWithSockets;
 
     protected $comment;
-    protected $url;
     protected $path;
+    protected $receiverId;
 
-    public function __construct($comment, $url, $path)
+    /**
+     * Create a new notification instance.
+     *
+     * @param  mixed  $comment
+     * @param  string  $path
+     * @param  int  $receiverId
+     */
+    public function __construct($comment, string $path, int $receiverId)
     {
-        $this->comment = $comment;
-        $this->url = $url;
-        $this->path = $path;
+        $this->comment     = $comment;
+        $this->path        = $path;
+        $this->receiverId  = $receiverId;
     }
 
-    public function via($notifiable)
+    /**
+     * Get the notification's delivery channels.
+     *
+     * @return array<int, string>
+     */
+    public function via($notifiable): array
     {
-        return ['database', 'broadcast']; 
+        return ['database', 'broadcast'];
     }
 
-    public function toArray($notifiable)
+    /**
+     * Get the broadcastable representation of the notification.
+     */
+    public function toBroadcast($notifiable): BroadcastMessage
     {
-        return [
-            'user' => auth()->user()->username,
+        $user = auth()->user();
+
+        return new BroadcastMessage([
+            'user' => $user?->username ?? 'System',
             'message' => [
-                'karyawan_key' => $this->comment->karyawan_key,
-                'tipe' => 'Penilaian 360',
-                'content' => $this->comment->content,
+                'tipe'          => 'Penilaian 360',
+                'karyawan_key'  => $this->comment->karyawan_key,
+                'content'       => $this->comment->content,
+                'pengirim'      => $user?->nama_lengkap ?? 'Sistem',
+                'jabatan'       => $user?->jabatan ?? null,
             ],
-            'path' => $this->path,
+            'path'   => $this->path ?? '#',
+            'status' => 'unread',
+        ]);
+    }
+
+    /**
+     * Get the array representation of the notification.
+     *
+     * @return array<string, mixed>
+     */
+    public function toArray($notifiable): array
+    {
+        $user = auth()->user();
+
+        return [
+            'user' => $user?->username ?? 'System',
+            'message' => [
+                'tipe'          => 'Penilaian 360',
+                'karyawan_key'  => $this->comment->karyawan_key,
+                'content'       => $this->comment->content,
+                'pengirim'      => $user?->nama_lengkap ?? 'Sistem',
+                'jabatan'       => $user?->jabatan ?? null,
+            ],
+            'path'   => $this->path ?? '#',
             'status' => 'unread',
         ];
     }
 
-    public function toBroadcast($notifiable)
+    /**
+     * Get the channels the event should broadcast on.
+     *
+     * @return \Illuminate\Broadcasting\PrivateChannel
+     */
+    public function broadcastOn(): PrivateChannel
     {
-        return new BroadcastMessage([
-            'user' => auth()->user()->username,
-            'message' => [
-                'karyawan_key' => $this->comment->karyawan_key,
-                'content' => $this->comment->content,
-            ],
-            'path' => $this->url,
-            'status' => 'unread',
-        ]);
+        return new PrivateChannel('notifikasi.' . $this->receiverId);
+    }
+
+    /**
+     * The event's broadcast name.
+     */
+    public function broadcastAs(): string
+    {
+        return 'notifikasi-event';
     }
 }
-

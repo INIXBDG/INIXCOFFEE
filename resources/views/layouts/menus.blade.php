@@ -2352,6 +2352,7 @@
         </div>
         {{-- </div> --}}
     </main>
+    <audio id="notifSound" src="{{ asset('bell.mp3') }}" preload="auto"></audio>
     </div>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
@@ -2364,6 +2365,87 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/timepicker/1.3.5/jquery.timepicker.min.js"></script>
     {{-- SweetAlert2 --}}
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script src="https://js.pusher.com/8.2/pusher.min.js"></script>
+
+    <script src="https://js.pusher.com/8.2/pusher.min.js"></script>
+    <script>
+        Pusher.logToConsole = true;
+
+        const pusher = new Pusher("{{ env('PUSHER_APP_KEY') }}", {
+            cluster: "{{ env('PUSHER_APP_CLUSTER') }}",
+            forceTLS: true,
+            authEndpoint: '/pusher/auth',
+            auth: {
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                }
+            }
+        });
+
+        const channel = pusher.subscribe('private-notifikasi.{{ auth()->id() }}');
+
+        channel.bind('pusher:subscription_succeeded', () => {
+            console.log('PUSHER AKTIF');
+        });
+
+        channel.bind('notifikasi-event', (data) => {
+            console.log('REAL-TIME MASUK!', data);
+
+            const toast = document.createElement('div');
+            toast.innerHTML = `
+            <div class="rt-toast" style="
+                position:fixed;
+                top:90px;
+                left:20px;
+                z-index:99999;
+                background:#10b981;
+                color:white;
+                padding:18px 32px;
+                border-radius:12px;
+                box-shadow:0 10px 30px rgba(0,0,0,0.3);
+                font-family:system-ui;
+                min-width:320px;
+                animation:slideIn 0.5s ease;
+            ">
+                <div style="font-weight:700;font-size:16px;">Notifikasi Baru!</div>
+                <div style="margin-top:6px;font-size:14px;opacity:0.9;">
+                    ${data.message?.message?.tipe || 'Ada pemberitahuan baru'}
+                </div>
+            </div>`;
+
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.transition = "opacity 0.5s ease";
+                toast.style.opacity = "0";
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
+
+            document.getElementById('notifSound')?.play();
+
+            const badge = document.getElementById('notifBadge');
+            if (badge) {
+                let current = parseInt(badge.textContent) || 0;
+                badge.textContent = current + 1;
+                badge.classList.add('animate__animated', 'animate__bounceIn');
+                setTimeout(() => badge.classList.remove('animate__bounceIn'), 1000);
+            }
+
+            const modalBody = document.querySelector('#notificationModal .modal-body');
+            if (modalBody) {
+                const newNotif = `
+            <div class="notification p-3 border-bottom animate__animated animate__fadeIn">
+                <p class="mb-1 fw-bold text-danger">Baru!</p>
+                <p class="mb-1"><strong>${data.message?.user || 'System'}</strong></p>
+                <p class="mb-1">${data.message?.message?.tipe || 'Notifikasi'}</p>
+                <small class="text-muted">Baru saja</small>
+            </div>`;
+                modalBody.insertAdjacentHTML('afterbegin', newNotif);
+            }
+        });
+    </script>
+
     <script>
         document.getElementById('logout-link').addEventListener('click', function(e) {
             e.preventDefault();

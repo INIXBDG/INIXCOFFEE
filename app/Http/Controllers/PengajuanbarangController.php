@@ -261,7 +261,8 @@ class PengajuanBarangController extends Controller
         $path = '/pengajuanbarang';
 
         foreach ($users as $user) {
-            NotificationFacade::send($user, new PengajuanbarangNotification($data, $path, $type));
+            $receiverId = $user->id;
+            NotificationFacade::send($user, new PengajuanbarangNotification($data, $path, $type, $receiverId));
         }
 
         return redirect()->route('pengajuanbarang.index')->with('success', 'Pengajuan Barang berhasil dibuat.');
@@ -386,7 +387,8 @@ class PengajuanBarangController extends Controller
             })->get();
 
             foreach ($userObjs as $user) {
-                NotificationFacade::send($user, new ApprovalbarangNotification($notifData, $path, $to, $type));
+                $receiverId = $user->id;
+                NotificationFacade::send($user, new ApprovalbarangNotification($notifData, $path, $to, $type, $receiverId));
             }
 
             return redirect()->route('pengajuanbarang.index')->with(['success' => 'Data berhasil diperbarui!']);
@@ -416,7 +418,8 @@ class PengajuanBarangController extends Controller
             ];
 
             foreach ($userObjs as $user) {
-                NotificationFacade::send($user, new ApprovalbarangNotification($notifData, $path, $to, $type));
+                $receiverId = $user->id;
+                NotificationFacade::send($user, new ApprovalbarangNotification($notifData, $path, $to, $type, $receiverId));
             }
 
             return redirect()->route('pengajuanbarang.index')->with(['success' => 'Data berhasil diperbarui!']);
@@ -481,7 +484,8 @@ class PengajuanBarangController extends Controller
         ];
 
         foreach ($userObjs as $user) {
-            NotificationFacade::send($user, new ApprovalbarangNotification($notifData, $path, $to, $type));
+            $receiverId = $user->id;
+            NotificationFacade::send($user, new ApprovalbarangNotification($notifData, $path, $to, $type, $receiverId));
         }
 
         return redirect()->route('pengajuanbarang.index')->with('success', 'Pengajuan Barang berhasil diperbarui.');

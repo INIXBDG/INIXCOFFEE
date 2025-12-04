@@ -700,8 +700,8 @@ class PeluangController extends Controller
 
                 $url = url('paymentAdvance.index');
                 $path = request()->path();
-
-                Notification::send($user, new CommentNotification($dummyComment, $url, $path));
+                $receiverUsers = $user->id;
+                Notification::send($user, new CommentNotification($dummyComment, $url, $path, $receiverUsers));
             }
         }
 

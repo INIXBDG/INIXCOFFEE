@@ -249,7 +249,8 @@ class RKMController extends Controller
 
         $path = '/rkm/' . $request->materi_key . 'ixb' . $hari . 'ie' . $tahun . 'ie' . $bulan . 'ixb' . $kelas;
         foreach ($users as $user) {
-            NotificationFacade::send($user, new rkmnewNotification($data, $path));
+            $receiverId = $user->id;
+            NotificationFacade::send($user, new rkmnewNotification($data, $path, $receiverId));
         }
 
 
@@ -459,11 +460,10 @@ class RKMController extends Controller
                 $user = $userInfo['user'];
                 $role = $userInfo['role'];
 
-                // Menambahkan informasi role ke dalam data
                 $data['role'] = $role;
-
+                $receiverId = $user->id;
                 // Mengirimkan notifikasi
-                NotificationFacade::send($user, new AssignkelasNotification($data, $path));
+                NotificationFacade::send($user, new AssignkelasNotification($data, $path, $receiverId));
             }
         }
         return redirect()->route('rkm.index')->with(['success' => 'Data Berhasil Diubah!']);
@@ -718,7 +718,8 @@ class RKMController extends Controller
             $path = '/rkm/' . $request->materi_key . 'ixb' . $hari . 'ie' . $tahun . 'ie' . $bulan . 'ixb' . $kelas;
 
             foreach ($users as $user) {
-                NotificationFacade::send($user, new RKMUpdateNotification($data, $path));
+                $receiverId = $user->id;
+                NotificationFacade::send($user, new RKMUpdateNotification($data, $path, $receiverId));
             }
 
             return redirect()->route('rkm.index')->with(['success' => 'Data Berhasil Diubah!']);

@@ -69,7 +69,8 @@ class ApprovedNetSalesController extends Controller
                     'nama_karyawan' => $salesUser->karyawan->nama_lengkap,
                     'alasan' => $keteranganInput,
                 ];
-                Notification::send($salesUser, new NetSalesNotification($dummyComment, $url, $path));
+                $receiverId = $salesUser->id;
+                Notification::send($salesUser, new NetSalesNotification($dummyComment, $path, $receiverId));
 
                 return response()->json(['success' => true, 'message' => 'Pengajuan ditolak dan notifikasi dikirim.']);
             }
@@ -99,7 +100,8 @@ class ApprovedNetSalesController extends Controller
                         'nama_karyawan' => $salesUser->karyawan->nama_lengkap,
                         'alasan' => 'SPV Sales telah menyetujui, mohon persetujuan Anda.',
                     ];
-                    Notification::send($gmUser, new NetSalesNotification($dummyCommentGM, $url, $path));
+                    $receiverId = $gmUser->id;
+                    Notification::send($gmUser, new NetSalesNotification($dummyCommentGM, $path, $receiverId));
                 }
 
                 $dummyCommentSales = (object) [
@@ -108,7 +110,8 @@ class ApprovedNetSalesController extends Controller
                     'nama_karyawan' => $salesUser->karyawan->nama_lengkap,
                     'alasan' => 'SPV Sales telah menyetujui pengajuan Anda.',
                 ];
-                Notification::send($salesUser, new NetSalesNotification($dummyCommentSales, $url, $path));
+                $receiverId = $salesUser->id;
+                Notification::send($salesUser, new NetSalesNotification($dummyCommentSales, $path, $receiverId));
             } elseif ($latestApproval->level_status === '1') {
                 $newApproval->level_status = '2';
                 $newApproval->keterangan = 'Telah disetujui oleh General Manager';
@@ -125,7 +128,8 @@ class ApprovedNetSalesController extends Controller
                         'nama_karyawan' => $salesUser->karyawan->nama_lengkap,
                         'alasan' => 'General Manager telah menyetujui, mohon persetujuan Anda.',
                     ];
-                    Notification::send($financeUser, new NetSalesNotification($dummyCommentFinance, $url, $path));
+                    $receiverId = $financeUser->id;
+                    Notification::send($financeUser, new NetSalesNotification($dummyCommentFinance, $path, $receiverId));
                 }
 
                 $dummyCommentSales = (object) [
@@ -134,7 +138,8 @@ class ApprovedNetSalesController extends Controller
                     'nama_karyawan' => $salesUser->karyawan->nama_lengkap,
                     'alasan' => 'General Manager telah menyetujui pengajuan Anda.',
                 ];
-                Notification::send($salesUser, new NetSalesNotification($dummyCommentSales, $url, $path));
+                $receiverId = $salesUser->id;
+                Notification::send($salesUser, new NetSalesNotification($dummyCommentSales, $path, $receiverId));
             } elseif ($latestApproval->level_status === '2') {
                 $newApproval->level_status = '3';
                 $newApproval->keterangan = $statusTracking;
@@ -146,7 +151,8 @@ class ApprovedNetSalesController extends Controller
                     'nama_karyawan' => $salesUser->karyawan->nama_lengkap,
                     'alasan' => $statusTracking,
                 ];
-                Notification::send($salesUser, new NetSalesNotification($dummyCommentSales, $url, $path));
+                $receiverId = $salesUser->id;
+                Notification::send($salesUser, new NetSalesNotification($dummyCommentSales, $path, $receiverId));
             } elseif ($latestApproval->level_status === '3') {
                 $newApproval->level_status = '3';
                 $newApproval->keterangan = $statusTracking;
@@ -158,7 +164,8 @@ class ApprovedNetSalesController extends Controller
                     'nama_karyawan' => $salesUser->karyawan->nama_lengkap,
                     'alasan' => $statusTracking,
                 ];
-                Notification::send($salesUser, new NetSalesNotification($dummyCommentSales, $url, $path));
+                $receiverId = $salesUser->id;
+                Notification::send($salesUser, new NetSalesNotification($dummyCommentSales, $path, $receiverId));
 
                 return response()->json(['success' => true, 'message' => 'Data persetujuan tambahan berhasil ditambahkan dan notifikasi dikirim.']);
             }

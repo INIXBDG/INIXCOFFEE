@@ -3,43 +3,75 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 
-class PengajuanSPJNotification extends Notification
+class PengajuanSPJNotification extends Notification implements ShouldBroadcast
 {
-    use Queueable;
+    use Queueable, InteractsWithSockets;
 
     protected $data;
     protected $path;
     protected $type;
+    protected $receiverId;
 
-    public function __construct($data, $path, $type)
+    public function __construct($data, $path, $type, $receiverId)
     {
         $this->data = $data;
         $this->path = $path;
         $this->type = $type;
+        $this->receiverId = $receiverId;
     }
 
-    public function via($notifiable)
+    public function via($notifiable): array
     {
-        return ['database', 'broadcast']; // Menggunakan 'database' dan 'broadcast'
+        return ['database', 'broadcast'];
     }
 
-    public function toArray($notifiable)
+    /** @var \App\Models\User $notifiable */
+    public function broadcastOn()
+    {
+        return new PrivateChannel('notifikasi.' . $this->receiverId);
+    }
+
+    public function broadcastAs(): string
+    {
+        return 'notifikasi-event';
+    }
+
+    public function toBroadcast($notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage([
+            'user' => auth()->user()?->username ?? 'System',
+            'message' => [
+                'tipe'              => $this->type,
+                'tanggal_berangkat' => $this->data['tanggal_berangkat'],
+                'tanggal_pulang'    => $this->data['tanggal_pulang'],
+                'alasan'            => $this->data['alasan'],
+                'durasi'            => $this->data['durasi'],
+                'tujuan'            => $this->data['tujuan'],
+            ],
+            'path'   => $this->path,
+            'status' => 'unread',
+        ]);
+    }
+
+    public function toArray($notifiable): array
     {
         return [
-            'user' => auth()->user()->username,
+            'user' => auth()->user()?->username ?? 'System',
             'message' => [
-                'tipe' => $this->type,
+                'tipe'              => $this->type,
                 'tanggal_berangkat' => $this->data['tanggal_berangkat'],
-                'tanggal_pulang' => $this->data['tanggal_pulang'],
-                'alasan' => $this->data['alasan'],
-                'durasi' => $this->data['durasi'],
-                'tujuan' => $this->data['tujuan'],
+                'tanggal_pulang'    => $this->data['tanggal_pulang'],
+                'alasan'            => $this->data['alasan'],
+                'durasi'            => $this->data['durasi'],
+                'tujuan'            => $this->data['tujuan'],
             ],
-            'path' => $this->path,
+            'path'   => $this->path,
             'status' => 'unread',
         ];
     }

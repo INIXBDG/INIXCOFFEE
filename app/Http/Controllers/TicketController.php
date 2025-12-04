@@ -149,7 +149,8 @@ class TicketController extends Controller
         $status = "Ticketing Baru";
 
         foreach ($users as $user) {
-            NotificationFacade::send($user, new TicketNotification($ticket, $path, $status));
+            $receiverId = $user->id;
+            NotificationFacade::send($user, new TicketNotification($ticket, $path, $status, $receiverId));
         }
 
         return redirect()->route('tickets.index')->with('success', 'Tiket berhasil dibuat, akan segera diprovide. Terimakasih!');

@@ -1348,13 +1348,18 @@ class DatabaseKPIController extends Controller
                 };
 
                 foreach ($users as $user) {
-                    $dummyComment = (object)[
+                    $dummyComment = (object) [
                         'karyawan_key' => $karyawan->karyawan_id,
                         'content'      => $karyawan->nama_lengkap . ' dapat mengisi formulir PENILAIAN KINERJA 360 ' . strtoupper($karyawanEvaluated->nama_lengkap) . ' untuk ' . $quarterLabel,
                     ];
 
                     $url = url('getFormPenilaian/' . $kode_form . '/' . $id_evaluated);
-                    Notification::send($user, new penilaianExcangheNotifikasi($dummyComment, $url, $url));
+
+                    Notification::send($user, new penilaianExcangheNotifikasi(
+                        $dummyComment,
+                        $url,
+                        $user->id  
+                    ));
                 }
             }
         }

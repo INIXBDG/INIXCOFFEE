@@ -132,10 +132,12 @@ class CateringController extends Controller
             ];
 
             foreach ($users as $user) {
+                $receiverId = $user->id;
                 NotificationFacade::send($user, new cateringNotification(
                     $notifData,
                     '/catering/index',
-                    'Pengajuan catering'
+                    'Pengajuan catering',
+                    $receiverId
                 ));
             }
         }
@@ -375,7 +377,8 @@ class CateringController extends Controller
 
         foreach ($usersToNotify as $user) {
             if ($user) {
-                NotificationFacade::send($user, new cateringNotification($data, $path, $type));
+                $receiverId = $user->id;
+                NotificationFacade::send($user, new cateringNotification($data, $path, $type, $receiverId));
             }
         }
 
