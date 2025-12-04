@@ -1,3 +1,4 @@
+
 <style>
     .styled-form {
         padding: 20px;
@@ -189,7 +190,7 @@
         @php
         $fieldKey = "field_{$index}_{$i}";
         $fieldName = "{$fieldKey}[{$sub['sub_kriteria_judul']}]";
-        $fieldId = Str::slug($sub['sub_kriteria_judul']) . "_{$index}_{$i}";
+        $fieldId = Str::slug($sub['sub_kriteria_judul']) . "_{$index}_{$i}_{$data['id_karyawan']}_{$data['jenis_penilaian']}";
         @endphp
         <div class="row mb-3 ms-3">
             <label id="label_{{ $fieldId }}" class="col-md-4 col-form-label text-md-start">
@@ -313,7 +314,6 @@
         let isValid = true;
         form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
 
-        // Radio
         const radioGroups = {};
         form.querySelectorAll('input[type="radio"][data-group]').forEach(radio => {
             const group = radio.dataset.group;
@@ -345,7 +345,6 @@
             }
         });
 
-        // Checkbox
         const checkboxGroups = {};
         form.querySelectorAll('input[type="checkbox"].checkbox-group[data-group]').forEach(cb => {
             const group = cb.dataset.group;
@@ -377,7 +376,6 @@
             }
         });
 
-        // Input biasa
         form.querySelectorAll('input[data-required], select[data-required], textarea[data-required]').forEach(el => {
             if (el.type === 'radio' || el.type === 'checkbox') return;
             if (!el.value.trim()) {
@@ -392,7 +390,6 @@
             }
         });
 
-        // Range
         form.querySelectorAll('input[type="range"][data-required]').forEach(range => {
             if (parseInt(range.value) === 0) {
                 isValid = false;
@@ -409,12 +406,10 @@
         return isValid;
     }
 
-    // Hanya bind sekali
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.querySelector('.styled-form');
         if (!form) return;
 
-        // Hapus listener lama jika ada (opsional, tapi aman)
         const submitHandler = function(e) {
             e.preventDefault();
             const submitBtn = form.querySelector('button[type="submit"]');
@@ -433,7 +428,6 @@
             form.submit();
         };
 
-        // Pastikan hanya ada satu listener
         form.removeEventListener('submit', submitHandler);
         form.addEventListener('submit', submitHandler);
     });

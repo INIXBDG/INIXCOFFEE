@@ -290,7 +290,7 @@
               <i class="mdi mdi-home menu-icon"></i>
             </a>
           </li>
-          <!-- <li class="nav-item">
+          <li class="nav-item">
             <a class="nav-link" style="margin-left: -10px;">
               <span class="menu-title">KPI</span>
             </a>
@@ -318,7 +318,7 @@
               <i class="fa-solid fa-users-viewfinder menu-icon"></i>
             </a>
           </li>
-          @endif -->
+          @endif
           <li class="nav-item">
             <a class="nav-link" style="margin-left: -10px;">
               <span class="menu-title">Penilaian 360°</span>

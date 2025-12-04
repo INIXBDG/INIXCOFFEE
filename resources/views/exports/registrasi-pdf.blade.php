@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,15 +12,21 @@
             width: auto;
             border-collapse: collapse;
         }
-        table, th, td {
+
+        table,
+        th,
+        td {
             border: 1px solid black;
             text-align: left;
         }
-        th, td {
+
+        th,
+        td {
             padding: 8px;
         }
     </style>
 </head>
+
 <body>
     <h3>Data Registrasi</h3>
     <table>
@@ -42,13 +49,20 @@
                 <td>{{ $data->peserta->nama }}</td>
                 <td>{{ $data->peserta->perusahaan->nama_perusahaan }}</td>
                 <td>{{ $data->materi->nama_materi }}</td>
-                <td>{{ $data->rkm->tanggal_awal . 's/d' . $data->rkm->tanggal_akhir }}</td>
+                <td>
+                    {{ optional($data->rkm)->tanggal_awal ?? '-' }}
+                    s/d
+                    {{ optional($data->rkm)->tanggal_akhir ?? '-' }}
+                </td>
                 <td>{{ $data->karyawan->kode_karyawan }}</td>
                 <td>{{ $data->sales->kode_karyawan }}</td>
-                <td>{{ optional($data->souvenirpeserta->first())->souvenir->nama_souvenir ?? '-' }}</td>
+                <td>
+                    {{ optional(optional($data->souvenirpeserta)->first())->souvenir->nama_souvenir ?? '-' }}
+                </td>
             </tr>
             @endforeach
         </tbody>
     </table>
 </body>
+
 </html>

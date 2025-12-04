@@ -145,6 +145,7 @@ Route::resource('/daily-activities', \App\Http\Controllers\DailyActivityControll
 Route::resource('/registry', \App\Http\Controllers\RegistryFeatureController::class)->parameters(['registry' => 'tugas']);
 Route::resource('permissions', \App\Http\Controllers\PermissionController::class);
 Route::resource('roles', \App\Http\Controllers\RoleController::class);
+Route::resource('penambahansouvenir', \App\Http\Controllers\PenambahanSouvenirController::class);
 
 Route::get('/rkmEditInstruktur/{id}', [App\Http\Controllers\RKMController::class, 'editInstruktur'])->name('editInstruktur');
 Route::put('/rkmUpdateInstruktur', [App\Http\Controllers\RKMController::class, 'updateInstruktur'])->name('updateInstruktur');
@@ -646,7 +647,10 @@ Route::middleware('auth')->get('/notifications/unread-count', function () {
 
 
 Route::get('laporan/penjualan', [LaporanPenjualanController::class, 'indexJson'])->name('jsonLaporan');
-
+Route::get('/laporan/penjualan/win/excel', [LaporanPenjualanController::class, 'downloadWinExcel'])->name('laporan.win.excel');
+Route::get('/laporan/penjualan/lost/excel', [LaporanPenjualanController::class, 'downloadLostExcel'])->name('laporan.lost.excel');
+Route::get('/laporan/penjualan/win/pdf', [LaporanPenjualanController::class, 'downloadPdfWin'])->name('laporan.win.pdf');
+Route::get('/laporan/penjualan/lost/pdf', [LaporanPenjualanController::class, 'downloadPdfLost'])->name('laporan.lost.pdf');
 // Kanban
 Route::get('/kanban', [KanbanController::class, 'index'])->name('kanban.index');
 Route::post('/tasks', [KanbanController::class, 'store'])->name('tasks.store');
@@ -744,3 +748,6 @@ Route::put('/catering/approved', [CateringController::class, 'approved'])->name(
 Route::get('/catering/destroy/{id}', [CateringController::class, 'destroy'])->name('catering.destroy');
 Route::get('/catering/invoice/{id}', [CateringController::class, 'invoice'])->name('catering.invoice');
 Route::put('/catering/updateinvoice/{id}', [CateringController::class, 'updateInvoice'])->name('catering.updateInvoice');
+
+// Penambahan Souvneir
+Route::get('/getPenambahanSouvenir/{month}/{year}', [App\Http\Controllers\PenambahanSouvenirController::class, 'getPenambahanSouvenir'])->name('getPenambahanSouvenir');

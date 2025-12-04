@@ -99,6 +99,13 @@
             </a>
         </li>
 
+            <li class="menu-item {{ request()->routeIs('penambahansouvenir.index') ? 'active open' : '' }}">
+                <a href="{{ route('penambahansouvenir.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-add-to-queue"></i>
+                    <div class="text-truncate" data-i18n="contact">Penambahan Souvenir</div>
+                </a>
+            </li>
+
     </ul>
 
     <!-- Sticky Footer di Sidebar -->

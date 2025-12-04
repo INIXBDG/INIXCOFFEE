@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Crm;
 
+use App\Exports\LaporanPenjualanExport;
 use App\Http\Controllers\Controller;
 use App\Models\karyawan;
 use App\Models\Materi;
@@ -15,6 +16,8 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class LaporanPenjualanController extends Controller
 {
@@ -31,7 +34,7 @@ class LaporanPenjualanController extends Controller
     public function indexJson(Request $request)
     {
         $status = $request->query('status');
-        $query = RKM::with(['exam', 'perhitunganNetSales.peserta', 'materi', 'perusahaan','invoice'])
+        $query = RKM::with(['exam', 'perhitunganNetSales.peserta', 'materi', 'perusahaan', 'invoice'])
             ->orderByDesc('tanggal_awal');
 
         if ($status !== null) {
@@ -266,7 +269,7 @@ class LaporanPenjualanController extends Controller
                 : 'Tanggal belum ditentukan',
             'milik' => $rkm->sales_key ?? 'Tidak diketahui',
             'waktu_perubahan' => Carbon::now()->format('Y-m-d H:i:s'),
-            'perubahan' => $changed, 
+            'perubahan' => $changed,
         ];
 
         $path = "/crm/edit/{$pa->id_rkm}/pa";
@@ -278,5 +281,262 @@ class LaporanPenjualanController extends Controller
             'message' => 'Data penawaran acara berhasil diperbarui.',
             'data' => $pa
         ]);
+    }
+
+    private function buildBaseQuery(Request $request, $status)
+    {
+        $query = RKM::with([
+            'exam',
+            'perhitunganNetSales.peserta',
+            'materi',
+            'perusahaan',
+            'invoice'
+        ])->where('status', $status)->orderByDesc('tanggal_awal');
+
+        if ($request->filled('sales_key')) {
+            $query->where('sales_key', $request->sales_key);
+        }
+
+        if ($request->filled('materi_key')) {
+            $query->where('materi_key', $request->materi_key);
+        }
+
+        if ($request->filled('tanggal_awal_mulai') && $request->filled('tanggal_awal_akhir')) {
+            $query->whereBetween('tanggal_awal', [
+                $request->tanggal_awal_mulai,
+                $request->tanggal_awal_akhir
+            ]);
+        } elseif ($request->filled('tanggal_awal_mulai')) {
+            $query->whereDate('tanggal_awal', '>=', $request->tanggal_awal_mulai);
+        } elseif ($request->filled('tanggal_awal_akhir')) {
+            $query->whereDate('tanggal_awal', '<=', $request->tanggal_awal_akhir);
+        }
+
+        if ($request->filled('triwulan')) {
+            $triwulanMapping = [
+                '1' => [1, 2, 3],
+                '2' => [4, 5, 6],
+                '3' => [7, 8, 9],
+                '4' => [10, 11, 12],
+            ];
+
+            $triwulan = $request->input('triwulan');
+            if (array_key_exists($triwulan, $triwulanMapping)) {
+                $query->whereIn(DB::raw('MONTH(tanggal_awal)'), $triwulanMapping[$triwulan]);
+            }
+        } elseif ($request->filled('bulan')) {
+            $query->whereMonth('tanggal_awal', $request->bulan);
+        }
+
+        if ($request->filled('minggu')) {
+            $query->whereRaw('WEEK(tanggal_awal, 1) = ?', [$request->minggu]);
+        }
+
+        if ($request->filled('tahun')) {
+            $query->whereYear('tanggal_awal', $request->tahun);
+        }
+
+        return $query;
+    }
+
+    // Helper: Proses perhitungan **sama persis seperti di indexJson / Blade**
+    private function calculateReportItem($item)
+    {
+        $exam = $item->exam;
+        $netsales = $item->perhitunganNetSales;
+
+        // Harga Exam
+        $examHarga = ($exam && isset($exam->harga_rupiah)) ? (float) $exam->harga_rupiah : 0.0;
+        $pax = (float) ($item->pax ?? 0);
+        $totalexam = $examHarga * $pax;
+
+        // Total Penjualan = harga_jual * pax
+        $hargaJual = (float) ($item->harga_jual ?? 0.0);
+        $totalPenjualan = $hargaJual * $pax;
+
+        if (is_null($netsales) || $netsales->isEmpty()) {
+            $grandNet = 0.0;
+        } else {
+            $grandNet =
+                (float) $netsales->sum('transportasi') +
+                (float) $netsales->sum('penginapan') +
+                (float) $netsales->sum('fresh_money') +
+                (float) $netsales->sum('cashback') +
+                (float) $netsales->sum('diskon') +
+                (float) $netsales->sum('entertaint') +
+                (float) $netsales->sum('souvenir');
+        }
+
+        $grandtotal = $totalPenjualan - ($grandNet + $totalexam);
+
+        return [
+            'id' => $item->id,
+            'sales_key' => $item->sales_key,
+            'nama_materi' => $item->materi?->nama_materi ?? '-',
+            'nama_perusahaan' => $item->perusahaan?->nama_perusahaan ?? '-',
+            'pax' => $pax,
+            'harga' => $hargaJual,
+            'total_penjualan' => $totalPenjualan,
+            'exam' => $examHarga,
+            'total_exam' => $totalexam,
+            'netsales' => $grandNet,
+            'grandtotal' => $grandtotal,
+            'tanggal_awal' => $item->tanggal_awal,
+            'tanggal_akhir' => $item->tanggal_akhir,
+            'metode_kelas' => $item->metode_kelas,
+            'invoice' => $item->invoice,
+        ];
+    }
+
+    public function downloadWinExcel(Request $request)
+    {
+        $query = $this->buildBaseQuery($request, '0');
+        $rawData = $query->get();
+
+        $processedData = $rawData->map(function ($item) {
+            return $this->calculateReportItem($item);
+        });
+
+        return Excel::download(
+            new LaporanPenjualanExport($processedData),
+            'laporan-win-' . now()->format('Y-m-d') . '.xlsx'
+        );
+    }
+
+    public function downloadLostExcel(Request $request)
+    {
+        $query = $this->buildBaseQuery($request, '2');
+        $rawData = $query->get();
+
+        $processedData = $rawData->map(function ($item) {
+            return $this->calculateReportItem($item);
+        });
+
+        return Excel::download(
+            new LaporanPenjualanExport($processedData),
+            'laporan-lost-' . now()->format('Y-m-d') . '.xlsx'
+        );
+    }
+
+
+    private function fetchDataForReport(Request $request, $status)
+    {
+        $status = $status; 
+        $query = RKM::with(['exam', 'perhitunganNetSales.peserta', 'materi', 'perusahaan', 'invoice'])
+            ->orderByDesc('tanggal_awal')
+            ->where('status', $status);
+
+        if ($request->filled('sales_key')) {
+            $query->where('sales_key', $request->sales_key);
+        }
+        if ($request->filled('materi_key')) {
+            $query->where('materi_key', $request->materi_key);
+        }
+        if ($request->filled('tanggal_awal_mulai') && $request->filled('tanggal_awal_akhir')) {
+            $query->whereBetween('tanggal_awal', [$request->tanggal_awal_mulai, $request->tanggal_awal_akhir]);
+        } elseif ($request->filled('tanggal_awal_mulai')) {
+            $query->whereDate('tanggal_awal', '>=', $request->tanggal_awal_mulai);
+        } elseif ($request->filled('tanggal_awal_akhir')) {
+            $query->whereDate('tanggal_awal', '<=', $request->tanggal_awal_akhir);
+        }
+        if ($request->filled('triwulan')) {
+            $triwulanMapping = ['1' => [1, 2, 3], '2' => [4, 5, 6], '3' => [7, 8, 9], '4' => [10, 11, 12]];
+            if (array_key_exists($request->triwulan, $triwulanMapping)) {
+                $query->whereIn(DB::raw('MONTH(tanggal_awal)'), $triwulanMapping[$request->triwulan]);
+            }
+        } elseif ($request->filled('bulan')) {
+            $query->whereMonth('tanggal_awal', $request->bulan);
+        }
+        if ($request->filled('minggu')) {
+            $query->whereRaw('WEEK(tanggal_awal, 1) = ?', [$request->minggu]);
+        }
+        if ($request->filled('tahun')) {
+            $query->whereYear('tanggal_awal', $request->tahun);
+        }
+
+        $totalHargaJualKeseluruhan = 0;
+        $totalNetSalesKeseluruhan = 0;
+        $totalExamKeseluruhan = 0;
+        $totalGrandKeseluruhan = 0;
+
+        $data = $query->get()->map(function ($item) use (&$totalHargaJualKeseluruhan, &$totalNetSalesKeseluruhan, &$totalExamKeseluruhan, &$totalGrandKeseluruhan) {
+            // ... (sama seperti di indexJson Anda)
+            $exam = $item->exam;
+            $netsales = $item->perhitunganNetSales;
+            $examHarga = ($exam && isset($exam->harga_rupiah)) ? (float) $exam->harga_rupiah : 0.0;
+            $pax = (float) ($item->pax ?? 0);
+            $totalexam = $examHarga * $pax;
+
+            if (is_null($netsales)) {
+                $sumGrand = 0.0;
+            } else {
+                $sumGrand =
+                    (float) $netsales->sum('transportasi') +
+                    (float) $netsales->sum('penginapan') +
+                    (float) $netsales->sum('fresh_money') +
+                    (float) $netsales->sum('cashback') +
+                    (float) $netsales->sum('diskon') +
+                    (float) $netsales->sum('entertaint') +
+                    (float) $netsales->sum('souvenir');
+            }
+
+            $hargaJual = (float) ($item->harga_jual ?? 0.0);
+            $totalPenjualan = $hargaJual * $pax;
+            $grandtotal = $totalPenjualan - ($sumGrand + $totalexam);
+
+            $totalHargaJualKeseluruhan += $hargaJual;
+            $totalNetSalesKeseluruhan += $sumGrand;
+            $totalExamKeseluruhan += $totalexam;
+            $totalGrandKeseluruhan += $grandtotal;
+
+            return [
+                'id' => $item->id,
+                'sales_key' => $item->sales_key,
+                'nama_materi' => $item->materi?->nama_materi ?? '-',
+                'nama_perusahaan' => $item->perusahaan?->nama_perusahaan ?? '-',
+                'pax' => $pax,
+                'harga' => $hargaJual,
+                'total_penjualan' => $totalPenjualan,
+                'exam' => $examHarga,
+                'total_exam' => $totalexam,
+                'netsales' => $sumGrand,
+                'grandtotal' => $grandtotal,
+                'tanggal_awal' => $item->tanggal_awal,
+                'tanggal_akhir' => $item->tanggal_akhir,
+            ];
+        });
+
+        $summary = (object) [
+            'total_harga_jual' => $totalHargaJualKeseluruhan,
+            'total_netsales' => $totalNetSalesKeseluruhan,
+            'total_exam' => $totalExamKeseluruhan,
+            'total_grand' => $totalGrandKeseluruhan,
+        ];
+
+        return [$data, $summary];
+    }
+
+    public function downloadPdfWin(Request $request)
+    {
+        [$data, $summary] = $this->fetchDataForReport($request, '0');
+        $title = 'Laporan Penjualan Win';
+        $isWin = true;
+
+        $pdf = Pdf::loadView('exports.laporanPenjualanPdf', compact('data', 'summary', 'title', 'isWin'))
+            ->setPaper('A4', 'landscape');
+
+        return $pdf->download('laporan-win-' . now()->format('Y-m-d') . '.pdf');
+    }
+
+    public function downloadPdfLost(Request $request)
+    {
+        [$data, $summary] = $this->fetchDataForReport($request, '2');
+        $title = 'Laporan Penjualan Lost';
+        $isWin = false;
+
+        $pdf = Pdf::loadView('exports.laporanPenjualanPdf', compact('data', 'summary', 'title', 'isWin'))
+            ->setPaper('A4', 'landscape');
+
+        return $pdf->download('laporan-lost-' . now()->format('Y-m-d') . '.pdf');
     }
 }
