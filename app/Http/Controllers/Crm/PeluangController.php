@@ -740,10 +740,8 @@ class PeluangController extends Controller
 
                 $url = url('paymentAdvance.index');
                 $path = request()->path();
-
-                Notification::send($user, new CommentNotification($dummyComment, $url, $path, $user->id));
-            } else {
-                Log::warning("[PA] No user found for SPV");
+                $receiverUsers = $user->id;
+                Notification::send($user, new CommentNotification($dummyComment, $url, $path, $receiverUsers));
             }
         } else {
             Log::warning("[PA] No SPV Sales found");

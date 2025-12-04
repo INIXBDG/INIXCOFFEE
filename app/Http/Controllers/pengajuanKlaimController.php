@@ -210,7 +210,8 @@ class pengajuanKlaimController extends Controller
 
             $path = '/pengajuan-klaim?tabel=no_record';
             foreach ($users as $user) {
-                NotificationFacade::send($user, new noRecordExchangeNotification($notificationData, $path));
+                $receiverId = $user->id;
+                NotificationFacade::send($user, new noRecordExchangeNotification($notificationData, $path, $receiverId));
             }
 
             // Redirect sesuai jabatan
@@ -367,7 +368,8 @@ class pengajuanKlaimController extends Controller
         $path = '/pengajuan-klaim?tabel=cancel_leave';
 
         foreach ($users as $user) {
-            NotificationFacade::send($user, new cancelLeaveExchangeNotification($notificationData, $path));
+            $receiverId = $user->id;
+            NotificationFacade::send($user, new cancelLeaveExchangeNotification($notificationData, $path, $receiverId));
         }
 
         return redirect('/pengajuan-klaim?tabel=cancel_leave')->with('success', 'Berhasil mengajukan');
@@ -483,7 +485,8 @@ class pengajuanKlaimController extends Controller
         $path = '/pengajuan-klaim?tabel=schema_work';
 
         foreach ($users as $user) {
-            NotificationFacade::send($user, new schemeWorkExchangeNotification($notificationData, $path));
+            $receiverId = $user->id;
+            NotificationFacade::send($user, new schemeWorkExchangeNotification($notificationData, $path, $receiverId));
         }
 
         return redirect('/pengajuan-klaim?tabel=schema_work')->with('success', 'Berhasil mengajukan');
@@ -660,7 +663,8 @@ class pengajuanKlaimController extends Controller
 
                     $path = 'pengajuan-klaim?tabel=no_record';
                     foreach ($users as $user) {
-                        NotificationFacade::send($user, new noRecordExchangeNotification($notificationData, $path));
+                        $receiverId = $user->id;
+                        NotificationFacade::send($user, new noRecordExchangeNotification($notificationData, $path, $receiverId));
                     }
                     break;
 
@@ -746,7 +750,8 @@ class pengajuanKlaimController extends Controller
                         $path = '/pengajuan-klaim?tabel=schema_work';
 
                         foreach ($users as $user) {
-                            NotificationFacade::send($user, new schemeWorkExchangeNotification($notificationData, $path));
+                            $receiverId = $user->id;
+                            NotificationFacade::send($user, new schemeWorkExchangeNotification($notificationData, $path, $receiverId));
                         }
                     break;
 
@@ -818,7 +823,8 @@ class pengajuanKlaimController extends Controller
                         $path = '/pengajuan-klaim?tabel=cancel_leave';
 
                         foreach ($users as $user) {
-                            NotificationFacade::send($user, new cancelLeaveExchangeNotification($notificationData, $path));
+                            $receiverId = $user->id;
+                            NotificationFacade::send($user, new cancelLeaveExchangeNotification($notificationData, $path, $receiverId));
                         }
                     break;
 
@@ -909,7 +915,8 @@ class pengajuanKlaimController extends Controller
 
                 $path = 'pengajuan-klaim?tabel=no_record';
                 foreach ($users as $user) {
-                    NotificationFacade::send($user, new noRecordExchangeNotification($notificationData, $path));
+                    $receiverId = $user->id;
+                    NotificationFacade::send($user, new noRecordExchangeNotification($notificationData, $path, $receiverId));
                 }
             break;
             

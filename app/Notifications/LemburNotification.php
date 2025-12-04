@@ -3,51 +3,74 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 
-class LemburNotification extends Notification
+class LemburNotification extends Notification implements ShouldBroadcast
 {
-    use Queueable;
+    use Queueable, InteractsWithSockets;
 
     protected $data;
     protected $path;
-    // protected $to;
     protected $type;
+    protected $receiverId;
 
-    public function __construct($data, $path, $type)
+    public function __construct($data, $path, $type, $receiverId)
     {
         $this->data = $data;
         $this->path = $path;
-        // $this->to = $to;
         $this->type = $type;
+        $this->receiverId = $receiverId;
     }
 
-    public function via($notifiable)
+    public function via($notifiable): array
     {
-        return ['database']; // Menggunakan 'database' dan 'broadcast'
+        return ['database', 'broadcast'];
     }
 
-    /**
-     * Get the array representation of the notification.
-     *
-     * @return array<string, mixed>
-     */
-    public function toArray(object $notifiable): array
+    public function broadcastOn()
     {
-        // Determine the type based on approval statuses
+        return new PrivateChannel('private-notifikasi.' . $this->receiverId);
+    }
 
-        return [
-            'user' => auth()->user()->username,
+    public function broadcastAs(): string
+    {
+        return 'notifikasi-event';
+    }
+
+    public function toBroadcast($notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage([
+            'user' => auth()->user()?->username ?? 'System',
             'message' => [
-                'tipe' => $this->type,  // Use the dynamically determined $type
-                'id_karyawan' => $this->data['id_karyawan'],
+                'tipe'           => $this->type,
+                'nama_lengkap'   => $this->data['nama_lengkap'] ?? auth()->user()?->karyawan?->nama_lengkap,
                 'tanggal_lembur' => $this->data['tanggal_lembur'],
-                'waktu_lembur' => $this->data['waktu_lembur'],
-                'uraian_tugas' => $this->data['uraian_tugas'],
+                'waktu_lembur'   => $this->data['waktu_lembur'],
+                'uraian_tugas'   => $this->data['uraian_tugas'] ?? '-',
+                'durasi'         => $this->data['durasi'] ?? null,
             ],
-            'path' => $this->path,
+            'path'   => $this->path ?? '#',
+            'status' => 'unread',
+        ]);
+    }
+
+    public function toArray($notifiable): array
+    {
+        return [
+            'user' => auth()->user()?->username ?? 'System',
+            'message' => [
+                'tipe'           => $this->type,
+                'nama_lengkap'   => $this->data['nama_lengkap'] ?? auth()->user()?->karyawan?->nama_lengkap,
+                'tanggal_lembur' => $this->data['tanggal_lembur'],
+                'waktu_lembur'   => $this->data['waktu_lembur'],
+                'uraian_tugas'   => $this->data['uraian_tugas'] ?? '-',
+                'durasi'         => $this->data['durasi'] ?? null,
+            ],
+            'path'   => $this->path ?? '#',
             'status' => 'unread',
         ];
     }

@@ -13,7 +13,6 @@ class NotifikasiEvent implements ShouldBroadcast
 
     public $user;
     public $message;
-
     public function __construct($user, $message)
     {
         $this->user = $user;

@@ -3,59 +3,80 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 
-class ApprovalCutiNotification extends Notification
+class ApprovalCutiNotification extends Notification implements ShouldBroadcast
 {
-    use Queueable;
+    use Queueable, InteractsWithSockets;
 
     protected $data;
     protected $path;
     protected $to;
+    protected $receiverId;
 
-    public function __construct($data, $path, $to)
+    public function __construct($data, $path, $to, $receiverId)
     {
         $this->data = $data;
         $this->path = $path;
-        $this->to = $to;
+        $this->to   = $to;
+        $this->receiverId = $receiverId;
     }
 
-    public function via($notifiable)
+    public function via($notifiable): array
     {
-        return ['database', 'broadcast']; // Menggunakan 'database' dan 'broadcast'
+        return ['database', 'broadcast'];
     }
 
-    /**
-     * Get the array representation of the notification.
-     *
-     * @return array<string, mixed>
-     */
-    public function toArray(object $notifiable): array
+    public function broadcastOn()
     {
-        // Determine the type based on approval statuses
-        $type = '';
+        return new PrivateChannel('notifikasi.' . $this->receiverId);
+    }
 
-        if ($this->data['approval_manager'] == 1) {
-            $type = 'Menyetujui';
-        } elseif ($this->data['approval_manager'] == 2) {
-            $type = 'Menolak';
-        }
+    public function broadcastAs(): string
+    {
+        return 'notifikasi-event';
+    }
+
+    public function toBroadcast($notifiable): BroadcastMessage
+    {
+        $type = $this->data['approval_manager'] == 1 ? 'Menyetujui Cuti' : 'Menolak Cuti';
+
+        return new BroadcastMessage([
+            'user' => auth()->user()?->username ?? 'System',
+            'message' => [
+                'tipe'             => $type,
+                'nama_lengkap'     => $this->to,
+                'tanggal_awal'     => $this->data['tanggal_awal'],
+                'tanggal_akhir'    => $this->data['tanggal_akhir'],
+                'jenis_cuti'       => $this->data['tipe'],
+                'durasi'           => $this->data['durasi'] . ' hari',
+                'alasan_manager'   => $this->data['alasan_manager'] ?? '-',
+            ],
+            'path'   => $this->path ?? '#',
+            'status' => 'unread',
+        ]);
+    }
+
+    public function toArray($notifiable): array
+    {
+        $type = $this->data['approval_manager'] == 1 ? 'Menyetujui Cuti' : 'Menolak Cuti';
 
         return [
-            'user' => auth()->user()->username,
+            'user' => auth()->user()?->username ?? 'System',
             'message' => [
-                'tipe' => $type,  // Use the dynamically determined $type
-                'nama_lengkap' => $this->to,
-                'tanggal_awal' => $this->data['tanggal_awal'],
-                'tanggal_akhir' => $this->data['tanggal_akhir'],
-                'jenis_cuti' => $this->data['tipe'],
-                'durasi' => $this->data['durasi'],
-                'approval_manager' => $this->data['approval_manager'],
-                'alasan_manager' => $this->data['alasan_manager'],
+                'tipe'             => $type,
+                'nama_lengkap'     => $this->to,
+                'tanggal_awal'     => $this->data['tanggal_awal'],
+                'tanggal_akhir'    => $this->data['tanggal_akhir'],
+                'jenis_cuti'       => $this->data['tipe'],
+                'durasi'           => $this->data['durasi'] . ' hari',
+                'alasan_manager'   => $this->data['alasan_manager'] ?? '-',
             ],
-            'path' => $this->path,
+            'path'   => $this->path ?? '#',
             'status' => 'unread',
         ];
     }

@@ -3,56 +3,75 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 
-class ApprovalSouvenirNotification extends Notification
+class ApprovalSouvenirNotification extends Notification implements ShouldBroadcast
 {
-    use Queueable;
+    use Queueable, InteractsWithSockets;
 
     protected $data;
     protected $path;
     protected $to;
     protected $type;
+    protected $receiverId;
 
-    /**
-     * Create a new notification instance.
-     */
-    public function __construct($data, $path, $to, $type)
+    public function __construct($data, $path, $to, $type, $receiverId)
     {
         $this->data = $data;
         $this->path = $path;
-        $this->to = $to;
+        $this->to   = $to;
         $this->type = $type;
+        $this->receiverId = $receiverId;
     }
 
-    /**
-     * Get the notification's delivery channels.
-     *
-     * @return array<int, string>
-     */
-    public function via(object $notifiable): array
+    public function via($notifiable): array
     {
-        return ['database', 'broadcast']; // Menggunakan 'database' dan 'broadcast'
+        return ['database', 'broadcast'];
     }
 
     /**
-     * Get the array representation of the notification.
-     *
-     * @return array<string, mixed>
+     * @var \App\Models\User $notifiable
      */
-    public function toArray(object $notifiable): array
+    public function broadcastOn()
+    {
+        return new PrivateChannel('notifikasi.' . $this->receiverId);
+    }
+
+    public function broadcastAs()
+    {
+        return 'notifikasi-event';
+    }
+
+    public function toBroadcast($notifiable)
+    {
+        return new BroadcastMessage([
+            'user' => auth()->user()?->username ?? 'System',
+            'message' => [
+                'tipe'         => $this->type,
+                'nama_lengkap' => $this->to,
+                'tanggal'      => $this->data['tanggal'],
+                'status'       => $this->data['status'],
+            ],
+            'path'   => $this->path,
+            'status' => 'unread',
+        ]);
+    }
+
+    public function toArray($notifiable): array
     {
         return [
-            'user' => auth()->user()->username,
+            'user' => auth()->user()?->username ?? 'System',
             'message' => [
-                'tipe' => $this->type,  // cth: 'Pengajuan Souvenir Disetujui'
-                'nama_lengkap' => $this->to, // cth: Nama Customer Care
-                'tanggal' => $this->data['tanggal'],
-                'status' => $this->data['status'], // cth: 'Disetujui GM, Menunggu Pencairan Finance'
+                'tipe'         => $this->type,
+                'nama_lengkap' => $this->to,
+                'tanggal'      => $this->data['tanggal'],
+                'status'       => $this->data['status'],
             ],
-            'path' => $this->path, // cth: '/pengajuansouvenir'
+            'path'   => $this->path,
             'status' => 'unread',
         ];
     }

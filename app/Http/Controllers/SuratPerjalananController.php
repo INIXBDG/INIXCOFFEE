@@ -287,7 +287,8 @@ class SuratPerjalananController extends Controller
         $path = '/suratperjalanan';
 
         foreach ($users as $user) {
-            NotificationFacade::send($user, new PengajuanSPJNotification($suratPerjalanan, $path, $type));
+            $receiverId = $user->id;
+            NotificationFacade::send($user, new PengajuanSPJNotification($suratPerjalanan, $path, $type, $receiverId));
         }
 
         return redirect()->route('suratperjalanan.index')->with('success', 'Surat perjalanan berhasil dibuat.');
@@ -384,7 +385,8 @@ class SuratPerjalananController extends Controller
         $path = '/suratperjalanan';
 
         foreach ($users as $user) {
-            NotificationFacade::send($user, new ApprovalSPJNotification($data, $path, $to));
+            $receiverId = $user->id;
+            NotificationFacade::send($user, new ApprovalSPJNotification($data, $path, $to, $receiverId));
         }
         return redirect()->route('suratperjalanan.index')->with('success', 'Surat perjalanan berhasil diperbarui.');
     }
@@ -428,7 +430,8 @@ class SuratPerjalananController extends Controller
         $path = '/suratperjalanan';
 
         foreach ($users as $user) {
-            NotificationFacade::send($user, new ApprovalSPJNotification($data, $path, $to));
+            $receiverId = $user->id;
+            NotificationFacade::send($user, new ApprovalSPJNotification($data, $path, $to, $receiverId));
         }
 
         return redirect()->route('suratperjalanan.index')->with('success', 'Surat perjalanan berhasil disetujui.');

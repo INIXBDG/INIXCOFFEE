@@ -211,7 +211,8 @@ class ExpenseHubController extends Controller
 
             foreach ($usersToNotify as $user) {
                 if ($user) {
-                    NotificationFacade::send($user, new ExpanseHubNotification($data, $path, $type));
+                    $receiverId = $user->id;
+                    NotificationFacade::send($user, new ExpanseHubNotification($data, $path, $type, $receiverId));
                 }
             }
         }
@@ -321,7 +322,8 @@ class ExpenseHubController extends Controller
         $path = '/expense-hub/index';
 
         foreach ($userList as $user) {
-            NotificationFacade::send($user, new ExpanseHubNotification($data, $path, $type));
+            $receiverId = $user->id;
+            NotificationFacade::send($user, new ExpanseHubNotification($data, $path, $type, $receiverId));
         }
 
         return redirect()->route('expensehub.index')->with('success', 'berhasil mengajukan!');

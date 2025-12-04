@@ -343,7 +343,8 @@ class PengajuanSouvenirController extends Controller
             $uniqueUsers = array_filter(array_unique($usersToNotify));
             foreach ($uniqueUsers as $user) {
                 if($user) {
-                    NotificationFacade::send($user, new ApprovalSouvenirNotification($notifData, $path, $to, $notifType));
+                    $receiverId = $user->id;
+                    NotificationFacade::send($user, new ApprovalSouvenirNotification($notifData, $path, $to, $notifType, $receiverId));
                 }
             }
         }
