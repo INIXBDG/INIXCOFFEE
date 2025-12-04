@@ -21,12 +21,16 @@ class apiController extends Controller
 {
     public function getFeedbacks()
     {
-        $feedbacks = Nilaifeedback::with('rkm')->get();
+        $feedbacks = Nilaifeedback::with('rkm')->whereYear('created_at', 2025)->get();
 
         // $groupedFeedbacks = $feedbacks->groupBy('id_rkm');
         $groupedFeedbacks = $feedbacks->groupBy(function ($feedback) {
-            return $feedback->rkm->materi->nama_materi . '/' . $feedback->rkm->tanggal_awal;
-        });
+			return
+				$feedback->rkm->materi->nama_materi . '/' .
+				$feedback->rkm->tanggal_awal . '/' .
+				$feedback->rkm->instruktur_key;
+		});
+
         // return $groupedFeedbacks;
         $averageFeedbacks = [];
 
@@ -164,11 +168,11 @@ class apiController extends Controller
             'data' => $materi
         ]);
     }
-
+    
     public function getMateriInix()
     {
         $materi = Materi::whereIn('tipe_materi', ['Normal', 'Webinar/Workshop'])->get();
-
+        
         $groupMateri = $materi->groupBy(function ($item) {
             return $item->kategori_materi;
         })->map(function ($group) {
@@ -198,7 +202,7 @@ class apiController extends Controller
     public function getMateriInixByID($id)
     {
         $materi = Materi::findOrFail($id);
-
+        
         $materiData = [
             'id' => $materi->id,
             'nama_materi' => $materi->nama_materi,
@@ -208,7 +212,7 @@ class apiController extends Controller
             'durasi' => $materi->durasi,
             'status' => $materi->status ? $materi->status : 'Nonaktif',
             'deskripsi' => 'test',
-            'harga' => '5000000',
+            'harga' => '5000000', 
             'created_at' => $materi->created_at,
             'updated_at' => $materi->updated_at,
         ];
@@ -216,7 +220,7 @@ class apiController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Detail Materi',
-            'data' => $materiData
+            'data' => $materiData        
         ]);
     }
 
@@ -344,7 +348,7 @@ class apiController extends Controller
 
         // Kelompokkan berdasarkan bulan
         $groupedByMonth = $result->groupBy('bulan')->sortKeys();
-
+    
 
         return response()->json([
             'success' => true,
@@ -353,7 +357,7 @@ class apiController extends Controller
         ]);
     }
 
-
+    
     public function getInventaris(Request $request)
     {
         $data = Inventaris::all();
