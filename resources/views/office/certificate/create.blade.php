@@ -22,7 +22,7 @@
                         <div class="mb-4">
                             <label class="text-muted small text-uppercase mb-2">Materi</label>
                             <div class="d-flex align-items-center">
-                                <div class="avatar avatar-sm bg-primary bg-opacity-15 rounded-circle me-3">
+                                <div class="avatar avatar-sm rounded-circle me-3">
                                     <i class="bx bx-book-open text-primary"></i>
                                 </div>
                                 <div>
@@ -35,7 +35,7 @@
                         <div class="mb-4">
                             <label class="text-muted small text-uppercase mb-2">Perusahaan</label>
                             <div class="d-flex align-items-center">
-                                <div class="avatar avatar-sm bg-info bg-opacity-15 rounded-circle me-3">
+                                <div class="avatar avatar-sm rounded-circle me-3">
                                     <i class="bx bx-buildings text-info"></i>
                                 </div>
                                 <p class="mb-0 fw-semibold text-dark">{{ $rkm->perusahaan->nama_perusahaan ?? '-' }}</p>
@@ -62,7 +62,7 @@
                         <div class="mb-4">
                             <label class="text-muted small text-uppercase mb-2">Peserta</label>
                             <div class="d-flex align-items-center">
-                                <div class="avatar avatar-sm bg-success bg-opacity-15 rounded-circle me-3">
+                                <div class="avatar avatar-sm rounded-circle me-3">
                                     <span class="text-success fw-bold">
                                         {{ strtoupper(substr($peserta->nama, 0, 1)) }}
                                     </span>
@@ -70,21 +70,6 @@
                                 <div>
                                     <p class="mb-0 fw-semibold text-dark">{{ $peserta->nama }}</p>
                                 </div>
-                            </div>
-                        </div>
-
-                        <div class="mb-0">
-                            <label class="text-muted small text-uppercase mb-2">Status RKM</label>
-                            <div>
-                                @if($rkm->status == '0')
-                                <span class="badge bg-warning-subtle text-warning px-3 py-2 w-100">
-                                    <i class="bx bx-time-five me-1"></i>Belum Selesai
-                                </span>
-                                @else
-                                <span class="badge bg-success-subtle text-success px-3 py-2 w-100">
-                                    <i class="bx bx-check-circle me-1"></i>Selesai
-                                </span>
-                                @endif
                             </div>
                         </div>
                     </div>
@@ -182,7 +167,7 @@
                                     <div class="input-group">
                                         <span class="input-group-text bg-light border-end-0">
                                             <i class="bx bx-calendar text-primary"></i>
-                                        </span>
+                                        </span> 
                                         <input type="date" 
                                                name="tanggal_awal" 
                                                class="form-control border-start-0 @error('tanggal_awal') is-invalid @enderror" 

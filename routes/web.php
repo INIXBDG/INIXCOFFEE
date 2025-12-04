@@ -41,6 +41,7 @@ use App\Http\Controllers\KanbanController;
 use App\Http\Controllers\DailyActivityController;
 use App\Http\Controllers\office\OfficeController;
 use App\Http\Controllers\Office\CertificateController;
+use App\Http\Controllers\office\ModulController;
 use App\Http\Controllers\OutstandingController;
 use App\Http\Controllers\office\vendorOfficeController;
 
@@ -254,9 +255,9 @@ Route::get('getTotalMengajarPerbulan/{year}/{month}', [App\Http\Controllers\Char
 Route::get('getTotalMateriPerbulan/{year}/{month}', [App\Http\Controllers\ChartController::class, 'getTotalMateriPerbulan'])->name('getTotalMateriPerbulan');
 Route::get('getTotalMengajarPerJenisMateriPerTahun/{year}/{month}', [App\Http\Controllers\ChartController::class, 'getTotalMengajarPerJenisMateriPerTahun'])->name('getTotalMengajarPerJenisMateriPerTahun');
 Route::get('getAbsenPerbulan/{year}/{month}', [App\Http\Controllers\ChartController::class, 'getAbsenPerbulan'])->name('getAbsenPerbulan');
-Route::get('/getPengajuanSouvenir/{month}/{year}',[App\Http\Controllers\PengajuanSouvenirController::class, 'getPengajuanSouvenir'])->name('getPengajuanSouvenir');
-Route::put('/pengajuansouvenir/{id}/updateitems',[App\Http\Controllers\PengajuanSouvenirController::class, 'updateItems'])->name('pengajuansouvenir.updateItems');
-Route::put('/pengajuansouvenir/{id}/upload-invoice',[App\Http\Controllers\PengajuanSouvenirController::class, 'updateInvoice'])->name('pengajuansouvenir.updateInvoice');
+Route::get('/getPengajuanSouvenir/{month}/{year}', [App\Http\Controllers\PengajuanSouvenirController::class, 'getPengajuanSouvenir'])->name('getPengajuanSouvenir');
+Route::put('/pengajuansouvenir/{id}/updateitems', [App\Http\Controllers\PengajuanSouvenirController::class, 'updateItems'])->name('pengajuansouvenir.updateItems');
+Route::put('/pengajuansouvenir/{id}/upload-invoice', [App\Http\Controllers\PengajuanSouvenirController::class, 'updateInvoice'])->name('pengajuansouvenir.updateInvoice');
 Route::get('/pengajuansouvenir/{id}/export-pdf', [App\Http\Controllers\PengajuanSouvenirController::class, 'exportPDF'])->name('pengajuansouvenir.exportpdf');
 
 Route::get('/create-only', [App\Http\Controllers\examController::class, 'createOnly'])->name('exam.createOnly');
@@ -699,10 +700,11 @@ Route::prefix('office')->name('office.')->middleware(['auth'])->group(function (
         Route::get('/download-by-peserta/{rkm_id}/{peserta_id}', [CertificateController::class, 'downloadByPeserta'])->name('downloadByPeserta');
         Route::get('/preview/{id}', [CertificateController::class, 'preview'])->name('preview');
     });
+
     Route::prefix('vendor')->name('vendor.')->group(function () {
         Route::resource('/souvenir', vendorOfficeController::class);
         Route::resource('/makansiang', vendorOfficeController::class);
-        Route::resource('/coffeebreak',vendorOfficeController::class);
+        Route::resource('/coffeebreak', vendorOfficeController::class);
         Route::resource('/bengkel', vendorOfficeController::class);
     });
 
@@ -712,9 +714,25 @@ Route::prefix('office')->name('office.')->middleware(['auth'])->group(function (
         Route::resource('/coffeebreak', vendorOfficeController::class);
         Route::resource('/bengkel', vendorOfficeController::class);
     });
+
+
+    Route::prefix('modul')->group(function () {
+        Route::get('/index', [ModulController::class, 'indexNomor'])->name('modul.index');
+        Route::post('/', [ModulController::class, 'storeNomor'])->name('modul.store.nomor');
+        Route::put('/update/nomor/{id}', [ModulController::class, 'updateNomor'])->name('modul.update.nomor');
+        Route::delete('/delete/nomor/{id}', [ModulController::class, 'deleteNomor'])->name('modul.delete.nomor');
+
+        Route::get('/detail/{id}', [ModulController::class, 'indexModul'])->name('modul.detail');
+        Route::post('/store', [ModulController::class, 'storeModul'])->name('modul.store');
+        Route::put('/update/{id}', [ModulController::class, 'updateModul'])->name('modul.update');
+        Route::delete('delete/{id}', [ModulController::class, 'deleteModul'])->name('modul.delete');
+
+        Route::post('/store/peserta', [ModulController::class, 'storePeserta'])->name('modul.store.peserta');
+        Route::put('/update/peserta/{id}', [ModulController::class, 'updatePeserta'])->name('modul.update.peserta');
+        Route::delete('/delete/peserta/{id}', [ModulController::class, 'deletePeserta'])->name('modul.delete.peserta');
+    });
 });
 
-// catering
 Route::get('/catering/index', [CateringController::class, 'index'])->name('catering.index');
 Route::get('/catering/get', [CateringController::class, 'get'])->name('catering.get');
 Route::get('/catering/create', [CateringController::class, 'create'])->name('catering.create');

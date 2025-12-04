@@ -42,57 +42,62 @@
             </a>
         </li>
 
-        <!-- Tambahkan menu lain di sini -->
-            <li class="menu-header small text-uppercase">
-                <span class="menu-header-text">Vendor</span>
-            </li>
+        <li class="menu-item {{ request()->routeIs('catering.index') ? 'active open' : '' }}">
+            <a href="{{ route('catering.index') }}" class="menu-link" target="_blank">
+                <i class="menu-icon tf-icons bx bx-dish"></i>
+                <div class="text-truncate" data-i18n="contact">Catering</div>
+            </a>
+        </li>
 
-            <!-- Makan Siang -->
-            <li class="menu-item {{ request()->routeIs('office.vendor.makansiang.index') ? 'active open' : '' }}">
-                <a href="{{ route('office.vendor.makansiang.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-dish"></i>
-                    <div class="text-truncate" data-i18n="contact">Makan Siang</div>
-                </a>
-            </li>
-            <!-- Coffee Break -->
-            <li class="menu-item {{ request()->routeIs('office.vendor.coffeebreak.index') ? 'active open' : '' }}">
-                <a href="{{ route('office.vendor.coffeebreak.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bxs-coffee"></i>
-                    <div class="text-truncate" data-i18n="contact">Coffee Break</div>
-                </a>
-            </li>
-            <!-- Bengkel -->
-            <li class="menu-item {{ request()->routeIs('office.vendor.bengkel.index') ? 'active open' : '' }}">
-                <a href="{{ route('office.vendor.bengkel.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-wrench"></i>
-                    <div class="text-truncate" data-i18n="contact">Bengkel</div>
-                </a>
-            </li>
+        <li class="menu-item {{ request()->routeIs('office.modul.index') ? 'active open' : '' }}">
+            <a href="{{ route('office.modul.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-cart"></i>
+                <div class="text-truncate" data-i18n="contact">Pemesanan Modul</div>
+            </a>
+        </li>
+
+        <li class="menu-header small text-uppercase">
+            <span class="menu-header-text">Vendor</span>
+        </li>
+
+        <!-- Makan Siang -->
+        <li class="menu-item {{ request()->routeIs('office.vendor.makansiang.index') ? 'active open' : '' }}">
+            <a href="{{ route('office.vendor.makansiang.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-dish"></i>
+                <div class="text-truncate" data-i18n="contact">Makan Siang</div>
+            </a>
+        </li>
+        <!-- Coffee Break -->
+        <li class="menu-item {{ request()->routeIs('office.vendor.coffeebreak.index') ? 'active open' : '' }}">
+            <a href="{{ route('office.vendor.coffeebreak.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bxs-coffee"></i>
+                <div class="text-truncate" data-i18n="contact">Coffee Break</div>
+            </a>
+        </li>
+        <!-- Bengkel -->
+        <li class="menu-item {{ request()->routeIs('office.vendor.bengkel.index') ? 'active open' : '' }}">
+            <a href="{{ route('office.vendor.bengkel.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-wrench"></i>
+                <div class="text-truncate" data-i18n="contact">Bengkel</div>
+            </a>
+        </li>
 
         <li class="menu-header small text-uppercase">
             <span class="menu-header-text">Souvenir</span>
         </li>
-            <li class="menu-item {{ request()->routeIs('pengajuansouvenir.index') ? 'active open' : '' }}">
-                <a href="{{ route('pengajuansouvenir.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bxs-gift"></i>
-                    <div class="text-truncate" data-i18n="contact">Pengajuan Souvenir</div>
-                </a>
-            </li>
+        <li class="menu-item {{ request()->routeIs('pengajuansouvenir.index') ? 'active open' : '' }}">
+            <a href="{{ route('pengajuansouvenir.index') }}" class="menu-link" target="_blank">
+                <i class="menu-icon tf-icons bx bxs-gift"></i>
+                <div class="text-truncate" data-i18n="contact">Pengajuan Souvenir</div>
+            </a>
+        </li>
 
-            <!-- Souvenir -->
-            <li class="menu-item {{ request()->routeIs('office.vendor.souvenir.index') ? 'active open' : '' }}">
-                <a href="{{ route('office.vendor.souvenir.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-donate-heart"></i>
-                    <div class="text-truncate" data-i18n="contact">Souvenir</div>
-                </a>
-            </li>
-
-            <li class="menu-item {{ request()->routeIs('office.vendor.souvenir.index') ? 'active open' : '' }}">
-                <a href="{{ route('office.vendor.souvenir.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-spreadsheet"></i>
-                    <div class="text-truncate" data-i18n="contact">Rekap Souvenir</div>
-                </a>
-            </li>
+        <li class="menu-item {{ request()->routeIs('office.vendor.souvenir.index') ? 'active open' : '' }}">
+            <a href="{{ route('office.vendor.souvenir.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-donate-heart"></i>
+                <div class="text-truncate" data-i18n="contact">Souvenir</div>
+            </a>
+        </li>
 
     </ul>
 
@@ -104,4 +109,3 @@
         </a>
     </div>
 </aside>
-
