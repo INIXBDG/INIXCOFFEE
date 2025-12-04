@@ -14,156 +14,165 @@
             </div>
 
             {{-- Card 1: Table Payment Advance --}}
+
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="card-title mb-0">Data Payment Advance</h5>
                 </div>
 
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th width="5%" class="text-center">#</th>
+                                <th>Peserta</th>
+                                <th>Harga</th>
+                                <th>Transportasi</th>
+                                <th>Jenis Transportasi</th>
+                                <th>Akomodasi Peserta</th>
+                                <th>Meeting Room</th>
+                                <th>Akomodasi Sales & Instruktur</th>
+                                <th>Reimburse Transport</th>
+                                <th>Sewa Laptop</th>
+                                <th>Fresh Money</th>
+                                <th>Entertainment</th>
+                                <th>Deskripsi Entertainment</th>
+                                <th>Souvenir</th>
+                                <th>Cashback</th>
+                                <th>Tgl. PA</th>
+                                <th>Pembayaran</th>
+                                <th>Deskripsi Tambahan</th>
+                                <th width="10%" class="text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($pa as $item)
                                 <tr>
-                                    <th width="5%" class="text-center">#</th>
-                                    <th>Peserta</th>
-                                    <th>Transportasi</th>
-                                    <th>Penginapan</th>
-                                    <th>Cashback</th>
-                                    <th>Fresh Money</th>
-                                    <th>Entertainment</th>
-                                    <th>Souvenir</th>
-                                    <th>Deskripsi</th>
-                                    <th>Harga</th>
-                                    <th>Tgl. PA</th>
-                                    <th>Pembayaran</th>
-                                    <th width="10%" class="text-center">Aksi</th>
+                                    <td class="text-center">{{ $loop->iteration }}</td>
+                                    <td class="fw-medium">{{ $item->peserta->nama ?? '-' }}</td>
+                                    <td class="fw-bold text-success">
+                                        {{ $item->harga_penawaran ? 'Rp ' . number_format($item->harga_penawaran, 0, ',', '.') : '-' }}
+                                    </td>
+                                    <td>{{ $item->transportasi ? 'Rp ' . number_format($item->transportasi, 0, ',', '.') : '-' }}</td>
+                                    <td>{{ $item->jenis_transportasi ?? '-' }}</td>
+                                    <td>{{ $item->akomodasi_peserta ? 'Rp ' . number_format($item->akomodasi_peserta, 0, ',', '.') : '-' }}</td>
+                                    <td>{{ $item->penginapan_meeting_room ? 'Rp ' . number_format($item->penginapan_meeting_room, 0, ',', '.') : '-' }}</td>
+                                    <td>{{ $item->akomodasi_sales_instruktur ? 'Rp ' . number_format($item->akomodasi_sales_instruktur, 0, ',', '.') : '-' }}</td>
+                                    <td>{{ $item->reimburse_transport_sales_instruktur ? 'Rp ' . number_format($item->reimburse_transport_sales_instruktur, 0, ',', '.') : '-' }}</td>
+                                    <td>{{ $item->sewa_laptop ? 'Rp ' . number_format($item->sewa_laptop, 0, ',', '.') : '-' }}</td>
+                                    <td>{{ $item->fresh_money ? 'Rp ' . number_format($item->fresh_money, 0, ',', '.') : '-' }}</td>
+                                    <td>{{ $item->entertaint ? 'Rp ' . number_format($item->entertaint, 0, ',', '.') : '-' }}</td>
+                                    <td>{{ $item->deskripsi_entertaint ?? '-' }}</td>
+                                    <td>{{ $item->souvenir ? 'Rp ' . number_format($item->souvenir, 0, ',', '.') : '-' }}</td>
+                                    <td>{{ $item->cashback ? 'Rp ' . number_format($item->cashback, 0, ',', '.') : '-' }}</td>
+                                    <td>{{ $item->tgl_pa ? \Carbon\Carbon::parse($item->tgl_pa)->translatedFormat('d/m/Y') : '-' }}</td>
+                                    <td>
+                                        @if ($item->tipe_pembayaran)
+                                            <span class="badge bg-{{ $item->tipe_pembayaran === 'cash' ? 'success' : ($item->tipe_pembayaran === 'transfer' ? 'info' : 'warning') }}">
+                                                {{ ucfirst($item->tipe_pembayaran) }}
+                                            </span>
+                                        @else
+                                            <span class="text-muted">—</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if ($item->desc)
+                                            <small class="text-muted">
+                                                {{ Str::limit($item->desc, 50) }}
+                                                @if (strlen($item->desc) > 50)
+                                                    <a href="#" class="text-primary" data-bs-toggle="modal" data-bs-target="#deskripsiModal{{ $item->id }}">
+                                                        Lihat
+                                                    </a>
+                                                @endif
+                                            </small>
+                                        @else
+                                            <span class="text-muted">—</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-sm btn-primary btn-edit"
+                                            data-id="{{ $item->id }}"
+                                            data-peserta_id="{{ $item->peserta->id ?? '' }}"
+                                            data-peserta_nama="{{ $item->peserta->nama ?? '-' }}"
+                                            data-transportasi="{{ $item->transportasi }}"
+                                            data-penginapan="{{ $item->penginapan_meeting_room }}"
+                                            data-cashback="{{ $item->cashback }}"
+                                            data-fresh_money="{{ $item->fresh_money }}"
+                                            data-entertaint="{{ $item->entertaint }}"
+                                            data-souvenir="{{ $item->souvenir }}"
+                                            data-harga_penawaran="{{ $item->harga_penawaran }}"
+                                            data-tgl_pa="{{ $item->tgl_pa }}"
+                                            data-tipe_pembayaran="{{ $item->tipe_pembayaran }}"
+                                            data-deskripsi="{{ $item->desc }}" {{ $canEdit ? '' : 'disabled' }}>
+                                            Edit
+                                        </button>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                @forelse ($pa as $item)
-                                    <tr>
-                                        <td class="text-center">{{ $loop->iteration }}</td>
-                                        <td class="fw-medium">{{ $item->peserta->nama ?? '-' }}</td>
-                                        <td>{{ $item->transportasi ? 'Rp ' . number_format($item->transportasi, 0, ',', '.') : '-' }}
-                                        </td>
-                                        <td>{{ $item->penginapan ? 'Rp ' . number_format($item->penginapan, 0, ',', '.') : '-' }}
-                                        </td>
-                                        <td>{{ $item->cashback ? 'Rp ' . number_format($item->cashback, 0, ',', '.') : '-' }}
-                                        </td>
-                                        <td>{{ $item->fresh_money ? 'Rp ' . number_format($item->fresh_money, 0, ',', '.') : '-' }}
-                                        </td>
-                                        <td>{{ $item->entertaint ? 'Rp ' . number_format($item->entertaint, 0, ',', '.') : '-' }}
-                                        </td>
-                                        <td>{{ $item->souvenir ? 'Rp ' . number_format($item->souvenir, 0, ',', '.') : '-' }}
-                                        </td>
-
-                                        <td>
-                                            @if ($item->desc)
-                                                <small class="text-muted">
-                                                    {{ Str::limit($item->desc, 50) }}
-                                                    @if (strlen($item->desc) > 50)
-                                                        <a href="#" class="text-primary" data-bs-toggle="modal"
-                                                            data-bs-target="#deskripsiModal{{ $item->id }}">
-                                                            Lihat
-                                                        </a>
-                                                    @endif
-                                                </small>
-                                            @else
-                                                <span class="text-muted">—</span>
-                                            @endif
-                                        </td>
-
-                                        <td class="fw-bold text-success">
-                                            {{ $item->harga_penawaran ? 'Rp ' . number_format($item->harga_penawaran, 0, ',', '.') : '-' }}
-                                        </td>
-
-                                        <td>{{ $item->tgl_pa ? \Carbon\Carbon::parse($item->tgl_pa)->translatedFormat('d/m/Y') : '-' }}
-                                        </td>
-
-                                        <td>
-                                            @if ($item->tipe_pembayaran)
-                                                <span
-                                                    class="badge bg-{{ $item->tipe_pembayaran === 'cash' ? 'success' : ($item->tipe_pembayaran === 'transfer' ? 'info' : 'warning') }}">
-                                                    {{ ucfirst($item->tipe_pembayaran) }}
-                                                </span>
-                                            @else
-                                                <span class="text-muted">—</span>
-                                            @endif
-                                        </td>
-
-                                        <td class="text-center">
-                                            <button type="button" class="btn btn-sm btn-primary btn-edit"
-                                                data-id="{{ $item->id }}"
-                                                data-peserta_id="{{ $item->peserta->id ?? '' }}"
-                                                data-peserta_nama="{{ $item->peserta->nama ?? '-' }}"
-                                                data-transportasi="{{ $item->transportasi }}"
-                                                data-penginapan="{{ $item->penginapan }}"
-                                                data-cashback="{{ $item->cashback }}"
-                                                data-fresh_money="{{ $item->fresh_money }}"
-                                                data-entertaint="{{ $item->entertaint }}"
-                                                data-souvenir="{{ $item->souvenir }}"
-                                                data-harga_penawaran="{{ $item->harga_penawaran }}"
-                                                data-tgl_pa="{{ $item->tgl_pa }}"
-                                                data-tipe_pembayaran="{{ $item->tipe_pembayaran }}"
-                                                data-deskripsi="{{ $item->desc }}" {{ $canEdit ? '' : 'disabled' }}>
-                                                Edit
-                                            </button>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="13" class="text-center text-muted py-5">
-                                            Belum ada data Payment Advance
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
+                            @empty
+                                <tr>
+                                    <td colspan="19" class="text-center text-muted py-5">
+                                        Belum ada data Payment Advance
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
+            </div>
 
-                @if ($pa->isNotEmpty())
-                    <div class="card-footer">
-                        <div class="row" style="margin-top: 20px">
-                            <div class="col-md-6 mb-3 mb-md-0">
-                                <small class="text-muted d-block mb-1">Total Biaya</small>
-                                <h5 class="mb-0 text-success">
-                                    Rp
-                                    {{ number_format(
+            @if ($pa->isNotEmpty())
+                <div class="card-footer">
+                    <div class="row" style="margin-top: 20px">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <small class="text-muted d-block mb-1">Total Biaya</small>
+                            <h5 class="mb-0 text-success">
+                                Rp {{ number_format(
+                                    $pa->sum('transportasi') +
+                                    $pa->sum('akomodasi_peserta') +
+                                    $pa->sum('penginapan_meeting_room') +
+                                    $pa->sum('akomodasi_sales_instruktur') +
+                                    $pa->sum('reimburse_transport_sales_instruktur') +
+                                    $pa->sum('sewa_laptop') +
+                                    $pa->sum('cashback') +
+                                    $pa->sum('fresh_money') +
+                                    $pa->sum('entertaint') +
+                                    $pa->sum('souvenir'),
+                                    0,
+                                    ',',
+                                    '.'
+                                ) }}
+                            </h5>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted d-block mb-1">Netsales</small>
+                            <h5 class="mb-0 text-info">
+                                Rp {{ number_format(
+                                    $pa->sum('harga_penawaran') -
+                                    (
                                         $pa->sum('transportasi') +
-                                            $pa->sum('penginapan') +
-                                            $pa->sum('cashback') +
-                                            $pa->sum('fresh_money') +
-                                            $pa->sum('entertaint') +
-                                            $pa->sum('souvenir'),
-                                        0,
-                                        ',',
-                                        '.',
-                                    ) }}
-                                </h5>
-                            </div>
-                            <div class="col-md-6">
-                                <small class="text-muted d-block mb-1">Netsales</small>
-                                <h5 class="mb-0 text-info">
-                                    Rp
-                                    {{ number_format(
-                                        $pa->sum('harga_penawaran') -
-                                            ($pa->sum('transportasi') +
-                                                $pa->sum('penginapan') +
-                                                $pa->sum('cashback') +
-                                                $pa->sum('fresh_money') +
-                                                $pa->sum('entertaint') +
-                                                $pa->sum('souvenir')),
-                                        0,
-                                        ',',
-                                        '.',
-                                    ) }}
-                                </h5>
-                            </div>
+                                        $pa->sum('akomodasi_peserta') +
+                                        $pa->sum('penginapan_meeting_room') +
+                                        $pa->sum('akomodasi_sales_instruktur') +
+                                        $pa->sum('reimburse_transport_sales_instruktur') +
+                                        $pa->sum('sewa_laptop') +
+                                        $pa->sum('cashback') +
+                                        $pa->sum('fresh_money') +
+                                        $pa->sum('entertaint') +
+                                        $pa->sum('souvenir')
+                                    ),
+                                    0,
+                                    ',',
+                                    '.'
+                                ) }}
+                            </h5>
                         </div>
                     </div>
-                @endif
+                </div>
+            @endif
+
             </div>
+
 
             {{-- Card 2: Tracking Information --}}
             <div class="card mb-4">

@@ -29,15 +29,7 @@
             width: 100%;
             height: 100%;
             position: relative;
-            /* Background image dengan base64 untuk DomPDF */
-            @php
-            $bgPath = storage_path('app/public/certificate-bg2.png');
-            if (file_exists($bgPath)) {
-                $bgData = base64_encode(file_get_contents($bgPath));
-                $bgSrc = 'data:image/png;base64,' . $bgData;
-                echo "background-image: url('$bgSrc');";
-            }
-            @endphp
+            background-image: url('{{ asset('assets/img/Cert BG.png') }}');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -127,9 +119,9 @@
         <div class="period-section">
             <span class="period-dates">
                 @php
-                $dates = explode(' - ', $certificate->tanggal_pelatihan);
-                $awal = $dates[0] ?? null;
-                $akhir = $dates[1] ?? null;
+                    $dates = explode(' - ', $certificate->tanggal_pelatihan);
+                    $awal = $dates[0] ?? null;
+                    $akhir = $dates[1] ?? null;
                 @endphp
                 {{ $awal ? \Carbon\Carbon::createFromFormat('Y-m-d', $awal)->format('F d, Y') : '' }} -
                 {{ $akhir ? \Carbon\Carbon::createFromFormat('Y-m-d', $akhir)->format('F d, Y') : '' }}
@@ -138,10 +130,10 @@
 
         <!-- Signature -->
         <div class="signature-section">
-            @if(isset($penandatangan) && $penandatangan->ttd && Storage::exists('public/' . $penandatangan->ttd))
-            <img src="{{ storage_path('app/public/' . $penandatangan->ttd) }}" class="signature-image">
+            @if (isset($penandatangan) && $penandatangan->ttd && Storage::exists('public/' . $penandatangan->ttd))
+                <img src="{{ storage_path('app/public/' . $penandatangan->ttd) }}" class="signature-image">
             @else
-            <div style="height: 75px;"></div>
+                <div style="height: 75px;"></div>
             @endif
         </div>
     </div>

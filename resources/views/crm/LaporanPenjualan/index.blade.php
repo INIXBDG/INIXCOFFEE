@@ -509,31 +509,138 @@
 
 
                                 if (rowData.perhitungannet && rowData.perhitungannet.length > 0) {
-                                    html += `<h6 class="mt-3">Detail NetSales</h6>
-                                        <div class="table-responsive">
-                                            <table class="table table-sm table-bordered">
-                                                <thead><tr>
-                                                    <th>Peserta</th><th>Trans</th><th>Penginapan</th><th>Fresh</th><th>Cashback</th><th>Diskon</th><th>Entertaint</th><th>Souvenir</th><th>Pembayaran</th>
-                                                </tr></thead><tbody>`;
-                                    rowData.perhitungannet.forEach(n => {
-                                        const peserta = n.peserta?.nama || '-';
-                                        html += `<tr>
-                                            <td>${peserta}</td>
-                                            <td>${formatRupiah(n.transportasi)}</td>
-                                            <td>${formatRupiah(n.penginapan)}</td>
-                                            <td>${formatRupiah(n.fresh_money)}</td>
-                                            <td>${formatRupiah(n.cashback)}</td>
-                                            <td>${formatRupiah(n.diskon)}</td>
-                                            <td>${formatRupiah(n.entertaint)}</td>
-                                            <td>${formatRupiah(n.souvenir)}</td>
-                                            <td>${(n.tipe_pembayaran || '-').toUpperCase()}</td>
+
+                                    html += `
+                                    <h6 class="mt-3 mb-2 fw-bold">Detail Payment Advance</h6>
+
+                                    <div class="table-responsive mb-4">
+                                        <table class="table table-bordered table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>Nama</th>
+                                                    <th>Harga Penawaran</th>
+                                                    <th>Transportasi</th>
+                                                    <th>Jenis Transportasi</th>
+                                                    <th>Akomodasi Peserta</th>
+                                                    <th>Meeting Room / Penginapan</th>
+                                                    <th>Akomodasi</th>
+                                                    <th>Reimburse Transport</th>
+                                                    <th>Sewa Laptop</th>
+                                                    <th>Fresh Money</th>
+                                                    <th>Entertaint</th>
+                                                    <th>Deskripsi Entertaint</th>
+                                                    <th>Souvenir</th>
+                                                    <th>Cashback</th>
+                                                    <th>Tanggal PA</th>
+                                                    <th>Tipe Pembayaran</th>
+                                                    <th>Deskripsi Tambahan</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                    `;
+
+                                    rowData.perhitungannet.forEach(item => {
+                                        html += `
+                                        <tr>
+                                            <td>${item.peserta?.nama ?? '-'}</td>
+                                            <td>${formatRupiah(item.harga_penawaran)}</td>
+                                            <td>${formatRupiah(item.transportasi)}</td>
+                                            <td>${item.jenis_transportasi ?? '-'}</td>
+                                            <td>${formatRupiah(item.akomodasi_peserta)}</td>
+                                            <td>${formatRupiah(item.penginapan_meeting_room)}</td>
+                                            <td>${formatRupiah(item.akomodasi_sales_instruktur)}</td>
+                                            <td>${formatRupiah(item.reimburse_transport_sales_instruktur)}</td>
+                                            <td>${item.sewa_laptop ? formatRupiah(item.sewa_laptop) : '-'}</td>
+                                            <td>${item.fresh_money ? formatRupiah(item.fresh_money) : '-'}</td>
+                                            <td>${item.entertaint ? formatRupiah(item.entertaint) : '-'}</td>
+                                            <td>${item.deskripsi_entertaint ?? '-'}</td>
+                                            <td>${item.souvenir ? formatRupiah(item.souvenir) : '-'}</td>
+                                            <td>${item.cashback ? formatRupiah(item.cashback) : '-'}</td>
+                                            <td>${item.tgl_pa ? moment(item.tgl_pa).format('DD MMMM YYYY') : '-'}</td>
+                                            <td>${item.tipe_pembayaran ? item.tipe_pembayaran.toUpperCase() : '-'}</td>
+                                            <td>${item.desc ?? '-'}</td>
                                         </tr>`;
                                     });
-                                    html += `</tbody></table></div>
+
+                                    html += `
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    `
+                                                                        html += `</tbody></table></div>
                                         <a href="/crm/edit/${rowData.id}/pa" class="btn btn-primary btn-sm mt-2" target="_blank">Edit PA</a>`;
-                                } else {
-                                    html += `<p class="text-muted mt-3">Tidak ada detail NetSales.</p>`;
+;
+
+                                    // Tracking
+                                    if (rowData.tracking) {
+                                        html += `
+                                        <h6 class="mt-4 mb-3 fw-bold">Tracking Information</h6>
+                                        <table class="table table-striped">
+                                            <tr>
+                                                <th>Tracking</th>
+                                                <td>${rowData.tracking.tracking ?? '-'}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Dibuat</th>
+                                                <td>${moment(rowData.tracking.created_at).format('DD MMMM YYYY')}</td>
+                                            </tr>
+                                        </table>
+                                        `;
+                                    } else {
+                                        html += `<p class="text-muted">Belum ada tracking</p>`;
+                                    }
+
+                                    // Approval
+                                    html += `<h6 class="mt-4 mb-3 fw-bold">Approval Information</h6>`;
+
+                                    if (rowData.approval && rowData.approval.length > 0) {
+                                        html += `
+                                        <div class="table-responsive">
+                                            <table class="table table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Status</th>
+                                                        <th>Approver</th>
+                                                        <th>Keterangan</th>
+                                                        <th>Tanggal</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                        `;
+
+                                        rowData.approval.forEach(a => {
+                                            const status = a.status == 1 
+                                                ? (a.level_status == 3 && a.keterangan !== 'Selesai' ? 'Diproses' : 'Disetujui')
+                                                : (a.status == 0 ? 'Ditolak' : 'Belum diketahui');
+
+                                            const approver = {
+                                                1: "SPV Sales",
+                                                2: "GM",
+                                                3: "Finance & Accounting"
+                                            }[a.level_status] ?? "-";
+
+                                            html += `
+                                                <tr>
+                                                    <td>${status}</td>
+                                                    <td>${approver}</td>
+                                                    <td>${a.keterangan ?? '-'}</td>
+                                                    <td>${moment(a.created_at).format('DD MMMM YYYY HH:mm')}</td>
+                                                </tr>
+                                            `;
+                                        });
+
+                                        html += `</tbody></table></div>
+                                        <div class="d-flex justify-content-end mt-3">
+                                            <a href="/crm/edit/${rowData.id}/pa" class="btn btn-success btn-sm" target="_blank">
+                                                Edit PA
+                                            </a>
+                                        </div>`
+;
+                                    } else {
+                                        html += `<p class="text-muted">Belum ada approval.</p>`;
+                                    }
                                 }
+
 
                                 $('#detailContent').html(html);
                                 $('#detailModalLabel').text(`Detail ${status === 0 ? 'Win' : 'Lost'}`);

@@ -547,8 +547,12 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal"
                                 aria-label="Close"></button>
                         </div>
+
                         <div class="modal-body">
+
                             <input type="hidden" name="id_rkm" value='{{ $peluang->id_rkm }}'>
+
+                            <!-- PILIH PESERTA (tidak diubah) -->
                             <div class="mb-3">
                                 <label for="id_peserta" class="form-label">Pilih Peserta</label>
                                 <select class="form-select" id="id_peserta" name="id_peserta">
@@ -562,67 +566,114 @@
                                     @endforeach
                                 </select>
                             </div>
+
+                            <!-- HARGA PENAWARAN -->
                             <div class="mb-3">
-                                <label for="hargaPenawaran" class="form-label">Harga Penawaran</label>
-                                <input type="text" class="form-control rupiah" id="hargaPenawaran"
-                                    name="hargaPenawaran" value="Rp {{ number_format($peluang->harga, 0, ',', '.') }}"
-                                    readonly>
+                                <label class="form-label">Harga Penawaran</label>
+                                <input type="text" class="form-control rupiah" readonly name="harga_penawaran"
+                                    value="Rp {{ number_format($peluang->harga, 0, ',', '.') }}">
                             </div>
+
+                            <!-- TRANSPORTASI -->
                             <div class="mb-3">
-                                <label for="transportasi" class="form-label">Transportasi</label>
-                                <input type="text" class="form-control rupiah" id="transportasi" name="transportasi">
+                                <label class="form-label">Transportasi</label>
+                                <input type="text" class="form-control rupiah" name="transportasi">
                             </div>
+
+                            <!-- JENIS TRANSPORTASI -->
                             <div class="mb-3">
-                                <label for="penginapan" class="form-label">Penginapan</label>
-                                <input type="text" class="form-control rupiah" id="penginapan" name="penginapan">
+                                <label class="form-label">Jenis Transportasi (Sewa Mobil / Tiket Pesawat)</label>
+                                <textarea class="form-control" name="jenis_transportasi" rows="2"></textarea>
                             </div>
+
+                            <!-- AKOMODASI PESERTA -->
                             <div class="mb-3">
-                                <label for="freshMoney" class="form-label">Fresh Money</label>
-                                <input type="text" class="form-control rupiah" id="freshMoney" name="freshMoney">
+                                <label class="form-label">Akomodasi Peserta</label>
+                                <input type="text" class="form-control rupiah" name="akomodasi_peserta">
                             </div>
+
+                            <!-- PENGINAPAN & MEETING ROOM -->
                             <div class="mb-3">
-                                <label for="entertaint" class="form-label">Entertaint</label>
-                                <input type="text" class="form-control rupiah" id="entertaint" name="entertaint">
+                                <label class="form-label">Penginapan / Meeting Room</label>
+                                <input type="text" class="form-control rupiah" name="penginapan_meeting_room">
                             </div>
+
+                            <!-- AKOMODASI SALES & INSTRUKTUR -->
                             <div class="mb-3">
-                                <label for="souvenir" class="form-label">Souvenir</label>
-                                <input type="text" class="form-control rupiah" id="souvenir" name="souvenir">
+                                <label class="form-label">Akomodasi Sales & Instruktur</label>
+                                <input type="text" class="form-control rupiah" name="akomodasi_sales_instruktur">
                             </div>
+
+                            <!-- REIMBURSE TRANSPORT SALES & INSTRUKTUR -->
                             <div class="mb-3">
-                                <label for="cashback" class="form-label">Cashback</label>
-                                <input type="text" class="form-control rupiah" id="cashback" name="cashback">
+                                <label class="form-label">Reimburse Transportasi Sales & Instruktur</label>
+                                <input type="text" class="form-control rupiah" name="reimburse_transport_sales_instruktur">
                             </div>
-                            {{-- <div class="mb-3">
-                                <label for="diskon" class="form-label">Diskon</label>
-                                <input type="text" class="form-control rupiah" id="diskon" name="diskon">
-                            </div> --}}
+
+                            <!-- SEWA LAPTOP -->
                             <div class="mb-3">
-                                <label for="desc" class="form-label">Description</label>
-                                <textarea name="desc" id="desc" rows="4" class="form-control"></textarea>
+                                <label class="form-label">Sewa Laptop</label>
+                                <input type="text" class="form-control rupiah" name="sewa_laptop">
                             </div>
+
+                            <!-- FRESH MONEY -->
                             <div class="mb-3">
-                                <label for="tanggalPayment" class="form-label">Tanggal Payment Advance</label>
-                                <input type="date" class="form-control" id="tanggalPayment" name="tanggalPayment"
-                                    placeholder="dd/mm/yyyy">
+                                <label class="form-label">Fresh Money (Uang Saku Peserta)</label>
+                                <input type="text" class="form-control rupiah" name="fresh_money">
                             </div>
+
+                            <!-- DISKON -->
                             <div class="mb-3">
-                                <label for="tipePembayaran" class="form-label">Tipe Pembayaran</label>
-                                <select class="form-select" id="tipePembayaran" name="tipePembayaran">
+                                <label class="form-label">Diskon</label>
+                                <input type="text" class="form-control rupiah" name="diskon">
+                            </div>
+
+                            <!-- ENTERTAINT -->
+                            <div class="mb-3">
+                                <label class="form-label">Entertain (Souvenir, Oleh-oleh, Dinner)</label>
+                                <input type="text" class="form-control rupiah" name="entertaint">
+                            </div>
+                            
+                            <!-- DESKRIPSI ENTERTAINT -->
+                            <div class="mb-3">
+                                <label class="form-label">Deskripsi Entertain</label>
+                                <textarea class="form-control" name="deskripsi_entertaint" rows="3"></textarea>
+                            </div>
+                            
+                            {{-- Tanggal Payment --}}
+                            <div class="mb-3">
+                                <label class="form-label">Tanggal Payment</label>
+                                <input type="date" class="form-control" name="tanggalPayment">
+                            </div>
+
+                            <!-- DESKRIPSI TAMBAHAN -->
+                            <div class="mb-3">
+                                <label class="form-label">Deskripsi Tambahan</label>
+                                <textarea class="form-control" name="desc" rows="3"></textarea>
+                            </div>
+
+                            <!-- PEMBAYARAN -->
+                            <div class="mb-3">
+                                <label class="form-label">Pembayaran</label>
+                                <select class="form-select" name="tipe_pembayaran">
                                     <option selected disabled>Pilih Tipe Pembayaran</option>
                                     <option value="cash">Cash</option>
                                     <option value="transfer">Transfer</option>
-                                    <option value="credit">Credit</option>
                                 </select>
                             </div>
+
                         </div>
+
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                             <button type="submit" class="btn btn-primary">Simpan</button>
                         </div>
+
                     </div>
                 </form>
             </div>
         </div>
+
 
         <!-- Modal Detail PA -->
         <div class="modal fade" id="detailPAModal" tabindex="-1" aria-labelledby="detailPAModalLabel"
@@ -633,8 +684,11 @@
                         <h5 class="modal-title" id="detailPAModalLabel">Detail Payment Advance</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
+
                     <div class="modal-body">
+
                         @if ($netsales->isNotEmpty())
+
                             <div class="table-responsive mb-4">
                                 <table class="table table-bordered table-striped">
                                     <thead>
@@ -642,85 +696,94 @@
                                             <th>Nama</th>
                                             <th>Harga Penawaran</th>
                                             <th>Transportasi</th>
-                                            <th>Penginapan</th>
+                                            <th>Jenis Transportasi</th>
+                                            <th>Akomodasi Peserta</th>
+                                            <th>Meeting Room / Penginapan</th>
+                                            <th>Akomodasi Sales & Instruktur</th>
+                                            <th>Reimburse Transport SI</th>
+                                            <th>Sewa Laptop</th>
                                             <th>Fresh Money</th>
                                             <th>Entertaint</th>
+                                            <th>Deskripsi Entertaint</th>
                                             <th>Souvenir</th>
-                                            {{-- <th>Diskon</th> --}}
                                             <th>Cashback</th>
                                             <th>Tanggal PA</th>
                                             <th>Tipe Pembayaran</th>
-                                            <th>Deskripsi</th>
+                                            <th>Deskripsi Tambahan</th>
                                         </tr>
                                     </thead>
+
                                     <tbody>
                                         @foreach ($netsales as $item)
                                             <tr>
+
                                                 <td>{{ $item->peserta->nama }}</td>
-                                                <td>Rp
-                                                    {{ $item->harga_penawaran ? number_format($item->harga_penawaran, 2, ',', '.') : '-' }}
-                                                </td>
-                                                <td>Rp
-                                                    {{ $item->transportasi ? number_format($item->transportasi, 2, ',', '.') : '-' }}
-                                                </td>
-                                                <td>Rp
-                                                    {{ $item->penginapan ? number_format($item->penginapan, 2, ',', '.') : '-' }}
-                                                </td>
-                                                <td>Rp
-                                                    {{ $item->fresh_money ? number_format($item->fresh_money, 2, ',', '.') : '-' }}
-                                                </td>
-                                                <td>Rp
-                                                    {{ $item->entertaint ? number_format($item->entertaint, 2, ',', '.') : '-' }}
-                                                </td>
-                                                <td>Rp
-                                                    {{ $item->souvenir ? number_format($item->souvenir, 2, ',', '.') : '-' }}
-                                                </td>
-                                                {{-- <td>Rp
-                                                    {{ $item->diskon ? number_format($item->diskon, 2, ',', '.') : '-' }}
-                                                </td> --}}
-                                                <td>Rp
-                                                    {{ $item->cashback ? number_format($item->cashback, 2, ',', '.') : '-' }}
-                                                </td>
-                                                <td>{{ $item->tgl_pa ? \Carbon\Carbon::parse($item->tgl_pa)->translatedFormat('d F Y') : '-' }}
-                                                </td>
-                                                <td>{{ $item->tipe_pembayaran ? ucfirst($item->tipe_pembayaran) : '-' }}
-                                                </td>
-                                                <td>{{ $item->desc ?? 'Tidak ada deskripsi.' }}</td>
+
+                                                <td>Rp {{ number_format($item->harga_penawaran, 0, ',', '.') }}</td>
+
+                                                <td>Rp {{ number_format($item->transportasi, 0, ',', '.') }}</td>
+                                                <td>{{ $item->jenis_transportasi ?? '-' }}</td>
+
+                                                <td>Rp {{ number_format($item->akomodasi_peserta, 0, ',', '.') }}</td>
+
+                                                <td>Rp {{ number_format($item->penginapan_meeting_room, 0, ',', '.') }}</td>
+
+                                                <td>Rp {{ number_format($item->akomodasi_sales_instruktur, 0, ',', '.') }}</td>
+
+                                                <td>Rp {{ number_format($item->reimburse_transport_sales_instruktur, 0, ',', '.') }}</td>
+
+                                                <td>{{ $item->sewa_laptop ? 'Rp ' . number_format($item->sewa_laptop, 0, ',', '.') : '-' }}</td>
+
+                                                <td>{{ $item->fresh_money ? 'Rp ' . number_format($item->fresh_money, 0, ',', '.') : '-' }}</td>
+
+                                                <td>{{ $item->entertaint ? 'Rp ' . number_format($item->entertaint, 0, ',', '.') : '-' }}</td>
+                                                <td>{{ $item->deskripsi_entertaint ?? '-' }}</td>
+
+                                                <td>{{ $item->souvenir ? 'Rp ' . number_format($item->souvenir, 0, ',', '.') : '-' }}</td>
+
+                                                <td>{{ $item->cashback ? 'Rp ' . number_format($item->cashback, 0, ',', '.') : '-' }}</td>
+
+                                                <td>{{ \Carbon\Carbon::parse($item->tgl_pa)->translatedFormat('d F Y') }}</td>
+
+                                                <td>{{ ucfirst($item->tipe_pembayaran) }}</td>
+
+                                                <td>{{ $item->desc ?? '-' }}</td>
+
                                             </tr>
                                         @endforeach
                                     </tbody>
                                 </table>
                             </div>
 
-                            {{-- Tracking Information --}}
+                            {{-- Tracking --}}
                             <h6 class="mt-4 mb-3">Tracking Information</h6>
                             @if ($netsales->first()->trackingNetSales)
                                 <div class="table-responsive">
-                                    <table class="table table-striped table-hover">
+                                    <table class="table table-striped">
                                         <thead>
                                             <tr>
                                                 <th>Tracking</th>
                                                 <th>Tanggal Dibuat</th>
                                             </tr>
                                         </thead>
+
                                         <tbody>
                                             <tr>
                                                 <td>{{ $netsales->first()->trackingNetSales->tracking ?? '-' }}</td>
-                                                <td>{{ $netsales->first()->created_at ? \Carbon\Carbon::parse($netsales->first()->created_at)->translatedFormat('d F Y') : '-' }}
-                                                </td>
+                                                <td>{{ $netsales->first()->trackingNetSales->created_at->translatedFormat('d F Y') }}</td>
                                             </tr>
                                         </tbody>
                                     </table>
                                 </div>
                             @else
-                                <p class="text-muted">Belum ada data tracking untuk Payment Advance ini.</p>
+                                <p class="text-muted">Belum ada tracking</p>
                             @endif
 
-                            {{-- Approval Information --}}
+                            {{-- Approval --}}
                             <h6 class="mt-4 mb-3">Approval Information</h6>
                             @if ($netsales->first()->approvedNetSales->isNotEmpty())
                                 <div class="table-responsive">
-                                    <table class="table table-striped table-hover">
+                                    <table class="table table-striped">
                                         <thead>
                                             <tr>
                                                 <th>Status</th>
@@ -729,46 +792,49 @@
                                                 <th>Tanggal</th>
                                             </tr>
                                         </thead>
+
                                         <tbody>
                                             @foreach ($netsales->first()->approvedNetSales as $approval)
                                                 @php
                                                     $status = match (true) {
-                                                        $approval->status === 1 &&
-                                                            $approval->level_status === '3' &&
-                                                            $approval->keterangan !== 'Selesai'
-                                                            => 'Diproses',
+                                                        $approval->status === 1 && $approval->level_status === '3' && $approval->keterangan !== 'Selesai' => 'Diproses',
                                                         $approval->status === 1 => 'Disetujui',
                                                         $approval->status === 0 => 'Ditolak',
-                                                        default => 'Belum diketahui',
+                                                        default => 'Belum diketahui'
                                                     };
+
                                                     $approver = match ($approval->level_status) {
                                                         '1' => 'SPV Sales',
                                                         '2' => 'GM',
                                                         '3' => 'Finance & Accounting',
-                                                        default => $approval->level_status ?? '-',
+                                                        default => '-'
                                                     };
                                                 @endphp
+
                                                 <tr>
                                                     <td>{{ $status }}</td>
                                                     <td>{{ $approver }}</td>
                                                     <td>{{ $approval->keterangan ?? '-' }}</td>
-                                                    <td>{{ $approval->created_at ? \Carbon\Carbon::parse($approval->created_at)->translatedFormat('d F Y H:i') : '-' }}
-                                                    </td>
+                                                    <td>{{ $approval->created_at->translatedFormat('d F Y H:i') }}</td>
                                                 </tr>
                                             @endforeach
                                         </tbody>
                                     </table>
                                 </div>
                             @else
-                                <p class="text-muted">Belum ada data approval untuk Payment Advance ini.</p>
+                                <p class="text-muted">Belum ada data approval.</p>
                             @endif
+
                         @else
                             <p class="text-muted">Belum ada data Payment Advance untuk peluang ini.</p>
                         @endif
+
                     </div>
+
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     </div>
+
                 </div>
             </div>
         </div>

@@ -5,16 +5,17 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class vendorSouvenir extends Model
+class NomorModul extends Model
 {
     use HasFactory;
     protected $fillable = [
-        'nama',
-        'is_active'
+        'no_modul',
+        'type',
+        'status',
     ];
 
-    public function pengajuanSouvenir()
+    public function moduls()
     {
-        return $this->hasMany(PengajuanSouvenir::class, 'id_vendor', 'id');
+        return $this->hasMany(Modul::class, 'no_modul', 'no_modul');
     }
 }

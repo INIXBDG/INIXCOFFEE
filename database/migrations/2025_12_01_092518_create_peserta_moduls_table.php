@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('pengajuan_souvenirs', function (Blueprint $table) {
+        Schema::create('peserta_moduls', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('id_karyawan');
-            $table->unsignedBigInteger('id_vendor');
-            $table->unsignedBigInteger('id_tracking')->nullable();
-            $table->decimal('total_keseluruhan', 15, 2)->nullable();
-            $table->string('invoice')->nullable();
+            $table->integer('no_modul');            
+            $table->integer('modul');
+            $table->text('nama_peserta');
+            $table->text('perusahaan_id');
+            $table->text('email');
+            $table->date('awal_training');
+            $table->date('akhir_training');
             $table->timestamps();
         });
     }
@@ -27,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('pengajuan_souvenirs');
+        Schema::dropIfExists('peserta_moduls');
     }
 };
