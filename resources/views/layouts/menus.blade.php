@@ -2406,8 +2406,7 @@
                 box-shadow:0 10px 30px rgba(0,0,0,0.3);
                 font-family:system-ui;
                 min-width:320px;
-                animation:slideIn 0.5s ease;
-            ">
+                animation:slideIn 0.5s ease;">
                 <div style="font-weight:700;font-size:16px;">Notifikasi Baru!</div>
                 <div style="margin-top:6px;font-size:14px;opacity:0.9;">
                     ${data.message?.message?.tipe || 'Ada pemberitahuan baru'}
