@@ -95,16 +95,24 @@
         <li class="menu-item {{ request()->routeIs('office.vendor.souvenir.index') ? 'active open' : '' }}">
             <a href="{{ route('office.vendor.souvenir.index') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-donate-heart"></i>
-                <div class="text-truncate" data-i18n="contact">Souvenir</div>
+                <div class="text-truncate" data-i18n="contact">Vendor Souvenir</div>
             </a>
         </li>
 
-            <li class="menu-item {{ request()->routeIs('penambahansouvenir.index') ? 'active open' : '' }}">
-                <a href="{{ route('penambahansouvenir.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-add-to-queue"></i>
-                    <div class="text-truncate" data-i18n="contact">Penambahan Souvenir</div>
-                </a>
-            </li>
+        <li class="menu-item {{ request()->routeIs('penambahansouvenir.index') ? 'active open' : '' }}">
+            <a href="{{ route('penambahansouvenir.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-add-to-queue"></i>
+                <div class="text-truncate" data-i18n="contact">Penambahan Souvenir</div>
+            </a>
+        </li>
+
+        <li class="menu-item {{ request()->routeIs('penukaransouvenir.index') ? 'active open' : '' }}">
+            <a href="{{ route('penukaransouvenir.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-shuffle"></i>
+                <div class="text-truncate" data-i18n="contact">Penukaran Souvenir</div>
+            </a>
+        </li>
+
 
     </ul>
 

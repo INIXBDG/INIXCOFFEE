@@ -1094,7 +1094,7 @@
                     </small>
 
                     <div class="mt-2">
-                        <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
+                        <form action="{{ route('notifications.markAsRead', $notification->iPengumumand) }}" method="POST" class="d-inline">
                             @csrf
                             @method('PUT')
                             <button type="submit" class="btn btn-outline-secondary btn-sm">
@@ -1108,17 +1108,57 @@
         @if ($notification->data['message']['tipe'] == 'Laporan Distribusi Souvenir')
             <div class="notification mb-3 p-3 border rounded bg-light">
                 <div class="d-flex justify-content-between align-items-start">
-                    <div>
+                    <div style="width: 100%;">
                         {{-- Header: User & Aksi --}}
                         <p class="mb-1">
                             <strong class="text-capitalize text-primary">
                                 {{ $notification->data['user'] }}
                             </strong>
-                            telah melakukan input distribusi
+                            telah mendistribusikan
                             <strong>{{ $notification->data['message']['tipe_barang'] ?? 'Souvenir' }}</strong>.
                         </p>
 
-                        {{-- Informasi RKM (Materi) --}}
+                        {{-- SECTION 1: INFORMASI PENERIMA (BARU) --}}
+                        <div class="mt-2 mb-2">
+                            <small class="text-muted d-block text-uppercase" style="font-size: 0.7rem; font-weight: bold;">
+                                Diberikan Kepada:
+                            </small>
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-person-badge text-secondary me-2"></i>
+                                <div>
+                                    <span class="text-dark fw-bold">
+                                        {{ $notification->data['message']['penerima_nama'] ?? 'Tanpa Nama' }}
+                                    </span>
+                                    <span class="text-muted ms-1" style="font-size: 0.85rem;">
+                                        ({{ $notification->data['message']['penerima_jabatan'] ?? '-' }})
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- SECTION 2: LIST ITEM YANG DIBERIKAN (BARU - LOOPING) --}}
+                        @if(!empty($notification->data['message']['detail_barang']))
+                            <div class="p-2 bg-white border rounded mb-2">
+                                <small class="text-muted d-block text-uppercase mb-1" style="font-size: 0.7rem; font-weight: bold;">
+                                    Detail Item:
+                                </small>
+                                <ul class="list-unstyled mb-0" style="font-size: 0.9rem;">
+                                    @foreach($notification->data['message']['detail_barang'] as $item)
+                                        <li class="d-flex justify-content-between align-items-center border-bottom pb-1 mb-1 last:border-0">
+                                            <span class="text-secondary">
+                                                <i class="bi bi-box-seam me-1"></i>
+                                                {{ $item['nama_souvenir'] }}
+                                            </span>
+                                            <span class="badge bg-success rounded-pill">
+                                                {{ $item['qty'] }} pcs
+                                            </span>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+
+                        {{-- SECTION 3: INFORMASI RKM (KONTEKS ACARA) --}}
                         @if(!empty($notification->data['message']['nama_rkm']))
                             <div class="mt-2 p-2 bg-white border rounded">
                                 <small class="text-muted d-block text-uppercase" style="font-size: 0.7rem; font-weight: bold;">
@@ -1153,6 +1193,80 @@
                     <a href="{{ $notification->data['path'] }}" class="btn btn-sm btn-primary">
                         <img src="{{ asset('icon/eye.svg') }}" width="14px" style="filter: invert(1);" class="me-1">
                         Lihat Data
+                    </a>
+
+                    <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST">
+                        @csrf
+                        @method('PUT')
+                        <button type="submit" class="btn btn-sm btn-outline-secondary">
+                            Tandai Dibaca
+                        </button>
+                    </form>
+                </div>
+            </div>
+        @endif
+        @if ($notification->data['message']['tipe'] == 'Penukaran Souvenir')
+            <div class="notification mb-3 p-3 border rounded bg-light">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        {{-- Header: User & Aksi --}}
+                        <p class="mb-1">
+                            <strong class="text-capitalize text-primary">
+                                {{ $notification->data['user'] }}
+                            </strong>
+                            telah melakukan
+                            <strong>Penukaran Souvenir</strong>.
+                        </p>
+
+                        {{-- Detail Penukaran (Box Putih) --}}
+                        <div class="mt-2 p-2 bg-white border rounded">
+                            {{-- Nama Peserta --}}
+                            <small class="text-muted d-block text-uppercase" style="font-size: 0.7rem; font-weight: bold;">
+                                Pemilik / Peserta:
+                            </small>
+                            <div class="mb-2">
+                                <i class="bi bi-person-circle text-secondary me-1"></i>
+                                <span class="text-dark fw-bold">
+                                    {{ $notification->data['message']['nama_peserta'] ?? 'Peserta' }}
+                                </span>
+                            </div>
+
+                            {{-- Visualisasi Tukar Barang (Lama -> Baru) --}}
+                            <div class="d-flex align-items-center p-2 bg-light rounded border border-light">
+                                {{-- Barang Lama (Merah/Coret) --}}
+                                <div class="text-danger" style="font-size: 0.85rem;" title="Dikembalikan">
+                                    <i class="bi bi-x-circle me-1"></i>
+                                    <span class="text-decoration-line-through text-secondary">
+                                        {{ $notification->data['message']['souvenir_lama'] }}
+                                    </span>
+                                </div>
+
+                                {{-- Panah --}}
+                                <div class="mx-2 text-muted">
+                                    <i class="bi bi-arrow-right"></i>
+                                </div>
+
+                                {{-- Barang Baru (Hijau/Bold) --}}
+                                <div class="text-success fw-bold" style="font-size: 0.85rem;" title="Diterima">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    {{ $notification->data['message']['souvenir_baru'] }}
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Waktu Transaksi --}}
+                        <small class="text-muted mt-2 d-block">
+                            <i class="bi bi-clock"></i> Diproses pada:
+                            {{ \Carbon\Carbon::parse($notification->data['message']['tanggal_tukar'])->translatedFormat('d F Y H:i') }} WIB
+                        </small>
+                    </div>
+                </div>
+
+                {{-- Tombol Aksi --}}
+                <div class="d-flex gap-2 mt-3">
+                    <a href="{{ $notification->data['path'] }}" class="btn btn-sm btn-primary">
+                        <img src="{{ asset('icon/eye.svg') }}" width="14px" style="filter: invert(1);" class="me-1">
+                        Lihat Riwayat
                     </a>
 
                     <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST">

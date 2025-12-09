@@ -104,9 +104,8 @@ class PenambahanSouvenirController extends Controller
      */
     public function store(Request $request)
     {
-        // 1. Validasi
+        // 1. Validasi Input
         $request->validate([
-            // Sesuaikan nama tabel RKM jika berbeda (rkms atau r_k_m_s)
             'id_rkm' => 'required|exists:r_k_m_s,id',
             'nama' => 'required|string|max:255',
             'jabatan' => 'required|string|max:255',
@@ -119,70 +118,94 @@ class PenambahanSouvenirController extends Controller
 
         DB::beginTransaction();
         try {
-            // Ambil ID Karyawan dari sesi login (Secure)
+            // 2. Persiapan Data
             $karyawanId = auth()->user()->karyawan->id;
-
             $items = $request->souvenir_id;
             $quantities = $request->qty;
 
+            // Array untuk menampung detail barang notifikasi
+            $listBarang = [];
+
+            // 3. Loop Proses Barang
             foreach ($items as $index => $souvenirId) {
                 $qtyRequested = $quantities[$index];
 
-                // Lock row untuk mencegah race condition stok
+                // Lock baris data untuk mencegah pengurangan stok ganda bersamaan
                 $souvenir = Souvenir::lockForUpdate()->find($souvenirId);
 
+                // Cek Stok Realtime
                 if (!$souvenir || $souvenir->stok < $qtyRequested) {
-                    throw new \Exception("Stok " . ($souvenir->nama_souvenir ?? 'Item') . " kurang. Sisa: " . ($souvenir->stok ?? 0));
+                    throw new \Exception("Stok " . ($souvenir->nama_souvenir ?? 'Item') . " kurang.");
                 }
 
-                // Simpan Data (Termasuk id_karyawan)
+                // Simpan Riwayat
                 PenambahanSouvenir::create([
                     'id_rkm' => $request->id_rkm,
-                    'id_karyawan' => $karyawanId, // <--- DATA BARU DITAMBAHKAN
+                    'id_karyawan' => $karyawanId,
                     'id_souvenir' => $souvenirId,
-                    'nama' => $request->nama,       // Nama Penerima
-                    'jabatan' => $request->jabatan, // Jabatan Penerima
+                    'nama' => $request->nama,
+                    'jabatan' => $request->jabatan,
                     'qty' => $qtyRequested,
                     'tanggal' => $request->tanggal,
                 ]);
 
-                // Kurangi Stok
+                // Kurangi Stok Master
                 $souvenir->decrement('stok', $qtyRequested);
+
+                // Masukkan ke Array untuk Notifikasi
+                $listBarang[] = [
+                    'nama_souvenir' => $souvenir->nama_souvenir,
+                    'qty' => $qtyRequested
+                ];
             }
 
-            DB::commit();
-
+            // 4. Persiapan Data Notifikasi
             $rkm = RKM::with('materi')->find($request->id_rkm);
-
-            // 2. Tentukan Nama Materi (Fallback ke nama program jika materi null)
             $namaMateri = $rkm->materi->nama_materi ?? $rkm->nama_program ?? 'RKM #' . $rkm->id;
 
             $dataNotif = [
-                'id_karyawan' => $karyawanId,
-                'tipe' => 'Souvenir',
+                'id_karyawan'       => $karyawanId,
+                'tipe'              => 'Souvenir',
                 'tanggal_pengajuan' => $request->tanggal,
-
-                'nama_rkm' => $namaMateri,
-                'rkm_start' => $rkm->tanggal_awal,
-                'rkm_end' => $rkm->tanggal_akhir
+                'nama_rkm'          => $namaMateri,
+                'rkm_start'         => $rkm->tanggal_awal,
+                'rkm_end'           => $rkm->tanggal_akhir,
+                // Data Detail Tambahan
+                'penerima_nama'     => $request->nama,
+                'penerima_jabatan'  => $request->jabatan,
+                'detail_barang'     => $listBarang
             ];
 
             $type = 'Laporan Distribusi Souvenir';
             $path = '/penambahansouvenir';
 
-            // Kirim Notif ke GM
-            $gm = karyawan::where('jabatan', 'GM')->first();
-            if ($gm) {
-                $userGM = User::whereHas('karyawan', fn($q) => $q->where('kode_karyawan', $gm->kode_karyawan))->first();
-                if ($userGM) NotificationFacade::send($userGM, new PenambahanSouvenirNotification($dataNotif, $path, $type));
+            // 5. Kirim Notifikasi
+
+            // A. Ke General Manager (GM)
+            $usersGM = User::whereHas('karyawan', function($q) {
+                $q->where('jabatan', 'GM');
+            })->get();
+
+            foreach ($usersGM as $gm) {
+                // Parameter ke-4: ID GM
+                $gm->notify(new PenambahanSouvenirNotification($dataNotif, $path, $type, $gm->id));
             }
 
-            // Kirim Notif ke Diri Sendiri
-            NotificationFacade::send(auth()->user(), new PenambahanSouvenirNotification($dataNotif, $path, $type));
+            // B. Ke Diri Sendiri (Konfirmasi)
+            $userSelf = auth()->user();
+            if ($userSelf) {
+                // Parameter ke-4: ID Sendiri
+                $userSelf->notify(new PenambahanSouvenirNotification($dataNotif, $path, $type, $userSelf->id));
+            }
 
-            return redirect()->route('penambahansouvenir.index')->with('success', 'Data distribusi berhasil disimpan.');
+            // 6. Commit Database (Simpan permanen)
+            DB::commit();
+
+            return redirect()->route('penambahansouvenir.index')
+                ->with('success', 'Data distribusi berhasil disimpan dan notifikasi terkirim.');
 
         } catch (\Exception $e) {
+            // 7. Rollback jika ada error
             DB::rollBack();
             return redirect()->back()->withInput()->with('error', 'Gagal menyimpan: ' . $e->getMessage());
         }
@@ -195,22 +218,16 @@ class PenambahanSouvenirController extends Controller
     {
         $penambahan = PenambahanSouvenir::with(['rkm', 'souvenir'])->findOrFail($id);
 
-        // Validasi Akses: Hanya pemilik data atau GM/Admin yang bisa edit (Opsional)
-        // if (auth()->user()->karyawan->id !== $penambahan->id_karyawan) { ... }
-
-        // Ambil data pendukung
         $souvenirs = Souvenir::where('stok', '>', 0)
-                        ->orWhere('id', $penambahan->id_souvenir) // Tetap tampilkan souvenir lama meski stok 0
+                        ->orWhere('id', $penambahan->id_souvenir)
                         ->get();
 
-        // Ambil RKM (Logic sama seperti create: 1 minggu lalu s/d 3 minggu kedepan)
-        // ATAU sertakan juga RKM yang sedang dipakai saat ini agar tidak error di dropdown
         $startDate = now()->subWeek()->startOfDay();
         $endDate   = now()->addWeeks(3)->endOfDay();
 
         $rkms = RKM::with('materi')
                     ->whereBetween('tanggal_awal', [$startDate, $endDate])
-                    ->orWhere('id', $penambahan->id_rkm) // Pastikan RKM saat ini tetap ada di list
+                    ->orWhere('id', $penambahan->id_rkm)
                     ->orderBy('tanggal_awal', 'asc')
                     ->get();
 
@@ -293,25 +310,57 @@ class PenambahanSouvenirController extends Controller
      */
     private function sendUpdateNotification($penambahan)
     {
-        // Ambil nama RKM / Materi
-        $rkm = RKM::with('materi')->find($penambahan->id_rkm);
+        // 1. Pastikan Relasi Terload (RKM & Souvenir)
+        // Kita perlu load relasi 'souvenir' untuk mengambil namanya
+        $penambahan->load(['souvenir', 'rkm.materi']);
+
+        $rkm = $penambahan->rkm;
         $namaMateri = $rkm->materi->nama_materi ?? $rkm->nama_program ?? 'RKM #' . $rkm->id;
 
-        $dataNotif = [
-            'id_karyawan' => auth()->user()->karyawan->id, // Yang melakukan edit
-            'tipe' => 'Souvenir',
-            'tanggal_pengajuan' => $penambahan->tanggal,
-            'nama_rkm' => $namaMateri,
-            'rkm_start' => $rkm->tanggal_awal,
-            'rkm_end' => $rkm->tanggal_akhir
+        // 2. Susun Detail Barang
+        // Karena update biasanya per satu baris (row), kita bungkus dalam array
+        $listBarang = [
+            [
+                'nama_souvenir' => $penambahan->souvenir->nama_souvenir ?? 'Item',
+                'qty' => $penambahan->qty
+            ]
         ];
 
-        // Tipe notifikasi berbeda untuk membedakan warna/pesan di view
-        $type = 'Pengajuan Souvenir Diperbarui';
+        // 3. Susun Payload Data (Harus Lengkap Sesuai Struktur Baru)
+        $dataNotif = [
+            'id_karyawan'       => auth()->user()->karyawan->id,
+            'tipe'              => 'Souvenir',
+            'tanggal_pengajuan' => $penambahan->tanggal,
+            'nama_rkm'          => $namaMateri,
+            'rkm_start'         => $rkm->tanggal_awal,
+            'rkm_end'           => $rkm->tanggal_akhir,
+
+            // Data Tambahan (PENTING: Agar tidak error di View)
+            'penerima_nama'     => $penambahan->nama,
+            'penerima_jabatan'  => $penambahan->jabatan,
+            'detail_barang'     => $listBarang
+        ];
+
+        // Ubah Judul Type agar user tahu ini hasil edit
+        $type = 'Update Distribusi Souvenir';
         $path = '/penambahansouvenir';
 
-        // Kirim (Contoh ke diri sendiri, bisa disesuaikan ke GM juga)
-        NotificationFacade::send(auth()->user(), new PenambahanSouvenirNotification($dataNotif, $path, $type));
+        // 4. Kirim Notifikasi (Gunakan Loop seperti di method store)
+
+        // A. Kirim ke GM
+        $usersGM = User::whereHas('karyawan', function($q) {
+            $q->where('jabatan', 'GM');
+        })->get();
+
+        foreach ($usersGM as $gm) {
+            $gm->notify(new PenambahanSouvenirNotification($dataNotif, $path, $type, $gm->id));
+        }
+
+        // B. Kirim ke Diri Sendiri
+        $userSelf = auth()->user();
+        if ($userSelf) {
+            $userSelf->notify(new PenambahanSouvenirNotification($dataNotif, $path, $type, $userSelf->id));
+        }
     }
 
 }
