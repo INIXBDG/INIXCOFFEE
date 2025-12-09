@@ -66,32 +66,41 @@ class DashboardSouvenirController extends Controller
             ->groupBy('bulan')
             ->get();
 
+        $tahunSekarang = date('Y');
+
+        // === ANALISA SELISIH (OFFICE vs PESERTA) - TAHUN INI ===
         $analisaSelisih = souvenir::select('id', 'nama_souvenir')
             ->get()
-            ->map(function($item) {
-                // A. Hitung Total Beli (Office) - Masuk
-                // Asumsi: Menggunakan model DetailPengajuanSouvenir
-                $totalBeli = DetailPengajuanSouvenir::where('id_souvenir', $item->id)->sum('pax');
+            ->map(function($item) use ($tahunSekarang) {
 
-                // B. Hitung Total Pilih (Peserta) - Keluar
-                $totalPakai = souvenirpeserta::where('id_souvenir', $item->id)->count();
+                // A. Hitung Total Beli (Office)
+                // SOLUSI: Cek tahun dari tabel PARENT (PengajuanSouvenir), bukan tabel detail
+                $totalBeli = DetailPengajuanSouvenir::where('id_souvenir', $item->id)
+                    ->whereHas('pengajuan', function($q) use ($tahunSekarang) {
+                        $q->whereYear('created_at', $tahunSekarang);
+                    })
+                    ->sum('pax'); // Pastikan nama kolom jumlah adalah 'qty' atau 'pax'
 
-                // C. Hitung Selisih Flow
+                // B. Hitung Total Pilih (Peserta)
+                // SOLUSI: Cek tahun dari tabel RKM (Tanggal Awal Kegiatan)
+                $totalPakai = souvenirpeserta::where('id_souvenir', $item->id)
+                    ->whereHas('rkm', function($q) use ($tahunSekarang) {
+                        $q->whereYear('tanggal_awal', $tahunSekarang);
+                    })
+                    ->count();
+
+                // C. Hitung Selisih
                 $selisih = $totalBeli - $totalPakai;
 
-                // Attach data ke object item
                 $item->total_masuk = $totalBeli;
                 $item->total_keluar = $totalPakai;
                 $item->selisih_flow = $selisih;
 
                 return $item;
             })
-            // Filter: Hanya tampilkan barang yang pernah ada transaksi (beli atau pakai)
-            // Agar tabel tidak penuh dengan barang yang angkanya 0 semua
             ->filter(function($item) {
                 return $item->total_masuk > 0 || $item->total_keluar > 0;
             })
-            // Urutkan: Defisit terbesar (Minus paling banyak) ditaruh paling atas untuk warning
             ->sortBy('selisih_flow');
 
 
