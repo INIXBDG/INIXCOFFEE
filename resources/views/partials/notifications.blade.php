@@ -304,7 +304,7 @@
             </div>
         </div>
     @endif
-    @if ($notification->data['message']['tipe'] == 'Menyetujui' || $notification->data['message']['tipe'] == 'Menolak')
+    @if ($notification->data['message']['tipe'] == 'Menyetujui' || $notification->data['message']['tipe'] == 'Menolak' || $notification->data['message']['tipe'] == 'Menyetujui Cuti' || $notification->data['message']['tipe'] == 'Menolak Cuti')
         <div class="notification mb-3">
             <p><strong style="text-transform: capitalize;">{{ $notification->data['user'] }}</strong> telah
                 {{ $notification->data['message']['tipe'] }} {{ $notification->data['message']['jenis_cuti'] }}
