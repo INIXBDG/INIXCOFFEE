@@ -48,6 +48,8 @@ use App\Http\Controllers\BroadcastAuthController;
 use App\Http\Controllers\PusherAuthController;
 use App\Http\Controllers\office\vendorOfficeController;
 use App\Http\Controllers\PenukaranSouvenirController;
+use App\Http\Controllers\office\DashboardSouvenirController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -764,3 +766,5 @@ Route::get('/getPenambahanSouvenir/{month}/{year}', [App\Http\Controllers\Penamb
 // Penukaran Souvenir
 Route::get('/penukaransouvenir/getRiwayat/{month}/{year}', [PenukaranSouvenirController::class, 'getRiwayat'])->name('getRiwayat');
 Route::get('/get-peserta/{rkmId}', [PenukaranSouvenirController::class, 'getPesertaByRKM'])->name('getPeserta');
+
+Route::get('/dashboard/souvenir', [DashboardSouvenirController::class, 'index'])->name('dashboard.souvenir');
