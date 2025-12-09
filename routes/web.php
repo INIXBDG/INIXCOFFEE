@@ -47,6 +47,7 @@ use App\Events\ServerTimeUpdate;
 use App\Http\Controllers\BroadcastAuthController;
 use App\Http\Controllers\PusherAuthController;
 use App\Http\Controllers\office\vendorOfficeController;
+use App\Http\Controllers\PenukaranSouvenirController;
 
 /*
 |--------------------------------------------------------------------------
@@ -152,6 +153,8 @@ Route::resource('/registry', \App\Http\Controllers\RegistryFeatureController::cl
 Route::resource('permissions', \App\Http\Controllers\PermissionController::class);
 Route::resource('roles', \App\Http\Controllers\RoleController::class);
 Route::resource('penambahansouvenir', \App\Http\Controllers\PenambahanSouvenirController::class);
+Route::resource('penukaransouvenir', \App\Http\Controllers\PenukaranSouvenirController::class);
+
 
 Route::get('/rkmEditInstruktur/{id}', [App\Http\Controllers\RKMController::class, 'editInstruktur'])->name('editInstruktur');
 Route::put('/rkmUpdateInstruktur', [App\Http\Controllers\RKMController::class, 'updateInstruktur'])->name('updateInstruktur');
@@ -757,3 +760,7 @@ Route::put('/catering/updateinvoice/{id}', [CateringController::class, 'updateIn
 
 // Penambahan Souvneir
 Route::get('/getPenambahanSouvenir/{month}/{year}', [App\Http\Controllers\PenambahanSouvenirController::class, 'getPenambahanSouvenir'])->name('getPenambahanSouvenir');
+
+// Penukaran Souvenir
+Route::get('/penukaransouvenir/getRiwayat/{month}/{year}', [PenukaranSouvenirController::class, 'getRiwayat'])->name('getRiwayat');
+Route::get('/get-peserta/{rkmId}', [PenukaranSouvenirController::class, 'getPesertaByRKM'])->name('getPeserta');
