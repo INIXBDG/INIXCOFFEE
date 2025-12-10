@@ -25,7 +25,7 @@ class RKM extends Model
         'asisten_key',
         'status',
         'exam',
-        'authorize',
+        'authorize',    
         'registrasi_form',
         'quartal',
         'bulan',
@@ -33,6 +33,7 @@ class RKM extends Model
         'isi_pax',
         'makanan'
     ];
+    protected $dates = ['tanggal_awal', 'tanggal_akhir'];
 
     public function perhitunganNetSales()
     {
@@ -120,7 +121,4 @@ class RKM extends Model
     {
         return $this->hasMany(Kwitansi::class, 'id_rkm');
     }
-    
-
-
 }

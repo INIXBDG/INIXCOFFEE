@@ -528,7 +528,8 @@ class registexamController extends Controller
             $path = '/exam/'. $id;
             
             foreach ($users as $user) {
-               NotificationFacade::send($user, new BayarCCNotification($data, $path));
+                $receiverId = $user->id;
+               NotificationFacade::send($user, new BayarCCNotification($data, $path, $receiverId));
             }
         // $post->update([
         //     'cc' => $request->cc,

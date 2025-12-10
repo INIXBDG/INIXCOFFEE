@@ -19,7 +19,14 @@ use PDF;
 
 class SuratPerjalananController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     /**
+     * 
      * Menampilkan daftar surat perjalanan.
      */
     public function index()
@@ -27,36 +34,36 @@ class SuratPerjalananController extends Controller
         return view('suratperjalanan.index');
     }
 
-public function getSuratPerjalanan()
-{
-    $user = auth()->user()->karyawan_id;
-    $karyawan = karyawan::findOrFail($user);
-    $jabatan = $karyawan->jabatan;
-    $divisi = $karyawan->divisi;
+    public function getSuratPerjalanan()
+    {
+        $user = auth()->user()->karyawan_id;
+        $karyawan = karyawan::findOrFail($user);
+        $jabatan = $karyawan->jabatan;
+        $divisi = $karyawan->divisi;
 
-    if (in_array($jabatan, ['Office Manager', 'Education Manager', 'SPV Sales', 'Koordinator ITSM'])) {
+        if (in_array($jabatan, ['Office Manager', 'Education Manager', 'SPV Sales', 'Koordinator ITSM'])) {
 
-        $SuratPerjalanan = SuratPerjalanan::with('karyawan', 'RKM')
-            ->whereHas('karyawan', function ($query) use ($divisi) {
-                $query->where('divisi', $divisi);
-            })->latest()->get();
-    } elseif (in_array($jabatan, ['HRD', 'Koordinator Office', 'Direktur Utama', 'Direktur', 'GM'])) {
- 
-        $SuratPerjalanan = SuratPerjalanan::with('karyawan', 'RKM')->latest()->get();
-    } else {
+            $SuratPerjalanan = SuratPerjalanan::with('karyawan', 'RKM')
+                ->whereHas('karyawan', function ($query) use ($divisi) {
+                    $query->where('divisi', $divisi);
+                })->latest()->get();
+        } elseif (in_array($jabatan, ['HRD', 'Koordinator Office', 'Direktur Utama', 'Direktur', 'GM'])) {
 
-        $SuratPerjalanan = SuratPerjalanan::with('karyawan', 'RKM')
-            ->whereHas('karyawan', function ($query) use ($user) {
-                $query->where('id', $user);
-            })->latest()->get();
+            $SuratPerjalanan = SuratPerjalanan::with('karyawan', 'RKM')->latest()->get();
+        } else {
+
+            $SuratPerjalanan = SuratPerjalanan::with('karyawan', 'RKM')
+                ->whereHas('karyawan', function ($query) use ($user) {
+                    $query->where('id', $user);
+                })->latest()->get();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'List SuratPerjalanan',
+            'data' => $SuratPerjalanan,
+        ]);
     }
-
-    return response()->json([
-        'success' => true,
-        'message' => 'List SuratPerjalanan',
-        'data' => $SuratPerjalanan,
-    ]);
-}
 
 
 
@@ -205,7 +212,7 @@ public function getSuratPerjalanan()
             ->groupBy(function ($item) {
                 return \Carbon\Carbon::parse($item->tanggal_awal)->translatedFormat('d F Y');
             });
-        
+
         return view('suratperjalanan.create', compact('karyawan', 'data_rkm'));
     }
 
@@ -280,7 +287,8 @@ public function getSuratPerjalanan()
         $path = '/suratperjalanan';
 
         foreach ($users as $user) {
-            NotificationFacade::send($user, new PengajuanSPJNotification($suratPerjalanan, $path, $type));
+            $receiverId = $user->id;
+            NotificationFacade::send($user, new PengajuanSPJNotification($suratPerjalanan, $path, $type, $receiverId));
         }
 
         return redirect()->route('suratperjalanan.index')->with('success', 'Surat perjalanan berhasil dibuat.');
@@ -377,7 +385,8 @@ public function getSuratPerjalanan()
         $path = '/suratperjalanan';
 
         foreach ($users as $user) {
-            NotificationFacade::send($user, new ApprovalSPJNotification($data, $path, $to));
+            $receiverId = $user->id;
+            NotificationFacade::send($user, new ApprovalSPJNotification($data, $path, $to, $receiverId));
         }
         return redirect()->route('suratperjalanan.index')->with('success', 'Surat perjalanan berhasil diperbarui.');
     }
@@ -421,7 +430,8 @@ public function getSuratPerjalanan()
         $path = '/suratperjalanan';
 
         foreach ($users as $user) {
-            NotificationFacade::send($user, new ApprovalSPJNotification($data, $path, $to));
+            $receiverId = $user->id;
+            NotificationFacade::send($user, new ApprovalSPJNotification($data, $path, $to, $receiverId));
         }
 
         return redirect()->route('suratperjalanan.index')->with('success', 'Surat perjalanan berhasil disetujui.');

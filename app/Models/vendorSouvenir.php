@@ -1,0 +1,20 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class vendorSouvenir extends Model
+{
+    use HasFactory;
+    protected $fillable = [
+        'nama',
+        'is_active'
+    ];
+
+    public function pengajuanSouvenir()
+    {
+        return $this->hasMany(PengajuanSouvenir::class, 'id_vendor', 'id');
+    }
+}

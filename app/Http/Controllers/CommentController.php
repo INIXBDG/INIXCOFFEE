@@ -55,6 +55,7 @@ class CommentController extends Controller
             $GM->kode_karyawan,
             $cs_codes, // ✅ semua kode CS
 			$ah_codes, // ✅ semua kode AH
+            
         ]);
 
         // Pastikan $users adalah array datar
@@ -110,9 +111,6 @@ class CommentController extends Controller
 
         return redirect()->back()->with('success', 'Semua notifikasi telah ditandai sebagai dibaca.');
     }
-
-
-
 
     public function update(Request $request, $id)
     {

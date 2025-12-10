@@ -10,7 +10,6 @@ use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 use Vinkla\Hashids\Facades\Hashids;
 
-
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable, HasRoles;
@@ -65,6 +64,9 @@ class User extends Authenticatable
     {
         return Hashids::encode($this->id);
     }
-    
 
+    public function surveyKepuasan()
+    {
+        return $this->hasMany(SurveyKepuasan::class, 'id_user');
+    }
 }

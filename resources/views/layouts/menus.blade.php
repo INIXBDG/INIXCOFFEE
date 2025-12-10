@@ -1409,6 +1409,22 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                            <div class="col-sm-6 mt-2">
+                                                <div class="card" id="card-hover">
+                                                    <div class="card-body d-flex">
+                                                        <div class="col-md-2">
+                                                            <i class="fa-solid fa-square-poll-vertical" style="font-size: 30px;"></i>
+                                                        </div>
+                                                        <div class="col-md-10" style="margin-left: 10px">
+                                                            <a href="{{ route('surveykepuasan.index') }}"
+                                                                class="link stretched-link text-decoration-none">
+                                                                <h5 class="card-title">Survey Kepuasan</h5>
+                                                            </a>
+                                                            <p class="card-text">survey kepuasan pelayanan ITSM.</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1880,6 +1896,7 @@
                                         <div class="card-body">
                                             <h5 class="text-center card-title">Performance Assesment</h5>
                                             <div class="row">
+                                                @if (auth()->user()->jabatan === "HRD" || auth()->user()->jabatan === 'GM' || auth()->user()->jabatan === "Direktur Utama")
                                                 <div class="col-sm-6 mt-2">
                                                     <div class="card" id="card-hover">
                                                         <div class="card-body d-flex">
@@ -1895,6 +1912,8 @@
                                                         </div>
                                                     </div>
                                                 </div>
+                                                @endif
+
                                                 @php
                                                 $id_karyawan = Auth()->user()->karyawan_id;
                                                 $month = \Carbon\Carbon::now()->month;
@@ -2076,6 +2095,25 @@
                                                 </div>
                                             </div>
                                             @endcan
+                                            @can('View Catering')
+                                            <div class="col-sm-6 mt-2">
+                                                <div class="card" id="card-hover">
+                                                    <div class="card-body d-flex">
+                                                        <div class="col-md-2">
+                                                            <img src="{{ asset('icon/paperclip.svg') }}"
+                                                                class="img-responsive" width="30px">
+                                                        </div>
+                                                        <div class="col-md-10" style="margin-left: 10px">
+                                                            <a href="{{ route('catering.index') }}"
+                                                                class="link stretched-link text-decoration-none">
+                                                                <h5 class="card-title">Pengajuan Catering</h5>
+                                                            </a>
+                                                            <p class="card-text">Pengajuan Catering</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            @endcan
                                         </div>
                                     </div>
                                 </div>
@@ -2110,11 +2148,31 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                            <div class="col-sm-6 mt-2">
+                                                <div class="card" id="card-hover">
+                                                    <div class="card-body d-flex">
+                                                        <div class="col-md-2">
+                                                            <i class="fa-solid fa-basket-shopping" style="font-size: 30px;"></i>
+                                                        </div>
+                                                        <div class="col-md-10"
+                                                            style="margin-left: 10px">
+                                                            <a href="{{ route('expensehub.index') }}"
+                                                                class="link stretched-link text-decoration-none">
+                                                                <h5 class="card-title">Pengajuan Diluar PA
+                                                                </h5>
+                                                            </a>
+                                                            <p class="card-text">Pengajuan entertaint, reimburst, dan oleh-oleh.
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
+
                         @endcan
                         @can('Fitur Menu Manajemen')
                         <div class="row">
@@ -2163,128 +2221,126 @@
                             <h5 class="text-center card-title">Fitur Menu Development</h5>
                             <div class="row">
                                 @can('Akses Development')
-                                    <div class="col-sm-6 mt-2">
-                                        <div class="card" id="card-hover">
-                                            <div class="card-body d-flex">
-                                                <div class="col-md-2">
-                                                    <img src="{{ asset('icon/bell.svg') }}"
-                                                        class="img-responsive" width="30px">
-                                                </div>
-                                                <div class="col-md-10" style="margin-left: 10px">
-                                                    <a href="/inixcoffeeloglarapelixb95"
-                                                        class="link stretched-link text-decoration-none">
-                                                        <h5 class="card-title">logs</h5>
-                                                    </a>
-                                                    <p class="card-text">logs prod.</p>
-                                                </div>
+                                <div class="col-sm-6 mt-2">
+                                    <div class="card" id="card-hover">
+                                        <div class="card-body d-flex">
+                                            <div class="col-md-2">
+                                                <img src="{{ asset('icon/bell.svg') }}"
+                                                    class="img-responsive" width="30px">
+                                            </div>
+                                            <div class="col-md-10" style="margin-left: 10px">
+                                                <a href="/inixcoffeeloglarapelixb95"
+                                                    class="link stretched-link text-decoration-none">
+                                                    <h5 class="card-title">logs</h5>
+                                                </a>
+                                                <p class="card-text">logs prod.</p>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-sm-6 mt-2">
-                                        <div class="card" id="card-hover">
-                                            <div class="card-body d-flex">
-                                                <div class="col-md-2">
-                                                    <img src="{{ asset('icon/target.svg') }}"
-                                                        class="img-responsive" width="30px">
-                                                </div>
-                                                <div class="col-md-10" style="margin-left: 10px">
-                                                    <a href="/permissions"
-                                                        class="link stretched-link text-decoration-none">
-                                                        <h5 class="card-title">Setting Permission</h5>
-                                                    </a>
-                                                    <p class="card-text">Permissions.</p>
-                                                </div>
+                                </div>
+                                <div class="col-sm-6 mt-2">
+                                    <div class="card" id="card-hover">
+                                        <div class="card-body d-flex">
+                                            <div class="col-md-2">
+                                                <img src="{{ asset('icon/target.svg') }}"
+                                                    class="img-responsive" width="30px">
+                                            </div>
+                                            <div class="col-md-10" style="margin-left: 10px">
+                                                <a href="/permissions"
+                                                    class="link stretched-link text-decoration-none">
+                                                    <h5 class="card-title">Setting Permission</h5>
+                                                </a>
+                                                <p class="card-text">Permissions.</p>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-sm-6 mt-2">
-                                        <div class="card" id="card-hover">
-                                            <div class="card-body d-flex">
-                                                <div class="col-md-2">
-                                                    <img src="{{ asset('icon/target.svg') }}"
-                                                        class="img-responsive" width="30px">
-                                                </div>
-                                                <div class="col-md-10" style="margin-left: 10px">
-                                                    <a href="/roles"
-                                                        class="link stretched-link text-decoration-none">
-                                                        <h5 class="card-title">Setting Role</h5>
-                                                    </a>
-                                                    <p class="card-text">Roles.</p>
-                                                </div>
+                                </div>
+                                <div class="col-sm-6 mt-2">
+                                    <div class="card" id="card-hover">
+                                        <div class="card-body d-flex">
+                                            <div class="col-md-2">
+                                                <img src="{{ asset('icon/target.svg') }}"
+                                                    class="img-responsive" width="30px">
+                                            </div>
+                                            <div class="col-md-10" style="margin-left: 10px">
+                                                <a href="/roles"
+                                                    class="link stretched-link text-decoration-none">
+                                                    <h5 class="card-title">Setting Role</h5>
+                                                </a>
+                                                <p class="card-text">Roles.</p>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-sm-6 mt-2">
-                                        <div class="card" id="card-hover">
-                                            <div class="card-body d-flex">
-                                                <div class="col-md-2">
-                                                    <img src="{{ asset('icon/target.svg') }}"
-                                                        class="img-responsive" width="30px">
-                                                </div>
-                                                <div class="col-md-10" style="margin-left: 10px">
-                                                    <a href="/userRolePermissions"
-                                                        class="link stretched-link text-decoration-none">
-                                                        <h5 class="card-title">Setting User</h5>
-                                                    </a>
-                                                    <p class="card-text">Users.</p>
-                                                </div>
+                                </div>
+                                <div class="col-sm-6 mt-2">
+                                    <div class="card" id="card-hover">
+                                        <div class="card-body d-flex">
+                                            <div class="col-md-2">
+                                                <img src="{{ asset('icon/target.svg') }}"
+                                                    class="img-responsive" width="30px">
+                                            </div>
+                                            <div class="col-md-10" style="margin-left: 10px">
+                                                <a href="/userRolePermissions"
+                                                    class="link stretched-link text-decoration-none">
+                                                    <h5 class="card-title">Setting User</h5>
+                                                </a>
+                                                <p class="card-text">Users.</p>
                                             </div>
                                         </div>
                                     </div>
+                                </div>
                                 @endcan
-                                @can('Super Duper Admin')
-                                    <div class="col-sm-6 mt-2">
-                                        <div class="card" id="card-hover">
-                                            <div class="card-body d-flex">
-                                                <div class="col-md-2">
-                                                    <img src="{{ asset('icon/bell.svg') }}"
-                                                        class="img-responsive" width="30px">
-                                                </div>
-                                                <div class="col-md-10" style="margin-left: 10px">
-                                                    <a href="/user-dropdown"
-                                                        class="link stretched-link text-decoration-none">
-                                                        <h5 class="card-title">Shortcut</h5>
-                                                    </a>
-                                                    <p class="card-text">shortcut.</p>
-                                                </div>
+                                <div class="col-sm-6 mt-2">
+                                    <div class="card" id="card-hover">
+                                        <div class="card-body d-flex">
+                                            <div class="col-md-2">
+                                                <img src="{{ asset('icon/bell.svg') }}"
+                                                    class="img-responsive" width="30px">
+                                            </div>
+                                            <div class="col-md-10" style="margin-left: 10px">
+                                                <a href="/user-dropdown"
+                                                    class="link stretched-link text-decoration-none">
+                                                    <h5 class="card-title">Shortcut</h5>
+                                                </a>
+                                                <p class="card-text">shortcut.</p>
                                             </div>
                                         </div>
                                     </div>
-                                @endcan
+                                </div>
                             </div>
                             <div class="row">
-                                 @if (auth()->user()->jabatan === 'Koordinator ITSM')
-                                    <div class="col mt-12">
-                                        <div class="mt-5 mb-3">
-                                            Uptime Monitoring
-                                        </div>
-                                        <div class="nav nav-tabs mt-3" role="tablist">
-                                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#nav-inixcoffee" type="button" role="tab" aria-controls="nav-inixcoffee" aria-selected="false">Inixcoffee</button>
-                                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#nav-inixlatte" type="button" role="tab" aria-controls="nav-inixlatte" aria-selected="false">Inixlatte</button>
-                                        </div>
-                                        <div class="tab-content">
-                                            <div class="tab-pane fade" id="nav-inixcoffee" role="tabpanel">
-                                                <div class="card">
-                                                    <div class="card-body">
-                                                        <div class="card-title">uptime monitoring INIXCOFFEE</div>
-                                                        <div class="p-4">
-                                                            <canvas id="uptimeChartInixcoffee" height="350"></canvas>
-                                                        </div>
+                                @if (auth()->user()->jabatan === 'Koordinator ITSM')
+                                <div class="col mt-12">
+                                    <div class="mt-5 mb-3">
+                                        Uptime Monitoring
+                                    </div>
+                                    <div class="nav nav-tabs mt-3" role="tablist">
+                                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#nav-inixcoffee" type="button" role="tab" aria-controls="nav-inixcoffee" aria-selected="false">Inixcoffee</button>
+                                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#nav-inixlatte" type="button" role="tab" aria-controls="nav-inixlatte" aria-selected="false">Inixlatte</button>
+                                    </div>
+                                    <div class="tab-content">
+                                        <div class="tab-pane fade" id="nav-inixcoffee" role="tabpanel">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <div class="card-title">uptime monitoring INIXCOFFEE</div>
+                                                    <div class="p-4">
+                                                        <canvas id="uptimeChartInixcoffee" height="350"></canvas>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="tab-pane fade" id="nav-inixlatte" role="tabpanel">
-                                                <div class="card">
-                                                    <div class="card-body">
-                                                        <div class="card-title">uptime monitoring INIXLATTE</div>
-                                                        <div class="p-4">
-                                                            <canvas id="uptimeChartInixlatte" height="350"></canvas>
-                                                        </div>
+                                        </div>
+                                        <div class="tab-pane fade" id="nav-inixlatte" role="tabpanel">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <div class="card-title">uptime monitoring INIXLATTE</div>
+                                                    <div class="p-4">
+                                                        <canvas id="uptimeChartInixlatte" height="350"></canvas>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
+                                </div>
                                 @endif
                             </div>
                         </div>
@@ -2297,6 +2353,7 @@
         </div>
         {{-- </div> --}}
     </main>
+    <audio id="notifSound" src="{{ asset('bell.mp3') }}" preload="auto"></audio>
     </div>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
@@ -2309,6 +2366,87 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/timepicker/1.3.5/jquery.timepicker.min.js"></script>
     {{-- SweetAlert2 --}}
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script src="https://js.pusher.com/8.2/pusher.min.js"></script>
+
+    <script src="https://js.pusher.com/8.2/pusher.min.js"></script>
+    <script>
+        Pusher.logToConsole = true;
+
+        const pusher = new Pusher("{{ env('PUSHER_APP_KEY') }}", {
+            cluster: "{{ env('PUSHER_APP_CLUSTER') }}",
+            forceTLS: true,
+            authEndpoint: '/pusher/auth',
+            auth: {
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                }
+            }
+        });
+
+        const channel = pusher.subscribe('private-notifikasi.{{ auth()->id() }}');
+
+        channel.bind('pusher:subscription_succeeded', () => {
+            console.log('PUSHER AKTIF');
+        });
+
+        channel.bind('notifikasi-event', (data) => {
+            console.log('REAL-TIME MASUK!', data);
+
+            const toast = document.createElement('div');
+            toast.innerHTML = `
+            <div class="rt-toast" style="
+                position:fixed;
+                top:90px;
+                left:20px;
+                z-index:99999;
+                background:#10b981;
+                color:white;
+                padding:18px 32px;
+                border-radius:12px;
+                box-shadow:0 10px 30px rgba(0,0,0,0.3);
+                font-family:system-ui;
+                min-width:320px;
+                animation:slideIn 0.5s ease;
+            ">
+                <div style="font-weight:700;font-size:16px;">Notifikasi Baru!</div>
+                <div style="margin-top:6px;font-size:14px;opacity:0.9;">
+                    ${data.message?.message?.tipe || 'Ada pemberitahuan baru'}
+                </div>
+            </div>`;
+
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.transition = "opacity 0.5s ease";
+                toast.style.opacity = "0";
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
+
+            document.getElementById('notifSound')?.play();
+
+            const badge = document.getElementById('notifBadge');
+            if (badge) {
+                let current = parseInt(badge.textContent) || 0;
+                badge.textContent = current + 1;
+                badge.classList.add('animate__animated', 'animate__bounceIn');
+                setTimeout(() => badge.classList.remove('animate__bounceIn'), 1000);
+            }
+
+            const modalBody = document.querySelector('#notificationModal .modal-body');
+            if (modalBody) {
+                const newNotif = `
+            <div class="notification p-3 border-bottom animate__animated animate__fadeIn">
+                <p class="mb-1 fw-bold text-danger">Baru!</p>
+                <p class="mb-1"><strong>${data.message?.user || 'System'}</strong></p>
+                <p class="mb-1">${data.message?.message?.tipe || 'Notifikasi'}</p>
+                <small class="text-muted">Baru saja</small>
+            </div>`;
+                modalBody.insertAdjacentHTML('afterbegin', newNotif);
+            }
+        });
+    </script>
+
     <script>
         document.getElementById('logout-link').addEventListener('click', function(e) {
             e.preventDefault();
@@ -2397,7 +2535,7 @@
             });
         });
 
-        function ajaxUptime (target, url){
+        function ajaxUptime(target, url) {
             $.ajax({
                 url: "{{ route('activity.log.chart') }}",
                 method: "GET",

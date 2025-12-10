@@ -225,7 +225,8 @@ class OvertimeController extends Controller
                     $path = '/overtime';
 
                     foreach ($users as $user) {
-                        NotificationFacade::send($user, new ApprovalHitunganLemburNotification($data, $path, $type));
+                        $receiverId = $user->id;
+                        NotificationFacade::send($user, new ApprovalHitunganLemburNotification($data, $path, $type, $receiverId));
                     }
                 }
                 

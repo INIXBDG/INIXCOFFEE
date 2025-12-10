@@ -2,17 +2,28 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Invoice;
 use App\Models\jabatan;
 use App\Models\karyawan;
-use App\Models\outstanding;
+use App\Models\Outstanding;
 use App\Models\RKM;
 use App\Models\trackingOutstanding;
 use App\Models\User;
 use App\Notifications\OutstandingNotification;
+use App\Notifications\OutstandingSelesai;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
+use setasign\Fpdi\Tcpdf\Fpdi;
+use Mostafaznv\PdfOptimizer\Laravel\Facades\PdfOptimizer;
+use Mostafaznv\PdfOptimizer\Enums\PdfSettings;
+use Mostafaznv\PdfOptimizer\Enums\ColorConversionStrategy;
+use Mostafaznv\PdfOptimizer\Laravel\Facade\PdfOptimizer as FacadePdfOptimizer;
+use Mostafaznv\PdfOptimizer\PdfOptimizer as PdfOptimizerPdfOptimizer;
+use Spatie\Browsershot\Browsershot;
 
 class OutstandingController extends Controller
 {
@@ -132,7 +143,8 @@ class OutstandingController extends Controller
                     $q->whereIn('kode_karyawan', $users);
                 })->get();
 
-                NotificationFacade::send($notifiedUsers, new OutstandingNotification($data, '/outstanding'));
+                $receiverId = $notifiedUsers->id;
+                NotificationFacade::send($notifiedUsers, new OutstandingNotification($data, '/outstanding', $receiverId));
             }
         }
 
@@ -352,7 +364,8 @@ class OutstandingController extends Controller
 
             // Kirim notifikasi ke setiap user yang ditemukan
             foreach ($users as $user) {
-                NotificationFacade::send($user, new OutstandingNotification($data, $path));
+                $receiverId = $user->id;
+                NotificationFacade::send($user, new OutstandingNotification($data, $path, $receiverId));
             }
         }
 
@@ -404,7 +417,6 @@ class OutstandingController extends Controller
 
     public function update(Request $request, $id)
     {
-        //validate form
         $this->validate($request, [
             'id_rkm'     => 'required',
             'net_sales'     => 'nullable',
@@ -415,9 +427,145 @@ class OutstandingController extends Controller
             'due_date'     => 'required',
             'pic'     => 'required',
             'sales_key'     => 'required',
+            'faktur_pajak' => 'nullable|file|max:2048',
         ]);
-        // return $request->all();
-        $post = outstanding::findOrFail($id);
+
+        $post = Outstanding::findOrFail($id);
+
+        $fakturPath = null;
+        if ($request->hasFile('faktur_pajak')) {
+            $file = $request->file('faktur_pajak');
+            $fakturPath = $file->store('faktur_pajak', 'public');
+        }
+        $dokumenTambahanPath = null;
+
+        if ($request->hasFile('dokumen_tambahan_files')) {
+            $files = $request->file('dokumen_tambahan_files');
+
+            // Simpan sementara file ke storage/temp
+            $tempPaths = [];
+            foreach ($files as $file) {
+                $path = $file->store('temp');
+                $tempPaths[] = storage_path('app/' . $path);
+            }
+
+            $outputPath = storage_path('app/public/doc_tambahan/doc_tambahan' . time() . '.pdf');
+            if (!file_exists(dirname($outputPath))) {
+                mkdir(dirname($outputPath), 0777, true);
+            }
+
+            $pdf = new Fpdi();
+
+            foreach ($tempPaths as $filePath) {
+                $pageCount = $pdf->setSourceFile($filePath);
+
+                for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
+                    $tpl = $pdf->importPage($pageNo);
+                    $size = $pdf->getTemplateSize($tpl);
+                    $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
+                    $pdf->useTemplate($tpl);
+                }
+            }
+
+            // Simpan PDF hasil merge
+            $pdf->Output($outputPath, 'F');
+
+            // Hapus file sementara
+            foreach ($tempPaths as $path) {
+                if (file_exists($path)) {
+                    unlink($path);
+                }
+            }
+
+            // 🔥 Optimalkan PDF hasil gabungan
+            $optimizedOutputPath = str_replace('.pdf', '_optimized.pdf', $outputPath);
+
+            $result = FacadePdfOptimizer::fromDisk('local')
+                ->open(str_replace(storage_path('app/'), '', $outputPath)) // Path relatif dari disk 'local'
+                ->settings(PdfSettings::SCREEN) // Atau PREPRESS, PRINTER, dll
+                ->colorConversionStrategy(ColorConversionStrategy::DEVICE_INDEPENDENT_COLOR)
+                ->colorImageResolution(50) // Atur resolusi gambar untuk mengurangi ukuran
+                ->optimize($optimizedOutputPath);
+
+            // Jika optimasi berhasil, gunakan file hasil optimasi
+            if ($result->status) {
+                unlink($outputPath); // Hapus file asli yang belum dioptimalkan
+                $dokumenTambahanPath = str_replace(storage_path('app/'), '', $optimizedOutputPath);
+            } else {
+                // Jika optimasi gagal, gunakan file asli
+                $dokumenTambahanPath = str_replace(storage_path('app/'), '', $outputPath);
+            }
+        }
+
+        if ($request->hasFile('pembayaran')) {
+            $newFile = $request->file('pembayaran');
+            $newFilePath = $newFile->store('temp');
+
+            $oldFilePath = null;
+            if ($post->path_dokumen_tambahan) {
+                $oldFilePath = storage_path('app/' . $post->path_dokumen_tambahan);
+            }
+
+            $allTempPaths = [];
+            if ($oldFilePath && file_exists($oldFilePath)) {
+                $allTempPaths[] = $oldFilePath;
+            }
+            $allTempPaths[] = storage_path('app/' . $newFilePath);
+
+            $outputPath = storage_path('app/public/doc_tambahan/doc_tambahan' . time() . '.pdf');
+            if (!file_exists(dirname($outputPath))) {
+                mkdir(dirname($outputPath), 0777, true);
+            }
+
+            $pdf = new Fpdi();
+
+            foreach ($allTempPaths as $filePath) {
+                $pageCount = $pdf->setSourceFile($filePath);
+
+                for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
+                    $tpl = $pdf->importPage($pageNo);
+                    $size = $pdf->getTemplateSize($tpl);
+                    $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
+                    $pdf->useTemplate($tpl);
+                }
+            }
+
+            $pdf->Output($outputPath, 'F');
+
+            // Hapus file sementara (kecuali file lama dari database)
+            foreach ($allTempPaths as $path) {
+                if ($path !== $oldFilePath && file_exists($path)) {
+                    unlink($path);
+                }
+            }
+
+            $newFilePathToDelete = storage_path('app/' . $newFilePath);
+            if (file_exists($newFilePathToDelete)) {
+                unlink($newFilePathToDelete);
+            }
+
+            // 🔥 Optimalkan PDF hasil gabungan
+            $optimizedOutputPath = str_replace('.pdf', '_optimized.pdf', $outputPath);
+
+            $result = FacadePdfOptimizer::fromDisk('local')
+                ->open(str_replace(storage_path('app/'), '', $outputPath))
+                ->settings(PdfSettings::SCREEN)
+                ->colorConversionStrategy(ColorConversionStrategy::DEVICE_INDEPENDENT_COLOR)
+                ->colorImageResolution(50)
+                ->optimize($optimizedOutputPath);
+
+            if ($result->status) {
+                if (file_exists($outputPath)) {
+                    unlink($outputPath);
+                }
+                // Simpan path baru untuk update ke database
+                $dokumenTambahanPath = str_replace(storage_path('app/'), '', $optimizedOutputPath);
+            } else {
+                // Jika optimasi gagal, gunakan file asli
+                $dokumenTambahanPath = str_replace(storage_path('app/'), '', $outputPath);
+            }
+        }
+
         $post->update([
             'id_rkm'     => $request->id_rkm,
             'net_sales'     => $request->net_sales,
@@ -428,8 +576,10 @@ class OutstandingController extends Controller
             'no_regist' => $request->no_regist,
             'no_invoice' => $request->no_invoice,
             'tanggal_bayar' => $request->tanggal_bayar,
+            'path_faktur_pajak' => $fakturPath ?? $post->path_faktur_pajak,
+            'path_dokumen_tambahan' => $dokumenTambahanPath ?? $post->path_dokumen_tambahan,
         ]);
-        // Inisialisasi status tracking  
+
         $status_tracking = [
             'invoice' => 0,
             'faktur_pajak' => 0,
@@ -441,10 +591,8 @@ class OutstandingController extends Controller
             'pembayaran' => 0,
         ];
 
-        // Ambil status dari request  
         $request_status = $request->status_tracking;
 
-        // Gunakan switch untuk mengatur nilai  
         switch ($request_status) {
             case 'invoice':
                 $status_tracking['invoice'] = 1;
@@ -498,30 +646,17 @@ class OutstandingController extends Controller
                 $status_tracking['konfir_pic'] = 1;
                 $status_tracking['pembayaran'] = 1;
                 break;
-            default:
-                $status_tracking['invoice'] = 0;
-                $status_tracking['faktur_pajak'] = 0;
-                $status_tracking['dokumen_tambahan'] = 0;
-                $status_tracking['konfir_cs'] = 0;
-                $status_tracking['tracking_dokumen'] = 0;
-                $status_tracking['no_resi'] = 0;
-                $status_tracking['konfir_pic'] = 0;
-                $status_tracking['pembayaran'] = 0;
-                break;
         }
 
-        // Cek entri di trackingOutstanding  
+        // Cek entri trackingOutstanding
         $tracking = trackingOutstanding::where('id_outstanding', $post->id)->first();
-
         if ($tracking) {
-            // Update entri yang ada  
             $tracking->update(array_merge($status_tracking, [
                 'status_resi' => $request->status_resi ?? '-',
                 'status_pic' => $request->status_pic ?? '-',
                 'updated_at' => now(),
             ]));
         } else {
-            // Buat entri baru  
             trackingOutstanding::create(array_merge($status_tracking, [
                 'id_outstanding' => $post->id,
                 'status_resi' => $request->status_resi ?? '-',
@@ -529,21 +664,151 @@ class OutstandingController extends Controller
             ]));
         }
 
+        // Update notifikasi jika status pembayaran 1
         if ($request->status_pembayaran == '1') {
             $rkm = RKM::where('id', $request->id_rkm)->with('perusahaan', 'materi')->first();
-
-            // Tandai notifikasi terkait sebagai dibaca (set read_at)
             DB::table('notifications')
                 ->where('type', 'App\Notifications\OutstandingNotification')
-                ->whereJsonContains('data->message->nama_perusahaan', $rkm->perusahaan->nama_perusahaan) // Sesuaikan dengan struktur data Anda
-                ->whereJsonContains('data->message->nama_materi', $rkm->materi->nama_materi) // Sesuaikan dengan struktur data Anda
-                ->whereJsonContains('data->message->due_date', $request->due_date) // Sesuaikan dengan struktur data Anda
-                ->update(['read_at' => Carbon::now()]);
+                ->whereJsonContains('data->message->nama_perusahaan', $rkm->perusahaan->nama_perusahaan)
+                ->whereJsonContains('data->message->nama_materi', $rkm->materi->nama_materi)
+                ->whereJsonContains('data->message->due_date', $request->due_date)
+                ->update(['read_at' => now()]);
+        }
+
+        if ($request->status_pembayaran == '1') {
+            $rkm = RKM::with('perusahaan', 'materi')->where('id', $post->id_rkm)->first();
+            $user = User::where('id_sales', $post->sales_key)->where('jabatan', 'Finance & Accounting')->get();
+            $data = [
+                'perusahaan' => $rkm->perusahaan->nama_perusahaan,
+                'materi' => $rkm->materi->nama_materi,
+                'tgl_bayar' => $post->tanggal_bayar,
+                'no_invoice' => $post->no_invoice,
+                'periode' => $rkm->tanggal_awal . ' -> ' . $rkm->tanggal_akhir,
+            ];
+            $receiverId = $user->id;
+            NotificationFacade::send($user, new OutstandingSelesai($data, $receiverId));
         }
 
         return redirect()->route('outstanding.index')->with(['success' => 'Data Berhasil Disimpan!']);
     }
 
+    public function dokumenGabungan($id)
+    {
+        $outstanding = Outstanding::findOrFail($id);
+
+        $filesToMerge = [];
+
+        // 1. Faktur Pajak
+        if ($outstanding->path_faktur_pajak) {
+            $fakturPath = storage_path('app/' . $outstanding->path_faktur_pajak);
+            if (file_exists($fakturPath)) {
+                $filesToMerge[] = $fakturPath;
+            }
+        }
+
+        // 2. Dokumen Tambahan
+        if ($outstanding->path_dokumen_tambahan) {
+            $dokumenPath = storage_path('app/' . $outstanding->path_dokumen_tambahan);
+            if (file_exists($dokumenPath)) {
+                $filesToMerge[] = $dokumenPath;
+            }
+        }
+
+        if (empty($filesToMerge)) {
+            return redirect()->back()->with('error', 'Tidak ada dokumen yang bisa digabung.');
+        }
+
+        // Path output
+        $outputPath = storage_path('app/public/gabungan/gabungan_' . $id . '_' . time() . '.pdf');
+        if (!is_dir(dirname($outputPath))) {
+            mkdir(dirname($outputPath), 0777, true);
+        }
+
+        $pdf = new Fpdi();
+
+        foreach ($filesToMerge as $file) {
+            $pageCount = $pdf->setSourceFile($file);
+            for ($i = 1; $i <= $pageCount; $i++) {
+                $tpl = $pdf->importPage($i);
+                $size = $pdf->getTemplateSize($tpl);
+
+                $orientation = $size['width'] > $size['height'] ? 'L' : 'P';
+                $pdf->AddPage($orientation, [$size['width'], $size['height']]);
+                $pdf->useTemplate($tpl);
+            }
+        }
+
+        $pdf->Output($outputPath, 'F');
+
+        // Optimasi PDF (biar ukurannya kecil)
+        $optimizedPath = str_replace('.pdf', '_optimized.pdf', $outputPath);
+
+        $result = FacadePdfOptimizer::fromDisk('local')
+            ->open(str_replace(storage_path('app/'), '', $outputPath))
+            ->settings(PdfSettings::SCREEN)
+            ->colorConversionStrategy(ColorConversionStrategy::DEVICE_INDEPENDENT_COLOR)
+            ->colorImageResolution(90)
+            ->optimize($optimizedPath);
+
+        $finalFile = $result->status ? $optimizedPath : $outputPath;
+
+        // Nama file download yang lebih informatif
+        $rkm = RKM::with('perusahaan')->find($outstanding->id_rkm);
+        $namaPerusahaan = $rkm?->perusahaan?->nama_perusahaan ?? 'Outstanding';
+        $fileName = 'Dokumen_Lengkap_' . preg_replace('/[^A-Za-z0-9\-]/', '_', $namaPerusahaan) . '_' . $id . '.pdf';
+
+        return response()->download($finalFile, $fileName)->deleteFileAfterSend(true);
+    }
+
+    private function terbilang($amount)
+    {
+        $bilangan = [
+            '',
+            'satu',
+            'dua',
+            'tiga',
+            'empat',
+            'lima',
+            'enam',
+            'tujuh',
+            'delapan',
+            'sembilan',
+            'sepuluh',
+            'sebelas'
+        ];
+        $satuan = ['', 'ribu', 'juta', 'miliar'];
+
+        $amount = (int)$amount; // <-- Ini benar
+        if ($amount < 0) return 'Minus ' . $this->terbilang(abs($amount));
+        if ($amount == 0) return 'Nol rupiah';
+
+        $words = '';
+        $i = 0;
+        while ($amount > 0) {
+            $part = $amount % 1000;
+            if ($part > 0) {
+                $partWords = '';
+                if ($part < 12) {
+                    $partWords = $bilangan[$part];
+                } elseif ($part < 20) {
+                    $partWords = $bilangan[$part - 10] . ' belas';
+                } elseif ($part < 100) {
+                    $puluhan = floor($part / 10);
+                    $satuan = $part % 10;
+                    $partWords = $bilangan[$puluhan] . ' puluh ' . ($satuan > 0 ? $bilangan[$satuan] : '');
+                } else {
+                    $ratusan = floor($part / 100);
+                    $sisa = $part % 100;
+                    $partWords = $bilangan[$ratusan] . ' ratus ' . ($sisa > 0 ? $this->terbilang($sisa) : '');
+                }
+                $words = trim($partWords . ' ' . $satuan[$i] . ' ' . $words);
+            }
+            $amount = floor($amount / 1000);
+            $i++;
+        }
+        return ucwords(trim($words)) . ' rupiah';
+    }
+    
     public function destroy($id)
     {
         $post = outstanding::findOrFail($id);

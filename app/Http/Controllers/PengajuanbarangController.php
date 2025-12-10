@@ -20,6 +20,11 @@ class PengajuanBarangController extends Controller
     /**
      * Menampilkan daftar Pengajuan Barang.
      */
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     public function index()
     {
         $user = auth()->user();
@@ -256,7 +261,8 @@ class PengajuanBarangController extends Controller
         $path = '/pengajuanbarang';
 
         foreach ($users as $user) {
-            NotificationFacade::send($user, new PengajuanbarangNotification($data, $path, $type));
+            $receiverId = $user->id;
+            NotificationFacade::send($user, new PengajuanbarangNotification($data, $path, $type, $receiverId));
         }
 
         return redirect()->route('pengajuanbarang.index')->with('success', 'Pengajuan Barang berhasil dibuat.');
@@ -381,7 +387,8 @@ class PengajuanBarangController extends Controller
             })->get();
 
             foreach ($userObjs as $user) {
-                NotificationFacade::send($user, new ApprovalbarangNotification($notifData, $path, $to, $type));
+                $receiverId = $user->id;
+                NotificationFacade::send($user, new ApprovalbarangNotification($notifData, $path, $to, $type, $receiverId));
             }
 
             return redirect()->route('pengajuanbarang.index')->with(['success' => 'Data berhasil diperbarui!']);
@@ -411,7 +418,8 @@ class PengajuanBarangController extends Controller
             ];
 
             foreach ($userObjs as $user) {
-                NotificationFacade::send($user, new ApprovalbarangNotification($notifData, $path, $to, $type));
+                $receiverId = $user->id;
+                NotificationFacade::send($user, new ApprovalbarangNotification($notifData, $path, $to, $type, $receiverId));
             }
 
             return redirect()->route('pengajuanbarang.index')->with(['success' => 'Data berhasil diperbarui!']);
@@ -476,7 +484,8 @@ class PengajuanBarangController extends Controller
         ];
 
         foreach ($userObjs as $user) {
-            NotificationFacade::send($user, new ApprovalbarangNotification($notifData, $path, $to, $type));
+            $receiverId = $user->id;
+            NotificationFacade::send($user, new ApprovalbarangNotification($notifData, $path, $to, $type, $receiverId));
         }
 
         return redirect()->route('pengajuanbarang.index')->with('success', 'Pengajuan Barang berhasil diperbarui.');
@@ -640,23 +649,20 @@ class PengajuanBarangController extends Controller
         // return $pdf->download('Data_pengajuan_barang.pdf');
     }
     public function getHold()
-{
-    $data = PengajuanBarang::with(['karyawan', 'tracking'])
-        ->whereNull('invoice')
-        ->get();
+    {
+        $data = PengajuanBarang::with(['karyawan', 'tracking'])
+            ->whereNull('invoice')
+            ->get();
 
-    return response()->json($data);
-}
+        return response()->json($data);
+    }
 
-public function getHasInvoice()
-{
-    $data = PengajuanBarang::with(['karyawan', 'tracking'])
-        ->whereNotNull('invoice')
-        ->get();
+    public function getHasInvoice()
+    {
+        $data = PengajuanBarang::with(['karyawan', 'tracking'])
+            ->whereNotNull('invoice')
+            ->get();
 
-    return response()->json($data);
-}
-
-
-    
+        return response()->json($data);
+    }
 }
