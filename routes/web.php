@@ -40,6 +40,7 @@ use App\Http\Controllers\TicketController;
 use App\Http\Controllers\KanbanController;
 use App\Http\Controllers\DailyActivityController;
 use App\Http\Controllers\office\OfficeController;
+use App\Http\Controllers\DashboardSLAController;
 use App\Http\Controllers\Office\CertificateController;
 use App\Http\Controllers\office\ModulController;
 use App\Http\Controllers\OutstandingController;
@@ -49,7 +50,6 @@ use App\Http\Controllers\PusherAuthController;
 use App\Http\Controllers\office\vendorOfficeController;
 use App\Http\Controllers\PenukaranSouvenirController;
 use App\Http\Controllers\office\DashboardSouvenirController;
-
 
 /*
 |--------------------------------------------------------------------------
@@ -702,6 +702,14 @@ Route::put('/expense-hub/update/{id}', [App\Http\Controllers\ExpenseHubControlle
 Route::prefix('office')->group(function () {
     Route::get('/dashboard', [OfficeController::class, 'dashboard'])->name('office.dashboard');
 });
+
+Route::prefix('dashboard-sla/{team}')->group(function () {
+    Route::whereIn('team', ['programmer', 'tech-support']);
+    Route::get('/tim', [DashboardSLAController::class, 'dashboardTim']);
+    Route::get('/user', [DashboardSLAController::class, 'dashboardUser']);
+    Route::get('/kritis', [DashboardSLAController::class, 'dashboardKritis']);
+});
+
 Route::prefix('office')->name('office.')->middleware(['auth'])->group(function () {
 
     // Certificate Routes

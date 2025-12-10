@@ -13,6 +13,11 @@ class laporanInsiden extends Model
 
     public function Pelapor()
     {
-        return $this->belongsTo(Karyawan::class, 'pelapor', 'id');
+        return $this->belongsTo(karyawan::class, 'pelapor', 'id');
+    }
+
+    public function tracking()
+    {
+        return $this->hasMany(trackingLaporanInsiden::class, 'id_laporanInsiden', 'id');
     }
 }

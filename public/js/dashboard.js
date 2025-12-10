@@ -14,8 +14,8 @@ function initializeYearlySales() {
         fetchTotalMengajarPerMateri(year, 'All');
         fetchAbsenPerbulan(year, 'All');
         // fetchNilaiFeedback(year, '1');
-        fetchJumlahPICData();
-        fetchJumlahTicketingData();
+        // fetchJumlahPICData();
+        // fetchJumlahTicketingData();
     }
 }
 function getYearlySales(year) {
@@ -823,7 +823,7 @@ function fetchTabInix(year) {
                 $('#nama_instruktur').text(data.instruktur_terbaik.instruktur.nama_lengkap);
                 $('#nama_itsm').text(data.itsm_terbaik.itsm.itsm_nama);
                 $('#nama_office').text(data.office_terbaik.office.office_nama);
-                
+
                 if (data.keterlambatan.length >= 3) {
                     // Mengisi src untuk foto peringkat kedua
                     $('.second-position #present-photo-dua').attr('src', '/storage/' + data.keterlambatan[1].foto);
@@ -1330,14 +1330,37 @@ function generateRandomColor() {
     return color;
 }
 
-// Fungsi untuk load daftar bulan dari server dan update dropdown options
-function loadFilterBulanOptions() {
+function secondsToHMS(seconds) {
+    // Handle null atau undefined seconds
+    if (seconds === null || typeof seconds === 'undefined') {
+        return '00:00:00';
+    }
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    return [
+        hrs.toString().padStart(2, '0'),
+        mins.toString().padStart(2, '0'),
+        secs.toString().padStart(2, '0')
+    ].join(':');
+}
+
+/**
+ * Mengambil daftar bulan dari server dan mengisi dropdown.
+ * Fungsi ini sekarang reusable untuk SEMUA dropdown filter bulan.
+ * @param {string} dropdownId - ID dari elemen <select> (e.g., '#filterBulan')
+ */
+function loadBulanFilter(dropdownId) {
     $.ajax({
-        url: '/list-bulan',  // Pastikan route ini sesuai dengan controller method
+        url: '/list-bulan',
         method: 'GET',
         dataType: 'json',
         success: function(bulanList) {
-            const dropdown = $('#filterBulan');
+            const dropdown = $(dropdownId);
+            if (dropdown.length === 0) {
+                console.error(`loadBulanFilter: Dropdown with ID "${dropdownId}" not found.`);
+                return;
+            }
             dropdown.empty();
             dropdown.append('<option value="all">Semua Bulan</option>');
             bulanList.forEach(function(bulan) {
@@ -1345,66 +1368,42 @@ function loadFilterBulanOptions() {
             });
         },
         error: function() {
-            console.error('Gagal mengambil daftar bulan dari server.');
+            console.error(`Gagal mengambil daftar bulan untuk ${dropdownId}.`);
         }
     });
 }
 
-// Event listener untuk saat opsi bulan dipilih, update chart
-$('#filterBulan').on('change', function() {
-    const filterValue = $(this).val();
-    updateChartJumlahTicketing(filterValue);
-});
 
-// Panggil fungsi load awal saat halaman siap
-$(document).ready(function() {
-    loadFilterBulanOptions();
-    fetchJumlahTicketingData('all');  // Load data seluruh bulan awalnya
-});
+// ===================================================================
+// 2. CHART VARIABLES & BLOK FUNGSI
+// ===================================================================
 
+// --- 2.1. JUMLAH TICKETING ---
 let jumlahTicketingChart = null;
-
-// Warna background yang cukup untuk beberapa divisi, jika lebih banyak label, warna diulang
 const backgroundColors = [
-    'rgba(255, 99, 132, 0.7)',
-    'rgba(54, 162, 235, 0.7)',
-    'rgba(255, 206, 86, 0.7)',
-    'rgba(255, 159, 64, 0.7)',
-    'rgba(75, 192, 192, 0.7)',
-    'rgba(153, 102, 255, 0.7)',
-    'rgba(255, 99, 255, 0.7)',
-    'rgba(99, 255, 132, 0.7)'
+    'rgba(255, 99, 132, 0.7)', 'rgba(54, 162, 235, 0.7)', 'rgba(255, 206, 86, 0.7)',
+    'rgba(255, 159, 64, 0.7)', 'rgba(75, 192, 192, 0.7)', 'rgba(153, 102, 255, 0.7)',
+    'rgba(255, 99, 255, 0.7)', 'rgba(99, 255, 132, 0.7)'
 ];
 const borderColors = [
-    'rgba(255, 99, 132, 1)',
-    'rgba(54, 162, 235, 1)',
-    'rgba(255, 206, 86, 1)',
-    'rgba(255, 159, 64, 1)',
-    'rgba(75, 192, 192, 1)',
-    'rgba(153, 102, 255, 1)',
-    'rgba(255, 99, 255, 1)',
-    'rgba(99, 255, 132, 1)'
+    'rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)', 'rgba(255, 206, 86, 1)',
+    'rgba(255, 159, 64, 1)', 'rgba(75, 192, 192, 1)', 'rgba(153, 102, 255, 1)',
+    'rgba(255, 99, 255, 1)', 'rgba(99, 255, 132, 1)'
 ];
 
 function fetchJumlahTicketingData(filterValue = 'all') {
     console.log("fetchJumlahTicketingData: memulai fetch dengan filter bulan =", filterValue);
-
     $.ajax({
-        url: '/ticketing-data',  // Pastikan route di backend sudah sesuai
+        url: '/ticketing-data',
         method: 'GET',
-        data: { filterMonth: filterValue },  // Kirim filter bulan ke backend
+        data: { filterMonth: filterValue },
         dataType: 'json',
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
+        cache: false,
+        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
         success: function(response) {
             console.log("fetchJumlahTicketingData: data diterima dari server =", response);
             if (response && Array.isArray(response.labels) && Array.isArray(response.values)) {
-                if (response.labels.length && response.values.length) {
-                    renderJumlahTicketingChart(response.labels, response.values);
-                } else {
-                    renderJumlahTicketingChart(['No Data'], [0]);
-                }
+                renderJumlahTicketingChart(response.labels, response.values);
             } else {
                 console.error('fetchJumlahTicketingData: Format data tidak sesuai:', response);
                 renderJumlahTicketingChart(['No Data'], [0]);
@@ -1419,31 +1418,23 @@ function fetchJumlahTicketingData(filterValue = 'all') {
 
 function renderJumlahTicketingChart(labels, values) {
     console.log("renderJumlahTicketingChart: menerima labels =", labels, ", values =", values);
-
     const canvas = document.getElementById('jumlahTicketingChart');
     if (!canvas) {
         console.error("renderJumlahTicketingChart: element canvas tidak ditemukan");
         return;
     }
-
     const ctx = canvas.getContext('2d');
-
     if (jumlahTicketingChart) {
         try {
             jumlahTicketingChart.destroy();
-            console.log("renderJumlahTicketingChart: chart lama dihancurkan");
         } catch (e) {
             console.warn("renderJumlahTicketingChart: error saat menghancurkan chart lama", e);
         }
     }
-
-    // Jika data kosong atau tidak ada label, gunakan data dummy
-    if (labels.length === 0 || values.length === 0) {
+    if (labels.length === 0 || values.length === 0 || (labels[0] === 'No Data')) {
         labels = ['No Data'];
         values = [0];
     }
-
-    // Buat array warna sesuai jumlah label, ulangi warna jika label lebih banyak
     const bgColors = labels.map((_, i) => backgroundColors[i % backgroundColors.length]);
     const bColors = labels.map((_, i) => borderColors[i % borderColors.length]);
 
@@ -1476,21 +1467,15 @@ function renderJumlahTicketingChart(labels, values) {
                 },
                 datalabels: {
                     color: '#fff',
-                    font: {
-                        weight: 'bold',
-                        size: 14,
-                    },
-                    formatter: function(value, context) {
-                        return value; // angka yang akan ditampilkan di tengah segmen
-                    },
+                    font: { weight: 'bold', size: 14 },
+                    formatter: (value) => value,
                     anchor: 'center',
                     align: 'center'
                 }
             }
         },
-        plugins: [ChartDataLabels] // aktifkan plugin datalabels
+        plugins: [ChartDataLabels]
     });
-
     console.log("renderJumlahTicketingChart: chart baru berhasil dibuat");
 }
 
@@ -1499,46 +1484,9 @@ function updateChartJumlahTicketing(filterValue) {
     fetchJumlahTicketingData(filterValue);
 }
 
-// Contoh event listener dropdown filter bulan jika ada
-$('#filterBulan').on('change', function() {
-    const filterValue = $(this).val();
-    updateChartJumlahTicketing(filterValue);
-});
 
-// Event listener Bootstrap tab shown: trigger load chart ketika tab diaktifkan
-const jumlahTicketingTabTrigger = document.getElementById('pills-jumlah-ticketing-tab');
-if (jumlahTicketingTabTrigger) {
-    jumlahTicketingTabTrigger.addEventListener('shown.bs.tab', function () {
-        console.log('Bootstrap tab shown event: Memuat ulang chart jumlah ticketing saat tab diaktifkan');
-        fetchJumlahTicketingData();
-    });
-}
-
-// Load data chart awal saat page ready dengan filter all
-$(document).ready(function() {
-    fetchJumlahTicketingData('all');
-});
-
+// --- 2.2. JUMLAH PIC ---
 let jumlahPICChart = null;
-
-function loadFilterMonthPICOptions() {
-    $.ajax({
-        url: '/list-bulan',
-        method: 'GET',
-        dataType: 'json',
-        success: function(bulanList) {
-            const dropdown = $('#filterMonthPIC');
-            dropdown.empty();
-            dropdown.append('<option value="all">Semua Bulan</option>');
-            bulanList.forEach(function(bulan) {
-                dropdown.append(`<option value="${bulan}">${bulan}</option>`);
-            });
-        },
-        error: function() {
-            console.error('Gagal mengambil daftar bulan dari server untuk filter Jumlah PIC.');
-        }
-    });
-}
 
 function renderJumlahPICChart(labels, data) {
     const ctx = document.getElementById('jumlahPICChart').getContext('2d');
@@ -1553,9 +1501,9 @@ function renderJumlahPICChart(labels, data) {
                 label: 'Jumlah PIC',
                 data: data,
                 backgroundColor: [
-                    'rgba(75, 192, 192, 0.7)',   // Programming (index 0)
-                    'rgba(255, 206, 86, 0.7)',   // Digital (index 1)
-                    'rgba(54, 162, 235, 0.7)'    // Technical Support (index 2)
+                    'rgba(75, 192, 192, 0.7)',
+                    'rgba(255, 206, 86, 0.7)',
+                    'rgba(54, 162, 235, 0.7)'
                 ],
                 borderColor: [
                     'rgba(75, 192, 192, 1)',
@@ -1568,13 +1516,8 @@ function renderJumlahPICChart(labels, data) {
         options: {
             responsive: true,
             scales: {
-                x: {
-                    title: { display: true, text: 'Kategori Keperluan' }
-                },
-                y: {
-                    beginAtZero: true,
-                    title: { display: true, text: 'Jumlah PIC' }
-                }
+                x: { title: { display: true, text: 'Kategori Keperluan' } },
+                y: { beginAtZero: true, title: { display: true, text: 'Jumlah PIC' } }
             }
         }
     });
@@ -1595,61 +1538,31 @@ function fetchJumlahPICData(filterMonth = 'all') {
     if (filterMonth !== 'all') {
         url += '?filterMonth=' + encodeURIComponent(filterMonth);
     }
-
     fetch(url)
-    .then(res => {
-        if (!res.ok) throw new Error('Network response was not ok');
-        return res.json();
-    })
-    .then(data => {
-        // Pastikan label kategori urut sesuai backend: Programming, Digital, Technical Support
-        if (data.labels && data.values) {
-            // Urutkan data agar sesuai urutan label yang diinginkan
-            const order = ['Programming', 'Digital', 'Technical Support'];
-            const sortedValues = order.map(cat => {
-                const index = data.labels.indexOf(cat);
-                return index !== -1 ? data.values[index] : 0;
-            });
-            updateJumlahPICChart(order, sortedValues);
-        } else {
-            console.error('Data dari API tidak sesuai format', data);
-        }
-    })
-    .catch(err => {
-        console.error('Gagal mengambil data jumlah PIC:', err);
-    });
-}
-
-$(document).ready(function() {
-    loadFilterMonthPICOptions();
-    fetchJumlahPICData('all');
-
-    $('#filterMonthPIC').on('change', function() {
-        const filterValue = $(this).val();
-        fetchJumlahPICData(filterValue);
-    });
-
-    const jumlahPICTabTrigger = document.getElementById('pills-jumlah-pic-tab');
-    if (jumlahPICTabTrigger) {
-        jumlahPICTabTrigger.addEventListener('shown.bs.tab', function () {
-            const currentFilter = $('#filterMonthPIC').val() || 'all';
-            fetchJumlahPICData(currentFilter);
+        .then(res => {
+            if (!res.ok) throw new Error('Network response was not ok');
+            return res.json();
+        })
+        .then(data => {
+            if (data.labels && data.values) {
+                const order = ['Programming', 'Digital', 'Technical Support'];
+                const sortedValues = order.map(cat => {
+                    const index = data.labels.indexOf(cat);
+                    return index !== -1 ? data.values[index] : 0;
+                });
+                updateJumlahPICChart(order, sortedValues);
+            } else {
+                console.error('Data dari API tidak sesuai format', data);
+            }
+        })
+        .catch(err => {
+            console.error('Gagal mengambil data jumlah PIC:', err);
         });
-    }
-});
-
-let rerataDurasiChartInstance = null;
-
-function secondsToHMS(seconds) {
-    const hrs = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-    return [
-        hrs.toString().padStart(2, '0'),
-        mins.toString().padStart(2, '0'),
-        secs.toString().padStart(2, '0')
-    ].join(':');
 }
+
+
+// --- 2.3. RERATA DURASI PENGERJAAN ---
+let rerataDurasiChartInstance = null;
 
 async function fetchRerataDurasiData(selectedMonth = 'all') {
     try {
@@ -1660,7 +1573,6 @@ async function fetchRerataDurasiData(selectedMonth = 'all') {
         const response = await fetch(url);
         if (!response.ok) throw new Error('Network response was not ok');
         const data = await response.json();
-
         renderRerataDurasiChart(data.labels, data.values);
     } catch (error) {
         console.error('Fetch Rata Rata Durasi Data Error:', error);
@@ -1669,15 +1581,13 @@ async function fetchRerataDurasiData(selectedMonth = 'all') {
 
 function renderRerataDurasiChart(labels, values) {
     const ctx = document.getElementById('rerataDurasiChart').getContext('2d');
-
     if (rerataDurasiChartInstance) {
         rerataDurasiChartInstance.destroy();
     }
-
     rerataDurasiChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: labels,  // langsung keperluan sebagai sumbu X
+            labels: labels,
             datasets: [{
                 label: 'Rata-rata Durasi (HH:mm:ss)',
                 data: values,
@@ -1695,83 +1605,41 @@ function renderRerataDurasiChart(labels, values) {
         options: {
             responsive: true,
             plugins: {
-                title: {
-                    display: true,
-                    text: 'Rata Rata Durasi Pengerjaan Ticketing',
-                    font: { size: 18, weight: 'bold' }
-                },
+                title: { display: true, text: 'Rata Rata Durasi Pengerjaan Ticketing', font: { size: 18, weight: 'bold' } },
                 tooltip: {
                     callbacks: {
-                        label: function(context) {
-                            return `Durasi: ${secondsToHMS(context.raw)}`;
-                        }
+                        label: (context) => `Durasi: ${secondsToHMS(context.raw)}`
                     }
                 },
-                legend: {
-                    display: true,
-                    position: 'top',
-                },
+                legend: { display: true, position: 'top' }
             },
             scales: {
                 y: {
                     beginAtZero: true,
-                    ticks: {
-                        callback: value => secondsToHMS(value)
-                    },
-                    title: {
-                        display: true,
-                        text: 'Durasi (HH:mm:ss)'
-                    }
+                    ticks: { callback: value => secondsToHMS(value) },
+                    title: { display: true, text: 'Durasi (HH:mm:ss)' }
                 },
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Kategori/Keperluan'
-                    }
-                }
+                x: { title: { display: true, text: 'Kategori/Keperluan' } }
             }
         }
     });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    loadFilterMonthOption();
 
-    document.getElementById('filterMonth').addEventListener('change', function() {
-        fetchRerataDurasiData(this.value);
-    });
-
-    fetchRerataDurasiData('all');
-});
-
-function loadFilterMonthOption() {
-    fetch('/list-bulan')
-        .then(response => {
-            if (!response.ok) throw new Error('Failed to load months');
-            return response.json();
-        })
-        .then(bulanList => {
-            const dropdown = document.getElementById('filterMonth');
-            dropdown.innerHTML = `<option value="all">Semua Bulan</option>`;
-            bulanList.forEach(bulan => {
-                dropdown.innerHTML += `<option value="${bulan}">${bulan}</option>`;
-            });
-        })
-        .catch(() => {
-            console.error('Gagal mengambil daftar bulan dari server untuk filter bulan.');
-        });
-}
-
+// --- 2.4. RERATA KETEPATAN RESPONSE ---
 let rerataKetepatanResponseChart = null;
 
 function secondsToHMS(seconds) {
-    const hrs = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
+    if (isNaN(seconds) || seconds < 0) return '00:00:00';
+    // Pastikan detik adalah angka
+    seconds = Number(seconds);
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
     return [
-        hrs.toString().padStart(2, '0'),
-        mins.toString().padStart(2, '0'),
-        secs.toString().padStart(2, '0')
+        h.toString().padStart(2, '0'),
+        m.toString().padStart(2, '0'),
+        s.toString().padStart(2, '0')
     ].join(':');
 }
 
@@ -1779,26 +1647,27 @@ async function fetchRerataKetepatanResponseData(selectedMonth = 'all') {
     try {
         let url = '/rerata-ketepatan-response-data';
         if (selectedMonth !== 'all') {
-            url += '?filterMonth=' + encodeURIComponent(selectedMonth);
+            // --- INI PERBAIKANNYA ---
+            url += '?filterMonthKetepatan=' + encodeURIComponent(selectedMonth);
+            // -------------------------
         }
         const response = await fetch(url);
         if (!response.ok) throw new Error('Network response was not ok');
         const data = await response.json();
-
         renderRerataKetepatanResponseChart(data.labels, data.values);
     } catch (error) {
         console.error('Fetch Rata Rata Ketepatan Response Data Error:', error);
     }
 }
 
+/**
+ * Merender chart ketepatan respons
+ */
 function renderRerataKetepatanResponseChart(labels, values) {
     const ctx = document.getElementById('rerataKetepatanResponseChart').getContext('2d');
-
-    // Destroy chart lama jika ada
     if (rerataKetepatanResponseChart) {
         rerataKetepatanResponseChart.destroy();
     }
-
     rerataKetepatanResponseChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -1820,44 +1689,24 @@ function renderRerataKetepatanResponseChart(labels, values) {
         options: {
             responsive: true,
             plugins: {
-                title: {
-                    display: true,
-                    text: 'Rata Rata Ketepatan Response Ticketing',
-                    font: { size: 18, weight: 'bold' }
-                },
+                title: { display: true, text: 'Rata Rata Ketepatan Response Ticketing', font: { size: 18, weight: 'bold' } },
                 tooltip: {
                     callbacks: {
-                        label: function(context) {
-                            return `Ketepatan: ${secondsToHMS(context.raw)}`;
-                        }
+                        label: (context) => `Ketepatan: ${secondsToHMS(context.raw)}`
                     }
                 },
-                legend: {
-                    display: true,
-                    position: 'top',
-                },
+                legend: { display: true, position: 'top' },
             },
             scales: {
                 y: {
                     beginAtZero: true,
-                    ticks: {
-                        callback: value => secondsToHMS(value)
-                    },
-                    title: {
-                        display: true,
-                        text: 'Durasi (HH:mm:ss)'
-                    },
+                    ticks: { callback: value => secondsToHMS(value) },
+                    title: { display: true, text: 'Durasi (HH:mm:ss)' },
                     grid: { color: '#eee' }
                 },
                 x: {
-                    title: {
-                        display: true,
-                        text: 'Kategori/Keperluan'
-                    },
-                    ticks: {
-                        color: '#444',
-                        font: { size: 14 }
-                    },
+                    title: { display: true, text: 'Kategori/Keperluan' },
+                    ticks: { color: '#444', font: { size: 14 } },
                     grid: { display: false }
                 }
             }
@@ -1865,43 +1714,15 @@ function renderRerataKetepatanResponseChart(labels, values) {
     });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    loadFilterMonthOptions();
 
-    document.getElementById('filterMonthKetepatan').addEventListener('change', function() {
-        fetchRerataKetepatanResponseData(this.value);
-    });
-
-    fetchRerataKetepatanResponseData('all');
-});
-
-function loadFilterMonthOptions() {
-    fetch('/list-bulan')
-        .then(response => {
-            if (!response.ok) throw new Error('Failed to load months');
-            return response.json();
-        })
-        .then(bulanList => {
-            const dropdown = document.getElementById('filterMonthKetepatan');
-            dropdown.innerHTML = `<option value="all">Semua Bulan</option>`;
-            bulanList.forEach(bulan => {
-                dropdown.innerHTML += `<option value="${bulan}">${bulan}</option>`;
-            });
-        })
-        .catch(() => {
-            console.error('Gagal mengambil daftar bulan dari server untuk filter bulan.');
-        });
-}
-
+// --- 2.5. JUMLAH PERMINTAAN PER BULAN ---
 let jumlahPermintaanPerBulanChart;
 
 function renderJumlahPermintaanPerBulanChart(labels, values) {
     const ctx = document.getElementById('jumlahPermintaanPerBulanChart').getContext('2d');
-
     if (jumlahPermintaanPerBulanChart) {
         jumlahPermintaanPerBulanChart.destroy();
     }
-
     jumlahPermintaanPerBulanChart = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -1912,10 +1733,9 @@ function renderJumlahPermintaanPerBulanChart(labels, values) {
                 backgroundColor: 'rgba(54, 162, 235, 0.85)',
                 borderColor: 'rgba(54, 132, 235, 1)',
                 borderWidth: 2,
-                borderRadius: 6, // Membuat efek agak bulat seperti 3D
+                borderRadius: 6,
                 barPercentage: 0.6,
                 categoryPercentage: 0.7,
-                // Optional : gradien bisa diaktifkan jika ingin lebih advanced
             }]
         },
         options: {
@@ -1923,48 +1743,29 @@ function renderJumlahPermintaanPerBulanChart(labels, values) {
             scales: {
                 y: {
                     beginAtZero: true,
-                    max: 110, // Sesuaikan max lebih dari data tertinggi 94
-                    ticks: {
-                        stepSize: 20,
-                        color: '#444',
-                        font: { size: 12 },
-                    },
-                    grid: {
-                        color: '#ddd',
-                        borderDash: [3, 3],
-                    }
+                    // max: 110, // Sebaiknya jangan di-hardcode, biarkan Chart.js yg menentukan
+                    ticks: { stepSize: 20, color: '#444', font: { size: 12 } },
+                    grid: { color: '#ddd', borderDash: [3, 3] }
                 },
                 x: {
-                    ticks: {
-                        color: '#222',
-                        font: { size: 14 },
-                    },
+                    ticks: { color: '#222', font: { size: 14 } },
                     grid: { display: false }
                 }
             },
             plugins: {
-                legend: {
-                    display: false // Hide legend agar seperti gambar (judul bisa di H3)
-                },
+                legend: { display: false },
                 tooltip: {
                     enabled: true,
                     callbacks: {
-                        label: function(context) {
-                            return context.dataset.label + ': ' + context.parsed.y;
-                        }
+                        label: (context) => context.dataset.label + ': ' + context.parsed.y
                     }
                 },
-                datalabels: { // Memakai ChartDataLabels plugin untuk angka di atas bar
+                datalabels: {
                     anchor: 'end',
                     align: 'start',
                     color: '#0056b3',
-                    font: {
-                        weight: 'bold',
-                        size: 14
-                    },
-                    formatter: function(value) {
-                        return value;
-                    },
+                    font: { weight: 'bold', size: 14 },
+                    formatter: (value) => value,
                     offset: -10,
                 }
             }
@@ -1985,10 +1786,8 @@ async function fetchJumlahPermintaanPerBulanData() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    fetchJumlahPermintaanPerBulanData();
-});
 
+// --- 2.6. PERMINTAAN SERING DIAJUKAN ---
 let permintaanSeringDiajukanChart;
 
 async function fetchPermintaanSeringDiajukanData() {
@@ -2005,11 +1804,9 @@ async function fetchPermintaanSeringDiajukanData() {
 
 function renderPermintaanSeringDiajukanChart(labels, values) {
     const ctx = document.getElementById('permintaanSeringDiajukanChart').getContext('2d');
-
     if (permintaanSeringDiajukanChart) {
         permintaanSeringDiajukanChart.destroy();
     }
-
     permintaanSeringDiajukanChart = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -2025,36 +1822,25 @@ function renderPermintaanSeringDiajukanChart(labels, values) {
             }]
         },
         options: {
-            indexAxis: 'y',  // Membuat bar chart horizontal
+            indexAxis: 'y',
             responsive: true,
             scales: {
                 x: {
                     beginAtZero: true,
-                    ticks: {
-                        stepSize: 10,
-                        color: '#444',
-                        font: { size: 12 }
-                    },
+                    ticks: { stepSize: 10, color: '#444', font: { size: 12 } },
                     grid: { color: '#eee' }
                 },
                 y: {
-                    ticks: {
-                        color: '#444',
-                        font: { size: 12 }
-                    },
+                    ticks: { color: '#444', font: { size: 12 } },
                     grid: { display: false }
                 }
             },
             plugins: {
-                legend: {
-                    display: false,
-                },
+                legend: { display: false },
                 tooltip: {
                     enabled: true,
                     callbacks: {
-                        label: function(context) {
-                            return context.parsed.x;
-                        }
+                        label: (context) => context.parsed.x
                     }
                 },
                 datalabels: {
@@ -2062,18 +1848,284 @@ function renderPermintaanSeringDiajukanChart(labels, values) {
                     align: 'right',
                     color: '#000',
                     font: { weight: 'bold', size: 13 },
-                    formatter: function(value) {
-                        return value;
-                    }
+                    formatter: (value) => value
                 }
             }
         },
-        plugins: [ChartDataLabels] // Pastikan plugin ini sudah include
+        plugins: [ChartDataLabels]
     });
 }
 
-// Jalankan saat halaman sudah siap
-document.addEventListener('DOMContentLoaded', () => {
-    fetchPermintaanSeringDiajukanData();
-});
+$(document).ready(function() {
 
+    // --- Inisialisasi semua dropdown filter bulan ---
+    // (Kode lama Anda - TIDAK BERUBAH)
+    loadBulanFilter('#filterBulan');
+    loadBulanFilter('#filterMonthPIC');
+    loadBulanFilter('#filterMonth');
+    loadBulanFilter('#filterMonthKetepatan');
+
+    // --- Event Listeners untuk Perubahan Filter Dropdown ---
+    // (Kode lama Anda - TIDAK BERUBAH)
+    $('#filterBulan').on('change', function() {
+        fetchJumlahTicketingData(this.value);
+    });
+    $('#filterMonthPIC').on('change', function() {
+        fetchJumlahPICData(this.value);
+    });
+    $('#filterMonth').on('change', function() {
+        fetchRerataDurasiData(this.value);
+    });
+    $('#filterMonthKetepatan').on('change', function() {
+        fetchRerataKetepatanResponseData(this.value);
+    });
+
+
+    // --- Event Listeners untuk PILLS (SUB-TAB) LAMA ---
+    // (Kode lama Anda - TIDAK BERUBAH)
+    $('#pills-jumlah-ticketing-tab').on('shown.bs.tab', function () {
+        fetchJumlahTicketingData($('#filterBulan').val() || 'all');
+    });
+    $('#pills-jumlah-pic-tab').on('shown.bs.tab', function () {
+        fetchJumlahPICData($('#filterMonthPIC').val() || 'all');
+    });
+    $('#pills-rerata-durasi-tab').on('shown.bs.tab', function () {
+        fetchRerataDurasiData($('#filterMonth').val() || 'all');
+    });
+    $('#pills-rerata-ketepatan-response-tab').on('shown.bs.tab', function () {
+        fetchRerataKetepatanResponseData($('#filterMonthKetepatan').val() || 'all');
+    });
+    $('#pills-jumlah-permintaan-tab').on('shown.bs.tab', function () {
+        fetchJumlahPermintaanPerBulanData();
+    });
+    $('#pills-permintaan-sering-diajukan-tab').on('shown.bs.tab', function () {
+        fetchPermintaanSeringDiajukanData();
+    });
+
+
+    // =======================================================================
+    // == KODE DASHBOARD SLA (PROGRAMMER & TS) ==
+    // =======================================================================
+
+    // --- Helper (TIDAK BERUBAH) ---
+    const formatPercent = (val) => `${parseFloat(val).toFixed(1)}%`;
+    const formatHours = (val) => `${parseFloat(val).toFixed(1)} jam`;
+    const formatValue = (val) => parseFloat(val).toFixed(0);
+    const getSlaClass = (val) => (val >= 90 ? 'text-success' : (val >= 80 ? 'text-warning' : 'text-danger'));
+
+    // --- Variabel & URL untuk Programmer (TIDAK BERUBAH) ---
+    const slaProgTimUrl = "/dashboard-sla/programmer/tim";
+    const slaProgUserUrl = "/dashboard-sla/programmer/user";
+    const slaProgKritisUrl = "/dashboard-sla/programmer/kritis";
+    let slaProgrammerChart;
+
+    // --- Variabel & URL untuk TS (TIDAK BERUBAH) ---
+    const slaTsTimUrl = "/dashboard-sla/tech-support/tim";
+    const slaTsUserUrl = "/dashboard-sla/tech-support/user";
+    const slaTsKritisUrl = "/dashboard-sla/tech-support/kritis";
+    let slaTsTimChart;
+
+    // --- Helper Periode (TIDAK BERUBAH) ---
+    function updateFilterDisplay(filters, elementId) {
+        try {
+            const startDate = new Date(filters.start);
+            const year = startDate.getFullYear();
+            const month = startDate.getMonth();
+            const semester = (month < 6) ? 1 : 2;
+            const el = document.getElementById(elementId);
+            if (el) {
+                el.innerHTML = `
+                    <strong>Tahun: ${year} - Semester: ${semester}</strong>
+                    <br>
+                    <small class="text-muted">(Data diambil untuk rentang: ${filters.start.split(' ')[0]} s/d ${filters.end.split(' ')[0]})</small>
+                `;
+            }
+        } catch (e) { console.error("Gagal update filter display", e); }
+    }
+
+    // --- SEMUA FUNGSI loadSla... untuk Programmer (TIDAK BERUBAH) ---
+    // (loadSlaTim, loadSlaUser, loadSlaKritis)
+    async function loadSlaTim() {
+        try {
+            const response = await fetch(slaProgTimUrl); const kpi = await response.json();
+            if (typeof updateFilterDisplay === "function") { updateFilterDisplay(kpi.filters, 'sla_current_period'); }
+            const resEl = document.getElementById('tim-sla-resolution');
+            resEl.textContent = formatPercent(kpi.sla_resolution_compliance);
+            resEl.className = `fs-2 fw-bold ${getSlaClass(kpi.sla_resolution_compliance)}`;
+            const respEl = document.getElementById('tim-sla-response');
+            respEl.textContent = formatPercent(kpi.sla_response_compliance);
+            respEl.className = `fs-2 fw-bold ${getSlaClass(kpi.sla_response_compliance)}`;
+            document.getElementById('tim-avg-resolution').textContent = formatHours(kpi.avg_resolution_time);
+            document.getElementById('tim-total-tickets').textContent = formatValue(kpi.total_tickets);
+            const chartCtx = document.getElementById('slaTimPriorityChart').getContext('2d');
+            const priorityData = kpi.tickets_by_priority;
+            if (slaProgrammerChart) slaProgrammerChart.destroy();
+            if (kpi.total_tickets > 0) {
+                $('#slaTimPriorityChart').show();
+                slaProgrammerChart = new Chart(chartCtx, { type: 'bar', data: { labels: ['High', 'Medium', 'Low', 'Other'], datasets: [{ label: 'Jumlah Tiket', data: [priorityData.High, priorityData.Medium, priorityData.Low, priorityData.Other], backgroundColor: ['rgba(220, 53, 69, 0.7)', 'rgba(255, 193, 7, 0.7)', 'rgba(25, 135, 84, 0.7)', 'rgba(108, 117, 125, 0.7)'], borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }, plugins: { legend: { display: false }, title: { display: true, text: 'Komposisi Tiket Tim per Prioritas' } } } });
+            } else { $('#slaTimPriorityChart').hide(); }
+        } catch (error) { console.error('Gagal memuat data SLA Tim:', error); }
+    }
+    async function loadSlaUser() {
+        try {
+            const response = await fetch(slaProgUserUrl);
+            const data = await response.json(); const kpiList = data.kpi;
+            const tableBody = document.getElementById('sla-user-table-body'); tableBody.innerHTML = '';
+            if (kpiList.length === 0) { tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Tidak ada data untuk periode ini.</td></tr>'; return; }
+            const sortedData = kpiList.sort((a, b) => b.total_tickets - a.total_tickets);
+            sortedData.forEach(item => { const row = `<tr><td><strong>${item.nama_programmer}</strong></td><td class="${getSlaClass(item.sla_resolution_compliance)}">${formatPercent(item.sla_resolution_compliance)}</td><td class="${getSlaClass(item.sla_response_compliance)}">${formatPercent(item.sla_response_compliance)}</td><td>${formatHours(item.avg_resolution_time)}</td><td><strong>${formatValue(item.total_tickets)}</strong></td><td><span class="badge bg-danger me-1">H: ${item.tickets_by_priority.High}</span> <span class="badge bg-warning me-1">M: ${item.tickets_by_priority.Medium}</span> <span class="badge bg-success me-1">L: ${item.tickets_by_priority.Low}</span> <span class="badge bg-secondary me-1">O: ${item.tickets_by_priority.Other}</span></td></tr>`; tableBody.innerHTML += row; });
+        } catch (error) { console.error('Gagal memuat data SLA User:', error); }
+    }
+    async function loadSlaKritis() {
+        try {
+            const response = await fetch(slaProgKritisUrl);
+            const data = await response.json(); const kpi = data.kpi; const details = data.details;
+            const resEl = document.getElementById('kritis-sla-resolution');
+            resEl.textContent = formatPercent(kpi.sla_resolution_compliance);
+            resEl.className = `fs-2 fw-bold ${getSlaClass(kpi.sla_resolution_compliance)}`;
+            const respEl = document.getElementById('kritis-sla-response');
+            respEl.textContent = formatPercent(kpi.sla_response_compliance);
+            respEl.className = `fs-2 fw-bold ${getSlaClass(kpi.sla_response_compliance)}`;
+            document.getElementById('kritis-avg-resolution').textContent = formatHours(kpi.avg_resolution_time);
+            document.getElementById('kritis-total-insiden').textContent = formatValue(kpi.total_insiden);
+            const tableBody = document.getElementById('sla-kritis-table-body'); tableBody.innerHTML = '';
+            if (details.length === 0) { tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Tidak ada insiden kritis periode ini.</td></tr>'; return; }
+            details.forEach(item => { const slaBadge = item.sla_resolution_met ? '<span class="badge bg-success">Met</span>' : '<span class="badge bg-danger">Breached</span>'; const row = `<tr><td>${item.id}</td><td>${item.laporan.substring(0, 50)}...</td><td>${slaBadge}</td><td>${formatHours(item.actual_resolution_hours)}</td><td>${item.actual_response_hours ? formatHours(item.actual_response_hours) : 'N/A'}</td><td>${item.responder}</td></tr>`; tableBody.innerHTML += row; });
+        } catch (error) { console.error('Gagal memuat data SLA Kritis:', error); }
+    }
+
+    // --- SEMUA FUNGSI loadSlaTs... untuk TS (TIDAK BERUBAH) ---
+    // (loadSlaTsTim, loadSlaTsUser, loadSlaTsKritis)
+    async function loadSlaTsTim() {
+        try {
+            const response = await fetch(slaTsTimUrl); const kpi = await response.json();
+            if (typeof updateFilterDisplay === "function") { updateFilterDisplay(kpi.filters, 'ts_sla_current_period'); }
+            const resEl = document.getElementById('ts-tim-sla-resolution');
+            resEl.textContent = formatPercent(kpi.sla_resolution_compliance);
+            resEl.className = `fs-2 fw-bold ${getSlaClass(kpi.sla_resolution_compliance)}`;
+            const respEl = document.getElementById('ts-tim-sla-response');
+            respEl.textContent = formatPercent(kpi.sla_response_compliance);
+            respEl.className = `fs-2 fw-bold ${getSlaClass(kpi.sla_response_compliance)}`;
+            document.getElementById('ts-tim-avg-resolution').textContent = formatHours(kpi.avg_resolution_time);
+            document.getElementById('ts-tim-total-tickets').textContent = formatValue(kpi.total_tickets);
+            const chartCtx = document.getElementById('tsSlaTimPriorityChart').getContext('2d');
+            const priorityData = kpi.tickets_by_priority;
+            if (slaTsTimChart) slaTsTimChart.destroy();
+            if (kpi.total_tickets > 0) {
+                $('#tsSlaTimPriorityChart').show();
+                slaTsTimChart = new Chart(chartCtx, { type: 'bar', data: { labels: ['High', 'Medium', 'Low', 'Other'], datasets: [{ label: 'Jumlah Tiket', data: [priorityData.High, priorityData.Medium, priorityData.Low, priorityData.Other], backgroundColor: ['rgba(220, 53, 69, 0.7)', 'rgba(255, 193, 7, 0.7)', 'rgba(25, 135, 84, 0.7)', 'rgba(108, 117, 125, 0.7)'], borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }, plugins: { legend: { display: false }, title: { display: true, text: 'Komposisi Tiket Tim per Prioritas' } } } });
+            } else { $('#tsSlaTimPriorityChart').hide(); }
+        } catch (error) { console.error('Gagal memuat data SLA TS Tim:', error); }
+    }
+    async function loadSlaTsUser() {
+        try {
+            const response = await fetch(slaTsUserUrl);
+            const data = await response.json(); const kpiList = data.kpi;
+            const tableBody = document.getElementById('ts-sla-user-table-body'); tableBody.innerHTML = '';
+            if (kpiList.length === 0) { tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Tidak ada data untuk periode ini.</td></tr>'; return; }
+            const sortedData = kpiList.sort((a, b) => b.total_tickets - a.total_tickets);
+            sortedData.forEach(item => { const row = `<tr><td><strong>${item.nama_programmer}</strong></td><td class="${getSlaClass(item.sla_resolution_compliance)}">${formatPercent(item.sla_resolution_compliance)}</td><td class="${getSlaClass(item.sla_response_compliance)}">${formatPercent(item.sla_response_compliance)}</td><td>${formatHours(item.avg_resolution_time)}</td><td><strong>${formatValue(item.total_tickets)}</strong></td><td><span class="badge bg-danger me-1">H: ${item.tickets_by_priority.High}</span> <span class="badge bg-warning me-1">M: ${item.tickets_by_priority.Medium}</span> <span class="badge bg-success me-1">L: ${item.tickets_by_priority.Low}</span> <span class="badge bg-secondary me-1">O: ${item.tickets_by_priority.Other}</span></td></tr>`; tableBody.innerHTML += row; });
+        } catch (error) { console.error('Gagal memuat data SLA TS User:', error); }
+    }
+    async function loadSlaTsKritis() {
+         try {
+            const response = await fetch(slaTsKritisUrl);
+            const data = await response.json(); const kpi = data.kpi; const details = data.details;
+            const resEl = document.getElementById('ts-kritis-sla-resolution');
+            resEl.textContent = formatPercent(kpi.sla_resolution_compliance);
+            resEl.className = `fs-2 fw-bold ${getSlaClass(kpi.sla_resolution_compliance)}`;
+            const respEl = document.getElementById('ts-kritis-sla-response');
+            respEl.textContent = formatPercent(kpi.sla_response_compliance);
+            respEl.className = `fs-2 fw-bold ${getSlaClass(kpi.sla_response_compliance)}`;
+            document.getElementById('ts-kritis-avg-resolution').textContent = formatHours(kpi.avg_resolution_time);
+            document.getElementById('ts-kritis-total-insiden').textContent = formatValue(kpi.total_insiden);
+            const tableBody = document.getElementById('ts-sla-kritis-table-body'); tableBody.innerHTML = '';
+            if (details.length === 0) { tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Tidak ada insiden kritis periode ini.</td></tr>'; return; }
+            details.forEach(item => { const slaBadge = item.sla_resolution_met ? '<span class="badge bg-success">Met</span>' : '<span class="badge bg-danger">Breached</span>'; const row = `<tr><td>${item.id}</td><td>${item.laporan.substring(0, 50)}...</td><td>${slaBadge}</td><td>${formatHours(item.actual_resolution_hours)}</td><td>${item.actual_response_hours ? formatHours(item.actual_response_hours) : 'N/A'}</td><td>${item.responder}</td></tr>`; tableBody.innerHTML += row; });
+        } catch (error) { console.error('Gagal memuat data SLA TS Kritis:', error); }
+    }
+
+    // =======================================================================
+    // == EVENT LISTENER UTAMA (YANG DIPERBARUI) ==
+    // =======================================================================
+
+    $('#itsm-pills-tab').on('shown.bs.tab', 'button[data-bs-toggle="pill"], a[data-bs-toggle="pill"]', function (event) {
+
+        const activePill = $(event.target); // Tab yang BARU saja aktif
+        const activePillId = activePill.attr('id');
+
+        // Gunakan data-attribute untuk menandai, bukan variabel JS global
+        const isLoaded = activePill.data('loaded') || false;
+
+        console.log(`Tab ${activePillId} ditampilkan.`);
+
+        // --- Logika untuk SLA Tabs ---
+        if (activePill.hasClass('sla-tab-trigger')) {
+            const team = activePill.data('team'); // "programmer" atau "tech-support"
+
+            if (!isLoaded) {
+                console.log(`Memuat data SLA untuk tim: ${team}...`);
+                if (team === 'programmer') {
+                    loadSlaTim();
+                    loadSlaUser();
+                    loadSlaKritis();
+                } else if (team === 'tech-support') {
+                    loadSlaTsTim();
+                    loadSlaTsUser();
+                    loadSlaTsKritis();
+                }
+                activePill.data('loaded', true); // Tandai sudah di-load
+            } else {
+                console.log(`Data SLA untuk ${team} sudah dimuat sebelumnya.`);
+            }
+
+        // --- Logika untuk Tab Lama ---
+        } else {
+            // Hanya panggil fungsi jika belum di-load
+            if (!isLoaded) {
+                console.log(`Memuat data untuk tab lama: ${activePillId}...`);
+                switch (activePillId) {
+                    case 'pills-jumlah-ticketing-tab':
+                        fetchJumlahTicketingData($('#filterBulan').val() || 'all');
+                        break;
+                    case 'pills-jumlah-pic-tab':
+                        fetchJumlahPICData($('#filterMonthPIC').val() || 'all');
+                        break;
+                    case 'pills-rerata-durasi-tab':
+                        fetchRerataDurasiData($('#filterMonth').val() || 'all');
+                        break;
+                    case 'pills-rerata-ketepatan-response-tab':
+                        fetchRerataKetepatanResponseData($('#filterMonthKetepatan').val() || 'all');
+                        break;
+                    case 'pills-jumlah-permintaan-tab':
+                        fetchJumlahPermintaanPerBulanData();
+                        break;
+                    case 'pills-permintaan-sering-diajukan-tab':
+                        fetchPermintaanSeringDiajukanData();
+                        break;
+                }
+                activePill.data('loaded', true); // Tandai sudah di-load
+            } else {
+                 console.log(`Data untuk ${activePillId} sudah dimuat sebelumnya.`);
+            }
+        }
+    });
+
+    // --- Trigger awal saat halaman dimuat ---
+    setTimeout(function() {
+        console.log("Memicu load data untuk tab yang aktif...");
+
+        // Cari tab yang aktif saat halaman dimuat
+        const activePill = $('#itsm-pills-tab .nav-link.active');
+
+        if (activePill.length > 0) {
+            // Picu event 'shown.bs.tab' pada tab yang aktif
+            // Listener baru kita di atas akan menangkap ini
+            activePill.trigger('shown.bs.tab');
+        } else {
+            console.error("Tidak ditemukan pill yang aktif saat load. Memuat tab pertama...");
+            // Jika tidak ada yang aktif, picu tab pertama
+            $('#itsm-pills-tab').find('button[data-bs-toggle="pill"]:first, a[data-bs-toggle="pill"]:first').trigger('shown.bs.tab');
+        }
+    }, 50); // Delay 50ms untuk memastikan semua sudah siap
+});

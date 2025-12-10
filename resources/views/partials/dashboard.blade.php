@@ -106,7 +106,7 @@
                             <div class="card" style="height: auto">
                                 <div class="card-body">
                                     <div class="row justify-content-center text-center">
-                                        <h5 class="position-header">Keterlambatan</h5>  
+                                        <h5 class="position-header">Keterlambatan</h5>
                                     </div>
                                     <div class="row justify-content-center align-items-end modern-ranking">
 
@@ -202,7 +202,7 @@
                                                 </div>
                                                 <div class="details">
                                                     <span class="caption">ITSM Terbaik</span>
-                                                    <h4 class="title" id="nama_itsm">John doe</h4> 
+                                                    <h4 class="title" id="nama_itsm">John doe</h4>
                                                 </div>
                                             </div>
                                         </div>
@@ -560,6 +560,28 @@
                     <li class="nav-item mx-1" role="presentation">
                         <button class="nav-link" id="pills-permintaan-sering-diajukan-tab" data-bs-toggle="pill" data-bs-target="#pills-permintaan-sering-diajukan" type="button" role="tab" aria-controls="pills-permintaan-sering-diajukan" aria-selected="false">Permintaan Sering Diajukan</button>
                     </li>
+                    <li class="nav-item mx-1" role="presentation">
+                        <button class="nav-link sla-tab-trigger" id="pills-sla-programmer-tab"
+                                data-bs-toggle="pill"
+                                data-bs-target="#pills-sla-programmer"
+                                type="button"
+                                role="tab"
+                                aria-controls="pills-sla-programmer"
+                                aria-selected="false"
+                                data-team="programmer" data-loaded="false"> 📈 SLA Programmer
+                        </button>
+                    </li>
+                    <li class="nav-item mx-1" role="presentation">
+                        <button class="nav-link sla-tab-trigger" id="pills-sla-tech-support-tab"
+                                data-bs-toggle="pill"
+                                data-bs-target="#pills-sla-tech-support"
+                                type="button"
+                                role="tab"
+                                aria-controls="pills-sla-tech-support"
+                                aria-selected="false"
+                                data-team="tech-support" data-loaded="false"> 🎧 SLA Technical Support
+                        </button>
+                    </li>
                 </ul>
 
                 <div class="tab-content" id="pills-tabContent">
@@ -620,6 +642,291 @@
                             <div class="col-12" id="containerCanvasPermintaanSering">
                                 <h3>Permintaan Yang Sering Diajukan</h3>
                                 <canvas id="permintaanSeringDiajukanChart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" style="height:auto;" id="pills-sla-programmer" role="tabpanel" aria-labelledby="pills-sla-programmer-tab" tabindex="0">
+                        <div class="container-fluid" id="sla-programmer-container">
+
+                            <div id="sla-period-display" class="row mb-3">
+                                <div class="col-md-12">
+                                    <div class="alert alert-primary" role="alert">
+                                        <h4 class="alert-heading mb-0 fs-5" id="sla_current_period">
+                                            Memuat periode data...
+                                        </h4>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+
+                                <div class="col-lg-12 mb-4">
+                                    <div class="card shadow-sm">
+                                        <div class="card-header fs-5 fw-semibold">
+                                            <i class="bi bi-bar-chart-line-fill me-2"></i>
+                                            Dashboard Kinerja SLA Tim Programmer
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row mb-4">
+                                                <div class="col-lg-3 col-md-6 mb-3">
+                                                    <div class="card card-body text-center h-100 shadow-sm">
+                                                        <h6 class="card-title text-muted text-uppercase small">SLA Resolusi</h6>
+                                                        <div class="fs-2 fw-bold" id="tim-sla-resolution">...</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-3 col-md-6 mb-3">
+                                                    <div class="card card-body text-center h-100 shadow-sm">
+                                                        <h6 class="card-title text-muted text-uppercase small">SLA Respon</h6>
+                                                        <div class="fs-2 fw-bold" id="tim-sla-response">...</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-3 col-md-6 mb-3">
+                                                    <div class="card card-body text-center h-100 shadow-sm">
+                                                        <h6 class="card-title text-muted text-uppercase small">Avg. Waktu Resolusi</h6>
+                                                        <div class="fs-2 fw-bold" id="tim-avg-resolution">...</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-3 col-md-6 mb-3">
+                                                    <div class="card card-body text-center h-100 shadow-sm">
+                                                        <h6 class="card-title text-muted text-uppercase small">Total Tiket</h6>
+                                                        <div class="fs-2 fw-bold" id="tim-total-tickets">...</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="row">
+                                                <div class="col-12">
+                                                    <canvas id="slaTimPriorityChart" style="width: 100%; height: 300px;"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-12 mb-4">
+                                    <div class="card shadow-sm">
+                                        <div class="card-header fs-5 fw-semibold">
+                                            <i class="bi bi-people-fill me-2"></i>
+                                            Dashboard Kinerja SLA Per Programmer
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="table-responsive">
+                                                <table class="table table-striped table-hover">
+                                                    <thead class="table-dark">
+                                                        <tr>
+                                                            <th>Nama Programmer</th>
+                                                            <th>SLA Resolusi</th>
+                                                            <th>SLA Respon</th>
+                                                            <th>Avg. Resolusi (Jam)</th>
+                                                            <th>Total Tiket</th>
+                                                            <th>Detail (H/M/L/O)</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="sla-user-table-body">
+                                                        <tr><td colspan="6" class="text-center">Memuat data...</td></tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-12 mb-4">
+                                    <div class="card shadow-sm">
+                                        <div class="card-header fs-5 fw-semibold text-danger">
+                                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                            Dashboard Kinerja SLA Insiden Kritis
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row mb-4">
+                                                <div class="col-lg-3 col-md-6 mb-3">
+                                                    <div class="card card-body text-center h-100 shadow-sm">
+                                                        <h6 class="card-title text-muted text-uppercase small">SLA Resolusi Kritis</h6>
+                                                        <div class="fs-2 fw-bold" id="kritis-sla-resolution">...</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-3 col-md-6 mb-3">
+                                                    <div class="card card-body text-center h-100 shadow-sm">
+                                                        <h6 class="card-title text-muted text-uppercase small">SLA Respon Kritis</h6>
+                                                        <div class="fs-2 fw-bold" id="kritis-sla-response">...</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-3 col-md-6 mb-3">
+                                                    <div class="card card-body text-center h-100 shadow-sm">
+                                                        <h6 class="card-title text-muted text-uppercase small">Avg. Waktu Resolusi</h6>
+                                                        <div class="fs-2 fw-bold" id="kritis-avg-resolution">...</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-3 col-md-6 mb-3">
+                                                    <div class="card card-body text-center h-100 shadow-sm">
+                                                        <h6 class="card-title text-muted text-uppercase small">Total Insiden</h6>
+                                                        <div class="fs-2 fw-bold" id="kritis-total-insiden">...</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <h4 class="mt-4">Detail Insiden Kritis</h4>
+                                            <div class="table-responsive">
+                                                <table class="table table-striped table-hover">
+                                                    <thead class="table-dark">
+                                                        <tr>
+                                                            <th>ID</th>
+                                                            <th>Laporan</th>
+                                                            <th>SLA Met?</th>
+                                                            <th>Waktu Resolusi (Jam)</th>
+                                                            <th>Waktu Respon (Jam)</th>
+                                                            <th>Responder</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="sla-kritis-table-body">
+                                                        <tr><td colspan="6" class="text-center">Memuat data...</td></tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" style="height:auto;" id="pills-sla-tech-support" role="tabpanel" aria-labelledby="pills-sla-tech-support-tab" tabindex="0">
+                        <div class="container-fluid" id="sla-tech-support-container">
+
+                            <div id="sla-period-display-ts" class="row mb-3">
+                                <div class="col-md-12">
+                                    <div class="alert alert-primary" role="alert">
+                                        <h4 class="alert-heading mb-0 fs-5" id="ts_sla_current_period">
+                                            Memuat periode data...
+                                        </h4>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-lg-12 mb-4">
+                                    <div class="card shadow-sm">
+                                        <div class="card-header fs-5 fw-semibold">
+                                            <i class="bi bi-bar-chart-line-fill me-2"></i>
+                                            Dashboard Kinerja SLA Tim Technical Support
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row mb-4">
+                                                <div class="col-lg-3 col-md-6 mb-3">
+                                                    <div class="card card-body text-center h-100 shadow-sm">
+                                                        <h6 class="card-title text-muted text-uppercase small">SLA Resolusi</h6>
+                                                        <div class="fs-2 fw-bold" id="ts-tim-sla-resolution">...</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-3 col-md-6 mb-3">
+                                                    <div class="card card-body text-center h-100 shadow-sm">
+                                                        <h6 class="card-title text-muted text-uppercase small">SLA Respon</h6>
+                                                        <div class="fs-2 fw-bold" id="ts-tim-sla-response">...</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-3 col-md-6 mb-3">
+                                                    <div class="card card-body text-center h-100 shadow-sm">
+                                                        <h6 class="card-title text-muted text-uppercase small">Avg. Waktu Resolusi</h6>
+                                                        <div class="fs-2 fw-bold" id="ts-tim-avg-resolution">...</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-3 col-md-6 mb-3">
+                                                    <div class="card card-body text-center h-100 shadow-sm">
+                                                        <h6 class="card-title text-muted text-uppercase small">Total Tiket</h6>
+                                                        <div class="fs-2 fw-bold" id="ts-tim-total-tickets">...</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-12">
+                                                    <canvas id="tsSlaTimPriorityChart" style="width: 100%; height: 300px;"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-12 mb-4">
+                                    <div class="card shadow-sm">
+                                        <div class="card-header fs-5 fw-semibold">
+                                            <i class="bi bi-people-fill me-2"></i>
+                                            Dashboard Kinerja SLA Per Technical Support
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="table-responsive">
+                                                <table class="table table-striped table-hover">
+                                                    <thead class="table-dark">
+                                                        <tr>
+                                                            <th>Nama Technical Support</th>
+                                                            <th>SLA Resolusi</th>
+                                                            <th>SLA Respon</th>
+                                                            <th>Avg. Resolusi (Jam)</th>
+                                                            <th>Total Tiket</th>
+                                                            <th>Detail (H/M/L/O)</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="ts-sla-user-table-body">
+                                                        <tr><td colspan="6" class="text-center">Memuat data...</td></tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-12 mb-4">
+                                    <div class="card shadow-sm">
+                                        <div class="card-header fs-5 fw-semibold text-danger">
+                                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                            Dashboard Kinerja SLA Insiden Kritis (TS)
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row mb-4">
+                                                <div class="col-lg-3 col-md-6 mb-3">
+                                                    <div class="card card-body text-center h-100 shadow-sm">
+                                                        <h6 class="card-title text-muted text-uppercase small">SLA Resolusi Kritis</h6>
+                                                        <div class="fs-2 fw-bold" id="ts-kritis-sla-resolution">...</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-3 col-md-6 mb-3">
+                                                    <div class="card card-body text-center h-100 shadow-sm">
+                                                        <h6 class="card-title text-muted text-uppercase small">SLA Respon Kritis</h6>
+                                                        <div class="fs-2 fw-bold" id="ts-kritis-sla-response">...</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-3 col-md-6 mb-3">
+                                                    <div class="card card-body text-center h-100 shadow-sm">
+                                                        <h6 class="card-title text-muted text-uppercase small">Avg. Waktu Resolusi</h6>
+                                                        <div class="fs-2 fw-bold" id="ts-kritis-avg-resolution">...</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-3 col-md-6 mb-3">
+                                                    <div class="card card-body text-center h-100 shadow-sm">
+                                                        <h6 class="card-title text-muted text-uppercase small">Total Insiden</h6>
+                                                        <div class="fs-2 fw-bold" id="ts-kritis-total-insiden">...</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <h4 class="mt-4">Detail Insiden Kritis</h4>
+                                            <div class="table-responsive">
+                                                <table class="table table-striped table-hover">
+                                                    <thead class="table-dark">
+                                                        <tr>
+                                                            <th>ID</th>
+                                                            <th>Laporan</th>
+                                                            <th>SLA Met?</th>
+                                                            <th>Waktu Resolusi (Jam)</th>
+                                                            <th>Waktu Respon (Jam)</th>
+                                                            <th>Responder</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="ts-sla-kritis-table-body">
+                                                        <tr><td colspan="6" class="text-center">Memuat data...</td></tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -716,63 +1023,45 @@
         }
 
         #containerCanvasPicChart {
+            width: 100%;
+            max-width: 70vw; /* (Opsional, 100% lebih baik) */
             height: auto;
-            width: 70vw;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            position: relative;
+            margin: 0 auto; /* (Opsional, untuk center) */
         }
 
         #containerCanvasjumlahTicketing {
+            width: 100%;
+            max-width: 70vw; /* (Opsional, 100% lebih baik) */
             height: auto;
-            width: 70vw;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            position: relative;
+            margin: 0 auto; /* (Opsional, untuk center) */
         }
 
         #containerCanvasRerataDurasi {
+            width: 100%;
+            max-width: 70vw; /* (Opsional, 100% lebih baik) */
             height: auto;
-            width: 70vw;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            position: relative;
+            margin: 0 auto; /* (Opsional, untuk center) */
         }
 
         #containerCanvasKetepatanRespond {
+            width: 100%;
+            max-width: 70vw; /* (Opsional, 100% lebih baik) */
             height: auto;
-            width: 70vw;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            position: relative;
+            margin: 0 auto; /* (Opsional, untuk center) */
         }
 
         #containerCanvasPermintaanPerbulan {
+            width: 100%;
+            max-width: 70vw; /* (Opsional, 100% lebih baik) */
             height: auto;
-            width: 70vw;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            position: relative;
+            margin: 0 auto; /* (Opsional, untuk center) */
         }
 
         #containerCanvasPermintaanSering {
+            width: 100%;
+            max-width: 70vw; /* (Opsional, 100% lebih baik) */
             height: auto;
-            width: 70vw;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            position: relative;
+            margin: 0 auto; /* (Opsional, untuk center) */
         }
     }
 
@@ -1089,7 +1378,7 @@
 .podium-card:hover {
   box-shadow: 0 0 25px rgba(255, 255, 255, 0.3);
   transform: scale(1.03);
-} 
+}
 
 /* OPTIONAL: BACKGROUND BINTANG */
 .podium-section {
@@ -1103,28 +1392,28 @@
 .rank-1 .position-label {
     color: #FFD93D;
     /* Menambahkan outline hitam setebal 1px */
-    text-shadow: 
-        -1px -1px 0 #000,  
+    text-shadow:
+        -1px -1px 0 #000,
          1px -1px 0 #000,
         -1px  1px 0 #000,
          1px  1px 0 #000;
 }
 
-.rank-2 .position-label { 
-    color: #c0aaff; 
+.rank-2 .position-label {
+    color: #c0aaff;
     /* Menambahkan outline putih setebal 1px agar kontras dengan teks gelap */
-    text-shadow: 
-        -1px -1px 0 #000,  
+    text-shadow:
+        -1px -1px 0 #000,
          1px -1px 0 #000,
         -1px  1px 0 #000,
          1px  1px 0 #000;
 }
 
-.rank-3 .position-label { 
-    color: #ff914d; 
+.rank-3 .position-label {
+    color: #ff914d;
     /* Menambahkan outline hitam setebal 1px */
-    text-shadow: 
-        -1px -1px 0 #000,  
+    text-shadow:
+        -1px -1px 0 #000,
          1px -1px 0 #000,
         -1px  1px 0 #000,
          1px  1px 0 #000;
@@ -1534,7 +1823,7 @@
             font-size: 0.7rem;
         }
     }
-    
+
 </style>
 <style>
 @media (max-width: 576px) {

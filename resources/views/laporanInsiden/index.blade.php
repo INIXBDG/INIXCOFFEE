@@ -240,7 +240,7 @@
                                         <ul class="dropdown-menu">
                                             <li>
                                                 <a class="dropdown-item" href="/laporan-insiden/detail/${item.id}"><i class="fa-solid fa-magnifying-glass me-4"></i> Detail</a>
-                                            </li>                                            
+                                            </li>
                                             <li>
                                                 <a class="dropdown-item" href="/laporan-insiden/edit/${item.id}"><i class="fa-solid fa-pen-to-square me-4"></i> Edit</a>
                                             </li>
