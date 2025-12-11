@@ -17,18 +17,22 @@ class CateringNotification extends Notification implements ShouldBroadcast
     protected $path;
     protected $type;
     protected $receiverId;
+    protected $senderUsername;
+    protected $senderNamaLengkap;
 
-    public function __construct($data, $path, $type, $receiverId)
+    public function __construct($data, $path, $type, $receiverId, $senderUsername = null, $senderNamaLengkap = null)
     {
         $this->data = $data;
         $this->path = $path;
         $this->type = $type;
         $this->receiverId = $receiverId;
+        $this->senderUsername = $senderUsername ?? 'System';
+        $this->senderNamaLengkap = $senderNamaLengkap ?? 'Sistem';
     }
 
     public function via($notifiable): array
     {
-        return ['database', 'broadcast'];
+        return ['database'];
     }
 
     public function broadcastOn()
@@ -41,33 +45,23 @@ class CateringNotification extends Notification implements ShouldBroadcast
         return 'notifikasi-event';
     }
 
-    public function toBroadcast($notifiable): BroadcastMessage
-    {
-        return new BroadcastMessage([
-            'user' => auth()->user()?->username ?? 'System',
-            'message' => [
-                'tipe'              => $this->type,
-                'nama_lengkap'      => $this->data['nama_lengkap'] ?? auth()->user()?->karyawan?->nama_lengkap,
-                'tipe_barang'       => $this->data['tipe'],
-                'tanggal_pengajuan' => $this->data['tanggal_pengajuan'],
-            ],
-            'path'   => $this->path ?? '#',
-            'status' => 'unread',
-        ]);
-    }
-
     public function toArray($notifiable): array
     {
         return [
-            'user' => auth()->user()?->username ?? 'System',
+            'user' => $this->senderUsername,
             'message' => [
-                'tipe'              => $this->type,
-                'nama_lengkap'      => $this->data['nama_lengkap'] ?? auth()->user()?->karyawan?->nama_lengkap,
-                'tipe_barang'       => $this->data['tipe'],
+                'tipe' => $this->type,
+                'nama_lengkap' => $this->data['nama_lengkap'] ?? $this->senderNamaLengkap,
+                'tipe_barang' => $this->data['tipe'],
                 'tanggal_pengajuan' => $this->data['tanggal_pengajuan'],
             ],
-            'path'   => $this->path ?? '#',
+            'path' => $this->path ?? '#',
             'status' => 'unread',
         ];
+    }
+
+    public function toBroadcast($notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage($this->toArray($notifiable));
     }
 }

@@ -48,8 +48,6 @@ use App\Events\ServerTimeUpdate;
 use App\Http\Controllers\BroadcastAuthController;
 use App\Http\Controllers\PusherAuthController;
 use App\Http\Controllers\office\vendorOfficeController;
-use App\Http\Controllers\PenukaranSouvenirController;
-use App\Http\Controllers\office\DashboardSouvenirController;
 
 /*
 |--------------------------------------------------------------------------
@@ -756,23 +754,19 @@ Route::prefix('office')->name('office.')->middleware(['auth'])->group(function (
     });
 });
 
-Route::get('/catering/index', [CateringController::class, 'index'])->name('catering.index');
-Route::get('/catering/get', [CateringController::class, 'get'])->name('catering.get');
-Route::get('/catering/create', [CateringController::class, 'create'])->name('catering.create');
-Route::post('/catering/store', [CateringController::class, 'store'])->name('catering.store');
-Route::get('/catering/show/{id}', [CateringController::class, 'show'])->name('catering.show');
-Route::put('/catering/update/{id}', [CateringController::class, 'update'])->name('catering.update');
-Route::post('/catering/export-pdf', [CateringController::class, 'PDF'])->name('catering.pdf');
-Route::put('/catering/approved', [CateringController::class, 'approved'])->name('catering.approved');
-Route::get('/catering/destroy/{id}', [CateringController::class, 'destroy'])->name('catering.destroy');
-Route::get('/catering/invoice/{id}', [CateringController::class, 'invoice'])->name('catering.invoice');
-Route::put('/catering/updateinvoice/{id}', [CateringController::class, 'updateInvoice'])->name('catering.updateInvoice');
+Route::prefix('/catering')->name('catering.')->group(function () {
+    Route::get('/index', [CateringController::class, 'index'])->name('index');
+    Route::get('/get', [CateringController::class, 'get'])->name('get');
+    Route::get('/create', [CateringController::class, 'create'])->name('create');
+    Route::post('/store', [CateringController::class, 'store'])->name('store');
+    Route::get('/show/{id}', [CateringController::class, 'show'])->name('show');
+    Route::post('/update/{id}', [CateringController::class, 'update'])->name('update');
+    Route::post('/export-pdf', [CateringController::class, 'PDF'])->name('pdf');
+    Route::put('/approved', [CateringController::class, 'approved'])->name('approved');
+    Route::get('/destroy/{id}', [CateringController::class, 'destroy'])->name('destroy');
+    Route::get('/invoice/{id}', [CateringController::class, 'invoice'])->name('invoice');
+    Route::put('/updateinvoice/{id}', [CateringController::class, 'updateInvoice'])->name('updateInvoice');
+});
 
 // Penambahan Souvneir
 Route::get('/getPenambahanSouvenir/{month}/{year}', [App\Http\Controllers\PenambahanSouvenirController::class, 'getPenambahanSouvenir'])->name('getPenambahanSouvenir');
-
-// Penukaran Souvenir
-Route::get('/penukaransouvenir/getRiwayat/{month}/{year}', [PenukaranSouvenirController::class, 'getRiwayat'])->name('getRiwayat');
-Route::get('/get-peserta/{rkmId}', [PenukaranSouvenirController::class, 'getPesertaByRKM'])->name('getPeserta');
-
-Route::get('/dashboard/souvenir', [DashboardSouvenirController::class, 'index'])->name('dashboard.souvenir');

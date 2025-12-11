@@ -16,7 +16,18 @@
     <ul class="menu-inner py-1" style="flex-grow: 1; overflow-y: auto; overflow-x: hidden; height: 100%;">
         @php
             $user = Auth::user();
-            // Role checking logic (jika diperlukan nanti)
+            $allowedRoles = [
+                'Adm Sales',
+                'HRD',
+                'Finance & Accounting',
+                'GM',
+                'Sales',
+                'Direktur Utama',
+                'Direktur',
+                'SPV Sales',
+                'Customer Care',
+                'Admin Holding',
+            ];
         @endphp
 
         <li class="menu-item {{ request()->is('office/dashboard') ? 'active' : '' }}">
@@ -123,21 +134,3 @@
         </a>
     </div>
 </aside>
-
-{{-- Style tambahan untuk scrollbar agar terlihat rapi --}}
-<style>
-    /* Custom Scrollbar untuk menu */
-    .menu-inner::-webkit-scrollbar {
-        width: 6px;
-    }
-    .menu-inner::-webkit-scrollbar-track {
-        background: transparent;
-    }
-    .menu-inner::-webkit-scrollbar-thumb {
-        background-color: rgba(0, 0, 0, 0.1);
-        border-radius: 10px;
-    }
-    .menu-inner::-webkit-scrollbar-thumb:hover {
-        background-color: rgba(0, 0, 0, 0.3);
-    }
-</style>
