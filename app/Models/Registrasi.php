@@ -43,7 +43,7 @@ class Registrasi extends Model
     // Tambahkan relasi dengan model SouvenirPeserta
     public function souvenirpeserta()
     {
-        return $this->hasOne(SouvenirPeserta::class, 'id_regist', 'id');
+        return $this->hasOne(souvenirpeserta::class, 'id_regist', 'id');
     }
 }
 
