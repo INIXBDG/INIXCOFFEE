@@ -73,7 +73,7 @@ class AbsensiKaryawanController extends Controller
         $jabatan = $request->input('jabatan') ?? auth()->user()->jabatan;
 
         // Validasi duplikasi absen
-        if ($jabatan !== 'Office Boy' && $this->checkDuplicateAbsen($request->id_karyawan, $sekarang->toDateString())) {
+        if ($this->checkDuplicateAbsen($request->id_karyawan, $sekarang->toDateString())) {
             return response()->json(['error' => 'Anda sudah melakukan absen masuk hari ini'], 400);
         }
 
@@ -93,6 +93,16 @@ class AbsensiKaryawanController extends Controller
         );
         if (!$validationResult['valid']) {
             return response()->json(['error' => $validationResult['message']], 400);
+        }
+        $kemarin = Carbon::yesterday();
+        $kemarintea = $kemarin->toDateString();
+        if($jabatan == 'Office Boy'){
+            $data = AbsensiKaryawan::where('tanggal', $kemarintea)->where('id_karyawan', $request->id_karyawan)->first();
+            // dd($data->jam_keluar);
+            if($data->jam_keluar == null){
+                $data->jam_keluar = $sekarang->toTimeString();
+                $data->save();
+            }
         }
 
         // Simpan data
