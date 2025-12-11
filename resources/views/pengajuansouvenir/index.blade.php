@@ -41,22 +41,23 @@
                                 <textarea class="form-control" id="alasan_manager" name="alasan" rows="3"></textarea>
                             </div>
                         </div>
-
-                        {{-- === INI BAGIAN YANG DITAMBAHKAN === --}}
                         @php
                             $jabatan = auth()->user()->karyawan->jabatan ?? '';
                         @endphp
                         @if ($jabatan == 'Finance & Accounting')
-                            {{-- Dropdown Status Khusus Finance (Muncul saat 'Ya') --}}
                             <div class="row my-2" id="financeStatusBlock" style="display: none;">
                                 <label for="status" class="form-label">Update Status Pencairan</label>
                                 <select name="status" id="status" class="form-select">
-                                    <option value="Pengajuan sedang dalam proses Pencairan">Proses Pencairan</option>
-                                    <option value="Pencairan Selesai">Pencairan Selesai</option>
+                                    <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager">Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager</option>
+                                    <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi">Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi</option>
+                                    <option value="Finance Menunggu Approve Direksi">Finance Menunggu Approve Direksi</option>
+                                    <option value="Membuat Permintaan Ke Direktur Utama">Membuat Permintaan Ke Direktur Utama</option>
+                                    <option value="Pengajuan sedang dalam proses Pencairan">Pengajuan sedang dalam proses Pencairan</option>
+                                    <option value="Pencairan Sudah Selesai">Pencairan Sudah Selesai</option>
+                                    <option value="Selesai">Selesai</option>
                                 </select>
                             </div>
                         @endif
-                        {{-- ======================================= --}}
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
@@ -67,15 +68,43 @@
         </div>
     </div>
 
+    {{-- Modal Upload Invoice --}}
+    <div class="modal fade" id="uploadInvoiceModal" tabindex="-1" aria-labelledby="uploadInvoiceModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadInvoiceModalLabel">Upload Bukti Invoice</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="uploadInvoiceForm" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    @method('PUT')
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="invoiceFile" class="form-label">Pilih File Invoice (PDF/JPG/PNG)</label>
+                            <input class="form-control" type="file" id="invoiceFile" name="invoice" required accept=".pdf,.jpg,.jpeg,.png">
+                            <small class="text-muted">Maksimal ukuran file 5MB.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">Upload</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <div class="row justify-content-center">
         <div class="col-md-12">
             <div class="d-flex justify-content-end">
             @php
                 $jabatan = auth()->user()->karyawan->jabatan ?? '';
+                $canCreate = ($jabatan == 'Customer Care' || $jabatan == 'Admin Holding'); // Perubahan di sini
             @endphp
 
-            {{-- Tombol Ajukan hanya untuk Customer Care --}}
-            @if ($jabatan == 'Customer Care')
+            {{-- Tombol Ajukan hanya untuk Customer Care ATAU Admin Holding --}}
+            @if ($canCreate)
                 @if ($tracking == 'tutup')
                     <button class="btn btn-md btn-secondary mx-4" disabled title="Tidak bisa mengajukan karena pengajuan sebelumnya belum Selesai">
                         <img src="{{ asset('icon/plus.svg') }}" width="30px"> Ajukan Souvenir
@@ -130,7 +159,7 @@
             {{-- TABEL 1: Data Pengajuan (Ongoing) --}}
             <div class="card m-4">
                 <div class="card-body table-responsive">
-                    <h3 class="card-title text-center my-1">{{ __('Data Pengajuan Souvenir (Berjalan)') }}</h3>
+                    <h3 class="card-title text-center my-1">{{ __('Pengajuan Souvenir') }}</h3>
                     <table class="table table-striped" id="tableOngoing">
                         <thead>
                             <tr>
@@ -152,7 +181,7 @@
             {{-- TABEL 2: Data Selesai --}}
             <div class="card m-4">
                 <div class="card-body table-responsive">
-                    <h3 class="card-title text-center my-1">{{ __('Data Pengajuan Souvenir (Selesai / Ditolak)') }}</h3>
+                    <h3 class="card-title text-center my-1">{{ __('Pengajuan Souvenir (Selesai / Ditolak)') }}</h3>
                     <table class="table table-striped" id="tableSelesai">
                         <thead>
                             <tr>
@@ -175,7 +204,6 @@
     </div>
 </div>
 <style>
-    /* CSS Loader (dari contoh Anda) */
     .cube {
         width: 64px;
         height: 64px;
@@ -215,34 +243,54 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+// Variabel global untuk role
+var userRole = '{{ auth()->user()->karyawan->jabatan ?? "" }}';
+// Variabel global untuk pengecekan role yang sama dengan CC/Admin Holding
+var isCCorAdminHolding = (userRole === 'Customer Care' || userRole === 'Admin Holding');
+
+
  $(document).ready(function(){
-    // Selalu jalankan loadTables saat halaman dimuat
     loadTables();
 });
 
-function formatRupiah(angka) {
-    if (!angka) return 'Rp 0';
-    let number_string = angka.toString().replace(/[^,\d]/g, ''),
-        split = number_string.split(','),
-        sisa = split[0].length % 3,
-        rupiah = split[0].substr(0, sisa),
-        ribuan = split[0].substr(sisa).match(/\d{3}/gi);
+// --- FUNGSI HELPER (Tetap Sama) ---
+function cleanDecimalString(value) {
+    if (typeof value === 'undefined' || value === null) return 0;
 
-    if (ribuan) {
-        separator = sisa ? '.' : '';
-        rupiah += separator + ribuan.join('.');
+    let stringValue = String(value);
+
+    if (stringValue.includes('.') || stringValue.includes(',')) {
+        let clean = stringValue.split(/[.,]/)[0];
+        return parseInt(clean.replace(/[^0-9]/g, '')) || 0;
     }
 
-    rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
-    return 'Rp ' + rupiah;
+    return parseInt(stringValue.replace(/[^0-9]/g, '')) || 0;
 }
 
+function formatRupiah(angka) {
+    if (!angka) return 'Rp 0';
+
+    let numericAngka = cleanDecimalString(angka);
+    let number_string = numericAngka.toString();
+
+    let sisa = number_string.length % 3,
+        rupiah = number_string.substr(0, sisa),
+        ribuan = number_string.substr(sisa).match(/\d{3}/gi);
+
+    if (ribuan) {
+        let separator = sisa ? '.' : '';
+        rupiah += separator + ribuan.join('.');
+    }
+    return 'Rp ' + (rupiah || '0');
+}
+// --- Akhir Fungsi Helper ---
+
+
 function loadTables(){
-    // Hancurkan tabel lama jika ada
     if ($.fn.DataTable.isDataTable('#tableOngoing')) {
         $('#tableOngoing').DataTable().destroy();
     }
-    if ($.fn.MataTable.isDataTable('#tableSelesai')) {
+    if ($.fn.DataTable.isDataTable('#tableSelesai')) {
         $('#tableSelesai').DataTable().destroy();
     }
 
@@ -263,126 +311,142 @@ function loadTables(){
 
             let allData = response.data || [];
 
-            // Pisahkan data: Selesai/Ditolak vs Berjalan
             var dataSelesai = allData.filter(item =>
-                item.tracking.tracking === 'Pencairan Selesai' ||
+                item.tracking.tracking === 'Selesai' ||
                 item.tracking.tracking.includes("Ditolak")
             );
 
             var dataOngoing = allData.filter(item =>
-                item.tracking.tracking !== 'Pencairan Selesai' &&
+                item.tracking.tracking !== 'Selesai' &&
                 !item.tracking.tracking.includes("Ditolak")
             );
 
-            // Inisialisasi Tabel Ongoing
+            // --- FUNGSI RENDER AKSI ---
+            function renderActions(data, type, row) {
+                var actions = "";
+                var userKaryawanId = {{ auth()->user()->karyawan_id }};
+                var trackingStatus = row.tracking.tracking;
+                var karyawanId = row.karyawan.id;
+
+                actions += '<div class="dropdown">';
+                actions += '<button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>';
+                actions += '<div class="dropdown-menu">';
+
+                // 1. LOGIKA TOMBOL APPROVE (Tidak berubah)
+                let canApprove = false;
+                if (userRole == 'GM' && trackingStatus == 'Diajukan dan Sedang Ditinjau oleh General Manager') {
+                    canApprove = true;
+                }
+                else if (userRole == 'Finance & Accounting' &&
+                         trackingStatus != 'Selesai' &&
+                         !trackingStatus.includes('Ditolak') &&
+                         trackingStatus != 'Diajukan dan Sedang Ditinjau oleh General Manager'
+                ) {
+                    canApprove = true;
+                }
+
+                if(canApprove) {
+                    actions += `<button type="button" class="dropdown-item"
+                        onclick="openApproveModal(${row.id})">
+                        <img src="{{ asset('icon/check-circle.svg') }}"> Approve/Update</button>`;
+                }
+
+                // 2. LOGIKA TOMBOL INVOICE (PERBAIKAN)
+                if (row.invoice) {
+                    var invoiceUrl = "{{ asset('storage') }}/" + row.invoice;
+                    actions += `<a href="${invoiceUrl}" target="_blank" class="dropdown-item">
+                        <img src="{{ asset('icon/file-text.svg') }}"> Lihat Invoice</a>`;
+                } else {
+                    // Hanya Pemilik (CC atau Admin Holding) yang bisa upload
+                    if (isCCorAdminHolding && userKaryawanId === karyawanId) {
+                        actions += `<button type="button" class="dropdown-item" onclick="openUploadModal(${row.id})">
+                            <img src="{{ asset('icon/upload.svg') }}"> Upload Invoice</button>`;
+                    }
+                }
+
+                // 3. LOGIKA TOMBOL DETAIL (Tidak berubah)
+                var detailUrl = "{{ url('/pengajuansouvenir') }}/" + row.id;
+                actions += `<a href="${detailUrl}" class="dropdown-item">
+                    <img src="{{ asset('icon/clipboard-primary.svg') }}"> Detail</a>`;
+
+                // 4. LOGIKA TOMBOL HAPUS (PERBAIKAN: Hanya Pemilik (CC/Admin Holding))
+                if (isCCorAdminHolding && userKaryawanId === karyawanId &&
+                   (trackingStatus.includes('Menunggu') || trackingStatus.includes('Ditolak'))) {
+                    actions += `<form onsubmit="return confirm('Apakah Anda Yakin Ingin Menghapus?');"
+                        action="{{ url('/pengajuansouvenir') }}/${row.id}" method="POST">
+                        @csrf @method('DELETE')
+                        <button type="submit" class="dropdown-item">
+                            <img src="{{ asset('icon/trash-danger.svg') }}"> Hapus</button>
+                    </form>`;
+                }
+
+                actions += '</div></div>';
+                return actions;
+            }
+            // --- AKHIR FUNGSI RENDER AKSI ---
+
+
+            // --- Inisialisasi Tabel Ongoing (Sama dengan perbaikan terakhir) ---
             $('#tableOngoing').DataTable({
                 data: dataOngoing,
                 processing: true,
                 columns: [
-                    {
-                        data: "created_at",
-                        render: function (data) {
-                            moment.locale('id');
-                            return moment(data).format('dddd, DD MMMM YYYY');
-                        }
-                    },
+                    { data: "created_at", render: function (data) { moment.locale('id'); return moment(data).format('dddd, DD MMMM YYYY'); } },
                     { data: "karyawan.nama_lengkap" },
-                    { data: "pax" },
                     {
-                        data: "harga_satuan",
-                        render: function(data) { return formatRupiah(data); }
-                    },
-                    {
-                        data: "harga_total",
-                        render: function(data) { return formatRupiah(data); }
-                    },
-                    { data: "tracking.tracking" },
-                    {
-                        data: null,
-                        render: function (data, type, row) {
-                            var actions = "";
-                            var userRole = '{{ auth()->user()->karyawan->jabatan ?? "" }}';
-                            var userKaryawanId = {{ auth()->user()->karyawan_id }};
-                            var trackingStatus = data.tracking.tracking;
-                            var karyawanId = data.karyawan.id;
-
-                            actions += '<div class="dropdown">';
-                            actions += '<button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>';
-                            actions += '<div class="dropdown-menu">';
-
-                            // --- Tombol Approve ---
-                            let canApprove = false;
-                            if (userRole == 'GM' && trackingStatus == 'Diajukan, Menunggu Persetujuan GM') {
-                                canApprove = true;
-                            } else if (userRole == 'Finance & Accounting' && trackingStatus == 'Disetujui GM, Menunggu Pencairan Finance') {
-                                canApprove = true;
-                            }
-
-                            if(canApprove) {
-                                actions += `<button type="button" class="dropdown-item"
-                                    onclick="openApproveModal(${row.id})">
-                                    <img src="{{ asset('icon/check-circle.svg') }}"> Approve/Tolak</button>`;
-                            }
-
-                            // --- Tombol Detail ---
-                            var detailUrl = "{{ url('/pengajuansouvenir') }}/" + row.id;
-                            actions += `<a href="${detailUrl}" class="dropdown-item">
-                                <img src="{{ asset('icon/clipboard-primary.svg') }}"> Detail</a>`;
-
-                            // --- Tombol Hapus ---
-                            // Hanya bisa hapus jika diajukan oleh CC, DAN status masih "Menunggu" atau "Ditolak"
-                            if (userKaryawanId === karyawanId &&
-                               (trackingStatus.includes('Menunggu') || trackingStatus.includes('Ditolak'))) {
-
-                                actions += `<form onsubmit="return confirm('Apakah Anda Yakin Ingin Menghapus?');"
-                                    action="{{ url('/pengajuansouvenir') }}/${row.id}" method="POST">
-                                    <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                                    <input type="hidden" name="_method" value="DELETE">
-                                    <button type="submit" class="dropdown-item">
-                                        <img src="{{ asset('icon/trash-danger.svg') }}"> Hapus</button>
-                                </form>`;
-                            }
-
-                            actions += '</div></div>';
-                            return actions;
+                        data: "detail",
+                        render: function(data) {
+                            if (!data || !Array.isArray(data)) return '-';
+                            return data.map(item =>
+                                `${item.souvenir ? item.souvenir.nama_souvenir : 'N/A'} (${item.pax} pax)`
+                            ).join('<hr style="margin:4px 0;">');
                         }
-                    }
+                    },
+                    {
+                        data: "detail",
+                        render: function(data) {
+                            if (!data || !Array.isArray(data) || data.length === 0) return '-';
+                            return data.map(item =>
+                                formatRupiah(item.harga_satuan)
+                            ).join('<hr style="margin:4px 0;">');
+                        }
+                    },
+                    { data: "total_keseluruhan", render: function(data) { return formatRupiah(data); } },
+                    { data: "tracking.tracking" },
+                    { data: null, render: renderActions }
                 ],
                 order: [[0, 'desc']],
                 columnDefs: [{ targets: [0], type: "date" }]
             });
 
-            // Inisialisasi Tabel Selesai
+            // --- Inisialisasi Tabel Selesai (Sama dengan perbaikan terakhir) ---
             $('#tableSelesai').DataTable({
                 data: dataSelesai,
                 processing: true,
                 columns: [
-                    {
-                        data: "created_at",
-                        render: function (data) {
-                            moment.locale('id');
-                            return moment(data).format('dddd, DD MMMM YYYY');
-                        }
-                    },
+                    { data: "created_at", render: function (data) { moment.locale('id'); return moment(data).format('dddd, DD MMMM YYYY'); } },
                     { data: "karyawan.nama_lengkap" },
-                    { data: "pax" },
                     {
-                        data: "harga_satuan",
-                        render: function(data) { return formatRupiah(data); }
-                    },
-                    {
-                        data: "harga_total",
-                        render: function(data) { return formatRupiah(data); }
-                    },
-                    { data: "tracking.tracking" },
-                    {
-                        data: null,
-                        render: function (data, type, row) {
-                            var detailUrl = "{{ url('/pengajuansouvenir') }}/" + row.id;
-                            return `<a href="${detailUrl}" class="btn btn-sm btn-info">
-                                        <img src="{{ asset('icon/clipboard-primary.svg') }}" style="filter: brightness(0) invert(1);"> Detail</a>`;
+                        data: "detail",
+                        render: function(data) {
+                            if (!data || !Array.isArray(data)) return '-';
+                            return data.map(item =>
+                                `${item.souvenir ? item.souvenir.nama_souvenir : 'N/A'} (${item.pax} pax)`
+                            ).join('<hr style="margin:4px 0;">');
                         }
-                    }
+                    },
+                    {
+                        data: "detail",
+                        render: function(data) {
+                            if (!data || !Array.isArray(data) || data.length === 0) return '-';
+                            return data.map(item =>
+                                formatRupiah(item.harga_satuan)
+                            ).join('<hr style="margin:4px 0;">');
+                        }
+                    },
+                    { data: "total_keseluruhan", render: function(data) { return formatRupiah(data); } },
+                    { data: "tracking.tracking" },
+                    { data: null, render: renderActions }
                 ],
                 order: [[0, 'desc']],
                 columnDefs: [{ targets: [0], type: "date" }]
@@ -390,11 +454,7 @@ function loadTables(){
 
             $('#loadingModal').modal('hide');
         },
-        error: function(err) {
-            console.error("Error AJAX:", err);
-            $('#loadingModal').modal('hide');
-            Swal.fire('Error', 'Gagal memuat data dari server.', 'error');
-        }
+        error: function(err) { /* error handling */ }
     });
 }
 
@@ -402,37 +462,48 @@ function openApproveModal(id) {
     var approveUrl = "{{ url('/pengajuansouvenir') }}/" + id;
     $('#approveForm').attr('action', approveUrl);
 
-    // Reset modal
-    $('#approveYes').prop('checked', true);
-    toggleAlasanManager(false);
+    if (userRole === 'Finance & Accounting') {
+        $('#manager-row').hide();
+        $('#financeStatusBlock').show();
+        $('#approveYes').prop('checked', true);
+        $('#approveNo').prop('checked', false);
+        $('#alasanManagerInput').hide();
+        document.getElementById('alasan_manager').value = '';
+    } else {
+        $('#manager-row').show();
+        $('#financeStatusBlock').hide();
+        $('#approveYes').prop('checked', true);
+        toggleApprovalForms(false);
+    }
 
     $('#approveModal').modal('show');
 }
 
+function openUploadModal(id) {
+    var url = "{{ route('pengajuansouvenir.updateInvoice', ':id') }}";
+    url = url.replace(':id', id);
+
+    $('#uploadInvoiceForm').attr('action', url);
+    $('#invoiceFile').val('');
+    $('#uploadInvoiceModal').modal('show');
+}
+
 function toggleApprovalForms(showAlasan) {
     const alasanInput = document.getElementById('alasanManagerInput');
-    const financeBlock = document.getElementById('financeStatusBlock'); // Target dropdown finance
-    var userRole = '{{ auth()->user()->karyawan->jabatan ?? "" }}';
+    const financeBlock = document.getElementById('financeStatusBlock');
 
     if (showAlasan) {
-        // ----- Tombol 'TIDAK' ditekan -----
         alasanInput.style.display = 'block';
-        if (financeBlock) {
-            financeBlock.style.display = 'none'; // Sembunyikan status finance
-        }
+        if (financeBlock) financeBlock.style.display = 'none';
     } else {
-        // ----- Tombol 'YA' ditekan -----
         alasanInput.style.display = 'none';
-        document.getElementById('alasan_manager').value = ''; // Kosongkan alasan
-
-        // Tampilkan block status HANYA jika user adalah Finance
+        document.getElementById('alasan_manager').value = '';
         if (financeBlock && userRole === 'Finance & Accounting') {
             financeBlock.style.display = 'block';
         }
     }
 }
 
- // Handle Form Submit Approval
  $('#approveForm').on('submit', function(e) {
     e.preventDefault();
     let form = $(this);
@@ -447,7 +518,6 @@ function toggleApprovalForms(showAlasan) {
         success: function(res) {
             $('#loadingModal').modal('hide');
             Swal.fire('Sukses', 'Status pengajuan berhasil diperbarui.', 'success');
-            // Muat ulang kedua tabel
             loadTables();
         },
         error: function(err) {
@@ -455,6 +525,10 @@ function toggleApprovalForms(showAlasan) {
             Swal.fire('Error', 'Gagal menyimpan data, silakan coba lagi.', 'error');
         }
     });
+});
+
+$('#uploadInvoiceForm').on('submit', function(e) {
+    $('#loadingModal').modal('show');
 });
 </script>
 @endpush

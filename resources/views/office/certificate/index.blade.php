@@ -35,13 +35,12 @@
                     <div class="card-body p-0">
                         <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
                             <table class="table table-hover align-middle mb-0">
-                                <thead class="table-light sticky-top">
+                                <thead class="sticky-top">
                                     <tr>
                                         <th class="border-0 ps-4" style="min-width: 60px;">No</th>
                                         <th class="border-0" style="min-width: 250px;">Materi</th>
                                         <th class="border-0" style="min-width: 200px;">Perusahaan</th>
                                         <th class="border-0" style="min-width: 200px;">Tanggal Pelatihan</th>
-                                        <th class="border-0 text-center" style="min-width: 120px;">Status</th>
                                         <th class="border-0 text-center pe-4" style="min-width: 180px;">Action</th>
                                     </tr>
                                 </thead>
@@ -53,43 +52,27 @@
                                         </td>
                                         <td>
                                             <div class="d-flex align-items-center">
-                                                <div class="avatar avatar-sm bg-primary bg-opacity-15 rounded-circle me-3">
+                                                <div class="avatar avatar-sm bg-opacity-15 rounded-circle me-3">
                                                     <i class="bx bx-book-open text-primary"></i>
                                                 </div>
-                                                <div>
+                                                <div>   
                                                     <div class="fw-semibold text-dark">{{ $item->materi->nama_materi ?? '-' }}</div>
                                                     <small class="text-muted">{{ $item->materi->kode ?? '' }}</small>
                                                 </div>
                                             </div>
                                         </td>
                                         <td>
-                                            <div class="text-truncate" style="max-width: 200px;" data-bs-toggle="tooltip" title="{{ $item->perusahaan->nama ?? '-' }}">
+                                            <div class="text-truncate" style="max-width: 200px;" data-bs-toggle="tooltip" title="{{ $item->perusahaan->nama_perusahaan ?? '-' }}">
                                                 <i class="bx bx-buildings text-muted me-1"></i>
                                                 {{ $item->perusahaan->nama_perusahaan ?? '-' }}
                                             </div>
                                         </td>
                                         <td>
-                                            <div class="d-flex flex-column small">
-                                                <span class="badge bg-info-subtle text-info mb-1">
-                                                    <i class="bx bx-calendar me-1"></i>
-                                                    {{ \Carbon\Carbon::parse($item->tanggal_awal)->format('d M Y') }}
-                                                </span>
-                                                <span class="text-muted small">
-                                                    <i class="bx bx-right-arrow-alt me-1"></i>
-                                                    {{ \Carbon\Carbon::parse($item->tanggal_akhir)->format('d M Y') }}
+                                            <div class="d-flex flex-column small text-center">
+                                                <span class="text-muted mb-1">
+                                                    {{ \Carbon\Carbon::parse($item->tanggal_akhir)->format('d M Y') }} <i class="bx bx-right-arrow-alt me-1"></i> {{ \Carbon\Carbon::parse($item->tanggal_awal)->format('d M Y') }} 
                                                 </span>
                                             </div>
-                                        </td>
-                                        <td class="text-center">
-                                            @if($item->status == '0')
-                                            <span class="badge bg-warning-subtle text-warning px-3 py-2">
-                                                <i class="bx bx-time-five me-1"></i>Belum Selesai
-                                            </span>
-                                            @else
-                                            <span class="badge bg-success-subtle text-success px-3 py-2">
-                                                <i class="bx bx-check-circle me-1"></i>Selesai
-                                            </span>
-                                            @endif
                                         </td>
                                         <td class="text-center pe-4">
                                             <a href="{{ route('office.certificate.detail', $item->id) }}" 
@@ -116,7 +99,7 @@
 
                     <!-- Pagination -->
                     @if($rkm->hasPages())
-                    <div class="card-footer bg-light border-top py-3">
+                    <div class="card-footer border-top py-3">
                         <div class="d-flex justify-content-between align-items-center">
                             <div class="text-muted small">
                                 Menampilkan {{ $rkm->firstItem() }} - {{ $rkm->lastItem() }} dari {{ $rkm->total() }} data

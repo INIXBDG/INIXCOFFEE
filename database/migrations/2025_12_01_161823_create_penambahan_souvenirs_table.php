@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('pengajuan_souvenirs', function (Blueprint $table) {
+        Schema::create('penambahan_souvenirs', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('id_rkm');
             $table->unsignedBigInteger('id_karyawan');
-            $table->unsignedBigInteger('id_vendor');
-            $table->unsignedBigInteger('id_tracking')->nullable();
-            $table->decimal('total_keseluruhan', 15, 2)->nullable();
-            $table->string('invoice')->nullable();
+            $table->unsignedBigInteger('id_souvenir');
+            $table->string('nama');
+            $table->string('jabatan');
+            $table->integer('qty');
+            $table->date('tanggal');
             $table->timestamps();
         });
     }
@@ -27,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('pengajuan_souvenirs');
+        Schema::dropIfExists('penambahan_souvenirs');
     }
 };

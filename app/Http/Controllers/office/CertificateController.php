@@ -21,6 +21,7 @@ class CertificateController extends Controller
             ->select('r_k_m_s.*')
             ->whereNotNull('tanggal_awal')
             ->whereNotNull('tanggal_akhir')
+            ->where('status', '0')
             ->orderBy('tanggal_awal', 'desc')
             ->paginate(10);
 
