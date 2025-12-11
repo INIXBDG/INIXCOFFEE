@@ -48,6 +48,7 @@ use App\Events\ServerTimeUpdate;
 use App\Http\Controllers\BroadcastAuthController;
 use App\Http\Controllers\PusherAuthController;
 use App\Http\Controllers\office\vendorOfficeController;
+use App\Http\Controllers\RekomendasiLanjutanController;
 
 /*
 |--------------------------------------------------------------------------
@@ -768,5 +769,10 @@ Route::prefix('/catering')->name('catering.')->group(function () {
     Route::put('/updateinvoice/{id}', [CateringController::class, 'updateInvoice'])->name('updateInvoice');
 });
 
-// Penambahan Souvneir
+Route::prefix('/rekomendasi-lanjutan')->name('rekomendasiLanjutan.')->group(function () {
+    Route::get('/index', [RekomendasiLanjutanController::class, 'index'])->name('index');
+    Route::get('/get/{year}/{month}', [RekomendasiLanjutanController::class, 'showMonth']);
+    Route::post('/store', [RekomendasiLanjutanController::class, 'store'])->name('store');
+});
+
 Route::get('/getPenambahanSouvenir/{month}/{year}', [App\Http\Controllers\PenambahanSouvenirController::class, 'getPenambahanSouvenir'])->name('getPenambahanSouvenir');
