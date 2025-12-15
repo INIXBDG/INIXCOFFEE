@@ -25,7 +25,7 @@ class RKM extends Model
         'asisten_key',
         'status',
         'exam',
-        'authorize',    
+        'authorize',
         'registrasi_form',
         'quartal',
         'bulan',
@@ -75,6 +75,12 @@ class RKM extends Model
         return $this->hasMany(comment::class, 'rkm_key', 'id');
     }
 
+    public function rekomendasilanjutan()
+    {
+        return $this->hasOne(RekomendasiLanjutan::class, 'id_rkm', 'id');
+    }
+
+
     public function exam()
     {
         return $this->hasOne(eksam::class, 'id_rkm');
@@ -100,11 +106,13 @@ class RKM extends Model
         return $this->hasMany(nilaifeedback::class, 'id_rkm', 'id');
     }
 
-    public function sertifikatPDF(){
+    public function sertifikatPDF()
+    {
         return $this->hasMany(SertifikatPDF::class, 'id_rkm', 'id');
     }
 
-    public function absensiPDF(){
+    public function absensiPDF()
+    {
         return $this->hasOne(absensiPDF::class, 'id_rkm', 'id');
     }
 
@@ -112,7 +120,7 @@ class RKM extends Model
     {
         return $this->hasOne(Peluang::class, 'id_rkm', 'id'); // Relasi dengan Peluang
     }
-  
+
     public function invoice()
     {
         return $this->hasOne(Invoice::class, 'id_rkm');
