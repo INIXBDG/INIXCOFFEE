@@ -22,6 +22,9 @@ return new class extends Migration
             $table->timestamp('on_progress_at')->nullable();
             $table->timestamp('failed_at')->nullable();
             $table->timestamp('completed_at')->nullable();
+            $table->boolean('is_locked')->default(0);
+            //pemisahan jika ada kelas
+            $table->string('id_rkm')->nullable();
             $table->timestamps();
         });
     }

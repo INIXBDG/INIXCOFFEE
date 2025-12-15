@@ -19,6 +19,8 @@ class ActivityInstruktur extends Model
         'on_progress_at',
         'failed_at',
         'completed_at',
+        'is_locked',
+        'id_rkm',
     ];
 
     protected $casts = [
@@ -27,4 +29,9 @@ class ActivityInstruktur extends Model
         'failed_at' => 'datetime',
         'completed_at' => 'datetime',
     ];
+
+    public function rkm()
+    {
+        return $this->belongsTo(RKM::class, 'id_rkm');
+    }
 }

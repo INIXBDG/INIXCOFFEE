@@ -43,7 +43,7 @@ use App\Http\Controllers\office\OfficeController;
 use App\Http\Controllers\Office\CertificateController;
 use App\Http\Controllers\OutstandingController;
 use App\Http\Controllers\office\vendorOfficeController;
-
+use App\Http\Controllers\ActivityInstrukturController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -730,3 +730,6 @@ Route::put('/catering/approved', [CateringController::class, 'approved'])->name(
 Route::get('/catering/destroy/{id}', [CateringController::class, 'destroy'])->name('catering.destroy');
 Route::get('/catering/invoice/{id}', [CateringController::class, 'invoice'])->name('catering.invoice');
 Route::put('/catering/updateinvoice/{id}', [CateringController::class, 'updateInvoice'])->name('catering.updateInvoice');
+
+Route::get('/activityinstruktur-data', [ActivityInstrukturController::class, 'getActivitiesData'])->name('api.activities');
+Route::post('/activityinstruktur-store', [ActivityInstrukturController::class, 'store'])->name('api.activities.store');
