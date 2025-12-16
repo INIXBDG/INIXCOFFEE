@@ -66,7 +66,11 @@
                                     <div class="row mb-2">
                                         <label for="barang[qty][]" class="col-md-4 col-form-label text-md-start">Jumlah</label>
                                         <div class="col-md-6">
-                                            <input type="number" class="form-control" name="barang[qty][]" required>
+                                            <input type="number" class="form-control" name="barang[qty][]"
+                                                @if ($jumlah_pax)
+                                                value="{{ $jumlah_pax }}"
+                                                @endif
+                                                required readonly>
                                         </div>
                                     </div>
                                     <div class="row">
@@ -215,7 +219,11 @@
                 <div class="row mb-2">
                     <label class="col-md-4 col-form-label">Jumlah</label>
                     <div class="col-md-6">
-                        <input type="number" class="form-control" name="barang[qty][]" min="1" required>
+                        <input type="number" class="form-control" name="barang[qty][]" min="1"
+                            @if ($jumlah_pax)
+                                value="{{ $jumlah_pax }}"
+                            @endif
+                        required readonly>
                     </div>
                 </div>
 

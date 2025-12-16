@@ -22,7 +22,7 @@
     @endif
      @if ($notification->data['message']['tipe'] == 'survey_reminder')
         <div class="notification mb-3">
-            <p><strong style="text-transform: capitalize;">{{ $notification->data['message']['judul'] }}
+            <p><strong style="text-transform: capitalize;">{{ $notification->data['message']['judul'] }}</strong>
             <br>
             {{ $notification->data['message']['deskripsi'] }}
             </p>
@@ -38,6 +38,78 @@
             </div>
         </div>
     @endif
+
+    @if ($notification->data['message']['tipe'] == 'Update Catering')
+        <div class="notification mb-3">
+            <p><strong style="text-transform: capitalize;">Update Pengajuan Catering</strong>
+            <br>
+            @php
+                $pesan = $notification->data['message']['pesan'];
+                $lines = explode("\n", $pesan);
+                $header = array_shift($lines);
+            @endphp
+
+            {{ $header }}
+            @if (!empty($lines))
+                <ul class="mt-2 mb-0" style="padding-left: 20px; margin-bottom: 0;">
+                    @foreach ($lines as $line)
+                        @if (trim($line))
+                            <li>{{ trim(str_replace('• ', '', $line)) }}</li>
+                        @endif
+                    @endforeach
+                </ul>
+            @endif
+            </p>
+            <br>
+            <div class="d-flex">
+                <a href="{{ $notification->data['path'] }}" class="btn btn-primary btn-sm" style="margin-right:8px;">Lihat
+                    Selengkapnya</a>
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai
+                        Dibaca</button>
+                </form>
+            </div>
+        </div>
+    @endif
+    @if ($notification->data['message']['tipe'] == 'Pengajuan catering')
+        <div class="notification mb-3">
+            <p><strong style="text-transform: capitalize;">Pengajuan Catering</strong>
+            <br>
+            <strong>{{ $notification->data['message']['nama_lengkap'] }}</strong> telah mengajukan catering pada tanggal {{ $notification->data['message']['tanggal_pengajuan'] }}
+            </p>
+            <div class="d-flex">
+                <a href="{{ $notification->data['path'] }}" class="btn btn-primary btn-sm" style="margin-right:8px;">Lihat
+                    Selengkapnya</a>
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai
+                        Dibaca</button>
+                </form>
+            </div>
+        </div>
+    @endif
+    @if ($notification->data['message']['tipe'] == 'survey_reminder')
+        <div class="notification mb-3">
+            <p><strong style="text-transform: capitalize;">{{ $notification->data['message']['judul'] }}</strong>
+            <br>
+            {{ $notification->data['message']['deskripsi'] }}
+            </p>
+            <div class="d-flex">
+                <a href="{{ $notification->data['path'] }}" class="btn btn-primary btn-sm" style="margin-right:8px;">Lihat
+                    Selengkapnya</a>
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai
+                        Dibaca</button>
+                </form>
+            </div>
+        </div>
+    @endif
+
     @if ($notification->data['message']['tipe'] == 'no_record')
         <div class="notification mb-3">
             <p><strong style="text-transform: capitalize;">{{ $notification->data['message']['status'] }}</strong> Atas
@@ -1094,7 +1166,7 @@
                     </small>
 
                     <div class="mt-2">
-                        <form action="{{ route('notifications.markAsRead', $notification->iPengumumand) }}" method="POST" class="d-inline">
+                        <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
                             @csrf
                             @method('PUT')
                             <button type="submit" class="btn btn-outline-secondary btn-sm">

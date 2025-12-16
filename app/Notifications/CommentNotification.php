@@ -25,7 +25,7 @@ class CommentNotification extends Notification implements ShouldBroadcast
         $this->comment = $comment;
         $this->url = $url;
         $this->path = $path;
-        $this->receiverId = $receiverId; // id user penerima
+        $this->receiverId = $receiverId; 
     }
 
     public function via($notifiable)

@@ -2,6 +2,7 @@
 
 namespace App\Console;
 
+use App\Console\Commands\AutoJobRKMCommands;
 use App\Models\activityLog;
 
 use Illuminate\Console\Scheduling\Schedule;
@@ -222,6 +223,8 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:update-status')->dailyAt('23:00');
 
         $schedule->command('uptime:check')->everySixHours();
+
+        $schedule->command('RKM:auto-job')->mondays()->at('10:47');
     }
     /**
      * Register the commands for the application.
