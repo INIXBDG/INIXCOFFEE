@@ -48,7 +48,11 @@ use App\Events\ServerTimeUpdate;
 use App\Http\Controllers\BroadcastAuthController;
 use App\Http\Controllers\PusherAuthController;
 use App\Http\Controllers\office\vendorOfficeController;
+use App\Http\Controllers\PenukaranSouvenirController;
+use App\Http\Controllers\office\DashboardSouvenirController;
+use App\Http\Controllers\Webinar\CalendarController;
 use App\Http\Controllers\RekomendasiLanjutanController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -775,4 +779,12 @@ Route::prefix('/rekomendasi-lanjutan')->name('rekomendasiLanjutan.')->group(func
     Route::post('/store', [RekomendasiLanjutanController::class, 'store'])->name('store');
 });
 
+// Penambahan Souvneir
 Route::get('/getPenambahanSouvenir/{month}/{year}', [App\Http\Controllers\PenambahanSouvenirController::class, 'getPenambahanSouvenir'])->name('getPenambahanSouvenir');
+// Penukaran Souvenir
+Route::get('/penukaransouvenir/getRiwayat/{month}/{year}', [PenukaranSouvenirController::class, 'getRiwayat'])->name('getRiwayat');
+Route::get('/get-peserta/{rkmId}', [PenukaranSouvenirController::class, 'getPesertaByRKM'])->name('getPeserta');
+Route::get('/dashboard/souvenir', [DashboardSouvenirController::class, 'index'])->name('dashboard.souvenir');
+
+// timeline
+Route::get('/timeline', [CalendarController::class, 'index'])->name('timeline.index');

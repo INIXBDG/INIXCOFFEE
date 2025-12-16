@@ -7,7 +7,7 @@
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 
-<div class="container mx-auto py-8 px-4">
+<div class="container-fluid mx-auto py-8 px-4">
     {{-- Header --}}
     <div class="flex justify-between items-center mb-6">
         <h4 class="text-2xl font-bold text-gray-800">
