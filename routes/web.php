@@ -141,7 +141,6 @@ Route::resource('/overtime', \App\Http\Controllers\OvertimeController::class);
 Route::resource('/pengajuanlabsdansubs', \App\Http\Controllers\PengajuanLabdanSubsController::class);
 Route::resource('/pengajuansouvenir', \App\Http\Controllers\PengajuanSouvenirController::class);
 Route::resource('/daily-activities', \App\Http\Controllers\DailyActivityController::class);
-Route::resource('/activityinstruktur', \App\Http\Controllers\ActivityInstrukturController::class);
 Route::resource('/registry', \App\Http\Controllers\RegistryFeatureController::class)->parameters(['registry' => 'tugas']);
 Route::resource('permissions', \App\Http\Controllers\PermissionController::class);
 Route::resource('roles', \App\Http\Controllers\RoleController::class);
@@ -733,3 +732,5 @@ Route::put('/catering/updateinvoice/{id}', [CateringController::class, 'updateIn
 
 Route::get('/activityinstruktur-data', [ActivityInstrukturController::class, 'getActivitiesData'])->name('api.activities');
 Route::post('/activityinstruktur-store', [ActivityInstrukturController::class, 'store'])->name('api.activities.store');
+Route::post('/activityinstruktur-update', [ActivityInstrukturController::class, 'update'])->name('api.activities.proof_update');
+Route::get('/activityinstruktur', [ActivityInstrukturController::class, 'index'])->name('activities.index');

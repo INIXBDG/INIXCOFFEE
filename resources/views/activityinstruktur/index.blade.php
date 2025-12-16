@@ -2,16 +2,16 @@
 
 @section('content')
 <div class="container py-4">
-    <h3 class="mb-4">📋 Laporan Aktivitas Instruktur</h3>
+    <h3 class="mb-4">Laporan Aktivitas Instruktur</h3>
     <div id="calendar"></div>
     
     <div class="modal fade" id="activityModal" tabindex="-1" aria-labelledby="activityModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
-                <form id="activityForm">
+                <form id="activityFormDetail" method="POST" enctype="multipart/form-data">
                     @csrf 
                     <div class="modal-header">
-                        <h5 class="modal-title" id="activityModalLabel">Aktivitas Tanggal: <span id="modalDate"></span></h5>
+                        <h5 class="modal-title" id="activityModalLabel">Aktivitas <span id="modalDate"></span></h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
@@ -37,19 +37,43 @@
                             <label for="formDesc" class="form-label">Deskripsi / Detail</label>
                             <textarea class="form-control" id="formDesc" name="desc" rows="3"></textarea>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label for="formDoc" class="form-label">Dokumen Pendukung</label>
-                            <input type="file" class="form-control" id="formDoc" name="doc" disabled>
-                            <small id="docInfo" class="form-text text-muted"></small>
+
+                        <div id="proofUploadSection" class="mt-4 border p-3 rounded d-none">
+                            <h6>Bukti Penyelesaian Aktivitas</h6>
+                            <div class="mb-3">
+                                <label for="formDoc" class="form-label">Unggah Dokumen Bukti (PDF/Gambar)</label>
+                                <input type="file" class="form-control" id="formDoc" name="doc"> 
+                                <small id="docInfo" class="form-text text-muted"></small>
+                                
+                            </div>
                         </div>
 
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-                        <button type="submit" class="btn btn-primary" id="saveActivityBtn">Simpan Aktivitas</button>
+                        <button type="submit" class="btn btn-primary" id="saveActivityDetailBtn">Simpan Detail</button>
                     </div>
                 </form>
+                <div id="rkmDetailSection" class="rounded p-3 mb-3 d-none">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="activityModalLabel">Detail Mengajar (RKM)</h5></span></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <strong>Materi:</strong> <span id="rkmMateri"></span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Tanggal:</strong> <span id="rkmTanggal"></span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Kelas:</strong> <span id="rkmKelas"></span>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -62,9 +86,10 @@
     // URL API dari route Laravel
     const API_DATA_URL = "{{ route('api.activities') }}";
     const API_STORE_URL = "{{ route('api.activities.store') }}";
-
+    const API_PROOF_UPDATE_URL = "{{ route('api.activities.proof_update') }}"; // Untuk completed_at & doc (akan dibuat)
     $(document).ready(function() {
         var calendarEl = document.getElementById('calendar');
+        $('#rkmDetailSection').addClass('d-none');
 
         var calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
@@ -94,118 +119,217 @@
                 });
             },
 
-            // Ketika mengklik tanggal kosong
             dateClick: function(info) {
-                showActivityModal(info.dateStr);
+                showActivityModal(
+                    'store',
+                    info.dateStr,
+                    null,
+                    null,
+                    ''
+                );
             },
-            
+
             // Ketika mengklik event yang sudah ada
             eventClick: function(info) {
-                // Gunakan id dan extendedProps untuk memuat data ke modal
-                showActivityModal(info.event.startStr, info.event.id, info.event.extendedProps);
+                showActivityModal('show', info.event.startStr, info.event.id, info.event.extendedProps, info.event.title);
             }
         });
-
+       
         calendar.render();
 
-        // --- Logika Modal dan AJAX ---
+        function resetActivityModal() {
+
+            // Reset section visibility
+            $('#rkmDetailSection').addClass('d-none');
+            $('#activityFormDetail').removeClass('d-none');
+            $('#proofUploadSection').addClass('d-none');
+
+            // Reset text RKM
+            $('#rkmMateri').text('');
+            $('#rkmTanggal').text('');
+            $('#rkmKelas').text('');
+
+            // Reset form value
+            $('#activityFormDetail')[0].reset();
+            $('#formActivityType').val('manual');
+
+            // Reset buttons
+            $('#saveActivityDetailBtn').addClass('d-none').prop('disabled', false);
+            $('#uploadProofBtn').prop('disabled', false).text('Selesaikan dan Unggah Bukti');
+
+            // Reset alert
+            $('#lockAlert')
+                .addClass('d-none')
+                .removeClass('alert-danger')
+                .html('');
+
+            // Enable semua input
+            $('.form-control, .form-select, button').prop('disabled', false);
+        }
+
         
-        function showActivityModal(date, activityId = null, activityData = null) {
-            // Reset form
-            $('#activityForm')[0].reset();
-            $('#lockAlert').addClass('d-none').removeClass('alert-danger alert-success').html('');
-            $('#saveActivityBtn').prop('disabled', false);
-            $('.form-control, .form-select').prop('disabled', false);
+        function showActivityModal(tipe,date,activityId,activityData,title) 
+        {
+            resetActivityModal();
+            $('#rkmDetailSection').addClass('d-none');
+            $('#activityFormDetail').removeClass('d-none');
+
+            $('#rkmMateri').text('');
+            $('#rkmTanggal').text('');
+            $('#rkmKelas').text('');
+
+            $('#formActivity').val('');
+            $('#formDesc').val('');
+            $('#formActivityType').val('manual');
             
-            // Set tanggal di modal
+            
+            console.log(title);
+            // --- Langkah 2: Set Data Awal & Variabel Kunci ---
+            
             $('#modalDate').text(moment(date).format('DD MMMM YYYY'));
             $('#formActivityDate').val(date);
             $('#formActivityId').val(activityId);
 
-            var isTeachingActivity = activityData && activityData.id_rkm;
+            var isTeachingActivity = activityData && activityData.type === 'rkm';
+            var isExistingActivity = activityId !== null;
+            var isCompleted = activityData && activityData.status === 'Selesai';
+            var isLocked = false; 
 
-            // Mengatur status field
-            if (isTeachingActivity) {
-                $('#formActivity').prop('readonly', true);
-                $('#formActivityType').val('teaching');
-                // ... mungkin tampilkan label "Dibuat Otomatis"
-            } else {
-                $('#formActivity').prop('readonly', false);
-                $('#formActivityType').val('manual');
-            }
-
-            // 1. Tentukan Status Locked Berdasarkan Tanggal
-            // Keterangan: Logic ini SANGAT SENSITIF, sebaiknya server yang memutuskan.
-            // Namun, untuk validasi awal di frontend:
-            var dateCarbon = moment(date);
-            // Cek apakah tanggal yang diklik sudah lebih dari 7 hari yang lalu
-            var lockThreshold = moment().subtract(7, 'days').endOf('isoWeek'); // Akhir minggu lalu
-            var isLocked = dateCarbon.isBefore(lockThreshold); 
-            
-            
-            // 2. Muat Data Jika Activity Sudah Ada
+            // Muat Data jika event diklik
             if (activityData) {
-                $('#formActivity').val(activityData.title);
+                $('#formActivity').val(title);
                 $('#formDesc').val(activityData.desc);
-                // Cek apakah ini aktivitas RKM (Otomatis)
-                if (activityData.id_rkm) {
-                    $('#formActivityType').val('teaching');
-                } else {
-                    $('#formActivityType').val('manual');
-                }
+                $('#formActivityType').val(isTeachingActivity ? 'teaching' : 'manual');
+                $('#formActivity').prop('disabled', true);
+                // $('#formDesc').prop('disabled', true);
+                $('#formActivityType').prop('disabled', true);
                 
                 // Ambil status lock dari data event
                 if (activityData.is_locked) {
                     isLocked = true;
                 }
+            } else {
+                // Jika dateClick (aktivitas baru), pastikan formActivityType adalah Manual
+                $('#formActivityType').val('manual');
+            }
+            // ===============================
+            // DOKUMEN TERSIMPAN
+            // ===============================
+            $('#docInfo').addClass('d-none').html('');
+
+            if (activityData && activityData.doc) {
+
+                const fileUrl = `/storage/${activityData.doc}`;
+                const fileName = activityData.doc.split('/').pop();
+
+                $('#docInfo')
+                    .removeClass('d-none')
+                    .html(`
+                        📎 Dokumen tersimpan:
+                        <a href="${fileUrl}" target="_blank">
+                            ${fileName}
+                        </a>
+                    `);
             }
 
+            
+            // Cek Status Locked Berdasarkan Tanggal (Frontend Check)
+            var dateCarbon = moment(date);
+            const startOfThisWeek = moment().startOf('isoWeek'); // Senin minggu ini
 
-            // 3. Terapkan Status Locking (Frontend)
+            if (dateCarbon.isBefore(startOfThisWeek)) {
+                isLocked = true; // Minggu lalu & sebelumnya
+            }
+
+            console.log({
+                klik: dateCarbon.format('YYYY-MM-DD'),
+                startOfThisWeek: startOfThisWeek.format('YYYY-MM-DD'),
+                locked: isLocked
+            });
+            // --- Langkah 3: Terapkan Logika Tiga Skenario (UI/UX) ---
+
             if (isLocked) {
+                // ===============================
+                // SKENARIO 1: LOCKED
+                // ===============================
+
+                // Tampilkan alert lock
                 $('#lockAlert')
                     .removeClass('d-none')
                     .addClass('alert-danger')
-                    .html('🚨 Minggu ini sudah dikunci! Laporan tidak dapat diubah atau ditambahkan lagi.');
-                $('#saveActivityBtn').prop('disabled', true);
-                // Disabled semua form control
+                    .html('🚨 Laporan minggu ini sudah <strong>dikunci</strong> dan tidak dapat diubah.');
+
+                // Jika aktivitas mengajar (RKM)
+                if (isTeachingActivity) {
+
+                    // Tampilkan detail RKM
+                    $('#rkmDetailSection').removeClass('d-none');
+                    $('#activityFormDetail').addClass('d-none');
+
+                    $('#rkmMateri').text(activityData.materi);
+                    $('#rkmTanggal').text(
+                        moment(activityData.tanggal_awal).format('DD MMM YYYY') +
+                        ' - ' +
+                        moment(activityData.tanggal_akhir).format('DD MMM YYYY')
+                    );
+                    $('#rkmKelas').text(activityData.metode_kelas ?? '-');
+
+                }
+
+                // Lock semua input (1x saja)
                 $('.form-control, .form-select').prop('disabled', true);
+
+                // Pastikan tidak ada tombol simpan
+                $('#saveActivityDetailBtn').addClass('d-none');
+            } else if (isExistingActivity) {
+                
+                // --- Aktivitas SUDAH ADA (Update/Edit Mode) ---
+                
+                 if (isTeachingActivity) {
+
+                    $('#rkmDetailSection').removeClass('d-none');
+                    $('#activityFormDetail').addClass('d-none');
+
+                    $('#rkmMateri').text(activityData.materi);
+                    $('#rkmTanggal').text(
+                        moment(activityData.tanggal_awal).format('DD MMM YYYY') +
+                        ' - ' +
+                        moment(activityData.tanggal_akhir).format('DD MMM YYYY')
+                    );
+                    $('#rkmKelas').text(activityData.metode_kelas);
+
+                    // Semua form jadi readonly
+                    $('.form-control, .form-select').prop('disabled', true);
+                    $('#saveActivityDetailBtn').addClass('d-none');
+                } else {
+                    // **SKENARIO 3: MANUAL + DATA ADA**
+                    
+                    // BISA Update Detail (Tombol Simpan Detail muncul)
+                    $('#saveActivityDetailBtn').removeClass('d-none').text('Update Detail Aktivitas');
+                    $('#activityFormDetail').attr('action', API_PROOF_UPDATE_URL);
+                    $('#activityFormDetail').attr('method', 'POST');
+                    // BISA Update Bukti/Selesai (Bagian upload muncul)
+                    $('#proofUploadSection').removeClass('d-none');
+                    
+                    if (isCompleted) {
+                        $('#uploadProofBtn').text('Bukti Sudah Diunggah').prop('disabled', true);
+                    }
+                }
+                
+            } else { 
+                // **SKENARIO 4: DATA BELUM ADA (DateClick)**
+                $('#activityFormDetail').attr('action', API_STORE_URL);
+                $('#activityFormDetail').attr('method', 'POST');
+                // HANYA BISA Store Baru (Aktivitas Manual)
+                $('#saveActivityDetailBtn').removeClass('d-none').text('Simpan Aktivitas Baru');
+                
+                // Bagian upload bukti disembunyikan
+                $('#proofUploadSection').addClass('d-none');
             }
             
             // 4. Tampilkan Modal
             $('#activityModal').modal('show');
         }
-        
-        // --- Handler Submit Form ---
-        $('#activityForm').on('submit', function(e) {
-            e.preventDefault();
-            
-            // Serialize form data
-            var formData = $(this).serialize();
-            
-            // Tampilkan loading/disabled tombol
-            $('#saveActivityBtn').text('Menyimpan...').prop('disabled', true);
-            
-            $.ajax({
-                url: API_STORE_URL,
-                method: 'POST',
-                data: formData,
-                success: function(response) {
-                    $('#activityModal').modal('hide');
-                    alert(response.message);
-                    calendar.refetchEvents(); // Refresh data kalender
-                },
-                error: function(xhr) {
-                    var errorMsg = "Terjadi kesalahan saat menyimpan laporan.";
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        errorMsg = xhr.responseJSON.message;
-                    }
-                    alert('Gagal: ' + errorMsg);
-                    
-                    $('#saveActivityBtn').text('Simpan Aktivitas').prop('disabled', false);
-                }
-            });
-        });
     });
 </script>
 @endsection

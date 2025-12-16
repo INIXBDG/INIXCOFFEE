@@ -358,7 +358,7 @@ class LemburController extends Controller
         $path = '/lembur';
 
         foreach ($users as $user) {
-            NotificationFacade::send($user, new LemburNotification($data, $path, $type));
+            NotificationFacade::send($user, new LemburNotification($data, $path, $type, ));
         }
 
         return redirect()->route('lembur.index')->with(['success' => 'Data Berhasil Diubah!']);

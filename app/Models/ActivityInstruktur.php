@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class ActivityInstruktur extends Model
 {
@@ -34,4 +35,11 @@ class ActivityInstruktur extends Model
     {
         return $this->belongsTo(RKM::class, 'id_rkm');
     }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+
 }

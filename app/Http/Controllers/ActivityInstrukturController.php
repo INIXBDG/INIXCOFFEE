@@ -6,199 +6,201 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use App\Models\ActivityInstruktur;
+use App\Models\karyawan;
 use App\Models\RKM; // Pastikan Anda memiliki model RKM
-
+use Illuminate\Support\Facades\Storage; // Import Storage facade
+use Illuminate\Support\Str;
 class ActivityInstrukturController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
     public function index()
     {
-        // 1. Dapatkan Instruktur ID yang sedang login
-        $instructorId = Auth::user()->id;
-        
-        // 2. Tentukan Rentang Minggu Saat Ini
-        $date = Carbon::now();
-        // Set awal dan akhir minggu (Senin - Minggu)
-        $weekStartDate = $date->startOfWeek(Carbon::MONDAY)->format('Y-m-d');
-        $weekEndDate = $date->endOfWeek(Carbon::SUNDAY)->format('Y-m-d');
-
-        // 3. Tentukan Status Locking (untuk minggu saat ini)
-        // Logika Locking: Kunci jika sudah lebih dari 7 hari setelah akhir minggu
-        $lockDateThreshold = Carbon::parse($weekEndDate)->addDays(7);
-        $isLockedForCurrentWeek = Carbon::now()->gt($lockDateThreshold);
-        
-        // 4. Ambil Jadwal Kelas (RKM) Instruktur untuk Minggu Ini
-        // Kita perlu mencari RKM yang rentang tanggalnya bersinggungan dengan minggu ini.
-        $rkmSchedules = RKM::where(function ($query) use ($instructorId) {
-                // Instruktur bisa di kolom instruktur_key atau instruktur_key2
-                $query->where('instruktur_key', $instructorId)
-                      ->orWhere('instruktur_key2', $instructorId);
-            })
-            // RKM aktif yang rentang tanggalnya bersinggungan dengan minggu ini
-            ->where('tanggal_awal', '<=', $weekEndDate)
-            ->where('tanggal_akhir', '>=', $weekStartDate)
-            ->get();
-
-        // 5. Otomatisasi (Auto-Fill) Activity Report berdasarkan RKM
-        // Jika ada jadwal, otomatis buat/update activity_instrukturs per hari dalam rentang RKM
-        $this->autoFillTeachingActivities($rkmSchedules, $instructorId);
-
-
-        // 6. Ambil Data Activity Instruktur untuk Tampilan Kalender
-        // Ambil semua aktivitas (manual/otomatis) instruktur untuk bulan ini
-        $activities = ActivityInstruktur::where('user_id', $instructorId)
-                                        ->whereBetween('activity_date', [
-                                            Carbon::now()->startOfMonth(), 
-                                            Carbon::now()->endOfMonth()
-                                        ])
-                                        ->get();
-
-
-        return view('activityinstruktur.index', compact(
-            'weekStartDate', 
-            'weekEndDate', 
-            'isLockedForCurrentWeek', 
-            'rkmSchedules',
-            'activities' // Data yang akan di-render di FullCalendar
-        ));
+        return view('activityinstruktur.index');
     }
-    
-    /**
-     * Metode untuk mengisi otomatis laporan aktivitas mengajar
-     */
-    private function autoFillTeachingActivities($rkmSchedules, $instructorId)
+
+    private function syncTeachingActivities($userId, $start, $end)
     {
-        foreach ($rkmSchedules as $rkm) {
-            $startDate = Carbon::parse($rkm->tanggal_awal);
+        $rkms = RKM::where(function ($q) use ($userId) {
+            $q->where('instruktur_key', $userId)
+            ->orWhere('instruktur_key2', $userId);
+        })
+        ->where('tanggal_awal', '<=', $end)
+        ->where('tanggal_akhir', '>=', $start)
+        ->get();
+
+        foreach ($rkms as $rkm) {
+            $date = Carbon::parse($rkm->tanggal_awal);
             $endDate = Carbon::parse($rkm->tanggal_akhir);
 
-            // Iterasi dari tanggal awal RKM hingga tanggal akhir RKM
-            $currentDate = $startDate;
-            while ($currentDate->lte($endDate)) {
-                
-                // Pastikan itu bukan hari Sabtu/Minggu jika diasumsikan hari kerja, atau sesuaikan dengan kebutuhan Anda
-                // if ($currentDate->isWeekday()) { 
-                    
-                    // Cek apakah sudah ada aktivitas untuk hari ini dan RKM ini
-                    $existingActivity = ActivityInstruktur::where('user_id', $instructorId)
-                        ->where('activity_date', $currentDate->toDateString())
-                        ->where('id_rkm', $rkm->id)
-                        ->first();
-                        
-                    // Jika belum ada, buat aktivitas baru secara otomatis
-                    if (!$existingActivity) {
-                        ActivityInstruktur::create([
-                            'user_id' => $instructorId,
-                            'activity' => 'Mengajar Kelas: ' . $rkm->materi_key, // Ganti dengan nama materi yang sebenarnya
-                            'desc' => 'Kelas RKM ID: ' . $rkm->id . ', ' . $rkm->metode_kelas,
-                            'activity_date' => $currentDate->toDateString(),
-                            'status' => 'Selesai', // Atau 'On Progres' tergantung kebijakan
-                            'id_rkm' => $rkm->id,
-                            'is_locked' => 0, // Belum dikunci
-                            'completed_at' => now(),
-                        ]);
-                    }
-                // }
-                
-                $currentDate->addDay();
+            while ($date->lte($endDate)) {
+                ActivityInstruktur::firstOrCreate([
+                    'user_id' => $userId,
+                    'activity_date' => $date->toDateString(),
+                    'id_rkm' => $rkm->id,
+                ], [
+                    'activity' => $rkm->materi_key,
+                    'desc' => 'Mengajar (RKM)',
+                    'status' => 'On Progress',
+                ]);
+                $date->addDay();
             }
         }
     }
 
-    // app/Http/Controllers/ActivityInstrukturController.php
+    private function isWeekLocked($date)
+    {
+        $weekEnd = \Carbon\Carbon::parse($date)->endOfWeek(\Carbon\Carbon::SUNDAY);
+        return now()->gt($weekEnd->addDays(7));
+    }
 
 
     public function getActivitiesData(Request $request)
     {
-        $instructorId = Auth::user()->id;
-        
+        $user = auth()->user();
+        $userId = $user->id;
+        $karyawan = karyawan::findOrFail($userId);
+        $instructorId = $karyawan->kode_karyawan;
+        $Eduman = 'AD';
+
         $start = Carbon::parse($request->start)->toDateString();
-        $end = Carbon::parse($request->end)->toDateString();
+        $end   = Carbon::parse($request->end)->toDateString();
 
-        // Ambil data dari activity_instrukturs, dan lakukan EAGER LOAD relasi RKM
-        $activities = ActivityInstruktur::where('user_id', $instructorId)
-            ->whereBetween('activity_date', [$start, $end])
-            ->with('rkm') // Eager load relasi RKM
-            ->get();
-        dd($activities);
         $events = [];
+        // dd($Eduman, $instructorId);
 
-        foreach ($activities as $activity) {
-            $isLocked = $activity->is_locked;
-            
-            $backgroundColor = '#007bff'; // Biru: Default (Manual)
+        /*
+        |--------------------------------------------------------------------------
+        | 1. AKTIVITAS MANUAL (DISIMPAN)
+        |--------------------------------------------------------------------------
+        */
+        $manualQuery = ActivityInstruktur::whereNull('id_rkm')
+            ->whereBetween('activity_date', [$start, $end]);
+
+        if ($instructorId !== $Eduman) {
+            $manualQuery->where('user_id', $userId);
+        }
+
+        foreach ($manualQuery->with('user.karyawan')->get() as $activity) {
+
+            $locked = $this->isWeekLocked($activity->activity_date);
+            $color  = $locked ? '#6c757d' : '#007bff';
+
+            // Default title
             $title = $activity->activity ?: 'Aktivitas Manual';
-            
-            // Default start date adalah tanggal aktivitas harian
-            $eventStart = $activity->activity_date; 
-            
-            // Variabel opsional untuk extendedProps jika event ingin ditampilkan membentang
-            // $eventEnd = null; 
 
-            // Cek jika ini adalah aktivitas mengajar (Auto-Fill) dan RKM tersedia
-            if ($activity->id_rkm && $activity->rkm) {
-                $rkm = $activity->rkm;
-                $backgroundColor = '#28a745'; // Hijau: Aktivitas Mengajar
-                
-                // Override Title dengan nama materi RKM jika kolom 'activity' kosong/default
-                if (!$activity->activity || str_contains($activity->activity, 'RKM ID')) {
-                    // Asumsi 'materi_key' di RKM adalah nama materi/kelas
-                    $title = 'Kls: ' . $rkm->materi_key; 
-                }
-                
-                // Catatan: 'start' tetap menggunakan activity_date karena laporan ini per hari.
-                // Jika Anda ingin event di kalender membentang selama durasi kelas penuh, 
-                // Anda bisa menggunakan tanggal_awal dan tanggal_akhir RKM sebagai berikut:
-                
-                $eventStart = $rkm->tanggal_awal; 
-                $eventEnd = Carbon::parse($rkm->tanggal_akhir)->addDay()->format('Y-m-d'); // FullCalendar end date exclusive
-                // Namun, ini akan mengganggu logika "per hari" dan "locking per minggu".
-                // Sebaiknya biarkan 'start' = activity_date.
-            }
-            
-            // Cek status locking
-            if ($isLocked) {
-                $backgroundColor = '#6c757d'; // Abu-abu: Locked
+            // 🔥 KHUSUS EDUMAN → tambahkan kode instruktur
+            if ($instructorId === $Eduman) {
+                $kodeInstruktur = optional($activity->user)->karyawan->kode_karyawan ?? 'AD';
+                $title .= ' (' . $kodeInstruktur . ')';
             }
 
             $events[] = [
-                'id' => $activity->id,
+                'id'    => $activity->id,
                 'title' => $title,
-                'start' => $eventStart, 
-                // 'end' => $eventEnd, // Jika menggunakan rentang RKM
-                'backgroundColor' => $backgroundColor,
-                'borderColor' => $backgroundColor,
+                'start' => $activity->activity_date,
+                'allDay' => true,
+                'backgroundColor' => $color,
+                'borderColor' => $color,
                 'extendedProps' => [
-                    'is_locked' => $isLocked,
-                    'status' => $activity->status,
+                    'type' => 'manual',
+                    'is_locked' => $locked,
                     'desc' => $activity->desc,
-                    'doc' => $activity->doc,
-                    'id_rkm' => $activity->id_rkm,
-                    // Tambahkan detail RKM di extendedProps untuk digunakan di Modal
-                    'rkm_materi' => $activity->rkm ? $activity->rkm->materi_key : null,
-                    'rkm_start' => $activity->rkm ? $activity->rkm->tanggal_awal : null,
-                    'rkm_end' => $activity->rkm ? $activity->rkm->tanggal_akhir : null,
+                    'status' => $activity->status,
+                    'doc' => $activity->doc ?? null,
                 ]
             ];
         }
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | 2. RKM (HANYA TAMPILAN)
+        |--------------------------------------------------------------------------
+        */
+        $rkmQuery = RKM::where('tanggal_awal', '<=', $end)
+            ->where('tanggal_akhir', '>=', $start)
+            ->with('materi');
+
+        if ($instructorId !== $Eduman) {
+            $rkmQuery->where(function ($q) use ($instructorId) {
+                $q->where('instruktur_key', $instructorId)
+                ->orWhere('instruktur_key2', $instructorId);
+            });
+        }
+
+        $rkmGrouped = [];
+
+        foreach ($rkmQuery->get() as $rkm) {
+
+            // 🔑 KEY UNIK UNTUK GROUPING
+            $groupKey = implode('|', [
+                $rkm->materi_id,
+                $rkm->tanggal_awal,
+                $rkm->tanggal_akhir,
+                $rkm->instruktur_key
+            ]);
+
+            if (!isset($rkmGrouped[$groupKey])) {
+                $rkmGrouped[$groupKey] = [
+                    'rkm' => $rkm,
+                    'count' => 1
+                ];
+            } else {
+                $rkmGrouped[$groupKey]['count']++;
+            }
+        }
+
+        foreach ($rkmGrouped as $group) {
+
+            $rkm   = $group['rkm'];
+            $count = $group['count'];
+
+            $title = optional($rkm->materi)->nama_materi ?? $rkm->materi_key;
+
+            // 🔥 EDUMAN → tampilkan kode instruktur
+            if ($instructorId === $Eduman) {
+                $title .= ' (' . $rkm->instruktur_key . ')';
+            }
+
+            $events[] = [
+                'id' => 'rkm-group-' . md5($rkm->id),
+                'title' => $title,
+                'start' => $rkm->tanggal_awal,
+                'end' => Carbon::parse($rkm->tanggal_akhir)->addDay(),
+                'allDay' => true,
+                'backgroundColor' => '#28a745',
+                'borderColor' => '#28a745',
+                'extendedProps' => [
+                    'type' => 'rkm',
+                    'grouped' => true,
+                    'total_kelas' => $count,
+                    'materi' => optional($rkm->materi)->nama_materi ?? $rkm->materi_key,
+                    'tanggal_awal' => $rkm->tanggal_awal,
+                    'tanggal_akhir' => $rkm->tanggal_akhir,
+                    'metode_kelas' => $rkm->metode_kelas,
+                ]
+            ];
+        }
         return response()->json($events);
     }
+
+
 
     public function store(Request $request)
     {
         $instructorId = Auth::user()->id;
-        
+        // dd($request->all());
         // 1. Validasi Input Dasar
-        $validator = Validator::make($request->all(), [
+         $validator = $request->validate([
             'activity_date' => 'required|date',
             'activity' => 'required|string|max:255',
             'desc' => 'nullable|string',
             // Tambahkan validasi untuk 'doc' jika Anda mengimplementasikan upload file
         ]);
-
-        if ($validator->fails()) {
-            return response()->json(['message' => 'Validasi gagal: ' . $validator->errors()->first()], 422);
-        }
 
         $activityDate = Carbon::parse($request->activity_date);
 
@@ -225,12 +227,12 @@ class ActivityInstrukturController extends Controller
             $activity = ActivityInstruktur::find($activityId);
 
             if (!$activity || $activity->user_id != $instructorId) {
-                return response()->json(['message' => 'Aktivitas tidak ditemukan atau Anda tidak berhak mengubahnya.'], 404);
+                return redirect()->route('activities.index')->with(['error' => 'Aktivitas tidak ditemukan atau Anda tidak berhak mengubahnya.']);
             }
 
             // Jika entri sudah dikunci di DB, TOLAK (validasi ganda)
             if ($activity->is_locked) {
-                 return response()->json(['message' => 'Aktivitas ini sudah ditandai terkunci di database.'], 403);
+                return redirect()->route('activities.index')->with(['error' => 'Aktivitas ini sudah ditandai terkunci di database']);
             }
             
             // Khusus Aktivitas Mengajar (RKM):
@@ -262,19 +264,94 @@ class ActivityInstrukturController extends Controller
                 'activity_date' => $request->activity_date,
                 'activity' => $request->activity,
                 'desc' => $request->desc,
-                'status' => 'Selesai', // Default status untuk aktivitas manual baru
+                'status' => 'On Progres', // Default status untuk aktivitas manual baru
                 'is_locked' => 0,
-                'completed_at' => now(),
+                'on_progress_at' => now(),
                 'id_rkm' => null, // Pastikan id_rkm kosong untuk aktivitas manual
                 // 'doc' => $fileName, // Tambahkan logic upload file di sini
             ]);
         }
+        return redirect()->route('activities.index')->with(['success' => 'Laporan aktivitas berhasil disimpan/diperbarui.']);
 
-        return response()->json([
-            'message' => 'Laporan aktivitas berhasil disimpan/diperbarui.', 
-            'activity' => $activity
-        ], 200);
     }
+
+    public function update(Request $request)
+    {
+        $instructorId = Auth::user()->id;
+        // dd($request->all());
+        // 1. Validasi Input Kunci
+        $request->validate([
+            'activity_id' => 'required|exists:activity_instrukturs,id', // Harus ada ID aktivitas yang sudah ada
+            'doc' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120', // Bukti wajib diunggah (Maks 5MB)
+        ]);
+
+        $activityId = $request->activity_id;
+        $activity = ActivityInstruktur::find($activityId);
+
+        // 2. Cek Kepemilikan dan Eksistensi
+        if (!$activity || $activity->user_id != $instructorId) {
+            return redirect()->route('activities.index')->with(['error' => 'Aktivitas tidak ditemukan atau Anda tidak berhak mengubahnya.']);
+        }
+
+        $activityDate = Carbon::parse($activity->activity_date);
+        
+        // 3. Cek Status Locking (Guard Rail Server-Side)
+        $weekEndDate = $activityDate->copy()->endOfWeek(Carbon::SUNDAY);
+        $lockThreshold = $weekEndDate->addDays(7); 
+        
+        if (Carbon::now()->gt($lockThreshold)) {
+            return redirect()->route('activities.index')->with(['error' => 'Aktivitas ini sudah ditandai terkunci di database']);
+        }
+
+        $docPath = null;
+
+        if ($request->hasFile('doc')) {
+
+            // Hapus dokumen lama jika ada
+            if ($activity->doc && Storage::disk('public')->exists($activity->doc)) {
+                Storage::disk('public')->delete($activity->doc);
+            }
+
+            // 🔥 Ambil data untuk nama file
+            $activityName   = Str::slug($activity->activity ?? 'aktivitas');
+            $kodeInstruktur = optional($activity->user)->karyawan->kode_karyawan ?? 'unknown';
+            $tanggal        = Carbon::parse($activity->activity_date)->format('Y-m-d');
+
+            $extension = $request->file('doc')->getClientOriginalExtension();
+
+            // 🔥 Nama file final
+            $fileName = "{$activityName}_{$kodeInstruktur}_{$tanggal}.{$extension}";
+
+            // 🔥 Simpan dengan nama custom
+            $docPath = $request->file('doc')->storeAs(
+                'activity_docs',
+                $fileName,
+                'public'
+            );
+        }
+
+        // 5. Lakukan Update
+        try {
+            $activity->update([
+                'doc' => $docPath,
+                'status' => 'Selesai', // Atau 'Completed'
+                'completed_at' => now(), // Set timestamp saat ini
+            ]);
+
+            return redirect()->route('activities.index')->with(['success' => 'Laporan aktivitas berhasil disimpan/diperbarui.']);
+
+            
+        } catch (\Exception $e) {
+            // Jika terjadi error DB setelah file diupload, coba hapus file yang sudah terlanjur tersimpan
+            if ($docPath) {
+                Storage::disk('public')->delete($docPath);
+            }
+            return redirect()->route('activities.index')->with(['error' => 'Gagal menyimpan data ke database: ' . $e->getMessage()]);
+
+        }
+    }
+
+    
 }
 
 
