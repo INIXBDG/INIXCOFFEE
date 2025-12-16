@@ -50,6 +50,7 @@ use App\Http\Controllers\PusherAuthController;
 use App\Http\Controllers\office\vendorOfficeController;
 use App\Http\Controllers\PenukaranSouvenirController;
 use App\Http\Controllers\office\DashboardSouvenirController;
+use App\Http\Controllers\Webinar\CalendarController;
 
 /*
 |--------------------------------------------------------------------------
@@ -776,3 +777,7 @@ Route::get('/penukaransouvenir/getRiwayat/{month}/{year}', [PenukaranSouvenirCon
 Route::get('/get-peserta/{rkmId}', [PenukaranSouvenirController::class, 'getPesertaByRKM'])->name('getPeserta');
 
 Route::get('/dashboard/souvenir', [DashboardSouvenirController::class, 'index'])->name('dashboard.souvenir');
+
+
+Route::get('/timeline', [CalendarController::class, 'index'])->name('timeline.index');
+

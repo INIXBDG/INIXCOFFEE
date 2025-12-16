@@ -1523,6 +1523,24 @@
                                     <div class="card-body">
                                         <h5 class="text-center card-title">IT Service Management</h5>
                                         <div class="row">
+                                            @can('Fitur Webinar')
+                                            <div class="col-sm-6 mt-2">
+                                                <div class="card" id="card-hover">
+                                                    <div class="card-body d-flex">
+                                                        <div class="col-md-2">
+                                                            <i class="fa-solid fa-timeline" style="font-size: 30px;"></i>
+                                                        </div>
+                                                        <div class="col-md-10" style="margin-left: 10px">
+                                                            <a href="{{ route('timeline.index') }}"
+                                                                class="link stretched-link text-decoration-none">
+                                                                <h5 class="card-title">Timeline Webinar</h5>
+                                                            </a>
+                                                            <p class="card-text">mapping webinar pertahun dan timeline.</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            @endcan
                                             @if (Auth::user()->karyawan && Auth::user()->karyawan->divisi === 'IT Service Management')
                                             <div class="col-sm-6 mt-2">
                                                 <div class="card" id="card-hover">
