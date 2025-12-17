@@ -213,7 +213,7 @@
                     </tr>
                     <tr>
                         <td class="meta-label">From</td>
-                        <td>{{ explode(' ', $ttd->nama_lengkap)[0] }}</td>
+                        <td>{{ explode(' ', $ttd->nama_lengkap)[0] }} Inixindo Bandung</td>
                     </tr>
                 </table>
             </td>
