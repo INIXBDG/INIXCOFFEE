@@ -17,17 +17,46 @@
             </div>
         @endif
 
-        <!-- Header Card -->
-        <div class="card shadow-sm mb-3" style="border-radius: 10px;">
-            <div class="card-body d-flex justify-content-between align-items-center">
-                <div>
-                    <h5 class="card-title mb-1">{{ $nomor->no_modul }}</h5>
-                    <p class="card-text text-muted mb-0">{{ $nomor->type }}</p>
-                </div>
-                <div>
-                    <span class="badge bg-primary p-3" style="font-size: 18px;">
-                        {{ $nomor->status }}
-                    </span>
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-body p-4">
+                <div
+                    class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-4">
+                    <div>
+                        <h3 class="mb-2 fw-bold text-dark">{{ $nomor->no_modul }}</h3>
+                        <p class="text-muted fs-5 mb-0">{{ $nomor->type }}</p>
+                    </div>
+                    <div class="d-flex flex-column flex-sm-row gap-3 align-items-end align-items-sm-center">
+                        @if ($nomor->type == 'Authorize')
+                            <button type="button" class="btn btn-outline-secondary btn-sm btnPdfPeserta"
+                                data-id="{{ $nomor->id }}" data-note="{{ $nomor->note_peserta }}" data-bs-toggle="modal"
+                                data-bs-target="#modalNotePeserta">
+                                PDF Peserta
+                            </button>
+
+                            <button type="button" class="btn btn-outline-success btn-sm btnExcelPeserta"
+                                data-id="{{ $nomor->id }}" data-note="{{ $nomor->note_peserta }}" data-bs-toggle="modal"
+                                data-bs-target="#modalExcelPeserta">
+                                <i class="fas fa-file-excel"></i> Excel Peserta
+                            </button>
+
+                            <button type="button" class="btn btn-outline-secondary btn-sm pdfBtn"
+                                data-id="{{ $nomor->id }}" data-note="{{ $nomor->note_modul }}" data-bs-toggle="modal"
+                                data-bs-target="#noteModal">
+                                PDF Modul
+                            </button>
+                        @endif
+                        @if ($nomor->type == 'Regular')
+                            <button type="button" class="btn btn-outline-secondary btn-sm pdfBtn"
+                                data-id="{{ $nomor->id }}" data-note="{{ $nomor->note_modul }}" data-bs-toggle="modal"
+                                data-bs-target="#noteModal">
+                                PDF Modul
+                            </button>
+                        @endif
+                        <span
+                            class="badge fs-5 px-4 py-3 {{ $nomor->status === 'active' ? 'bg-success' : 'bg-secondary' }}">
+                            {{ ucfirst($nomor->status) }}
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -196,12 +225,6 @@
                                         class="form-control text-start format-rupiah" required placeholder="0">
                                 </div>
                             </div>
-
-                            <div class="mb-3">
-                                <label>Note (Opsional)</label>
-                                <textarea name="note" class="form-control" rows="3"></textarea>
-                            </div>
-
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
@@ -401,6 +424,97 @@
         </div>
     </div>
 
+    {{-- Modal Input Note Khusus PDF Peserta --}}
+    <div class="modal fade" id="modalNotePeserta" tabindex="-1" aria-labelledby="modalNotePesertaLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form id="formNotePeserta" action="" method="POST" class="modal-content shadow-lg border-0 rounded-4">
+                @csrf
+                @method('PUT')
+
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold" id="modalNotePesertaLabel">Catatan PDF Peserta</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body pt-2">
+                    <div class="mb-3">
+                        <label for="note_peserta_input" class="form-label fw-semibold">Note / Catatan (opsional)</label>
+                        <textarea name="note" id="note_peserta_input" class="form-control" rows="5"
+                            placeholder="Tuliskan catatan untuk PDF Peserta..."></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary px-4">
+                        Download PDF
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade" id="noteModal" tabindex="-1" aria-labelledby="noteModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form id="noteForm" action="" method="POST" class="modal-content shadow-lg border-0 rounded-4">
+                @csrf
+                @method('PUT')
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold" id="noteModalLabel">Catatan untuk PDF</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body pt-2">
+                    <div class="mb-3">
+                        <label for="note" class="form-label fw-semibold">Note / Catatan (opsional)</label>
+                        <textarea name="note" id="note" class="form-control" rows="5"
+                            placeholder="Tuliskan catatan tambahan yang ingin dicantumkan di PDF..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary px-4">
+                        Download PDF
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- Modal Input Note Khusus EXCEL Peserta --}}
+    <div class="modal fade" id="modalExcelPeserta" tabindex="-1" aria-labelledby="modalExcelPesertaLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form id="formExcelPeserta" action="" method="POST"
+                class="modal-content shadow-lg border-0 rounded-4">
+                @csrf
+                @method('PUT')
+
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold" id="modalExcelPesertaLabel">Download Excel Peserta</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body pt-2">
+                    <div class="alert alert-info py-2 small">
+                        <i class="fas fa-info-circle"></i> File akan diunduh dalam format .xlsx
+                    </div>
+                    <div class="mb-3">
+                        <label for="note_excel_peserta_input" class="form-label fw-semibold">Note / Catatan
+                            (opsional)</label>
+                        <textarea name="note" id="note_excel_peserta_input" class="form-control" rows="5"
+                            placeholder="Tuliskan catatan untuk Excel Peserta..."></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-success px-4">
+                        Download Excel
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 
     {{-- CSS Select2 + Theme Bootstrap 5 --}}
@@ -528,6 +642,43 @@
                     dropdownParent: $('#modalEditPeserta'),
                     theme: 'bootstrap-5'
                 });
+            });
+
+            $(document).on('click', '.btnPdfPeserta', function() {
+                const id = $(this).data('id');
+                const noteContent = $(this).data('note');
+
+                $('#note_peserta_input').val(noteContent);
+
+                let routeUrl = '{{ route('office.modul.download.pdf.peserta', ':id') }}';
+                routeUrl = routeUrl.replace(':id', id);
+
+                $('#formNotePeserta').attr('action', routeUrl);
+            });
+
+            $('.pdfBtn').on('click', function() {
+                const id = $(this).data('id');
+                const noteContent = $(this).data('note');
+
+                $('#note').val(noteContent);
+
+                const route = '{{ route('office.modul.download.pdf', ':id') }}';
+                $('#noteForm').attr('action', route.replace(':id', id));
+            });
+
+            $(document).on('click', '.btnExcelPeserta', function() {
+                const id = $(this).data('id');
+                const noteContent = $(this).data('note'); // Mengambil note yang sama dengan PDF
+
+                // Masukkan note ke textarea khusus Excel
+                $('#note_excel_peserta_input').val(noteContent);
+
+                // Set action form ke route download EXCEL
+                // Pastikan nama route ini sesuai dengan di web.php
+                let routeUrl = '{{ route('office.modul.download.excel.peserta', ':id') }}';
+                routeUrl = routeUrl.replace(':id', id);
+
+                $('#formExcelPeserta').attr('action', routeUrl);
             });
 
         });

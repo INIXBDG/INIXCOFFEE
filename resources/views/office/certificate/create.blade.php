@@ -113,6 +113,27 @@
                                 <div class="text-danger small mt-1">{{ $message }}</div>
                             @enderror
 
+                            <!-- Nomor Sertifikat -->
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">
+                                    Nomor Sertifikat <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0">
+                                        <i class="bx bx-user text-primary"></i>
+                                    </span>
+                                        <input type="text" 
+                                            name="nomor_sertifikat" 
+                                            class="form-control border-start-0 @error('nomor_sertifikat') is-invalid @enderror" 
+                                            value="{{ old('nomor_sertifikat', $nomorSertifikatBaru) }}"
+                                            readonly>
+
+                                    @error('nama')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+
                             <!-- Nama Peserta (Read-only) -->
                             <div class="mb-4">
                                 <label class="form-label fw-semibold">
