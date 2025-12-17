@@ -12,10 +12,12 @@ class NomorModul extends Model
         'no_modul',
         'type',
         'status',
+        'note_modul',
+        'note_peserta',
     ];
 
     public function moduls()
     {
-        return $this->hasMany(Modul::class, 'no_modul', 'no_modul');
+        return $this->hasMany(Modul::class, 'no_modul', 'id');
     }
 }

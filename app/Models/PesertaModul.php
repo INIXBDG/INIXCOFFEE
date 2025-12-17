@@ -17,12 +17,13 @@ class PesertaModul extends Model
         'awal_training',
         'akhir_training',
     ];
+
     public function nomorModul()
     {
-        return $this->belongsTo(NomorModul::class, 'no_modul', 'no_modul');
+        return $this->belongsTo(NomorModul::class, 'no_modul', 'id');
     }
 
-    public function modul()
+    public function dataModul()
     {
         return $this->belongsTo(Modul::class, 'modul', 'id');
     }
