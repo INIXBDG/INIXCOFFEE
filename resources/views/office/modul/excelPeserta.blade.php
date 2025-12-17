@@ -54,7 +54,7 @@
         <tr>
             <td></td>
             <td style="border: 1px solid #000000; font-weight: bold;">From</td>
-            <td style="border: 1px solid #000000;">: {{ explode(' ', $ttd->nama_lengkap)[0] }}</td>
+            <td style="border: 1px solid #000000;">: {{ explode(' ', $ttd->nama_lengkap)[0] }} Inixindo Bandung</td>
         </tr>
 
         <tr>
