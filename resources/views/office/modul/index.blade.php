@@ -70,6 +70,16 @@
             </button>
         @endif
 
+        @if (Auth::user()->jabatan === 'Finance & Accounting')
+            <form action="{{ route('office.modul.update.status', $nomor->id) }}" method="POST" class="d-inline">
+                @csrf
+                @method('PUT')
+                <button type="submit" class="btn btn-success mb-3">
+                    <i class="fas fa-check"></i> Setujui
+                </button>
+            </form>
+        @endif
+
         <div class="card">
             <div class="card-body">
                 <h5 class="mb-2">Daftar Modul</h5>
