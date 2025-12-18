@@ -1352,5 +1352,130 @@
             </div>
         @endif
 
+        
+    @if ($notification->data['message']['tipe'] == 'Preorder Modul')
+        <div class="notification mb-3 p-3 border rounded bg-light">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="w-100">
+                    {{-- Header: Pembuat & Aksi --}}
+                    <p class="mb-1">
+                        <strong class="text-capitalize text-primary">
+                            {{ $notification->data['message']['pembuat'] ?? 'User' }}
+                        </strong>
+                        telah membuat sebuah preorder modul baru.
+                    </p>
+
+                    {{-- Detail Informasi (Box Putih) --}}
+                    <div class="mt-2 p-3 bg-white border rounded">
+                        {{-- Baris Informasi Utama --}}
+                        <div class="row">
+                            {{-- Nomor Modul --}}
+                            <div class="col-md-6 mb-2 mb-md-0">
+                                <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem;">
+                                    Nomor Modul
+                                </small>
+                                <span class="text-dark fw-bold font-monospace">
+                                    <i class="bi bi-hash text-secondary me-1"></i>
+                                    {{ $notification->data['message']['noModul'] }}
+                                </span>
+                            </div>
+
+                            {{-- Tipe Modul --}}
+                            <div class="col-md-6">
+                                <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem;">
+                                    Tipe
+                                </small>
+                                <span class="badge bg-info text-dark">
+                                    {{ $notification->data['message']['type'] }}
+                                </span>
+                            </div>
+                        </div>
+
+                        {{-- Pesan Tambahan --}}
+                        <div class="mt-3 pt-2 border-top">
+                            <p class="mb-0 text-muted fst-italic" style="font-size: 0.85rem;">
+                                "Silahkan di cek beberapa saat nanti."
+                            </p>
+                        </div>
+                    </div>
+
+                    {{-- Waktu Transaksi --}}
+                    <small class="text-muted mt-2 d-block">
+                        <i class="bi bi-clock"></i> Dibuat pada:
+                        {{ $notification->created_at->translatedFormat('d F Y H:i') }} WIB
+                    </small>
+                </div>
+            </div>
+
+            {{-- Tombol Aksi --}}
+            <div class="d-flex gap-2 mt-3">
+                {{-- Tombol Lihat Detail (Path) --}}
+                <a href="{{ $notification->data['path'] }}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-eye me-1"></i>
+                    Lihat Detail
+                </a>
+
+                {{-- Tombol Tandai Dibaca --}}
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                        Tandai Dibaca
+                    </button>
+                </form>
+            </div>
+        </div>
+    @endif
+    
+    @if ($notification->data['message']['tipe'] == 'Persetujuan Preorder')
+        <div class="notification mb-3 p-3 border rounded bg-light">
+            <div class="w-100">
+                {{-- Pesan Utama --}}
+                <p class="mb-2 text-success fw-bold">
+                    Pengajuan anda telah disetujui
+                </p>
+
+                {{-- Informasi Modul --}}
+                <div class="mb-2">
+                    <small class="text-muted d-block">Nomor Modul</small>
+                    <span class="fw-bold font-monospace">
+                        {{ $notification->data['message']['noModul'] ?? '-' }}
+                    </span>
+                </div>
+
+                <div class="mb-2">
+                    <small class="text-muted d-block">Tipe Modul</small>
+                    <span class="badge bg-info text-dark">
+                        {{ $notification->data['message']['type'] ?? '-' }}
+                    </span>
+                </div>
+
+                {{-- Waktu Notifikasi --}}
+                <small class="text-muted d-block">
+                    <i class="bi bi-clock"></i> Dibuat pada:
+                    {{ $notification->created_at->translatedFormat('d F Y H:i') }} WIB
+                </small>
+
+                {{-- Tombol Aksi --}}
+                <div class="d-flex gap-2 mt-3">
+                    {{-- Tombol Detail --}}
+                    <a href="{{ $notification->data['path'] }}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-eye me-1"></i> Detail
+                    </a>
+
+                    {{-- Tombol Tandai Dibaca --}}
+                    <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST">
+                        @csrf
+                        @method('PUT')
+                        <button type="submit" class="btn btn-sm btn-outline-secondary">
+                            Tandai Dibaca
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
+
+
     <hr>
 @endforeach
