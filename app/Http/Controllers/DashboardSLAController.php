@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
 use App\Models\Tickets;
 use App\Models\laporanInsiden;
+use App\Models\YearMapping;
+use App\Models\EventTodo;
 use App\Models\trackingLaporanInsiden;
 use App\Models\karyawan;
 use App\Models\User; // <-- Pastikan namespace model User Anda benar
@@ -83,6 +85,31 @@ class DashboardSLAController extends Controller
             'startDate' => $startDate,
             'endDate'   => $endDate,
             'filters'   => ['start' => $startDate->toDateTimeString(), 'end' => $endDate->toDateTimeString()]
+        ];
+    }
+
+    private function getSlaRules()
+    {
+        return [
+            // --- TAHAP PERENCANAAN (H-30) ---
+            'Link Pendaftaran' => ['offset' => -30, 'stage' => 'Perencanaan', 'desc' => 'Max H-30'],
+            'Pemateri'         => ['offset' => -30, 'stage' => 'Perencanaan', 'desc' => 'Fixasi H-30'],
+
+            // --- TAHAP PERSIAPAN (H-14 s/d H-3) ---
+            'Flyer'            => ['offset' => -14, 'stage' => 'Persiapan', 'desc' => 'Max H-14'],
+            'Background Zoom'  => ['offset' => -7,  'stage' => 'Persiapan', 'desc' => 'Max H-7'],
+            'Akun E-Learning'  => ['offset' => -7,  'stage' => 'Persiapan', 'desc' => 'Max H-7'],
+            'Teknis & Ruangan' => ['offset' => -3,  'stage' => 'Persiapan', 'desc' => 'Max H-3'],
+            'MC'               => ['offset' => -3,  'stage' => 'Persiapan', 'desc' => 'Naskah H-3'],
+            'Moderator'        => ['offset' => -3,  'stage' => 'Persiapan', 'desc' => 'Briefing H-3'],
+
+            // --- TAHAP FINALISASI (H-1) ---
+            'Blast Link Zoom'  => ['offset' => -1,  'stage' => 'Finalisasi', 'desc' => 'H-1 Pagi'],
+            'Link Zoom & Youtube' => ['offset' => -1, 'stage' => 'Finalisasi', 'desc' => 'Ready H-1'],
+
+            // --- TAHAP PELAPORAN (H+7) ---
+            'Sertifikat Webinar' => ['offset' => 2,   'stage' => 'Pelaporan', 'desc' => 'Max H+2'],
+            'Link Feed Back'     => ['offset' => 7,   'stage' => 'Pelaporan', 'desc' => 'Data H+7'],
         ];
     }
 
@@ -334,6 +361,117 @@ class DashboardSLAController extends Controller
         ];
 
         return response()->json(['kpi' => $kpi, 'details' => $listInsiden]);
+    }
+
+    // =========================================================================
+    // FUNGSI UTAMA 4: DASHBOARD SLA EVENT / WEBINAR (BARU)
+    // =========================================================================
+    public function dashboardEventSla(Request $request, $mappingId)
+    {
+        // 1. Ambil Data Event Utama (D-Day)
+        $mapping = YearMapping::with('eventDetail')->findOrFail($mappingId);
+        $dDay = Carbon::parse($mapping->planned_date, $this->timezone)->startOfDay();
+
+        // 2. Ambil Checklist Aktual dari Database (EventTodo + Todo)
+        $eventTodos = EventTodo::with('todo')
+            ->where('year_mapping_id', $mappingId)
+            ->get()
+            ->keyBy(function ($item) {
+                // Key array berdasarkan nama task agar mudah dicocokkan dengan Rules
+                return $item->todo->task_name;
+            });
+
+        // 3. Ambil Aturan SLA
+        $slaRules = $this->getSlaRules();
+
+        // 4. Proses Kalkulasi
+        $stats = [
+            'total_tasks' => 0,
+            'completed_tasks' => 0,
+            'on_time' => 0,
+            'late' => 0,
+            'overdue' => 0,
+        ];
+
+        $details = [];
+
+        // Loop berdasarkan ATURAN, bukan berdasarkan data transaksi.
+        // Agar item SLA tetap muncul di dashboard meskipun belum ada di checklist user.
+        foreach ($slaRules as $taskName => $rule) {
+            $stats['total_tasks']++;
+
+            // Hitung Target Date
+            $targetDate = $dDay->copy()->addDays($rule['offset'])->endOfDay();
+
+            // Cek Realisasi (Apakah user sudah punya checklist ini?)
+            $actualItem = $eventTodos->get($taskName);
+
+            $status = 'Pending';
+            $isDone = false;
+            $actualDateStr = '-';
+            $actualDateObj = null;
+            $pic = '-';
+
+            if ($actualItem) {
+                $pic = $actualItem->pic ?? '-'; // Ambil PIC dari EventTodo
+
+                if ($actualItem->is_checked) {
+                    $isDone = true;
+                    // Gunakan updated_at sebagai waktu penyelesaian
+                    $actualDateObj = Carbon::parse($actualItem->updated_at, $this->timezone);
+                    $actualDateStr = $actualDateObj->format('d M Y');
+                    $stats['completed_tasks']++;
+
+                    // Logika Status: On Time vs Late
+                    if ($actualDateObj->lte($targetDate)) {
+                        $status = 'On Time';
+                        $stats['on_time']++;
+                    } else {
+                        $status = 'Late';
+                        $stats['late']++;
+                    }
+                } else {
+                    // Belum diceklis, cek deadline
+                    if (Carbon::now($this->timezone)->gt($targetDate)) {
+                        $status = 'Overdue';
+                        $stats['overdue']++;
+                    } else {
+                        $status = 'On Progress';
+                    }
+                }
+            } else {
+                // Item ada di Rules tapi tidak ada di EventTodo (Mungkin Todo Master dihapus/ubah)
+                $status = 'Not Found'; // Atau anggap Overdue/Pending
+            }
+
+            // Grouping data untuk View JSON
+            $details[$rule['stage']][] = [
+                'activity'    => $taskName,
+                'pic'         => $pic,
+                'sla_label'   => $rule['desc'], // Label teks H-Min
+                'target_date' => $targetDate->format('d M Y'),
+                'actual_date' => $actualDateStr,
+                'status'      => $status,
+                // Hitung selisih hari (opsional untuk sorting/indikator)
+                'days_diff'   => $isDone ? $actualDateObj->diffInDays($targetDate, false) : 0
+            ];
+        }
+
+        // 5. Finalisasi KPI Percentage
+        $total = $stats['total_tasks'];
+        $kpi = [
+            'completion_rate' => ($total > 0) ? ($stats['completed_tasks'] / $total) * 100 : 0,
+            'sla_compliance'  => ($stats['completed_tasks'] > 0) ? ($stats['on_time'] / $stats['completed_tasks']) * 100 : 0,
+            'total_late'      => $stats['late'],
+            'total_overdue'   => $stats['overdue'],
+            'event_title'     => $mapping->eventDetail->title ?? 'Judul Belum Diset',
+            'event_date'      => $dDay->format('d M Y')
+        ];
+
+        return response()->json([
+            'kpi'     => $kpi,
+            'details' => $details
+        ]);
     }
 
     // =========================================================================

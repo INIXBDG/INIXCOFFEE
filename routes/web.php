@@ -52,6 +52,8 @@ use App\Http\Controllers\PenukaranSouvenirController;
 use App\Http\Controllers\office\DashboardSouvenirController;
 use App\Http\Controllers\Webinar\CalendarController;
 use App\Http\Controllers\RekomendasiLanjutanController;
+use App\Http\Controllers\Webinar\TimelineItemController;
+use App\Http\Controllers\Webinar\ChecklistController;
 
 
 /*
@@ -712,6 +714,7 @@ Route::prefix('dashboard-sla/{team}')->group(function () {
     Route::get('/user', [DashboardSLAController::class, 'dashboardUser']);
     Route::get('/kritis', [DashboardSLAController::class, 'dashboardKritis']);
 });
+Route::get('/dashboard-sla/event/{mappingId}', [DashboardSLAController::class, 'dashboardEventSla']);
 
 Route::prefix('office')->name('office.')->middleware(['auth'])->group(function () {
 
@@ -788,3 +791,13 @@ Route::get('/dashboard/souvenir', [DashboardSouvenirController::class, 'index'])
 
 // timeline
 Route::get('/timeline', [CalendarController::class, 'index'])->name('timeline.index');
+
+Route::get('/api/checklist/{mappingId}', [ChecklistController::class, 'index']);
+Route::patch('/api/checklist/{id}/toggle', [ChecklistController::class, 'toggle']);
+Route::put('/api/checklist/{id}/detail', [ChecklistController::class, 'updateDetail']);
+
+// API Timeline Item
+Route::post('/api/timeline-item', [TimelineItemController::class, 'store']);
+
+// API Event Update
+Route::post('/api/event/{id}/update', [CalendarController::class, 'updateEvent']);
