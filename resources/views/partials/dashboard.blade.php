@@ -582,6 +582,18 @@
                                 data-team="tech-support" data-loaded="false"> 🎧 SLA Technical Support
                         </button>
                     </li>
+                    <li class="nav-item mx-1" role="presentation">
+                        <button class="nav-link sla-tab-trigger" id="pills-sla-event-tab"
+                                data-bs-toggle="pill"
+                                data-bs-target="#pills-sla-event"
+                                type="button"
+                                role="tab"
+                                aria-controls="pills-sla-event"
+                                aria-selected="false"
+                                data-loaded="false">
+                                📅 SLA Webinar
+                        </button>
+                    </li>
                 </ul>
 
                 <div class="tab-content" id="pills-tabContent">
@@ -928,6 +940,104 @@
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="pills-sla-event" role="tabpanel" aria-labelledby="pills-sla-event-tab" tabindex="0">
+                        <div class="container-fluid">
+
+                            <div class="row mb-4 mt-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Pilih Bulan Webinar:</label>
+                                    <select id="eventSlaFilter" class="form-select">
+                                        <option value="" selected disabled>-- Pilih Event --</option>
+                                        @foreach(\App\Models\YearMapping::where('year', date('Y'))->orderBy('month')->get() as $map)
+                                            <option value="{{ $map->id }}">
+                                                Bulan {{ \Carbon\Carbon::createFromDate(null, $map->month)->translatedFormat('F') }} - {{ $map->theme ?? 'Tema Belum Set' }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div id="event-sla-empty" class="text-center py-5 text-muted">
+                                <i class="bi bi-calendar-event fs-1"></i>
+                                <p class="mt-2">Silakan pilih bulan webinar terlebih dahulu.</p>
+                            </div>
+
+                            <div id="event-sla-content" style="display: none;">
+
+                                <div class="row mb-3">
+                                    <div class="col-md-12">
+                                        <div class="alert alert-info d-flex justify-content-between align-items-center" role="alert">
+                                            <div>
+                                                <h4 class="alert-heading mb-0 fs-5" id="event-title">...</h4>
+                                                <small id="event-date" class="font-monospace">...</small>
+                                            </div>
+                                            <span class="badge bg-light text-dark border">Target: H-Min Timeline</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row mb-4">
+                                    <div class="col-lg-3 col-md-6 mb-3">
+                                        <div class="card card-body text-center h-100 shadow-sm border-start border-4 border-primary">
+                                            <h6 class="text-muted text-uppercase small">Kelengkapan</h6>
+                                            <div class="fs-2 fw-bold" id="event-kpi-completion">0%</div>
+                                            <small class="text-muted">Item Selesai / Total</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-3 col-md-6 mb-3">
+                                        <div class="card card-body text-center h-100 shadow-sm border-start border-4 border-success">
+                                            <h6 class="text-muted text-uppercase small">Tepat Waktu (SLA)</h6>
+                                            <div class="fs-2 fw-bold" id="event-kpi-compliance">0%</div>
+                                            <small class="text-muted">Dari item yang selesai</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-3 col-md-6 mb-3">
+                                        <div class="card card-body text-center h-100 shadow-sm border-start border-4 border-warning">
+                                            <h6 class="text-muted text-uppercase small">Terlambat</h6>
+                                            <div class="fs-2 fw-bold text-warning" id="event-kpi-late">0</div>
+                                            <small class="text-muted">Selesai tapi lewat deadline</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-3 col-md-6 mb-3">
+                                        <div class="card card-body text-center h-100 shadow-sm border-start border-4 border-danger">
+                                            <h6 class="text-muted text-uppercase small">Overdue</h6>
+                                            <div class="fs-2 fw-bold text-danger" id="event-kpi-overdue">0</div>
+                                            <small class="text-muted">Belum selesai & lewat deadline</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card-header fs-5 fw-semibold bg-white">
+                                    <i class="bi bi-list-check me-2"></i> Rincian Timeline & Realisasi
+                                </div>
+                                
+                                <div class="card shadow-sm">
+                                    <div class="table">
+                                        <table class="table table-hover mb-0 align-middle w-100">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th style="width: 45%">Aktivitas</th>
+
+                                                    <th>PIC</th>
+
+                                                    <th class="text-center">Aturan SLA</th>
+
+                                                    <th class="text-center">Deadline</th>
+
+                                                    <th class="text-center">Tgl Selesai</th>
+
+                                                    <th class="text-center">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="event-sla-table-body">
+                                                </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>

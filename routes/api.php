@@ -8,9 +8,6 @@ use App\Http\Controllers\PeluangController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WebhookController;
-use App\Http\Controllers\Webinar\CalendarController;
-use App\Http\Controllers\Webinar\TimelineItemController;
-use App\Http\Controllers\Webinar\ChecklistController;
 
 /*
 |--------------------------------------------------------------------------
@@ -56,13 +53,3 @@ Route::get('getInventaris', [App\Http\Controllers\Api\apiController::class, 'get
 Route::post('/create/ticket', [TicketController::class, 'store']);
 
 Route::match(['get', 'post'], '/webhook/fonnte', [WebhookController::class, 'handle']);
-
-Route::post('/event/{mappingId}/update', [CalendarController::class, 'updateEvent']);
-
-// 2. Simpan Item Harian (Timeline)
-Route::post('/timeline-item', [TimelineItemController::class, 'store']);
-
-// 3. Checklist Management
-Route::get('/checklist/{mappingId}', [ChecklistController::class, 'index']);      // Get & Auto-generate
-Route::patch('/checklist/{id}/toggle', [ChecklistController::class, 'toggle']);   // Centang
-Route::put('/checklist/{id}/detail', [ChecklistController::class, 'updateDetail']); // Update PIC/Note
