@@ -66,7 +66,7 @@
                             </label>
                             <div class="col-sm-8 d-flex align-items-center">
                                 <div class="d-flex align-items-center">
-                                    <div class="avatar avatar-sm bg-primary bg-opacity-15 rounded-circle me-3">
+                                    <div class="avatar avatar-sm rounded-circle me-3">
                                         <span class="text-primary fw-bold">
                                             {{ strtoupper(substr($certificate->nama_peserta, 0, 1)) }}
                                         </span>
@@ -121,7 +121,7 @@
                     </div>
 
                     <!-- Action Buttons Footer -->
-                    <div class="card-footer bg-light border-top py-3">
+                    <div class="card-footer border-top py-3">
                         <div class="d-flex flex-wrap gap-2 justify-content-center">
                             <a href="{{ route('office.certificate.preview', $certificate->id) }}" 
                                class="btn btn-info shadow-sm hover-scale"

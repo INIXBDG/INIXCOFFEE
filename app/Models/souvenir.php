@@ -28,4 +28,9 @@ class souvenir extends Model
     {
         return $this->hasMany(PengajuanSouvenir::class, 'id_souvenir', 'id');
     }
+
+    public function penambahanSouvenir()
+    {
+        return $this->hasMany(PenambahanSouvenir::class, 'id_souvenir', 'id');
+    }
 }

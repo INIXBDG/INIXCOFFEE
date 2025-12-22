@@ -274,7 +274,8 @@ class LaporanPenjualanController extends Controller
 
         $path = "/crm/edit/{$pa->id_rkm}/pa";
 
-        Notification::send($users, new UpdateLaporanPenjualan($data, $path));
+        $receiverId = $users->pluck('id')->toArray();
+        Notification::send($users, new UpdateLaporanPenjualan($data, $path, $receiverId));
 
         return response()->json([
             'success' => true,

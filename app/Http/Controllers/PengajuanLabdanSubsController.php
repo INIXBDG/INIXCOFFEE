@@ -332,7 +332,8 @@ class PengajuanLabdanSubsController extends Controller
         }
 
         foreach ($users as $user) {
-            NotificationFacade::send($user, new PengajuanLabdanSubsNotification($data, $path, $type));
+            $receiverId = $user->id;
+            NotificationFacade::send($user, new PengajuanLabdanSubsNotification($data, $path, $type, $receiverId));
         }
 
         return redirect()
@@ -390,13 +391,15 @@ class PengajuanLabdanSubsController extends Controller
             ];
 
             foreach ($userObjs as $user) {
+                $receiverId = $user->id;
                 NotificationFacade::send(
                     $user,
                     new ApprovalLabSubsNotification(
                         $notifData,
                         '/pengajuanlabsdansubs',
                         $data->karyawan->nama_lengkap,
-                        'Update Status Pencairan oleh Finance'
+                        'Update Status Pencairan oleh Finance',
+                        $receiverId
                     )
                 );
             }
@@ -453,13 +456,15 @@ class PengajuanLabdanSubsController extends Controller
             ];
 
             foreach ($userObjs as $user) {
+                $receiverId = $user->id;
                 NotificationFacade::send(
                     $user,
                     new ApprovalLabSubsNotification(
                         $notifData,
                         '/pengajuanlabsdansubs',
                         $data->karyawan->nama_lengkap,
-                        'Menyetujui Pengajuan Lab/Subscription'
+                        'Menyetujui Pengajuan Lab/Subscription', 
+                        $receiverId
                     )
                 );
             }
@@ -493,13 +498,15 @@ class PengajuanLabdanSubsController extends Controller
             ];
 
             foreach ($userObjs as $user) {
+                $receiverId = $user->id;
                 NotificationFacade::send(
                     $user,
                     new ApprovalLabSubsNotification(
                         $notifData,
                         '/pengajuanlabsdansubs',
                         $data->karyawan->nama_lengkap,
-                        'Menolak Pengajuan Lab/Subscription'
+                        'Menolak Pengajuan Lab/Subscription',
+                        $receiverId
                     )
                 );
             }

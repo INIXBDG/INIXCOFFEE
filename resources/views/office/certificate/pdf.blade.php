@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Certificate - {{ $certificate->nomor_sertifikat }}</title>
+    <title>Sertifikat - {{ $certificate->nomor_sertifikat ?? 'Preview' }}</title>
+
     <style>
         * {
             margin: 0;
@@ -14,136 +15,158 @@
 
         @page {
             margin: 0;
+            size: A4 landscape;
         }
 
         body {
-            font-family: 'Helvetica', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
             width: 297mm;
+            /* A4 landscape */
             height: 210mm;
             position: relative;
-            background: white;
-            color: #333;
+            background: #fff;
         }
 
         .certificate-container {
             width: 100%;
             height: 100%;
             position: relative;
-            /* Background image dengan base64 untuk DomPDF */
-            @php
-            $bgPath = storage_path('app/public/certificate-bg2.png');
-            if (file_exists($bgPath)) {
-                $bgData = base64_encode(file_get_contents($bgPath));
-                $bgSrc = 'data:image/png;base64,' . $bgData;
-                echo "background-image: url('$bgSrc');";
-            }
-            @endphp
+            background-image: url('{{ public_path('assets/img/Cert BG.png') }}');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
+            background-color: #ffffff;
+            /* fallback kalau gambar gagal */
         }
 
-        /* Nomor Sertifikat - kanan atas */
         .certificate-number {
             position: absolute;
             top: 88px;
-            right: 135px;
+            right: 125px;
             font-size: 15px;
-            color: #000;
+            color: black;
             font-style: italic;
+            font-weight: 600;
         }
 
-        /* Nama Peserta - tengah */
         .participant-name {
             position: absolute;
-            top: 280px;
-            left: 52%;
+            top: 290px;
+            left: 53%;
             transform: translateX(-50%);
+            width: 90%;
             text-align: center;
             font-size: 52px;
             font-weight: bold;
-            color: #000;
-            width: 85%;
+            color: black;
+            line-height: 1.2;
         }
 
-        /* Nama Materi/Course - tengah bawah nama */
+        /* Nama Pelatihan / Materi */
         .course-name {
             position: absolute;
             top: 420px;
-            left: 54%;
+            left: 52.8%;
             transform: translateX(-50%);
+            width: 85%;
             text-align: center;
             font-size: 36px;
             font-weight: bold;
-            color: #000;
-            width: 85%;
+            color: black;
         }
 
-        /* Period - kiri bawah (tanpa label) */
         .period-section {
             position: absolute;
-            top: 495px;
-            left: 240px;
+            top: 470px;
+            left: 120px;
             font-size: 25px;
             color: #333;
             font-style: italic;
         }
 
-        /* Signature - kiri bawah */
+        /* Tanda Tangan – kiri bawah */
         .signature-section {
+            margin-top: 25px;
             position: absolute;
             bottom: 68px;
             left: 135px;
+            text-align: center;
         }
 
         .signature-image {
-            width: 220px;
-            height: 75px;
+            width: auto;
+            height: 140px;
             object-fit: contain;
-            margin-bottom: 0px;
+            margin-bottom: 8px;
         }
 
         .signature-line {
-            border-top: 2px solid #000;
             width: 300px;
-            margin-bottom: 0px;
-            margin-top: 3px;
+            border-top: 2px solid #000;
+            margin-top: 5px;
+        }
+
+        .signature-name {
+            margin-top: 8px;
+            font-weight: bold;
+            font-size: 18px;
+            color: black;
+        }
+
+        .signature-title {
+            font-size: 16px;
+            color: #444;
         }
     </style>
 </head>
 
 <body>
     <div class="certificate-container">
-        <!-- Nomor Sertifikat -->
-        <div class="certificate-number">No. {{ $certificate->nomor_sertifikat }}</div>
 
-        <!-- Nama Peserta -->
-        <div class="participant-name">{{ $certificate->nama_peserta }}</div>
+        <div class="certificate-number">
+            No. {{ $certificate->nomor_sertifikat }}
+        </div>
 
-        <!-- Nama Materi -->
-        <div class="course-name">{{ $certificate->nama_materi }}</div>
+        <div class="participant-name">
+            {{ $certificate->nama_peserta }}
+        </div>
 
-        <!-- Period -->
+        <div class="course-name">
+            {{ $certificate->nama_materi }}
+        </div>
+
         <div class="period-section">
-            <span class="period-dates">
-                @php
-                $dates = explode(' - ', $certificate->tanggal_pelatihan);
+            Period :
+            @php
+                $dates = explode(' - ', $certificate->tanggal_pelatihan ?? '');
                 $awal = $dates[0] ?? null;
                 $akhir = $dates[1] ?? null;
-                @endphp
-                {{ $awal ? \Carbon\Carbon::createFromFormat('Y-m-d', $awal)->format('F d, Y') : '' }} -
-                {{ $akhir ? \Carbon\Carbon::createFromFormat('Y-m-d', $akhir)->format('F d, Y') : '' }}
-            </span>
+            @endphp
+            {{ $awal ? \Carbon\Carbon::parse($awal)->format('F d, Y') : '' }}
+            @if ($awal && $akhir)
+                -
+            @endif
+            {{ $akhir ? \Carbon\Carbon::parse($akhir)->format('F d, Y') : '' }}
         </div>
 
-        <!-- Signature -->
         <div class="signature-section">
-            @if(isset($penandatangan) && $penandatangan->ttd && Storage::exists('public/' . $penandatangan->ttd))
-            <img src="{{ storage_path('app/public/' . $penandatangan->ttd) }}" class="signature-image">
+            @if (!empty($penandatangan->ttd) && Storage::exists('public/ttd/' . $penandatangan->ttd))
+                <img src="{{ public_path('storage/ttd/' . $penandatangan->ttd) }}" class="signature-image">
             @else
-            <div style="height: 75px;"></div>
+                <div style="height: 75px;"></div>
             @endif
+
+            <div class="signature-name">
+                {{ $penandatangan->nama_lengkap ?? '____________________' }}
+            </div>
+            <div class="signature-line"></div>
+            <div class="signature-title">
+                {{ $penandatangan->jabatan ?? 'Penandatangan' }}
+            </div>
         </div>
+
     </div>
 </body>
 

@@ -18,14 +18,14 @@ class CommentNotification extends Notification implements ShouldBroadcast
     protected $comment;
     protected $url;
     protected $path;
-    protected $receiverId; // user penerima notifikasi
+    protected $receiverId; 
 
     public function __construct($comment, $url, $path, $receiverId)
     {
         $this->comment = $comment;
         $this->url = $url;
         $this->path = $path;
-        $this->receiverId = $receiverId; // id user penerima
+        $this->receiverId = $receiverId; 
     }
 
     public function via($notifiable)
@@ -67,7 +67,6 @@ class CommentNotification extends Notification implements ShouldBroadcast
 
     public function broadcastOn()
     {
-        // Private channel khusus penerima notifikasi
         return new PrivateChannel('notifikasi.' . $this->receiverId);
     }
 

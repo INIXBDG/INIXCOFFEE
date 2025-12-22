@@ -238,22 +238,11 @@
                         hargaContent = '<div class="text-muted">-</div>';
                     }
 
-                    const userJabatan = "{{ auth()->user()->jabatan }}".trim();
+                    const userJabatan = "{!! auth()->user()->jabatan !!}".trim();
                     const statusTracking = item.tracking;
 
-                    const financeStatusOrder = [
-                        "Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager",
-                        "Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi",
-                        "Finance Menunggu Approve Direksi",
-                        "Membuat Permintaan Ke Direktur Utama",
-                        "Pengajuan sedang dalam proses Pencairan",
-                        "Pencairan Sudah Selesai",
-                        "Selesai"
-                    ];
-
-                    const isFinanceStatus = financeStatusOrder.includes(statusTracking);
-                    const isFinalStatus = ['Selesai', 'Pengajuan anda tidak disetujui.'].includes(statusTracking);
-                    const showApprovedButton = userJabatan === 'Finance &amp; Accounting' && isFinanceStatus && !isFinalStatus;
+                    const isFinalStatus = statusTracking === 'Selesai';
+                    const showApprovedButton = userJabatan === 'Finance & Accounting' && !isFinalStatus;
 
                     let actionMenu = `
                     <div class="dropdown">
@@ -271,8 +260,7 @@
                             </li>
                             <li><a class="dropdown-item" href="/catering/invoice/${item.id}">
                                 <span class="me-2"><img src="{{ asset('icon/clipboard-primary.svg') }}"></span> Upload Invoice
-                            </a></li>
-                `;
+                            </a></li>`;
 
                     if (showApprovedButton) {
                         actionMenu += `
@@ -290,8 +278,7 @@
 
                     actionMenu += `
                         </ul>
-                    </div>
-                `;
+                    </div>`;
 
                     content.append(`
                     <tr class="${stripeClass}">

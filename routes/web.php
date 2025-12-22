@@ -40,10 +40,23 @@ use App\Http\Controllers\TicketController;
 use App\Http\Controllers\KanbanController;
 use App\Http\Controllers\DailyActivityController;
 use App\Http\Controllers\office\OfficeController;
+use App\Http\Controllers\DashboardSLAController;
 use App\Http\Controllers\Office\CertificateController;
+use App\Http\Controllers\office\ModulController;
 use App\Http\Controllers\OutstandingController;
+use App\Events\ServerTimeUpdate;
+use App\Http\Controllers\BroadcastAuthController;
+use App\Http\Controllers\PusherAuthController;
 use App\Http\Controllers\office\vendorOfficeController;
 use App\Http\Controllers\ActivityInstrukturController;
+use App\Http\Controllers\PenukaranSouvenirController;
+use App\Http\Controllers\office\DashboardSouvenirController;
+use App\Http\Controllers\Webinar\CalendarController;
+use App\Http\Controllers\RekomendasiLanjutanController;
+use App\Http\Controllers\Webinar\TimelineItemController;
+use App\Http\Controllers\Webinar\ChecklistController;
+
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -58,6 +71,9 @@ use App\Http\Controllers\ActivityInstrukturController;
 // Route::get('/', function () {
 //     return view('auth.login');
 // });
+
+Route::post('/pusher/auth', [PusherAuthController::class, 'auth'])->middleware('web');
+
 Route::get('/partials/dashboard', function () {
     return view('partials.dashboard');
 });
@@ -144,6 +160,9 @@ Route::resource('/daily-activities', \App\Http\Controllers\DailyActivityControll
 Route::resource('/registry', \App\Http\Controllers\RegistryFeatureController::class)->parameters(['registry' => 'tugas']);
 Route::resource('permissions', \App\Http\Controllers\PermissionController::class);
 Route::resource('roles', \App\Http\Controllers\RoleController::class);
+Route::resource('penambahansouvenir', \App\Http\Controllers\PenambahanSouvenirController::class);
+Route::resource('penukaransouvenir', \App\Http\Controllers\PenukaranSouvenirController::class);
+
 
 Route::get('/rkmEditInstruktur/{id}', [App\Http\Controllers\RKMController::class, 'editInstruktur'])->name('editInstruktur');
 Route::put('/rkmUpdateInstruktur', [App\Http\Controllers\RKMController::class, 'updateInstruktur'])->name('updateInstruktur');
@@ -254,9 +273,9 @@ Route::get('getTotalMengajarPerbulan/{year}/{month}', [App\Http\Controllers\Char
 Route::get('getTotalMateriPerbulan/{year}/{month}', [App\Http\Controllers\ChartController::class, 'getTotalMateriPerbulan'])->name('getTotalMateriPerbulan');
 Route::get('getTotalMengajarPerJenisMateriPerTahun/{year}/{month}', [App\Http\Controllers\ChartController::class, 'getTotalMengajarPerJenisMateriPerTahun'])->name('getTotalMengajarPerJenisMateriPerTahun');
 Route::get('getAbsenPerbulan/{year}/{month}', [App\Http\Controllers\ChartController::class, 'getAbsenPerbulan'])->name('getAbsenPerbulan');
-Route::get('/getPengajuanSouvenir/{month}/{year}',[App\Http\Controllers\PengajuanSouvenirController::class, 'getPengajuanSouvenir'])->name('getPengajuanSouvenir');
-Route::put('/pengajuansouvenir/{id}/updateitems',[App\Http\Controllers\PengajuanSouvenirController::class, 'updateItems'])->name('pengajuansouvenir.updateItems');
-Route::put('/pengajuansouvenir/{id}/upload-invoice',[App\Http\Controllers\PengajuanSouvenirController::class, 'updateInvoice'])->name('pengajuansouvenir.updateInvoice');
+Route::get('/getPengajuanSouvenir/{month}/{year}', [App\Http\Controllers\PengajuanSouvenirController::class, 'getPengajuanSouvenir'])->name('getPengajuanSouvenir');
+Route::put('/pengajuansouvenir/{id}/updateitems', [App\Http\Controllers\PengajuanSouvenirController::class, 'updateItems'])->name('pengajuansouvenir.updateItems');
+Route::put('/pengajuansouvenir/{id}/upload-invoice', [App\Http\Controllers\PengajuanSouvenirController::class, 'updateInvoice'])->name('pengajuansouvenir.updateInvoice');
 Route::get('/pengajuansouvenir/{id}/export-pdf', [App\Http\Controllers\PengajuanSouvenirController::class, 'exportPDF'])->name('pengajuansouvenir.exportpdf');
 
 Route::get('/create-only', [App\Http\Controllers\examController::class, 'createOnly'])->name('exam.createOnly');
@@ -689,6 +708,15 @@ Route::put('/expense-hub/update/{id}', [App\Http\Controllers\ExpenseHubControlle
 Route::prefix('office')->group(function () {
     Route::get('/dashboard', [OfficeController::class, 'dashboard'])->name('office.dashboard');
 });
+
+Route::prefix('dashboard-sla/{team}')->group(function () {
+    Route::whereIn('team', ['programmer', 'tech-support']);
+    Route::get('/tim', [DashboardSLAController::class, 'dashboardTim']);
+    Route::get('/user', [DashboardSLAController::class, 'dashboardUser']);
+    Route::get('/kritis', [DashboardSLAController::class, 'dashboardKritis']);
+});
+Route::get('/dashboard-sla/event/{mappingId}', [DashboardSLAController::class, 'dashboardEventSla']);
+
 Route::prefix('office')->name('office.')->middleware(['auth'])->group(function () {
 
     // Certificate Routes
@@ -702,10 +730,11 @@ Route::prefix('office')->name('office.')->middleware(['auth'])->group(function (
         Route::get('/download-by-peserta/{rkm_id}/{peserta_id}', [CertificateController::class, 'downloadByPeserta'])->name('downloadByPeserta');
         Route::get('/preview/{id}', [CertificateController::class, 'preview'])->name('preview');
     });
+
     Route::prefix('vendor')->name('vendor.')->group(function () {
         Route::resource('/souvenir', vendorOfficeController::class);
         Route::resource('/makansiang', vendorOfficeController::class);
-        Route::resource('/coffeebreak',vendorOfficeController::class);
+        Route::resource('/coffeebreak', vendorOfficeController::class);
         Route::resource('/bengkel', vendorOfficeController::class);
     });
 
@@ -715,22 +744,67 @@ Route::prefix('office')->name('office.')->middleware(['auth'])->group(function (
         Route::resource('/coffeebreak', vendorOfficeController::class);
         Route::resource('/bengkel', vendorOfficeController::class);
     });
+
+
+    Route::prefix('modul')->group(function () {
+        Route::get('/index', [ModulController::class, 'indexNomor'])->name('modul.index');
+        Route::post('/', [ModulController::class, 'storeNomor'])->name('modul.store.nomor');
+        Route::put('/update/nomor/{id}', [ModulController::class, 'updateNomor'])->name('modul.update.nomor');
+        Route::delete('/delete/nomor/{id}', [ModulController::class, 'deleteNomor'])->name('modul.delete.nomor');
+
+        Route::get('/detail/{id}', [ModulController::class, 'indexModul'])->name('modul.detail');
+        Route::post('/store', [ModulController::class, 'storeModul'])->name('modul.store');
+        Route::put('/update/{id}', [ModulController::class, 'updateModul'])->name('modul.update');
+        Route::delete('delete/{id}', [ModulController::class, 'deleteModul'])->name('modul.delete');
+
+        Route::post('/store/peserta', [ModulController::class, 'storePeserta'])->name('modul.store.peserta');
+        Route::put('/update/peserta/{id}', [ModulController::class, 'updatePeserta'])->name('modul.update.peserta');
+        Route::delete('/delete/peserta/{id}', [ModulController::class, 'deletePeserta'])->name('modul.delete.peserta');
+
+        Route::put('/update/status/{id}', [ModulController::class, 'updateStatus'])->name('modul.update.status');
+
+        Route::put('/download/pdf/{id}', [ModulController::class, 'pdfModul'])->name('modul.download.pdf');
+        Route::put('/download/pdf/{id}/peserta', [ModulController::class, 'pdfPeserta'])->name('modul.download.pdf.peserta');
+        Route::put('/download/excel/{id}/peserta', [ModulController::class, 'excelPeserta'])->name('modul.download.excel.peserta');
+    });
 });
 
-// catering
-Route::get('/catering/index', [CateringController::class, 'index'])->name('catering.index');
-Route::get('/catering/get', [CateringController::class, 'get'])->name('catering.get');
-Route::get('/catering/create', [CateringController::class, 'create'])->name('catering.create');
-Route::post('/catering/store', [CateringController::class, 'store'])->name('catering.store');
-Route::get('/catering/show/{id}', [CateringController::class, 'show'])->name('catering.show');
-Route::put('/catering/update/{id}', [CateringController::class, 'update'])->name('catering.update');
-Route::post('/catering/export-pdf', [CateringController::class, 'PDF'])->name('catering.pdf');
-Route::put('/catering/approved', [CateringController::class, 'approved'])->name('catering.approved');
-Route::get('/catering/destroy/{id}', [CateringController::class, 'destroy'])->name('catering.destroy');
-Route::get('/catering/invoice/{id}', [CateringController::class, 'invoice'])->name('catering.invoice');
-Route::put('/catering/updateinvoice/{id}', [CateringController::class, 'updateInvoice'])->name('catering.updateInvoice');
+Route::prefix('/catering')->name('catering.')->group(function () {
+    Route::get('/index', [CateringController::class, 'index'])->name('index');
+    Route::get('/get', [CateringController::class, 'get'])->name('get');
+    Route::get('/create', [CateringController::class, 'create'])->name('create');
+    Route::post('/store', [CateringController::class, 'store'])->name('store');
+    Route::get('/show/{id}', [CateringController::class, 'show'])->name('show');
+    Route::post('/update/{id}', [CateringController::class, 'update'])->name('update');
+    Route::post('/export-pdf', [CateringController::class, 'PDF'])->name('pdf');
+    Route::put('/approved', [CateringController::class, 'approved'])->name('approved');
+    Route::get('/destroy/{id}', [CateringController::class, 'destroy'])->name('destroy');
+    Route::get('/invoice/{id}', [CateringController::class, 'invoice'])->name('invoice');
+    Route::put('/updateinvoice/{id}', [CateringController::class, 'updateInvoice'])->name('updateInvoice');
+});
 
-Route::get('/activityinstruktur-data', [ActivityInstrukturController::class, 'getActivitiesData'])->name('api.activities');
-Route::post('/activityinstruktur-store', [ActivityInstrukturController::class, 'store'])->name('api.activities.store');
-Route::post('/activityinstruktur-update', [ActivityInstrukturController::class, 'update'])->name('api.activities.proof_update');
-Route::get('/activityinstruktur', [ActivityInstrukturController::class, 'index'])->name('activities.index');
+Route::prefix('/rekomendasi-lanjutan')->name('rekomendasiLanjutan.')->group(function () {
+    Route::get('/index', [RekomendasiLanjutanController::class, 'index'])->name('index');
+    Route::get('/get/{year}/{month}', [RekomendasiLanjutanController::class, 'showMonth']);
+    Route::post('/store', [RekomendasiLanjutanController::class, 'store'])->name('store');
+});
+
+// Penambahan Souvneir
+Route::get('/getPenambahanSouvenir/{month}/{year}', [App\Http\Controllers\PenambahanSouvenirController::class, 'getPenambahanSouvenir'])->name('getPenambahanSouvenir');
+// Penukaran Souvenir
+Route::get('/penukaransouvenir/getRiwayat/{month}/{year}', [PenukaranSouvenirController::class, 'getRiwayat'])->name('getRiwayat');
+Route::get('/get-peserta/{rkmId}', [PenukaranSouvenirController::class, 'getPesertaByRKM'])->name('getPeserta');
+Route::get('/dashboard/souvenir', [DashboardSouvenirController::class, 'index'])->name('dashboard.souvenir');
+
+// timeline
+Route::get('/timeline', [CalendarController::class, 'index'])->name('timeline.index');
+
+Route::get('/api/checklist/{mappingId}', [ChecklistController::class, 'index']);
+Route::patch('/api/checklist/{id}/toggle', [ChecklistController::class, 'toggle']);
+Route::put('/api/checklist/{id}/detail', [ChecklistController::class, 'updateDetail']);
+
+// API Timeline Item
+Route::post('/api/timeline-item', [TimelineItemController::class, 'store']);
+
+// API Event Update
+Route::post('/api/event/{id}/update', [CalendarController::class, 'updateEvent']);

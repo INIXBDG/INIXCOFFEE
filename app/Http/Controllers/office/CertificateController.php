@@ -21,6 +21,7 @@ class CertificateController extends Controller
             ->select('r_k_m_s.*')
             ->whereNotNull('tanggal_awal')
             ->whereNotNull('tanggal_akhir')
+            ->where('status', '0')
             ->orderBy('tanggal_awal', 'desc')
             ->paginate(10);
 
@@ -79,7 +80,21 @@ class CertificateController extends Controller
                 ->with('info', 'Sertifikat sudah ada.');
         }
 
-        return view('office.certificate.create', compact('rkm', 'peserta'));
+
+        $initialNumber = 25737;
+
+        $lastCert = Certificate::orderBy('nomor_sertifikat', 'desc')->first();
+
+        if ($lastCert && !empty($lastCert->nomor_sertifikat)) {
+            $lastNumber = (int) substr($lastCert->nomor_sertifikat, -6);
+            $number = $lastNumber + 1;
+        } else {
+            $number = $initialNumber + 1;
+        }
+
+        $nomorSertifikatBaru = sprintf('%06d', $number);
+
+        return view('office.certificate.create', compact('rkm', 'peserta', 'nomorSertifikatBaru'));
     }
 
     // Proses generate sertifikat dan simpan ke database
@@ -94,10 +109,9 @@ class CertificateController extends Controller
             'tanggal_akhir' => 'required|date|after_or_equal:tanggal_awal',
         ]);
 
-        $nomorSertifikat = Certificate::generateNomorSertifikat();
 
         $certificate = Certificate::create([
-            'nomor_sertifikat' => $nomorSertifikat,
+            'nomor_sertifikat' => $request->nomor_sertifikat,
             'rkm_id' => $request->rkm_id,
             'id_peserta' => $request->id_peserta,
             'nama_peserta' => $request->nama_peserta,
@@ -105,7 +119,7 @@ class CertificateController extends Controller
             'tanggal_pelatihan' => $request->tanggal_awal . ' - ' . $request->tanggal_akhir,
         ]);
 
-        $penandatangan = Karyawan::find(4);
+        $penandatangan = Karyawan::find(4); 
 
         // Generate PDF
         $pdf = Pdf::loadView('office.certificate.pdf', compact('certificate', 'penandatangan'))
@@ -117,12 +131,12 @@ class CertificateController extends Controller
         }
 
         // Ganti "/" dengan "-" untuk nama file yang aman
-        $safeFilename = str_replace('/', '-', $nomorSertifikat) . '.pdf';
-        
+        $safeFilename = str_replace('/', '-', $request->nomor_sertifikat) . '.pdf';
+
         // Simpan file dengan path yang benar
         $filename = 'certificates/' . $safeFilename;
         Storage::put('public/' . $filename, $pdf->output());
-        
+
         // Update database dengan path relatif (tanpa 'public/')
         $certificate->update(['pdf_path' => $filename]);
 

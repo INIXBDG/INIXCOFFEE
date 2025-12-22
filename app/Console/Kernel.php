@@ -2,6 +2,7 @@
 
 namespace App\Console;
 
+use App\Console\Commands\AutoJobRKMCommands;
 use App\Models\activityLog;
 
 use Illuminate\Console\Scheduling\Schedule;
@@ -234,6 +235,7 @@ class Kernel extends ConsoleKernel
                 ->where('is_locked', 0)
                 ->update(['is_locked' => 1]);
         })->dailyAt('01:00'); // Jalankan setiap hari pukul 01:00
+        $schedule->command('RKM:auto-job')->mondays()->at('10:47');
     }
     /**
      * Register the commands for the application.

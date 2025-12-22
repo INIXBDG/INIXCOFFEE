@@ -3,58 +3,83 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 
-class ApprovalSPJNotification extends Notification
+class ApprovalSPJNotification extends Notification implements ShouldBroadcast
 {
-    use Queueable;
+    use Queueable, InteractsWithSockets;
 
     protected $data;
     protected $path;
     protected $to;
+    protected $receiverId;
 
-    public function __construct($data, $path, $to)
+    public function __construct($data, $path, $to, $receiverId)
     {
         $this->data = $data;
         $this->path = $path;
-        $this->to = $to;
+        $this->to   = $to;
+        $this->receiverId = $receiverId;
     }
 
-    public function via($notifiable)
+    public function via($notifiable): array
     {
-        return ['database', 'broadcast']; // Menggunakan 'database' dan 'broadcast'
+        return ['database', 'broadcast'];
     }
 
     /**
-     * Get the array representation of the notification.
-     *
-     * @return array<string, mixed>
+     * @var \App\Models\User $notifiable
      */
-    public function toArray(object $notifiable): array
+    public function broadcastOn()
     {
-        // Determine the type based on approval statuses
-        $type = '';
+        return new PrivateChannel('notifikasi.' . $this->receiverId);
+    }
 
-        if ($this->data['approval_manager'] == 1) {
-            $type = 'Menyetujui SPJ';
-        } elseif ($this->data['approval_manager'] == 2) {
-            $type = 'Menolak SPJ';
-        }
+    public function broadcastAs()
+    {
+        return 'notifikasi-event';
+    }
+
+    public function toBroadcast($notifiable)
+    {
+        $type = $this->data['approval_manager'] == 1 ? 'Menyetujui SPJ' : 'Menolak SPJ';
+
+        return new BroadcastMessage([
+            'user' => auth()->user()?->username ?? 'System',
+            'message' => [
+                'tipe'             => $type,
+                'nama_lengkap'     => $this->to,
+                'tanggal_berangkat' => $this->data['tanggal_berangkat'],
+                'tanggal_pulang'   => $this->data['tanggal_pulang'],
+                'alasan'           => $this->data['alasan'],
+                'durasi'           => $this->data['durasi'],
+                'tujuan'           => $this->data['tujuan'],
+            ],
+            'path'   => $this->path,
+            'status' => 'unread',
+        ]);
+    }
+
+    public function toArray($notifiable): array
+    {
+        $type = $this->data['approval_manager'] == 1 ? 'Menyetujui SPJ' : 'Menolak SPJ';
 
         return [
-            'user' => auth()->user()->username,
+            'user' => auth()->user()?->username ?? 'System',
             'message' => [
-                'tipe' => $type,  // Use the dynamically determined $type
-                'nama_lengkap' => $this->to,
+                'tipe'             => $type,
+                'nama_lengkap'     => $this->to,
                 'tanggal_berangkat' => $this->data['tanggal_berangkat'],
-                'tanggal_pulang' => $this->data['tanggal_pulang'],
-                'alasan' => $this->data['alasan'],
-                'durasi' => $this->data['durasi'],
-                'tujuan' => $this->data['tujuan'],
+                'tanggal_pulang'   => $this->data['tanggal_pulang'],
+                'alasan'           => $this->data['alasan'],
+                'durasi'           => $this->data['durasi'],
+                'tujuan'           => $this->data['tujuan'],
             ],
-            'path' => $this->path,
+            'path'   => $this->path,
             'status' => 'unread',
         ];
     }

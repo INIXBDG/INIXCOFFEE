@@ -5,15 +5,18 @@ namespace App\Http\Controllers;
 use App\Models\Catering;
 use App\Models\DetailCatering;
 use App\Models\karyawan;
+use App\Models\RKM;
 use App\Models\TrackingCatering;
 use App\Models\User;
 use App\Models\vendor;
 use App\Models\vendorCoffeeBreak;
 use App\Models\vendorMakansiang;
 use App\Notifications\cateringNotification;
+use App\Notifications\updateCateringNotification;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
 
 class CateringController extends Controller
@@ -57,12 +60,26 @@ class CateringController extends Controller
     public function create()
     {
         $id_user = auth()->user()->id;
-        $karyawan = karyawan::where('id', $id_user)->first();
+        $karyawan = Karyawan::where('id', $id_user)->first();
 
-        $vendorCB = vendorCoffeeBreak::get();
-        $vendorMS = vendorMakansiang::get();
+        $tanggalSekarang = Carbon::today()->format('Y-m-d');
 
-        return view('catering.create', compact('karyawan', 'vendorCB', 'vendorMS'));
+        $rkmHariIni = RKM::where('metode_kelas', 'offline')
+            ->whereRaw("STR_TO_DATE(tanggal_awal, '%Y-%m-%d') <= ?", [$tanggalSekarang])
+            ->whereRaw("STR_TO_DATE(tanggal_akhir, '%Y-%m-%d') >= ?", [$tanggalSekarang])
+            ->get();
+
+        $jumlah_pax = $rkmHariIni->sum('pax');
+
+        $vendorCB = VendorCoffeeBreak::all();
+        $vendorMS = VendorMakanSiang::all();
+
+        return view('catering.create', compact(
+            'karyawan',
+            'vendorCB',
+            'vendorMS',
+            'jumlah_pax'
+        ));
     }
 
     public function store(Request $request)
@@ -109,35 +126,49 @@ class CateringController extends Controller
             'tanggal'     => now(),
         ]);
 
-        $karyawan = Karyawan::findOrFail($request->id_karyawan);
-        $divisi   = $karyawan->divisi;
-        $jabatan  = $karyawan->jabatan;
+        $karyawanPengaju = Karyawan::findOrFail($request->id_karyawan);
+        $userPengaju = $karyawanPengaju->user ?? null;
 
-        $finance = Karyawan::where('jabatan', 'Finance & Accounting')->first();
-        $penerimaKode = [];
+        $spvSales = Karyawan::where('jabatan', 'SPV Sales')->first();
+        $finance  = Karyawan::where('jabatan', 'Finance & Accounting')->first();
 
-        if (in_array($jabatan, ['SPV Sales', 'Finance & Accounting']) && $finance) {
-            $penerimaKode[] = $finance->kode_karyawan;
-        } elseif ($divisi === 'Office' && $finance) {
-            $penerimaKode[] = $finance->kode_karyawan;
+        $penerimaUsers = collect();
+
+        if ($spvSales?->user) {
+            $penerimaUsers->push($spvSales->user);
         }
 
-        if (!empty($penerimaKode)) {
-            $users = User::whereHas('karyawan', fn($q) => $q->whereIn('kode_karyawan', $penerimaKode))->get();
+        if ($finance?->user) {
+            $penerimaUsers->push($finance->user);
+        }
 
-            $notifData = [
-                'id_karyawan'      => $request->id_karyawan,
-                'tipe'             => $request->tipe,
-                'tanggal_pengajuan' => now()->format('d-m-Y H:i'),
-            ];
+        if ($userPengaju) {
+            $penerimaUsers->push($userPengaju);
+        }
 
-            foreach ($users as $user) {
-                NotificationFacade::send($user, new cateringNotification(
-                    $notifData,
-                    '/catering/index',
-                    'Pengajuan catering'
-                ));
-            }
+        $penerimaUsers = $penerimaUsers->unique('id')->values();
+
+        // Siapkan notifikasi
+        $notifData = [
+            'id_karyawan'      => $request->id_karyawan,
+            'tipe'             => $request->tipe,
+            'tanggal_pengajuan' => now()->format('d-m-Y H:i'),
+            'nama_lengkap'     => $karyawanPengaju->nama_lengkap,
+        ];
+
+        $currentUser = auth()->user();
+        $senderUsername = $currentUser?->username ?? 'System';
+        $senderNama = $currentUser?->karyawan?->nama_lengkap ?? 'Sistem';
+
+        foreach ($penerimaUsers as $user) {
+            NotificationFacade::send($user, new CateringNotification(
+                $notifData,
+                '/catering/index',
+                'Pengajuan catering',
+                $user->id,
+                $senderUsername,
+                $senderNama
+            ));
         }
 
         return redirect()->route('catering.index')->with('success', 'Pengajuan berhasil dikirim!');
@@ -152,6 +183,7 @@ class CateringController extends Controller
         }
 
         $dataTrackingTerbaru = $dataCatering->TrackingCatering->sortByDesc('tanggal')->first();
+        $dataStatusTracking = $dataCatering->TrackingCatering->sortByDesc('tanggal')->first()?->tracking ?? '-';
 
         $data = [
             'id' => $dataCatering->id,
@@ -194,65 +226,181 @@ class CateringController extends Controller
         $vendorCB = vendorCoffeeBreak::get();
         $vendorMS = vendorMakansiang::get();
 
-        return view('catering.show', compact('data', 'vendorCB', 'vendorMS'));
+        $tanggalSekarang = Carbon::today()->format('Y-m-d');
+
+        $rkmHariIni = RKM::where('metode_kelas', 'offline')
+            ->whereRaw("STR_TO_DATE(tanggal_awal, '%Y-%m-%d') <= ?", [$tanggalSekarang])
+            ->whereRaw("STR_TO_DATE(tanggal_akhir, '%Y-%m-%d') >= ?", [$tanggalSekarang])
+            ->get();
+
+        $jumlah_pax = $rkmHariIni->sum('pax');
+
+        return view('catering.show', compact('data', 'vendorCB', 'vendorMS', 'jumlah_pax', 'dataStatusTracking'));
     }
 
     public function update(Request $request, $id)
     {
         $request->validate([
-            'id_detail_catering' => 'array',
+            'id_detail_catering' => 'nullable|array',
             'id_detail_catering.*' => 'nullable|exists:detail_caterings,id',
-            'nama_makanan' => 'array',
+            'nama_makanan' => 'required|array',
             'nama_makanan.*' => 'required|string|max:255',
-            'qty' => 'array',
+            'qty' => 'required|array',
             'qty.*' => 'required|integer|min:1',
-            'harga' => 'array',
+            'harga' => 'required|array',
             'harga.*' => 'required|integer|min:0',
-            'vendor' => 'array',
+            'vendor' => 'required|array',
             'vendor.*' => 'required|integer|exists:vendors,id',
-            'tipe_detail' => 'array',
+            'tipe_detail' => 'required|array',
             'tipe_detail.*' => 'required|in:Coffee Break,Makan Siang',
-            'keterangan' => 'array',
-            'keterangan.*' => 'nullable|string',
+            'keterangan' => 'nullable|array',
             'deleted_ids' => 'nullable|string',
+            'id_karyawan' => 'required|integer'
         ]);
 
         $catering = Catering::findOrFail($id);
+        $changes  = [];
 
+        // 1. Hapus item
         if ($request->filled('deleted_ids')) {
             $deletedIds = array_filter(explode(',', $request->deleted_ids));
-            if (!empty($deletedIds)) {
-                DetailCatering::whereIn('id', $deletedIds)->delete();
+            $deletedDetails = DetailCatering::whereIn('id', $deletedIds)->get();
+
+            foreach ($deletedDetails as $del) {
+                $changes[] = "Menghapus item: {$del->nama_makanan}";
             }
+
+            DetailCatering::whereIn('id', $deletedIds)->delete();
         }
 
-        foreach ($request->id_detail_catering as $index => $detailId) {
-            $data = [
-                'nama_makanan' => $request->nama_makanan[$index],
-                'jumlah'       => $request->qty[$index],
-                'harga'        => $request->harga[$index],
-                'id_vendor'    => $request->vendor[$index],
-                'tipe_detail'  => $request->tipe_detail[$index],
-                'keterangan'   => $request->keterangan[$index] ?? null,
+        // 2. Update atau tambah item
+        $itemCount = count($request->nama_makanan);
+
+        for ($i = 0; $i < $itemCount; $i++) {
+            $detailId = $request->id_detail_catering[$i] ?? null;
+
+            $newData = [
+                'nama_makanan' => $request->nama_makanan[$i],
+                'jumlah'       => $request->qty[$i],
+                'harga'        => $request->harga[$i],
+                'id_vendor'    => $request->vendor[$i],
+                'tipe_detail'  => $request->tipe_detail[$i],
+                'keterangan'   => $request->keterangan[$i] ?? null,
             ];
 
-            if (is_null($detailId) || $detailId === '') {
-                $data['id_catering'] = $id;
-                DetailCatering::create($data);
+            if ($detailId) {
+                $detail = DetailCatering::find($detailId);
+                if ($detail) {
+                    $fields = ['nama_makanan', 'jumlah', 'harga', 'id_vendor', 'tipe_detail', 'keterangan'];
+
+                    foreach ($fields as $field) {
+                        $oldValue = $detail->{$field};
+                        $newValue = $newData[$field];
+
+                        $oldValue = $oldValue === null ? '' : $oldValue;
+                        $newValue = $newValue === null ? '' : $newValue;
+
+                        if ((string) $oldValue !== (string) $newValue) {
+                            $label = match ($field) {
+                                'nama_makanan' => 'Nama makanan',
+                                'jumlah' => 'Jumlah',
+                                'harga' => 'Harga',
+                                'id_vendor' => 'Vendor',
+                                'tipe_detail' => 'Tipe',
+                                'keterangan' => 'Keterangan',
+                                default => $field,
+                            };
+
+                            $oldDisplay = $field === 'id_vendor'
+                                ? $this->getVendorName($oldValue, $detail->tipe_detail)
+                                : $oldValue;
+
+                            $newDisplay = $field === 'id_vendor'
+                                ? $this->getVendorName($newValue, $newData['tipe_detail'])
+                                : $newValue;
+
+                            $changes[] = "{$oldDisplay} → {$newDisplay}";
+                        }
+                    }
+
+                    $detail->update($newData);
+                }
             } else {
-                DetailCatering::where('id', $detailId)->update($data);
+                // Item baru
+                $newData['id_catering'] = $id;
+                DetailCatering::create($newData);
+                $changes[] = "Menambah item: {$newData['nama_makanan']}";
             }
         }
 
-        TrackingCatering::create([
-            'id_catering' => $id,
-            'tracking'    => 'Terjadi perubahan data Barang',
-            'tanggal'     => now(),
-        ]);
+        if (!empty($changes)) {
+            TrackingCatering::create([
+                'id_catering' => $id,
+                'tracking'    => 'Terjadi perubahan catering',
+                'tanggal'     => now(),
+            ]);
+        }
 
-        return redirect()->route('catering.show', $id)->with('success', 'Data berhasil diperbarui.');
+        if (empty($changes)) {
+            return redirect()->route('catering.show', $id)
+                ->with('success', 'Tidak ada perubahan yang disimpan.');
+        }
+
+        $karyawanPengaju = Karyawan::findOrFail($request->id_karyawan);
+        $userPengaju = $karyawanPengaju->user ?? null;
+
+        $spvSales = Karyawan::where('jabatan', 'SPV Sales')->first();
+        $finance  = Karyawan::where('jabatan', 'Finance & Accounting')->first();
+
+        $penerimaUsers = collect();
+        if ($spvSales?->user) $penerimaUsers->push($spvSales->user);
+        if ($finance?->user) $penerimaUsers->push($finance->user);
+        if ($userPengaju) $penerimaUsers->push($userPengaju);
+        $penerimaUsers = $penerimaUsers->unique('id')->values();
+
+        $notifData = [
+            'pengubah'          => $karyawanPengaju->nama_lengkap,
+            'perubahan'         => $changes, // ✅ Sekarang array flat per kolom
+            'tipe'              => 'Catering',
+            'nama_lengkap'      => $karyawanPengaju->nama_lengkap,
+            'tanggal_pengajuan' => now()->toDateString(),
+        ];
+
+        $url  = route('catering.show', $id);
+        $type = 'Update Catering';
+
+        $currentUser = auth()->user();
+
+        foreach ($penerimaUsers as $user) {
+            NotificationFacade::send(
+                $user,
+                new UpdateCateringNotification(
+                    $notifData,
+                    $url,
+                    $type,
+                    $user->id,
+                )
+            );
+        }
+
+        return redirect()->route('catering.show', $id)
+            ->with('success', 'Data catering berhasil diperbarui.');
     }
 
+    private function getVendorName($vendorId, $tipeDetail)
+    {
+        if (!$vendorId) return '(kosong)';
+
+        if ($tipeDetail === 'Coffee Break') {
+            $vendor = VendorCoffeeBreak::find($vendorId);
+            return $vendor?->nama ?? "Vendor CB #{$vendorId}";
+        } elseif ($tipeDetail === 'Makan Siang') {
+            $vendor = VendorMakanSiang::find($vendorId);
+            return $vendor?->nama ?? "Vendor MS #{$vendorId}";
+        }
+
+        return "Vendor #{$vendorId}";
+    }
     public function PDF(Request $request)
     {
         $id = $request->input('id');
@@ -341,41 +489,65 @@ class CateringController extends Controller
             $trackingMessage = "Pengajuan anda tidak disetujui.";
         }
 
-        $tracking = new TrackingCatering();
-        $tracking->id_catering = $catering->id;
-        $tracking->id_karyawan = auth()->user()->id;
-        $tracking->tracking = $trackingMessage;
-        $tracking->tanggal = now();
-        $tracking->keterangan = $statusInput === '0' ? $keterangan : null;
-        $tracking->save();
+        TrackingCatering::create([
+            'id_catering' => $catering->id,
+            'id_karyawan' => auth()->user()->id,
+            'tracking'    => $trackingMessage,
+            'tanggal'     => now(),
+            'keterangan'  => $statusInput === '0' ? $keterangan : null,
+        ]);
 
         if ($statusInput === '1' && $statusFinance) {
             $catering->update(['status_finance' => $statusFinance]);
         }
 
-        $type = 'Approved Catering';
-        $path = '/catering/detail/' . $catering->id;
+        // Pengaju
         $karyawanPemohon = $catering->karyawan;
+        $userPemohon = $karyawanPemohon->user ?? null;
+
+        // Cari SPV & Finance
+        $spvSales = Karyawan::where('jabatan', 'SPV Sales')->first();
+        $finance  = Karyawan::where('jabatan', 'Finance & Accounting')->first();
+
+        $usersToNotify = collect();
+
+        if ($userPemohon) {
+            $usersToNotify->push($userPemohon);
+        }
+
+        if ($spvSales?->user) {
+            $usersToNotify->push($spvSales->user);
+        }
+
+        if ($finance?->user) {
+            $usersToNotify->push($finance->user);
+        }
+
+        // Hindari duplikat
+        $usersToNotify = $usersToNotify->unique('id')->values();
 
         $data = [
             'id_karyawan' => $karyawanPemohon->id,
             'tipe' => $catering->tipe,
             'id_catering' => $catering->id,
             'tanggal_pengajuan' => $catering->created_at->translatedFormat('l, d F Y'),
+            'nama_lengkap' => $karyawanPemohon->nama_lengkap,
         ];
 
-        $usersToNotify = collect([$karyawanPemohon->user]);
-
-        if ($statusInput === '1') {
-            $finance = Karyawan::where('jabatan', 'Finance & Accounting')->first();
-            if ($finance?->user) {
-                $usersToNotify->push($finance->user);
-            }
-        }
+        $currentUser = auth()->user();
+        $senderUsername = $currentUser?->username ?? 'System';
+        $senderNama = $currentUser?->karyawan?->nama_lengkap ?? 'Sistem';
 
         foreach ($usersToNotify as $user) {
             if ($user) {
-                NotificationFacade::send($user, new cateringNotification($data, $path, $type));
+                NotificationFacade::send($user, new CateringNotification(
+                    $data,
+                    '/catering/index',
+                    'Pengajuan catering',
+                    $user->id,
+                    $senderUsername,
+                    $senderNama
+                ));
             }
         }
 

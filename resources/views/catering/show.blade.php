@@ -12,10 +12,10 @@
                 <div class="modal-body">
                     <form id="updateBarangForm" method="POST" action="{{ route('catering.update', $data['id']) }}">
                         @csrf
-                        @method('PUT')
                         <div id="itemsContainer">
                             @foreach ($data['detail'] as $index => $detail)
                             <div class="item-section mb-4 p-3 border rounded">
+                                <input type="hidden" name="id_karyawan" value="{{ Auth()->user()->id }}">
                                 <input type="hidden" name="id_detail_catering[]" value="{{ $detail['id'] }}">
                                 <input type="hidden" name="tipe_detail[]" class="tipe-detail-input" value="{{ $detail['tipe_detail'] }}">
                                 <input type="hidden" name="current_vendor_id[]" class="current-vendor-id" value="{{ $detail['id_vendor'] }}">
@@ -137,7 +137,11 @@
                                     <div class="d-flex justify-content-between align-items-center mb-3">
                                         <h5 class="card-title mb-0">Detail Pengajuan</h5>
                                         <div class="d-flex gap-2">
+                                            @if ($dataStatusTracking === 'Selesai' || $dataStatusTracking === 'Ditolak')
+                                            <button class="btn btn-danger btn-sm" disabled>Edit Barang</button>
+                                            @else
                                             <button class="btn btn-warning btn-sm" onclick="updateBarang()">Edit Barang</button>
+                                            @endif
                                             <form action="{{ route('catering.pdf') }}" method="post" class="m-0 d-inline">
                                                 @csrf
                                                 <input type="hidden" name="id" value="{{ $data['id'] }}">
@@ -344,7 +348,11 @@
             <div class="row mb-3">
                 <label class="col-md-4 col-form-label">Qty</label>
                 <div class="col-md-6">
-                    <input type="number" class="form-control" name="qty[]" min="1" required>
+                    <input type="number" class="form-control" name="qty[]" min="1"
+                        @if ($jumlah_pax)
+                         value="{{ $jumlah_pax }}"
+                        @endif
+                     required readonly>
                 </div>
             </div>
             <div class="row mb-3">

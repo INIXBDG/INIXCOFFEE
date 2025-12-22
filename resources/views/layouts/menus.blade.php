@@ -32,6 +32,7 @@
 
     {{-- <link rel="stylesheet" href="//cdn.datatables.net/2.0.3/css/dataTables.dataTables.min.css"> --}}
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
     <style>
@@ -1506,6 +1507,24 @@
                                     <div class="card-body">
                                         <h5 class="text-center card-title">IT Service Management</h5>
                                         <div class="row">
+                                            @can('Fitur Webinar')
+                                            <div class="col-sm-6 mt-2">
+                                                <div class="card" id="card-hover">
+                                                    <div class="card-body d-flex">
+                                                        <div class="col-md-2">
+                                                            <i class="fa-solid fa-timeline" style="font-size: 30px;"></i>
+                                                        </div>
+                                                        <div class="col-md-10" style="margin-left: 10px">
+                                                            <a href="{{ route('timeline.index') }}"
+                                                                class="link stretched-link text-decoration-none">
+                                                                <h5 class="card-title">Timeline Webinar</h5>
+                                                            </a>
+                                                            <p class="card-text">mapping webinar pertahun dan timeline.</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            @endcan
                                             @if (Auth::user()->karyawan && Auth::user()->karyawan->divisi === 'IT Service Management')
                                             <div class="col-sm-6 mt-2">
                                                 <div class="card" id="card-hover">
@@ -2040,6 +2059,7 @@
                                                 </div>
                                             </div>
                                             @endcan
+                                            @can('View Rekomendasi Peserta')
                                             <div class="col-sm-6 mt-2">
                                                 <div class="card" id="card-hover">
                                                     <div class="card-body d-flex">
@@ -2056,11 +2076,18 @@
                                                             </a>
                                                             <p class="card-text">Activity Report
                                                                 Instruktur.
+                                                            <a href="{{ route('rekomendasiLanjutan.index') }}"
+                                                                class="link stretched-link text-decoration-none">
+                                                                <h5 class="card-title">Rekomendasi Training Lanjutan
+                                                                </h5>
+                                                            </a>
+                                                            <p class="card-text">rekomendasi untuk peserta.
                                                             </p>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
+                                            @endcan
                                         </div>
                                     </div>
                                 </div>
@@ -2373,6 +2400,7 @@
         </div>
         {{-- </div> --}}
     </main>
+    <audio id="notifSound" src="{{ asset('bell.mp3') }}" preload="auto"></audio>
     </div>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
@@ -2385,6 +2413,86 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/timepicker/1.3.5/jquery.timepicker.min.js"></script>
     {{-- SweetAlert2 --}}
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script src="https://js.pusher.com/8.2/pusher.min.js"></script>
+
+    <script src="https://js.pusher.com/8.2/pusher.min.js"></script>
+    <script>
+        Pusher.logToConsole = true;
+
+        const pusher = new Pusher("{{ env('PUSHER_APP_KEY') }}", {
+            cluster: "{{ env('PUSHER_APP_CLUSTER') }}",
+            forceTLS: true,
+            authEndpoint: '/pusher/auth',
+            auth: {
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                }
+            }
+        });
+
+        const channel = pusher.subscribe('private-notifikasi.{{ auth()->id() }}');
+
+        channel.bind('pusher:subscription_succeeded', () => {
+            console.log('PUSHER AKTIF');
+        });
+
+        channel.bind('notifikasi-event', (data) => {
+            console.log('REAL-TIME MASUK!', data);
+
+            const toast = document.createElement('div');
+            toast.innerHTML = `
+            <div class="rt-toast" style="
+                position:fixed;
+                top:90px;
+                left:20px;
+                z-index:99999;
+                background:#10b981;
+                color:white;
+                padding:18px 32px;
+                border-radius:12px;
+                box-shadow:0 10px 30px rgba(0,0,0,0.3);
+                font-family:system-ui;
+                min-width:320px;
+                animation:slideIn 0.5s ease;">
+                <div style="font-weight:700;font-size:16px;">Notifikasi Baru!</div>
+                <div style="margin-top:6px;font-size:14px;opacity:0.9;">
+                    ${data.message?.message?.tipe || 'Ada pemberitahuan baru'}
+                </div>
+            </div>`;
+
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.transition = "opacity 0.5s ease";
+                toast.style.opacity = "0";
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
+
+            document.getElementById('notifSound')?.play();
+
+            const badge = document.getElementById('notifBadge');
+            if (badge) {
+                let current = parseInt(badge.textContent) || 0;
+                badge.textContent = current + 1;
+                badge.classList.add('animate__animated', 'animate__bounceIn');
+                setTimeout(() => badge.classList.remove('animate__bounceIn'), 1000);
+            }
+
+            const modalBody = document.querySelector('#notificationModal .modal-body');
+            if (modalBody) {
+                const newNotif = `
+            <div class="notification p-3 border-bottom animate__animated animate__fadeIn">
+                <p class="mb-1 fw-bold text-danger">Baru!</p>
+                <p class="mb-1"><strong>${data.message?.user || 'System'}</strong></p>
+                <p class="mb-1">${data.message?.message?.tipe || 'Notifikasi'}</p>
+                <small class="text-muted">Baru saja</small>
+            </div>`;
+                modalBody.insertAdjacentHTML('afterbegin', newNotif);
+            }
+        });
+    </script>
+
     <script>
         document.getElementById('logout-link').addEventListener('click', function(e) {
             e.preventDefault();

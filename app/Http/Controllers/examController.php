@@ -425,7 +425,8 @@ public function getHistoriExam()
             $path = '/exam/'. $exam->id;
             
             foreach ($users as $user) {
-               NotificationFacade::send($user, new PengajuanexamNotification($data, $path));
+                $receiverId = $user->id;
+               NotificationFacade::send($user, new PengajuanexamNotification($data, $path, $receiverId));
             }
 
             return redirect()->route('exam.index')->with(['success' => 'Data Berhasil Disimpan!']);
@@ -610,7 +611,8 @@ public function show(string $id)
             $path = '/exam/'. $id;
             
             foreach ($users as $user) {
-               NotificationFacade::send($user, new ApprovalExamNotification($data, $path));
+                $receiverId = $user->id;
+               NotificationFacade::send($user, new ApprovalExamNotification($data, $path, $receiverId));
             }
         }
         if ($jabatan == 'Office Manager' || $jabatan == 'GM' || $jabatan == 'Koordinator Office' || $jabatan == 'Finance & Accounting') {
@@ -658,7 +660,8 @@ public function show(string $id)
             $path = '/exam/'. $id;
             
             foreach ($users as $user) {
-               NotificationFacade::send($user, new ApprovalExamNotification($data, $path));
+                $receiverId = $user->id;
+               NotificationFacade::send($user, new ApprovalExamNotification($data, $path, $receiverId));
             }
         }
         if ($jabatan == 'Technical Support') {
@@ -708,7 +711,8 @@ public function show(string $id)
             $path = '/exam/'. $id;
             
             foreach ($users as $user) {
-               NotificationFacade::send($user, new ApprovalExamNotification($data, $path));
+                $receiverId = $user->id;
+               NotificationFacade::send($user, new ApprovalExamNotification($data, $path, $receiverId));
             }
 
             $finance = karyawan::where('jabatan', 'Finance & Accounting')->first();
@@ -727,7 +731,8 @@ public function show(string $id)
             $path = '/exam/'. $id;
             
             foreach ($users as $user) {
-               NotificationFacade::send($user, new BayarExamNotification($data, $path));
+                $receiverId = $user->id;
+               NotificationFacade::send($user, new BayarExamNotification($data, $path,$receiverId));
             }
         }
 

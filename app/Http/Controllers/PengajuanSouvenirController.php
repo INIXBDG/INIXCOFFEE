@@ -197,7 +197,8 @@ class PengajuanSouvenirController extends Controller
                     ];
                     $type = 'Mengajukan Permintaan Souvenir';
                     $path = '/pengajuansouvenir';
-                    NotificationFacade::send($userGM, new PengajuanSouvenirNotification($dataNotif, $path, $type));
+                    $receiverId = $userGM->id;
+                    NotificationFacade::send($userGM, new PengajuanSouvenirNotification($dataNotif, $path, $type, $receiverId));
                 }
             }
 
@@ -343,7 +344,8 @@ class PengajuanSouvenirController extends Controller
             $uniqueUsers = array_filter(array_unique($usersToNotify));
             foreach ($uniqueUsers as $user) {
                 if($user) {
-                    NotificationFacade::send($user, new ApprovalSouvenirNotification($notifData, $path, $to, $notifType));
+                    $receiverId = $user->id;
+                    NotificationFacade::send($user, new ApprovalSouvenirNotification($notifData, $path, $to, $notifType, $receiverId));
                 }
             }
         }
@@ -456,7 +458,8 @@ class PengajuanSouvenirController extends Controller
                     $to = $pengajuan->karyawan->nama_lengkap;
 
                     if ($user) {
-                        NotificationFacade::send($user, new ApprovalSouvenirNotification($notifData, $path, $to, $notifType));
+                        $receiverId = $user->id;
+                        NotificationFacade::send($user, new ApprovalSouvenirNotification($notifData, $path, $to, $notifType, $receiverId));
                     }
                 }
             }

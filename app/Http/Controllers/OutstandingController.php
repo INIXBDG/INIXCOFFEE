@@ -143,7 +143,8 @@ class OutstandingController extends Controller
                     $q->whereIn('kode_karyawan', $users);
                 })->get();
 
-                NotificationFacade::send($notifiedUsers, new OutstandingNotification($data, '/outstanding'));
+                $receiverId = $notifiedUsers->id;
+                NotificationFacade::send($notifiedUsers, new OutstandingNotification($data, '/outstanding', $receiverId));
             }
         }
 
@@ -363,7 +364,8 @@ class OutstandingController extends Controller
 
             // Kirim notifikasi ke setiap user yang ditemukan
             foreach ($users as $user) {
-                NotificationFacade::send($user, new OutstandingNotification($data, $path));
+                $receiverId = $user->id;
+                NotificationFacade::send($user, new OutstandingNotification($data, $path, $receiverId));
             }
         }
 
@@ -683,8 +685,8 @@ class OutstandingController extends Controller
                 'no_invoice' => $post->no_invoice,
                 'periode' => $rkm->tanggal_awal . ' -> ' . $rkm->tanggal_akhir,
             ];
-
-            NotificationFacade::send($user, new OutstandingSelesai($data));
+            $receiverId = $user->id;
+            NotificationFacade::send($user, new OutstandingSelesai($data, $receiverId));
         }
 
         return redirect()->route('outstanding.index')->with(['success' => 'Data Berhasil Disimpan!']);

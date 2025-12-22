@@ -147,7 +147,8 @@ class LemburController extends Controller
         $path = '/lembur';
 
         foreach ($users as $user) {
-            NotificationFacade::send($user, new LemburNotification($data, $path, $type));
+            $receiverId = $user->id;
+            NotificationFacade::send($user, new LemburNotification($data, $path, $type, $receiverId));
         }
 
 
@@ -358,7 +359,8 @@ class LemburController extends Controller
         $path = '/lembur';
 
         foreach ($users as $user) {
-            NotificationFacade::send($user, new LemburNotification($data, $path, $type, ));
+            $receiverId = $user->id;
+            NotificationFacade::send($user, new LemburNotification($data, $path, $type, $receiverId));
         }
 
         return redirect()->route('lembur.index')->with(['success' => 'Data Berhasil Diubah!']);
@@ -479,7 +481,8 @@ class LemburController extends Controller
         $path = '/lembur';
 
         foreach ($users as $user) {
-            NotificationFacade::send($user, new LemburNotification($data, $path, $type));
+            $receiverId = $user->id;
+            NotificationFacade::send($user, new LemburNotification($data, $path, $type, $receiverId));
         }
         return redirect()->route('lembur.index')->with(['success' => 'Data Berhasil Diubah!']);
     }
