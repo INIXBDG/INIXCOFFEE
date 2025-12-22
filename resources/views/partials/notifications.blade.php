@@ -1476,6 +1476,65 @@
         </div>
     @endif
 
+@if ($notification->data['message']['tipe'] == 'Outstanding Lunas dengan data PA')
+    <div class="notification mb-3 p-3 border rounded bg-light">
+        <div class="w-100">
+
+            <p class="mb-2 text-success fw-bold">
+                Pembayaran Outstanding Telah Diselesaikan
+            </p>
+
+            <div class="mb-2">
+                <small class="text-muted d-block">Perusahaan</small>
+                <span class="fw-bold">
+                    {{ $notification->data['message']['perusahaan'] ?? '-' }}
+                </span>
+            </div>
+
+            <div class="mb-2">
+                <small class="text-muted d-block">Materi</small>
+                <span>
+                    {{ $notification->data['message']['materi'] ?? '-' }}
+                </span>
+            </div>
+
+            <div class="mb-2">
+                <small class="text-muted d-block">Periode Kelas</small>
+                <span class="badge bg-info text-dark">
+                    {{ $notification->data['message']['periode'] ?? '-' }}
+                </span>
+            </div>
+
+            <div class="alert alert-info py-2 px-3 mb-3" style="font-size: 0.85rem;">
+                <i class="bi bi-info-circle me-1"></i>
+                Data <strong>Payment Advance (PA)</strong> tersedia.
+            </div>
+
+            <small class="text-muted d-block">
+                <i class="bi bi-clock"></i>
+                Dibuat pada:
+                {{ $notification->created_at->translatedFormat('d F Y H:i') }} WIB
+            </small>
+
+            <div class="d-flex gap-2 mt-3">
+                <a href="{{ $notification->data['path'] }}" target="_blank" class="btn btn-sm btn-primary">
+                    <i class="bi bi-eye me-1"></i>Detail
+                </a>
+
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                        Tandai Dibaca
+                    </button>
+                </form>
+            </div>
+
+            </div>
+        </div>
+    @endif
+
+
 
     <hr>
 @endforeach
