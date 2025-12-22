@@ -2,9 +2,12 @@
 
 @section('content')
 <div class="container py-4">
-    <h3 class="mb-4">Laporan Aktivitas Instruktur</h3>
-    <div id="calendar"></div>
-    
+    <div class="card" style="width: 100%">
+        <div class="card-body d-block justify-content-center">
+            <h3 class="mb-4">Laporan Aktivitas Instruktur</h3>
+            <div id="calendar"></div>
+        </div>
+    </div>
     <div class="modal fade" id="activityModal" tabindex="-1" aria-labelledby="activityModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
