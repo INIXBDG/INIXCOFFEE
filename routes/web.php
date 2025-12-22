@@ -52,7 +52,7 @@ use App\Http\Controllers\PenukaranSouvenirController;
 use App\Http\Controllers\office\DashboardSouvenirController;
 use App\Http\Controllers\Webinar\CalendarController;
 use App\Http\Controllers\RekomendasiLanjutanController;
-
+use App\Http\Controllers\ForumSSOController;
 
 /*
 |--------------------------------------------------------------------------
@@ -68,6 +68,13 @@ use App\Http\Controllers\RekomendasiLanjutanController;
 // Route::get('/', function () {
 //     return view('auth.login');
 // });
+
+Route::get('/forum', [ForumSSOController::class, 'redirect'])
+    ->middleware('auth')
+    ->name('forum.sso');
+Route::get('/forum/logout', [ForumSSOController::class, 'logout']);
+
+
 
 Route::post('/pusher/auth', [PusherAuthController::class, 'auth'])->middleware('web');
 

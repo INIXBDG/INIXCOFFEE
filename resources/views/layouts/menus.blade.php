@@ -1152,6 +1152,24 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                            <div class="col-sm-6 mt-2">
+                                                <div class="card" id="card-hover">
+                                                    <div class="card-body d-flex">
+                                                        <div class="col-md-2">
+                                                            <img src="{{ asset('icon/users.svg') }}"
+                                                                class="img-responsive" width="30px">
+                                                        </div>
+                                                        <div class="col-md-10" style="margin-left: 10px">
+                                                            <a href="{{ route('forum.sso') }}" target="_blank"
+                                                                class="link stretched-link text-decoration-none">
+                                                                <h5 class="card-title">Forum</h5>
+                                                            </a>
+                                                            <p class="card-text">.</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
                                             @can('View DataKaryawan')
                                             <div class="col-sm-6 mt-2">
                                                 <div class="card" id="card-hover">
@@ -1170,6 +1188,10 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                            <a href=>
+    Forum Diskusi
+</a>
+
                                             @endcan
                                             {{-- @can('View DataKaryawan') --}}
                                             <div class="col-sm-6 mt-2">
