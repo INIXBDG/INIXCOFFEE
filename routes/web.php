@@ -217,6 +217,8 @@ Route::get('getTarget', [App\Http\Controllers\TargetController::class, 'getTarge
 Route::get('getOutstandingLunas', [App\Http\Controllers\OutstandingController::class, 'getOutstandingLunas'])->name('getOutstandingLunas');
 Route::get('getOutstandingHutang', [App\Http\Controllers\OutstandingController::class, 'getOutstandingHutang'])->name('getOutstandingHutang');
 Route::get('getOutstandingRKM/{year}/{month}', [App\Http\Controllers\OutstandingController::class, 'getOutstandingRKM'])->name('getOutstandingRKM');
+Route::get('getOutstandingPA', [OutstandingController::class, 'getOutstandingPA'])->name('getOutstandingPA');
+Route::get('/outstanding/{id}/detail', [OutstandingController::class, 'detailPA'])->name('detailDataOutstanding');
 Route::get('singkronDataOutstandingRKM', [App\Http\Controllers\OutstandingController::class, 'singkronDataOutstanding'])->name('outstanding.singkronDataOutstanding');
 Route::get('/download/dokumen/{id}', [OutstandingController::class, 'dokumenGabungan'])->name('dokumenGabungan');
 Route::get('cekregisform/{id}', [App\Http\Controllers\RKMController::class, 'cekregisform'])->name('cekregisform');

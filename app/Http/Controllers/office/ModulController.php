@@ -194,7 +194,6 @@ class ModulController extends Controller
             'no_modul'    => $request->no_modul,
             'type'        => $request->type,
             'pembuat'     => $senderName,
-            'sender_name' => $senderName,
         ];
 
         $path = "/office/modul/detail/$nomor->id";
