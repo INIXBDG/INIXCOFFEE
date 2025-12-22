@@ -71,6 +71,8 @@ class rekapInstrukturController extends Controller
                 'r_k_m_s.materi_key',
                 // kita tidak men-select ruang langsung — kita akan hitung ruang_result di bawah
                 'r_k_m_s.event',
+				'r_k_m_s.instruktur_key',
+				'r_k_m_s.tanggal_awal',
                 DB::raw('GROUP_CONCAT(DISTINCT r_k_m_s.instruktur_key SEPARATOR ",") AS instruktur_all'),
                 DB::raw('GROUP_CONCAT(DISTINCT r_k_m_s.perusahaan_key SEPARATOR ",") AS perusahaan_all'),
                 DB::raw('GROUP_CONCAT(DISTINCT r_k_m_s.sales_key SEPARATOR ",") AS sales_all'),
@@ -100,7 +102,9 @@ class rekapInstrukturController extends Controller
             )
             ->groupBy(
                 'r_k_m_s.materi_key',
-                'r_k_m_s.event'
+                'r_k_m_s.event',
+				'r_k_m_s.instruktur_key',
+				'r_k_m_s.tanggal_awal'
             )
             ->orderBy('status_all', 'asc')
             ->orderBy('tanggal_awal', 'asc')
@@ -194,14 +198,16 @@ class rekapInstrukturController extends Controller
         $tahun = $date->year;
         $bulan = $date->month;
         $tanggal_awal = $rkm->tanggal_awal;
+		$instruktur_key = $rkm->instruktur_key;
         $datarkm = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan', 'instruktur2', 'asisten'])
             ->where('materi_key', $materi_key)
+			->where('instruktur_key', $instruktur_key)
             ->whereBetween('tanggal_awal', [$tanggal_awal, $tanggal_akhir])
             ->get();
-        
             $totalPax = $datarkm->sum('pax');
             $instruktur = $request->instruktur;
-            foreach ($instruktur as $inst) {
+            //dd($totalPax);
+			foreach ($instruktur as $inst) {
             
                 $status = "Belum Dihitung";
                 if ($inst['instruktur'] == null) {

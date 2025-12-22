@@ -48,6 +48,7 @@ use App\Events\ServerTimeUpdate;
 use App\Http\Controllers\BroadcastAuthController;
 use App\Http\Controllers\PusherAuthController;
 use App\Http\Controllers\office\vendorOfficeController;
+use App\Http\Controllers\ActivityInstrukturController;
 use App\Http\Controllers\PenukaranSouvenirController;
 use App\Http\Controllers\office\DashboardSouvenirController;
 use App\Http\Controllers\Webinar\CalendarController;

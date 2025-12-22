@@ -390,7 +390,7 @@
                                 <tbody>
                                     @foreach ($izinTigaJam as $izin)
                                     <tr>
-                                        <td>{{ \Carbon\Carbon::parse($izin->tanggal_pengajuan)->translatedFormat('l, d F Y') }}</td>
+                                        <td>{{ \Carbon\Carbon::parse($izin->tanggal ?? $izin->tanggal_pengajuan)->translatedFormat('l, d F Y') }}</td>
                                         <td>{{ $izin->jam_mulai }}</td>
                                         <td>{{ $izin->jam_selesai }}</td>
                                         <td>{{ $izin->alasan }}</td>
