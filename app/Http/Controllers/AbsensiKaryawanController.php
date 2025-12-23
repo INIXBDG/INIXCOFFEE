@@ -524,7 +524,6 @@ class AbsensiKaryawanController extends Controller
         // Mengambil data absensi karyawan berdasarkan bulan dan tahun  
         $absensiKaryawan = AbsensiKaryawan::whereMonth('tanggal', $bulan)
             ->whereYear('tanggal', $tahun)
-            ->Where('jam_keluar', '!=', '')
             ->where('id_karyawan', $karyawanId)
             ->get();
         $absen_pulang = AbsensiKaryawan::whereMonth('tanggal', $bulan)

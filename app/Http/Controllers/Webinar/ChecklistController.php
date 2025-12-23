@@ -4,19 +4,23 @@ namespace App\Http\Controllers\Webinar;
 
 use App\Http\Controllers\Controller;
 use App\Models\EventTodo;
-use App\Models\YearMapping;
 use App\Models\Todo;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth; // Tambahkan facade Auth
 
 class ChecklistController extends Controller
 {
+    /**
+     * AMBIL LIST CHECKLIST PER EVENT
+     */
     public function index($mappingId)
     {
         $count = EventTodo::where('year_mapping_id', $mappingId)->count();
+        $user = Auth::user(); // Ambil user dengan aman
 
         if ($count === 0) {
-            // --- AUTH CHECK: Hanya Tim Digital yang boleh Generate awal ---
-            if (auth()->user()->jabatan === 'Tim Digital') {
+            // Cek: User ada DAN jabatannya Tim Digital
+            if ($user && $user->jabatan === 'Tim Digital') {
                 $masterTodos = Todo::where('is_active', true)->orderBy('sort_order')->get();
                 $newChecklists = [];
                 foreach ($masterTodos as $todo) {
@@ -50,11 +54,12 @@ class ChecklistController extends Controller
      */
     public function toggle($id)
     {
-        // --- AUTH CHECK ---
-        if (auth()->user()->jabatan !== 'Tim Digital') {
+        $user = Auth::user();
+
+
+        if (!$user || $user->jabatan !== 'Tim Digital') {
             return response()->json(['message' => 'Akses Ditolak.'], 403);
         }
-        // ------------------
 
         $checklist = EventTodo::findOrFail($id);
         $checklist->update([
@@ -69,11 +74,12 @@ class ChecklistController extends Controller
      */
     public function updateDetail(Request $request, $id)
     {
-        // --- AUTH CHECK ---
-        if (auth()->user()->jabatan !== 'Tim Digital') {
+        $user = Auth::user();
+
+        // FIX ERROR DISINI JUGA:
+        if (!$user || $user->jabatan !== 'Tim Digital') {
             return response()->json(['message' => 'Akses Ditolak.'], 403);
         }
-        // ------------------
 
         $checklist = EventTodo::findOrFail($id);
         $checklist->update([

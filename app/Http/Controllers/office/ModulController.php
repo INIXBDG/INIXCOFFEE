@@ -10,9 +10,14 @@ use App\Models\Modul;
 use App\Models\NomorModul;
 use App\Models\Perusahaan;
 use App\Models\PesertaModul;
+use App\Models\User;
+use App\Notifications\PersetujuanPreorder;
+use App\Notifications\PreorderNotification;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ModulController extends Controller
@@ -163,24 +168,42 @@ class ModulController extends Controller
     public function storeNomor(Request $request)
     {
         $request->validate([
-            'no_modul'  => 'required',
-            'type'      => 'in:Regular,Authorize',
+            'no_modul' => 'required',
+            'type'     => 'in:Regular,Authorize',
         ]);
 
         if (NomorModul::where('no_modul', $request->no_modul)->exists()) {
             return back()->with('error', 'Nomor modul sudah ada, silahkan gunakan nomor yang lain');
         }
-
-        NomorModul::create([
+        $nomor = NomorModul::create([
             'no_modul' => $request->no_modul,
-            'type' => $request->type,
+            'type'     => $request->type,
         ]);
+
+        $penerima = User::where('jabatan', 'Finance & Accounting') // Cek apakah seharusnya 'Accounting'?
+            ->where('status_akun', '1')
+            ->get();
+
+        if ($penerima->isEmpty()) {
+            dd("Error: Tidak ada user dengan jabatan 'Finance & Accounting' dan status '1'. Notifikasi gagal dikirim.");
+        }
+
+        $senderName = auth()->user()->username ?? 'System';
+
+        $data = [
+            'no_modul'    => $request->no_modul,
+            'type'        => $request->type,
+            'pembuat'     => $senderName,
+        ];
+
+        $path = "/office/modul/detail/$nomor->id";
+
+        Notification::send($penerima, new PreorderNotification($data, $path));
 
         return redirect()
             ->route('office.modul.index')
             ->with('success', 'Nomor Modul berhasil ditambahkan');
     }
-
 
     public function updateNomor(Request $request, $id)
     {
@@ -219,6 +242,24 @@ class ModulController extends Controller
         return redirect()
             ->route('office.modul.index')
             ->with('success', 'Nomor Modul beserta semua modul terkait berhasil dihapus');
+    }
+
+    public function updateStatus($id){
+        $nomor = NomorModul::findOrFail($id);
+        $nomor->status = 'Disetujui';
+        $nomor->save();
+
+        $penerima = User::where('jabatan', 'Admin Holding')->where('status_akun', '1')->get();
+        $data = [
+            'no_modul' => $nomor->no_modul,
+            'type' => $nomor->type,
+        ];
+
+        $path = "/office/modul/detail/$nomor->id";
+
+        Notification::send($penerima, new PersetujuanPreorder($data, $path));
+
+        return back();
     }
 
     public function storePeserta(Request $request)

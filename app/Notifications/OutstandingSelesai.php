@@ -14,22 +14,15 @@ class OutstandingSelesai extends Notification implements ShouldBroadcast
     use Queueable, InteractsWithSockets;
 
     protected $data;
-    protected $receiverId;
 
-    public function __construct(array $data, $receiverId)
+    public function __construct(array $data)
     {
         $this->data = $data;
-        $this->receiverId = $receiverId;
     }
 
     public function via($notifiable): array
     {
         return ['database', 'broadcast'];
-    }
-
-    public function broadcastOn()
-    {
-        return new PrivateChannel('notifikasi.' . $this->receiverId);
     }
 
     public function broadcastAs(): string

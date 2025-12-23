@@ -54,58 +54,64 @@ class CRMController extends Controller
 
 
             // 2. Target dan aktivitas
+            // 1. Ambil Input Filter
             $tahun = $request->input('tahun', Carbon::now()->year);
             $bulan = $request->input('bulan', Carbon::now()->month);
             $mingguKe = $request->input('minggu', null);
 
-            // 🔹 Ambil awal dan akhir bulan berdasarkan filter
-            $startDate = Carbon::create($tahun, $bulan, 1)->startOfMonth();
-            $endDate = (clone $startDate)->endOfMonth();
+            // 2. Tentukan Batas Awal dan Akhir Bulan yang Dipilih
+            $monthStart = Carbon::create($tahun, $bulan, 1)->startOfMonth();
+            $monthEnd = (clone $monthStart)->endOfMonth();
 
-            // Jika minggu ke-nya dipilih
+            // 3. Logika Penentuan Rentang Waktu (Filter Waktu)
             if ($mingguKe) {
-                // Hitung tanggal awal dan akhir minggu ke-n
-                $startOfWeek = (clone $startDate)->addWeeks($mingguKe - 1)->startOfWeek(Carbon::MONDAY);
+                // KASUS A: Filter Minggu Spesifik
+                // Hitung awal minggu berdasarkan offset minggu ke-n
+                $startOfWeek = (clone $monthStart)->addWeeks($mingguKe - 1)->startOfWeek(Carbon::MONDAY);
                 $endOfWeek = (clone $startOfWeek)->endOfWeek(Carbon::SUNDAY);
 
-                // Pastikan tidak lewat dari akhir bulan
-                if ($endOfWeek->gt($endDate)) {
-                    $endOfWeek = $endDate;
+                // Clamping: Potong tanggal jika minggu dimulai sebelum bulan berjalan
+                if ($startOfWeek->lt($monthStart)) {
+                    $startOfWeek = $monthStart;
+                }
+
+                // Clamping: Potong tanggal jika minggu berakhir setelah bulan berjalan
+                if ($endOfWeek->gt($monthEnd)) {
+                    $endOfWeek = $monthEnd;
                 }
             } else {
-                // Default: minggu berjalan
-                $startOfWeek = Carbon::now()->startOfWeek(Carbon::MONDAY);
-                $endOfWeek = Carbon::now()->endOfWeek(Carbon::SUNDAY);
+                // KASUS B: Filter "Semua" (Minggu Kosong)
+                // Gunakan rentang Full 1 Bulan sesuai tahun & bulan yang dipilih
+                $startOfWeek = $monthStart;
+                $endOfWeek = $monthEnd;
             }
 
-            // 🔹 Format rentang tanggal yang difilter
-            $tanggalRange = $startOfWeek->translatedFormat('d') . '–' . $endOfWeek->translatedFormat('d F Y');
-
-            // Contoh tambahan (opsional): jika kamu ingin juga menampilkan bulan dan tahun yang difilter
+            // 4. Format String untuk UI
+            $tanggalRange = $startOfWeek->translatedFormat('d') . ' – ' . $endOfWeek->translatedFormat('d F Y');
             $bulanTahun = $startOfWeek->translatedFormat('F Y');
 
-            // 🔹 Ambil target sales
+            // 5. Ambil Target Sales
             $target = TargetActivity::all()->keyBy('id_sales');
 
-            // 🔹 Ambil aktivitas berdasarkan filter waktu
+            // 6. Ambil Aktivitas Berdasarkan Rentang Waktu yang Sudah Dihitung
             $aktivitas = Aktivitas::with(['contact.perusahaan', 'peserta'])
                 ->whereBetween('waktu_aktivitas', [$startOfWeek, $endOfWeek])
-                ->whereYear('waktu_aktivitas', $tahun)
-                ->get();
+                ->get(); // whereYear tidak diperlukan lagi karena whereBetween sudah spesifik tanggal & tahun
 
-            // 🔹 Ambil sales aktif
+            // 7. Ambil Daftar Sales Aktif
             $sales = User::where('jabatan', 'Sales')
                 ->where('status_akun', '1')
                 ->pluck('id_sales')
                 ->toArray();
 
-            // 🔹 Hitung aktivitas per sales
+            // 8. Hitung Aktivitas Per Sales (Looping Data)
             $activitysales = [];
 
             foreach ($sales as $id_sales) {
+                // Filter koleksi aktivitas milik sales ini
                 $userAktivitas = $aktivitas->where('id_sales', $id_sales);
 
-                // Ambil data berdasarkan jenis aktivitas
+                // Kelompokkan data berdasarkan jenis aktivitas
                 $contactData = $userAktivitas->where('aktivitas', 'Contact');
                 $callData = $userAktivitas->where('aktivitas', 'Call');
                 $emailData = $userAktivitas->where('aktivitas', 'Email');
@@ -119,8 +125,10 @@ class CRMController extends Controller
                 $formKeluarData = $userAktivitas->where('aktivitas', 'Form_Keluar');
                 $dbData = $userAktivitas->where('aktivitas', 'DB');
 
+                // Ambil target spesifik sales
                 $salesTarget = $target[$id_sales] ?? null;
 
+                // Masukkan ke array hasil
                 $activitysales[] = [
                     'id_sales' => $id_sales,
 
@@ -138,7 +146,7 @@ class CRMController extends Controller
                     'Form_Keluar' => $formKeluarData->count(),
                     'DB' => $dbData->count(),
 
-                    // 💰 Total nilai
+                    // 💰 Total nilai (Sum)
                     'total_PA' => $paData->sum('total'),
                     'total_Form_Masuk' => $formMasukData->sum('total'),
                     'total_Form_Keluar' => $formKeluarData->sum('total'),
@@ -157,7 +165,7 @@ class CRMController extends Controller
                     'target_Form_Keluar' => $salesTarget->FormK ?? 0,
                     'target_DB' => $salesTarget->DB ?? 0,
 
-                    // 🗂️ Data aktivitas (detail)
+                    // 🗂️ Data aktivitas (detail untuk modal/tabel)
                     'data_contact' => $contactData->values(),
                     'data_call' => $callData->values(),
                     'data_email' => $emailData->values(),
@@ -172,7 +180,6 @@ class CRMController extends Controller
                     'data_DB' => $dbData->values(),
                 ];
             }
-
 
             // 3. Top 5 produk paling banyak terjual
             $best = RKM::with('materi')
