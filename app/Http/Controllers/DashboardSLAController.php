@@ -11,6 +11,8 @@ use App\Models\Tickets;
 use App\Models\laporanInsiden;
 use App\Models\YearMapping;
 use App\Models\EventTodo;
+use App\Models\ContentSchedule;
+use Carbon\CarbonPeriod;
 use App\Models\trackingLaporanInsiden;
 use App\Models\karyawan;
 use App\Models\User; // <-- Pastikan namespace model User Anda benar
@@ -475,13 +477,103 @@ class DashboardSLAController extends Controller
     }
 
     // =========================================================================
-    // HELPER 1: PENGAMBIL WAKTU TRACKING
+    // FUNGSI UTAMA 5: DASHBOARD TIM DIGITAL (TICKETING + KONTEN)
     // =========================================================================
-    /**
-     * Mengambil timestamp dari event tracking.
-     * Menggunakan tanggal_response/waktu_response jika ada,
-     * fallback ke created_at jika tidak ada.
-     */
+    public function dashboardDigital(Request $request)
+    {
+        $dateRange = $this->validateAndParseDates($request);
+
+        // --- BAGIAN A: SLA TICKETING (Tim Digital) ---
+        $keperluan = '%Tim Digital%';
+
+        // 1. Ambil Data Tiket
+        $rawTickets = DB::table('tickets')
+            ->select(
+                'id', 'created_at', 'kategori', 'tingkat_kesulitan',
+                'tanggal_response', 'jam_response',
+                'tanggal_selesai', 'jam_selesai'
+            )
+            ->where('keperluan', 'LIKE', $keperluan)
+            ->whereNotNull('tanggal_selesai')
+            ->whereBetween('created_at', [$dateRange['startDate'], $dateRange['endDate']])
+            ->get();
+
+        // 2. Kalkulasi SLA Tiket (Menggunakan Helper Existing)
+        $ticketStats = $this->processTicketSla($rawTickets);
+
+        // --- BAGIAN B: SLA KONTEN (Target 3 Upload/Minggu) ---
+        $contentStats = [
+            'total_weeks' => 0,
+            'weeks_met' => 0,
+            'weeks_missed' => 0,
+            'total_content' => 0,
+            'weekly_details' => []
+        ];
+
+        // 1. Generate Periode Mingguan dalam Semester Terpilih
+        $period = CarbonPeriod::create($dateRange['startDate'], '1 week', $dateRange['endDate']);
+
+        foreach ($period as $date) {
+            $startOfWeek = $date->copy()->startOfWeek();
+            $endOfWeek   = $date->copy()->endOfWeek();
+
+            // Batasi agar tidak melebihi range filter (jika filter parsial)
+            if ($startOfWeek < $dateRange['startDate']) $startOfWeek = $dateRange['startDate'];
+            if ($endOfWeek > $dateRange['endDate']) $endOfWeek = $dateRange['endDate'];
+
+            // Skip jika start > end (edge case akhir periode)
+            if ($startOfWeek > $endOfWeek) continue;
+
+            $contentStats['total_weeks']++;
+
+            // 2. Hitung Upload pada Minggu Tersebut
+            $uploadCount = ContentSchedule::whereBetween('upload_date', [$startOfWeek, $endOfWeek])
+                ->count();
+
+            $contentStats['total_content'] += $uploadCount;
+
+            // 3. Cek Target (Minimal 3)
+            $isMet = $uploadCount >= 3;
+            if ($isMet) {
+                $contentStats['weeks_met']++;
+            } else {
+                $contentStats['weeks_missed']++;
+            }
+
+            $contentStats['weekly_details'][] = [
+                'week_range' => $startOfWeek->format('d M') . ' - ' . $endOfWeek->format('d M Y'),
+                'count' => $uploadCount,
+                'status' => $isMet ? 'Met' : 'Missed',
+                'target' => 3
+            ];
+        }
+
+        // --- BAGIAN C: FINALISASI KPI GABUNGAN ---
+        $totalTickets = $ticketStats['total_tickets'];
+
+        $kpi = [
+            // KPI Ticketing
+            'ticket_response_compliance' => ($totalTickets > 0) ? ($ticketStats['response_met'] / $totalTickets) * 100 : 0,
+            'ticket_resolution_compliance' => ($totalTickets > 0) ? ($ticketStats['resolution_met'] / $totalTickets) * 100 : 0,
+            'avg_resolution_time' => ($totalTickets > 0) ? $ticketStats['sum_resolution_hours'] / $totalTickets : 0,
+            'total_tickets' => $totalTickets,
+
+            // KPI Konten
+            'content_sla_compliance' => ($contentStats['total_weeks'] > 0) ? ($contentStats['weeks_met'] / $contentStats['total_weeks']) * 100 : 0,
+            'total_content_uploaded' => $contentStats['total_content'],
+            'total_weeks_evaluated' => $contentStats['total_weeks'],
+            'weeks_met' => $contentStats['weeks_met'],
+
+            // Filter Info
+            'filters' => $dateRange['filters']
+        ];
+
+        return response()->json([
+            'kpi' => $kpi,
+            'content_details' => $contentStats['weekly_details']
+        ]);
+    }
+
     private function getTrackingTimestamp($trackingEvent)
     {
         if (!$trackingEvent) {
@@ -573,10 +665,6 @@ class DashboardSLAController extends Controller
         return $stats;
     }
 
-    // =========================================================================
-    // HELPER 3: KALKULASI JAM KERJA (BUSINESS HOURS) - VERSI OPTIMAL
-    // =========================================================================
-    // (Fungsi ini 100% dapat digunakan kembali, tidak perlu diubah)
     private function calculateBusinessHours(Carbon $start, Carbon $end)
     {
         // Jika waktu selesai sebelum mulai, return 0
