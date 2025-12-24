@@ -53,7 +53,11 @@
                     </div>
                     <div class="col-md-4 mx-1">
                         <button type="submit" onclick="getDataRKM()" class="btn click-primary" style="margin-top: 30px; height: 37px;">Cari Data</button>
-                        <button type="submit" onclick="excelDownload()" class="btn btn-success" style="margin-top: 30px">Download excel</button>
+                         @if (Auth()->user()->jabatan === "Adm Sales")
+                        <button type="submit" onclick="excelDownloadAdmSales()" class="btn btn-success" style="margin-top: 30px">Download excel</button>
+                        @elseif (Auth()->user()->jabatan === "Technical Support")
+                            <button type="submit" onclick="excelDownload()" class="btn btn-success" style="margin-top: 30px">Download excel</button>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -174,6 +178,42 @@ function excelDownload() {
         document.body.removeChild(form);
     }, 1000);
 }
+
+ function excelDownloadAdmSales() {
+        var tahun = document.getElementById('tahun').value;
+        var bulan = document.getElementById('bulan').value;
+
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.action = "{{ route('excel.rkmAdmSales') }}";
+        form.style.display = 'none';
+
+        var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        var csrf = document.createElement('input');
+        csrf.type = 'hidden';
+        csrf.name = '_token';
+        csrf.value = token;
+        form.appendChild(csrf);
+
+        var inputTahun = document.createElement('input');
+        inputTahun.type = 'hidden';
+        inputTahun.name = 'tahun';
+        inputTahun.value = tahun;
+        form.appendChild(inputTahun);
+
+        var inputBulan = document.createElement('input');
+        inputBulan.type = 'hidden';
+        inputBulan.name = 'bulan';
+        inputBulan.value = bulan;
+        form.appendChild(inputBulan);
+
+        document.body.appendChild(form);
+        form.submit();
+
+        setTimeout(() => {
+            document.body.removeChild(form);
+        }, 1000);
+    }
 
 function getDataRKM() {
     var tahun = document.getElementById('tahun').value;
