@@ -568,7 +568,7 @@
                                 role="tab"
                                 aria-controls="pills-sla-programmer"
                                 aria-selected="false"
-                                data-team="programmer" data-loaded="false"> 📈 SLA Programmer
+                                data-team="programmer" data-loaded="false">SLA Programmer
                         </button>
                     </li>
                     <li class="nav-item mx-1" role="presentation">
@@ -579,7 +579,7 @@
                                 role="tab"
                                 aria-controls="pills-sla-tech-support"
                                 aria-selected="false"
-                                data-team="tech-support" data-loaded="false"> 🎧 SLA Technical Support
+                                data-team="tech-support" data-loaded="false">SLA Technical Support
                         </button>
                     </li>
                     <li class="nav-item mx-1" role="presentation">
@@ -591,7 +591,19 @@
                                 aria-controls="pills-sla-event"
                                 aria-selected="false"
                                 data-loaded="false">
-                                📅 SLA Webinar
+                                SLA Webinar
+                        </button>
+                    </li>
+                    <li class="nav-item mx-1" role="presentation">
+                        <button class="nav-link sla-tab-trigger" id="pills-sla-digital-tab"
+                                data-bs-toggle="pill"
+                                data-bs-target="#pills-sla-digital"
+                                type="button"
+                                role="tab"
+                                aria-controls="pills-sla-digital"
+                                aria-selected="false"
+                                data-loaded="false">
+                                SLA Digital
                         </button>
                     </li>
                 </ul>
@@ -1012,7 +1024,7 @@
                                 <div class="card-header fs-5 fw-semibold bg-white">
                                     <i class="bi bi-list-check me-2"></i> Rincian Timeline & Realisasi
                                 </div>
-                                
+
                                 <div class="card shadow-sm">
                                     <div class="table">
                                         <table class="table table-hover mb-0 align-middle w-100">
@@ -1034,6 +1046,99 @@
                                             <tbody id="event-sla-table-body">
                                                 </tbody>
                                         </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" style="height:auto;" id="pills-sla-digital" role="tabpanel" aria-labelledby="pills-sla-digital-tab" tabindex="0">
+                        <div class="container-fluid" id="sla-digital-container">
+
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <div class="alert alert-info" role="alert">
+                                        <h4 class="alert-heading mb-0 fs-5" id="digital_sla_period">
+                                            Memuat periode data...
+                                        </h4>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-lg-6 mb-4">
+                                    <div class="card shadow-sm h-100 border-primary border-start border-4">
+                                        <div class="card-header bg-white fw-bold">
+                                            <i class="bi bi-camera-reels-fill me-2 text-primary"></i> SLA Jadwal Konten
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row text-center">
+                                                <div class="col-md-6 mb-3">
+                                                    <h6 class="text-muted small text-uppercase">Kepatuhan Upload (Min 3/Minggu)</h6>
+                                                    <div class="fs-1 fw-bold" id="digital-content-sla">...</div>
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <h6 class="text-muted small text-uppercase">Total Konten Uploaded</h6>
+                                                    <div class="fs-1 fw-bold text-dark" id="digital-content-total">...</div>
+                                                </div>
+                                                <div class="col-12">
+                                                    <span class="badge bg-light text-dark border p-2">
+                                                        Target Terpenuhi: <span id="digital-weeks-met" class="fw-bold">...</span> dari <span id="digital-weeks-total">...</span> Minggu
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-6 mb-4">
+                                    <div class="card shadow-sm h-100 border-warning border-start border-4">
+                                        <div class="card-header bg-white fw-bold">
+                                            <i class="bi bi-ticket-detailed-fill me-2 text-warning"></i> SLA Ticketing (Support)
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row text-center">
+                                                <div class="col-md-4 mb-3">
+                                                    <h6 class="text-muted small text-uppercase">SLA Resolusi</h6>
+                                                    <div class="fs-2 fw-bold" id="digital-ticket-res-sla">...</div>
+                                                </div>
+                                                <div class="col-md-4 mb-3">
+                                                    <h6 class="text-muted small text-uppercase">SLA Respon</h6>
+                                                    <div class="fs-2 fw-bold" id="digital-ticket-resp-sla">...</div>
+                                                </div>
+                                                <div class="col-md-4 mb-3">
+                                                    <h6 class="text-muted small text-uppercase">Avg Resolusi</h6>
+                                                    <div class="fs-2 fw-bold text-secondary" id="digital-ticket-avg">...</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="card-header">
+                                        <i class="bi bi-calendar-week me-2"></i> Detail Pencapaian Mingguan
+                                    </div>
+                                    <div class="card shadow-sm">
+                                        <div class="card-body p-0">
+                                            <div class="table-responsive">
+                                                <table class="table table-striped table-hover mb-0">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th>Periode Minggu</th>
+                                                            <th class="text-center">Jumlah Upload</th>
+                                                            <th class="text-center">Target</th>
+                                                            <th class="text-center">Status</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="digital-weekly-table-body">
+                                                        <tr><td colspan="4" class="text-center py-3">Memuat data...</td></tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

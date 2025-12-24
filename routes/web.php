@@ -170,6 +170,7 @@ Route::resource('permissions', \App\Http\Controllers\PermissionController::class
 Route::resource('roles', \App\Http\Controllers\RoleController::class);
 Route::resource('penambahansouvenir', \App\Http\Controllers\PenambahanSouvenirController::class);
 Route::resource('penukaransouvenir', \App\Http\Controllers\PenukaranSouvenirController::class);
+Route::resource('content-schedules', \App\Http\Controllers\ContentScheduleController::class);
 
 
 Route::get('/rkmEditInstruktur/{id}', [App\Http\Controllers\RKMController::class, 'editInstruktur'])->name('editInstruktur');
@@ -726,6 +727,7 @@ Route::prefix('dashboard-sla/{team}')->group(function () {
     Route::get('/kritis', [DashboardSLAController::class, 'dashboardKritis']);
 });
 Route::get('/dashboard-sla/event/{mappingId}', [DashboardSLAController::class, 'dashboardEventSla']);
+Route::get('/dashboard-sla/digital', [DashboardSLAController::class, 'dashboardDigital']);
 
 Route::prefix('office')->name('office.')->middleware(['auth'])->group(function () {
 
@@ -818,3 +820,7 @@ Route::post('/api/timeline-item', [TimelineItemController::class, 'store']);
 
 // API Event Update
 Route::post('/api/event/{id}/update', [CalendarController::class, 'updateEvent']);
+
+// content
+Route::patch('content-schedules/{contentSchedule}/mark-uploaded', [App\Http\Controllers\ContentScheduleController::class, 'markAsUploaded'])
+    ->name('content-schedules.mark-uploaded');
