@@ -15,6 +15,10 @@ use App\Models\AbsensiPDF;
 use App\Models\Nilaifeedback;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\RKMExport;
+use App\Exports\RKMExcelAdmsales;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Illuminate\Support\Facades\Storage;
 
 class RKMController extends Controller
 {
@@ -102,6 +106,20 @@ class RKMController extends Controller
         return new PostResource(true, 'List Detail Bulan RKM', $json);
     }
 
+    public function exportExcel(Request $request)
+    {
+        $data = $request->input('data');
+        $tahun = $request->input('tahun');
+        $bulan = $request->input('bulan');
+
+        $filename = "RKM_Bulan_{$bulan}_Tahun_{$tahun}_" . date('Ymd_His') . ".xlsx";
+
+        $path = 'exports/' . $filename;
+
+        Excel::store(new RKMExport($data), $path, 'local');
+
+        return response()->json(['filename' => $path]);
+    }
     public function RKMAPIabsensi($year, $month)
     {
         $bulan = $month + 1;
@@ -124,46 +142,46 @@ class RKMController extends Controller
                 $end = $endOfWeek->format('Y-m-d');
                 $startOfWeek = $startOfWeek->addWeek();
                 $rows = RKM::with(['materi', 'peluang'])
-        ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
-        ->whereBetween('r_k_m_s.tanggal_awal', [$start, $end])
-        ->whereDoesntHave('peluang', function ($query) {
-            $query->where('tentatif', 1);
-        })
-        ->select(
-            DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'),
-            'r_k_m_s.materi_key',
-            'r_k_m_s.ruang',
-            'r_k_m_s.metode_kelas',
-            'r_k_m_s.event',
-            DB::raw('GROUP_CONCAT(CASE 
+                    ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
+                    ->whereBetween('r_k_m_s.tanggal_awal', [$start, $end])
+                    ->whereDoesntHave('peluang', function ($query) {
+                        $query->where('tentatif', 1);
+                    })
+                    ->select(
+                        DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'),
+                        'r_k_m_s.materi_key',
+                        'r_k_m_s.ruang',
+                        'r_k_m_s.metode_kelas',
+                        'r_k_m_s.event',
+                        DB::raw('GROUP_CONCAT(CASE 
                 WHEN r_k_m_s.exam = "0" THEN "Tidak"
                 WHEN r_k_m_s.exam = "1" THEN "Ya"
                 ELSE COALESCE(r_k_m_s.exam, "Tidak")
             END SEPARATOR ", ") AS exam'),
-            DB::raw('GROUP_CONCAT(CASE 
+                        DB::raw('GROUP_CONCAT(CASE 
                 WHEN r_k_m_s.makanan = "0" THEN "Tidak Ada"
                 WHEN r_k_m_s.makanan = "1" THEN "Nasi Box"
                 WHEN r_k_m_s.makanan = "2" THEN "Prasmanan"
                 ELSE COALESCE(r_k_m_s.makanan, "Tidak Ada")
             END SEPARATOR ", ") AS makanan'),
-            DB::raw('GROUP_CONCAT(r_k_m_s.instruktur_key SEPARATOR ", ") AS instruktur_all'),
-            DB::raw('GROUP_CONCAT(r_k_m_s.perusahaan_key SEPARATOR ", ") AS perusahaan_all'),
-            DB::raw('GROUP_CONCAT(r_k_m_s.sales_key SEPARATOR ", ") AS sales_all'),
-            DB::raw('CASE WHEN SUM(r_k_m_s.status = 0) > 0 THEN 0 ELSE MIN(r_k_m_s.status) END AS status_all'),
-            DB::raw('SUM(r_k_m_s.pax) AS total_pax'),
-            'r_k_m_s.tanggal_awal',
-            DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir')
-        )
-        ->groupBy(
-            'r_k_m_s.materi_key',
-            'r_k_m_s.ruang',
-            'r_k_m_s.metode_kelas',
-            'r_k_m_s.event',
-            'r_k_m_s.tanggal_awal'
-        )
-        ->orderBy('status_all', 'asc')
-        ->orderBy('r_k_m_s.tanggal_awal', 'asc')
-        ->get();
+                        DB::raw('GROUP_CONCAT(r_k_m_s.instruktur_key SEPARATOR ", ") AS instruktur_all'),
+                        DB::raw('GROUP_CONCAT(r_k_m_s.perusahaan_key SEPARATOR ", ") AS perusahaan_all'),
+                        DB::raw('GROUP_CONCAT(r_k_m_s.sales_key SEPARATOR ", ") AS sales_all'),
+                        DB::raw('CASE WHEN SUM(r_k_m_s.status = 0) > 0 THEN 0 ELSE MIN(r_k_m_s.status) END AS status_all'),
+                        DB::raw('SUM(r_k_m_s.pax) AS total_pax'),
+                        'r_k_m_s.tanggal_awal',
+                        DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir')
+                    )
+                    ->groupBy(
+                        'r_k_m_s.materi_key',
+                        'r_k_m_s.ruang',
+                        'r_k_m_s.metode_kelas',
+                        'r_k_m_s.event',
+                        'r_k_m_s.tanggal_awal'
+                    )
+                    ->orderBy('status_all', 'asc')
+                    ->orderBy('r_k_m_s.tanggal_awal', 'asc')
+                    ->get();
                 foreach ($rows as $row) {
                     if ($row->instruktur_all == null) {
                         $sales_ids = explode(', ', $row->sales_all);

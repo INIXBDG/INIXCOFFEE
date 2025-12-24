@@ -65,6 +65,7 @@ class LemburNotification extends Notification implements ShouldBroadcast
             'user' => auth()->user()?->username ?? 'System',
             'message' => [
                 'tipe'           => $this->type,
+                'id_karyawan'    => $this->data['id_karyawan'] ?? '-',
                 'nama_lengkap'   => $this->data['nama_lengkap'] ?? auth()->user()?->karyawan?->nama_lengkap,
                 'tanggal_lembur' => $this->data['tanggal_lembur'],
                 'waktu_lembur'   => $this->data['waktu_lembur'],

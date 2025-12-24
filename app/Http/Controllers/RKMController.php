@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\RKMExcelAdmsales;
 use App\Models\AbsensiPDF;
 use App\Models\comment;
 use App\Models\eksam;
@@ -59,9 +60,62 @@ class RKMController extends Controller
         return Excel::download(new RKMExport($tahun, $bulan), $filename);
     }
 
+    public function excelDownloadAdmSales(Request $request)
+    {
+        $tahun = $request->input('tahun');
+        $bulan = $request->input('bulan');
+
+        $month = (int) $bulan;
+        $year  = (int) $tahun;
+
+        $startDate = Carbon::create($year, $month, 1)->startOfMonth();
+        $endDate   = $startDate->copy()->endOfMonth();
+
+        $data = DB::table('r_k_m_s as rkm')
+            ->leftJoin('materis', 'rkm.materi_key', '=', 'materis.id')
+            ->leftJoin('karyawans as sales', 'rkm.sales_key', '=', 'sales.kode_karyawan')
+            ->leftJoin('karyawans as instruktur', 'rkm.instruktur_key', '=', 'instruktur.kode_karyawan')
+            ->leftJoin('karyawans as instruktur2', 'rkm.instruktur_key2', '=', 'instruktur2.kode_karyawan')
+            ->leftJoin('karyawans as asisten', 'rkm.asisten_key', '=', 'asisten.kode_karyawan')
+            ->leftJoin('perusahaans', 'rkm.perusahaan_key', '=', 'perusahaans.id')
+            ->whereBetween('rkm.tanggal_awal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->selectRaw("GROUP_CONCAT(DISTINCT rkm.id SEPARATOR ', ') AS id_all")
+            ->selectRaw('materis.nama_materi')
+            ->selectRaw('MIN(rkm.tanggal_awal) AS tanggal_awal')
+            ->selectRaw('MAX(rkm.tanggal_akhir) AS tanggal_akhir')
+            ->selectRaw('rkm.metode_kelas')
+            ->selectRaw('rkm.event')
+            ->selectRaw('rkm.ruang')
+            ->selectRaw('SUM(rkm.pax) AS pax')
+            ->selectRaw('rkm.exam')
+            ->selectRaw('rkm.makanan')
+            ->selectRaw('MIN(rkm.status) AS status')
+            ->selectRaw('GROUP_CONCAT(DISTINCT perusahaans.nama_perusahaan ORDER BY perusahaans.nama_perusahaan SEPARATOR ", ") AS perusahaan_all')
+            ->selectRaw('GROUP_CONCAT(DISTINCT sales.nama_lengkap ORDER BY sales.nama_lengkap SEPARATOR ", ") AS sales_all')
+            // Instruktur, Instruktur 2, dan Asisten diambil dengan MAX() agar aman di GROUP BY
+            ->selectRaw('MAX(instruktur.nama_lengkap) AS instruktur_nama')
+            ->selectRaw('MAX(instruktur2.nama_lengkap) AS instruktur2_nama')
+            ->selectRaw('MAX(asisten.nama_lengkap) AS asisten_nama')
+            ->groupBy([
+                'materis.nama_materi',
+                'rkm.metode_kelas',
+                'rkm.event',
+                'rkm.ruang',
+                'rkm.exam',
+                'rkm.makanan'
+            ])
+            ->orderBy('tanggal_awal')
+            ->get()
+            ->map(fn($item) => (array) $item)
+            ->toArray();
+
+        $bulanFormatted = str_pad($bulan, 2, '0', STR_PAD_LEFT);
+        $filename = "rkm-adm-sales-{$bulanFormatted}-{$tahun}.xlsx";
+
+        return Excel::download(new RKMExcelAdmsales($data), $filename);
+    }
     public function create(): View
     {
-        // $sales = karyawan::where('jabatan', 'sales')->get();
         $sales = Karyawan::whereIn('jabatan', ['Sales', 'SPV Sales', 'Adm Sales', 'Tim Digital'])
             ->where('status_aktif', '1')
             ->get();
@@ -72,10 +126,8 @@ class RKMController extends Controller
 
         $materi = Materi::where('status', 'Aktif')->get();
         $perusahaan = Perusahaan::get();
-        $date = Carbon::now(); // atau bisa menggunakan Carbon::parse('2024-10-17')
-        // $quarter = 'Q' . $date->quarter;
+        $date = Carbon::now();
         $year = $date->year;
-        // dd($materi);
         return view('rkm.tambahrkm', compact('sales', 'materi', 'perusahaan', 'instruktur', 'year'));
     }
 
@@ -663,67 +715,67 @@ class RKMController extends Controller
             'user_update' => auth()->user()->username,
         ];
 
-            $bersangkutan = RKM::findOrFail($id);
+        $bersangkutan = RKM::findOrFail($id);
 
-            $Offman = karyawan::where('jabatan', 'Office Manager')->first();
-            $kooroff = karyawan::where('jabatan', 'Koordinator Office')->first();
-            $Eduman = karyawan::where('jabatan', 'Education Manager')->first();
-            $SPVSales = karyawan::where('jabatan', 'SPV Sales')->first();
-            $GM = karyawan::where('jabatan', 'GM')->first();
-            $cs_codes = karyawan::where('jabatan', 'Customer Care')->latest()->get();
-            $ah_codes = karyawan::where('jabatan', 'Admin Holding')->latest()->get();
-            $ts_codes = karyawan::where('jabatan', 'Technical Support')->latest()->get();
+        $Offman = karyawan::where('jabatan', 'Office Manager')->first();
+        $kooroff = karyawan::where('jabatan', 'Koordinator Office')->first();
+        $Eduman = karyawan::where('jabatan', 'Education Manager')->first();
+        $SPVSales = karyawan::where('jabatan', 'SPV Sales')->first();
+        $GM = karyawan::where('jabatan', 'GM')->first();
+        $cs_codes = karyawan::where('jabatan', 'Customer Care')->latest()->get();
+        $ah_codes = karyawan::where('jabatan', 'Admin Holding')->latest()->get();
+        $ts_codes = karyawan::where('jabatan', 'Technical Support')->latest()->get();
 
-            $CS = $cs_codes->pluck('kode_karyawan')->filter()->all();
-            $AH = $ah_codes->pluck('kode_karyawan')->filter()->all();
-            $TS = $ts_codes->pluck('kode_karyawan')->filter()->all();
+        $CS = $cs_codes->pluck('kode_karyawan')->filter()->all();
+        $AH = $ah_codes->pluck('kode_karyawan')->filter()->all();
+        $TS = $ts_codes->pluck('kode_karyawan')->filter()->all();
 
-            $sales = karyawan::where('kode_karyawan', $bersangkutan->sales_key)->first();
-            $instrukturs = karyawan::whereIn('kode_karyawan', [
-                $bersangkutan->instruktur_key,
-                $bersangkutan->instruktur_key2,
-                $bersangkutan->asisten_key
-            ])->get();
+        $sales = karyawan::where('kode_karyawan', $bersangkutan->sales_key)->first();
+        $instrukturs = karyawan::whereIn('kode_karyawan', [
+            $bersangkutan->instruktur_key,
+            $bersangkutan->instruktur_key2,
+            $bersangkutan->asisten_key
+        ])->get();
 
-            // Array untuk single users (yang pakai mapping)
-            $singleUsers = array_map(function ($user) {
-                return $user === '-' ? null : $user;
-            }, [
-                $request->sales_key,
-                $Eduman->kode_karyawan ?? null,
-                $Offman->kode_karyawan ?? null,
-                $kooroff->kode_karyawan ?? null,
-                $SPVSales->kode_karyawan ?? null,
-                $GM->kode_karyawan ?? null,
-                $sales->kode_karyawan ?? null,
-            ]);
+        // Array untuk single users (yang pakai mapping)
+        $singleUsers = array_map(function ($user) {
+            return $user === '-' ? null : $user;
+        }, [
+            $request->sales_key,
+            $Eduman->kode_karyawan ?? null,
+            $Offman->kode_karyawan ?? null,
+            $kooroff->kode_karyawan ?? null,
+            $SPVSales->kode_karyawan ?? null,
+            $GM->kode_karyawan ?? null,
+            $sales->kode_karyawan ?? null,
+        ]);
 
-            $instrukturKeys = $instrukturs->pluck('kode_karyawan')->toArray();
+        $instrukturKeys = $instrukturs->pluck('kode_karyawan')->toArray();
 
-            // Gabungkan single users dengan array CS, AH, TS
-            $usersFlat = collect($singleUsers)
-                ->merge($CS)  // Tambahkan semua Customer Care
-                ->merge($AH)  // Tambahkan semua Admin Holding
-                ->merge($TS)  // Tambahkan semua Technical Support
-                ->filter()    // Hapus nilai kosong/null
-                ->unique()    // Hapus duplikat
-                ->values()    // Reset index
-                ->all();      // Konversi ke PHP array
+        // Gabungkan single users dengan array CS, AH, TS
+        $usersFlat = collect($singleUsers)
+            ->merge($CS)  // Tambahkan semua Customer Care
+            ->merge($AH)  // Tambahkan semua Admin Holding
+            ->merge($TS)  // Tambahkan semua Technical Support
+            ->filter()    // Hapus nilai kosong/null
+            ->unique()    // Hapus duplikat
+            ->values()    // Reset index
+            ->all();      // Konversi ke PHP array
 
-            // Query users
-            $users = User::whereHas('karyawan', function ($query) use ($usersFlat) {
-                $query->whereIn('kode_karyawan', $usersFlat);
-            })->get();
+        // Query users
+        $users = User::whereHas('karyawan', function ($query) use ($usersFlat) {
+            $query->whereIn('kode_karyawan', $usersFlat);
+        })->get();
 
-            $path = '/rkm/' . $request->materi_key . 'ixb' . $hari . 'ie' . $tahun . 'ie' . $bulan . 'ixb' . $kelas;
+        $path = '/rkm/' . $request->materi_key . 'ixb' . $hari . 'ie' . $tahun . 'ie' . $bulan . 'ixb' . $kelas;
 
-            foreach ($users as $user) {
-                $receiverId = $user->id;
-                NotificationFacade::send($user, new RKMUpdateNotification($data, $path, $receiverId));
-            }
+        foreach ($users as $user) {
+            $receiverId = $user->id;
+            NotificationFacade::send($user, new RKMUpdateNotification($data, $path, $receiverId));
+        }
 
-            return redirect()->route('rkm.index')->with(['success' => 'Data Berhasil Diubah!']);
-             }
+        return redirect()->route('rkm.index')->with(['success' => 'Data Berhasil Diubah!']);
+    }
     /**
      * destroy
      *
