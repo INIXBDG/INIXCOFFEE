@@ -48,7 +48,15 @@ use App\Events\ServerTimeUpdate;
 use App\Http\Controllers\BroadcastAuthController;
 use App\Http\Controllers\PusherAuthController;
 use App\Http\Controllers\office\vendorOfficeController;
+use App\Http\Controllers\ActivityInstrukturController;
+use App\Http\Controllers\PenukaranSouvenirController;
+use App\Http\Controllers\office\DashboardSouvenirController;
+use App\Http\Controllers\Webinar\CalendarController;
 use App\Http\Controllers\RekomendasiLanjutanController;
+use App\Http\Controllers\ForumSSOController;
+use App\Http\Controllers\Webinar\TimelineItemController;
+use App\Http\Controllers\Webinar\ChecklistController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -64,6 +72,13 @@ use App\Http\Controllers\RekomendasiLanjutanController;
 // Route::get('/', function () {
 //     return view('auth.login');
 // });
+
+Route::get('/forum', [ForumSSOController::class, 'redirect'])
+    ->middleware('auth')
+    ->name('forum.sso');
+Route::get('/forum/logout', [ForumSSOController::class, 'logout']);
+
+
 
 Route::post('/pusher/auth', [PusherAuthController::class, 'auth'])->middleware('web');
 
@@ -213,6 +228,8 @@ Route::get('getTarget', [App\Http\Controllers\TargetController::class, 'getTarge
 Route::get('getOutstandingLunas', [App\Http\Controllers\OutstandingController::class, 'getOutstandingLunas'])->name('getOutstandingLunas');
 Route::get('getOutstandingHutang', [App\Http\Controllers\OutstandingController::class, 'getOutstandingHutang'])->name('getOutstandingHutang');
 Route::get('getOutstandingRKM/{year}/{month}', [App\Http\Controllers\OutstandingController::class, 'getOutstandingRKM'])->name('getOutstandingRKM');
+Route::get('getOutstandingPA', [OutstandingController::class, 'getOutstandingPA'])->name('getOutstandingPA');
+Route::get('/outstanding/{id}/detail', [OutstandingController::class, 'detailPA'])->name('detailDataOutstanding');
 Route::get('singkronDataOutstandingRKM', [App\Http\Controllers\OutstandingController::class, 'singkronDataOutstanding'])->name('outstanding.singkronDataOutstanding');
 Route::get('/download/dokumen/{id}', [OutstandingController::class, 'dokumenGabungan'])->name('dokumenGabungan');
 Route::get('cekregisform/{id}', [App\Http\Controllers\RKMController::class, 'cekregisform'])->name('cekregisform');
@@ -709,6 +726,7 @@ Route::prefix('dashboard-sla/{team}')->group(function () {
     Route::get('/user', [DashboardSLAController::class, 'dashboardUser']);
     Route::get('/kritis', [DashboardSLAController::class, 'dashboardKritis']);
 });
+Route::get('/dashboard-sla/event/{mappingId}', [DashboardSLAController::class, 'dashboardEventSla']);
 
 Route::prefix('office')->name('office.')->middleware(['auth'])->group(function () {
 
@@ -753,6 +771,12 @@ Route::prefix('office')->name('office.')->middleware(['auth'])->group(function (
         Route::post('/store/peserta', [ModulController::class, 'storePeserta'])->name('modul.store.peserta');
         Route::put('/update/peserta/{id}', [ModulController::class, 'updatePeserta'])->name('modul.update.peserta');
         Route::delete('/delete/peserta/{id}', [ModulController::class, 'deletePeserta'])->name('modul.delete.peserta');
+
+        Route::put('/update/status/{id}', [ModulController::class, 'updateStatus'])->name('modul.update.status');
+
+        Route::put('/download/pdf/{id}', [ModulController::class, 'pdfModul'])->name('modul.download.pdf');
+        Route::put('/download/pdf/{id}/peserta', [ModulController::class, 'pdfPeserta'])->name('modul.download.pdf.peserta');
+        Route::put('/download/excel/{id}/peserta', [ModulController::class, 'excelPeserta'])->name('modul.download.excel.peserta');
     });
 });
 
@@ -776,4 +800,22 @@ Route::prefix('/rekomendasi-lanjutan')->name('rekomendasiLanjutan.')->group(func
     Route::post('/store', [RekomendasiLanjutanController::class, 'store'])->name('store');
 });
 
+// Penambahan Souvneir
 Route::get('/getPenambahanSouvenir/{month}/{year}', [App\Http\Controllers\PenambahanSouvenirController::class, 'getPenambahanSouvenir'])->name('getPenambahanSouvenir');
+// Penukaran Souvenir
+Route::get('/penukaransouvenir/getRiwayat/{month}/{year}', [PenukaranSouvenirController::class, 'getRiwayat'])->name('getRiwayat');
+Route::get('/get-peserta/{rkmId}', [PenukaranSouvenirController::class, 'getPesertaByRKM'])->name('getPeserta');
+Route::get('/dashboard/souvenir', [DashboardSouvenirController::class, 'index'])->name('dashboard.souvenir');
+
+// timeline
+Route::get('/timeline', [CalendarController::class, 'index'])->name('timeline.index');
+
+Route::get('/api/checklist/{mappingId}', [ChecklistController::class, 'index']);
+Route::patch('/api/checklist/{id}/toggle', [ChecklistController::class, 'toggle']);
+Route::put('/api/checklist/{id}/detail', [ChecklistController::class, 'updateDetail']);
+
+// API Timeline Item
+Route::post('/api/timeline-item', [TimelineItemController::class, 'store']);
+
+// API Event Update
+Route::post('/api/event/{id}/update', [CalendarController::class, 'updateEvent']);

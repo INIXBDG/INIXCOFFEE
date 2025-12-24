@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Modul extends Model
 {
     use HasFactory;
-    protected $fillable =[
+    protected $fillable = [
         'no_modul',
         'kode_materi',
         'nama_materi',
@@ -17,11 +17,15 @@ class Modul extends Model
         'jumlah',
         'harga_satuan',
         'total',
-        'note',
     ];
 
     public function nomorModul()
     {
-        return $this->belongsTo(NomorModul::class, 'no_modul', 'no_modul');
+        return $this->belongsTo(NomorModul::class, 'no_modul', 'id');
+    }
+
+    public function pesertaModul()
+    {
+        return $this->hasMany(PesertaModul::class, 'modul', 'id');
     }
 }

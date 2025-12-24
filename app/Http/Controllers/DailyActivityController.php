@@ -15,29 +15,45 @@ class DailyActivityController extends Controller
     public function index()
     {
         $currentUser = Auth::user();
-
         $karyawan = $currentUser->karyawan;
 
-        $divisionName = 'Tidak Terdaftar'; // Teks default jika user/karyawan tidak ada
-        $activities = collect(); // Kumpulan data kosong by default
+        $divisionName = 'Tidak Terdaftar';
+        $activities = collect();
 
         if ($karyawan) {
             $userDivisionName = $karyawan->divisi;
+            $userJobTitle = $karyawan->jabatan; // Mendapatkan data jabatan user saat ini
+
             if (!empty($userDivisionName)) {
                 $divisionName = $userDivisionName;
-                $activities = DailyActivity::with(['user.karyawan', 'task'])
-                                        ->whereHas('user.karyawan', function ($query) use ($userDivisionName) {
-                                            $query->where('divisi', $userDivisionName);
 
-                                        })
-                                        ->latest('activity_date') // Urutkan dari tanggal terbaru
-                                        ->latest('created_at')    // Urutkan lagi by waktu pembuatan
-                                        ->get();
+                $activities = DailyActivity::with(['user.karyawan', 'task'])
+                    ->whereHas('user.karyawan', function ($query) use ($userDivisionName, $userJobTitle) {
+
+                        // 1. Filter dasar: Kesamaan Divisi
+                        $query->where('divisi', $userDivisionName);
+
+                        // 2. Logika Khusus untuk 'IT Service Management'
+                        if ($userDivisionName === 'IT Service Management') {
+
+                            // Cek grup jabatan: Koordinator ITSM & Programmer
+                            if (in_array($userJobTitle, ['Koordinator ITSM', 'Programmer'])) {
+                                $query->whereIn('jabatan', ['Koordinator ITSM', 'Programmer']);
+                            } else {
+                                // Untuk jabatan lain di ITSM, filter per jabatan spesifik
+                                $query->where('jabatan', $userJobTitle);
+                            }
+                        }
+                    })
+                    ->latest('activity_date')
+                    ->latest('created_at')
+                    ->get();
+
             } else {
                 $divisionName = 'Karyawan Tanpa Divisi';
             }
-
         }
+
         return view('daily_activities.index', compact('activities', 'divisionName'));
     }
 

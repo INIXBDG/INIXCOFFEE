@@ -40,6 +40,12 @@ class RKM extends Model
         return $this->hasMany(perhitunganNetSales::class, 'id_rkm', 'id');
     }
 
+    public function outstanding()
+    {
+        return $this->hasOne(outstanding::class, 'id_rkm', 'id');
+    }
+
+
     public function sales()
     {
         return $this->belongsTo(karyawan::class, 'sales_key', 'kode_karyawan');

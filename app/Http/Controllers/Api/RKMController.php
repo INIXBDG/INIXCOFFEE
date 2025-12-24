@@ -270,11 +270,14 @@ class RKMController extends Controller
         $rkm = RKM::with('materi', 'instruktur', 'instruktur2', 'asisten', 'nilaifeedback')
             ->where('id', $idRkm)
             ->first();
+		//dd($rkm);
         $materi_key = $rkm->materi_key;
         $start = $rkm->tanggal_awal;
         $end = $rkm->tanggal_akhir;
+		$instruktur_key = $rkm->instruktur_key;
         $rows = RKM::with('materi', 'instruktur', 'instruktur2', 'asisten', 'nilaifeedback')
             ->where('materi_key', $materi_key)
+			->where('instruktur_key', $instruktur_key)
             ->where('tanggal_awal', $start)
             ->whereBetween('tanggal_akhir', [$start, $end])
             ->get();

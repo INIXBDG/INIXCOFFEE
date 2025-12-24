@@ -2,18 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\RkmExport;
 use App\Models\Invoice;
 use App\Models\jabatan;
 use App\Models\karyawan;
 use App\Models\Outstanding;
+use App\Models\outstanding as ModelsOutstanding;
 use App\Models\RKM;
 use App\Models\trackingOutstanding;
 use App\Models\User;
 use App\Notifications\OutstandingNotification;
+use App\Notifications\OutstandingPaNotification;
 use App\Notifications\OutstandingSelesai;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
@@ -237,6 +241,41 @@ class OutstandingController extends Controller
             'data' => $outstanding,
         ]);
     }
+
+    public function getOutstandingPA()
+    {
+        $startOfWeek = Carbon::now()->startOfWeek(); 
+        $endOfWeek = Carbon::now()->endOfWeek();     
+
+        $rkm = RKM::with(['perhitunganNetSales', 'outstanding', 'perusahaan', 'materi'])
+            ->whereHas('outstanding', function ($query) {
+                $query->where('status_pembayaran', '1');
+            })
+            ->whereHas('perhitunganNetSales')
+            ->where(function ($query) use ($startOfWeek, $endOfWeek) {
+                $query->whereBetween('tanggal_awal', [$startOfWeek, $endOfWeek])
+                    ->orWhereBetween('tanggal_akhir', [$startOfWeek, $endOfWeek]);
+            })
+            ->get();
+
+        return response()->json([
+            'data' => $rkm
+        ]);
+    }
+    
+    public function detailPA($id)
+    {
+        $rkm = RKM::with(['perhitunganNetSales.peserta', 'outstanding', 'perusahaan', 'materi'])
+            ->where('id', $id)
+            ->whereHas('outstanding', function ($query) {
+                $query->where('status_pembayaran', '1');
+            })
+            ->whereHas('perhitunganNetSales')
+            ->firstOrFail();
+
+        return view('outstanding.detailPA', compact('rkm'));
+    }
+
 
     public function create()
     {
@@ -676,17 +715,41 @@ class OutstandingController extends Controller
         }
 
         if ($request->status_pembayaran == '1') {
-            $rkm = RKM::with('perusahaan', 'materi')->where('id', $post->id_rkm)->first();
-            $user = User::where('id_sales', $post->sales_key)->where('jabatan', 'Finance & Accounting')->get();
+
+            $rkm = RKM::with(['perusahaan', 'materi'])
+                ->where('id', $post->id_rkm)
+                ->first();
+
+            $users = User::where('id_sales', $post->sales_key)
+                ->where('jabatan', 'Finance & Accounting')
+                ->get();
+
+            $data = [
+                'perusahaan' => $rkm->perusahaan->nama_perusahaan,
+                'materi'     => $rkm->materi->nama_materi,
+                'tgl_bayar'  => $post->tanggal_bayar,
+                'no_invoice' => $post->no_invoice,
+                'periode'    => $rkm->tanggal_awal . ' -> ' . $rkm->tanggal_akhir,
+            ];
+
+            NotificationFacade::send($users, new OutstandingSelesai($data));
+        }
+
+
+        if ($request->status_pembayaran == '1') {
+            $rkm = RKM::with('outstanding', 'perusahaan', 'materi')->where('id', $post->id_rkm)->first();
+            $penerima = User::where('jabatan', 'Finance & Accounting') // Cek apakah seharusnya 'Accounting'?
+                ->where('status_akun', '1')
+                ->get();
+
             $data = [
                 'perusahaan' => $rkm->perusahaan->nama_perusahaan,
                 'materi' => $rkm->materi->nama_materi,
-                'tgl_bayar' => $post->tanggal_bayar,
-                'no_invoice' => $post->no_invoice,
                 'periode' => $rkm->tanggal_awal . ' -> ' . $rkm->tanggal_akhir,
             ];
-            $receiverId = $user->id;
-            NotificationFacade::send($user, new OutstandingSelesai($data, $receiverId));
+
+            $path = '/outstanding/' . $rkm->id . '/detail';
+            NotificationFacade::send($penerima, new OutstandingPaNotification($data, $path));
         }
 
         return redirect()->route('outstanding.index')->with(['success' => 'Data Berhasil Disimpan!']);
@@ -808,7 +871,7 @@ class OutstandingController extends Controller
         }
         return ucwords(trim($words)) . ' rupiah';
     }
-    
+
     public function destroy($id)
     {
         $post = outstanding::findOrFail($id);

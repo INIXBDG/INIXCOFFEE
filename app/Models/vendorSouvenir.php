@@ -10,7 +10,9 @@ class vendorSouvenir extends Model
     use HasFactory;
     protected $fillable = [
         'nama',
-        'is_active'
+        'is_active',
+        'foto',
+        'keterangan'
     ];
 
     public function pengajuanSouvenir()

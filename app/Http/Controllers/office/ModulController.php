@@ -2,14 +2,23 @@
 
 namespace App\Http\Controllers\office;
 
+use App\Exports\ModulPesertaExport;
 use App\Http\Controllers\Controller;
+use App\Models\karyawan;
 use App\Models\Materi;
 use App\Models\Modul;
 use App\Models\NomorModul;
 use App\Models\Perusahaan;
 use App\Models\PesertaModul;
+use App\Models\User;
+use App\Notifications\PersetujuanPreorder;
+use App\Notifications\PreorderNotification;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ModulController extends Controller
 {
@@ -159,24 +168,42 @@ class ModulController extends Controller
     public function storeNomor(Request $request)
     {
         $request->validate([
-            'no_modul'  => 'required',
-            'type'      => 'in:Regular,Authorize',
+            'no_modul' => 'required',
+            'type'     => 'in:Regular,Authorize',
         ]);
 
         if (NomorModul::where('no_modul', $request->no_modul)->exists()) {
             return back()->with('error', 'Nomor modul sudah ada, silahkan gunakan nomor yang lain');
         }
-
-        NomorModul::create([
+        $nomor = NomorModul::create([
             'no_modul' => $request->no_modul,
-            'type' => $request->type,
+            'type'     => $request->type,
         ]);
+
+        $penerima = User::where('jabatan', 'Finance & Accounting') // Cek apakah seharusnya 'Accounting'?
+            ->where('status_akun', '1')
+            ->get();
+
+        if ($penerima->isEmpty()) {
+            dd("Error: Tidak ada user dengan jabatan 'Finance & Accounting' dan status '1'. Notifikasi gagal dikirim.");
+        }
+
+        $senderName = auth()->user()->username ?? 'System';
+
+        $data = [
+            'no_modul'    => $request->no_modul,
+            'type'        => $request->type,
+            'pembuat'     => $senderName,
+        ];
+
+        $path = "/office/modul/detail/$nomor->id";
+
+        Notification::send($penerima, new PreorderNotification($data, $path));
 
         return redirect()
             ->route('office.modul.index')
             ->with('success', 'Nomor Modul berhasil ditambahkan');
     }
-
 
     public function updateNomor(Request $request, $id)
     {
@@ -217,6 +244,24 @@ class ModulController extends Controller
             ->with('success', 'Nomor Modul beserta semua modul terkait berhasil dihapus');
     }
 
+    public function updateStatus($id){
+        $nomor = NomorModul::findOrFail($id);
+        $nomor->status = 'Disetujui';
+        $nomor->save();
+
+        $penerima = User::where('jabatan', 'Admin Holding')->where('status_akun', '1')->get();
+        $data = [
+            'no_modul' => $nomor->no_modul,
+            'type' => $nomor->type,
+        ];
+
+        $path = "/office/modul/detail/$nomor->id";
+
+        Notification::send($penerima, new PersetujuanPreorder($data, $path));
+
+        return back();
+    }
+
     public function storePeserta(Request $request)
     {
         $request->validate([
@@ -231,10 +276,11 @@ class ModulController extends Controller
 
         $materi = Materi::where('id', $request->modul)->first();
         $modul = NomorModul::where('id', $request->no_modul)->first();
-        if (PesertaModul::where('no_modul', $modul->id)->count() >= $modul->jumlah) {
+        $jumlah = Modul::where('no_modul', $modul->id)->first();
+        if (PesertaModul::where('no_modul', $modul->id)->count() >= $jumlah->jumlah) {
             return back()->with('error', 'Peserta sudah mencapat batas, silahkan periksa kembali.');
         }
-        
+
         if (!$materi) {
             return back()->with('error', 'Materi tidak ditemukan. Silakan pilih modul yang valid.');
         }
@@ -305,5 +351,65 @@ class ModulController extends Controller
     {
         PesertaModul::findOrFail($id)->delete();
         return back()->with('success', 'Data peserta berhasil dihapus');
+    }
+
+    public function pdfModul(Request $request, $id)
+    {
+        NomorModul::where('id', $id)->update([
+            'note_modul' => $request->note,
+        ]);
+
+        $no = NomorModul::findOrFail($id);
+        $modul = Modul::with('nomorModul')->where('no_modul', $id)->get();
+
+        $ttd = karyawan::where('status_aktif', '1')->where('jabatan', 'Admin Holding')->first();
+
+        $grandTotal = $modul->sum('total');
+        Log::info('Data yg terikirim', [$modul, $no]);
+
+        $pdf = Pdf::loadView('office.modul.pdf', compact('modul', 'grandTotal', 'no', 'ttd'));
+
+        $pdf->setPaper('a4', 'landscape');
+
+        return $pdf->download('PO_Materi' . $id . '.pdf');
+    }
+
+    public function pdfPeserta(Request $request, $id)
+    {
+        NomorModul::where('id', $id)->update([
+            'note_peserta' => $request->note,
+        ]);
+
+        $no = NomorModul::findOrFail($id);
+
+        $peserta = PesertaModul::with(['perusahaan', 'dataModul'])->where('no_modul', $id)->get();
+
+        $ttd = karyawan::where('status_aktif', '1')->where('jabatan', 'Admin Holding')->first();
+
+        $pdf = Pdf::loadView('office.modul.pdfPeserta', compact('no', 'peserta', 'ttd'));
+
+        $pdf->setPaper('a4', 'portrait');
+
+        return $pdf->download('Peserta_' . $id . '.pdf');
+    }
+
+    public function excelPeserta(Request $request, $id)
+    {
+        // 1. Update Note (Sama seperti PDF)
+        // Jika request datang dari modal yang sama, logic ini tetap jalan
+        if ($request->has('note')) {
+            NomorModul::where('id', $id)->update([
+                'note_peserta' => $request->note,
+            ]);
+        }
+
+        // 2. Ambil Data (Sama seperti PDF)
+        $no = NomorModul::findOrFail($id);
+        $peserta = PesertaModul::with(['perusahaan', 'dataModul'])->where('no_modul', $id)->get();
+        $ttd = karyawan::where('status_aktif', '1')->where('jabatan', 'Admin Holding')->first();
+
+        // 3. Return Download Excel
+        // Parameter constructor dikirim ke Class Export
+        return Excel::download(new ModulPesertaExport($no, $peserta, $ttd), 'Peserta_' . $id . '.xlsx');
     }
 }
