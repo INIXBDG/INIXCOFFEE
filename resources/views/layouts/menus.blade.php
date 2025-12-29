@@ -1189,8 +1189,8 @@
                                                 </div>
                                             </div>
                                             <a href=>
-    Forum Diskusi
-</a>
+                                                Forum Diskusi
+                                            </a>
 
                                             @endcan
                                             {{-- @can('View DataKaryawan') --}}
@@ -1607,8 +1607,8 @@
                                                         </div>
                                                         <div class="col-md-10" style="margin-left: 10px">
                                                             {{-- <a href="{{ route('surveykepuasan.create') }}"
-                                                                class="link stretched-link text-decoration-none">
-                                                                <h5 class="card-title">Survey Kepuasan</h5>
+                                                            class="link stretched-link text-decoration-none">
+                                                            <h5 class="card-title">Survey Kepuasan</h5>
                                                             </a> --}}
                                                             <p class="card-text">Survey kepuasan pelayanan ITSM.</p>
                                                         </div>
@@ -2098,11 +2098,11 @@
                                                             </a>
                                                             <p class="card-text">Activity Report
                                                                 Instruktur.
-                                                            <a href="{{ route('rekomendasiLanjutan.index') }}"
-                                                                class="link stretched-link text-decoration-none">
-                                                                <h5 class="card-title">Rekomendasi Training Lanjutan
-                                                                </h5>
-                                                            </a>
+                                                                <a href="{{ route('rekomendasiLanjutan.index') }}"
+                                                                    class="link stretched-link text-decoration-none">
+                                                                    <h5 class="card-title">Rekomendasi Training Lanjutan
+                                                                    </h5>
+                                                                </a>
                                                             <p class="card-text">rekomendasi untuk peserta.
                                                             </p>
                                                         </div>
@@ -2547,7 +2547,6 @@
 
         $(document).ready(function() {
             handleNotificationDismissal();
-            // initializeYearlySales();
 
             $('#tahun').change(function() {
                 initializeYearlySales();
@@ -2557,12 +2556,10 @@
             let activeSubTabId = '#sales-tab-pane';
             let activeNestedTabId = '#pills-perquartal';
 
-            // Handle Home button click with fade effect
             $('#pills-home-tab').click(function() {
                 $('#loadingModal').modal('show');
                 $('.tab-pane.show').fadeOut(100, function() {
                     $(this).removeClass('show active');
-                    // After fadeOut, show the home tab with fadeIn
                     $('#pills-home').fadeIn(100).addClass('show active');
                 });
                 setTimeout(() => {
@@ -2570,10 +2567,8 @@
                 }, 1000);
             });
 
-            // Pasang handler click yang memanggil fungsi
             $('#pills-dashboard-tab').on('click', function() {
                 loadDashboard().catch(function(err) {
-                    // optional: tangani error global di sini
                     console.error(err);
                 });
             });
@@ -2601,6 +2596,18 @@
                     ajaxUptime(target, 'http://192.168.95.60:8002/');
                 }
             });
+
+            $(document).on('shown.bs.tab', '#pills-uptime-presentase-tab', function(e) {
+                console.log("Tab Presentase Uptime diklik dan ditampilkan");
+
+                if ($(this).data('loaded') !== true) {
+                    console.log("Memuat data uptime untuk pertama kali...");
+                    loadUptimePercentage();
+                    $(this).data('loaded', true);
+                } else {
+                    console.log("Data sudah dimuat sebelumnya");
+                }
+            });
         });
 
         function ajaxUptime(target, url) {
@@ -2609,7 +2616,7 @@
                 method: "GET",
                 dataType: "json",
                 success: function(response) {
-                    console.log("Data mentah dari server:", response); // Tambahkan ini
+                    console.log("Data mentah dari server:", response); // Tambahkan ini 
                     if (!response || typeof response !== 'object' || response.error) {
                         console.error("Data tidak valid:", response);
                         return;
@@ -3111,6 +3118,267 @@
             }
         }
         $('#modalPemberitahuan').on('click', '.btn-danger', handleNotificationDismissal);
+
+
+        $(document).on('shown.bs.tab', '#pills-uptime-presentase-tab', function() {
+            if ($(this).data('loaded') === 'false') {
+                loadUptimePercentage();
+                $(this).data('loaded', 'true');
+            }
+        });
+        let uptimeCharts = {};
+
+        // Fungsi utama untuk load data uptime presentase
+        function loadUptimePercentage() {
+            const $content = $('#uptime-content');
+            const $loading = $('#uptime-loading');
+
+            $loading.removeClass('d-none');
+            $content.addClass('d-none');
+
+            console.log("Memuat data untuk Presentase Uptime Inixcoffee...");
+
+            $.ajax({
+                url: "{{ route('activity.log.chart') }}",
+                method: "GET",
+                dataType: "json",
+                success: function(response) {
+                    console.log("Data mentah dari server (untuk presentase):", response);
+
+                    if (!response || typeof response !== 'object' || response.error) {
+                        console.error("Data tidak valid:", response);
+                        $('#uptime-loading').html(`
+                    <div class="text-center py-5">
+                        <i class="fas fa-exclamation-triangle text-danger fa-3x mb-3"></i>
+                        <h5>Gagal Memuat Data</h5>
+                        <p class="text-muted">Respons dari server tidak valid.</p>
+                    </div>
+                `);
+                        return;
+                    }
+
+                    const targetUrl = 'https://192.168.95.60:8001/';
+                    if (!response[targetUrl]) {
+                        console.warn("Data Inixcoffee tidak ditemukan. Key yang tersedia:", Object.keys(response));
+                        $('#uptime-loading').html(`
+                    <div class="text-center py-5">
+                        <i class="fas fa-exclamation-triangle text-warning fa-3x mb-3"></i>
+                        <h5>Data Tidak Ditemukan</h5>
+                        <p class="text-muted">Tidak ada data monitoring untuk Inixcoffee.<br>
+                        <small>Key tersedia: ${Object.keys(response).join(', ') || 'kosong'}</small></p>
+                    </div>
+                `);
+                        return;
+                    }
+
+                    const data = response[targetUrl];
+                    console.log("Data Inixcoffee berhasil diambil:", data);
+
+                    if (!Array.isArray(data.labels) || !Array.isArray(data.statuses) || data.labels.length === 0) {
+                        $('#uptime-loading').html(`
+                    <div class="text-center py-5">
+                        <i class="fas fa-database text-muted fa-3x mb-3"></i>
+                        <h5>Belum Ada Data</h5>
+                        <p class="text-muted">Monitoring belum mencatat data yang cukup.</p>
+                    </div>
+                `);
+                        return;
+                    }
+
+                    // Hitung dan render
+                    const weeklyData = calculateWeeklyUptime(data);
+                    const monthlyData = calculateMonthlyUptime(data);
+
+                    updateSummary('weekly', weeklyData);
+                    updateSummary('monthly', monthlyData);
+                    renderWeeklyChart(weeklyData);
+                    renderMonthlyChart(monthlyData);
+
+                    // Selesai → tampilkan konten
+                    $loading.addClass('d-none');
+                    $content.removeClass('d-none');
+
+                    console.log("Presentase Uptime Inixcoffee berhasil ditampilkan!");
+                },
+                error: function(xhr) {
+                    console.error("AJAX Error:", xhr.status, xhr.responseText);
+                    $('#uptime-loading').html(`
+                <div class="text-center py-5">
+                    <i class="fas fa-wifi-slash text-danger fa-3x mb-3"></i>
+                    <h5>Koneksi Gagal</h5>
+                    <p class="text-muted">Error ${xhr.status}: ${xhr.statusText}</p>
+                    <small class="text-danger">Coba refresh halaman atau hubungi admin.</small>
+                </div>
+            `);
+                }
+            });
+        }
+
+        // Hitung uptime 7 hari terakhir
+        function calculateWeeklyUptime(data) {
+            const recent = data.statuses.slice(-7); // Ambil 7 data terakhir
+            const upCount = recent.filter(s => s === true).length;
+            const percentage = (upCount / 7) * 100;
+            const downtimeMinutes = (7 - upCount) * 5; // Asumsi check setiap 5 menit
+
+            return {
+                labels: data.labels.slice(-7),
+                percentages: recent.map(s => s === true ? 100 : 0),
+                overall: percentage.toFixed(2),
+                downtime: downtimeMinutes
+            };
+        }
+
+        // Hitung uptime bulanan (aggregasi per bulan)
+        function calculateMonthlyUptime(data) {
+            const monthly = {};
+            data.labels.forEach((label, i) => {
+                const date = new Date(label);
+                const key = date.toLocaleString('id-ID', {
+                    month: 'short',
+                    year: 'numeric'
+                });
+                if (!monthly[key]) monthly[key] = {
+                    up: 0,
+                    total: 0
+                };
+                monthly[key].total++;
+                if (data.statuses[i] === true) monthly[key].up++;
+            });
+
+            const sortedKeys = Object.keys(monthly).sort((a, b) => {
+                return new Date('1 ' + a) - new Date('1 ' + b);
+            }).slice(-12); // 12 bulan terakhir
+
+            const labels = [];
+            const percentages = [];
+            let totalUp = 0,
+                totalChecks = 0;
+
+            sortedKeys.forEach(key => {
+                const perc = (monthly[key].up / monthly[key].total) * 100;
+                labels.push(key);
+                percentages.push(perc.toFixed(1));
+                totalUp += monthly[key].up;
+                totalChecks += monthly[key].total;
+            });
+
+            const currentMonthPerc = percentages[percentages.length - 1] || 0;
+
+            return {
+                labels,
+                percentages,
+                overall: currentMonthPerc,
+                downtime: Math.round((totalChecks - totalUp) * 5) // menit
+            };
+        }
+
+        function updateSummary(type, data) {
+            $(`#${type}-uptime`).text(data.overall + '%');
+            $(`#${type}-progress`).css('width', data.overall + '%');
+
+            if (data.overall >= 99.9) {
+                $(`#${type}-uptime`).removeClass('text-warning text-danger').addClass('text-success');
+                $(`#${type}-progress`).removeClass('bg-warning bg-danger').addClass('bg-success');
+            } else if (data.overall >= 99) {
+                $(`#${type}-uptime`).removeClass('text-success text-danger').addClass('text-warning');
+                $(`#${type}-progress`).removeClass('bg-success bg-danger').addClass('bg-warning');
+            } else {
+                $(`#${type}-uptime`).removeClass('text-success text-warning').addClass('text-danger');
+                $(`#${type}-progress`).removeClass('bg-success bg-warning').addClass('bg-danger');
+            }
+
+            $(`#${type}-downtime`).text(`Downtime: ${data.downtime} menit`);
+        }
+
+        function renderWeeklyChart(data) {
+            const ctx = document.getElementById('weeklyChart');
+            if (uptimeCharts.weekly) uptimeCharts.weekly.destroy();
+
+            uptimeCharts.weekly = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Uptime (%)',
+                        data: data.percentages,
+                        backgroundColor: data.percentages.map(p => p === 100 ? 'rgba(40,167,69,0.8)' : 'rgba(220,53,69,0.8)'),
+                        borderColor: data.percentages.map(p => p === 100 ? 'rgba(40,167,69,1)' : 'rgba(220,53,69,1)'),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => `Uptime: ${ctx.parsed.y}%`
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: v => v + '%'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderMonthlyChart(data) {
+            const ctx = document.getElementById('monthlyChart');
+            if (uptimeCharts.monthly) uptimeCharts.monthly.destroy();
+
+            uptimeCharts.monthly = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Uptime Bulanan (%)',
+                        data: data.percentages,
+                        borderColor: 'rgba(0,123,255,1)',
+                        backgroundColor: 'rgba(0,123,255,0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: data.percentages.map(p => p >= 99.9 ? '#28a745' : p >= 99 ? '#ffc107' : '#dc3545')
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: v => v + '%'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Trigger saat tab diklik
+        $(document).on('shown.bs.tab', '#pills-uptime-presentase-tab', function() {
+            if ($(this).data('loaded') === 'false') {
+                loadUptimePercentage();
+                $(this).data('loaded', 'true');
+            }
+        });
     </script>
 </body>
 

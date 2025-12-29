@@ -606,6 +606,18 @@
                                 SLA Digital
                         </button>
                     </li>
+                    <li class="nav-item mx-1" role="presentation">
+                        <button class="nav-link sla-tab-trigger" id="pills-uptime-presentase-tab"
+                                data-bs-toggle="pill"
+                                data-bs-target="#pills-uptime-presentase"
+                                type="button"
+                                role="tab"
+                                aria-controls="pills-uptime-presentase"
+                                aria-selected="false"
+                                data-loaded="false">
+                                Presentase Uptime
+                        </button>
+                    </li>
                 </ul>
 
                 <div class="tab-content" id="pills-tabContent">
@@ -1052,6 +1064,8 @@
 
                         </div>
                     </div>
+
+
                     <div class="tab-pane fade" style="height:auto;" id="pills-sla-digital" role="tabpanel" aria-labelledby="pills-sla-digital-tab" tabindex="0">
                         <div class="container-fluid" id="sla-digital-container">
 
@@ -1143,6 +1157,80 @@
                                 </div>
                             </div>
 
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane fade" id="pills-uptime-presentase" role="tabpanel" aria-labelledby="pills-uptime-presentase-tab" tabindex="0">
+                        <div class="container-fluid" id="sla-digital-container">
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h4 class="mb-4 text-primary fw-semibold">
+                                        <i class="fas fa-chart-line me-2"></i>Presentase Uptime Inixcoffee
+                                    </h4>
+                                </div>
+                            </div>
+
+                            <div id="uptime-loading" class="text-center py-5">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-3 text-muted">Memuat data uptime...</p>
+                            </div>
+
+                            <div id="uptime-content" class="d-none">
+
+                                <div class="row mb-4">
+                                    <div class="col-md-6 mb-3">
+                                        <div class="card border-0 shadow-sm h-100">
+                                            <div class="card-body">
+                                                <h6 class="card-title text-muted">Uptime Minggu Ini (7 Hari)</h6>
+                                                <h2 class="mb-0 text-success" id="weekly-uptime">0%</h2>
+                                                <div class="progress mt-3" style="height: 8px;">
+                                                    <div class="progress-bar bg-success" role="progressbar" id="weekly-progress" style="width: 0%"></div>
+                                                </div>
+                                                <small class="text-muted mt-2 d-block" id="weekly-downtime">Downtime: 0 menit</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <div class="card border-0 shadow-sm h-100">
+                                            <div class="card-body">
+                                                <h6 class="card-title text-muted">Uptime Bulan Ini</h6>
+                                                <h2 class="mb-0 text-success" id="monthly-uptime">0%</h2>
+                                                <div class="progress mt-3" style="height: 8px;">
+                                                    <div class="progress-bar bg-success" role="progressbar" id="monthly-progress" style="width: 0%"></div>
+                                                </div>
+                                                <small class="text-muted mt-2 d-block" id="monthly-downtime">Downtime: 0 menit</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-lg-6 mb-4">
+                                        <div class="card border-0 shadow-sm">
+                                            <div class="card-header bg-transparent border-0">
+                                                <h6 class="mb-0">Uptime Harian (7 Hari Terakhir)</h6>
+                                            </div>
+                                            <div class="card-body p-3">
+                                                <canvas id="weeklyChart" height="200"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-lg-6 mb-4">
+                                        <div class="card border-0 shadow-sm">
+                                            <div class="card-header bg-transparent border-0">
+                                                <h6 class="mb-0">Uptime Bulanan (12 Bulan Terakhir)</h6>
+                                            </div>
+                                            <div class="card-body p-3">
+                                                <canvas id="monthlyChart" height="200"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
