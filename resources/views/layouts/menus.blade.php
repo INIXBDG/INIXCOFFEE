@@ -1189,8 +1189,8 @@
                                                 </div>
                                             </div>
                                             <a href=>
-    Forum Diskusi
-</a>
+                                                Forum Diskusi
+                                            </a>
 
                                             @endcan
                                             {{-- @can('View DataKaryawan') --}}
@@ -1607,8 +1607,8 @@
                                                         </div>
                                                         <div class="col-md-10" style="margin-left: 10px">
                                                             {{-- <a href="{{ route('surveykepuasan.create') }}"
-                                                                class="link stretched-link text-decoration-none">
-                                                                <h5 class="card-title">Survey Kepuasan</h5>
+                                                            class="link stretched-link text-decoration-none">
+                                                            <h5 class="card-title">Survey Kepuasan</h5>
                                                             </a> --}}
                                                             <p class="card-text">Survey kepuasan pelayanan ITSM.</p>
                                                         </div>
@@ -2098,11 +2098,11 @@
                                                             </a>
                                                             <p class="card-text">Activity Report
                                                                 Instruktur.
-                                                            <a href="{{ route('rekomendasiLanjutan.index') }}"
-                                                                class="link stretched-link text-decoration-none">
-                                                                <h5 class="card-title">Rekomendasi Training Lanjutan
-                                                                </h5>
-                                                            </a>
+                                                                <a href="{{ route('rekomendasiLanjutan.index') }}"
+                                                                    class="link stretched-link text-decoration-none">
+                                                                    <h5 class="card-title">Rekomendasi Training Lanjutan
+                                                                    </h5>
+                                                                </a>
                                                             <p class="card-text">rekomendasi untuk peserta.
                                                             </p>
                                                         </div>
@@ -2547,7 +2547,6 @@
 
         $(document).ready(function() {
             handleNotificationDismissal();
-            // initializeYearlySales();
 
             $('#tahun').change(function() {
                 initializeYearlySales();
@@ -2557,12 +2556,10 @@
             let activeSubTabId = '#sales-tab-pane';
             let activeNestedTabId = '#pills-perquartal';
 
-            // Handle Home button click with fade effect
             $('#pills-home-tab').click(function() {
                 $('#loadingModal').modal('show');
                 $('.tab-pane.show').fadeOut(100, function() {
                     $(this).removeClass('show active');
-                    // After fadeOut, show the home tab with fadeIn
                     $('#pills-home').fadeIn(100).addClass('show active');
                 });
                 setTimeout(() => {
@@ -2570,35 +2567,200 @@
                 }, 1000);
             });
 
-            // Pasang handler click yang memanggil fungsi
             $('#pills-dashboard-tab').on('click', function() {
                 loadDashboard().catch(function(err) {
-                    // optional: tangani error global di sini
                     console.error(err);
                 });
             });
+
             $('#pills-admin-tab').click(function() {
                 $('#loadingModal').modal('show');
-                // initializeYearlySales();
                 $('.tab-pane.show').fadeOut(100, function() {
                     $(this).removeClass('show active');
 
-                    // After fadeOut, show the dashboard tab with fadeIn
                     $('#pills-admin').fadeIn(100).addClass('show active');
                     setTimeout(() => {
                         $('#loadingModal').modal('hide');
                     }, 1000);
                 });
             });
-            // console.log(progress, carprogress);
 
-            // Saat tab berubah
             $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
                 const target = $(e.target).attr('data-bs-target');
                 if (target === '#nav-inixcoffee') {
                     ajaxUptime(target, 'https://192.168.95.60:8001/');
                 } else if (target === '#nav-inixlatte') {
                     ajaxUptime(target, 'http://192.168.95.60:8002/');
+                }
+            });
+
+            let uptimeCharts = {};
+
+            const services = {
+                coffee: 'https://192.168.95.60:8001/',
+                latte: 'https://192.168.95.61:8002/'
+            };
+
+
+            loadUptimePercentage();
+
+            function loadUptimePercentage() {
+                const $content = $('#uptime-content');
+                const $loading = $('#uptime-loading');
+
+                $loading.removeClass('d-none');
+                $content.addClass('d-none');
+
+                $.ajax({
+                    url: "/activity-log/data",
+                    method: "GET",
+                    dataType: "json",
+                    success: function(response) {
+                        if (!response || typeof response !== 'object') {
+                            showError("Respons dari server tidak valid.");
+                            return;
+                        }
+
+                        processService('coffee', response[services.coffee] || null);
+
+                        processService('latte', response[services.latte] || null);
+
+                        $loading.addClass('d-none');
+                        $content.removeClass('d-none');
+                    },
+                    error: function(xhr) {
+                        showError(`Koneksi gagal: Error ${xhr.status}`);
+                    }
+                });
+            }
+
+            function processService(type, data) {
+                // Prefix ID untuk elemen (coffee atau latte)
+                const prefix = type;
+
+                if (!data || !Array.isArray(data.labels) || !Array.isArray(data.statuses) || data.labels.length === 0) {
+                    // Data kosong → tetap tampilkan 0% dengan progress bar
+                    updateSummary(prefix, 'weekly', {
+                        overall: 0,
+                        downtime: 0
+                    });
+                    updateSummary(prefix, 'monthly', {
+                        overall: 0,
+                        downtime: 0
+                    });
+                    return;
+                }
+
+                const weeklyData = calculateWeeklyUptime(data);
+                const monthlyData = calculateMonthlyUptime(data);
+
+                updateSummary(prefix, 'weekly', weeklyData);
+                updateSummary(prefix, 'monthly', monthlyData);
+            }
+
+            function calculateWeeklyUptime(data) {
+                const recent = data.statuses.slice(-7);
+                const upCount = recent.filter(s => s === true).length;
+                const percentage = recent.length > 0 ? (upCount / recent.length) * 100 : 0;
+                const downtimeMinutes = (recent.length - upCount) * 5;
+
+                return {
+                    overall: percentage.toFixed(2),
+                    downtime: downtimeMinutes
+                };
+            }
+
+            function calculateMonthlyUptime(data) {
+                const monthly = {};
+                data.labels.forEach((label, i) => {
+                    const date = new Date(label);
+                    const key = date.toLocaleString('id-ID', {
+                        month: 'short',
+                        year: 'numeric'
+                    });
+                    if (!monthly[key]) monthly[key] = {
+                        up: 0,
+                        total: 0
+                    };
+                    monthly[key].total++;
+                    if (data.statuses[i] === true) monthly[key].up++;
+                });
+
+                // Ambil bulan terakhir yang ada data
+                const sortedKeys = Object.keys(monthly).sort((a, b) => new Date('1 ' + a) - new Date('1 ' + b));
+                const lastMonth = sortedKeys[sortedKeys.length - 1];
+
+                if (!lastMonth) {
+                    return {
+                        overall: 0,
+                        downtime: 0
+                    };
+                }
+
+                const perc = (monthly[lastMonth].up / monthly[lastMonth].total) * 100;
+                const totalUpAll = Object.values(monthly).reduce((sum, m) => sum + m.up, 0);
+                const totalAll = Object.values(monthly).reduce((sum, m) => sum + m.total, 0);
+                const downtimeAll = (totalAll - totalUpAll) * 5;
+
+                return {
+                    overall: perc.toFixed(2),
+                    downtime: Math.round((monthly[lastMonth].total - monthly[lastMonth].up) * 5)
+                };
+            }
+
+            function updateSummary(prefix, period, data) {
+                const uptimePerc = parseFloat(data.overall);
+                const downtimePerc = (100 - uptimePerc).toFixed(2);
+                const hasData = uptimePerc > 0 || data.downtime > 0;
+
+                $(`#${prefix}-${period}-uptime`).text(uptimePerc.toFixed(2) + '%');
+                $(`#${prefix}-${period}-downtime-mins`).text(data.downtime);
+
+                const uptimeBar = $(`#${prefix}-${period}-uptime-bar`);
+                const downtimeBar = $(`#${prefix}-${period}-downtime-bar`);
+
+                uptimeBar.removeClass('bg-success bg-warning bg-danger');
+                downtimeBar.removeClass('bg-danger');
+
+                if (!hasData) {
+                    uptimeBar.css('width', '0%');
+                    downtimeBar.css('width', '0%');
+                    return;
+                }
+
+                uptimeBar.css('width', uptimePerc + '%');
+                downtimeBar.css('width', downtimePerc + '%');
+
+                if (uptimePerc >= 99.9) {
+                    uptimeBar.addClass('bg-success');
+                } else if (uptimePerc >= 99) {
+                    uptimeBar.addClass('bg-warning');
+                } else {
+                    uptimeBar.addClass('bg-danger');
+                }
+
+                if (downtimePerc > 0) {
+                    downtimeBar.addClass('bg-danger');
+                } else {
+                    downtimeBar.css('width', '0%'); 
+                }
+            }
+
+            function showError(message) {
+                $('#uptime-loading').html(`
+            <div class="text-center py-5">
+                <i class="fas fa-exclamation-triangle text-danger fa-3x mb-3"></i>
+                <h5>Gagal Memuat Data</h5>
+                <p class="text-muted">${message}</p>
+            </div>
+        `);
+            }
+
+            // Event: hanya jalankan sekali saat tab pertama kali ditampilkan
+            $(document).on('shown.bs.tab', '#pills-uptime-presentase-tab', function() {
+                if ($(this).data('loaded') !== true) {
+                    loadUptimePercentage();
+                    $(this).data('loaded', true);
                 }
             });
         });
@@ -2609,7 +2771,7 @@
                 method: "GET",
                 dataType: "json",
                 success: function(response) {
-                    console.log("Data mentah dari server:", response); // Tambahkan ini
+                    console.log("Data mentah dari server:", response); // Tambahkan ini 
                     if (!response || typeof response !== 'object' || response.error) {
                         console.error("Data tidak valid:", response);
                         return;
@@ -3111,6 +3273,15 @@
             }
         }
         $('#modalPemberitahuan').on('click', '.btn-danger', handleNotificationDismissal);
+
+
+        $(document).on('shown.bs.tab', '#pills-uptime-presentase-tab', function() {
+            if ($(this).data('loaded') === 'false') {
+                loadUptimePercentage();
+                $(this).data('loaded', 'true');
+            }
+        });
+        let uptimeCharts = {};
     </script>
 </body>
 
