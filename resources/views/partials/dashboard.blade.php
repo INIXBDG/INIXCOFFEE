@@ -1,4 +1,3 @@
-
 <div class="card" style="margin-bottom: 8px">
     <div class="card-body d-flex justify-content-start">
         <div class="col-md-12 mx-1">
@@ -8,24 +7,24 @@
                 @php
                 $tahun_sekarang = now()->year;
                 for ($tahun = 2020; $tahun <= $tahun_sekarang + 2; $tahun++) {
-                    $selected = $tahun == $tahun_sekarang ? 'selected' : '';
-                    echo "<option value=\"$tahun\" $selected>$tahun</option>";
-                }
-                @endphp
+                    $selected=$tahun==$tahun_sekarang ? 'selected' : '' ;
+                    echo "<option value=\" $tahun\" $selected>$tahun</option>";
+                    }
+                    @endphp
             </select>
         </div>
     </div>
 </div>
 <div class="card" style="margin-bottom: 8px">
     <div class="card-body">
-       <div class="row">
-        <div class="col-6 d-flex justify-content-start">
-            <p style="margin: 0">Total Saat ini adalah: <span id="totalSalesDisplay">Rp 0</span></p>
-        </div>
-        <div class="col-6 d-flex justify-content-end">
+        <div class="row">
+            <div class="col-6 d-flex justify-content-start">
+                <p style="margin: 0">Total Saat ini adalah: <span id="totalSalesDisplay">Rp 0</span></p>
+            </div>
+            <div class="col-6 d-flex justify-content-end">
 
+            </div>
         </div>
-       </div>
         <div id="progress-container" style="position: relative;">
             <div id="progress-bar" class="progress-bar"></div>
             <div id="car" class="car"></div>
@@ -42,40 +41,40 @@
 <div class="card" style="margin-bottom: 8px">
     <div class="card-body" style="overflow-x:auto">
         @php
-            $divisi = auth()->user()->karyawan->divisi;
-            $manager = auth()->user()->jabatan;
+        $divisi = auth()->user()->karyawan->divisi;
+        $manager = auth()->user()->jabatan;
 
-            if (in_array($manager, ['Education Manager', 'GM', 'SPV Sales', 'Office Manager', 'Koordinator Office'])) {
-                $salesDisabled = true;
-                $officeDisabled = true;
-                $instrukturDisabled = true;
-                $itsmDisable = true;
-            } elseif ($divisi == 'Office') {
-                $salesDisabled = false;
-                $officeDisabled = true;
-                $instrukturDisabled = false;
-                $itsmDisable = false;
-            } elseif ($divisi == 'Education') {
-                $salesDisabled = false;
-                $officeDisabled = false;
-                $instrukturDisabled = true;
-                $itsmDisable = false;
-            } elseif ($divisi == 'Sales & Marketing') {
-                $salesDisabled = true;
-                $officeDisabled = false;
-                $instrukturDisabled = false;
-                $itsmDisable = false;
-            } elseif ($divisi == 'IT Service Management') {
-                $officeDisabled = false;
-                $instrukturDisabled = false;
-                $itsmDisable = true;
-                $salesDisabled = false;
-            } else {
-                $salesDisabled = true;
-                $officeDisabled = true;
-                $instrukturDisabled = true;
-                $itsmDisable = true;
-            }
+        if (in_array($manager, ['Education Manager', 'GM', 'SPV Sales', 'Office Manager', 'Koordinator Office'])) {
+        $salesDisabled = true;
+        $officeDisabled = true;
+        $instrukturDisabled = true;
+        $itsmDisable = true;
+        } elseif ($divisi == 'Office') {
+        $salesDisabled = false;
+        $officeDisabled = true;
+        $instrukturDisabled = false;
+        $itsmDisable = false;
+        } elseif ($divisi == 'Education') {
+        $salesDisabled = false;
+        $officeDisabled = false;
+        $instrukturDisabled = true;
+        $itsmDisable = false;
+        } elseif ($divisi == 'Sales & Marketing') {
+        $salesDisabled = true;
+        $officeDisabled = false;
+        $instrukturDisabled = false;
+        $itsmDisable = false;
+        } elseif ($divisi == 'IT Service Management') {
+        $officeDisabled = false;
+        $instrukturDisabled = false;
+        $itsmDisable = true;
+        $salesDisabled = false;
+        } else {
+        $salesDisabled = true;
+        $officeDisabled = true;
+        $instrukturDisabled = true;
+        $itsmDisable = true;
+        }
         @endphp
         <ul class="nav nav-tabs" id="chart" role="tablist">
             <li class="nav-item" role="presentation">
@@ -95,7 +94,7 @@
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="itsm-tab" data-bs-toggle="tab" data-bs-target="#itsm-tab-pane" type="button" role="tab" aria-controls="itsm-tab-pane" aria-selected="false"
-                {{ $itsmDisable ? '' : 'disabled' }}>ITSM</button>
+                    {{ $itsmDisable ? '' : 'disabled' }}>ITSM</button>
             </li>
         </ul>
         <div class="tab-content" id="chartContent" style="">
@@ -562,60 +561,60 @@
                     </li>
                     <li class="nav-item mx-1" role="presentation">
                         <button class="nav-link sla-tab-trigger" id="pills-sla-programmer-tab"
-                                data-bs-toggle="pill"
-                                data-bs-target="#pills-sla-programmer"
-                                type="button"
-                                role="tab"
-                                aria-controls="pills-sla-programmer"
-                                aria-selected="false"
-                                data-team="programmer" data-loaded="false">SLA Programmer
+                            data-bs-toggle="pill"
+                            data-bs-target="#pills-sla-programmer"
+                            type="button"
+                            role="tab"
+                            aria-controls="pills-sla-programmer"
+                            aria-selected="false"
+                            data-team="programmer" data-loaded="false">SLA Programmer
                         </button>
                     </li>
                     <li class="nav-item mx-1" role="presentation">
                         <button class="nav-link sla-tab-trigger" id="pills-sla-tech-support-tab"
-                                data-bs-toggle="pill"
-                                data-bs-target="#pills-sla-tech-support"
-                                type="button"
-                                role="tab"
-                                aria-controls="pills-sla-tech-support"
-                                aria-selected="false"
-                                data-team="tech-support" data-loaded="false">SLA Technical Support
+                            data-bs-toggle="pill"
+                            data-bs-target="#pills-sla-tech-support"
+                            type="button"
+                            role="tab"
+                            aria-controls="pills-sla-tech-support"
+                            aria-selected="false"
+                            data-team="tech-support" data-loaded="false">SLA Technical Support
                         </button>
                     </li>
                     <li class="nav-item mx-1" role="presentation">
                         <button class="nav-link sla-tab-trigger" id="pills-sla-event-tab"
-                                data-bs-toggle="pill"
-                                data-bs-target="#pills-sla-event"
-                                type="button"
-                                role="tab"
-                                aria-controls="pills-sla-event"
-                                aria-selected="false"
-                                data-loaded="false">
-                                SLA Webinar
+                            data-bs-toggle="pill"
+                            data-bs-target="#pills-sla-event"
+                            type="button"
+                            role="tab"
+                            aria-controls="pills-sla-event"
+                            aria-selected="false"
+                            data-loaded="false">
+                            SLA Webinar
                         </button>
                     </li>
                     <li class="nav-item mx-1" role="presentation">
                         <button class="nav-link sla-tab-trigger" id="pills-sla-digital-tab"
-                                data-bs-toggle="pill"
-                                data-bs-target="#pills-sla-digital"
-                                type="button"
-                                role="tab"
-                                aria-controls="pills-sla-digital"
-                                aria-selected="false"
-                                data-loaded="false">
-                                SLA Digital
+                            data-bs-toggle="pill"
+                            data-bs-target="#pills-sla-digital"
+                            type="button"
+                            role="tab"
+                            aria-controls="pills-sla-digital"
+                            aria-selected="false"
+                            data-loaded="false">
+                            SLA Digital
                         </button>
                     </li>
                     <li class="nav-item mx-1" role="presentation">
                         <button class="nav-link sla-tab-trigger" id="pills-uptime-presentase-tab"
-                                data-bs-toggle="pill"
-                                data-bs-target="#pills-uptime-presentase"
-                                type="button"
-                                role="tab"
-                                aria-controls="pills-uptime-presentase"
-                                aria-selected="false"
-                                data-loaded="false">
-                                Presentase Uptime
+                            data-bs-toggle="pill"
+                            data-bs-target="#pills-uptime-presentase"
+                            type="button"
+                            role="tab"
+                            aria-controls="pills-uptime-presentase"
+                            aria-selected="false"
+                            data-loaded="false">
+                            Presentase Uptime
                         </button>
                     </li>
                 </ul>
@@ -759,7 +758,9 @@
                                                         </tr>
                                                     </thead>
                                                     <tbody id="sla-user-table-body">
-                                                        <tr><td colspan="6" class="text-center">Memuat data...</td></tr>
+                                                        <tr>
+                                                            <td colspan="6" class="text-center">Memuat data...</td>
+                                                        </tr>
                                                     </tbody>
                                                 </table>
                                             </div>
@@ -815,7 +816,9 @@
                                                         </tr>
                                                     </thead>
                                                     <tbody id="sla-kritis-table-body">
-                                                        <tr><td colspan="6" class="text-center">Memuat data...</td></tr>
+                                                        <tr>
+                                                            <td colspan="6" class="text-center">Memuat data...</td>
+                                                        </tr>
                                                     </tbody>
                                                 </table>
                                             </div>
@@ -901,7 +904,9 @@
                                                         </tr>
                                                     </thead>
                                                     <tbody id="ts-sla-user-table-body">
-                                                        <tr><td colspan="6" class="text-center">Memuat data...</td></tr>
+                                                        <tr>
+                                                            <td colspan="6" class="text-center">Memuat data...</td>
+                                                        </tr>
                                                     </tbody>
                                                 </table>
                                             </div>
@@ -956,7 +961,9 @@
                                                         </tr>
                                                     </thead>
                                                     <tbody id="ts-sla-kritis-table-body">
-                                                        <tr><td colspan="6" class="text-center">Memuat data...</td></tr>
+                                                        <tr>
+                                                            <td colspan="6" class="text-center">Memuat data...</td>
+                                                        </tr>
                                                     </tbody>
                                                 </table>
                                             </div>
@@ -975,9 +982,9 @@
                                     <select id="eventSlaFilter" class="form-select">
                                         <option value="" selected disabled>-- Pilih Event --</option>
                                         @foreach(\App\Models\YearMapping::where('year', date('Y'))->orderBy('month')->get() as $map)
-                                            <option value="{{ $map->id }}">
-                                                Bulan {{ \Carbon\Carbon::createFromDate(null, $map->month)->translatedFormat('F') }} - {{ $map->theme ?? 'Tema Belum Set' }}
-                                            </option>
+                                        <option value="{{ $map->id }}">
+                                            Bulan {{ \Carbon\Carbon::createFromDate(null, $map->month)->translatedFormat('F') }} - {{ $map->theme ?? 'Tema Belum Set' }}
+                                        </option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -1056,7 +1063,7 @@
                                                 </tr>
                                             </thead>
                                             <tbody id="event-sla-table-body">
-                                                </tbody>
+                                            </tbody>
                                         </table>
                                     </div>
                                 </div>
@@ -1148,7 +1155,9 @@
                                                         </tr>
                                                     </thead>
                                                     <tbody id="digital-weekly-table-body">
-                                                        <tr><td colspan="4" class="text-center py-3">Memuat data...</td></tr>
+                                                        <tr>
+                                                            <td colspan="4" class="text-center py-3">Memuat data...</td>
+                                                        </tr>
                                                     </tbody>
                                                 </table>
                                             </div>
@@ -1159,13 +1168,14 @@
 
                         </div>
                     </div>
-                    
-                    <div class="tab-pane fade" id="pills-uptime-presentase" role="tabpanel" aria-labelledby="pills-uptime-presentase-tab" tabindex="0">
+
+                    <div class="tab-pane fade" id="pills-uptime-presentase" role="tabpanel"
+                        aria-labelledby="pills-uptime-presentase-tab" tabindex="0">
                         <div class="container-fluid" id="sla-digital-container">
                             <div class="row mb-4">
                                 <div class="col-12">
                                     <h4 class="mb-4 text-primary fw-semibold">
-                                        <i class="fas fa-chart-line me-2"></i>Presentase Uptime Inixcoffee
+                                        <i class="fas fa-chart-line me-2"></i>Presentase Uptime
                                     </h4>
                                 </div>
                             </div>
@@ -1179,57 +1189,102 @@
 
                             <div id="uptime-content" class="d-none">
 
+                                <h5 class="mb-4 text-primary fw-bold">Inixcoffee</h5>
+                                <div class="row mb-5">
+
+                                    <div class="col-md-6 mb-4">
+                                        <div class="card border-0 shadow-sm rounded-4 h-100">
+                                            <div class="card-body p-4">
+                                                <h6 class="card-title text-muted mb-3">Uptime Minggu Ini (7 Hari Terakhir)</h6>
+
+                                                <h2 class="mb-3 fw-bold" id="coffee-weekly-uptime">0.00%</h2>
+
+                                                <div class="progress mb-4" style="height: 12px;">
+                                                    <div class="progress-bar" role="progressbar" id="coffee-weekly-uptime-bar"
+                                                        style="width: 0%"></div>
+                                                </div>
+
+                                                <small class="text-muted d-block mb-2">Downtime: <span id="coffee-weekly-downtime-mins">0</span> menit</small>
+
+                                                <div class="progress" style="height:12px;">
+                                                    <div class="progress-bar bg-danger" role="progressbar" id="coffee-weekly-downtime-bar"
+                                                        style="width: 0%"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6 mb-4">
+                                        <div class="card border-0 shadow-sm rounded-4 h-100">
+                                            <div class="card-body p-4">
+                                                <h6 class="card-title text-muted mb-3">Uptime Bulan Ini</h6>
+
+                                                <h2 class="mb-3 fw-bold" id="coffee-monthly-uptime">0.00%</h2>
+
+                                                <div class="progress mb-4" style="height: 12px;">
+                                                    <div class="progress-bar" role="progressbar" id="coffee-monthly-uptime-bar"
+                                                        style="width: 0%"></div>
+                                                </div>
+
+                                                <small class="text-muted d-block mb-2">Downtime: <span id="coffee-monthly-downtime-mins">0</span> menit</small>
+
+                                                <div class="progress" style="height: 12px;">
+                                                    <div class="progress-bar bg-danger" role="progressbar" id="coffee-monthly-downtime-bar"
+                                                        style="width: 0%"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <h5 class="mb-4 text-primary fw-bold">Inixlatte</h5>
                                 <div class="row mb-4">
-                                    <div class="col-md-6 mb-3">
-                                        <div class="card border-0 shadow-sm h-100">
-                                            <div class="card-body">
-                                                <h6 class="card-title text-muted">Uptime Minggu Ini (7 Hari)</h6>
-                                                <h2 class="mb-0 text-success" id="weekly-uptime">0%</h2>
-                                                <div class="progress mt-3" style="height: 8px;">
-                                                    <div class="progress-bar bg-success" role="progressbar" id="weekly-progress" style="width: 0%"></div>
+
+                                    <div class="col-md-6 mb-4">
+                                        <div class="card border-0 shadow-sm rounded-4 h-100">
+                                            <div class="card-body p-4">
+                                                <h6 class="card-title text-muted mb-3">Uptime Minggu Ini (7 Hari Terakhir)</h6>
+
+                                                <h2 class="mb-3 fw-bold" id="latte-weekly-uptime">0.00%</h2>
+
+                                                <div class="progress mb-4" style="height: 12px;">
+                                                    <div class="progress-bar" role="progressbar" id="latte-weekly-uptime-bar"
+                                                        style="width: 0%"></div>
                                                 </div>
-                                                <small class="text-muted mt-2 d-block" id="weekly-downtime">Downtime: 0 menit</small>
+
+                                                <small class="text-muted d-block mb-2">Downtime: <span id="latte-weekly-downtime-mins">0</span> menit</small>
+
+                                                <div class="progress" style="height: 12px;">
+                                                    <div class="progress-bar bg-danger" role="progressbar" id="latte-weekly-downtime-bar"
+                                                        style="width: 0%"></div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div class="col-md-6 mb-3">
-                                        <div class="card border-0 shadow-sm h-100">
-                                            <div class="card-body">
-                                                <h6 class="card-title text-muted">Uptime Bulan Ini</h6>
-                                                <h2 class="mb-0 text-success" id="monthly-uptime">0%</h2>
-                                                <div class="progress mt-3" style="height: 8px;">
-                                                    <div class="progress-bar bg-success" role="progressbar" id="monthly-progress" style="width: 0%"></div>
+                                    <div class="col-md-6 mb-4">
+                                        <div class="card border-0 shadow-sm rounded-4 h-100">
+                                            <div class="card-body p-4">
+                                                <h6 class="card-title text-muted mb-3">Uptime Bulan Ini</h6>
+
+                                                <h2 class="mb-3 fw-bold" id="latte-monthly-uptime">0.00%</h2>
+
+                                                <div class="progress mb-4" style="height: 12px;">
+                                                    <div class="progress-bar" role="progressbar" id="latte-monthly-uptime-bar"
+                                                        style="width: 0%"></div>
                                                 </div>
-                                                <small class="text-muted mt-2 d-block" id="monthly-downtime">Downtime: 0 menit</small>
+
+                                                <small class="text-muted d-block mb-2">Downtime: <span id="latte-monthly-downtime-mins">0</span> menit</small>
+
+                                                <div class="progress" style="height: 12px;">
+                                                    <div class="progress-bar bg-danger" role="progressbar" id="latte-monthly-downtime-bar"
+                                                        style="width: 0%"></div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="row">
-                                    <div class="col-lg-6 mb-4">
-                                        <div class="card border-0 shadow-sm">
-                                            <div class="card-header bg-transparent border-0">
-                                                <h6 class="mb-0">Uptime Harian (7 Hari Terakhir)</h6>
-                                            </div>
-                                            <div class="card-body p-3">
-                                                <canvas id="weeklyChart" height="200"></canvas>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-lg-6 mb-4">
-                                        <div class="card border-0 shadow-sm">
-                                            <div class="card-header bg-transparent border-0">
-                                                <h6 class="mb-0">Uptime Bulanan (12 Bulan Terakhir)</h6>
-                                            </div>
-                                            <div class="card-body p-3">
-                                                <canvas id="monthlyChart" height="200"></canvas>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -1327,44 +1382,56 @@
 
         #containerCanvasPicChart {
             width: 100%;
-            max-width: 70vw; /* (Opsional, 100% lebih baik) */
+            max-width: 70vw;
+            /* (Opsional, 100% lebih baik) */
             height: auto;
-            margin: 0 auto; /* (Opsional, untuk center) */
+            margin: 0 auto;
+            /* (Opsional, untuk center) */
         }
 
         #containerCanvasjumlahTicketing {
             width: 100%;
-            max-width: 70vw; /* (Opsional, 100% lebih baik) */
+            max-width: 70vw;
+            /* (Opsional, 100% lebih baik) */
             height: auto;
-            margin: 0 auto; /* (Opsional, untuk center) */
+            margin: 0 auto;
+            /* (Opsional, untuk center) */
         }
 
         #containerCanvasRerataDurasi {
             width: 100%;
-            max-width: 70vw; /* (Opsional, 100% lebih baik) */
+            max-width: 70vw;
+            /* (Opsional, 100% lebih baik) */
             height: auto;
-            margin: 0 auto; /* (Opsional, untuk center) */
+            margin: 0 auto;
+            /* (Opsional, untuk center) */
         }
 
         #containerCanvasKetepatanRespond {
             width: 100%;
-            max-width: 70vw; /* (Opsional, 100% lebih baik) */
+            max-width: 70vw;
+            /* (Opsional, 100% lebih baik) */
             height: auto;
-            margin: 0 auto; /* (Opsional, untuk center) */
+            margin: 0 auto;
+            /* (Opsional, untuk center) */
         }
 
         #containerCanvasPermintaanPerbulan {
             width: 100%;
-            max-width: 70vw; /* (Opsional, 100% lebih baik) */
+            max-width: 70vw;
+            /* (Opsional, 100% lebih baik) */
             height: auto;
-            margin: 0 auto; /* (Opsional, untuk center) */
+            margin: 0 auto;
+            /* (Opsional, untuk center) */
         }
 
         #containerCanvasPermintaanSering {
             width: 100%;
-            max-width: 70vw; /* (Opsional, 100% lebih baik) */
+            max-width: 70vw;
+            /* (Opsional, 100% lebih baik) */
             height: auto;
-            margin: 0 auto; /* (Opsional, untuk center) */
+            margin: 0 auto;
+            /* (Opsional, untuk center) */
         }
     }
 
@@ -1625,102 +1692,114 @@
         align-items: center;
     }
 
-.first-position {
-    margin-top: 60px;
-}
-.second-position {
-    margin-top: 40px;
-}
-.third-position {
-    margin-top: 0px;
-}
+    .first-position {
+        margin-top: 60px;
+    }
+
+    .second-position {
+        margin-top: 40px;
+    }
+
+    .third-position {
+        margin-top: 0px;
+    }
 
     .medal-bawah {
         margin-top: 5px;
         width: 70px;
         height: auto;
     }
-/* ANIMASI MUNCUL */
-@keyframes slideFadeUp {
-  0% {
-    transform: translateY(40px);
-    opacity: 0;
-  }
-  100% {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
 
-/* ANIMASI MELAYANG */
-@keyframes floatCard {
-  0%   { transform: translateY(0); }
-  50%  { transform: translateY(-8px); }
-  100% { transform: translateY(0); }
-}
+    /* ANIMASI MUNCUL */
+    @keyframes slideFadeUp {
+        0% {
+            transform: translateY(40px);
+            opacity: 0;
+        }
 
+        100% {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
 
-/* PODIUM CARD */
-.podium-card {
-    /* background: linear-gradient(to bottom right, #f5f7fa, #b7cceeff); */
-  background-image: url('/images/pixel1.jpg');
-  background-size: cover;
-  background-repeat: repeat;
-  border-radius: 15px;
-  padding: 15px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.25);
-  backdrop-filter: blur(6px);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  /* Tambahkan ini: */
-  animation: slideFadeUp 1s ease-out forwards, floatCard 6s ease-in-out infinite;
-}
+    /* ANIMASI MELAYANG */
+    @keyframes floatCard {
+        0% {
+            transform: translateY(0);
+        }
+
+        50% {
+            transform: translateY(-8px);
+        }
+
+        100% {
+            transform: translateY(0);
+        }
+    }
 
 
+    /* PODIUM CARD */
+    .podium-card {
+        /* background: linear-gradient(to bottom right, #f5f7fa, #b7cceeff); */
+        background-image: url('/images/pixel1.jpg');
+        background-size: cover;
+        background-repeat: repeat;
+        border-radius: 15px;
+        padding: 15px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+        backdrop-filter: blur(6px);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        /* Tambahkan ini: */
+        animation: slideFadeUp 1s ease-out forwards, floatCard 6s ease-in-out infinite;
+    }
 
- /* GLOW HOVER EFFECT */
-.podium-card:hover {
-  box-shadow: 0 0 25px rgba(255, 255, 255, 0.3);
-  transform: scale(1.03);
-}
-
-/* OPTIONAL: BACKGROUND BINTANG */
-.podium-section {
-  background: radial-gradient(ellipse at center, #0d1a2d 0%, #0b0f20 100%);
-  position: relative;
-  overflow: hidden;
-}
 
 
-/* Peringkat label warna */
-.rank-1 .position-label {
-    color: #FFD93D;
-    /* Menambahkan outline hitam setebal 1px */
-    text-shadow:
-        -1px -1px 0 #000,
-         1px -1px 0 #000,
-        -1px  1px 0 #000,
-         1px  1px 0 #000;
-}
+    /* GLOW HOVER EFFECT */
+    .podium-card:hover {
+        box-shadow: 0 0 25px rgba(255, 255, 255, 0.3);
+        transform: scale(1.03);
+    }
 
-.rank-2 .position-label {
-    color: #c0aaff;
-    /* Menambahkan outline putih setebal 1px agar kontras dengan teks gelap */
-    text-shadow:
-        -1px -1px 0 #000,
-         1px -1px 0 #000,
-        -1px  1px 0 #000,
-         1px  1px 0 #000;
-}
+    /* OPTIONAL: BACKGROUND BINTANG */
+    .podium-section {
+        background: radial-gradient(ellipse at center, #0d1a2d 0%, #0b0f20 100%);
+        position: relative;
+        overflow: hidden;
+    }
 
-.rank-3 .position-label {
-    color: #ff914d;
-    /* Menambahkan outline hitam setebal 1px */
-    text-shadow:
-        -1px -1px 0 #000,
-         1px -1px 0 #000,
-        -1px  1px 0 #000,
-         1px  1px 0 #000;
-}
+
+    /* Peringkat label warna */
+    .rank-1 .position-label {
+        color: #FFD93D;
+        /* Menambahkan outline hitam setebal 1px */
+        text-shadow:
+            -1px -1px 0 #000,
+            1px -1px 0 #000,
+            -1px 1px 0 #000,
+            1px 1px 0 #000;
+    }
+
+    .rank-2 .position-label {
+        color: #c0aaff;
+        /* Menambahkan outline putih setebal 1px agar kontras dengan teks gelap */
+        text-shadow:
+            -1px -1px 0 #000,
+            1px -1px 0 #000,
+            -1px 1px 0 #000,
+            1px 1px 0 #000;
+    }
+
+    .rank-3 .position-label {
+        color: #ff914d;
+        /* Menambahkan outline hitam setebal 1px */
+        text-shadow:
+            -1px -1px 0 #000,
+            1px -1px 0 #000,
+            -1px 1px 0 #000,
+            1px 1px 0 #000;
+    }
 
 
 
@@ -1742,6 +1821,7 @@
         letter-spacing: 1px;
         text-shadow: 0 0 8px rgba(255, 255, 255, 0.1);
     }
+
     .position-header {
         font-size: 1.4rem;
         font-weight: bold;
@@ -1896,11 +1976,11 @@
         height: 325px;
         background: #fff;
         border-radius: 15px;
-        padding:0 4px 12px rgba(0,0,0,0.08);
+        padding: 0 4px 12px rgba(0, 0, 0, 0.08);
         transition: transform 0.3 ease;
         box-shadow: 0 2px 10px rgba(0, 0, 0, .2);
         text-align: center;
-          /* animation: floatCard 6s ease-in-out infinite; */
+        /* animation: floatCard 6s ease-in-out infinite; */
     }
 
     .card_foto:before,
@@ -2126,18 +2206,18 @@
             font-size: 0.7rem;
         }
     }
-
 </style>
 <style>
-@media (max-width: 576px) {
-    .feedback-card .dekorasi {
-        transform: none !important;
-        position: static !important;
-        max-width: 100% !important;
-        height: auto !important;
+    @media (max-width: 576px) {
+        .feedback-card .dekorasi {
+            transform: none !important;
+            position: static !important;
+            max-width: 100% !important;
+            height: auto !important;
+        }
+
+        .feedback-card {
+            overflow: hidden !important;
+        }
     }
-    .feedback-card {
-        overflow: hidden !important;
-    }
-}
 </style>
