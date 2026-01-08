@@ -452,6 +452,7 @@ Route::get('kalkulator/analisis/{id}/kelas', [KelasAnalisisController::class, 'k
 Route::get('/rkm/upload/page', [ControllersRKMController::class, 'uploadPage'])->name('uploadPage');
 Route::get('/rkm/data/page', [ControllersRKMController::class, 'dataPage'])->name('dataPage');
 Route::get('/rkm/uploadAbsensi/{id}', [ControllersRKMController::class, 'uploadAbsensi'])->name('uploadAbsensi');
+Route::post('/generate/pdf/peserta/{id}', [OutstandingController::class, 'generatePdfPeserta'])->name('generatePdfPeserta');
 Route::post('/rkm/store/absensi', [ControllersRKMController::class, 'storeAbsensi'])->name('storeAbsensi');
 Route::post('/rkm/delete/absensi', [ControllersRKMController::class, 'deleteAbsensi'])->name('deleteAbsensi');
 Route::get('/rkm/uploadSertifikat/{id}', [ControllersRKMController::class, 'uploadSertifikat'])->name('uploadSertifikat');
