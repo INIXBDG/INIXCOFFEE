@@ -808,3 +808,8 @@ Route::post('/api/timeline-item', [TimelineItemController::class, 'store']);
 
 // API Event Update
 Route::post('/api/event/{id}/update', [CalendarController::class, 'updateEvent']);
+
+Route::get('/activityinstruktur-data', [ActivityInstrukturController::class, 'getActivitiesData'])->name('api.activities');
+Route::post('/activityinstruktur-store', [ActivityInstrukturController::class, 'store'])->name('api.activities.store');
+Route::post('/activityinstruktur-update', [ActivityInstrukturController::class, 'update'])->name('api.activities.proof_update');
+Route::get('/activityinstruktur', [ActivityInstrukturController::class, 'index'])->name('activities.index');
