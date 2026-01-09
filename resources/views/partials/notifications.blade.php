@@ -1534,6 +1534,203 @@
         </div>
     @endif
 
+    @if ($notification->data['message']['tipe'] == 'Notif Kegiatan')
+    <div class="notification mb-3 p-3 border rounded bg-light">
+        <div class="w-100">
+
+            <p class="mb-2 text-primary fw-bold">
+                Pengajuan Kegiatan Baru Telah Diajukan
+            </p>
+
+            <div class="mb-2">
+                <small class="text-muted d-block">Nama Kegiatan</small>
+                <span class="fw-bold">
+                    {{ $notification->data['message']['kegiatan'] ?? '-' }}
+                </span>
+            </div>
+
+            <div class="mb-2">
+                <small class="text-muted d-block">Lama Kegiatan</small>
+                <span>
+                    {{ $notification->data['message']['lama_kegiatan'] ?? '-' }}
+                </span>
+            </div>
+
+            <div class="mb-2">
+                <small class="text-muted d-block">Waktu Pelaksanaan</small>
+                <span class="badge bg-info text-dark">
+                    {{ $notification->data['message']['waktu_kegiatan'] ?? '-' }}
+                </span>
+            </div>
+
+            <div class="mb-2">
+                <small class="text-muted d-block">Penanggung Jawab</small>
+                <span class="badge bg-info text-dark">
+                    {{ $notification->data['message']['pic'] ?? '-' }}
+                </span>
+            </div>
+
+            <div class="alert alert-warning py-2 px-3 mb-3" style="font-size: 0.85rem;">
+                <i class="bi bi-clock me-1"></i>
+                Pengajuan sedang diproses. Silakan cek kembali beberapa saat lagi untuk melihat status terbaru.
+            </div>
+
+            <small class="text-muted d-block">
+                <i class="bi bi-clock"></i>
+                Dibuat pada:
+                {{ $notification->created_at->translatedFormat('d F Y H:i') }} WIB
+            </small>
+
+            <div class="d-flex gap-2 mt-3">
+                <a href="{{ $notification->data['path'] }}" target="_blank" class="btn btn-sm btn-primary">
+                    <i class="bi bi-eye me-1"></i>Detail
+                </a>
+
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                        Tandai Dibaca
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+@endif
+
+@if ($notification->data['message']['tipe'] == 'Status Approved')
+    <div class="notification mb-3 p-3 border rounded bg-light">
+        <div class="w-100">
+
+            <p class="mb-2 text-success fw-bold">
+                Kegiatan Telah Disetujui (Approved)
+            </p>
+
+            <div class="mb-3">
+                <span class="fw-bold">
+                    {{ $notification->data['message']['kegiatan'] ?? 'Kegiatan' }}
+                </span>
+                <span class="text-muted"> telah disetujui oleh General Manager.</span>
+            </div>
+
+            <div class="alert alert-success py-2 px-3 mb-3" style="font-size: 0.85rem;">
+                <i class="bi bi-check-circle me-1"></i>
+                Status kegiatan telah berubah menjadi <strong>Approved</strong>. Silakan lanjutkan proses selanjutnya dibagian Finance.
+            </div>
+
+            <small class="text-muted d-block">
+                <i class="bi bi-clock"></i>
+                Dibuat pada:
+                {{ $notification->created_at->translatedFormat('d F Y H:i') }} WIB
+            </small>
+
+            <div class="d-flex gap-2 mt-3">
+                <a href="{{ $notification->data['path'] }}" target="_blank" class="btn btn-sm btn-primary">
+                    <i class="bi bi-eye me-1"></i>Detail Kegiatan
+                </a>
+
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                        Tandai Dibaca
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+@endif
+
+@if ($notification->data['message']['tipe'] == 'Status Pencairan')
+    <div class="notification mb-3 p-3 border rounded bg-light">
+        <div class="w-100">
+
+            <p class="mb-2 text-info fw-bold">
+                Dana Kegiatan Telah Dicairkan
+            </p>
+
+            <div class="mb-3">
+                <span class="fw-bold">
+                    {{ $notification->data['message']['kegiatan'] ?? 'Kegiatan' }}
+                </span>
+                <span class="text-muted"> telah selesai proses pencairan dana.</span>
+            </div>
+
+            <div class="alert alert-info py-2 px-3 mb-3" style="font-size: 0.85rem;">
+                <i class="bi bi-cash-coin me-1"></i>
+                Dana kegiatan telah <strong>dicairkan</strong> oleh Finance. Silakan lanjutkan pelaksanaan kegiatan dan selesaikan.
+            </div>
+
+            <small class="text-muted d-block">
+                <i class="bi bi-clock"></i>
+                Dibuat pada:
+                {{ $notification->created_at->translatedFormat('d F Y H:i') }} WIB
+            </small>
+
+            <div class="d-flex gap-2 mt-3">
+                <a href="{{ $notification->data['path'] }}" target="_blank" class="btn btn-sm btn-primary">
+                    <i class="bi bi-eye me-1"></i>Detail Kegiatan
+                </a>
+
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                        Tandai Dibaca
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+@endif
+
+
+@if ($notification->data['message']['tipe'] == 'Status Menunggu')
+    <div class="notification mb-3 p-3 border rounded bg-light">
+        <div class="w-100">
+
+            <p class="mb-2 text-warning fw-bold">
+                Kegiatan Dalam Status Menunggu
+            </p>
+
+            <div class="mb-3">
+                <span class="fw-bold">
+                    {{ $notification->data['message']['kegiatan'] ?? 'Kegiatan' }}
+                </span>
+                <span class="text-muted"> memerlukan peninjauan lebih lanjut.</span>
+            </div>
+
+            <div class="alert alert-warning py-2 px-3 mb-3" style="font-size: 0.85rem;">
+                <i class="bi bi-hourglass-split me-1"></i>
+                Status kegiatan saat ini <strong>Menunggu</strong>. Mohon lakukan review atau tindakan yang diperlukan.
+            </div>
+
+            <small class="text-muted d-block">
+                <i class="bi bi-clock"></i>
+                Dibuat pada:
+                {{ $notification->created_at->translatedFormat('d F Y H:i') }} WIB
+            </small>
+
+            <div class="d-flex gap-2 mt-3">
+                <a href="{{ $notification->data['path'] }}" target="_blank" class="btn btn-sm btn-primary">
+                    <i class="bi bi-eye me-1"></i>Detail Kegiatan
+                </a>
+
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                        Tandai Dibaca
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+@endif
 
 
     <hr>
