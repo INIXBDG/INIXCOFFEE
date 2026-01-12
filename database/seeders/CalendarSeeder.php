@@ -47,15 +47,12 @@ class CalendarSeeder extends Seeder
             ['category' => 'Kebutuhan', 'task_name' => 'Hadiah Doorprize', 'sort_order' => 21],
             ['category' => 'Kebutuhan', 'task_name' => 'Hadiah Doorprize Instagram', 'sort_order' => 22],
 
-            // KELOMPOK 3: PERINTILAN
             ['category' => 'Perintilan', 'task_name' => 'KONSUMSI PANITIA', 'sort_order' => 23],
         ];
         foreach($todos as $t) {
             Todo::create($t);
         }
 
-        // 3. Isi Mapping Tahunan (Slot Bulan untuk Tahun 2025)
-        // Kita buat setahun penuh (Q1 - Q4)
         $mappings = [];
         $themes = [
             1 => 'PMBOK Strategy', 2 => 'Scrum Basics', 3 => 'Agile Tools', // Q1
@@ -67,11 +64,11 @@ class CalendarSeeder extends Seeder
         for ($i = 1; $i <= 12; $i++) {
             $quarter = ceil($i / 3);
             YearMapping::create([
-                'year' => 2025,
+                'year' => 2026,
                 'quarter' => $quarter,
                 'month' => $i,
                 'theme' => $themes[$i],
-                'planned_date' => "2025-{$i}-25", // Asumsi tanggal 25 tiap bulan
+                'planned_date' => "2026-{$i}-25", // Asumsi tanggal 25 tiap bulan
                 'duration_minutes' => 120
             ]);
         }
