@@ -70,7 +70,7 @@
                 @for($i = 0; $i < 3; $i++)
                     @php
                         $mNum = $startM + $i;
-                        $mName = Carbon\Carbon::create(2025, $mNum, 1)->translatedFormat('F');
+                        $mName = Carbon\Carbon::create(2026, $mNum, 1)->translatedFormat('F');
                     @endphp
                     <a href="?month={{ $mNum }}"
                     class="px-3 py-1.5 text-xs font-bold rounded-full border {{ request('month') == $mNum ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50' }}">
@@ -96,8 +96,6 @@
                                 </span>
                             </div>
 
-                            {{-- TOMBOL KELOLA/DETAIL EVENT --}}
-                            {{-- Semua orang bisa tekan tombol ini untuk melihat Checklist Read-Only --}}
                             <button @click="openEventModal(
                                     {{ $data['mapping_id'] ?? 'null' }},
                                     '{{ $data['name'] }}',
@@ -121,84 +119,63 @@
                             </button>
                         </div>
 
-                        {{-- INFO JUDUL --}}
                         @if($data['event_detail'])
                             <div class="mt-4 bg-slate-800 p-3 rounded border border-slate-700">
                                 <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Judul Webinar</div>
-                                <div class="{{ $isSingleView ? 'text-lg' : 'text-sm' }} font-bold leading-tight text-blue-200">
+                                <div class="text-sm font-bold leading-tight text-blue-200">
                                     {{ $data['event_detail']->title }}
                                 </div>
-                                <div class="text-xs text-slate-400 mt-2 flex items-center gap-2">
-                                    <span>🎙️ {{ $data['event_detail']->speaker_name ?? '-' }}</span>
-                                    @if($isSingleView)
-                                        <span class="text-slate-600">|</span>
-                                        <span>⏱️ {{ $data['duration'] }} Menit</span>
-                                    @endif
-                                </div>
-                            </div>
-                        @else
-                            <div class="mt-3 bg-slate-800/50 p-2 rounded border border-slate-700 border-dashed text-center">
-                                <span class="text-xs text-slate-500 italic">Judul belum diisi</span>
                             </div>
                         @endif
                     </div>
 
-                    {{-- HEADER HARI --}}
-                    <div class="grid grid-cols-5 bg-gray-100 text-gray-500 text-xs font-bold py-3 text-center border-b border-gray-200">
+                    {{-- HEADER HARI (5 KOLOM) --}}
+                    <div class="grid grid-cols-5 bg-gray-100 text-gray-500 text-[10px] font-bold py-3 text-center border-b border-gray-200">
                         <div>SEN</div><div>SEL</div><div>RAB</div><div>KAM</div><div>JUM</div>
                     </div>
 
                     {{-- BODY KALENDER --}}
-                    <div class="grid grid-cols-5 auto-rows-fr bg-white flex-grow {{ $isSingleView ? 'min-h-[500px]' : '' }}">
+                    <div class="grid grid-cols-5 auto-rows-fr bg-white flex-grow">
 
+                        {{-- 1. PADDING SEL KOSONG --}}
                         @for($i = 0; $i < $data['start_padding']; $i++)
                             <div class="bg-gray-50/50 border-b border-r border-gray-100"></div>
                         @endfor
 
+                        {{-- 2. LOOP TANGGAL KERJA --}}
                         @foreach($data['dates'] as $date)
-                            {{-- LOGIKA KLIK & CURSOR HARIAN --}}
-                            {{-- Hanya bisa diklik jika canEdit (Tim Digital) --}}
                             <div
                                 @click="canEdit ? openDailyModal('{{ $date['full_date'] }}', {{ $data['mapping_id'] }}, '{{ $date['item']->content ?? '' }}') : null"
                                 class="border-b border-r border-gray-100 p-2 relative group flex flex-col justify-between
-                                {{-- Cursor Logic --}}
-                                {{ $isTimDigital ? 'cursor-pointer hover:bg-blue-50 transition' : 'cursor-default' }}
-                                {{ $isSingleView ? 'min-h-[150px]' : 'min-h-[100px]' }}
-                                {{ $date['is_dday'] ? 'bg-blue-800 hover:bg-blue-900' : 'bg-white' }}">
+                                {{ $isTimDigital ? 'cursor-pointer hover:bg-blue-50' : 'cursor-default' }}
+                                {{ $isSingleView ? 'min-h-[140px]' : 'min-h-[90px]' }}
+                                {{ $date['is_dday'] ? 'bg-blue-600' : 'bg-white' }}">
 
-                                <div class="text-right text-sm font-bold {{ $date['is_dday'] ? 'text-white' : (!empty($date['item']) ? 'text-blue-600' : 'text-gray-300') }}">
+                                {{-- NOMOR TANGGAL --}}
+                                <div class="text-right text-xs font-bold {{ $date['is_dday'] ? 'text-white' : ($date['item'] ? 'text-blue-600' : 'text-slate-300') }}">
                                     {{ $date['day'] }}
                                 </div>
 
+                                {{-- TAMPILAN D-DAY --}}
                                 @if($date['is_dday'])
-                                    <div class="flex-grow flex flex-col items-center justify-center text-center my-1">
-                                        <h3 class="text-yellow-300 font-black {{ $isSingleView ? 'text-2xl' : 'text-lg' }} tracking-widest drop-shadow-md">D-DAY</h3>
-                                        @if($data['event_detail'])
-                                            <p class="text-[10px] text-white leading-tight px-1 mt-1 font-medium">
-                                                {{ Str::limit($data['event_detail']->title, $isSingleView ? 100 : 30) }}
-                                            </p>
-                                        @endif
+                                    <div class="flex-grow flex flex-col items-center justify-center text-center">
+                                        <span class="text-yellow-300 font-black text-sm tracking-tighter drop-shadow-sm">D-DAY</span>
                                     </div>
                                 @endif
 
-                                @if(!empty($date['item']))
-                                    <div class="mt-1 p-1.5 text-[10px] font-bold leading-snug rounded shadow-sm border flex flex-col gap-0.5
-                                        {{ $date['is_dday']
-                                            ? 'bg-blue-600 text-yellow-300 border-blue-500'
-                                            : 'bg-blue-100 text-blue-900 border-blue-200' }}">
-                                        @foreach(explode("\n", $date['item']->content) as $line)
-                                            @if(trim($line) !== '')
-                                                <div class="truncate">{{ $line }}</div>
-                                            @endif
-                                        @endforeach
+                                {{-- KONTEN AKTIVITAS --}}
+                                @if($date['item'])
+                                    <div class="mt-1 p-1 text-[9px] font-bold leading-tight rounded border
+                                        {{ $date['is_dday'] ? 'bg-blue-700 text-white border-blue-400' : 'bg-blue-50 text-blue-800 border-blue-100' }}">
+                                        <div class="truncate">{{ $date['item']->content }}</div>
                                     </div>
-                                @else
-                                    {{-- Tombol Plus HANYA muncul jika Tim Digital --}}
-                                    @if($isTimDigital)
-                                        <div class="hidden group-hover:flex absolute inset-0 items-center justify-center {{ $date['is_dday'] ? 'text-white' : 'text-blue-400' }} opacity-50">
-                                            <span class="text-2xl">+</span>
-                                        </div>
-                                    @endif
+                                @endif
+
+                                {{-- ICON TAMBAH (TIM DIGITAL ONLY) --}}
+                                @if($isTimDigital && !$date['item'] && !$date['is_dday'])
+                                    <div class="hidden group-hover:flex absolute inset-0 items-center justify-center text-blue-300 opacity-40">
+                                        <span class="text-xl">+</span>
+                                    </div>
                                 @endif
                             </div>
                         @endforeach
@@ -362,7 +339,7 @@
     </div>
 
     {{-- SCRIPTS --}}
-    <script>
+    <script>2
         function webinarApp() {
             return {
                 isLoading: false,
