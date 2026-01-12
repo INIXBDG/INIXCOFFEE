@@ -1547,6 +1547,24 @@
                                                 </div>
                                             </div>
                                             @endcan
+                                            @can('Fitur Content')
+                                            <div class="col-sm-6 mt-2">
+                                                <div class="card" id="card-hover">
+                                                    <div class="card-body d-flex">
+                                                        <div class="col-md-2">
+                                                            <i class="fa-solid fa-timeline" style="font-size: 30px;"></i>
+                                                        </div>
+                                                        <div class="col-md-10" style="margin-left: 10px">
+                                                            <a href="{{ route('content-schedules.index') }}"
+                                                                class="link stretched-link text-decoration-none">
+                                                                <h5 class="card-title">Content Harian</h5>
+                                                            </a>
+                                                            <p class="card-text">merekap konten harian</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            @endcan
                                             @if (Auth::user()->karyawan && Auth::user()->karyawan->divisi === 'IT Service Management')
                                             <div class="col-sm-6 mt-2">
                                                 <div class="card" id="card-hover">
@@ -2742,7 +2760,7 @@
                 if (downtimePerc > 0) {
                     downtimeBar.addClass('bg-danger');
                 } else {
-                    downtimeBar.css('width', '0%'); 
+                    downtimeBar.css('width', '0%');
                 }
             }
 
@@ -2771,7 +2789,7 @@
                 method: "GET",
                 dataType: "json",
                 success: function(response) {
-                    console.log("Data mentah dari server:", response); // Tambahkan ini 
+                    console.log("Data mentah dari server:", response); // Tambahkan ini
                     if (!response || typeof response !== 'object' || response.error) {
                         console.error("Data tidak valid:", response);
                         return;

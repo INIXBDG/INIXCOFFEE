@@ -47,10 +47,10 @@
                         <th style="width: 10%">Bentuk Konten</th>
                         <th style="width: 15%">Tanggal Upload</th>
                         <th style="width: 20%">Talent</th>
-                        <th style="width: 5%" class="text-center">Tiktok</th>
                         <th>Keterangan</th>
                         <th style="width: 10%" class="text-center">Bukti</th>
                         <th style="width: 10%" class="text-center">Aksi</th>
+                        <th style="width: 5%" class="text-center">Tiktok</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -92,13 +92,6 @@
                                 @foreach(explode(',', $item->talents) as $talent)
                                     <span class="badge bg-light text-dark border me-1 mb-1">{{ trim($talent) }}</span>
                                 @endforeach
-                            </td>
-                            <td class="text-center">
-                                @if($item->is_tiktok)
-                                    <i class="fas fa-check-circle text-dark fa-lg"></i>
-                                @else
-                                    <span class="text-muted">-</span>
-                                @endif
                             </td>
                             <td>
                                 <span class="d-inline-block text-truncate" style="max-width: 150px;">
@@ -149,6 +142,13 @@
                                         </li>
                                     </ul>
                                 </div>
+                            </td>
+                            <td class="text-center">
+                                @if($item->is_tiktok)
+                                    <i class="fas fa-check-circle text-dark fa-lg"></i>
+                                @else
+                                    <span class="text-muted">-</span>
+                                @endif
                             </td>
                         </tr>
                     @empty
