@@ -55,6 +55,7 @@ use App\Http\Controllers\Webinar\CalendarController;
 use App\Http\Controllers\RekomendasiLanjutanController;
 use App\Http\Controllers\ForumSSOController;
 use App\Http\Controllers\KegiatanController;
+use App\Http\Controllers\KendaraanController;
 use App\Http\Controllers\Webinar\TimelineItemController;
 use App\Http\Controllers\Webinar\ChecklistController;
 
@@ -797,6 +798,13 @@ Route::prefix('office')->name('office.')->middleware(['auth'])->group(function (
         Route::put('/update/status/gm/{id}', [KegiatanController::class, 'gm'])->name('UpdateStatusGM');
         Route::put('/update/status/finance/{id}', [KegiatanController::class, 'finance'])->name('UpdateStatusFinance');
         Route::put('/update/status/selesai/{id}', [KegiatanController::class, 'selesai'])->name('UpdateStatusSelesai');
+    });
+
+    Route::prefix('kendaraan')->group(function(){
+        Route::get('/index/kondisi', [KendaraanController::class, 'indexKondisi'])->name('indexKondisiKendaraan');
+        Route::post('/store/kondisi', [KendaraanController::class, 'storeKondisi'])->name('storeKondisiKendaraan');
+        Route::put('/update/kondisi/{id}', [KendaraanController::class, 'updateKondisi'])->name('updateKondisiKendaraan');
+        Route::delete('/delete/kondisi/{id}', [KendaraanController::class, 'deleteKondisi'])->name('deleteKondisiKendaraan');
     });
 });
 
