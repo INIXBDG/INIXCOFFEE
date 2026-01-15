@@ -1733,5 +1733,60 @@
 @endif
 
 
+@if ($notification->data['message']['tipe'] == 'Laporan Kondisi Kendaraan')
+    <div class="notification mb-3 p-3 border rounded bg-light">
+        <div class="w-100">
+
+            <p class="mb-2 text-success fw-bold">
+                Laporan Kondisi Kendaraan Diperbarui
+            </p>
+
+            <div class="mb-3">
+                <span class="fw-bold">
+                    {{ $notification->data['message']['user'] ?? 'User' }}
+                </span>
+                <span class="text-muted">
+                    telah mengupdate kondisi kendaraan
+                </span>
+                <span class="fw-bold">
+                    {{ $notification->data['message']['kendaraan'] ?? '-' }}
+                </span>
+            </div>
+
+            <div class="alert alert-success py-2 px-3 mb-3" style="font-size: 0.85rem;">
+                <i class="bi bi-truck me-1"></i>
+                Pemeriksaan dilakukan pada tanggal
+                <strong>
+                    {{ \Carbon\Carbon::parse(
+                        $notification->data['message']['tanggal_pemeriksaan'] ?? now()
+                    )->translatedFormat('d F Y') }}
+                </strong>
+            </div>
+
+            <small class="text-muted d-block">
+                <i class="bi bi-clock"></i>
+                Dibuat pada:
+                {{ $notification->created_at->translatedFormat('d F Y H:i') }} WIB
+            </small>
+
+            <div class="d-flex gap-2 mt-3">
+                <a href="{{ $notification->data['path'] }}" target="_blank" class="btn btn-sm btn-primary">
+                    <i class="bi bi-eye me-1"></i>Detail Kondisi
+                </a>
+
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                        Tandai Dibaca
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+@endif
+
+
     <hr>
 @endforeach

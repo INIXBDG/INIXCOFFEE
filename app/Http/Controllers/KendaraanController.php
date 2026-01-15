@@ -2,15 +2,26 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\karyawan;
 use App\Models\KondisiKendaraan;
+use App\Models\User;
+use App\Notifications\KondisiKendaraan as NotificationsKondisiKendaraan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Notification;
 
 class KendaraanController extends Controller
 {
 
-    public function indexKondisi(){
+    public function indexKondisi()
+    {
         $kondisi = KondisiKendaraan::with('user.karyawan')->get();
-        // return view('office.kendaraan.indexKondisi', compact('kondisi'));
+        return view('office.kendaraan.indexKondisi', compact('kondisi'));
+    }
+
+    public function detailKondisi($id)
+    {
+        $kondisi = KondisiKendaraan::with('user.karyawan')->findOrFail($id);
+        return view('office.kendaraan.updateKondisi', compact('kondisi'));
     }
 
     public function storeKondisi(Request $request)
@@ -60,7 +71,24 @@ class KendaraanController extends Controller
             'tanggal_pemeriksaan' => 'required|date',
         ]);
 
-        KondisiKendaraan::create($validated);
+        $kondisi = KondisiKendaraan::create($validated);
+
+        $penerima = User::where('jabatan', 'Finance & Accounting')->get();
+        $karyawan = Karyawan::findOrFail($request->user_id);
+
+        $data = [
+            'user' => $karyawan->nama_lengkap,
+            'kendaraan' => $request->jenis_kendaraan,
+            'tanggal_pemeriksaan' => $request->tanggal_pemeriksaan,
+        ];
+
+        $path = '/office/kendaraan/detail/kondisi/' . $kondisi->id;
+
+        Notification::send(
+            $penerima,
+            new NotificationsKondisiKendaraan($data, $path)
+        );
+
 
         return redirect()
             ->back()
@@ -72,7 +100,6 @@ class KendaraanController extends Controller
         $kondisi = KondisiKendaraan::findOrFail($id);
 
         $validated = $request->validate([
-            'user_id' => 'required|string|max:255',
             'jenis_kendaraan' => 'required|in:Innova,H1',
 
             // Kondisi Fisik
