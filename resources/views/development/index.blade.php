@@ -263,11 +263,9 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h3 class="card-title">Data Sertifikasi</h3>
-                                @if(auth()->user()->jabatan !== 'Education Manager')
                                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createSertifikasiModal">
                                     <img src="{{ asset('icon/plus.svg') }}" width="20px"> Tambah Sertifikasi
                                 </button>
-                                @endif
                             </div>
 
                             <div class="table-responsive">
@@ -379,7 +377,7 @@
                                             <th>Nama Karyawan</th>
                                             <th>Nama Pelatihan</th>
                                             <th>Penyedia</th>
-                                            <th>Pelaksanaan</th> {{-- Diubah dari Tgl Pelatihan --}}
+                                            <th>Pelaksanaan</th>
                                             <th>Keterangan</th>
                                             <th>Harga</th>
                                             <th>Status</th>
@@ -393,8 +391,6 @@
                                             <td>{{ $item->user->karyawan->nama_lengkap ?? '-' }}</td>
                                             <td>{{ $item->nama_pelatihan }}</td>
                                             <td>{{ $item->penyedia }}</td>
-
-                                            {{-- PERBAIKAN: Menampilkan Rentang Tanggal Mulai - Selesai --}}
                                             <td>
                                                 {{ \Carbon\Carbon::parse($item->tanggal_mulai)->translatedFormat('d F Y') }}
                                                 -

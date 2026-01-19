@@ -15,9 +15,6 @@ use Carbon\Carbon;
 
 class InstructorDevelopmentController extends Controller
 {
-    /**
-     * Menampilkan daftar Pengembangan Diri (Sertifikasi & Pelatihan).
-     */
     public function index()
     {
         $user = auth()->user();
@@ -42,12 +39,8 @@ class InstructorDevelopmentController extends Controller
         return view('development.index', compact('sertifikasis', 'pelatihans'));
     }
 
-    /**
-     * Menyimpan Sertifikasi baru.
-     */
     public function storeSertifikasi(Request $request)
     {
-        // 1. Validasi Input Standar
         $request->validate([
             'nama_sertifikat'        => 'required|string|max:255',
             'penyedia'               => 'required|string|max:255',
@@ -58,7 +51,6 @@ class InstructorDevelopmentController extends Controller
             'vendor'                 => 'required|string|max:255',
         ]);
 
-        // 2. LOGIKA VALIDASI DUPLIKASI & MASA BERLAKU
         $userId = Auth::id();
 
         // Cari sertifikat existing dengan kriteria sama
@@ -66,19 +58,17 @@ class InstructorDevelopmentController extends Controller
             ->where('nama_sertifikat', $request->nama_sertifikat)
             ->where('penyedia', $request->penyedia)
             ->where('vendor', $request->vendor)
-            // Urutkan berdasarkan tanggal berakhir paling lama (untuk mengambil status terakhir)
             ->orderByDesc('tanggal_berlaku_sampai')
             ->first();
 
         if ($existingCert) {
-            // KASUS A: Sertifikat lama berlaku seumur hidup
+            // Sertifikat lama berlaku seumur hidup
             if (is_null($existingCert->tanggal_berlaku_sampai)) {
                 return redirect()->back()
                     ->withInput()
                     ->with('error', 'Gagal: Sertifikasi ini sudah terdaftar dan statusnya berlaku seumur hidup.');
             }
 
-            // KASUS B: Cek tanggal ujian baru vs tanggal berakhir lama
             // Jika tanggal ujian baru <= tanggal berakhir lama, berarti masih aktif
             if ($request->tanggal_ujian <= $existingCert->tanggal_berlaku_sampai) {
                 $formattedDate = Carbon::parse($existingCert->tanggal_berlaku_sampai)->translatedFormat('d F Y');
@@ -162,8 +152,8 @@ class InstructorDevelopmentController extends Controller
                 'user_id'           => Auth::id(),
                 'nama_pelatihan'    => $request->nama_pelatihan,
                 'penyedia'          => $request->penyedia,
-                'tanggal_mulai'     => $request->tanggal_mulai,   // Baru
-                'tanggal_selesai'   => $request->tanggal_selesai, // Baru
+                'tanggal_mulai'     => $request->tanggal_mulai,
+                'tanggal_selesai'   => $request->tanggal_selesai,
                 'keterangan'        => $request->keterangan,
                 'harga'             => $request->harga,
                 'status_approval'   => 'pending',
@@ -213,7 +203,7 @@ class InstructorDevelopmentController extends Controller
             DB::beginTransaction();
 
             $sertifikasi = Sertifikasi::with('user.karyawan')->findOrFail($id);
-            $status = $request->status_approval; // 'approved' atau 'rejected'
+            $status = $request->status_approval;
 
             $sertifikasi->update([
                 'status_approval' => $status,
@@ -227,14 +217,11 @@ class InstructorDevelopmentController extends Controller
                 $notifType = ($status == 'approved') ? 'Pengembangan Diri Disetujui' : 'Pengembangan Diri Ditolak';
                 $pesanStatus = ($status == 'approved') ? 'Disetujui' : 'Ditolak';
 
-                // --- PERBAIKAN DISINI: Tambahkan detail lengkap ---
                 $dataNotif = [
                     'tipe_kategori'     => 'Sertifikasi',
                     'nama_item'         => $sertifikasi->nama_sertifikat,
                     'status'            => 'Status diubah menjadi: ' . $pesanStatus,
-                    'tanggal_pengajuan' => now(), // Gunakan key yang konsisten dengan Notification Class
-
-                    // Data Detail Wajib Ditambahkan agar muncul di View
+                    'tanggal_pengajuan' => now(),
                     'tanggal_ujian'     => $sertifikasi->tanggal_ujian,
                     'berlaku_dari'      => $sertifikasi->tanggal_berlaku_dari,
                     'berlaku_sampai'    => $sertifikasi->tanggal_berlaku_sampai,
@@ -257,9 +244,6 @@ class InstructorDevelopmentController extends Controller
         return redirect()->back()->with('success', 'Status Sertifikasi diperbarui.');
     }
 
-    /**
-     * Approval Pelatihan (Oleh Education Manager).
-     */
     public function approvePelatihan(Request $request, $id)
     {
         if (auth()->user()->karyawan->jabatan !== 'Education Manager') {
@@ -278,7 +262,6 @@ class InstructorDevelopmentController extends Controller
                 'approved_at'     => now(),
             ]);
 
-            // Kirim Notifikasi Balik ke Pengaju
             $pengaju = $pelatihan->user;
             if ($pengaju) {
                 $notifType = ($status == 'approved') ? 'Pengembangan Diri Disetujui' : 'Pengembangan Diri Ditolak';
@@ -303,7 +286,7 @@ class InstructorDevelopmentController extends Controller
             DB::commit();
 
         } catch (\Exception $e) {
-            DB::rollBack();
+            DB::rollBack(); 
             return redirect()->back()->with('error', 'Gagal update status: ' . $e->getMessage());
         }
 

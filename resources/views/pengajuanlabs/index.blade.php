@@ -47,7 +47,7 @@
                                         <option value="Finance Menunggu Approve Direksi">Finance Menunggu Approve Direksi</option>
                                         <option value="Membuat Permintaan Ke Direktur Utama">Membuat Permintaan Ke Direktur Utama</option>
                                         <option value="Pengajuan sedang dalam proses Pencairan">Pengajuan sedang dalam proses Pencairan</option>
-                                        <option value="Pencairan Sudah Selesai">Pencairan Sudah Selesai</option>
+                                        <option value="Selesai">Pencairan Sudah Selesai</option>
                                         <option value="Selesai">Selesai</option>
                                     </select>
                                 </div>
