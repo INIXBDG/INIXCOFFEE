@@ -145,7 +145,11 @@
                         {{-- 2. LOOP TANGGAL KERJA --}}
                         @foreach($data['dates'] as $date)
                             <div
-                                @click="canEdit ? openDailyModal('{{ $date['full_date'] }}', {{ $data['mapping_id'] }}, '{{ $date['item']->content ?? '' }}') : null"
+                                @click="canEdit ? openDailyModal(
+                                        '{{ $date['full_date'] }}',
+                                        {{ $data['mapping_id'] }},
+                                        {{ json_encode($date['item']->content ?? '') }}
+                                    ) : null"
                                 class="border-b border-r border-gray-100 p-2 relative group flex flex-col justify-between
                                 {{ $isTimDigital ? 'cursor-pointer hover:bg-blue-50' : 'cursor-default' }}
                                 {{ $isSingleView ? 'min-h-[140px]' : 'min-h-[90px]' }}
@@ -167,7 +171,9 @@
                                 @if($date['item'])
                                     <div class="mt-1 p-1 text-[9px] font-bold leading-tight rounded border
                                         {{ $date['is_dday'] ? 'bg-blue-700 text-white border-blue-400' : 'bg-blue-50 text-blue-800 border-blue-100' }}">
-                                        <div class="truncate">{{ $date['item']->content }}</div>
+                                        <div class="whitespace-pre-line truncate-custom">
+                                            {{ $date['item']->content }}
+                                        </div>
                                     </div>
                                 @endif
 
@@ -369,16 +375,36 @@
                     this.modals.daily.open = true;
                 },
                 async saveDailyItem() {
+                    if (this.isLoading) return;
                     this.isLoading = true;
+
                     try {
-                        await fetch('/api/timeline-item', {
+                        const response = await fetch('/api/timeline-item', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
-                            body: JSON.stringify({ item_date: this.modals.daily.date, year_mapping_id: this.modals.daily.mappingId, content: this.modals.daily.content })
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: JSON.stringify({
+                                item_date: this.modals.daily.date,
+                                year_mapping_id: this.modals.daily.mappingId,
+                                content: this.modals.daily.content
+                            })
                         });
-                        window.location.reload();
-                    } catch (e) { console.error(e); }
-                    this.isLoading = false;
+
+                        if (response.ok) {
+                            window.location.reload();
+                        } else {
+                            const error = await response.json();
+                            alert('Gagal menyimpan: ' + (error.message || 'Terjadi kesalahan sistem'));
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        alert('Koneksi gagal');
+                    } finally {
+                        this.isLoading = false;
+                    }
                 },
                 openEventModal(mappingId, monthName, eventData, theme, plannedDate, duration) {
                     this.modals.event.mappingId = mappingId;
