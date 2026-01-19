@@ -248,28 +248,6 @@
                         </div>
                     </div>
                 </div>
-                {{-- <div class="card m-4">
-                    <div class="card-body table-responsive">
-                        <h4 class="card-title text-center my-1">{{ __('Barang Non-Elektronik') }}</h4>
-                        <table class="table table-striped" id="inventaristableNonElektronik">
-                            <thead>
-                                <tr>
-                                    <th scope="col">No</th>
-                                    <th scope="col">ID</th>
-                                    <th scope="col">ID Barang</th>
-                                    <th scope="col">Nama Barang</th>
-                                    <th scope="col">Tipe</th>
-                                    <th scope="col">Pic</th>
-                                    <th scope="col">Ruangan</th>
-                                    <th scope="col">Kondisi</th>
-                                    <th scope="col">Tanggal Pembelian</th>
-                                    <th scope="col">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div> --}}
             </div>
         </div>
     </div>
