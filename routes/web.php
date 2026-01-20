@@ -15,7 +15,7 @@ use App\Http\Controllers\Crm\salesPribadiController;
 use App\Http\Controllers\Crm\TargetAktivitas;
 use App\Http\Controllers\Crm\LaporanPenjualanController;
 use App\Http\Controllers\Crm\ImportPerusahaanAndContactController;
-use App\Http\Controllers\databasekpiContoller;
+use App\Http\Controllers\TelegramController;
 use App\Http\Controllers\izinTigaJamController;
 use App\Http\Controllers\KelasAnalisisController;
 use App\Http\Controllers\RKMController as ControllersRKMController;
@@ -813,3 +813,4 @@ Route::get('/activityinstruktur-data', [ActivityInstrukturController::class, 'ge
 Route::post('/activityinstruktur-store', [ActivityInstrukturController::class, 'store'])->name('api.activities.store');
 Route::post('/activityinstruktur-update', [ActivityInstrukturController::class, 'update'])->name('api.activities.proof_update');
 Route::get('/activityinstruktur', [ActivityInstrukturController::class, 'index'])->name('activities.index');
+

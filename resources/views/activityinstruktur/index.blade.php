@@ -22,12 +22,17 @@
                         
                         <input type="hidden" name="activity_date" id="formActivityDate">
                         <input type="hidden" name="activity_id" id="formActivityId">
+                        <input type="hidden" value="manual" name="activity_subtype" id="activity_subtype">
 
                         <div class="mb-3">
                             <label for="formActivityType" class="form-label">Tipe Aktivitas</label>
                             <select class="form-select" id="formActivityType" name="activity_type">
-                                <option value="manual">Manual Input</option>
-                                <option value="teaching" disabled>Mengajar (Otomatis)</option>
+                                <option value="pilih" selected>Pilih Aktivitas</option>
+                                <option value="Mengajar">Mengajar</option>
+                                <option value="Sharing Knowledge">Sharing Knowledge</option>
+                                <option value="Webinar">Webinar</option>
+                                <option value="Projek">Projek</option>
+                                <option value="Buat Materi">Buat Materi</option>
                             </select>
                         </div>
                         
@@ -44,10 +49,14 @@
                         <div id="proofUploadSection" class="mt-4 border p-3 rounded d-none">
                             <h6>Bukti Penyelesaian Aktivitas</h6>
                             <div class="mb-3">
-                                <label for="formDoc" class="form-label">Unggah Dokumen Bukti (PDF/Gambar)</label>
-                                <input type="file" class="form-control" id="formDoc" name="doc"> 
+                                <label for="formDoc" class="form-label">Link Dokumen Bukti</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="formDoc" name="doc" placeholder="https://...">
+                                    <a href="#" id="btnViewDoc" target="_blank" class="btn btn-outline-primary d-none">
+                                        <i class="bi bi-box-arrow-up-right"></i> Buka Link
+                                    </a>
+                                </div>
                                 <small id="docInfo" class="form-text text-muted"></small>
-                                
                             </div>
                         </div>
 
@@ -154,12 +163,12 @@
 
             // Reset form value
             $('#activityFormDetail')[0].reset();
-            $('#formActivityType').val('manual');
+            $('#formActivityType').val('pilih');
 
             // Reset buttons
             $('#saveActivityDetailBtn').addClass('d-none').prop('disabled', false);
             $('#uploadProofBtn').prop('disabled', false).text('Selesaikan dan Unggah Bukti');
-
+            $('#btnViewDoc').addClass('d-none').attr('href', '#');
             // Reset alert
             $('#lockAlert')
                 .addClass('d-none')
@@ -183,7 +192,7 @@
 
             $('#formActivity').val('');
             $('#formDesc').val('');
-            $('#formActivityType').val('manual');
+            $('#formActivityType').val('pilih');
             
             
             console.log(title);
@@ -192,8 +201,9 @@
             $('#modalDate').text(moment(date).format('DD MMMM YYYY'));
             $('#formActivityDate').val(date);
             $('#formActivityId').val(activityId);
-
+            console.log(activityData);
             var isTeachingActivity = activityData && activityData.type === 'rkm';
+            var activity_type = activityData && activityData.activity_type;
             var isExistingActivity = activityId !== null;
             var isCompleted = activityData && activityData.status === 'Selesai';
             var isLocked = false; 
@@ -202,7 +212,7 @@
             if (activityData) {
                 $('#formActivity').val(title);
                 $('#formDesc').val(activityData.desc);
-                $('#formActivityType').val(isTeachingActivity ? 'teaching' : 'manual');
+                $('#formActivityType').val(activity_type);
                 $('#formActivity').prop('disabled', true);
                 // $('#formDesc').prop('disabled', true);
                 $('#formActivityType').prop('disabled', true);
@@ -213,26 +223,37 @@
                 }
             } else {
                 // Jika dateClick (aktivitas baru), pastikan formActivityType adalah Manual
-                $('#formActivityType').val('manual');
+                $('#formActivityType').val('pilih');
             }
             // ===============================
             // DOKUMEN TERSIMPAN
             // ===============================
             $('#docInfo').addClass('d-none').html('');
+            $('#btnViewDoc').addClass('d-none'); // Sembunyikan tombol secara default
 
             if (activityData && activityData.doc) {
+                // Set value ke input
+                $('#formDoc').val(activityData.doc);
 
-                const fileUrl = `/storage/${activityData.doc}`;
-                const fileName = activityData.doc.split('/').pop();
+                // Jika isinya diawali http (Link), jadikan button "Open New Tab"
+                if (activityData.doc.startsWith('http')) {
+                    $('#btnViewDoc')
+                        .removeClass('d-none')
+                        .attr('href', activityData.doc);
+                } 
+                // Jika isinya path file storage (asumsi kode lama Anda)
+                else {
+                    const fileUrl = `/storage/${activityData.doc}`;
+                    const fileName = activityData.doc.split('/').pop();
 
-                $('#docInfo')
-                    .removeClass('d-none')
-                    .html(`
-                        📎 Dokumen tersimpan:
-                        <a href="${fileUrl}" target="_blank">
-                            ${fileName}
-                        </a>
-                    `);
+                    $('#btnViewDoc')
+                        .removeClass('d-none')
+                        .attr('href', fileUrl);
+                        
+                    $('#docInfo')
+                        .removeClass('d-none')
+                        .html(`📎 File: ${fileName}`);
+                }
             }
 
             

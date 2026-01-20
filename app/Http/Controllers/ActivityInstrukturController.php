@@ -109,8 +109,10 @@ class ActivityInstrukturController extends Controller
                     'type' => 'manual',
                     'is_locked' => $locked,
                     'desc' => $activity->desc,
+                    'activity_type' => $activity->activity_type,
                     'status' => $activity->status,
                     'doc' => $activity->doc ?? null,
+
                 ]
             ];
         }
@@ -263,6 +265,7 @@ class ActivityInstrukturController extends Controller
                 'user_id' => $instructorId,
                 'activity_date' => $request->activity_date,
                 'activity' => $request->activity,
+                'activity_type' => $request->activity_type,
                 'desc' => $request->desc,
                 'status' => 'On Progres', // Default status untuk aktivitas manual baru
                 'is_locked' => 0,
@@ -278,11 +281,11 @@ class ActivityInstrukturController extends Controller
     public function update(Request $request)
     {
         $instructorId = Auth::user()->id;
-        // dd($request->all());
+
         // 1. Validasi Input Kunci
         $request->validate([
-            'activity_id' => 'required|exists:activity_instrukturs,id', // Harus ada ID aktivitas yang sudah ada
-            'doc' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120', // Bukti wajib diunggah (Maks 5MB)
+            'activity_id' => 'required|exists:activity_instrukturs,id',
+            'doc'         => 'required|url', // Validasi input harus berupa format URL (http/https)
         ]);
 
         $activityId = $request->activity_id;
@@ -303,51 +306,18 @@ class ActivityInstrukturController extends Controller
             return redirect()->route('activities.index')->with(['error' => 'Aktivitas ini sudah ditandai terkunci di database']);
         }
 
-        $docPath = null;
-
-        if ($request->hasFile('doc')) {
-
-            // Hapus dokumen lama jika ada
-            if ($activity->doc && Storage::disk('public')->exists($activity->doc)) {
-                Storage::disk('public')->delete($activity->doc);
-            }
-
-            // 🔥 Ambil data untuk nama file
-            $activityName   = Str::slug($activity->activity ?? 'aktivitas');
-            $kodeInstruktur = optional($activity->user)->karyawan->kode_karyawan ?? 'unknown';
-            $tanggal        = Carbon::parse($activity->activity_date)->format('Y-m-d');
-
-            $extension = $request->file('doc')->getClientOriginalExtension();
-
-            // 🔥 Nama file final
-            $fileName = "{$activityName}_{$kodeInstruktur}_{$tanggal}.{$extension}";
-
-            // 🔥 Simpan dengan nama custom
-            $docPath = $request->file('doc')->storeAs(
-                'activity_docs',
-                $fileName,
-                'public'
-            );
-        }
-
-        // 5. Lakukan Update
+        // 4. Lakukan Update Link
         try {
             $activity->update([
-                'doc' => $docPath,
-                'status' => 'Selesai', // Atau 'Completed'
-                'completed_at' => now(), // Set timestamp saat ini
+                'doc'          => $request->doc, // Simpan langsung string URL dari input
+                'status'       => 'Selesai',
+                'completed_at' => now(), 
             ]);
 
-            return redirect()->route('activities.index')->with(['success' => 'Laporan aktivitas berhasil disimpan/diperbarui.']);
+            return redirect()->route('activities.index')->with(['success' => 'Link bukti aktivitas berhasil disimpan.']);
 
-            
         } catch (\Exception $e) {
-            // Jika terjadi error DB setelah file diupload, coba hapus file yang sudah terlanjur tersimpan
-            if ($docPath) {
-                Storage::disk('public')->delete($docPath);
-            }
-            return redirect()->route('activities.index')->with(['error' => 'Gagal menyimpan data ke database: ' . $e->getMessage()]);
-
+            return redirect()->route('activities.index')->with(['error' => 'Gagal menyimpan data: ' . $e->getMessage()]);
         }
     }
 
