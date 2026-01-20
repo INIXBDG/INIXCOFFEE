@@ -96,7 +96,7 @@
             @php
                 $jabatan = auth()->user()->karyawan->jabatan ?? '';
             @endphp
-            @if (in_array($jabatan, ['Finance & Accounting', 'GM', 'Koordinator ITSM', 'Technical Support']))
+            @if (in_array($jabatan, ['Finance & Accounting', 'GM', 'Koordinator ITSM', 'Technical Support','Education Manager']))
                 <div class="card my-3">
                     <div class="card-body d-flex justify-content-center">
                         <div class="col-md-4 mx-1">
