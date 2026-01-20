@@ -54,6 +54,8 @@ use App\Http\Controllers\office\DashboardSouvenirController;
 use App\Http\Controllers\Webinar\CalendarController;
 use App\Http\Controllers\RekomendasiLanjutanController;
 use App\Http\Controllers\ForumSSOController;
+use App\Http\Controllers\KegiatanController;
+use App\Http\Controllers\KendaraanController;
 use App\Http\Controllers\Webinar\TimelineItemController;
 use App\Http\Controllers\Webinar\ChecklistController;
 use App\Http\Controllers\InstructorDevelopmentController;
@@ -453,6 +455,7 @@ Route::get('kalkulator/analisis/{id}/kelas', [KelasAnalisisController::class, 'k
 Route::get('/rkm/upload/page', [ControllersRKMController::class, 'uploadPage'])->name('uploadPage');
 Route::get('/rkm/data/page', [ControllersRKMController::class, 'dataPage'])->name('dataPage');
 Route::get('/rkm/uploadAbsensi/{id}', [ControllersRKMController::class, 'uploadAbsensi'])->name('uploadAbsensi');
+Route::post('/generate/pdf/peserta/{id}', [OutstandingController::class, 'generatePdfPeserta'])->name('generatePdfPeserta');
 Route::post('/rkm/store/absensi', [ControllersRKMController::class, 'storeAbsensi'])->name('storeAbsensi');
 Route::post('/rkm/delete/absensi', [ControllersRKMController::class, 'deleteAbsensi'])->name('deleteAbsensi');
 Route::get('/rkm/uploadSertifikat/{id}', [ControllersRKMController::class, 'uploadSertifikat'])->name('uploadSertifikat');
@@ -780,6 +783,30 @@ Route::prefix('office')->name('office.')->middleware(['auth'])->group(function (
         Route::put('/download/pdf/{id}', [ModulController::class, 'pdfModul'])->name('modul.download.pdf');
         Route::put('/download/pdf/{id}/peserta', [ModulController::class, 'pdfPeserta'])->name('modul.download.pdf.peserta');
         Route::put('/download/excel/{id}/peserta', [ModulController::class, 'excelPeserta'])->name('modul.download.excel.peserta');
+    });
+
+    Route::prefix('kegiatan')->group(function() {
+        Route::get('/index', [KegiatanController::class, 'index'])->name('indexKegiatan');
+        Route::post('/store', [KegiatanController::class, 'storeKegiatan'])->name('storeKegiatan');
+        Route::put('/update/{id}', [KegiatanController::class, 'updateKegiatan'])->name('updateKegiatan');
+        Route::delete('/delete/{id}', [KegiatanController::class, 'deleteKegiatan'])->name('deleteKegiatan');
+
+        Route::get('/show/{id}', [KegiatanController::class, 'show'])->name('showRincian');
+        Route::post('/store/rincian/{id}', [KegiatanController::class, 'storeRincian'])->name('storeRincian');
+        Route::put('/update/rincian/{id}', [KegiatanController::class, 'updateRincian'])->name('updateRincian');
+        Route::delete('/delete/rincian/{id}', [KegiatanController::class, 'deleteRincian'])->name('deleteRincian');
+
+        Route::put('/update/status/gm/{id}', [KegiatanController::class, 'gm'])->name('UpdateStatusGM');
+        Route::put('/update/status/finance/{id}', [KegiatanController::class, 'finance'])->name('UpdateStatusFinance');
+        Route::put('/update/status/selesai/{id}', [KegiatanController::class, 'selesai'])->name('UpdateStatusSelesai');
+    });
+
+    Route::prefix('kendaraan')->group(function(){
+        Route::get('/index/kondisi', [KendaraanController::class, 'indexKondisi'])->name('indexKondisiKendaraan');
+        Route::get('/detail/kondisi/{id}', [KendaraanController::class, 'detailKondisi'])->name('detailKondisiKendaraan');
+        Route::post('/store/kondisi', [KendaraanController::class, 'storeKondisi'])->name('storeKondisiKendaraan');
+        Route::put('/update/kondisi/{id}', [KendaraanController::class, 'updateKondisi'])->name('updateKondisiKendaraan');
+        Route::delete('/delete/kondisi/{id}', [KendaraanController::class, 'deleteKondisi'])->name('deleteKondisiKendaraan');
     });
 });
 
