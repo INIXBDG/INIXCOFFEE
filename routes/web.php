@@ -56,6 +56,7 @@ use App\Http\Controllers\RekomendasiLanjutanController;
 use App\Http\Controllers\ForumSSOController;
 use App\Http\Controllers\Webinar\TimelineItemController;
 use App\Http\Controllers\Webinar\ChecklistController;
+use App\HTTP\Controllers\SentryWebhookController;
 
 
 /*
@@ -323,6 +324,8 @@ Route::get('/export-lembur-pdf/{id}/{year}/{month}', [App\Http\Controllers\Overt
 Route::post('/change-user', [App\Http\Controllers\UserController::class, 'changeUser'])->name('change.user');
 Route::get('/get-users', [App\Http\Controllers\UserController::class, 'getUsers'])->name('get.users');
 Route::get('/user-dropdown', [App\Http\Controllers\UserController::class, 'showUserDropdown'])->name('user.dropdown');
+// Route::get('/webhook/sentry', [SentryWebhookController::class, 'index']);
+
 
 Route::get('/rkm/{id}/souvenir', [App\Http\Controllers\SouvenirController::class, 'createSouvenirInhouse'])->name('createSouvenirInhouse');
 Route::get('/souvenir/filter/{keyword}', [SouvenirController::class, 'filterSouvenir'])->name('filterSouvenir');
@@ -395,7 +398,7 @@ Route::put('/notifications/markAllAsRead', [App\Http\Controllers\CommentControll
 Route::get('/rkm/{id}/absensi', [App\Http\Controllers\RKMController::class, 'absensiPeserta'])->name('absensiPeserta');
 Route::put('/suratperjalanan/{id}/approval', [App\Http\Controllers\SuratPerjalananController::class, 'approval'])->name('suratperjalanan.approval');
 Route::get('/fetch-attendance', [\App\Http\Controllers\RKMController::class, 'fetchAttendance'])->name('attendance.fetch');
-Route::post('/absensi', [\App\Http\Controllers\AbsensiKaryawanController::class, 'storeMasuk'])->name('absensi.masuk');
+Route::post('/absensi', [\App\Http\Controllers\AbsensiKaryawanController::class, 'storeAbsensi'])->name('absensi.masuk');
 Route::get('/absensi/karyawan',  [App\Http\Controllers\AbsensiKaryawanController::class, 'absensiKaryawan'])->name('absensi.karyawan');
 Route::get('/absensi/pengajuan-klaim/no-recorded',  [App\Http\Controllers\AbsensiKaryawanController::class, 'noRecord'])->name('absensi.noRecord');
 Route::post('/absensi/approve/pengajuan-klaim/no-recorded',  [App\Http\Controllers\AbsensiKaryawanController::class, 'ApproveNoRecord'])->name('absensi.approveNoRecord');

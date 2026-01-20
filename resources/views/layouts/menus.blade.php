@@ -1188,9 +1188,9 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <a href=>
+                                            <!-- <a href=>
                                                 Forum Diskusi
-                                            </a>
+                                            </a> -->
 
                                             @endcan
                                             {{-- @can('View DataKaryawan') --}}
@@ -2372,6 +2372,23 @@
                                                     <h5 class="card-title">Shortcut</h5>
                                                 </a>
                                                 <p class="card-text">shortcut.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6 mt-2">
+                                    <div class="card" id="card-hover">
+                                        <div class="card-body d-flex">
+                                            <div class="col-md-2">
+                                                <img src="{{ asset('icon/bell.svg') }}"
+                                                    class="img-responsive" width="30px">
+                                            </div>
+                                            <div class="col-md-10" style="margin-left: 10px">
+                                                <a href="https://inixindo.sentry.io/issues/"
+                                                    class="link stretched-link text-decoration-none">
+                                                    <h5 class="card-title">Sentry Dashboard</h5>
+                                                </a>
+                                                <p class="card-text">Sentry laravel.</p>
                                             </div>
                                         </div>
                                     </div>
