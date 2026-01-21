@@ -814,3 +814,5 @@ Route::post('/activityinstruktur-store', [ActivityInstrukturController::class, '
 Route::post('/activityinstruktur-update', [ActivityInstrukturController::class, 'update'])->name('api.activities.proof_update');
 Route::get('/activityinstruktur', [ActivityInstrukturController::class, 'index'])->name('activities.index');
 
+// Pastikan berada di dalam grup middleware auth
+Route::get('/activityinstruktur-data/summary', [App\Http\Controllers\ActivityInstrukturController::class, 'getSummaryData'])->name('api.activities.summary');
