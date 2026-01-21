@@ -398,7 +398,7 @@ Route::put('/notifications/markAllAsRead', [App\Http\Controllers\CommentControll
 Route::get('/rkm/{id}/absensi', [App\Http\Controllers\RKMController::class, 'absensiPeserta'])->name('absensiPeserta');
 Route::put('/suratperjalanan/{id}/approval', [App\Http\Controllers\SuratPerjalananController::class, 'approval'])->name('suratperjalanan.approval');
 Route::get('/fetch-attendance', [\App\Http\Controllers\RKMController::class, 'fetchAttendance'])->name('attendance.fetch');
-Route::post('/absensi', [\App\Http\Controllers\AbsensiKaryawanController::class, 'storeMasuk'])->name('absensi.masuk');
+Route::post('/absensi', [\App\Http\Controllers\AbsensiKaryawanController::class, 'storeAbsensi'])->name('absensi.masuk');
 Route::get('/absensi/karyawan',  [App\Http\Controllers\AbsensiKaryawanController::class, 'absensiKaryawan'])->name('absensi.karyawan');
 Route::get('/absensi/pengajuan-klaim/no-recorded',  [App\Http\Controllers\AbsensiKaryawanController::class, 'noRecord'])->name('absensi.noRecord');
 Route::post('/absensi/approve/pengajuan-klaim/no-recorded',  [App\Http\Controllers\AbsensiKaryawanController::class, 'ApproveNoRecord'])->name('absensi.approveNoRecord');
@@ -723,6 +723,8 @@ Route::put('/expense-hub/update/{id}', [App\Http\Controllers\ExpenseHubControlle
 
 Route::prefix('office')->group(function () {
     Route::get('/dashboard', [OfficeController::class, 'dashboard'])->name('office.dashboard');
+    Route::get('/data-cuti', [OfficeController::class, 'dataCuti']);
+    Route::get('/data-mengajar', [OfficeController::class, 'dataMengajar']);
 });
 
 Route::prefix('dashboard-sla/{team}')->group(function () {
