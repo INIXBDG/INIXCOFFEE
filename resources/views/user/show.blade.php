@@ -93,7 +93,52 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                    @if(in_array($users->karyawan->jabatan, ['Instruktur', 'Education Manager']))
+                        <div class="card certification-card mb-5">
+                            <div class="card-body">
+                                <h5 class="card-title text-dark fw-bold mb-3">
+                                Sertifikasi
+                                </h5>
+                                
+                                @if($sertifikasis->count() > 0)
+                                    <div class="list-group list-group-flush">
+                                        @foreach($sertifikasis as $sertifikat)
+                                        @php
+                                            // Cek apakah expired
+                                            $isExpired = $sertifikat->tanggal_berlaku_sampai && \Carbon\Carbon::parse($sertifikat->tanggal_berlaku_sampai)->endOfDay()->isPast();
+                                        @endphp
+                                        <div class="list-group-item px-0 py-2">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <div class="fw-bold text-dark">
+                                                        {{ $sertifikat->nama_sertifikat }}
+                                                    </div>
+                                                    <small class="text-muted d-block">{{ $sertifikat->penyedia }}</small>
+                                                    <small class="{{ $isExpired ? 'text-danger fw-bold' : 'text-muted' }}">
+                                                        Berlaku: {{ \Carbon\Carbon::parse($sertifikat->tanggal_berlaku_dari)->format('d M Y') }}
+                                                        @if($sertifikat->tanggal_berlaku_sampai)
+                                                        - {{ \Carbon\Carbon::parse($sertifikat->tanggal_berlaku_sampai)->format('d M Y') }}
+                                                        @else
+                                                        (Seumur Hidup)
+                                                        @endif
+                                                    </small>
+                                                </div>
+                                                
+                                                {{-- Logika Badge Retired/Approved --}}
+                                                @if($isExpired)
+                                                    <span class="badge bg-secondary">RETIRED</span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <p class="text-muted small fst-italic mb-0">Belum ada sertifikasi yang disetujui.</p>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
+                    </div>
 
                 {{-- Kolom Kanan --}}
                 <div class="col-md-8">
