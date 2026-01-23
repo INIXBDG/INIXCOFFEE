@@ -8,6 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 class Kegiatan extends Model
 {
     use HasFactory;
+    protected $casts = [
+        'id_peserta' => 'array',
+    ];
+
     protected $fillable = [
         'nama_kegiatan',
         'waktu_kegiatan',
@@ -18,9 +22,11 @@ class Kegiatan extends Model
         'approved',
         'pencairan',
         'selesai',
+        'tipe',
     ];
 
-    public function rincian(){
+    public function rincian()
+    {
         return $this->hasMany(RincianKegiatan::class, 'id_kegiatan', 'id');
     }
 }

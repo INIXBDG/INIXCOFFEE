@@ -222,6 +222,7 @@ Route::post('download/SuratPerjalanan/to/excel-year', [App\Http\Controllers\Sura
 Route::post('download/SuratPerjalanan/to/pdf', [App\Http\Controllers\SuratPerjalananController::class, 'getToPdfMonth'])->name('getToPdfMonth');
 Route::post('download/SuratPerjalanan/to/pdf-year', [App\Http\Controllers\SuratPerjalananController::class, 'getToPdfYear'])->name('getToPdfYear');
 Route::get('getPengajuanBarang/{month}/{year}', [App\Http\Controllers\PengajuanBarangController::class, 'getPengajuanBarang'])->name('getPengajuanBarang');
+Route::get('getPengajuanBarang/{id}', [KegiatanController::class, 'getPengajuanBarang'])->name('getPengajuanBarangKegiatan');
 Route::get('getPengajuanLabSubs/{month}/{year}', [App\Http\Controllers\PengajuanLabdanSubsController::class, 'getPengajuanLabSubs'])->name('getPengajuanLabSubs');
 Route::put('pengajuanlabsdansubs/updatelabsubs/{id}', [App\Http\Controllers\PengajuanLabdanSubsController::class, 'updateLabSubs'])->name('pengajuanlabsdansubs.updatelabsubs');
 Route::post('/pengajuanlabsdansubs/{id}/upload-invoice', [App\Http\Controllers\PengajuanLabdanSubsController::class, 'uploadInvoice'])->name('pengajuanlabsdansubs.uploadInvoice');
@@ -798,6 +799,9 @@ Route::prefix('office')->name('office.')->middleware(['auth'])->group(function (
         Route::put('/update/status/gm/{id}', [KegiatanController::class, 'gm'])->name('UpdateStatusGM');
         Route::put('/update/status/finance/{id}', [KegiatanController::class, 'finance'])->name('UpdateStatusFinance');
         Route::put('/update/status/selesai/{id}', [KegiatanController::class, 'selesai'])->name('UpdateStatusSelesai');
+
+        Route::put('/tambah/peserta/{id}', [KegiatanController::class, 'storePeserta'])->name('StorePesertaKegiatan');
+        Route::get('/download/pdf/{id}', [KegiatanController::class, 'downloadPDF'])->name('downloadPdfRab');
     });
 
     Route::prefix('kendaraan')->group(function(){

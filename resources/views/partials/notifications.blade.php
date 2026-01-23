@@ -1550,6 +1550,13 @@
             </div>
 
             <div class="mb-2">
+                <small class="text-muted d-block">Tipe RAB</small>
+                <span class="fw-bold text-uppercase">
+                    {{ $notification->data['message']['tipe_kegiatan'] ?? '-' }}
+                </span>
+            </div>
+
+            <div class="mb-2">
                 <small class="text-muted d-block">Lama Kegiatan</small>
                 <span>
                     {{ $notification->data['message']['lama_kegiatan'] ?? '-' }}

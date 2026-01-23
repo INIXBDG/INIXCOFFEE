@@ -3,19 +3,33 @@
 namespace App\Http\Controllers;
 
 use App\Models\AbsensiKaryawan;
+use App\Models\karyawan;
 use App\Models\Kegiatan;
+use App\Models\PengajuanBarang;
 use App\Models\RincianKegiatan;
+use App\Models\tracking_pengajuan_barang;
 use App\Models\User;
 use App\Notifications\KegiatanApproved;
 use App\Notifications\KegiatanMenunggu;
 use App\Notifications\KegiatanNotification;
 use App\Notifications\KegiatanPencairan;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
 
 class KegiatanController extends Controller
 {
+
+    protected $PengajuanBarangController;
+
+    public function __construct(PengajuanBarangController $PengajuanBarangController)
+    {
+        $this->middleware('auth');
+        $this->PengajuanBarangController = $PengajuanBarangController;
+    }
+
     public function index()
     {
         $kegiatan = Kegiatan::all();
@@ -27,24 +41,83 @@ class KegiatanController extends Controller
         $kegiatan = Kegiatan::with('rincian')->findOrFail($id);
         $totalRincian = $kegiatan->rincian->sum('total');
 
+        $absensi = AbsensiKaryawan::with('karyawan')
+            ->whereDate('tanggal', $kegiatan->waktu_kegiatan)
+            ->get();
+
+        $karyawan = karyawan::where('status_aktif', '1')->get();
+
+        $idPeserta = $kegiatan->id_peserta ?? [];
+
+        $peserta = Karyawan::whereIn('id', $idPeserta)->get();
+
+        return view('office.rab.show', compact('kegiatan', 'totalRincian', 'absensi', 'karyawan', 'peserta'));
+    }
+
+    public function getPengajuanBarang($id)
+    {
+        $dataPengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')->where('id_kegiatan', $id)->get();
+        return response()->json([
+            'success' => true,
+            'message' => 'List data pengajuan barang untuk kegiatan/pembelian',
+            'data' => $dataPengajuanBarang,
+        ]);
+    }
+
+    public function downloadPDF($id)
+    {
+        $kegiatan = Kegiatan::with('rincian')->findOrFail($id);
+        $totalRincian = $kegiatan->rincian->sum('total');
+
         $karyawan = AbsensiKaryawan::with('karyawan')
             ->whereDate('tanggal', $kegiatan->waktu_kegiatan)
             ->get();
-        return view('office.rab.show', compact('kegiatan', 'totalRincian', 'karyawan'));
+
+        $idPeserta = $kegiatan->id_peserta ?? [];
+
+        $peserta = Karyawan::whereIn('id', $idPeserta)->get();
+
+        $dataPengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')->where('id_kegiatan', $id)->get();
+
+        if ($kegiatan->tipe === 'kegiatan') {
+            $filename = 'pdf-kegiatan.pdf';
+        } elseif ($kegiatan->tipe === 'pembelian') {
+            $filename = 'pdf-pembelian.pdf';
+        } else {
+            $filename = 'pdf-kegiatan.pdf';
+        }
+
+        $pdf = Pdf::loadView(
+            'office.rab.pdf',
+            compact('kegiatan', 'totalRincian', 'karyawan', 'dataPengajuanBarang', 'peserta')
+        )->setPaper('a4', 'landscape');
+
+        return $pdf->download($filename);
+    }
+
+    public function storePeserta(Request $request, $id)
+    {
+        $kegiatan = Kegiatan::findOrFail($id);
+        $kegiatan->id_peserta = array_map('intval', $request->peserta);
+        $kegiatan->save();
+
+        return back()->with('success', 'Berhasil menambahkan peserta kegiatan');
     }
 
     public function storeKegiatan(Request $request)
     {
         $validated = $request->validate([
             'nama_kegiatan'   => 'required|string|max:255',
-            'waktu_kegiatan'  => 'required|date',
-            'lama_kegiatan'   => 'required|max:100',
+            'tipe'   => 'required|in:kegiatan,pembelian',
+            'waktu_kegiatan'  => 'nullable|date',
+            'lama_kegiatan'   => 'nullable|max:100',
             'pic'             => 'nullable|string|max:255',
             'status'          => 'nullable|in:Diajukan,Menunggu,Approved,Pencairan,Selesai',
         ]);
 
         $kegiatan = new Kegiatan();
         $kegiatan->nama_kegiatan  = $validated['nama_kegiatan'];
+        $kegiatan->tipe  = $validated['tipe'];
         $kegiatan->waktu_kegiatan = $validated['waktu_kegiatan'];
         $kegiatan->lama_kegiatan  = $validated['lama_kegiatan'];
         $kegiatan->pic            = $validated['pic'] ?? null;
@@ -55,6 +128,7 @@ class KegiatanController extends Controller
         $penerima = User::where('jabatan', 'GM')->where('status_akun', '1')->first();
         $data = [
             'nama_kegiatan' => $validated['nama_kegiatan'],
+            'tipe' => $validated['tipe'],
             'waktu_kegiatan' => $validated['waktu_kegiatan'],
             'lama_kegiatan' => $validated['lama_kegiatan'],
             'pic' => $validated['pic'],
@@ -74,8 +148,8 @@ class KegiatanController extends Controller
 
         $validated = $request->validate([
             'nama_kegiatan'   => 'required|string|max:255',
-            'waktu_kegiatan'  => 'required|date',
-            'lama_kegiatan'   => 'required|max:100',
+            'waktu_kegiatan'  => 'nullable|date',
+            'lama_kegiatan'   => 'nullable|max:100',
             'pic'             => 'nullable|string|max:255',
             'status'          => 'nullable|in:Diajukan,Menunggu,Approved,Pencairan,Selesai',
         ]);
@@ -99,59 +173,80 @@ class KegiatanController extends Controller
         return redirect()->back()->with('success', 'Kegiatan berhasil dihapus');
     }
 
-    public function storeRincian(Request $request, $id)
-    {
-        $validated = $request->validate([
-            'hal'   => 'required|string|max:255',
-            'rincian'  => 'required|string|max:255',
-            'qty'   => 'required|integer',
-            'harga_satuan'             => 'nullable|numeric|min:0',
-        ]);
+    // Tidak Terpakai, jadinya pakai dari PengajuanBarangController
 
-        $total = $request->harga_satuan * $request->qty;
+    // public function storeRincian(Request $request, $id)
+    // {
+    //     $validated = $request->validate([
+    //         'hal'          => 'required|string|max:255',
+    //         'rincian'      => 'required|string|max:255',
+    //         'qty'          => 'required|integer',
+    //         'harga_satuan' => 'nullable|numeric|min:0',
+    //         'tipe'         => 'nullable|in:ATK,Elektronik,Makanan,Souvenir,Operasional,Reimbursement,Training & Sertifikasi',
+    //     ]);
 
-        $rincian = new RincianKegiatan();
-        $rincian->id_kegiatan = $id;
-        $rincian->hal  = $validated['hal'];
-        $rincian->rincian = $validated['rincian'];
-        $rincian->qty  = $validated['qty'];
-        $rincian->harga_satuan            = $validated['harga_satuan'];
-        $rincian->total    = $total;
+    //     $rincian = new RincianKegiatan();
+    //     $rincian->id_kegiatan  = $id;
+    //     $rincian->hal          = $validated['hal'];
+    //     $rincian->rincian      = $validated['rincian'];
+    //     $rincian->qty          = $validated['qty'];
+    //     $rincian->harga_satuan = $validated['harga_satuan'];
+    //     $rincian->total        = $validated['harga_satuan'] * $validated['qty'];
+    //     $rincian->save();
 
-        $rincian->save();
+    //     // Gunakan construct untuk menggunakan function controller lain
+    //     $user = Auth::user();
+    //     $idKaryawan = $user->karyawan ? $user->karyawan->id : $user->id;
 
-        return redirect()->back()->with('success', 'Rincian berhasil disimpan');
-    }
+    //     $payloadPengajuan = [
+    //         'id_karyawan' => (string) $idKaryawan,
+    //         'tipe'        => (string) $validated['tipe'],
+    //         'barang'      => [
+    //             'nama_barang'  => [$validated['rincian']],
+    //             'qty'          => [(string) $validated['qty']],
+    //             'harga_barang' => [(string) $validated['harga_satuan']],
+    //             'keterangan'   => [$validated['hal']],
+    //         ],
+    //     ];
 
-    public function updateRincian(Request $request, $id)
-    {
-        $rincian = RincianKegiatan::findOrFail($id);
-        $validated = $request->validate([
-            'hal'   => 'required|string|max:255',
-            'rincian'  => 'required|string|max:255',
-            'qty'   => 'required|integer',
-            'harga_satuan'  => 'nullable|numeric|min:0',
-        ]);
-        $total = $request->harga_satuan * $request->qty;
+    //     $newRequest = $request->duplicate();
 
-        $rincian->id_kegiatan = $rincian->id_kegiatan;
-        $rincian->hal  = $validated['hal'];
-        $rincian->rincian = $validated['rincian'];
-        $rincian->qty  = $validated['qty'];
-        $rincian->harga_satuan            = $validated['harga_satuan'];
-        $rincian->total    = $total;
+    //     $newRequest->merge($payloadPengajuan);
 
-        $rincian->save();
+    //     $this->PengajuanBarangController->store($newRequest);
 
-        return redirect()->back()->with('success', 'Rincian berhasil diupdate');
-    }
+    //     return redirect()->back()->with('success', 'Rincian dan Pengajuan Barang berhasil disimpan.');
+    // }
 
-    public function deleteRincian($id)
-    {
-        RincianKegiatan::findOrFail($id)->delete();
+    // public function updateRincian(Request $request, $id)
+    // {
+    //     $rincian = RincianKegiatan::findOrFail($id);
+    //     $validated = $request->validate([
+    //         'hal'   => 'required|string|max:255',
+    //         'rincian'  => 'required|string|max:255',
+    //         'qty'   => 'required|integer',
+    //         'harga_satuan'  => 'nullable|numeric|min:0',
+    //     ]);
+    //     $total = $request->harga_satuan * $request->qty;
 
-        return redirect()->back()->with('success', 'Rincian berhasil didelete');
-    }
+    //     $rincian->id_kegiatan = $rincian->id_kegiatan;
+    //     $rincian->hal  = $validated['hal'];
+    //     $rincian->rincian = $validated['rincian'];
+    //     $rincian->qty  = $validated['qty'];
+    //     $rincian->harga_satuan            = $validated['harga_satuan'];
+    //     $rincian->total    = $total;
+
+    //     $rincian->save();
+
+    //     return redirect()->back()->with('success', 'Rincian berhasil diupdate');
+    // }
+
+    // public function deleteRincian($id)
+    // {
+    //     RincianKegiatan::findOrFail($id)->delete();
+
+    //     return redirect()->back()->with('success', 'Rincian berhasil didelete');
+    // }
 
     public function gm(Request $request, $id)
     {
@@ -159,6 +254,7 @@ class KegiatanController extends Controller
         $kegiatan->status = $request->status;
         if ($request->status === 'Approved') {
             $kegiatan->approved = Carbon::now();
+            $kegiatan->menunggu = Carbon::now();
         } elseif ($request->status === 'Menunggu') {
             $kegiatan->menunggu = Carbon::now();
         }

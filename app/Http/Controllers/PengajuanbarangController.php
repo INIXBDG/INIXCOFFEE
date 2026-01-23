@@ -142,6 +142,7 @@ class PengajuanBarangController extends Controller
     {
         $request->validate([
             'id_karyawan' => 'required|string|max:255',
+            'id_kegiatan' => 'required|integer',
             'tipe' => 'required|string|max:255',
             'barang.nama_barang.*' => 'nullable|string|max:255',
             'barang.qty.*' => 'nullable|string',
@@ -163,6 +164,7 @@ class PengajuanBarangController extends Controller
         $PengajuanBarang = PengajuanBarang::create([
             'tipe' => $request->tipe,
             'id_karyawan' => $request->id_karyawan,
+            'id_kegiatan' => $request->id_kegiatan,
         ]);
 
         $barangData = [];
@@ -265,7 +267,7 @@ class PengajuanBarangController extends Controller
             NotificationFacade::send($user, new PengajuanbarangNotification($data, $path, $type, $receiverId));
         }
 
-        return redirect()->route('pengajuanbarang.index')->with('success', 'Pengajuan Barang berhasil dibuat.');
+        return back()->with('success', 'Pengajuan Barang berhasil dibuat.');
     }
 
 
