@@ -677,143 +677,142 @@
             }
 
         }
-                  .chart-container {
-                max-height: 280px;
-                overflow: hidden;
-            }
-        </style>
+        .chart-container {
+            max-height: 280px;
+            overflow: hidden;
+        }
+    </style>
 
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                const ctx = document.getElementById('kehadiranChart')?.getContext('2d');
-                if (!ctx) return;
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {  
+            const ctx = document.getElementById('kehadiranChart')?.getContext('2d');
+            if (!ctx) return;
 
-                const labels = @json($kehadiranChart['labels']);
-                const data = @json($kehadiranChart['data']);
-                const totalKaryawan = {{ $total_karyawan }};
+            const labels = @json($kehadiranChart['labels']);
+            const data = @json($kehadiranChart['data']);
+            const totalKaryawan = {{ $total_karyawan }};
 
-                // Gradient fill
-                const gradient = ctx.createLinearGradient(0, 0, 0, 320);
-                gradient.addColorStop(0, 'rgba(91, 115, 232, 0.2)');
-                gradient.addColorStop(1, 'rgba(91, 115, 232, 0.05)');
+            // Gradient fill
+            const gradient = ctx.createLinearGradient(0, 0, 0, 320);
+            gradient.addColorStop(0, 'rgba(91, 115, 232, 0.2)');
+            gradient.addColorStop(1, 'rgba(91, 115, 232, 0.05)');
 
-                new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Jumlah Hadir',
-                            data: data,
-                            borderColor: '#5b73e8',
-                            backgroundColor: gradient,
-                            borderWidth: 3,
-                            fill: true,
-                            tension: 0.45,
-                            pointRadius: 6,
-                            pointHoverRadius: 9,
-                            pointBackgroundColor: '#fff',
-                            pointBorderColor: '#5b73e8',
-                            pointBorderWidth: 3,
-                            pointHoverBackgroundColor: '#5b73e8',
-                            pointHoverBorderColor: '#fff',
-                        }]
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Jumlah Hadir',
+                        data: data,
+                        borderColor: '#5b73e8',
+                        backgroundColor: gradient,
+                        borderWidth: 3, 
+                        fill: true,
+                        tension: 0.45,
+                        pointRadius: 6,
+                        pointHoverRadius: 9,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#5b73e8',
+                        pointBorderWidth: 3,
+                        pointHoverBackgroundColor: '#5b73e8',
+                        pointHoverBorderColor: '#fff',
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
                     },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        interaction: {
-                            mode: 'index',
-                            intersect: false
-                        },
-                        plugins: {
-                            legend: {
-                                display: true,
-                                position: 'top',
-                                labels: {
-                                    font: {
-                                        size: 14,
-                                        weight: 'bold'
-                                    },
-                                    color: '#333',
-                                    usePointStyle: true,
-                                    padding: 20
-                                }
-                            },
-                            tooltip: {
-                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                titleColor: '#fff',
-                                bodyColor: '#fff',
-                                cornerRadius: 8,
-                                displayColors: false,
-                                padding: 12,
-                                callbacks: {
-                                    afterLabel: function(context) {
-                                        const hadir = context.parsed.y;
-                                        const tidakHadir = totalKaryawan - hadir;
-                                        return [
-                                            '',
-                                            `Tidak Hadir: ${tidakHadir}`,
-                                            `Persentase: ${Math.round((hadir / totalKaryawan) * 100)}%`
-                                        ];
-                                    }
-                                }
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                color: '#333',
+                                usePointStyle: true,
+                                padding: 20
                             }
                         },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                max: totalKaryawan + 5,
-                                ticks: {
-                                    stepSize: 1,
-                                    font: {
-                                        size: 12
-                                    },
-                                    color: '#666'
-                                },
-                                grid: {
-                                    color: 'rgba(0, 0, 0, 0.05)',
-                                    drawBorder: false
-                                },
-                                title: {
-                                    display: true,
-                                    text: 'Jumlah Karyawan',
-                                    font: {
-                                        size: 14,
-                                        weight: 'bold'
-                                    },
-                                    color: '#333'
-                                }
-                            },
-                            x: {
-                                ticks: {
-                                    font: {
-                                        size: 12
-                                    },
-                                    color: '#666',
-                                    maxRotation: 0
-                                },
-                                grid: {
-                                    display: false
-                                },
-                                title: {
-                                    display: true,
-                                    text: 'Tanggal',
-                                    font: {
-                                        size: 14,
-                                        weight: 'bold'
-                                    },
-                                    color: '#333'
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            cornerRadius: 8,
+                            displayColors: false,
+                            padding: 12,
+                            callbacks: {
+                                afterLabel: function(context) {
+                                    const hadir = context.parsed.y;
+                                    const tidakHadir = totalKaryawan - hadir;
+                                    return [
+                                        '',
+                                        `Tidak Hadir: ${tidakHadir}`,
+                                        `Persentase: ${Math.round((hadir / totalKaryawan) * 100)}%`
+                                    ];
                                 }
                             }
-                        },
-                        animation: {
-                            duration: 1500,
-                            easing: 'easeOutQuart'
                         }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: totalKaryawan + 5,
+                            ticks: {
+                                stepSize: 1,
+                                font: {
+                                    size: 12
+                                },
+                                color: '#666'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)',
+                                drawBorder: false
+                            },
+                            title: {
+                                display: true,
+                                text: 'Jumlah Karyawan',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                color: '#333'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                font: {
+                                    size: 12
+                                },
+                                color: '#666',
+                                maxRotation: 0
+                            },
+                            grid: {
+                                display: false
+                            },
+                            title: {
+                                display: true,
+                                text: 'Tanggal',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                color: '#333'
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 1500,
+                        easing: 'easeOutQuart'
                     }
-                });
+                }
             });
 
             let cuti = document.getElementById('dataCuti')?.getContext('2d');
