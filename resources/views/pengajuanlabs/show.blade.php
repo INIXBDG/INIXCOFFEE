@@ -10,12 +10,12 @@
                         <img src="{{ asset('icon/arrow-left.svg') }}" class="img-responsive" width="20px"> Back
                     </a>
 
+                   {{-- Judul tetap dinamis berdasarkan ID --}}
                    <h5 class="card-title">
-                        Detail Pengajuan {{ $data->lab ? 'Lab' : ($data->subs ? 'Subscription' : '-') }}
+                        Detail Pengajuan {{ $data->id_labs ? 'Lab' : ($data->id_subs ? 'Subscription' : '-') }}
                     </h5>
 
                     <div class="row">
-                        <!-- ===================== INFORMASI KARYAWAN ===================== -->
                         <div class="col-md-5">
                             <div class="row">
                                 <div class="col-md-4"><p>Nama Karyawan</p></div>
@@ -33,7 +33,7 @@
                                 <div class="col-md-4"><p>Tipe Pengajuan</p></div>
                                 <div class="col-md-1"><p>:</p></div>
                                 <div class="col-md-7">
-                                    <p>{{ $data->lab ? 'Lab' : 'Subscription' }}</p>
+                                    <p>{{ $data->id_labs ? 'Lab' : 'Subscription' }}</p>
                                 </div>
 
                                 <div class="col-md-4"><p>Invoice</p></div>
@@ -65,100 +65,93 @@
                             </div>
                         </div>
 
-                        <!-- ===================== DETAIL LAB / SUBS ===================== -->
                         <div class="col-md-7">
                             <div class="card">
                                 <div class="card-body">
-                                    <div class="col-md-12" style="display: flex; justify-content: space-between;">
-                                        <h5 class="card-title">Detail {{ $data->lab ? 'Lab' : 'Subscription' }}</h5>
+                                    @php
+                                        $displayData = null;
+                                        $type = '';
 
-                                        @php
-                                            $jabatan = auth()->user()->jabatan;
-                                            $id_karyawan = auth()->user()->karyawan_id;
+                                        if ($data->id_labs) {
+                                            $type = 'Lab';
+                                            $displayData = $data->lab_snapshot;
+                                        } elseif ($data->id_subs) {
+                                            $type = 'Subscription';
+                                            $displayData = $data->subs_snapshot;
+                                        }
 
-                                            // Cek kelengkapan data
-                                            if ($data->lab) {
-                                                $isComplete = !empty($data->lab->nama_labs)
-                                                    && !empty($data->lab->harga)
-                                                    && !empty($data->lab->mata_uang)
-                                                    && (!empty($data->lab->start_date) && !empty($data->lab->end_date));
-                                            } elseif ($data->subs) {
-                                                $isComplete = !empty($data->subs->nama_subs)
-                                                    && !empty($data->subs->harga)
-                                                    && !empty($data->subs->mata_uang)
-                                                    && (!empty($data->subs->start_date) && !empty($data->subs->end_date));
-                                            } else {
-                                                $isComplete = false;
-                                            }
-                                        @endphp
+                                        $isComplete = false;
 
+                                        if (!empty($displayData) && is_array($displayData)) {
+                                            $nameKey = ($type == 'Lab') ? 'nama_labs' : 'nama_subs';
+
+                                            // Pastikan key wajib ada dalam array JSON
+                                            $isComplete = !empty($displayData[$nameKey])
+                                                && !empty($displayData['harga'])
+                                                && !empty($displayData['mata_uang'])
+                                                && !empty($displayData['start_date'])
+                                                && !empty($displayData['end_date']);
+                                        }
+                                    @endphp
+
+                                    <div class="col-md-12 d-flex justify-content-between">
+                                        <h5 class="card-title">Detail {{ $type }}</h5>
                                         <div>
+                                            {{-- Tombol PDF hanya aktif jika snapshot JSON sudah lengkap --}}
                                             <a href="{{ $isComplete ? route('pengajuanlabsdansubs.exportpdf', $data->id) : '#' }}"
-                                            target="{{ $isComplete ? '_blank' : '' }}"
-                                            class="btn btn-danger {{ !$isComplete ? 'disabled' : '' }}"
-                                            title="{{ $isComplete ? 'Export PDF' : 'Lengkapi data terlebih dahulu' }}">
+                                               target="{{ $isComplete ? '_blank' : '' }}"
+                                               class="btn btn-danger {{ !$isComplete ? 'disabled' : '' }}"
+                                               title="{{ $isComplete ? 'Export PDF' : 'Menunggu Approval Koordinator ITSM' }}">
                                                 Export PDF
                                             </a>
                                         </div>
                                     </div>
+
                                     <div class="table-responsive">
                                         <table class="table table-striped">
                                             <tbody>
-                                                {{-- ===================== LAB ===================== --}}
-                                                @if ($data->lab)
-                                                    <tr><td>Nama Lab</td><td>{{ $data->lab->nama_labs ?? '-' }}</td></tr>
-                                                    <tr><td>Deskripsi</td><td>{{ $data->lab->desc ?? '-' }}</td></tr>
-                                                    <tr>
-                                                        <td>URL Lab</td>
-                                                        <td>
-                                                            @if (!empty($data->lab->lab_url))
-                                                                <a href="{{ $data->lab->lab_url }}" target="_blank">
-                                                                    Lihat URL Lab
-                                                                </a>
-                                                            @else
-                                                                <span class="text-muted">-</span>
-                                                            @endif
-                                                        </td>
-                                                    </tr>
-                                                    <tr><td>Kode Akses</td><td>{{ $data->lab->access_code ?? '-' }}</td></tr>
-                                                    <tr><td>Durasi (menit)</td><td>{{ $data->lab->duration_minutes ?? '-' }}</td></tr>
-                                                    <tr><td>Mata Uang</td><td>{{ $data->lab->mata_uang ?? '-' }}</td></tr>
-                                                    <tr><td>Harga</td><td>{{ number_format($data->lab->harga, 2, ',', '.') ?? '-' }}</td></tr>
-                                                    <tr><td>Kurs</td><td>{{ $data->lab->kurs ? number_format($data->lab->kurs, 2, ',', '.') : '-' }}</td></tr>
-                                                    <tr><td>Harga (Rupiah)</td><td>{{ $data->lab->harga_rupiah ? 'Rp '.number_format($data->lab->harga_rupiah, 0, ',', '.') : '-' }}</td></tr>
-                                                    <tr><td>Mulai</td><td>{{ $data->lab->start_date ? \Carbon\Carbon::parse($data->lab->start_date)->format('d M Y') : '-' }}</td></tr>
-                                                    <tr><td>Berakhir</td><td>{{ $data->lab->end_date ? \Carbon\Carbon::parse($data->lab->end_date)->format('d M Y') : '-' }}</td></tr>
-                                                    <tr><td>Status</td><td>{{ ucfirst($data->lab->status ?? '-') }}</td></tr>
+                                                {{-- Cek apakah data snapshot ada --}}
+                                                @if (!empty($displayData) && is_array($displayData))
+                                                    @if ($type == 'Lab')
+                                                        <tr><td>Nama Lab</td><td>{{ $displayData['nama_labs'] ?? '-' }}</td></tr>
+                                                        <tr><td>Deskripsi</td><td>{{ $displayData['desc'] ?? '-' }}</td></tr>
+                                                        <tr><td>URL Lab</td>
+                                                            <td>
+                                                                @if (!empty($displayData['lab_url']))
+                                                                    <a href="{{ $displayData['lab_url'] }}" target="_blank">Lihat URL Lab</a>
+                                                                @else - @endif
+                                                            </td>
+                                                        </tr>
+                                                        <tr><td>Durasi (menit)</td><td>{{ $displayData['duration_minutes'] ?? '-' }}</td></tr>
+                                                    @else
+                                                        {{-- Tampilan Subscription --}}
+                                                        <tr><td>Nama Subscription</td><td>{{ $displayData['nama_subs'] ?? '-' }}</td></tr>
+                                                        <tr><td>Merk</td><td>{{ $displayData['merk'] ?? '-' }}</td></tr>
+                                                        <tr><td>Deskripsi</td><td>{{ $displayData['desc'] ?? '-' }}</td></tr>
+                                                        <tr><td>URL</td>
+                                                            <td>
+                                                                @if (!empty($displayData['subs_url']))
+                                                                    <a href="{{ $displayData['subs_url'] }}" target="_blank">Lihat URL</a>
+                                                                @else - @endif
+                                                            </td>
+                                                        </tr>
+                                                    @endif
 
-                                                {{-- ===================== SUBS ===================== --}}
-                                                @elseif ($data->subs)
-                                                    <tr><td>Nama Subscription</td><td>{{ $data->subs->nama_subs ?? '-' }}</td></tr>
-                                                    <tr><td>Merk</td><td>{{ $data->subs->merk ?? '-' }}</td></tr>
-                                                    <tr><td>Deskripsi</td><td>{{ $data->subs->desc ?? '-' }}</td></tr>
-                                                    <tr>
-                                                        <td>URL</td>
-                                                        <td>
-                                                            @if (!empty($data->subs->subs_url))
-                                                                <a href="{{ $data->subs->subs_url }}" target="_blank">
-                                                                    Lihat URL Subscription
-                                                                </a>
-                                                            @else
-                                                                <span class="text-muted">-</span>
-                                                            @endif
-                                                        </td>
-                                                    </tr>
-                                                    <tr><td>Kode Akses</td><td>{{ $data->subs->access_code ?? '-' }}</td></tr>
-                                                    <tr><td>Mata Uang</td><td>{{ $data->subs->mata_uang ?? '-' }}</td></tr>
-                                                    <tr><td>Harga</td><td>{{ number_format($data->subs->harga, 2, ',', '.') ?? '-' }}</td></tr>
-                                                    <tr><td>Kurs</td><td>{{ $data->subs->kurs ? number_format($data->subs->kurs, 2, ',', '.') : '-' }}</td></tr>
-                                                    <tr><td>Harga (Rupiah)</td><td>{{ $data->subs->harga_rupiah ? 'Rp '.number_format($data->subs->harga_rupiah, 0, ',', '.') : '-' }}</td></tr>
-                                                    <tr><td>Mulai</td><td>{{ $data->subs->start_date ? \Carbon\Carbon::parse($data->subs->start_date)->format('d M Y') : '-' }}</td></tr>
-                                                    <tr><td>Berakhir</td><td>{{ $data->subs->end_date ? \Carbon\Carbon::parse($data->subs->end_date)->format('d M Y') : '-' }}</td></tr>
-                                                    <tr><td>Status</td><td>{{ ucfirst($data->subs->status ?? '-') }}</td></tr>
-
+                                                    {{-- Field Umum (Lab & Subs) --}}
+                                                    <tr><td>Kode Akses</td><td>{{ $displayData['access_code'] ?? '-' }}</td></tr>
+                                                    <tr><td>Mata Uang</td><td>{{ $displayData['mata_uang'] ?? '-' }}</td></tr>
+                                                    <tr><td>Harga</td><td>{{ number_format((float)($displayData['harga'] ?? 0), 2, ',', '.') }}</td></tr>
+                                                    <tr><td>Kurs</td><td>{{ number_format((float)($displayData['kurs'] ?? 1), 2, ',', '.') }}</td></tr>
+                                                    <tr><td>Harga (Rupiah)</td><td>{{ isset($displayData['harga_rupiah']) ? 'Rp '.number_format((float)$displayData['harga_rupiah'], 0, ',', '.') : '-' }}</td></tr>
+                                                    <tr><td>Mulai</td><td>{{ !empty($displayData['start_date']) ? \Carbon\Carbon::parse($displayData['start_date'])->format('d M Y') : '-' }}</td></tr>
+                                                    <tr><td>Berakhir</td><td>{{ !empty($displayData['end_date']) ? \Carbon\Carbon::parse($displayData['end_date'])->format('d M Y') : '-' }}</td></tr>
+                                                    <tr><td>Status Alat</td><td>{{ ucfirst($displayData['status'] ?? '-') }}</td></tr>
                                                 @else
+                                                    {{-- Tampilan jika JSON Snapshot masih NULL --}}
                                                     <tr>
-                                                        <td colspan="2" class="text-center">Belum ada detail Lab / Subscription</td>
+                                                        <td colspan="2" class="text-center text-muted">
+                                                            <em>Belum ada detail data tersimpan (Menunggu Approval Koordinator ITSM).</em>
+                                                        </td>
                                                     </tr>
                                                 @endif
                                             </tbody>
@@ -167,7 +160,6 @@
                                 </div>
                             </div>
 
-                            <!-- ===================== TRACKING APPROVAL ===================== -->
                             <div class="card mt-3">
                                 <div class="card-body">
                                     <h5 class="card-title">Tracking Pengajuan</h5>
@@ -195,8 +187,7 @@
                                     </div>
                                 </div>
                             </div>
-
-                        </div> <!-- end col-md-7 -->
+                        </div>
                     </div>
                 </div>
             </div>

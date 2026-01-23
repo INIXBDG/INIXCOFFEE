@@ -47,7 +47,7 @@
                                         <option value="Finance Menunggu Approve Direksi">Finance Menunggu Approve Direksi</option>
                                         <option value="Membuat Permintaan Ke Direktur Utama">Membuat Permintaan Ke Direktur Utama</option>
                                         <option value="Pengajuan sedang dalam proses Pencairan">Pengajuan sedang dalam proses Pencairan</option>
-                                        <option value="Pencairan Sudah Selesai">Pencairan Sudah Selesai</option>
+                                        <option value="Selesai">Pencairan Sudah Selesai</option>
                                         <option value="Selesai">Selesai</option>
                                     </select>
                                 </div>
@@ -96,7 +96,7 @@
             @php
                 $jabatan = auth()->user()->karyawan->jabatan ?? '';
             @endphp
-            @if (in_array($jabatan, ['Finance & Accounting', 'GM', 'Koordinator ITSM', 'Technical Support']))
+            @if (in_array($jabatan, ['Finance & Accounting', 'GM', 'Koordinator ITSM', 'Technical Support','Education Manager']))
                 <div class="card my-3">
                     <div class="card-body d-flex justify-content-center">
                         <div class="col-md-4 mx-1">

@@ -47,34 +47,36 @@ class CalendarController extends Controller
             $dates = [];
             $daysInMonth = $dateObj->daysInMonth;
 
-            for ($d = 1; $d <= $daysInMonth; $d++) {
-                $currDate = Carbon::create($year, $m, $d);
+                for ($d = 1; $d <= $daysInMonth; $d++) {
+                    $currDate = Carbon::create($year, $m, $d);
 
-                if ($currDate->isWeekend()) {
-                    continue;
-                }
-
-                $dateStr = $currDate->format('Y-m-d');
-
-                // Ambil aktivitas harian
-                $dailyItem = $mapping ? $mapping->timelineItems->where('item_date', $dateStr)->first() : null;
-
-                // Cek status D-Day (Hari Pelaksanaan)
-                $isDDay = false;
-                if ($mapping && $mapping->planned_date) {
-                    // Gunakan format Y-m-d untuk perbandingan presisi
-                    if ($dateStr === Carbon::parse($mapping->planned_date)->format('Y-m-d')) {
-                        $isDDay = true;
+                    if ($currDate->isWeekend()) {
+                        continue;
                     }
-                }
 
-                $dates[] = [
-                    'day'       => $d,
-                    'full_date' => $dateStr,
-                    'item'      => $dailyItem,
-                    'is_dday'   => $isDDay
-                ];
-            }
+                    $dateStr = $currDate->format('Y-m-d');
+
+                    // Ambil aktivitas harian dengan filter yang lebih stabil
+                    $dailyItem = $mapping ? $mapping->timelineItems->filter(function($item) use ($dateStr) {
+                        // perbandingan menggunakan format string agar tidak ada isu objek Carbon
+                        return Carbon::parse($item->item_date)->format('Y-m-d') === $dateStr;
+                    })->first() : null;
+
+                    // Cek status D-Day
+                    $isDDay = false;
+                    if ($mapping && $mapping->planned_date) {
+                        if ($dateStr === Carbon::parse($mapping->planned_date)->format('Y-m-d')) {
+                            $isDDay = true;
+                        }
+                    }
+
+                    $dates[] = [
+                        'day'       => $d,
+                        'full_date' => $dateStr,
+                        'item'      => $dailyItem,
+                        'is_dday'   => $isDDay
+                    ];
+                }
 
             $monthsData[$m] = [
                 'name'             => $monthName,

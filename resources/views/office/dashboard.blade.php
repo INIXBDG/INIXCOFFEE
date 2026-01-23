@@ -130,6 +130,148 @@
                 </div>
             </div>
 
+            <!-- Chart Cuti -->
+            <div class="col-xl-12">
+                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden">
+                    <div class="card-header bg-white border-bottom-0 pb-0 d-flex justify-content-between">
+                        <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
+                            <i class="bx bx-pie-chart-alt text-primary me-2" style="font-size: 1.5rem;"></i>
+                            Grafik Cuti<span class="ms-2" id="rentangWaktu"></span>
+                        </h5>
+                        <div class="d-flex gap-4 align-items-center">
+                            <h6 class="mb-0">Export : </h6>
+                            <button type="button" id="exportCuti" class="btn btn-outline-secondary btn-sm pdfBtn">
+                            PDF
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body pe-5 mt-5" style="height: 320px;">
+                        <div class="chart-container d-flex align-items-center" style="position: relative; height: 100%;">
+                            <canvas id="dataCuti"></canvas>
+                            <div id="cutiEmpty" class="d-none d-flex flex-column align-items-center container-fluid">
+                                <i class="bx bx-x-circle text-muted" style="font-size: 3rem;"></i>
+                                <p class="text-muted mt-3 mb-0">Tidak ada data Cuti</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="container">
+                        <div class="row">
+                            <div class="col">
+                                <label for="filterCutiTahun" class="mb-1 ms-1">Tahun</label>
+                                <select id="filterCutiTahun" class="form-select mb-3">
+                                    <option value="default" disabled selected>Berdasarkan Tahun</option>
+                                    @php
+                                        $tahun_sekarang = now()->year;
+                                        for ($tahun = 2023; $tahun <= $tahun_sekarang + 2; $tahun++) {
+                                            echo "<option value=\"$tahun\">$tahun</option>";
+                                        }
+                                    @endphp
+                                </select>
+                            </div>
+                            <div class="col">
+                                <label for="filterCutiBulan" class="mb-1 ms-1">Bulan</label>
+                                <select id="filterCutiBulan" class="form-select mb-3">
+                                    <option value="default" disabled selected>Berdasarkan Bulan</option>
+                                    @php
+                                    $bulan_sekarang = now()->month;
+                                    $nama_bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                                    for ($bulan = 1; $bulan <= 12; $bulan++) {
+                                        echo "<option value=\"$bulan\">{$nama_bulan[$bulan - 1]}</option>";
+                                    }
+                                    @endphp
+                                </select>
+                            </div>
+                            <div class="col">
+                                <label for="filterCutiTriwulan" class="mb-1 ms-1">Triwulan</label>
+                                <select id="filterCutiTriwulan" class="form-select mb-3">
+                                    <option value="default" disabled selected>Berdasarkan Triwulan</option>
+                                    <option value="1">Quarter 1</option>
+                                    <option value="2">Quarter 2</option>
+                                    <option value="3">Quarter 3</option>
+                                    <option value="4">Quarter 4</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {{-- End Chart Cuti --}}
+
+            {{-- Total Mengajar Instruktur --}}
+            <div class="col-xl-12">
+                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden">
+                    <div class="card-header bg-white border-bottom-0 pb-0 d-flex justify-content-between">
+                        <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
+                            <i class="bx bx-archive text-primary me-2" style="font-size: 1.5rem;"></i>
+                            Total Mengajar Instruktur <span class="ms-2" id="rentangWaktuMengajar"></span>
+                        </h5>
+                        <div class="d-flex gap-4 align-items-center">
+                            <h6 class="mb-0">Export : </h6>
+                            <button type="button" id="exportTotalMengajar" class="btn btn-outline-secondary btn-sm pdfBtn">
+                            PDF
+                            </button>
+                        </div>
+                    </div>
+                    <div class="container mt-5">
+                        <div class="row">
+                            <div class="col">
+                                <label for="filterMengajarPerTahun" class="mb-1 ms-1">Tahun</label>
+                                <select id="filterMengajarPerTahun" class="form-select mb-3">
+                                    <option value="default" disabled selected>Berdasarkan Tahun</option>
+                                    @php
+                                        $tahun_sekarang = now()->year;
+                                        for ($tahun = 2023; $tahun <= $tahun_sekarang + 2; $tahun++) {
+                                            echo "<option value=\"$tahun\">$tahun</option>";
+                                        }
+                                    @endphp
+                                </select>
+                            </div>
+                            <div class="col">
+                                <label for="filterMengajarPerBulan" class="mb-1 ms-1">Bulan</label>
+                                <select id="filterMengajarPerBulan" class="form-select mb-3">
+                                    <option value="default" disabled selected>Berdasarkan Bulan</option>
+                                    @php
+                                    $bulan_sekarang = now()->month;
+                                    $nama_bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                                    for ($bulan = 1; $bulan <= 12; $bulan++) {
+                                        echo "<option value=\"$bulan\">{$nama_bulan[$bulan - 1]}</option>";
+                                    }
+                                    @endphp
+                                </select>
+                            </div>
+                            <div class="col">
+                                <label for="filterMengajarPerTriwulan" class="mb-1 ms-1">Triwulan</label>
+                                <select id="filterMengajarPerTriwulan" class="form-select mb-3">
+                                    <option value="default" disabled selected>Berdasarkan Triwulan</option>
+                                    <option value="1">Quarter 1</option>
+                                    <option value="2">Quarter 2</option>
+                                    <option value="3">Quarter 3</option>
+                                    <option value="4">Quarter 4</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-0 mt-2">
+                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                            <table class="table table-hover align-middle mb-0" id="tabelTotalMengajar">
+                                <thead class="table-light sticky-top">
+                                    <tr>
+                                        <td class="border-0" style="width: 5%">No</td>
+                                        <td class="border-0" style="min-width: 70%">Nama Lengkap</td>
+                                        <td class="border-0" style="min-width: 15%">Kode Instruktur</td>
+                                        <td class="border-0" style="min-width: 10%">Total Mengajar</td>
+                                    </tr>
+                                </thead>
+                                <tbody class="text-muted fw-medium">
+                                    
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {{-- End Total Mengajar Instrukrur --}}
+
             {{-- RKM Berjalan Minggu Ini --}}
             <div class="row g-3 mb-4">
                 <div class="col-12">
@@ -533,44 +675,51 @@
                     --bs-modal-width: 95vw;
                 }
             }
-        </style>
 
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                const ctx = document.getElementById('kehadiranChart')?.getContext('2d');
-                if (!ctx) return;
+        }
+        .chart-container {
+            max-height: 280px;
+            overflow: hidden;
+        }
+    </style>
 
-                const labels = @json($kehadiranChart['labels']);
-                const data = @json($kehadiranChart['data']);
-                const totalKaryawan = {{ $total_karyawan }};
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {  
+            const ctx = document.getElementById('kehadiranChart')?.getContext('2d');
+            if (!ctx) return;
 
-                // Gradient fill
-                const gradient = ctx.createLinearGradient(0, 0, 0, 320);
-                gradient.addColorStop(0, 'rgba(91, 115, 232, 0.2)');
-                gradient.addColorStop(1, 'rgba(91, 115, 232, 0.05)');
+            const labels = @json($kehadiranChart['labels']);
+            const data = @json($kehadiranChart['data']);
+            const totalKaryawan = {{ $total_karyawan }};
 
-                new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Jumlah Hadir',
-                            data: data,
-                            borderColor: '#5b73e8',
-                            backgroundColor: gradient,
-                            borderWidth: 3,
-                            fill: true,
-                            tension: 0.45,
-                            pointRadius: 6,
-                            pointHoverRadius: 9,
-                            pointBackgroundColor: '#fff',
-                            pointBorderColor: '#5b73e8',
-                            pointBorderWidth: 3,
-                            pointHoverBackgroundColor: '#5b73e8',
-                            pointHoverBorderColor: '#fff',
-                        }]
-                    },
+            // Gradient fill
+            const gradient = ctx.createLinearGradient(0, 0, 0, 320);
+            gradient.addColorStop(0, 'rgba(91, 115, 232, 0.2)');
+            gradient.addColorStop(1, 'rgba(91, 115, 232, 0.05)');
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Jumlah Hadir',
+                        data: data,
+                        borderColor: '#5b73e8',
+                        backgroundColor: gradient,
+                        borderWidth: 3, 
+                        fill: true,
+                        tension: 0.45,
+                        pointRadius: 6,
+                        pointHoverRadius: 9,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#5b73e8',
+                        pointBorderWidth: 3,
+                        pointHoverBackgroundColor: '#5b73e8',
+                        pointHoverBorderColor: '#fff',
+                    }]
+                },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
@@ -666,5 +815,278 @@
                     }
                 });
             });
-        </script>
-    @endsection
+
+            let cuti = document.getElementById('dataCuti')?.getContext('2d');
+            if (!cuti) return;
+
+            let cutiChart = null;
+            let currentFilterCuti = {
+                filter: null,
+                value: null,
+                tahun: null,
+                rentangWaktu: null
+            };
+
+
+            function loadDataCuti(filterType, value) {
+                let tahun = $('#filterCutiTahun').val();
+
+                if (tahun === 'default' || !tahun) {
+                    tahun = new Date().getFullYear();
+                }
+
+                $.ajax({
+                    url: '/office/data-cuti',
+                    method: 'GET',
+                    data: {
+                        filter: filterType,
+                        value: value,
+                        tahun: tahun,
+                    },
+                    success: function (res) {
+
+                        if (cutiChart) {
+                            cutiChart.data.labels = res.labelCuti;
+                            cutiChart.data.datasets[0].data = res.totalCuti;
+                            cutiChart.update();
+                        } else {
+                            cutiChart = new Chart(cuti, {
+                                type: 'pie',
+                                data: {
+                                    labels: res.labelCuti,
+                                    datasets: [{
+                                        label: 'Jumlah Cuti',
+                                        data: res.totalCuti,
+                                        backgroundColor: [
+                                            'rgba(75, 192, 192, 0.8)',
+                                            'rgba(255, 99, 132, 0.8)',
+                                            'rgba(54, 162, 235, 0.8)',
+                                            'rgba(255, 206, 86, 0.8)',
+                                            'rgba(153, 102, 255, 0.8)',
+                                            'rgba(255, 159, 64, 0.8)',
+                                            'rgba(0, 128, 128, 0.8)',
+                                        ],
+                                        borderWidth: 1
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
+                                            position: 'right'
+                                        }
+                                    }
+                                }
+                            });
+                        }
+
+                        $('#rentangWaktu').text(res.rentangWaktu);
+
+                        if (res.labelCuti.length === 0) {
+                            $('#exportCuti').prop('disabled', true);
+                            $('#dataCuti').addClass('d-none');
+                            $('#cutiEmpty').removeClass('d-none');
+                            return;
+                        }
+
+                        $('#exportCuti').prop('disabled', false);
+                        $('#cutiEmpty').addClass('d-none');
+                        $('#dataCuti').removeClass('d-none');
+
+                        currentFilterCuti.filter = filterType;
+                        currentFilterCuti.value = value;
+                        currentFilterCuti.tahun = tahun;
+                        currentFilterCuti.rentangWaktu = res.rentangWaktu;
+                    },
+                    error: function (xhr) {
+                        console.error(xhr.responseText);
+                    }
+                });
+            }
+
+            // reset filter per tahun
+            $('#filterCutiTahun').change(function () {
+                $('#filterCutiBulan, #filterCutiTriwulan').val('default');
+                loadDataCuti('tahun', $(this).val());
+            });
+
+            // reset Filter per bulan
+            $('#filterCutiBulan').change(function () {
+                $('#filterCutiTriwulan').val('default');
+                loadDataCuti('bulan', $(this).val());
+            });
+
+            // reset filter per triwulan
+            $('#filterCutiTriwulan').change(function () {
+                $('#filterCutiBulan').val('default');
+                loadDataCuti('triwulan', $(this).val());
+            });
+
+            // Export cuti
+            $('#exportCuti').click(function () {
+
+                $.ajax({
+                    url: '/office/data-cuti',
+                    method: 'GET',
+                    data: {
+                        filter: currentFilterCuti.filter,
+                        value: currentFilterCuti.value,
+                        tahun: currentFilterCuti.tahun,
+                        export: 1
+                    },
+                    xhrFields: {
+                        responseType: 'blob'
+                    },
+                    success: function (blob) {
+
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+
+                        a.href = url;
+                        a.download = `Laporan_Cuti_${currentFilterCuti.rentangWaktu}.pdf`;
+                        document.body.appendChild(a);
+                        a.click();
+
+                        a.remove();
+                        window.URL.revokeObjectURL(url);
+                    },
+                    error: function (err) {
+                        alert('Gagal export PDF' + err);
+                    }
+                });
+            });
+
+            
+            // Filter total mengajar
+            let currentFilterMengajar = {
+                filter: null,
+                value: null,
+                tahun: null,
+                rentangWaktu: null
+            };
+
+            // Load tabel total mengajar
+            function loadDataMengajar(filterType, value) {
+                let tahun = $('#filterMengajarPerTahun').val();
+
+                if (tahun === 'default' || !tahun) {
+                    tahun = new Date().getFullYear();
+                }
+                
+                $.ajax({
+                    url: '/office/data-mengajar',
+                    type: 'GET',
+                    dataType: 'json',
+                    data: {
+                        filter: filterType,
+                        value: value,
+                        tahun: tahun
+                    },
+                    success: function (res) {
+                        let tabelMengajar = $('#tabelTotalMengajar tbody');
+                        tabelMengajar.empty();
+                        let data = res.dataMengajar;
+
+                        $.each(data, function (index, item) {
+                            tabelMengajar.append(`
+                                <tr>
+                                    <td>${index + 1}</td>
+                                    <td>${item.namaKaryawan}</td>
+                                    <td>${item.kodeKaryawan}</td>
+                                    <td>${item.totalMengajar}</td>
+                                </tr>
+                            `)
+                        });
+
+                        $('#rentangWaktuMengajar').text(res.rentangWaktu);
+
+                        if (data.length === 0) {
+                            $('#exportTotalMengajar').prop('disabled', true);
+                            tabelMengajar.append(`
+                                <tr>
+                                   <td colspan="7" class="text-center py-5">
+                                        <div class="d-flex flex-column align-items-center">
+                                            <i class="bx bx-archive text-muted"
+                                                style="font-size: 3rem;"></i>
+                                            <p class="text-muted mt-3 mb-0">Tidak ada data total mengajar instruktur</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `);
+                            return;
+                        }
+
+                        $('#exportTotalMengajar').prop('disabled', false);
+
+                        currentFilterMengajar.filter = filterType;
+                        currentFilterMengajar.value = value;
+                        currentFilterMengajar.tahun = tahun;
+                        currentFilterMengajar.rentangWaktu = res.rentangWaktu;
+                    },
+                    error: function (err) {
+                        alert(err);
+                    }
+                });
+            };
+
+            // reset filter per tahun
+            $('#filterMengajarPerTahun').change(function () {
+                $('#filterMengajarPerBulan, #filterMengajarPerTriwulan').val('default');
+                loadDataMengajar('tahun', $(this).val());
+            });
+
+            // reset Filter per bulan
+            $('#filterMengajarPerBulan').change(function () {
+                $('#filterMengajarPerTriwulan').val('default');
+                loadDataMengajar('bulan', $(this).val());
+            });
+
+            // reset filter per triwulan
+            $('#filterMengajarPerTriwulan').change(function () {
+                $('#filterMengajarPerBulan').val('default');
+                loadDataMengajar('triwulan', $(this).val());
+            });
+
+            // Export Total Mengajar
+            $('#exportTotalMengajar').click(function () {
+
+                $.ajax({
+                    url: '/office/data-mengajar',
+                    method: 'GET',
+                    data: {
+                        filter: currentFilterMengajar.filter,
+                        value: currentFilterMengajar.value,
+                        tahun: currentFilterMengajar.tahun,
+                        exportTotalMengajar: 1
+                    },
+                    xhrFields: {
+                        responseType: 'blob'
+                    },
+                    success: function (blob) {
+
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+
+                        a.href = url;
+                        a.download = `Laporan_Total_Mengajar_${currentFilterMengajar.rentangWaktu}.pdf`;
+                        document.body.appendChild(a);
+                        a.click();
+
+                        a.remove();
+                        window.URL.revokeObjectURL(url);
+                    },
+                    error: function (xhr, status, error) {
+                        console.log(xhr);
+                    }
+                });
+            });
+
+            // Load semua AJAX
+            $(document).ready(function () {
+                loadDataCuti('bulan', new Date().getMonth() + 1);
+                loadDataMengajar('bulan', new Date().getMonth() + 1);
+            });
+        });
+    </script>
+@endsection

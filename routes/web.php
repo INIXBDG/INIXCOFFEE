@@ -58,6 +58,7 @@ use App\Http\Controllers\KegiatanController;
 use App\Http\Controllers\KendaraanController;
 use App\Http\Controllers\Webinar\TimelineItemController;
 use App\Http\Controllers\Webinar\ChecklistController;
+use App\Http\Controllers\InstructorDevelopmentController;
 
 
 /*
@@ -398,7 +399,7 @@ Route::put('/notifications/markAllAsRead', [App\Http\Controllers\CommentControll
 Route::get('/rkm/{id}/absensi', [App\Http\Controllers\RKMController::class, 'absensiPeserta'])->name('absensiPeserta');
 Route::put('/suratperjalanan/{id}/approval', [App\Http\Controllers\SuratPerjalananController::class, 'approval'])->name('suratperjalanan.approval');
 Route::get('/fetch-attendance', [\App\Http\Controllers\RKMController::class, 'fetchAttendance'])->name('attendance.fetch');
-Route::post('/absensi', [\App\Http\Controllers\AbsensiKaryawanController::class, 'storeMasuk'])->name('absensi.masuk');
+Route::post('/absensi', [\App\Http\Controllers\AbsensiKaryawanController::class, 'storeAbsensi'])->name('absensi.masuk');
 Route::get('/absensi/karyawan',  [App\Http\Controllers\AbsensiKaryawanController::class, 'absensiKaryawan'])->name('absensi.karyawan');
 Route::get('/absensi/pengajuan-klaim/no-recorded',  [App\Http\Controllers\AbsensiKaryawanController::class, 'noRecord'])->name('absensi.noRecord');
 Route::post('/absensi/approve/pengajuan-klaim/no-recorded',  [App\Http\Controllers\AbsensiKaryawanController::class, 'ApproveNoRecord'])->name('absensi.approveNoRecord');
@@ -723,6 +724,8 @@ Route::put('/expense-hub/update/{id}', [App\Http\Controllers\ExpenseHubControlle
 
 Route::prefix('office')->group(function () {
     Route::get('/dashboard', [OfficeController::class, 'dashboard'])->name('office.dashboard');
+    Route::get('/data-cuti', [OfficeController::class, 'dataCuti']);
+    Route::get('/data-mengajar', [OfficeController::class, 'dataMengajar']);
 });
 
 Route::prefix('dashboard-sla/{team}')->group(function () {
@@ -856,3 +859,13 @@ Route::post('/api/event/{id}/update', [CalendarController::class, 'updateEvent']
 // content
 Route::patch('content-schedules/{contentSchedule}/mark-uploaded', [App\Http\Controllers\ContentScheduleController::class, 'markAsUploaded'])
     ->name('content-schedules.mark-uploaded');
+
+Route::get('/development', [InstructorDevelopmentController::class, 'index'])->name('development.index');
+Route::post('/development/sertifikasi', [InstructorDevelopmentController::class, 'storeSertifikasi'])->name('sertifikasi.store');
+Route::delete('/development/sertifikasi/{id}', [InstructorDevelopmentController::class, 'destroySertifikasi'])->name('sertifikasi.destroy');
+Route::post('/development/sertifikasi/{id}/approve', [InstructorDevelopmentController::class, 'approveSertifikasi'])->name('sertifikasi.approve');
+Route::post('/development/pelatihan', [InstructorDevelopmentController::class, 'storePelatihan'])->name('pelatihan.store');
+Route::delete('/development/pelatihan/{id}', [InstructorDevelopmentController::class, 'destroyPelatihan'])->name('pelatihan.destroy');
+Route::post('/development/pelatihan/{id}/approve', [InstructorDevelopmentController::class, 'approvePelatihan'])->name('pelatihan.approve');
+Route::put('/development/sertifikasi/{id}', [InstructorDevelopmentController::class, 'updateSertifikasi'])->name('sertifikasi.update');
+Route::put('/development/pelatihan/{id}', [InstructorDevelopmentController::class, 'updatePelatihan'])->name('pelatihan.update');
