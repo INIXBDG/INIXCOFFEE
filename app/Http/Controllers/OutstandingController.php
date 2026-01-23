@@ -247,18 +247,15 @@ class OutstandingController extends Controller
 
     public function getOutstandingPA()
     {
-        $startOfWeek = Carbon::now()->startOfWeek();
-        $endOfWeek = Carbon::now()->endOfWeek();
+        $startDate = Carbon::now();
+        $endDate   = Carbon::now()->addMonth();
 
         $rkm = RKM::with(['perhitunganNetSales', 'outstanding', 'perusahaan', 'materi'])
             ->whereHas('outstanding', function ($query) {
                 $query->where('status_pembayaran', '1');
             })
             ->whereHas('perhitunganNetSales')
-            ->where(function ($query) use ($startOfWeek, $endOfWeek) {
-                $query->whereBetween('tanggal_awal', [$startOfWeek, $endOfWeek])
-                    ->orWhereBetween('tanggal_akhir', [$startOfWeek, $endOfWeek]);
-            })
+            ->whereBetween('tanggal_akhir', [$startDate, $endDate])
             ->get();
 
         return response()->json([

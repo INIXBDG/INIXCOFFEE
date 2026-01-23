@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('kegiatans', function (Blueprint $table) {
             $table->id();
             $table->text('nama_kegiatan');
-            $table->dateTime('waktu_kegiatan');
-            $table->text('lama_kegiatan');
+            $table->dateTime('waktu_kegiatan')->nullable();
+            $table->text('lama_kegiatan')->nullable();
             $table->text('pic')->nullable();
             $table->enum('status', ['Diajukan', 'Menunggu', 'Approved', 'Pencairan', 'Selesai'])->default('Diajukan');
             $table->dateTime('menunggu')->nullable();

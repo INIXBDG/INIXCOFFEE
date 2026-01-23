@@ -277,390 +277,405 @@
                 <div class="col-12">
                     <div class="card h-100 shadow-sm border-0 rounded-3">
                         <div class="card-header bg-white border-bottom py-3">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <h5 class="card-title mb-0 fw-semibold">
-                                    <i class="bx bx-calendar-event text-primary me-2"></i>
-                                    RKM Berjalan Minggu Ini
-                                </h5>
-                                <span class="badge bg-primary-subtle text-primary">{{ count($rkm) }} Data</span>
-                            </div>
-                        </div>
-                        <div class="card-body p-0">
-                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                                <table class="table table-hover align-middle mb-0">
-                                    <thead class="table-light sticky-top">
-                                        <tr>
-                                            <th class="border-0 ps-4" style="min-width: 70px;">Sales</th>
-                                            <th class="border-0" style="min-width: 250px;">Materi</th>
-                                            <th class="border-0" style="min-width: 120px;">Harga</th>
-                                            <th class="border-0" style="min-width: 200px;">Periode</th>
-                                            <th class="border-0 text-center" style="min-width: 80px;">Pax</th>
-                                            <th class="border-0 text-center pe-4" style="min-width: 100px;">Exam</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @forelse($rkm as $index => $item)
-                                            <tr class="border-bottom">
-                                                <td class="ps-4">
-                                                    <div class="d-flex align-items-center">
-                                                        <span class="fw-medium">{{ $item->sales_key }}</span>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div class="text-truncate" style="max-width: 250px;"
-                                                        data-bs-toggle="tooltip"
-                                                        title="{{ $item->materi->nama_materi }}">
-                                                        <i class="bx bx-book-open text-muted me-1"></i>
-                                                        {{ $item->materi->nama_materi }}
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <span class="text-success fw-semibold">
-                                                        Rp {{ number_format($item->harga_jual, 0, ',', '.') }}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex flex-column small">
-                                                        <span class="text-muted">
-                                                            {{ \Carbon\Carbon::parse($item->tanggal_awal)->format('d M Y') }}
-                                                        </span>
-                                                        <span class="text-muted">
-                                                            <i class="bx bx-right-arrow-alt me-1"></i>
-                                                            {{ \Carbon\Carbon::parse($item->tanggal_akhir)->format('d M Y') }}
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                                <td class="text-center">
-                                                    <span class="badge bg-info-subtle text-info px-3 py-2">
-                                                        {{ number_format($item->pax, 0, ',', '.') }}
-                                                    </span>
-                                                </td>
-                                                <td class="text-center pe-4">
-                                                    @if ($item->exam == '1')
-                                                        <span class="badge bg-success-subtle text-success px-3 py-2">
-                                                            <i class="bx bx-check-circle me-1"></i>Ya
-                                                        </span>
-                                                    @else
-                                                        <span class="badge bg-secondary-subtle text-secondary px-3 py-2">
-                                                            <i class="bx bx-x-circle me-1"></i>Tidak
-                                                        </span>
-                                                    @endif
-                                                </td>
-                                            </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="7" class="text-center py-5">
-                                                    <div class="d-flex flex-column align-items-center">
-                                                        <i class="bx bx-calendar-x text-muted"
-                                                            style="font-size: 3rem;"></i>
-                                                        <p class="text-muted mt-3 mb-0">Tidak ada data RKM minggu ini</p>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        @endforelse
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <span class="badge bg-primary-subtle text-primary px-3 py-2">
+                                    {{ count($rkm) }} RKM
+                                </span>
 
-            {{-- Daftar Ticketing --}}
-            <div class="row g-3 mb-4">
-                <div class="col-12">
-                    <div class="card h-100 shadow-sm border-0 rounded-3">
-                        <div class="card-header bg-white border-bottom py-3">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <h5 class="card-title mb-0 fw-semibold">
-                                    <i class="bx bx-support text-primary me-2"></i>
-                                    Ticketing
-                                </h5>
-                                <span class="badge bg-primary-subtle text-primary">{{ count($ticket) }} Ticket</span>
-                            </div>
-                        </div>
-                        <div class="card-body p-0">
-                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                                <table class="table table-hover align-middle mb-0">
-                                    <thead class="table-light sticky-top">
-                                        <tr>
-                                            <th class="border-0 ps-4" style="min-width: 160px;">Timestamp</th>
-                                            <th class="border-0" style="min-width: 180px;">Karyawan</th>
-                                            <th class="border-0" style="min-width: 150px;">Divisi</th>
-                                            <th class="border-0" style="min-width: 120px;">Kategori</th>
-                                            <th class="border-0" style="min-width: 200px;">Keperluan</th>
-                                            <th class="border-0" style="min-width: 250px;">Detail Kendala</th>
-                                            <th class="border-0" style="min-width: 150px;">PIC</th>
-                                            <th class="border-0 text-center pe-4" style="min-width: 120px;">Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @forelse($ticket as $item)
-                                            <tr class="border-bottom">
-                                                <td class="ps-4">
-                                                    <div class="small">
-                                                        {{ \Carbon\Carbon::parse($item->timestamp)->format('d M Y, H:i') }}
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex align-items-center">
-                                                        <div class="text-truncate" style="max-width: 150px;"
-                                                            data-bs-toggle="tooltip" title="{{ $item->nama_karyawan }}">
-                                                            {{ $item->nama_karyawan }}
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <span class="badge bg-secondary-subtle text-secondary">
-                                                        {{ $item->divisi }}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <div class="text-truncate" style="max-width: 120px;"
-                                                        data-bs-toggle="tooltip" title="{{ $item->kategori }}">
-                                                        <i class="bx bx-category text-muted me-1"></i>
-                                                        {{ $item->kategori }}
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div class="text-truncate" style="max-width: 200px;"
-                                                        data-bs-toggle="tooltip" title="{{ $item->keperluan }}">
-                                                        {{ $item->keperluan }}
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div class="text-truncate" style="max-width: 250px;"
-                                                        data-bs-toggle="tooltip" title="{{ $item->detail_kendala }}">
-                                                        {{ $item->detail_kendala }}
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex align-items-center">
-                                                        <div class="text-truncate" style="max-width: 100px;"
-                                                            data-bs-toggle="tooltip" title="{{ $item->pic }}">
-                                                            {{ $item->pic ?? '-' }}
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td class="text-center pe-4">
-                                                    @php
-                                                        $statusConfig = [
-                                                            'Menunggu' => [
-                                                                'color' => 'warning',
-                                                                'icon' => 'bx-time-five',
-                                                            ],
-                                                            'Di Proses' => [
-                                                                'color' => 'primary',
-                                                                'icon' => 'bx-loader-circle',
-                                                            ],
-                                                            'Selesai' => [
-                                                                'color' => 'success',
-                                                                'icon' => 'bx-check-circle',
-                                                            ],
-                                                            'Terkendala' => [
-                                                                'color' => 'danger',
-                                                                'icon' => 'bx-error-circle',
-                                                            ],
-                                                        ];
-                                                        $config = $statusConfig[$item->status] ?? [
-                                                            'color' => 'secondary',
-                                                            'icon' => 'bx-info-circle',
-                                                        ];
-                                                    @endphp
-                                                    <span
-                                                        class="badge bg-{{ $config['color'] }}-subtle text-{{ $config['color'] }} px-3 py-2">
-                                                        <i class="bx {{ $config['icon'] }} me-1"></i>
-                                                        {{ $item->status }}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="8" class="text-center py-5">
-                                                    <div class="d-flex flex-column align-items-center">
-                                                        <i class="bx bx-message-square-x text-muted"
-                                                            style="font-size: 3rem;"></i>
-                                                        <p class="text-muted mt-3 mb-0">Tidak ada ticket untuk ditampilkan
-                                                        </p>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        @endforelse
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+                                <span class="badge bg-success-subtle text-success px-3 py-2">
+                                    {{ number_format($jumlahPeserta, 0, ',', '.') }} Peserta
+                                </span>
 
-    <!-- Modals untuk setiap Divisi -->
-    @foreach ($divisiStats as $index => $divisi)
-        <div class="modal fade" id="modalDivisi{{ $index }}" tabindex="-1"
-            aria-labelledby="modalLabel{{ $index }}" aria-hidden="true">
-            <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
-                <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-                    <div class="modal-header bg-{{ $divisi['color'] }} bg-opacity-10 border-bottom-0">
-                        <h5 class="modal-title fw-bold" id="modalLabel{{ $index }}">
-                            <i class="{{ $divisi['icon'] }} text-{{ $divisi['color'] }} me-2"
-                                style="font-size: 1.5rem;"></i>
-                            Data Karyawan - {{ $divisi['nama'] }}
-                            <span class="badge bg-{{ $divisi['color'] }} ms-3 mb-2">{{ $divisi['total'] }} orang</span>
-                        </h5>
-                        <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal"
-                            aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body p-0">
-                        @if ($divisi['data']->count() > 0)
-                            <div class="table-responsive">
-                                <table class="table table-hover table-striped align-middle mb-0">
-                                    <thead class="bg-light sticky-top">
-                                        <tr>
-                                            <th class="ps-4" width="60">#</th>
-                                            <th class="ps-4">Nama Lengkap</th>
-                                            <th>NIP</th>
-                                            <th>Jabatan</th>
-                                            <th>Email</th>
-                                            <th width="100">Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach ($divisi['data'] as $key => $karyawan)
-                                            <tr class="hover-bg">
-                                                <td class="ps-4 fw-medium">{{ $key + 1 }}</td>
-                                                <td class="ps-4">
-                                                    <div class="d-flex align-items-center">
-                                                        <div class="avatar avatar-sm bg-opacity-15 rounded-circle me-3">
-                                                            <span class="text-{{ $divisi['color'] }} fw-bold small">
-                                                                {{ strtoupper(substr($karyawan->nama_lengkap, 0, 1)) }}
+                                <span class="badge bg-success-subtle text-success px-3 py-2">
+                                    {{ number_format($jumlahInstruktur, 0, ',', '.') }} Instruktur
+                                </span>
+                            </div>
+
+                            <div class="card-body p-0">
+                                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="table-light sticky-top">
+                                            <tr>
+                                                <th class="border-0 ps-4" style="min-width: 70px;">Sales</th>
+                                                <th class="border-0" style="min-width: 250px;">Materi</th>
+                                                <th class="border-0" style="min-width: 120px;">Harga</th>
+                                                <th class="border-0" style="min-width: 200px;">Periode</th>
+                                                <th class="border-0 text-center" style="min-width: 80px;">Pax</th>
+                                                <th class="border-0 text-center pe-4" style="min-width: 100px;">Exam</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($rkm as $index => $item)
+                                                <tr class="border-bottom">
+                                                    <td class="ps-4">
+                                                        <div class="d-flex align-items-center">
+                                                            <span class="fw-medium">{{ $item->sales_key }}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="text-truncate" style="max-width: 250px;"
+                                                            data-bs-toggle="tooltip"
+                                                            title="{{ $item->materi->nama_materi }}">
+                                                            {{ $item->materi->nama_materi }}
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <span class="text-success fw-semibold">
+                                                            Rp {{ number_format($item->harga_jual, 0, ',', '.') }}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <div class="d-flex flex-column small">
+                                                            <span class="text-muted">
+                                                                {{ \Carbon\Carbon::parse($item->tanggal_awal)->format('d M Y') }}
+                                                            </span>
+                                                            <span class="text-muted">
+                                                                <i class="bx bx-right-arrow-alt me-1"></i>
+                                                                {{ \Carbon\Carbon::parse($item->tanggal_akhir)->format('d M Y') }}
                                                             </span>
                                                         </div>
-                                                        <span class="fw-medium">{{ $karyawan->nama_lengkap }}</span>
-                                                    </div>
-                                                </td>
-                                                <td><code class="small">{{ $karyawan->nip ?? '-' }}</code></td>
-                                                <td>{{ $karyawan->jabatan ?? '-' }}</td>
-                                                <td><small class="text-muted">{{ $karyawan->email ?? '-' }}</small></td>
-                                                <td>
-                                                    <span class="badge bg-success">Aktif</span>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <span class="badge bg-info-subtle text-info px-3 py-2">
+                                                            {{ number_format($item->pax, 0, ',', '.') }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-center pe-4">
+                                                        @if ($item->exam == '1')
+                                                            <span class="badge bg-success-subtle text-success px-3 py-2">
+                                                                Ya
+                                                            </span>
+                                                        @else
+                                                            <span
+                                                                class="badge bg-secondary-subtle text-secondary px-3 py-2">
+                                                                Tidak
+                                                            </span>
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                            @empty
+                                                <tr>
+                                                    <td colspan="7" class="text-center py-5">
+                                                        <div class="d-flex flex-column align-items-center">
+                                                            <i class="bx bx-calendar-x text-muted"
+                                                                style="font-size: 3rem;"></i>
+                                                            <p class="text-muted mt-3 mb-0">Tidak ada data RKM minggu ini
+                                                            </p>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
-                        @else
-                            <div class="text-center py-6 text-muted">
-                                <i class="bx bx-user-x" style="font-size: 4rem; opacity: 0.5;"></i>
-                                <p class="mt-3 fw-medium">Belum ada data karyawan di divisi ini</p>
-                            </div>
-                        @endif
+                        </div>
                     </div>
-                    <div class="modal-footer border-top-0 bg-light" style="padding: 6px">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                            <i class="bx bx-x me-1"></i> Tutup
-                        </button>
+                </div>
+
+                {{-- Daftar Ticketing --}}
+                <div class="row g-3 mb-4">
+                    <div class="col-12">
+                        <div class="card h-100 shadow-sm border-0 rounded-3">
+                            <div class="card-header bg-white border-bottom py-3">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <h5 class="card-title mb-0 fw-semibold">
+                                        <i class="bx bx-support text-primary me-2"></i>
+                                        Ticketing
+                                    </h5>
+                                    <span class="badge bg-primary-subtle text-primary">{{ count($ticket) }} Ticket</span>
+                                </div>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="table-light sticky-top">
+                                            <tr>
+                                                <th class="border-0 ps-4" style="min-width: 160px;">Timestamp</th>
+                                                <th class="border-0" style="min-width: 180px;">Karyawan</th>
+                                                <th class="border-0" style="min-width: 150px;">Divisi</th>
+                                                <th class="border-0" style="min-width: 120px;">Kategori</th>
+                                                <th class="border-0" style="min-width: 200px;">Keperluan</th>
+                                                <th class="border-0" style="min-width: 250px;">Detail Kendala</th>
+                                                <th class="border-0" style="min-width: 150px;">PIC</th>
+                                                <th class="border-0 text-center pe-4" style="min-width: 120px;">Status
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($ticket as $item)
+                                                <tr class="border-bottom">
+                                                    <td class="ps-4">
+                                                        <div class="small">
+                                                            {{ \Carbon\Carbon::parse($item->timestamp)->format('d M Y, H:i') }}
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="text-truncate" style="max-width: 150px;"
+                                                                data-bs-toggle="tooltip"
+                                                                title="{{ $item->nama_karyawan }}">
+                                                                {{ $item->nama_karyawan }}
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-secondary-subtle text-secondary">
+                                                            {{ $item->divisi }}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <div class="text-truncate" style="max-width: 120px;"
+                                                            data-bs-toggle="tooltip" title="{{ $item->kategori }}">
+                                                            <i class="bx bx-category text-muted me-1"></i>
+                                                            {{ $item->kategori }}
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="text-truncate" style="max-width: 200px;"
+                                                            data-bs-toggle="tooltip" title="{{ $item->keperluan }}">
+                                                            {{ $item->keperluan }}
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="text-truncate" style="max-width: 250px;"
+                                                            data-bs-toggle="tooltip" title="{{ $item->detail_kendala }}">
+                                                            {{ $item->detail_kendala }}
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="text-truncate" style="max-width: 100px;"
+                                                                data-bs-toggle="tooltip" title="{{ $item->pic }}">
+                                                                {{ $item->pic ?? '-' }}
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td class="text-center pe-4">
+                                                        @php
+                                                            $statusConfig = [
+                                                                'Menunggu' => [
+                                                                    'color' => 'warning',
+                                                                    'icon' => 'bx-time-five',
+                                                                ],
+                                                                'Di Proses' => [
+                                                                    'color' => 'primary',
+                                                                    'icon' => 'bx-loader-circle',
+                                                                ],
+                                                                'Selesai' => [
+                                                                    'color' => 'success',
+                                                                    'icon' => 'bx-check-circle',
+                                                                ],
+                                                                'Terkendala' => [
+                                                                    'color' => 'danger',
+                                                                    'icon' => 'bx-error-circle',
+                                                                ],
+                                                            ];
+                                                            $config = $statusConfig[$item->status] ?? [
+                                                                'color' => 'secondary',
+                                                                'icon' => 'bx-info-circle',
+                                                            ];
+                                                        @endphp
+                                                        <span
+                                                            class="badge bg-{{ $config['color'] }}-subtle text-{{ $config['color'] }} px-3 py-2">
+                                                            <i class="bx {{ $config['icon'] }} me-1"></i>
+                                                            {{ $item->status }}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            @empty
+                                                <tr>
+                                                    <td colspan="8" class="text-center py-5">
+                                                        <div class="d-flex flex-column align-items-center">
+                                                            <i class="bx bx-message-square-x text-muted"
+                                                                style="font-size: 3rem;"></i>
+                                                            <p class="text-muted mt-3 mb-0">Tidak ada ticket untuk
+                                                                ditampilkan
+                                                            </p>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    @endforeach
 
-    <style>
-        :root {
-            --bs-primary: #5b73e8;
-            --bs-primary-rgb: 91, 115, 232;
-        }
+        <!-- Modals untuk setiap Divisi -->
+        @foreach ($divisiStats as $index => $divisi)
+            <div class="modal fade" id="modalDivisi{{ $index }}" tabindex="-1"
+                aria-labelledby="modalLabel{{ $index }}" aria-hidden="true">
+                <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
+                    <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                        <div class="modal-header bg-{{ $divisi['color'] }} bg-opacity-10 border-bottom-0">
+                            <h5 class="modal-title fw-bold" id="modalLabel{{ $index }}">
+                                <i class="{{ $divisi['icon'] }} text-{{ $divisi['color'] }} me-2"
+                                    style="font-size: 1.5rem;"></i>
+                                Data Karyawan - {{ $divisi['nama'] }}
+                                <span class="badge bg-{{ $divisi['color'] }} ms-3 mb-2">{{ $divisi['total'] }}
+                                    orang</span>
+                            </h5>
+                            <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body p-0">
+                            @if ($divisi['data']->count() > 0)
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-striped align-middle mb-0">
+                                        <thead class="bg-light sticky-top">
+                                            <tr>
+                                                <th class="ps-4" width="60">#</th>
+                                                <th class="ps-4">Nama Lengkap</th>
+                                                <th>NIP</th>
+                                                <th>Jabatan</th>
+                                                <th>Email</th>
+                                                <th width="100">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($divisi['data'] as $key => $karyawan)
+                                                <tr class="hover-bg">
+                                                    <td class="ps-4 fw-medium">{{ $key + 1 }}</td>
+                                                    <td class="ps-4">
+                                                        <div class="d-flex align-items-center">
+                                                            <div
+                                                                class="avatar avatar-sm bg-opacity-15 rounded-circle me-3">
+                                                                <span class="text-{{ $divisi['color'] }} fw-bold small">
+                                                                    {{ strtoupper(substr($karyawan->nama_lengkap, 0, 1)) }}
+                                                                </span>
+                                                            </div>
+                                                            <span class="fw-medium">{{ $karyawan->nama_lengkap }}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td><code class="small">{{ $karyawan->nip ?? '-' }}</code></td>
+                                                    <td>{{ $karyawan->jabatan ?? '-' }}</td>
+                                                    <td><small class="text-muted">{{ $karyawan->email ?? '-' }}</small>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-success">Aktif</span>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @else
+                                <div class="text-center py-6 text-muted">
+                                    <i class="bx bx-user-x" style="font-size: 4rem; opacity: 0.5;"></i>
+                                    <p class="mt-3 fw-medium">Belum ada data karyawan di divisi ini</p>
+                                </div>
+                            @endif
+                        </div>
+                        <div class="modal-footer border-top-0 bg-light" style="padding: 6px">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                                <i class="bx bx-x me-1"></i> Tutup
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endforeach
 
-        .hover-card {
-            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .hover-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-            transition: 0.5s;
-        }
-
-        .hover-card:hover {
-            transform: translateY(-8px) scale(1.02);
-            box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175) !important;
-            z-index: 1;
-        }
-
-        .hover-card:hover::before {
-            left: 100%;
-        }
-
-        .hover-bg:hover {
-            background-color: rgba(91, 115, 232, 0.05) !important;
-        }
-
-        .avatar {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-        }
-
-        .avatar-sm {
-            width: 38px;
-            height: 38px;
-            font-size: 0.875rem;
-        }
-
-        .avatar-md {
-            width: 48px;
-            height: 48px;
-            font-size: 1.125rem;
-        }
-
-        .avatar-xl {
-            width: 80px;
-            height: 80px;
-        }
-
-        .scrollbar-custom::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .scrollbar-custom::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-
-        .scrollbar-custom::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 10px;
-        }
-
-        .scrollbar-custom::-webkit-scrollbar-thumb:hover {
-            background: #a8a8a8;
-        }
-
-        .card {
-            transition: all 0.3s ease;
-        }
-
-        .badge {
-            font-size: 0.75rem;
-            padding: 0.35em 0.65em;
-        }
-
-        @media (max-width: 768px) {
-            .modal-xl {
-                --bs-modal-width: 95vw;
+        <style>
+            :root {
+                --bs-primary: #5b73e8;
+                --bs-primary-rgb: 91, 115, 232;
             }
+
+            .hover-card {
+                transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+                cursor: pointer;
+                position: relative;
+                overflow: hidden;
+            }
+
+            .hover-card::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+                transition: 0.5s;
+            }
+
+            .hover-card:hover {
+                transform: translateY(-8px) scale(1.02);
+                box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175) !important;
+                z-index: 1;
+            }
+
+            .hover-card:hover::before {
+                left: 100%;
+            }
+
+            .hover-bg:hover {
+                background-color: rgba(91, 115, 232, 0.05) !important;
+            }
+
+            .avatar {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 600;
+            }
+
+            .avatar-sm {
+                width: 38px;
+                height: 38px;
+                font-size: 0.875rem;
+            }
+
+            .avatar-md {
+                width: 48px;
+                height: 48px;
+                font-size: 1.125rem;
+            }
+
+            .avatar-xl {
+                width: 80px;
+                height: 80px;
+            }
+
+            .scrollbar-custom::-webkit-scrollbar {
+                width: 8px;
+            }
+
+            .scrollbar-custom::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 10px;
+            }
+
+            .scrollbar-custom::-webkit-scrollbar-thumb {
+                background: #c1c1c1;
+                border-radius: 10px;
+            }
+
+            .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+                background: #a8a8a8;
+            }
+
+            .card {
+                transition: all 0.3s ease;
+            }
+
+            .badge {
+                font-size: 0.75rem;
+                padding: 0.35em 0.65em;
+            }
+
+            @media (max-width: 768px) {
+                .modal-xl {
+                    --bs-modal-width: 95vw;
+                }
+            }
+
         }
         .chart-container {
             max-height: 280px;
@@ -705,99 +720,100 @@
                         pointHoverBorderColor: '#fff',
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false
-                    },
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'top',
-                            labels: {
-                                font: {
-                                    size: 14,
-                                    weight: 'bold'
-                                },
-                                color: '#333',
-                                usePointStyle: true,
-                                padding: 20
-                            }
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
                         },
-                        tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            titleColor: '#fff',
-                            bodyColor: '#fff',
-                            cornerRadius: 8,
-                            displayColors: false,
-                            padding: 12,
-                            callbacks: {
-                                afterLabel: function(context) {
-                                    const hadir = context.parsed.y;
-                                    const tidakHadir = totalKaryawan - hadir;
-                                    return [
-                                        '',
-                                        `Tidak Hadir: ${tidakHadir}`,
-                                        `Persentase: ${Math.round((hadir / totalKaryawan) * 100)}%`
-                                    ];
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: {
+                                    font: {
+                                        size: 14,
+                                        weight: 'bold'
+                                    },
+                                    color: '#333',
+                                    usePointStyle: true,
+                                    padding: 20
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                cornerRadius: 8,
+                                displayColors: false,
+                                padding: 12,
+                                callbacks: {
+                                    afterLabel: function(context) {
+                                        const hadir = context.parsed.y;
+                                        const tidakHadir = totalKaryawan - hadir;
+                                        return [
+                                            '',
+                                            `Tidak Hadir: ${tidakHadir}`,
+                                            `Persentase: ${Math.round((hadir / totalKaryawan) * 100)}%`
+                                        ];
+                                    }
                                 }
                             }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: totalKaryawan + 5,
-                            ticks: {
-                                stepSize: 1,
-                                font: {
-                                    size: 12
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: totalKaryawan + 5,
+                                ticks: {
+                                    stepSize: 1,
+                                    font: {
+                                        size: 12
+                                    },
+                                    color: '#666'
                                 },
-                                color: '#666'
-                            },
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.05)',
-                                drawBorder: false
-                            },
-                            title: {
-                                display: true,
-                                text: 'Jumlah Karyawan',
-                                font: {
-                                    size: 14,
-                                    weight: 'bold'
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)',
+                                    drawBorder: false
                                 },
-                                color: '#333'
+                                title: {
+                                    display: true,
+                                    text: 'Jumlah Karyawan',
+                                    font: {
+                                        size: 14,
+                                        weight: 'bold'
+                                    },
+                                    color: '#333'
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    font: {
+                                        size: 12
+                                    },
+                                    color: '#666',
+                                    maxRotation: 0
+                                },
+                                grid: {
+                                    display: false
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Tanggal',
+                                    font: {
+                                        size: 14,
+                                        weight: 'bold'
+                                    },
+                                    color: '#333'
+                                }
                             }
                         },
-                        x: {
-                            ticks: {
-                                font: {
-                                    size: 12
-                                },
-                                color: '#666',
-                                maxRotation: 0
-                            },
-                            grid: {
-                                display: false
-                            },
-                            title: {
-                                display: true,
-                                text: 'Tanggal',
-                                font: {
-                                    size: 14,
-                                    weight: 'bold'
-                                },
-                                color: '#333'
-                            }
+                        animation: {
+                            duration: 1500,
+                            easing: 'easeOutQuart'
                         }
-                    },
-                    animation: {
-                        duration: 1500,
-                        easing: 'easeOutQuart'
                     }
-                }
+                });
             });
 
             let cuti = document.getElementById('dataCuti')?.getContext('2d');

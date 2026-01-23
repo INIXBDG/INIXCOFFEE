@@ -23,6 +23,7 @@ class PengajuanBarang extends Model
      */
     protected $fillable = [
         'id_karyawan',
+        'id_kegiatan',
         'id_tracking',
         'tipe',
         'invoice',

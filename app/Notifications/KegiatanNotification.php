@@ -37,6 +37,7 @@ class KegiatanNotification extends Notification
             'message' => [
                 'tipe'    => 'Notif Kegiatan',
                 'kegiatan' => $this->data['nama_kegiatan'] ?? '-',
+                'tipe_kegiatan' => $this->data['tipe'] ?? '-',
                 'lama_kegiatan'    => $this->data['lama_kegiatan'] ?? '-',
                 'waktu_kegiatan' => $this->data['waktu_kegiatan'] ?? '-',
                 'pic' => $this->data['pic'] ?? '-',
@@ -52,6 +53,7 @@ class KegiatanNotification extends Notification
             'message' => [
                 'tipe'    => 'Notif Kegiatan',
                 'kegiatan' => $this->data['nama_kegiatan'] ?? '-',
+                'tipe_kegiatan' => $this->data['tipe'] ?? '-',
                 'lama_kegiatan'    => $this->data['lama_kegiatan'] ?? '-',
                 'waktu_kegiatan' => $this->data['waktu_kegiatan'] ?? '-',
                 'pic' => $this->data['pic'] ?? '-',

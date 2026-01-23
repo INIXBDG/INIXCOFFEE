@@ -104,9 +104,9 @@ class OfficeController extends Controller
 
         // 3. Laporan Ticketing
         $ticket = Tickets::where('status', '!=', 'Selesai')
-        ->latest()
-        ->take(7)
-        ->get();
+            ->latest()
+            ->take(7)
+            ->get();
 
         // 4. RKM
         $rkm = RKM::with('materi', 'perusahaan', 'peluang')
@@ -115,6 +115,30 @@ class OfficeController extends Controller
             ->where('status', '0')
             ->get();
 
+        // 5. Jumlah Peserta
+        $jumlahPeserta = RKM::where('tanggal_awal', '<=', Carbon::now())
+            ->where('tanggal_akhir', '>=', Carbon::now())
+            ->where('status', '0')
+            ->sum('pax');
+
+        // 6. Jumlah Instruktur
+        $jumlahInstruktur = RKM::where('tanggal_awal', '<=', now())
+            ->where('tanggal_akhir', '>=', now())
+            ->where('status', '0')
+            ->get()
+            ->sum(
+                fn($rkm) =>
+                collect([
+                    $rkm->instruktur_key,
+                    $rkm->instruktur_key2,
+                    $rkm->asisten_key,
+                ])
+                    ->filter(fn($v) => $v !== '-' && !is_null($v))
+                    ->count()
+            );
+
+
+
         return view('office.dashboard', compact(
             'total_karyawan',
             'divisiStats',
@@ -122,6 +146,8 @@ class OfficeController extends Controller
             'tidakHadirList',
             'ticket',
             'rkm',
+            'jumlahPeserta',
+            'jumlahInstruktur',
         ));
     }
 
