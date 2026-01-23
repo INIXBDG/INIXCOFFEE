@@ -91,28 +91,36 @@ class RekomendasiLanjutanController extends Controller
 
     public function store(Request $request)
     {
+        // Validasi input sebagai array
         $request->validate([
-            'id_rkm' => 'required',
-            'rekomendasi' => 'required|array',
-            'keterangan' => 'nullable|string', // Validasi keterangan
+            'data' => 'required|array',
+            'data.*.id_rkm' => 'required',
+            'data.*.rekomendasi' => 'nullable|array', // Bisa null jika user tidak mengisi untuk salah satu PT
+            'data.*.keterangan' => 'nullable|string',
         ]);
 
         try {
-            $id_rkm = $request->id_rkm;
-            $materi_string = implode(',', $request->rekomendasi);
+            // Loop setiap item data (per perusahaan/RKM ID)
+            foreach ($request->data as $item) {
+                // Cek jika user memilih materi (jika kosong, skip atau hapus data lama)
+                if (!empty($item['rekomendasi'])) {
+                    $materi_string = implode(',', $item['rekomendasi']);
 
-            RekomendasiLanjutan::updateOrCreate(
-                ['id_rkm' => $id_rkm], 
-                [
-                    'id_materi' => $materi_string,
-                    'keterangan' => $request->keterangan // Simpan keterangan
-                ]
-            );
+                    RekomendasiLanjutan::updateOrCreate(
+                        ['id_rkm' => $item['id_rkm']], 
+                        [
+                            'id_materi' => $materi_string,
+                            'keterangan' => $item['keterangan'] ?? null
+                        ]
+                    );
+                }
+            }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Rekomendasi dan keterangan berhasil disimpan.'
+                'message' => 'Semua rekomendasi berhasil disimpan.'
             ]);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

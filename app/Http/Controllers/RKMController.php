@@ -44,8 +44,8 @@ class RKMController extends Controller
     }
     public function index()
     {
-
-        return view('rkm.index');
+        $dataMateri = Materi::get();
+        return view('rkm.index', compact('dataMateri'));
     }
 
 
@@ -292,7 +292,7 @@ class RKMController extends Controller
         }
 
         // Query RKM
-        $rkm = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan', 'instruktur2', 'asisten'])
+        $rkm = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan', 'instruktur2', 'asisten', 'rekomendasilanjutan'])
             ->where('materi_key', $materi_key)
             ->where('metode_kelas', $kelas)
             ->whereBetween('tanggal_awal', [$tanggal_awal, $tanggal_akhir])
@@ -310,9 +310,40 @@ class RKMController extends Controller
         $souvenir = null;
 
         foreach ($rkm as $data) {
+            // Gabung comments (kode lama)
             $comments = $comments->merge($data->comments);
-            $souvenir = souvenirinhouse::where('id_rkm', $data->id)->first();
+            
+            // Ambil souvenir (kode lama)
+            if (!$souvenir) {
+                $souvenir = souvenirinhouse::where('id_rkm', $data->id)->first();
+            }
+
+            // --- PROSES PEMANGGILAN MATERI REKOMENDASI ---
+            if ($data->rekomendasilanjutan && $data->rekomendasilanjutan->id_materi) {
+            // 1. Pecah string menjadi array awal
+            $raw_ids = explode(',', $data->rekomendasilanjutan->id_materi);
+            $materi_ids = [];
+
+            // 2. Loop (Foreach) untuk membersihkan ID (trim spasi)
+            foreach ($raw_ids as $id) {
+                $clean_id = trim($id); // Hapus spasi depan/belakang
+                if (!empty($clean_id)) {
+                    $materi_ids[] = $clean_id;
+                }
+            }
+
+            // 3. Ambil data materi sekaligus (Query whereIn lebih efisien daripada query di dalam loop)
+            $data->rekomendasilanjutan->list_materi_lanjutan = Materi::whereIn('id', $materi_ids)->get();
+            // dd($materi_ids, $data->rekomendasilanjutan->list_materi_lanjutan);
+            } else {
+                // Jika tidak ada data, set koleksi kosong
+                if ($data->rekomendasilanjutan) {
+                    $data->rekomendasilanjutan->list_materi_lanjutan = collect([]);
+                }
+            }
         }
+
+        // return $rkm;
 
         return view('rkm.show', compact('rkm', 'comments', 'ids', 'params', 'materi_key', 'souvenir'));
     }

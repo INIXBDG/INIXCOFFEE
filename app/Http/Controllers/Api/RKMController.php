@@ -49,6 +49,7 @@ class RKMController extends Controller
                     })
                     ->select(
                         DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'), // Gabungkan semua id
+                        DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id_all'), // Gabungkan semua id
                         'r_k_m_s.materi_key',
                         'r_k_m_s.ruang',
                         'r_k_m_s.metode_kelas',

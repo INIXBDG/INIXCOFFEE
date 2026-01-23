@@ -77,9 +77,8 @@ class RKM extends Model
 
     public function rekomendasilanjutan()
     {
-        return $this->hasMany(RekomendasiLanjutan::class, 'id_rkm', 'id');
+        return $this->hasOne(RekomendasiLanjutan::class, 'id_rkm', 'id');
     }
-
 
     public function exam()
     {
