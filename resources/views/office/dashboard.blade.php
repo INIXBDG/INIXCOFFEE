@@ -677,49 +677,49 @@
             }
 
         }
-        .chart-container {
-            max-height: 280px;
-            overflow: hidden;
-        }
-    </style>
+                  .chart-container {
+                max-height: 280px;
+                overflow: hidden;
+            }
+        </style>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {  
-            const ctx = document.getElementById('kehadiranChart')?.getContext('2d');
-            if (!ctx) return;
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const ctx = document.getElementById('kehadiranChart')?.getContext('2d');
+                if (!ctx) return;
 
-            const labels = @json($kehadiranChart['labels']);
-            const data = @json($kehadiranChart['data']);
-            const totalKaryawan = {{ $total_karyawan }};
+                const labels = @json($kehadiranChart['labels']);
+                const data = @json($kehadiranChart['data']);
+                const totalKaryawan = {{ $total_karyawan }};
 
-            // Gradient fill
-            const gradient = ctx.createLinearGradient(0, 0, 0, 320);
-            gradient.addColorStop(0, 'rgba(91, 115, 232, 0.2)');
-            gradient.addColorStop(1, 'rgba(91, 115, 232, 0.05)');
+                // Gradient fill
+                const gradient = ctx.createLinearGradient(0, 0, 0, 320);
+                gradient.addColorStop(0, 'rgba(91, 115, 232, 0.2)');
+                gradient.addColorStop(1, 'rgba(91, 115, 232, 0.05)');
 
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Jumlah Hadir',
-                        data: data,
-                        borderColor: '#5b73e8',
-                        backgroundColor: gradient,
-                        borderWidth: 3, 
-                        fill: true,
-                        tension: 0.45,
-                        pointRadius: 6,
-                        pointHoverRadius: 9,
-                        pointBackgroundColor: '#fff',
-                        pointBorderColor: '#5b73e8',
-                        pointBorderWidth: 3,
-                        pointHoverBackgroundColor: '#5b73e8',
-                        pointHoverBorderColor: '#fff',
-                    }]
-                },
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Jumlah Hadir',
+                            data: data,
+                            borderColor: '#5b73e8',
+                            backgroundColor: gradient,
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.45,
+                            pointRadius: 6,
+                            pointHoverRadius: 9,
+                            pointBackgroundColor: '#fff',
+                            pointBorderColor: '#5b73e8',
+                            pointBorderWidth: 3,
+                            pointHoverBackgroundColor: '#5b73e8',
+                            pointHoverBorderColor: '#fff',
+                        }]
+                    },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
