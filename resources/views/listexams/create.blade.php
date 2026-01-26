@@ -98,6 +98,27 @@
                             </div>
                         </div>
 
+                         <div class="row mb-3">
+                            <label for="harga" class="col-md-4 col-form-label text-md-start">{{ __('Harga') }}</label>
+                            <div class="col-md-6">
+                                <input type="number" class="form-control" name="harga" id="harga">
+                            </div>
+                        </div>
+                         
+                        <div class="row mb-3">
+                            <label for="estimasi_durasi" class="col-md-4 col-form-label text-md-start">{{ __('Estimasi Durasi Booking') }}</label>
+                            <div class="col-md-6">
+                                <input type="text" class="form-control" name="estimasi_durasi" id="estimasi_durasi">
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <label for="note" class="col-md-4 col-form-label text-md-start">{{ __('Note/Syarat Exam') }}</label>
+                            <div class="col-md-6">
+                                <input type="text" class="form-control" name="note" id="note">
+                            </div>
+                        </div>
+
                         <div class="row mb-0">
                             <div class="col-md-8 offset-md-4">
                                 <button type="submit" class="btn click-primary">

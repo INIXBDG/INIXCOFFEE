@@ -81,6 +81,30 @@
                             </div>
                         </div>
 
+                        <div class="row mb-3">
+                            <label for="harga_exam" class="col-md-4 col-form-label text-md-start">{{ __('Harga') }}</label>
+                            <div class="col-md-6"> 
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text">Rp.</span>
+                                    <input type="number" class="form-control" name="harga_exam" id="harga_exam" value={{ $exam->harga_exam }}>
+                                </div>
+                            </div>
+                        </div>
+                         
+                        <div class="row mb-3">
+                            <label for="estimasi_durasi_booking" class="col-md-4 col-form-label text-md-start">{{ __('Estimasi Durasi Booking') }}</label>
+                            <div class="col-md-6">
+                                <input type="text" class="form-control" name="estimasi_durasi_booking" id="estimasi_durasi_booking" value={{ $exam->estimasi_durasi_booking }}>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <label for="note" class="col-md-4 col-form-label text-md-start">{{ __('Note/Syarat Exam') }}</label>
+                            <div class="col-md-6">
+                                <input type="text" class="form-control" name="note" id="note" value={{ $exam->note }}>
+                            </div>
+                        </div>
+
                         <div class="row mb-0">
                             <div class="col-md-8 offset-md-4">
                                 <button type="submit" class="btn click-primary">

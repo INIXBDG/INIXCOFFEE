@@ -189,21 +189,19 @@
                 //         "visible": false
                 // },
                 {
-                    "data": null,
-                    // "visible" : false,
+                    "data": "valid_until",
                     "render": function(data, type, row) {
+
+                        const tanggalSekarang = new Date().setHours(0,0,0,0);
+                        const validUntil = new Date(data).setHours(0,0,0,0);
+
                         var actions = "";
-                                actions += '<div class="dropdown">';
-                                actions += '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
-                                actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
-                                actions += '<a class="dropdown-item" disabled href="{{ url('/listexams') }}/' + row.id + '/edit" data-toggle="tooltip" data-placement="top" title="Edit List Exam"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Edit</a>';
-                                // actions += '<a class="dropdown-item" disabled href="{{ url('/listexams') }}/' + row.id + '" data-toggle="tooltip" data-placement="top" title="Detail User"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Detail</a>';
-                                actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/listexams') }}/' + row.id + '" method="POST">';
-                                actions += '@csrf';
-                                actions += '@method('DELETE')';
-                                actions += '<button type="submit"  class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
-                                actions += '</form>';
-                                actions += '</div>';
+                                actions += '<div class="btn">';
+                                    if (validUntil < tanggalSekarang) {
+                                        actions += '<a class="dropdown-item bg-warning rounded-2" disabled href="{{ url('/pengajuanUpdateExam') }}/' + row.id + '" data-toggle="tooltip" data-placement="top" title="Edit List Exam"><img src="{{ asset('icon/send.svg') }}" class="">Minta Update</a>';
+                                    } else {
+                                        actions += '<a class="dropdown-item" disabled href="{{ url('/detailHargaExam') }}/' + row.id + '" data-toggle="tooltip" data-placement="top" title="Edit List Exam"><img src="{{ asset('icon/file-text.svg') }}" class="">Detail</a>';
+                                    }
                                 actions += '</div>';
                         return actions;
                     }
