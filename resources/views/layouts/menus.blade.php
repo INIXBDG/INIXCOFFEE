@@ -1784,6 +1784,25 @@
                                                     </div>
                                                 </div>
                                                 @endcan
+                                                @can("List Exam Sales")
+                                                <div class="col-sm-6 mt-2">
+                                                    <div class="card" id="card-hover">
+                                                        <div class="card-body d-flex">
+                                                            <div class="col-md-2">
+                                                                <img src="{{ asset('icon/dollar-sign.svg') }}"
+                                                                    class="img-responsive" width="30px">
+                                                            </div>
+                                                            <div class="col-md-10" style="margin-left: 10px">
+                                                                <a href="/hargaExam"
+                                                                class="link stretched-link text-decoration-none">
+                                                                    <h5 class="card-title">Harga Exam</h5>
+                                                                </a>
+                                                                <p class="card-text">Data Harga Exam.</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                @endcan
                                                 @can('View AnalisisRKM')
                                                 <div class="col-sm-6 mt-2">
                                                     <div class="card" id="card-hover">
