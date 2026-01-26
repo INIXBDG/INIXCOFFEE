@@ -10,9 +10,6 @@ use Carbon\Carbon;
 
 class TimelineItemController extends Controller
 {
-    /**
-     * SIMPAN / UPDATE ITEM HARIAN
-     */
     public function store(Request $request)
     {
         // --- AUTH CHECK: Hanya Tim Digital ---

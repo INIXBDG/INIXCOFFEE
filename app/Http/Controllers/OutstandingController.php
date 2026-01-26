@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Exports\RkmExport;
+use App\Models\AbsensiPDF;
 use App\Models\Invoice;
 use App\Models\jabatan;
 use App\Models\karyawan;
 use App\Models\Outstanding;
 use App\Models\outstanding as ModelsOutstanding;
+use App\Models\Registrasi;
 use App\Models\RKM;
 use App\Models\trackingOutstanding;
 use App\Models\User;
@@ -21,6 +23,7 @@ use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
+use Illuminate\Support\Facades\Storage;
 use setasign\Fpdi\Tcpdf\Fpdi;
 use Mostafaznv\PdfOptimizer\Laravel\Facades\PdfOptimizer;
 use Mostafaznv\PdfOptimizer\Enums\PdfSettings;
@@ -244,25 +247,22 @@ class OutstandingController extends Controller
 
     public function getOutstandingPA()
     {
-        $startOfWeek = Carbon::now()->startOfWeek(); 
-        $endOfWeek = Carbon::now()->endOfWeek();     
+        $startDate = Carbon::now();
+        $endDate   = Carbon::now()->addMonth();
 
         $rkm = RKM::with(['perhitunganNetSales', 'outstanding', 'perusahaan', 'materi'])
             ->whereHas('outstanding', function ($query) {
                 $query->where('status_pembayaran', '1');
             })
             ->whereHas('perhitunganNetSales')
-            ->where(function ($query) use ($startOfWeek, $endOfWeek) {
-                $query->whereBetween('tanggal_awal', [$startOfWeek, $endOfWeek])
-                    ->orWhereBetween('tanggal_akhir', [$startOfWeek, $endOfWeek]);
-            })
+            ->whereBetween('tanggal_akhir', [$startDate, $endDate])
             ->get();
 
         return response()->json([
             'data' => $rkm
         ]);
     }
-    
+
     public function detailPA($id)
     {
         $rkm = RKM::with(['perhitunganNetSales.peserta', 'outstanding', 'perusahaan', 'materi'])
@@ -755,9 +755,44 @@ class OutstandingController extends Controller
         return redirect()->route('outstanding.index')->with(['success' => 'Data Berhasil Disimpan!']);
     }
 
+    public function generatePdfPeserta($id)
+    {
+        $rkm = RKM::with(
+            'instruktur',
+            'instruktur2',
+            'asisten',
+            'materi',
+            'perusahaan'
+        )->findOrFail($id);
+
+        $peserta = Registrasi::with('peserta')
+            ->where('id_rkm', $id)
+            ->get();
+
+        $pdf = Pdf::loadView('outstanding.pdfPeserta', compact('rkm', 'peserta'));
+
+        $fileName = 'peserta_rkm_' . $rkm->id . '.pdf';
+        $path = 'public/rkm/' . $fileName;
+
+        if ($rkm->pdf_peserta && Storage::exists($rkm->pdf_peserta)) {
+            Storage::delete($rkm->pdf_peserta);
+        }
+
+        Storage::put($path, $pdf->output());
+
+        $rkm->update([
+            'pdf_peserta' => $path
+        ]);
+
+        return $path;
+    }
+
+
+
     public function dokumenGabungan($id)
     {
         $outstanding = Outstanding::findOrFail($id);
+        $absensi = AbsensiPDF::where('id_rkm', $outstanding->id_rkm)->first();
 
         $filesToMerge = [];
 
@@ -776,6 +811,30 @@ class OutstandingController extends Controller
                 $filesToMerge[] = $dokumenPath;
             }
         }
+
+        // 3. Absensi Peserta
+        if ($absensi) {
+            $absensis = storage_path('app/' . $absensi->pdf_path);
+            if (file_exists($absensis)) {
+                $filesToMerge[] = $absensis;
+            }
+        }
+
+        // 4. PDF Peserta
+        $rkm = RKM::find($outstanding->id_rkm);
+
+        if ($rkm) {
+            if (!$rkm->pdf_peserta || !Storage::exists($rkm->pdf_peserta)) {
+                $this->generatePdfPeserta($rkm->id);
+                $rkm->refresh();
+            }
+
+            $pesertaPdfPath = storage_path('app/' . $rkm->pdf_peserta);
+            if (file_exists($pesertaPdfPath)) {
+                $filesToMerge[] = $pesertaPdfPath;
+            }
+        }
+
 
         if (empty($filesToMerge)) {
             return redirect()->back()->with('error', 'Tidak ada dokumen yang bisa digabung.');

@@ -21,8 +21,8 @@
             </div>
             <div class="card m-4">
                 <div class="card-body table-responsive">
-                    <h3 class="card-title text-center my-1">{{ __('List Exam') }}</h3>
-                    <table class="table table-striped" id="listexamtable">
+                    <h3 class="card-title text-center my-1">{{ __('List Harga Exam') }}</h3>
+                    <table class="table table-striped w-100" id="listexamtable">
                         <thead>
                             <tr>
                                 <th scope="col">No</th>
@@ -30,6 +30,10 @@
                                 <th scope="col">Vendor</th>
                                 <th scope="col">Nama Exam</th>
                                 <th scope="col">Kode Exam</th>
+                                <th scope="col">Harga</th>
+                                <th scope="col">Status Data</th>
+                                <th scope="col">Last Update</th>
+                                <th scope="col">Estimasi Durasi Booking</th>
                                 {{-- <th scope="col">sales</th> --}}
                                 <th scope="col">Aksi</th>
                             </tr>
@@ -104,6 +108,7 @@
         var tableIndex2 = 1;
 
         $('#listexamtable').DataTable({
+            "scrollX": true,
             "ajax": {
                 "url": "{{ route('getListExam') }}", // URL API untuk mengambil data
                 "type": "GET",
@@ -132,6 +137,39 @@
                 {"data": "vendor"},
                 {"data": "nama_exam"},
                 {"data": "kode_exam"},
+                {
+                    "data": "harga_exam",
+                    "render": function(data) {
+                        if (!data) return '-';
+
+                        return `
+                            <div>Rp ${Number(data).toLocaleString('id-ID')}</div>
+                        `;
+                    }
+                },
+                {
+                    "data": "valid_until",
+                    "render": function(data, type, row) {
+                        if(!data) {
+                            return `-`;
+                        }
+
+                        const tanggalSekarang = new Date().setHours(0,0,0,0);
+                        const validUntil = new Date(data).setHours(0,0,0,0);
+
+                        return validUntil < tanggalSekarang
+                            ? '<span class="badge bg-warning py-2">Expired</span>'
+                            : '<span class="badge bg-success py-2">Valid</span>';
+                    }
+                },
+                {
+                    "data": 'updated_at',
+                    "render": data =>
+                        data
+                            ? new Date(data).toLocaleDateString('id-ID')
+                            : '-'
+                },
+                {"data": "estimasi_durasi_booking"},
                 // {
                 //     "data": null,
                 //     "render": function (data, type, row) {
