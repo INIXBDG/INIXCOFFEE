@@ -58,6 +58,7 @@ use App\Http\Controllers\KegiatanController;
 use App\Http\Controllers\KendaraanController;
 use App\Http\Controllers\Webinar\TimelineItemController;
 use App\Http\Controllers\Webinar\ChecklistController;
+use App\HTTP\Controllers\SentryWebhookController;
 use App\Http\Controllers\InstructorDevelopmentController;
 
 
@@ -91,7 +92,7 @@ Route::get('/partials/dashboard', function () {
 
 Route::redirect('/', '/login');
 
-Auth::routes(['register' => false, 'password.request' => false, 'password.email' =>  false, 'password.reset' =>  false, 'password.update' => false]);
+Auth::routes(['register' => false, 'password.request' => false, 'password.email' => false, 'password.reset' => false, 'password.update' => false]);
 
 Route::middleware('auth')->group(function () {
     Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
@@ -330,6 +331,8 @@ Route::get('/export-lembur-pdf/{id}/{year}/{month}', [App\Http\Controllers\Overt
 Route::post('/change-user', [App\Http\Controllers\UserController::class, 'changeUser'])->name('change.user');
 Route::get('/get-users', [App\Http\Controllers\UserController::class, 'getUsers'])->name('get.users');
 Route::get('/user-dropdown', [App\Http\Controllers\UserController::class, 'showUserDropdown'])->name('user.dropdown');
+// Route::get('/webhook/sentry', [SentryWebhookController::class, 'index']);
+
 
 Route::get('/rkm/{id}/souvenir', [App\Http\Controllers\SouvenirController::class, 'createSouvenirInhouse'])->name('createSouvenirInhouse');
 Route::get('/souvenir/filter/{keyword}', [SouvenirController::class, 'filterSouvenir'])->name('filterSouvenir');
@@ -403,6 +406,16 @@ Route::get('/rkm/{id}/absensi', [App\Http\Controllers\RKMController::class, 'abs
 Route::put('/suratperjalanan/{id}/approval', [App\Http\Controllers\SuratPerjalananController::class, 'approval'])->name('suratperjalanan.approval');
 Route::get('/fetch-attendance', [\App\Http\Controllers\RKMController::class, 'fetchAttendance'])->name('attendance.fetch');
 Route::post('/absensi', [\App\Http\Controllers\AbsensiKaryawanController::class, 'storeAbsensi'])->name('absensi.masuk');
+Route::get('/absensi/karyawan', [App\Http\Controllers\AbsensiKaryawanController::class, 'absensiKaryawan'])->name('absensi.karyawan');
+Route::get('/absensi/pengajuan-klaim/no-recorded', [App\Http\Controllers\AbsensiKaryawanController::class, 'noRecord'])->name('absensi.noRecord');
+Route::post('/absensi/approve/pengajuan-klaim/no-recorded', [App\Http\Controllers\AbsensiKaryawanController::class, 'ApproveNoRecord'])->name('absensi.approveNoRecord');
+Route::post('/absensi/delete/pengajuan-klaim/no-recorded', [App\Http\Controllers\AbsensiKaryawanController::class, 'deleteNoRecord'])->name('absensi.deleteNoRecord');
+Route::get('/absensi/pengajuan-klaim/scheme-work', [App\Http\Controllers\AbsensiKaryawanController::class, 'schemeWork'])->name('absensi.schemeWork');
+Route::post('/absensi/approve/pengajuan-klaim/scheme-work', [App\Http\Controllers\AbsensiKaryawanController::class, 'ApproveSchemeWork'])->name('absensi.approveSchemeWork');
+Route::post('/absensi/delete/pengajuan-klaim/scheme-work', [App\Http\Controllers\AbsensiKaryawanController::class, 'deleteSchemeWork'])->name('absensi.deleteSchemeWork');
+Route::get('/absensi/pengajuan-klaim/cancel-leave', [App\Http\Controllers\AbsensiKaryawanController::class, 'cancelLeave'])->name('absensi.cancelLeave');
+Route::post('/absensi/approve/pengajuan-klaim/cancel-leave', [App\Http\Controllers\AbsensiKaryawanController::class, 'ApproveCancelLeave'])->name('absensi.approveCancelLeave');
+Route::post('/absensi/delete/pengajuan-klaim/cancel-leave', [App\Http\Controllers\AbsensiKaryawanController::class, 'deleteCancelLeave'])->name('absensi.deleteCancelLeave');
 Route::get('/absensi/karyawan',  [App\Http\Controllers\AbsensiKaryawanController::class, 'absensiKaryawan'])->name('absensi.karyawan');
 Route::get('/absensi/pengajuan-klaim/no-recorded',  [App\Http\Controllers\AbsensiKaryawanController::class, 'noRecord'])->name('absensi.noRecord');
 Route::post('/absensi/approve/pengajuan-klaim/no-recorded',  [App\Http\Controllers\AbsensiKaryawanController::class, 'ApproveNoRecord'])->name('absensi.approveNoRecord');
@@ -742,6 +755,16 @@ Route::get('/dashboard-sla/digital', [DashboardSLAController::class, 'dashboardD
 
 Route::prefix('office')->name('office.')->middleware(['auth'])->group(function () {
 
+    Route::prefix('feedback')->name('feedback.')->group(function () {
+        Route::get('chartFeedback', [OfficeController::class, 'getNilaiInstruktur'])->name('get');
+
+    });
+    Route::get(
+        '/feedbackinstrukturpdf',
+        [OfficeController::class, 'exportPdf']
+    )->name('feedbackinstrukturpdf');
+
+
     // Certificate Routes
     Route::prefix('certificate')->name('certificate.')->group(function () {
         Route::get('/', [CertificateController::class, 'index'])->name('index');
@@ -863,6 +886,7 @@ Route::post('/api/event/{id}/update', [CalendarController::class, 'updateEvent']
 Route::patch('content-schedules/{contentSchedule}/mark-uploaded', [App\Http\Controllers\ContentScheduleController::class, 'markAsUploaded'])
     ->name('content-schedules.mark-uploaded');
 
+Route::get('/dashboard/feedback', [OfficeController::class, 'index']);
 Route::get('/development', [InstructorDevelopmentController::class, 'index'])->name('development.index');
 Route::post('/development/sertifikasi', [InstructorDevelopmentController::class, 'storeSertifikasi'])->name('sertifikasi.store');
 Route::delete('/development/sertifikasi/{id}', [InstructorDevelopmentController::class, 'destroySertifikasi'])->name('sertifikasi.destroy');

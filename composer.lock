@@ -4,6 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
+    "content-hash": "f64f56fa94528fab66ede8e1ce34ba51",
     "content-hash": "d4bc2a049bceda1c145d8b5a22282ce1",
     "packages": [
         {
@@ -6219,6 +6220,16 @@
         },
         {
             "name": "sentry/sentry-laravel",
+            "version": "4.18.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/getsentry/sentry-laravel.git",
+                "reference": "b9a647f93f9a040eaf6f21d0684f2351310d3360"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/getsentry/sentry-laravel/zipball/b9a647f93f9a040eaf6f21d0684f2351310d3360",
+                "reference": "b9a647f93f9a040eaf6f21d0684f2351310d3360",
             "version": "4.20.1",
             "source": {
                 "type": "git",
@@ -6235,6 +6246,8 @@
                 "illuminate/support": "^6.0 | ^7.0 | ^8.0 | ^9.0 | ^10.0 | ^11.0 | ^12.0",
                 "nyholm/psr7": "^1.0",
                 "php": "^7.2 | ^8.0",
+                "sentry/sentry": "^4.16.0",
+                "symfony/psr-http-message-bridge": "^1.0 | ^2.0 | ^6.0 | ^7.0"
                 "sentry/sentry": "^4.19.0",
                 "symfony/psr-http-message-bridge": "^1.0 | ^2.0 | ^6.0 | ^7.0 | ^8.0"
             },
@@ -6293,6 +6306,7 @@
             ],
             "support": {
                 "issues": "https://github.com/getsentry/sentry-laravel/issues",
+                "source": "https://github.com/getsentry/sentry-laravel/tree/4.18.0"
                 "source": "https://github.com/getsentry/sentry-laravel/tree/4.20.1"
             },
             "funding": [
@@ -6305,6 +6319,7 @@
                     "type": "custom"
                 }
             ],
+            "time": "2025-10-20T12:57:51+00:00"
             "time": "2026-01-07T08:53:19+00:00"
         },
         {
