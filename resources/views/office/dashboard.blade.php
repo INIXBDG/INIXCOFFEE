@@ -130,6 +130,78 @@
                 </div>
             </div>
 
+            <!-- Chart nilai Feedback -->
+            <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden">
+                <div class="card-header bg-white border-bottom-0 pb-0 d-flex justify-content-between">
+                    <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
+                        <i class="bx bx-line-chart text-primary me-2" style="font-size: 1.5rem;"></i>
+                        Grafik Feedback
+                    </h5>
+                    <div class="d-flex gap-4 align-items-center">
+                        <h6 class="mb-0">Export : </h6>
+                        <button type="button" id="exportFeedbackInstruktur" class="btn btn-outline-secondary btn-sm pdfBtn">
+                            PDF
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card-body p-4"
+                    style="height: 400px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div class="card-body p-4 chart-wrapper">
+                        <canvas id="feedbackChart"></canvas>
+                        <div id="nilaiInstrukturEmpty" class="d-none position-absolute top-50 start-50 translate-middle
+                                d-flex flex-column align-items-center text-center w-100">
+                            <i class="bx bx-x-circle text-muted" style="font-size:3rem;"></i>
+                            <p class="text-muted mt-2 mb-0">
+                                Tidak ada data Nilai Instruktur
+                            </p>
+                        </div>
+
+                    </div>
+
+                </div>
+                <div class="container">
+                    <div class="row">
+                        <div class="col">
+                            <label for="filterFeedbackTahun" class="mb-1 ms-1">Tahun</label>
+                            <select id="filterFeedbackTahun" class="form-select mb-3">
+                                <option value="default" disabled selected>Berdasarkan Tahun</option>
+                                @php
+                                    $tahun_sekarang = now()->year;
+                                    for ($tahun = 2023; $tahun <= $tahun_sekarang + 2; $tahun++) {
+                                        echo "<option value=\"$tahun\">$tahun</option>";
+                                    }
+                                @endphp
+                            </select>
+                        </div>
+                        <div class="col">
+                            <label for="filterFeedbackBulan" class="mb-1 ms-1">Bulan</label>
+                            <select id="filterFeedbackBulan" class="form-select mb-3">
+                                <option value="default" disabled selected>Berdasarkan Bulan</option>
+                                @php
+                                    $bulan_sekarang = now()->month;
+                                    $nama_bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                                    for ($bulan = 1; $bulan <= 12; $bulan++) {
+                                        echo "<option value=\"$bulan\">{$nama_bulan[$bulan - 1]}</option>";
+                                    }
+                                @endphp
+                            </select>
+                        </div>
+                        <div class="col">
+                            <label for="filterFeedbackTriwulan" class="mb-1 ms-1">Triwulan</label>
+                            <select id="filterFeedbackTriwulan" class="form-select mb-3">
+                                <option value="default" disabled selected>Berdasarkan Triwulan</option>
+                                <option value="1">Quarter 1</option>
+                                <option value="2">Quarter 2</option>
+                                <option value="3">Quarter 3</option>
+                                <option value="4">Quarter 4</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
             {{-- RKM Berjalan Minggu Ini --}}
             <div class="row g-3 mb-4">
                 <div class="col-12">
@@ -166,8 +238,7 @@
                                                 </td>
                                                 <td>
                                                     <div class="text-truncate" style="max-width: 250px;"
-                                                        data-bs-toggle="tooltip"
-                                                        title="{{ $item->materi->nama_materi }}">
+                                                        data-bs-toggle="tooltip" title="{{ $item->materi->nama_materi }}">
                                                         <i class="bx bx-book-open text-muted me-1"></i>
                                                         {{ $item->materi->nama_materi }}
                                                     </div>
@@ -209,8 +280,7 @@
                                             <tr>
                                                 <td colspan="7" class="text-center py-5">
                                                     <div class="d-flex flex-column align-items-center">
-                                                        <i class="bx bx-calendar-x text-muted"
-                                                            style="font-size: 3rem;"></i>
+                                                        <i class="bx bx-calendar-x text-muted" style="font-size: 3rem;"></i>
                                                         <p class="text-muted mt-3 mb-0">Tidak ada data RKM minggu ini</p>
                                                     </div>
                                                 </td>
@@ -356,19 +426,17 @@
 
     <!-- Modals untuk setiap Divisi -->
     @foreach ($divisiStats as $index => $divisi)
-        <div class="modal fade" id="modalDivisi{{ $index }}" tabindex="-1"
-            aria-labelledby="modalLabel{{ $index }}" aria-hidden="true">
+        <div class="modal fade" id="modalDivisi{{ $index }}" tabindex="-1" aria-labelledby="modalLabel{{ $index }}"
+            aria-hidden="true">
             <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
                 <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
                     <div class="modal-header bg-{{ $divisi['color'] }} bg-opacity-10 border-bottom-0">
                         <h5 class="modal-title fw-bold" id="modalLabel{{ $index }}">
-                            <i class="{{ $divisi['icon'] }} text-{{ $divisi['color'] }} me-2"
-                                style="font-size: 1.5rem;"></i>
+                            <i class="{{ $divisi['icon'] }} text-{{ $divisi['color'] }} me-2" style="font-size: 1.5rem;"></i>
                             Data Karyawan - {{ $divisi['nama'] }}
                             <span class="badge bg-{{ $divisi['color'] }} ms-3 mb-2">{{ $divisi['total'] }} orang</span>
                         </h5>
-                        <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal"
-                            aria-label="Close"></button>
+                        <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body p-0">
                         @if ($divisi['data']->count() > 0)
@@ -520,11 +588,142 @@
                 --bs-modal-width: 95vw;
             }
         }
+
+        .chart-wrapper {
+            height: 400px;
+            position: relative;
+        }
     </style>
 
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        let feedbackChart;
+
+        $(document).ready(function () {
+            initChart();
+            loadFeedback();
+
+            $('#filterFeedbackTahun').change(function () {
+                resetSelect('#filterFeedbackBulan', '#filterFeedbackTriwulan');
+                loadFeedback('tahun', $(this).val());
+            });
+
+            $('#filterFeedbackBulan').change(function () {
+                resetSelect('#filterFeedbackTriwulan');
+                loadFeedback('bulan', $(this).val());
+            });
+
+            $('#filterFeedbackTriwulan').change(function () {
+                resetSelect('#filterFeedbackBulan');
+                loadFeedback('triwulan', $(this).val());
+            });
+        });
+
+        function initChart() {
+            const ctx = document.getElementById('feedbackChart').getContext('2d');
+
+            feedbackChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: generateColors(30)
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+        }
+
+        function loadFeedback(filter = null, value = null) {
+            $.ajax({
+                url: "{{ route('office.feedback.get') }}",
+                type: "GET",
+                data: {
+                    filter: filter,
+                    value: value,
+                    tahun: $('#filterFeedbackTahun').val()
+                },
+                success: function (res) {
+
+                    // === DATA KOSONG ===
+                    if (!res || res.length === 0) {
+                        feedbackChart.data.labels = [];
+                        feedbackChart.data.datasets[0].data = [];
+                        feedbackChart.update();
+
+                        $('#nilaiInstrukturEmpty').removeClass('d-none');
+                        $('#exportFeedbackInstruktur').prop('disabled', true);
+                        return;
+                    }
+
+                    $('#nilaiInstrukturEmpty').addClass('d-none');
+                    $('#exportFeedbackInstruktur').prop('disabled', false);
+
+                    const labels = [];
+                    const data = [];
+
+                    res.forEach(item => {
+                        labels.push(item.nama_instruktur);
+                        data.push(item.nilai_instruktur);
+                    });
+
+                    feedbackChart.data.labels = labels;
+                    feedbackChart.data.datasets[0].data = data;
+                    feedbackChart.update();
+                }
+            });
+        }
+
+        function resetSelect(...selectors) {
+            selectors.forEach(sel => {
+                $(sel).val('default');
+            });
+        }
+
+        function generateColors(count) {
+            const colors = [];
+            for (let i = 0; i < count; i++) {
+                colors.push(`hsl(${i * 360 / count}, 70%, 60%)`);
+            }
+            return colors;
+        }
+
+        // === EXPORT PDF ===
+        $('#exportFeedbackInstruktur').on('click', function () {
+            let tahun = $('#filterFeedbackTahun').val();
+            let bulan = $('#filterFeedbackBulan').val();
+            let triwulan = $('#filterFeedbackTriwulan').val();
+
+            let filter = '';
+            let value = '';
+
+            if (bulan && bulan !== 'default') {
+                filter = 'bulan';
+                value = bulan;
+            } else if (triwulan && triwulan !== 'default') {
+                filter = 'triwulan';
+                value = triwulan;
+            } else if (tahun && tahun !== 'default') {
+                filter = 'tahun';
+                value = tahun;
+            }
+
+            let url = `{{ route('office.feedbackinstrukturpdf') }}?filter=${filter}&value=${value}&tahun=${tahun}`;
+            window.open(url, '_blank');
+        });
+
+        //chart kehadiran
+        document.addEventListener('DOMContentLoaded', function () {
             const ctx = document.getElementById('kehadiranChart')?.getContext('2d');
             if (!ctx) return;
 
@@ -587,7 +786,7 @@
                             displayColors: false,
                             padding: 12,
                             callbacks: {
-                                afterLabel: function(context) {
+                                afterLabel: function (context) {
                                     const hadir = context.parsed.y;
                                     const tidakHadir = totalKaryawan - hadir;
                                     return [
