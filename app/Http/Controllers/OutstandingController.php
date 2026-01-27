@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exports\RkmExport;
 use App\Models\AbsensiPDF;
+use App\Models\Certificate;
 use App\Models\Invoice;
 use App\Models\jabatan;
 use App\Models\karyawan;
@@ -11,6 +12,7 @@ use App\Models\Outstanding;
 use App\Models\outstanding as ModelsOutstanding;
 use App\Models\Registrasi;
 use App\Models\RKM;
+use App\Models\SertifikatPDF;
 use App\Models\trackingOutstanding;
 use App\Models\User;
 use App\Notifications\OutstandingNotification;
@@ -194,7 +196,7 @@ class OutstandingController extends Controller
         $user = auth()->user();
         $idSales = $user->jabatan == 'SPV Sales' ? '' : $user->id_sales;
 
-        $query = outstanding::with('rkm', 'rkm.perusahaan', 'rkm.materi', 'tracking_outstanding')
+        $query = outstanding::with('rkm.invoice', 'rkm.perusahaan', 'rkm.materi', 'tracking_outstanding')
             ->where('status_pembayaran', '0');
 
         if ($idSales) {
@@ -835,6 +837,25 @@ class OutstandingController extends Controller
             }
         }
 
+        // 5. Sertifikat Peserta bro
+        $certs = Certificate::where('rkm_id', $outstanding->id_rkm)->get();
+
+        foreach ($certs as $cert) {
+            if ($cert->pdf_path) {
+                $certificate = storage_path('app/public/' . $cert->pdf_path);
+                $filesToMerge[] = $certificate;
+            }
+        }
+
+        // 6. Sertifikat Peserta input
+        $certPeserta = SertifikatPDF::where('id_rkm', $outstanding->id_rkm)->get();
+
+        foreach ($certPeserta as $cert) {
+            if ($cert->pdf_path) {
+                $holding = storage_path('app/' . $cert->pdf_path);
+                $filesToMerge[] = $holding;
+            }
+        }
 
         if (empty($filesToMerge)) {
             return redirect()->back()->with('error', 'Tidak ada dokumen yang bisa digabung.');
@@ -862,7 +883,6 @@ class OutstandingController extends Controller
 
         $pdf->Output($outputPath, 'F');
 
-        // Optimasi PDF (biar ukurannya kecil)
         $optimizedPath = str_replace('.pdf', '_optimized.pdf', $outputPath);
 
         $result = FacadePdfOptimizer::fromDisk('local')
@@ -874,7 +894,6 @@ class OutstandingController extends Controller
 
         $finalFile = $result->status ? $optimizedPath : $outputPath;
 
-        // Nama file download yang lebih informatif
         $rkm = RKM::with('perusahaan')->find($outstanding->id_rkm);
         $namaPerusahaan = $rkm?->perusahaan?->nama_perusahaan ?? 'Outstanding';
         $fileName = 'Dokumen_Lengkap_' . preg_replace('/[^A-Za-z0-9\-]/', '_', $namaPerusahaan) . '_' . $id . '.pdf';

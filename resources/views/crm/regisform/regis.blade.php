@@ -553,7 +553,7 @@
                     value="Aryani Meitasari">
                 <label>Jabatan Penandatangan 3:</label>
                 <input type="text" placeholder="Jabatan Penandatangan 3" class="signature-position" required
-                    value="Chief Marketing Manager">
+                    value="SPV Marketing Manager">
             </div>
         </div>
 
