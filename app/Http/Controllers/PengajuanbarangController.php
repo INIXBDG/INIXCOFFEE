@@ -142,7 +142,7 @@ class PengajuanBarangController extends Controller
     {
         $request->validate([
             'id_karyawan' => 'required|string|max:255',
-            'id_kegiatan' => 'required|integer',
+            'id_kegiatan' => 'nullable|integer',
             'tipe' => 'required|string|max:255',
             'barang.nama_barang.*' => 'nullable|string|max:255',
             'barang.qty.*' => 'nullable|string',
