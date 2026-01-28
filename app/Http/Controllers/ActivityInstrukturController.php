@@ -109,8 +109,10 @@ class ActivityInstrukturController extends Controller
                     'type' => 'manual',
                     'is_locked' => $locked,
                     'desc' => $activity->desc,
+                    'activity_type' => $activity->activity_type,
                     'status' => $activity->status,
                     'doc' => $activity->doc ?? null,
+
                 ]
             ];
         }
@@ -263,6 +265,7 @@ class ActivityInstrukturController extends Controller
                 'user_id' => $instructorId,
                 'activity_date' => $request->activity_date,
                 'activity' => $request->activity,
+                'activity_type' => $request->activity_type,
                 'desc' => $request->desc,
                 'status' => 'On Progres', // Default status untuk aktivitas manual baru
                 'is_locked' => 0,
@@ -278,11 +281,11 @@ class ActivityInstrukturController extends Controller
     public function update(Request $request)
     {
         $instructorId = Auth::user()->id;
-        // dd($request->all());
+
         // 1. Validasi Input Kunci
         $request->validate([
-            'activity_id' => 'required|exists:activity_instrukturs,id', // Harus ada ID aktivitas yang sudah ada
-            'doc' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120', // Bukti wajib diunggah (Maks 5MB)
+            'activity_id' => 'required|exists:activity_instrukturs,id',
+            'doc'         => 'required|url', // Validasi input harus berupa format URL (http/https)
         ]);
 
         $activityId = $request->activity_id;
@@ -303,52 +306,133 @@ class ActivityInstrukturController extends Controller
             return redirect()->route('activities.index')->with(['error' => 'Aktivitas ini sudah ditandai terkunci di database']);
         }
 
-        $docPath = null;
-
-        if ($request->hasFile('doc')) {
-
-            // Hapus dokumen lama jika ada
-            if ($activity->doc && Storage::disk('public')->exists($activity->doc)) {
-                Storage::disk('public')->delete($activity->doc);
-            }
-
-            // 🔥 Ambil data untuk nama file
-            $activityName   = Str::slug($activity->activity ?? 'aktivitas');
-            $kodeInstruktur = optional($activity->user)->karyawan->kode_karyawan ?? 'unknown';
-            $tanggal        = Carbon::parse($activity->activity_date)->format('Y-m-d');
-
-            $extension = $request->file('doc')->getClientOriginalExtension();
-
-            // 🔥 Nama file final
-            $fileName = "{$activityName}_{$kodeInstruktur}_{$tanggal}.{$extension}";
-
-            // 🔥 Simpan dengan nama custom
-            $docPath = $request->file('doc')->storeAs(
-                'activity_docs',
-                $fileName,
-                'public'
-            );
-        }
-
-        // 5. Lakukan Update
+        // 4. Lakukan Update Link
         try {
             $activity->update([
-                'doc' => $docPath,
-                'status' => 'Selesai', // Atau 'Completed'
-                'completed_at' => now(), // Set timestamp saat ini
+                'doc'          => $request->doc, // Simpan langsung string URL dari input
+                'status'       => 'Selesai',
+                'completed_at' => now(), 
             ]);
 
-            return redirect()->route('activities.index')->with(['success' => 'Laporan aktivitas berhasil disimpan/diperbarui.']);
+            return redirect()->route('activities.index')->with(['success' => 'Link bukti aktivitas berhasil disimpan.']);
 
-            
         } catch (\Exception $e) {
-            // Jika terjadi error DB setelah file diupload, coba hapus file yang sudah terlanjur tersimpan
-            if ($docPath) {
-                Storage::disk('public')->delete($docPath);
-            }
-            return redirect()->route('activities.index')->with(['error' => 'Gagal menyimpan data ke database: ' . $e->getMessage()]);
-
+            return redirect()->route('activities.index')->with(['error' => 'Gagal menyimpan data: ' . $e->getMessage()]);
         }
+    }
+
+    // File: app/Http/Controllers/ActivityInstrukturController.php
+
+    public function getSummaryData(Request $request)
+    {
+        $user = auth()->user();
+        $userId = $user->id;
+        $karyawan = karyawan::findOrFail($userId);
+        $instructorId = $karyawan->kode_karyawan;
+        $Eduman = 'AD';
+
+        $start = Carbon::parse($request->start)->toDateString();
+        $end   = Carbon::parse($request->end)->toDateString();
+
+        // --- 1. Detail Aktivitas Manual ---
+        $manualQuery = ActivityInstruktur::with('user.karyawan') // Eager load relasi
+            ->whereNull('id_rkm')
+            ->whereBetween('activity_date', [$start, $end]);
+
+        if ($instructorId !== $Eduman) {
+            $manualQuery->where('user_id', $userId);
+        }
+
+        $manualActivities = $manualQuery->get();
+
+        // Grouping Manual berdasarkan Nama
+        $manualDetails = $manualActivities->groupBy(function($item) {
+            // Ambil nama karyawan, fallback ke user name
+            return optional(optional($item->user)->karyawan)->nama_lengkap 
+                ?? optional($item->user)->name ?? 'Unknown';
+        })->map(function($group) {
+            
+            // --- TAMBAHAN LOGIKA DI SINI ---
+            // Hitung jumlah per activity_type di dalam grup user ini
+            $types = $group->groupBy('activity_type')->map(function($typeGroup) {
+                return $typeGroup->count();
+            });
+            // -------------------------------
+
+            return [
+                'total'       => $group->count(),
+                'selesai'     => $group->where('status', 'Selesai')->count(),
+                'on_progress' => $group->where('status', '!=', 'Selesai')->count(),
+                'types'       => $types // <--- Masukkan data tipe aktivitas ke response JSON
+            ];
+        });
+
+        // --- 2. BAGIAN 1: RKM (LOGIKA DIPERBARUI) ---
+        $rkmQuery = RKM::where('tanggal_awal', '<=', $end)
+            ->where('tanggal_akhir', '>=', $start);
+
+        if ($instructorId !== $Eduman) {
+            $rkmQuery->where(function ($q) use ($instructorId) {
+                $q->where('instruktur_key', $instructorId)
+                ->orWhere('instruktur_key2', $instructorId);
+            });
+        }
+
+        $rkms = $rkmQuery->get();
+
+        // Mapping Kode ke Nama
+        $allCodes = $rkms->pluck('instruktur_key')->merge($rkms->pluck('instruktur_key2'))->unique()->filter();
+        $karyawanMap = karyawan::whereIn('kode_karyawan', $allCodes)->pluck('nama_lengkap', 'kode_karyawan');
+
+        $rkmDetails = [];
+        foreach ($rkms as $rkm) {
+            // Cek Instruktur 1 (Tambahkan filter !== '-')
+            if ($rkm->instruktur_key && $rkm->instruktur_key !== '-') {
+                $name = $karyawanMap[$rkm->instruktur_key] ?? $rkm->instruktur_key;
+                
+                // Pastikan hasil mapping juga bukan '-'
+                if ($name !== '-') {
+                    if (!isset($rkmDetails[$name])) $rkmDetails[$name] = 0;
+                    $rkmDetails[$name]++;
+                }
+            }
+            
+            // Cek Instruktur 2 (Tambahkan filter !== '-')
+            if ($rkm->instruktur_key2 && $rkm->instruktur_key2 !== '-') {
+                $name = $karyawanMap[$rkm->instruktur_key2] ?? $rkm->instruktur_key2;
+                
+                if ($name !== '-') {
+                    if (!isset($rkmDetails[$name])) $rkmDetails[$name] = 0;
+                    $rkmDetails[$name]++;
+                }
+            }
+        }
+
+        // Safety Net: Unset manual jika masih lolos
+        if (isset($rkmDetails['-'])) {
+            unset($rkmDetails['-']);
+        }
+
+        // Filter view untuk user biasa (bukan admin/Eduman)
+        if ($instructorId !== $Eduman) {
+            $myName = $karyawan->nama_karyawan;
+            // Hanya ambil data diri sendiri
+            $rkmDetails = array_intersect_key($rkmDetails, [$myName => 0]);
+        }
+
+        // Sortir array berdasarkan jumlah terbanyak (Opsional, agar rapi)
+        arsort($rkmDetails);
+
+        return response()->json([
+            'manual_summary' => [
+                'total_all' => $manualActivities->count(),
+                'details' => $manualDetails
+            ],
+            'rkm_summary' => [
+                'total_all' => $rkms->count(),
+                'details' => $rkmDetails
+            ]
+        ]);
     }
 
     
