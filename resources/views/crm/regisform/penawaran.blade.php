@@ -641,22 +641,31 @@
         document.getElementById('add-pelatihan').addEventListener('click', () => {
             const row = document.createElement('div');
             row.className = 'pelatihan-row';
+
             row.innerHTML = `
-                <select class="materi-pelatihan" required>
-                    <option value="">Pilih Materi</option>
-                    ${materiData.map(m => `<option value="${m.id}" data-nama="${m.nama_materi}" data-durasi="${m.durasi}">${m.nama_materi}</option>`).join('')}
-                </select>
-                <input type="text" class="durasi-pelatihan" readonly>
+                <div style="display: flex; gap: 5px;">
+                    <select class="materi-select" style="width: 30%;">
+                        <option value="">-- Pilih Template Materi --</option>
+                        ${materiData.map(m => `<option value="${m.id}" data-nama="${m.nama_materi}" data-durasi="${m.durasi}">${m.nama_materi}</option>`).join('')}
+                    </select>
+                    <input type="text" class="materi-text" placeholder="Nama Materi (Bisa diedit)" required style="width: 70%;">
+                </div>
+                
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <input type="number" class="durasi-pelatihan" placeholder="Durasi" min="1" required style="width: 70px;">
+                </div>
+
                 <input type="date" class="tanggal-awal-pelatihan" required>
-                <input type="text" class="tanggal-pelatihan" readonly>
-                <input type="text" class="harga-pelatihan" placeholder="Masukkan harga (contoh: 10000000)" required>
+                <input type="text" class="tanggal-pelatihan" readonly placeholder="Tanggal Akhir Otomatis">
+                <input type="text" class="harga-pelatihan" placeholder="Harga (Rp)" required>
                 <input type="text" class="ppn-amount" readonly placeholder="PPN Amount">
                 <button type="button" onclick="this.parentElement.remove()">Hapus</button>
             `;
             document.getElementById('pelatihan-list').appendChild(row);
 
-            // Tambahkan event listener untuk materi
-            const materiSelect = row.querySelector('.materi-pelatihan');
+            // Seleksi elemen
+            const materiSelect = row.querySelector('.materi-select');
+            const materiTextInput = row.querySelector('.materi-text'); // Input baru untuk nama materi yg di customize
             const durasiInput = row.querySelector('.durasi-pelatihan');
             const tanggalAwalInput = row.querySelector('.tanggal-awal-pelatihan');
             const tanggalPelatihanInput = row.querySelector('.tanggal-pelatihan');
@@ -667,16 +676,15 @@
                 const ppnRate = parseFloat(document.getElementById('ppn-rate').value) || 0;
                 const includePPN = document.getElementById('include-ppn').checked;
                 const price = parseFloat(hargaInput.value) || 0;
-                const {
-                    ppnAmount
-                } = calculatePriceWithPPN(price, ppnRate, includePPN);
+                const { ppnAmount } = calculatePriceWithPPN(price, ppnRate, includePPN);
                 ppnAmountInput.value = formatRupiah(ppnAmount);
             }
 
             function updateEndDate() {
-                const durasi = materiSelect.options[materiSelect.selectedIndex]?.getAttribute('data-durasi') || '';
+                const durasi = parseInt(durasiInput.value) || 0; 
                 const startDate = tanggalAwalInput.value;
-                if (durasi && startDate) {
+                
+                if (durasi > 0 && startDate) {
                     const endDate = calculateEndDate(startDate, durasi);
                     tanggalPelatihanInput.value = endDate || 'Tanggal tidak valid';
                 } else {
@@ -686,10 +694,16 @@
 
             materiSelect.addEventListener('change', function() {
                 const selectedOption = this.options[this.selectedIndex];
+                const nama = selectedOption.getAttribute('data-nama') || '';
                 const durasi = selectedOption.getAttribute('data-durasi') || '';
-                durasiInput.value = durasi ? `${durasi} Hari` : '';
+
+                if (nama) materiTextInput.value = nama;
+                if (durasi) durasiInput.value = durasi;
+
                 updateEndDate();
             });
+
+            durasiInput.addEventListener('input', updateEndDate);
 
             tanggalAwalInput.addEventListener('change', updateEndDate);
 
@@ -697,7 +711,6 @@
             document.getElementById('ppn-rate').addEventListener('input', updatePPN);
             document.getElementById('include-ppn').addEventListener('change', updatePPN);
 
-            // Mencegah input karakter non-angka pada harga
             hargaInput.addEventListener('keypress', function(e) {
                 const charCode = e.which ? e.which : e.keyCode;
                 if (charCode < 48 || charCode > 57) {
@@ -792,21 +805,25 @@
             const pelatihanRows = document.querySelectorAll('.pelatihan-row');
             let pelatihanHTML = '';
             let isPelatihanValid = true;
+
             pelatihanRows.forEach(row => {
-                const materiSelect = row.querySelector('.materi-pelatihan');
-                const materi = materiSelect.options[materiSelect.selectedIndex]?.getAttribute(
-                    'data-nama') || '';
-                const durasi = row.querySelector('.durasi-pelatihan').value || '';
+                // MODIFIKASI DISINI: Ambil nilai dari input text .materi-text
+                const materi = row.querySelector('.materi-text').value || '';
+                
+                // Ambil nilai durasi langsung, tambahkan teks "Hari" manual karena inputnya type number
+                const durasiVal = row.querySelector('.durasi-pelatihan').value;
+                const durasi = durasiVal ? `${durasiVal} Hari` : '';
+
                 const tanggal = row.querySelector('.tanggal-pelatihan').value || '';
                 const harga = parseFloat(row.querySelector('.harga-pelatihan').value) || 0;
-                const {
-                    total,
-                    ppnAmount
-                } = calculatePriceWithPPN(harga, ppnRate, includePPN);
+
+                const { total } = calculatePriceWithPPN(harga, ppnRate, includePPN);
+
                 if (!materi || !durasi || !tanggal || !harga) {
                     isPelatihanValid = false;
                     return;
                 }
+
                 pelatihanHTML += `
                     <tr>
                         <td>${materi}</td>

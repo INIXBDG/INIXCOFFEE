@@ -71,6 +71,9 @@ class listexamController extends Controller
             'nama_exam' => 'required|string|max:255',
             'kode_exam' => 'required|string|max:255',
             'vendor' => 'required|string|max:255',
+            'harga_exam' => 'numeric',
+            'estimasi_durasi_booking' => 'string|max:255',
+            'note' => 'string|max:255',
         ]);
 
         $exam = ListExam::findOrFail($id);
@@ -102,5 +105,4 @@ class listexamController extends Controller
         $vendor = Vendor::create(['nama' => $request->nama]);
         return response()->json($vendor);
     }
-
 }

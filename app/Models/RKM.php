@@ -31,7 +31,8 @@ class RKM extends Model
         'bulan',
         'tahun',
         'isi_pax',
-        'makanan'
+        'makanan',
+        'pdf_peserta'
     ];
     protected $dates = ['tanggal_awal', 'tanggal_akhir'];
 
@@ -39,6 +40,12 @@ class RKM extends Model
     {
         return $this->hasMany(perhitunganNetSales::class, 'id_rkm', 'id');
     }
+
+    public function outstanding()
+    {
+        return $this->hasOne(outstanding::class, 'id_rkm', 'id');
+    }
+
 
     public function sales()
     {
