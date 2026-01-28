@@ -53,6 +53,12 @@
                             </div>
                         </div>
                         <div class="row mb-3">
+                            <label for="valid_until" class="col-md-4 col-form-label text-md-start">{{ __('Valid Until') }}</label>
+                            <div class="col-md-6">
+                                <input disabled id="valid_until" type="text" class="form-control" name="valid_until" value="{{ $exam->valid_until }}">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
                             <label for="note" class="col-md-4 col-form-label text-md-start">{{ __('Notes/Syarat Exam') }}</label>
                             <div class="col-md-6">
                                 <input disabled id="note" type="text" class="form-control" name="note" value="{{ $exam->note }}">

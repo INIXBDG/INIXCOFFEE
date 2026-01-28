@@ -93,12 +93,20 @@
                             <div class="col-sm">
                                 <div class="form-group">
                                     <label for="rekomendasi">Ajukan Rekomendasi Materi Selanjutnya</label>
-                                    <select name="rekomendasi" id="rekomendasi" class="form-control" required>
-                                        <option value="" disabled>Pilih Materi</option>
+                                    <select name="rekomendasi[]" id="rekomendasi" class="form-control rekomendasi" multiple="multiple" required>
+                                        {{-- <option value="" disabled>Pilih Materi</option> --}}
                                         @foreach ($dataMateri as $data)
                                         <option value="{{ $data->id }}">{{ $data->nama_materi }}</option>
                                         @endforeach
                                     </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-sm">
+                                <div class="form-group">
+                                    <label for="keterangan_rekomendasi">Keterangan</label>
+                                    <textarea name="keterangan" id="keterangan_rekomendasi" class="form-control" rows="3" placeholder="Masukkan keterangan tambahan..."></textarea>
                                 </div>
                             </div>
                         </div>
@@ -180,10 +188,10 @@
 </style>
 
 @push('js')
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
 <script>
     $(document).ready(function() {
@@ -197,13 +205,18 @@
             var tanggal_training = $(this).data('tanggal');
             var perusahaan = $(this).data('perusahaan');
             var id_rekomendasi = $(this).data('rekomendasi-id');
-            var id_rekomendasi_materi = $(this).data('rekomendasi-materi-id');
+            var keterangan = $(this).data('keterangan');
+            
+            // AMBIL DATA MATERI (Pastikan ini dikirim sebagai array atau string dipisah koma)
+            var id_rekomendasi_materi = $(this).data('rekomendasi-materi-id'); 
 
             $('#Materi').val(materi_sebelumnya);
             $('#tanggal_training').val(tanggal_training);
             $('#perusahaan').val(perusahaan);
             $('#id_rekomendasi').val(id_rekomendasi || '');
+            $('#keterangan_rekomendasi').val(keterangan || '');
 
+            // Logika penanganan Hidden Input id_rkm
             var $hidden = $('input[name="id_rkm"]');
             if ($hidden.length === 0) {
                 $('<input>').attr({
@@ -215,53 +228,49 @@
                 $hidden.val(id_rkm);
             }
 
-            if ($('#rekomendasi').data('select2')) {
-                $('#rekomendasi').select2('destroy');
-            }
-            $('#rekomendasi').val(id_rekomendasi_materi || null).trigger('change');
-
-            $('#rekomendasi').select2({
+            // INISIALISASI SELECT2
+            $('.rekomendasi').select2({
                 placeholder: "Pilih Materi",
                 allowClear: true,
                 width: '100%',
                 dropdownParent: $('#modalRekomendasiLanjutan')
             });
+
+            // SET VALUE (Jika data tersimpan adalah string "1,2,3", ubah ke array [1,2,3])
+            if (id_rekomendasi_materi) {
+                var selectedValues = id_rekomendasi_materi.toString().split(',');
+                $('#rekomendasi').val(selectedValues).trigger('change');
+            } else {
+                $('#rekomendasi').val(null).trigger('change');
+            }
         });
 
         $('#formStoreRekomendasi').on('submit', function(e) {
             e.preventDefault();
 
-            var id_rekomendasi = $('#id_rekomendasi').val();
-            var id_rkm = $('input[name="id_rkm"]').val();
-            var id_materi = $('#rekomendasi').val();
-            var token = $('meta[name="csrf-token"]').attr('content');
-
-            if (!id_materi) {
-                Swal.fire('Peringatan!', 'Silakan pilih materi rekomendasi.', 'warning');
-                return;
-            }
+            // serialize() akan otomatis mengambil 'rekomendasi[]' dan 'id_rkm' 
+            // sehingga terbaca sebagai array oleh Laravel
+            var formData = $(this).serialize(); 
 
             $.ajax({
                 url: '/rekomendasi-lanjutan/store',
                 method: 'POST',
-                data: {
-                    _token: token,
-                    id_rekomendasi: id_rekomendasi,
-                    id_rkm: id_rkm,
-                    id_materi: id_materi
-                },
+                data: formData, 
                 success: function(res) {
                     if (res.success) {
                         Swal.fire('Berhasil!', res.message, 'success');
                         $('#modalRekomendasiLanjutan').modal('hide');
                         getDataRKM();
-                    } else {
-                        Swal.fire('Gagal!', res.message, 'error');
                     }
                 },
                 error: function(xhr) {
-                    var msg = xhr.responseJSON?.message || 'Terjadi kesalahan saat menyimpan.';
-                    Swal.fire('Error!', msg, 'error');
+                    // Jika validasi gagal (422), tampilkan pesan errornya
+                    var errors = xhr.responseJSON.errors;
+                    if (errors && errors.rekomendasi) {
+                        Swal.fire('Error!', 'Mohon pilih minimal satu materi.', 'error');
+                    } else {
+                        Swal.fire('Error!', 'Gagal menyimpan data.', 'error');
+                    }
                 }
             });
         });
@@ -271,6 +280,7 @@
             $('input[name="id_rkm"]').remove();
             if ($('#rekomendasi').data('select2')) {
                 $('#rekomendasi').select2('destroy');
+                $('#keterangan_rekomendasi').val('');
             }
         });
     });
@@ -286,7 +296,7 @@
             success: function(response) {
                 var html = '';
                 var jabatan = `{!! auth()->user()->jabatan !!}`.replace(/&amp;/g, "&").trim();
-
+                var listMateriSemua = {!! json_encode($dataMateri) !!};
                 response.data.forEach(function(monthData) {
                     monthData.weeksData.forEach(function(weekData) {
                         html += '<div class="card my-1">';
@@ -303,6 +313,7 @@
                         html += '<th scope="col">Tanggal Training</th>';
                         html += '<th scope="col">Perusahaan</th>';
                         html += '<th scope="col">Rekomendasi Pelatihan Selanjutnya</th>';
+                        html += '<th scope="col">Keterangan</th>';
                         if (jabatan == 'Education Manager' || jabatan == 'Instruktur') {
                             html += '<th scope="col">Aksi</th>';
                         }
@@ -312,40 +323,68 @@
                             html += '<tr><td colspan="6" class="text-center">Tidak Ada Kelas Mingguan</td></tr>';
                         } else {
                             weekData.data.forEach(function(rkm, index) {
-                                var tanggalText = rkm.tanggal_awal == rkm.tanggal_akhir ?
-                                    moment(rkm.tanggal_awal).format('DD MMMM YYYY') :
-                                    moment(rkm.tanggal_awal).format('DD MMMM YYYY') + ' s/d ' + moment(rkm.tanggal_akhir).format('DD MMMM YYYY');
+                            var tanggalText = rkm.tanggal_awal == rkm.tanggal_akhir ?
+                                moment(rkm.tanggal_awal).format('DD MMMM YYYY') :
+                                moment(rkm.tanggal_awal).format('DD MMMM YYYY') + ' s/d ' + moment(rkm.tanggal_akhir).format('DD MMMM YYYY');
 
-                                var perusahaanText = '';
-                                rkm.perusahaan.forEach(function(p) {
-                                    perusahaanText += p.nama_perusahaan + ', ';
-                                });
-                                perusahaanText = perusahaanText ? perusahaanText.slice(0, -2) : '';
+                            var perusahaanText = rkm.perusahaan.map(p => p.nama_perusahaan).join(', ');
 
-                                html += '<tr>';
-                                html += '<td>' + (index + 1) + '</td>';
-                                html += '<td>' + rkm.materi.nama_materi + '</td>';
-                                html += '<td>' + tanggalText + '</td>';
-                                html += '<td>' + perusahaanText + '</td>';
-                                html += '<td>' + (rkm.rekomendasilanjutan?.materi?.nama_materi ?? '-') + '</td>';
-                                if (jabatan == 'Education Manager' || jabatan == 'Instruktur') {
-                                    html += '<td>';
-                                    html += '<div class="btn-group dropup">';
-                                    html += '<button type="button" class="btn dropdown-toggle text-black" data-bs-toggle="dropdown">Actions</button>';
-                                    html += '<div class="dropdown-menu">';
-                                    html += '<a class="dropdown-item js-ajukan-rekomendasi" href="#" ' +
-                                        'data-id="' + rkm.id + '" ' +
-                                        'data-materi="' + rkm.materi.nama_materi + '" ' +
-                                        'data-tanggal="' + tanggalText + '" ' +
-                                        'data-perusahaan="' + perusahaanText + '" ' +
-                                        'data-rekomendasi-id="' + (rkm.rekomendasilanjutan?.id ?? '') + '" ' +
-                                        'data-rekomendasi-materi-id="' + (rkm.rekomendasilanjutan?.id_materi ?? '') + '" ' +
-                                        'data-bs-toggle="modal" data-bs-target="#modalRekomendasiLanjutan">' +
-                                        '<img src="{{ asset("icon/clipboard-primary.svg") }}" class="me-1">Ajukan Rekomendasi</a>';
-                                    html += '</div></div></td>';
+                            // --- LOGIKA BARU UNTUAL FORMAT STRING KOMA ---
+                            var rekomendasiNamaMateri = '-';
+                            var rawIds = '';
+                            var ketText = '-';
+                            console.log();
+                            if (rkm.rekomendasilanjutan) {
+                                rawIds = rkm.rekomendasilanjutan.id_materi || ''; // Contoh: "1,2"
+                                ketText = rkm.rekomendasilanjutan.keterangan || '-';
+
+                                if (rawIds) {
+                                    var arrayIds = rawIds.split(',');
+                                    var namaArray = [];
+                                    
+                                    arrayIds.forEach(function(id) {
+                                        // Cari nama materi di listMateriSemua (variable dari PHP)
+                                        var materiKetemu = listMateriSemua.find(m => m.id == id.trim());
+                                        if (materiKetemu) {
+                                            namaArray.push(materiKetemu.nama_materi);
+                                        }
+                                    });
+                                    
+                                    rekomendasiNamaMateri = namaArray.length > 0 ? namaArray.join(', ') : '-';
                                 }
-                                html += '</tr>';
-                            });
+                            }
+                            // --------------------------------------------
+
+                            html += '<tr>';
+                            html += '<td>' + (index + 1) + '</td>';
+                            html += '<td>' + rkm.materi.nama_materi + '</td>';
+                            html += '<td>' + tanggalText + '</td>';
+                            html += '<td>' + perusahaanText + '</td>';
+                            // TAMPILKAN NAMA MATERI DAN KETERANGAN
+                            html += '<td>' + 
+                                        '<strong>' + rekomendasiNamaMateri + '</strong>' + 
+                                    '</td>';
+                            html += '<td>' + ketText + '</td>';
+                            
+                            if (jabatan == 'Education Manager' || jabatan == 'Instruktur') {
+                                html += '<td>';
+                                html += '<div class="btn-group dropup">';
+                                html += '<button type="button" class="btn dropdown-toggle text-black" data-bs-toggle="dropdown">Actions</button>';
+                                html += '<div class="dropdown-menu">';
+                                html += '<a class="dropdown-item js-ajukan-rekomendasi" href="#" ' +
+                                    'data-id="' + rkm.id + '" ' +
+                                    'data-materi="' + rkm.materi.nama_materi + '" ' +
+                                    'data-tanggal="' + tanggalText + '" ' +
+                                    'data-perusahaan="' + perusahaanText + '" ' +
+                                    'data-keterangan="' + (ketText === '-' ? '' : ketText) + '" ' +
+                                    'data-rekomendasi-id="' + (rkm.rekomendasilanjutan ? rkm.rekomendasilanjutan.id : '') + '" ' +
+                                    'data-rekomendasi-materi-id="' + rawIds + '" ' + 
+                                    'data-bs-toggle="modal" data-bs-target="#modalRekomendasiLanjutan">' +
+                                    '<img src="{{ asset("icon/clipboard-primary.svg") }}" class="me-1">Ajukan Rekomendasi</a>';
+                                html += '</div></div></td>';
+                            }
+                            html += '</tr>';
+                        });
                         }
                         html += '</tbody></table></div></div>';
                     });

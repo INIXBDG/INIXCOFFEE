@@ -15,7 +15,7 @@ use App\Http\Controllers\Crm\salesPribadiController;
 use App\Http\Controllers\Crm\TargetAktivitas;
 use App\Http\Controllers\Crm\LaporanPenjualanController;
 use App\Http\Controllers\Crm\ImportPerusahaanAndContactController;
-use App\Http\Controllers\databasekpiContoller;
+use App\Http\Controllers\TelegramController;
 use App\Http\Controllers\izinTigaJamController;
 use App\Http\Controllers\KelasAnalisisController;
 use App\Http\Controllers\RKMController as ControllersRKMController;
@@ -882,6 +882,13 @@ Route::post('/api/timeline-item', [TimelineItemController::class, 'store']);
 // API Event Update
 Route::post('/api/event/{id}/update', [CalendarController::class, 'updateEvent']);
 
+Route::get('/activityinstruktur-data', [ActivityInstrukturController::class, 'getActivitiesData'])->name('api.activities');
+Route::post('/activityinstruktur-store', [ActivityInstrukturController::class, 'store'])->name('api.activities.store');
+Route::post('/activityinstruktur-update', [ActivityInstrukturController::class, 'update'])->name('api.activities.proof_update');
+Route::get('/activityinstruktur', [ActivityInstrukturController::class, 'index'])->name('activities.index');
+
+// Pastikan berada di dalam grup middleware auth
+Route::get('/activityinstruktur-data/summary', [App\Http\Controllers\ActivityInstrukturController::class, 'getSummaryData'])->name('api.activities.summary');
 // content
 Route::patch('content-schedules/{contentSchedule}/mark-uploaded', [App\Http\Controllers\ContentScheduleController::class, 'markAsUploaded'])
     ->name('content-schedules.mark-uploaded');

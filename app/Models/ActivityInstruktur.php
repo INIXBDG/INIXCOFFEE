@@ -13,6 +13,7 @@ class ActivityInstruktur extends Model
     protected $fillable = [
         'user_id',
         'activity',
+        'activity_type',
         'status',
         'desc',
         'doc',

@@ -8,7 +8,7 @@ use App\Http\Controllers\PeluangController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WebhookController;
-
+use App\Http\Controllers\TelegramController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -53,3 +53,6 @@ Route::get('getInventaris', [App\Http\Controllers\Api\apiController::class, 'get
 Route::post('/create/ticket', [TicketController::class, 'store']);
 
 Route::match(['get', 'post'], '/webhook/fonnte', [WebhookController::class, 'handle']);
+
+Route::get('/telegram/setwebhook', [TelegramController::class, 'setWebhook'])->name('telegram.setwebhook');
+Route::post('/telegram/webhook', [TelegramController::class, 'webhook'])->name('telegram.webhook');
