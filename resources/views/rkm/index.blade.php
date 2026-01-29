@@ -247,7 +247,7 @@
                 var html = '';
                 var count = 1;
                 var jabatan = `{!! auth()->user()->jabatan !!}`.replace(/&amp;/g, "&").trim();
-
+                var userKode = "{{ auth()->user()->karyawan->kode_karyawan ?? '' }}";
                 response.data.forEach(function(monthData) {
                     monthData.weeksData.forEach(function(weekData) {
                         var bulanKosong = moment(weekData.start).format('M');
@@ -393,9 +393,12 @@
                                     const firstId = rkm.id_all ? String(rkm.id_all).split(', ')[0] : '';
                                     html += '<a class="dropdown-item" href="/rkm/' + rkm.materi_key + 'ixb' + tanggal + 'ie' + hunta + 'ie' + lanbu + 'ixb' + kelas + '" data-toggle="tooltip" data-placement="top" title="Detail RKM">';
                                     html += '<img src="{{ asset('icon/clipboard-primary.svg') }}" class="me-1"> Detail RKM</a>';
-                                    // 1. Siapkan Array ID RKM (Asumsi backend mengirim string "1, 2, 3")
+                                    
+                                    var instrukturRKM = (rkm.instruktur_all || "").toUpperCase(); 
+                                    var myKode = userKode.toUpperCase();
+                                    var showButton = (jabatan === 'Instruktur' && instrukturRKM.includes(myKode) || jabatan === 'Education Manager' && instrukturRKM.includes(myKode));
                                     const idList = rkm.id_all ? String(rkm.id_all).split(',').map(i => i.trim()) : [];
-
+                                    console.log(jabatan, instrukturRKM, myKode, showButton);
                                     // 2. Siapkan Array Nama Perusahaan
                                     const perusahaanList = rkm.perusahaan.map(p => p.nama_perusahaan);
                                     // console.log(perusahaanList);
@@ -406,6 +409,7 @@
                                     const jsonRecs = JSON.stringify(existingRecs).replace(/"/g, '&quot;');
 
                                     // Render Tombol
+                                    if (showButton) {
                                     html += '<a class="dropdown-item js-ajukan-rekomendasi" href="#" ' +
                                         'data-materi="' + rkm.materi.nama_materi + '" ' +
                                         'data-tanggal="' + moment(rkm.tanggal_awal).format('DD MMMM YYYY') + '" ' +
@@ -417,6 +421,7 @@
 
                                         'data-bs-toggle="modal" data-bs-target="#modalRekomendasiLanjutan">' +
                                         '<img src="{{ asset("icon/clipboard-primary.svg") }}" class="me-1"> Ajukan Rekomendasi</a>';
+                                    }
                                     html += '</div></div></td>';
                                     if (jabatan == 'Customer Care') {
                                         html += '<div class="dropdown-divider"></div>';
