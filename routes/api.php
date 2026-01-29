@@ -53,3 +53,4 @@ Route::get('getInventaris', [App\Http\Controllers\Api\apiController::class, 'get
 Route::post('/create/ticket', [TicketController::class, 'store']);
 
 Route::match(['get', 'post'], '/webhook/fonnte', [WebhookController::class, 'handle']);
+Route::post('/internal/update-ticket', [TicketController::class, 'handleInternalUpdate']);

@@ -17,6 +17,7 @@ use Telegram\Bot\Laravel\Facades\Telegram;
 use DateTime;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
 // use Google_Service_Sheets_ValueRange;
+
 class TicketController extends Controller
 {
     public function __construct()
@@ -93,19 +94,10 @@ class TicketController extends Controller
             . "`/terima {$ticket->ticket_id}` untuk memproses.";
 
 
-        $spreadsheetId = '1k_NRI52B-alnGVeLTGB8cecL3f1G-C7_WCVGnQQGe9Y';
-        $range = 'Form Responses 1!A:H';  // Pastikan nama sheet dan kolom sesuai di Spreadsheet Anda
         $timestamp = $this->normalizeTimestamp($ticket->timestamp);
         $detail_kendala_ts = '';
         $detail_kendala_pr = '';
         $detail_kendala_td = '';
-
-        $response = Http::withHeaders([
-            'Authorization' => 'eGKWto6VRxd93cPSf9JZ',
-        ])->post('https://api.fonnte.com/send', [
-            'target'  => '120363418574215044@g.us', // pakai Group ID
-            'message' => $message,
-        ]);
 
         if ($ticket->keperluan == 'Technical Support') {
             $detail_kendala_ts = $ticket->detail_kendala;
@@ -126,7 +118,6 @@ class TicketController extends Controller
                 $detail_kendala_td,
             ]
         ];
-        $message = $this->appendValues($spreadsheetId, $range, $values);
         $ticket->update([
             'row' => $message
         ]);
@@ -153,10 +144,26 @@ class TicketController extends Controller
             NotificationFacade::send($user, new TicketNotification($ticket, $path, $status, $receiverId));
         }
 
-        return redirect()->route('tickets.index')->with('success', 'Tiket berhasil dibuat, akan segera diprovide. Terimakasih!');
+        // KIRIM KE LARAVEL A VIA WEBHOOK
+        try {
+            Http::withHeaders([
+                'Accept' => 'application/json',
+                'X-Webhook-Secret' => 'RAHASIA_KITA' // Opsional: Untuk keamanan
+            ])->post('https://inixindobdg.co.id/api/new-ticket-notification', [
+                'ticket_id'      => $ticket->ticket_id,
+                'nama_karyawan'  => $ticket->nama_karyawan,
+                'divisi'         => $ticket->divisi,
+                'kategori'       => $ticket->kategori,
+                'keperluan'      => $ticket->keperluan,
+                'detail_kendala' => $ticket->detail_kendala,
+            ]);
+            
+        } catch (\Exception $e) {
+            // Log error jika Laravel A down
+            Log::error("Gagal mengirim webhook: " . $e->getMessage());
+        }
 
-        // return response()->json(['message' => 'Tiket berhasil dibuat, notifikasi terkirim, dan data disimpan di Google Sheets.']);
-        // return response()->json(['message' => 'Tiket berhasil dibuat, akan segera diprovide. Terimakasih']);
+        return redirect()->route('tickets.index')->with('success', 'Tiket berhasil dibuat, akan segera diprovide. Terimakasih!');
     }
 
     private function appendValues($spreadsheetId, $range, $values, $valueInputOption = 'RAW')
@@ -243,8 +250,6 @@ class TicketController extends Controller
             'pic' => $request->pic,
         ]);
 
-        $spreadsheetId = '1k_NRI52B-alnGVeLTGB8cecL3f1G-C7_WCVGnQQGe9Y';
-        $range = 'Form Responses 1!I' . $ticket->row . ':M' . $ticket->row;
         $values = [
             [
                 $tanggal_response,
@@ -254,8 +259,7 @@ class TicketController extends Controller
                 $ticket->status,
             ]
         ];
-        $data = $this->updatedValues($spreadsheetId, $range, $values);
-
+        
         $message = "Ticket Sedang Ditangani Oleh:\n"
             . "Nama Karyawan: {$request->pic}\n"
             . "Divisi: IT Service Management\n"
@@ -263,13 +267,7 @@ class TicketController extends Controller
             . "Waktu Response: {$tanggal_response} {$jam_response}\n"
             . "Mohon tunggu. Terimakasih!";
 
-        $response = Http::withHeaders([
-            'Authorization' => 'eGKWto6VRxd93cPSf9JZ',
-        ])->post('https://api.fonnte.com/send', [
-            'target'  => '120363418574215044@g.us', // pakai Group ID
-            'message' => $message,
-        ]);
-
+        
         return redirect()->route('tickets.index')->with('success', 'Tiket diterima.');
     }
     public function finish(Request $request, Tickets $ticket)
@@ -287,8 +285,6 @@ class TicketController extends Controller
             'tingkat_kesulitan' => $request->kesulitan,
         ]);
 
-        $spreadsheetId = '1k_NRI52B-alnGVeLTGB8cecL3f1G-C7_WCVGnQQGe9Y';
-        $range = 'Form Responses 1!L' . $ticket->row . ':S' . $ticket->row;
         $values = [
             [
                 $ticket->penanganan,
@@ -301,7 +297,6 @@ class TicketController extends Controller
                 $ticket->tingkat_kesulitan,
             ]
         ];
-        $data = $this->updatedValues($spreadsheetId, $range, $values);
         $message = "Ticket Sudah Selesai:\n"
             . "Nama Karyawan: {$ticket->nama_karyawan}\n"
             . "Divisi: {$ticket->divisi}\n"
@@ -309,12 +304,6 @@ class TicketController extends Controller
             . "Waktu Selesai: {$tanggal_selesai} {$jam_selesai}\n"
             . "Terimakasih!";
 
-        $response = Http::withHeaders([
-            'Authorization' => 'eGKWto6VRxd93cPSf9JZ',
-        ])->post('https://api.fonnte.com/send', [
-            'target'  => '120363418574215044@g.us', // pakai Group ID
-            'message' => $message,
-        ]);
         return redirect()->route('tickets.index')->with('success', 'Tiket selesai.');
     }
 
@@ -332,9 +321,7 @@ class TicketController extends Controller
             'jam_selesai' => $jam_selesai,
         ]);
 
-        $spreadsheetId = '1k_NRI52B-alnGVeLTGB8cecL3f1G-C7_WCVGnQQGe9Y';
-        $range = 'Form Responses 1!L' . $ticket->row . ':S' . $ticket->row;
-        $values = [
+       $values = [
             [
                 $ticket->penanganan,
                 $ticket->status,
@@ -346,7 +333,6 @@ class TicketController extends Controller
                 $ticket->kesulitan,
             ]
         ];
-        $data = $this->updatedValues($spreadsheetId, $range, $values);
         $message = "Ticket Terkendala:\n"
             . "Nama Karyawan: {$ticket->nama_karyawan}\n"
             . "Divisi: {$ticket->divisi}\n"
@@ -355,12 +341,7 @@ class TicketController extends Controller
             . "Waktu Selesai: {$tanggal_selesai} {$jam_selesai}\n"
             . "Terimakasih!";
 
-        $response = Http::withHeaders([
-            'Authorization' => 'eGKWto6VRxd93cPSf9JZ',
-        ])->post('https://api.fonnte.com/send', [
-            'target'  => '120363418574215044@g.us', // pakai Group ID
-            'message' => $message,
-        ]);
+      
         return redirect()->route('tickets.index')->with('success', 'Tiket ditandai sebagai terkendala.');
     }
     public function show(Tickets $ticket)
@@ -397,5 +378,67 @@ class TicketController extends Controller
             echo 'Message: ' . $e->getMessage();
             return null;
         }
+    }
+
+
+    public function handleInternalUpdate(Request $request)
+    {
+        // 1. Log request masuk dari Laravel A
+        Log::info('Laravel B: Internal Update Request Received', [
+            'ip_pengirim' => $request->ip(),
+            'ticket_id'   => $request->ticket_id,
+            'action'      => $request->action,
+            'pic_name'    => $request->pic_name,
+            'full_payload'=> $request->all()
+        ]);
+
+        // Cari tiket berdasarkan ticket_id
+        $ticket = Tickets::where('ticket_id', $request->ticket_id)->first();
+
+        if (!$ticket) {
+            Log::error("Laravel B: Ticket ID {$request->ticket_id} Not Found.");
+            return response()->json(['message' => 'Tiket tidak ditemukan'], 404);
+        }
+
+        $action = $request->action;
+
+        if ($action === 'accept') {
+            Log::info("Laravel B: Processing ACCEPT for Ticket {$ticket->ticket_id} by {$request->pic_name}");
+            
+            $fakeRequest = new Request([
+                'pic' => $request->pic_name,
+                'tanggal_response' => now()->format('Y-m-d'),
+                'jam_response' => now()->format('H:i:s'),
+            ]);
+            return $this->accept($fakeRequest, $ticket);
+        }
+
+        if ($action === 'finish') {
+            Log::info("Laravel B: Processing FINISH for Ticket {$ticket->ticket_id}");
+
+            $fakeRequest = new Request([
+                'penanganan' => 'Selesai via Bot Telegram',
+                'keterangan' => $request->keterangan ?? 'Selesai',
+                'kesulitan' => 'Normal',
+                'tanggal_selesai' => now()->format('Y-m-d'),
+                'jam_selesai' => now()->format('H:i:s'),
+            ]);
+            return $this->finish($fakeRequest, $ticket);
+        }
+
+        if ($action === 'reject') {
+            Log::info("Laravel B: Processing REJECT/BLOCK for Ticket {$ticket->ticket_id}");
+
+            $fakeRequest = new Request([
+                'penanganan' => 'Terkendala/Ditolak',
+                'keterangan' => 'Dibatalkan/Ditolak via Telegram',
+                'tanggal_selesai' => now()->format('Y-m-d'),
+                'jam_selesai' => now()->format('H:i:s'),
+            ]);
+            return $this->block($fakeRequest, $ticket);
+        }
+
+        Log::warning("Laravel B: Unknown action '{$action}' received for Ticket {$request->ticket_id}");
+        return response()->json(['message' => 'Aksi tidak dikenali'], 400);
     }
 }
