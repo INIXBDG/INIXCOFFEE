@@ -338,15 +338,16 @@
                                                             $hasRekomendasi = $rkm->filter(function ($item) {
                                                                 return $item->rekomendasilanjutan != null;
                                                             })->isNotEmpty();
+                                                        // dd($hasRekomendasi);
                                                         @endphp
-                                                        @if (isset($hasRekomendasi))
+                                                        @if ($hasRekomendasi == true)
                                                         <button type="button" class="btn btn-sm btn-primary click-primary" 
                                                                 data-bs-toggle="modal" 
                                                                 data-bs-target="#modalDetailRekomendasi-{{ $post->id }}">
                                                             Lihat Rekomendasi
                                                         </button>
                                                         @else
-                                                        <p>{{ $rekomendasilanjutan }}</p>
+                                                        <p>-</p>
                                                         @endif
                                                     </div>
                                                     @endif
