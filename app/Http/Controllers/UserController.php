@@ -15,10 +15,12 @@ use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
 use Vinkla\Hashids\Facades\Hashids;
 use Illuminate\Notifications\Notifiable;
+use App\Models\Sertifikasi;
+use App\Models\Pelatihan;
 
 class UserController extends Controller
 {
-    use Notifiable; 
+    use Notifiable;
 
     public function __construct()
     {
@@ -118,7 +120,16 @@ class UserController extends Controller
         if (auth()->id() !== $users->id && auth()->user()->jabatan !== 'HRD') {
             abort(403, 'Kamu tidak diizinkan mengakses data ini.');
         }
-                $id_karyawan = Auth::user()->id;
+
+        $sertifikasis = Sertifikasi::where('user_id', $userId)
+                        ->where('status_approval', 'approved')
+                        ->orderBy('tanggal_ujian', 'desc')
+                        ->get()
+                        ->unique(function ($item) {
+                            return strtolower($item->nama_sertifikat . $item->penyedia . $item->vendor);
+                        });
+
+        $id_karyawan = Auth::user()->id;
 
         $dataAuth = activityLog::with('karyawan')
             ->where('user_id', $id_karyawan)
@@ -139,7 +150,14 @@ class UserController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('user.show', compact(['dataAuth', 'dataVisit', 'dataAbsen', 'users']));
+        // Jangan lupa tambahkan variabel baru ke compact
+        return view('user.show', compact([
+            'dataAuth',
+            'dataVisit',
+            'dataAbsen',
+            'users',
+            'sertifikasis'
+        ]));
     }
 
     public function editPassword($id)
@@ -185,7 +203,7 @@ class UserController extends Controller
             $users->update($data);
 
             return redirect()->route('user.show', ['hashid' => $users->hashids])
-                ->with('success', 'Password berhasil diperbarui.'); //fixing redirect route and message 
+                ->with('success', 'Password berhasil diperbarui.'); //fixing redirect route and message
         } else {
             return back()->with('error', 'Password Lama Anda Salah');
         }

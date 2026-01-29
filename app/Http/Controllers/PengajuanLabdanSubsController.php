@@ -87,7 +87,7 @@ class PengajuanLabdanSubsController extends Controller
         $jabatan = $karyawan->jabatan;
         $divisi = $karyawan->divisi;
 
-        if (in_array($jabatan, ['Finance & Accounting', 'Koordinator ITSM', 'GM', 'Technical Support'])) {
+        if (in_array($jabatan, ['Finance & Accounting', 'Koordinator ITSM', 'GM', 'Technical Support', 'Education Manager'])) {
             $Pengajuan = PengajuanLabSubs::with(['karyawan', 'tracking', 'lab', 'subs', 'rkm.perusahaan', 'rkm.materi'])
                 ->whereMonth('created_at', $month)
                 ->whereYear('created_at', $year)
@@ -209,7 +209,6 @@ class PengajuanLabdanSubsController extends Controller
                 $tracking = 'Diajukan dan Sedang Ditinjau';
         }
 
-        // --- 📥 Simpan Pengajuan ---
         if ($request->jenis_pengajuan === 'lab') {
             if ($request->lab_id === 'new') {
                 $lab = Lab::create([
@@ -343,9 +342,9 @@ class PengajuanLabdanSubsController extends Controller
 
     public function show($id)
     {
-        $data = PengajuanLabSubs::with(['karyawan', 'lab', 'subs', 'tracking', 'rkm.perusahaan', 'rkm.materi'])->findOrFail($id);
-
-        // dd($data);
+        // Mengambil data beserta relasi pendukung
+        $data = PengajuanLabSubs::with(['karyawan', 'lab', 'subs', 'tracking', 'rkm.perusahaan', 'rkm.materi'])
+            ->findOrFail($id);
 
         return view('pengajuanlabs.show', compact('data'));
     }
@@ -380,7 +379,6 @@ class PengajuanLabdanSubsController extends Controller
 
             $data->update(['id_tracking' => $e->id]);
 
-            // 🔔 Kirim notifikasi ke pengaju
             $userObjs = User::whereHas('karyawan', function ($q) use ($data) {
                 $q->where('kode_karyawan', $data->karyawan->kode_karyawan);
             })->get();
@@ -416,6 +414,9 @@ class PengajuanLabdanSubsController extends Controller
             $status = '';
             $nextUser = null;
 
+            // 1. Inisialisasi payload update
+            $updatePayload = [];
+
             switch ($jabatan) {
                 case 'SPV Sales':
                 case 'Education Manager':
@@ -427,6 +428,19 @@ class PengajuanLabdanSubsController extends Controller
                 case 'Koordinator ITSM':
                     $status = "Telah disetujui oleh Koordinator ITSM dan sedang diproses oleh Finance";
                     $nextUser = Karyawan::where('jabatan', 'Finance & Accounting')->first();
+
+                    // 2. LOGIC SNAPSHOT: Ambil data saat ini dari tabel master
+                    if ($data->id_labs) {
+                        $labData = \App\Models\Lab::find($data->id_labs);
+                        if ($labData) {
+                            $updatePayload['lab_snapshot'] = $labData->toArray();
+                        }
+                    } elseif ($data->id_subs) {
+                        $subsData = \App\Models\Subscription::find($data->id_subs);
+                        if ($subsData) {
+                            $updatePayload['subs_snapshot'] = $subsData->toArray();
+                        }
+                    }
                     break;
 
                 default:
@@ -436,15 +450,19 @@ class PengajuanLabdanSubsController extends Controller
                     ], 403);
             }
 
+            // Buat tracking history
             $e = TrackingPengajuanLabSubs::create([
                 'id_pengajuan_lab_subs' => $id,
                 'tracking' => $status,
-                'tanggal' => now()
+                'tanggal'  => now()
             ]);
 
-            $data->update(['id_tracking' => $e->id]);
+            // 3. PENTING: Masukkan id_tracking ke payload yang sama
+            $updatePayload['id_tracking'] = $e->id;
 
-            // 🔔 Kirim notifikasi ke pengaju dan next user
+            // 4. Eksekusi update (Snapshot + Tracking ID masuk bersamaan)
+            $data->update($updatePayload);
+
             $usersCodes = [$data->karyawan->kode_karyawan];
             if ($nextUser) $usersCodes[] = $nextUser->kode_karyawan;
 
@@ -452,26 +470,25 @@ class PengajuanLabdanSubsController extends Controller
 
             $notifData = [
                 'tanggal' => now(),
-                'status' => $status,
+                'status'  => $status,
             ];
 
             foreach ($userObjs as $user) {
-                $receiverId = $user->id;
                 NotificationFacade::send(
                     $user,
                     new ApprovalLabSubsNotification(
                         $notifData,
                         '/pengajuanlabsdansubs',
                         $data->karyawan->nama_lengkap,
-                        'Menyetujui Pengajuan Lab/Subscription', 
-                        $receiverId
+                        'Menyetujui Pengajuan Lab/Subscription',
+                        $user->id
                     )
                 );
             }
 
             return response()->json([
-                'success' => true,
-                'message' => 'Approval berhasil disimpan!',
+                'success'  => true,
+                'message'  => 'Approval berhasil disimpan!',
                 'redirect' => route('pengajuanlabsdansubs.index')
             ]);
         }

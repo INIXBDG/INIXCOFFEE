@@ -43,6 +43,7 @@
                                     <option value="Software Engineer">Software Engineer</option>
                                     <option value="Office">Office</option>
                                     <option value="Non-IT">Non-IT</option>
+                                    <option value="Artificial Intelligence">Artificial Intelligence</option>
                                 </select>
                                 @error('kategori_materi')
                                     <span class="invalid-feedback" role="alert">

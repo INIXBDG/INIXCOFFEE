@@ -52,7 +52,8 @@
                         <div class="me-2">
                             <label class="form-label small text-muted mb-1">Minggu Ke</label>
                             <select name="minggu" class="form-select form-select-sm">
-                                <option value="">Semua</option>
+                                <option value="" {{ empty($mingguKe) ? 'selected' : '' }}>Semua</option>
+
                                 @for ($m = 1; $m <= 5; $m++)
                                     <option value="{{ $m }}" {{ $mingguKe == $m ? 'selected' : '' }}>Minggu ke {{ $m }}</option>
                                 @endfor

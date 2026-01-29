@@ -187,25 +187,65 @@
                         <img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> Kode Barang
                     </a>
                 </div>
+                <h3 class="card-title text-center my-1">{{ __('Data Inventaris Inixindo') }}</h3>
                 <div class="card m-4">
                     <div class="card-body table-responsive">
-                        <h3 class="card-title text-center my-1">{{ __('Data Inventaris Inixindo') }}</h3>
-                        <table class="table table-striped" id="inventaristable">
-                            <thead>
-                                <tr>
-                                    <th scope="col">No</th>
-                                    <th scope="col">ID</th>
-                                    <th scope="col">ID Barang</th>
-                                    <th scope="col">Nama Barang</th>
-                                    <th scope="col">Tipe</th>
-                                    <th scope="col">Ruangan</th>
-                                    <th scope="col">Kondisi</th>
-                                    <th scope="col">Tanggal Pembelian</th>
-                                    <th scope="col">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
+                        <ul class="nav nav-tabs" id="myTab" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="elektronik-tab" data-bs-toggle="tab" data-bs-target="#elektronik" type="button" role="tab">
+                                    {{ __('Tipe Elektronik') }}
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="nonElektronik-tab" data-bs-toggle="tab" data-bs-target="#nonElektronik" type="button" role="tab">
+                                    {{ __('Tipe Non-Elektronik') }}
+                                </button>
+                            </li>
+                        </ul>
+                        <div class="tab-content mt-2" id="myTabContent">
+                            <div class="tab-pane fade show active" id="elektronik" role="tabpanel">
+                                <h4 class="card-title text-center my-1">{{ __('Barang Elektronik') }}</h4>
+                                <table class="table table-striped" id="inventaristableElektronik">
+                                    <thead>
+                                    <tr>
+                                        <th scope="col">No</th>
+                                        <th scope="col">ID</th>
+                                        <th scope="col">ID Barang</th>
+                                        <th scope="col">Nama Barang</th>
+                                        <th scope="col">Tipe</th>
+                                        <th scope="col">Pic</th>
+                                        <th scope="col">Ruangan</th>
+                                        <th scope="col">Kondisi</th>
+                                        <th scope="col">Tanggal Pembelian</th>
+                                        <th scope="col">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="tab-pane fade show active" id="nonElektronik" role="tabpanel">
+                                <h4 class="card-title text-center my-1">{{ __('Barang Non-Elektronik') }}</h4>
+                                <table class="table table-striped" id="inventaristableNonElektronik">
+                                    <thead>
+                                    <tr>
+                                        <th scope="col">No</th>
+                                        <th scope="col">ID</th>
+                                        <th scope="col">ID Barang</th>
+                                        <th scope="col">Nama Barang</th>
+                                        <th scope="col">Tipe</th>
+                                        <th scope="col">Pic</th>
+                                        <th scope="col">Ruangan</th>
+                                        <th scope="col">Kondisi</th>
+                                        <th scope="col">Tanggal Pembelian</th>
+                                        <th scope="col">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                                </table>
+                            </div>
+
+                        </div>
                     </div>
                 </div>
             </div>
@@ -305,7 +345,7 @@
                     });
                 };
 
-                var table = $('#inventaristable').DataTable({
+                var table = $('#inventaristableElektronik').DataTable({
                     dom: 'Bfrtip',
                     buttons: [
                         {
@@ -318,6 +358,9 @@
                     ajax: {
                         url: "{{ route('getInventaris') }}",
                         type: "GET",
+                        dataSrc: function(json) {
+                            return json.data.filter(item => item.type === 'E');
+                        },
                         beforeSend: function() {
                             $('#loadingModal').modal('show');
                         },
@@ -350,6 +393,118 @@
                             render: function(data) {
                                 return data === 'E' ? 'Elektronik' : 'Non-Elektronik';
                             }
+                        },
+                        {
+                            data: 'pengguna'
+                        },
+                        {
+                            data: 'ruangan',
+                            render: function(data) {
+                                return data || '-';
+                            }
+                        },
+                        {
+                            data: 'kondisi'
+                        },
+                        {
+                            "data": null,
+                            "render": function (data, type, row) {
+                                var created_at = moment(data.waktu_pembelian).format('dddd, DD MMMM YYYY');
+                                return created_at;
+                            },
+                        },
+                        {
+                            data: null,
+                            render: function(data, type, row) {
+                                if (window.userRole === 'TS' && row.type === 'NE') return '';
+                                if (window.userRole === 'Finance' && row.type === 'E') return '';
+
+                                var actions = '<div class="dropdown">';
+                                actions +=
+                                    '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButton_' +
+                                    row.idbarang +
+                                    '" data-bs-toggle="dropdown" aria-expanded="false">Actions</button>';
+                                actions +=
+                                    '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton_' +
+                                    row.idbarang + '">';
+                                actions +=
+                                    '<a class="dropdown-item" href="{{ url('/inventaris/show/data') }}/' +
+                                    row.id +
+                                    '" data-toggle="tooltip" data-placement="top" title="Edit Inventaris"><img src="{{ asset('icon/file-text.svg') }}" class="">Detail</a>';
+                                actions +=
+                                    '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/inventaris/delete/data/') }}/' +
+                                    row.id + '" method="POST">';
+                                actions += '@csrf';
+                                actions += '@method('DELETE')';
+                                actions +=
+                                    '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
+                                actions += '</form>';
+                                actions += '</div></div>';
+                                return actions;
+                            }
+                        }
+                    ],
+                    order: [
+                        [6, 'asc']
+                    ],
+                    columnDefs: [{
+                        targets: 6,
+                        orderDataType: 'custom-kondisi'
+                    }]
+                });
+
+                // Type non elektronik
+                var table = $('#inventaristableNonElektronik').DataTable({
+                    dom: 'Bfrtip',
+                    buttons: [
+                        {
+                            extend: 'excelHtml5',
+                            title: 'Data Inventaris',
+                            text: '<i class="bi bi-file-earmark-excel"></i> Export Excel',
+                            className: 'btn btn-success'
+                        }
+                    ],
+                    ajax: {
+                        url: "{{ route('getInventaris') }}",
+                        type: "GET",
+                        dataSrc: function(json) {
+                            return json.data.filter(item => item.type != 'E');
+                        },
+                        beforeSend: function() {
+                            $('#loadingModal').modal('show');
+                        },
+                        complete: function() {
+                            $('#loadingModal').modal('hide');
+                        },
+                        error: function(xhr, status, error) {
+                            $('#loadingModal').modal('hide');
+                            alert('Gagal memuat data: ' + (xhr.responseJSON?.message || error));
+                        }
+                    },
+                    columns: [{
+                            data: null,
+                            render: function() {
+                                return tableIndex++;
+                            }
+                        },
+                        {
+                            data: 'id',
+                            visible: false
+                        },
+                        {
+                            data: 'idbarang'
+                        },
+                        {
+                            data: 'name'
+                        },
+                        {
+                            data: 'type',
+                            render: function(data) {
+                                return data === 'E' ? 'Elektronik' : 'Non-Elektronik';
+                            }
+                        },
+                        {
+                            data: 'pengguna'
                         },
                         {
                             data: 'ruangan',

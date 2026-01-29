@@ -1863,10 +1863,12 @@ $(document).ready(function() {
     // =======================================================================
 
     // Inisialisasi dropdown filter bulan
-    loadBulanFilter('#filterBulan');
-    loadBulanFilter('#filterMonthPIC');
-    loadBulanFilter('#filterMonth');
-    loadBulanFilter('#filterMonthKetepatan');
+    if(typeof loadBulanFilter === 'function') {
+        loadBulanFilter('#filterBulan');
+        loadBulanFilter('#filterMonthPIC');
+        loadBulanFilter('#filterMonth');
+        loadBulanFilter('#filterMonthKetepatan');
+    }
 
     // Event Listeners Filter Dropdown
     $('#filterBulan').on('change', function() { fetchJumlahTicketingData(this.value); });
@@ -2028,21 +2030,18 @@ $(document).ready(function() {
 
 
     // =======================================================================
-    // 5. FUNGSI SLA EVENT (WEBINAR) - BARU!
+    // 5. FUNGSI SLA EVENT (WEBINAR)
     // =======================================================================
     async function loadSlaEvent(mappingId) {
-        // 1. Validasi Input
         if (!mappingId || mappingId == 0) {
             $('#event-sla-table-body').html('<tr><td colspan="6" class="text-center p-4 text-danger">Event belum dipilih.</td></tr>');
             return;
         }
 
-        // 2. Tampilkan Loading
         $('#event-sla-content').hide();
         $('#event-sla-empty').html('<div class="spinner-border text-primary" role="status"></div><p>Memuat data...</p>').show();
 
         try {
-            // 3. Fetch Data
             const response = await fetch(`/dashboard-sla/event/${mappingId}`);
             if (!response.ok) throw new Error('Network error');
 
@@ -2050,27 +2049,16 @@ $(document).ready(function() {
             const kpi = data.kpi;
             const details = data.details;
 
-            // --- 4. Update Header & KPI (MENGGUNAKAN JQUERY AGAR ANTI-ERROR) ---
-            // Helper Class
             const getKpiClass = (val) => val >= 100 ? 'text-success' : 'text-primary';
             const getSlaClass = (val) => val >= 90 ? 'text-success' : (val >= 80 ? 'text-warning' : 'text-danger');
 
-            // Update Text & Class dengan jQuery (Lebih aman dari document.getElementById)
             $('#event-title').text(kpi.event_title);
             $('#event-date').text(`D-Day: ${kpi.event_date}`);
-
-            $('#event-kpi-completion')
-                .text(formatPercent(kpi.completion_rate))
-                .attr('class', `fs-2 fw-bold ${getKpiClass(kpi.completion_rate)}`);
-
-            $('#event-kpi-compliance')
-                .text(formatPercent(kpi.sla_compliance))
-                .attr('class', `fs-2 fw-bold ${getSlaClass(kpi.sla_compliance)}`);
-
+            $('#event-kpi-completion').text(formatPercent(kpi.completion_rate)).attr('class', `fs-2 fw-bold ${getKpiClass(kpi.completion_rate)}`);
+            $('#event-kpi-compliance').text(formatPercent(kpi.sla_compliance)).attr('class', `fs-2 fw-bold ${getSlaClass(kpi.sla_compliance)}`);
             $('#event-kpi-late').text(kpi.total_late);
             $('#event-kpi-overdue').text(kpi.total_overdue);
 
-            // --- 5. Render Tabel Detail ---
             const tableBody = $('#event-sla-table-body');
             tableBody.empty();
 
@@ -2078,50 +2066,22 @@ $(document).ready(function() {
                 tableBody.html('<tr><td colspan="6" class="text-center p-4">Tidak ada data checklist ditemukan.</td></tr>');
             } else {
                 $.each(details, function(stage, items) {
-                    // HEADER GROUP (colspan=6)
-                    tableBody.append(`
-                        <tr class="table-secondary">
-                            <td colspan="6" class="fw-bold text-uppercase px-3 py-2">
-                                <i class="bi bi-bookmark-fill me-1"></i> ${stage}
-                            </td>
-                        </tr>
-                    `);
-
-                    // ITEM ROWS
+                    tableBody.append(`<tr class="table-secondary"><td colspan="6" class="fw-bold text-uppercase px-3 py-2"><i class="bi bi-bookmark-fill me-1"></i> ${stage}</td></tr>`);
                     items.forEach(item => {
                         let badge = '';
                         let rowClass = '';
-
-                        // Logika Badge
                         switch(item.status) {
-                            case 'On Time':     badge = '<span class="badge bg-success">On Time</span>'; break;
-                            case 'Late':        badge = '<span class="badge bg-warning text-dark">Terlambat</span>'; break;
-                            case 'Overdue':     badge = '<span class="badge bg-danger">Overdue</span>'; rowClass = 'bg-danger bg-opacity-10'; break;
+                            case 'On Time': badge = '<span class="badge bg-success">On Time</span>'; break;
+                            case 'Late': badge = '<span class="badge bg-warning text-dark">Terlambat</span>'; break;
+                            case 'Overdue': badge = '<span class="badge bg-danger">Overdue</span>'; rowClass = 'bg-danger bg-opacity-10'; break;
                             case 'On Progress': badge = '<span class="badge bg-info text-dark">On Progress</span>'; break;
-                            default:            badge = '<span class="badge bg-secondary">Pending</span>';
+                            default: badge = '<span class="badge bg-secondary">Pending</span>';
                         }
-
-                        const picBadge = item.pic !== '-'
-                            ? `<span class="badge bg-light text-dark border">${item.pic}</span>`
-                            : '<span class="text-muted">-</span>';
-
-                        // STRUKTUR BARIS (Pastikan 6 Kolom)
-                        const row = `
-                            <tr class="${rowClass}">
-                                <td class="fw-medium ps-4 align-middle">${item.activity}</td>
-                                <td class="align-middle">${picBadge}</td>
-                                <td class="text-center align-middle"><small class="text-muted fw-bold">${item.sla_label}</small></td>
-                                <td class="text-center font-monospace small align-middle">${item.target_date}</td>
-                                <td class="text-center font-monospace small fw-bold align-middle">${item.actual_date}</td>
-                                <td class="text-center align-middle">${badge}</td>
-                            </tr>
-                        `;
-                        tableBody.append(row);
+                        const picBadge = item.pic !== '-' ? `<span class="badge bg-light text-dark border">${item.pic}</span>` : '<span class="text-muted">-</span>';
+                        tableBody.append(`<tr class="${rowClass}"><td class="fw-medium ps-4 align-middle">${item.activity}</td><td class="align-middle">${picBadge}</td><td class="text-center align-middle"><small class="text-muted fw-bold">${item.sla_label}</small></td><td class="text-center font-monospace small align-middle">${item.target_date}</td><td class="text-center font-monospace small fw-bold align-middle">${item.actual_date}</td><td class="text-center align-middle">${badge}</td></tr>`);
                     });
                 });
             }
-
-            // Tampilkan Hasil
             $('#event-sla-empty').hide();
             $('#event-sla-content').fadeIn();
 
@@ -2131,13 +2091,78 @@ $(document).ready(function() {
         }
     }
 
-    // Listener Dropdown Event SLA
-    $('#eventSlaFilter').on('change', function() {
-        loadSlaEvent($(this).val());
-    });
+    $('#eventSlaFilter').on('change', function() { loadSlaEvent($(this).val()); });
+
 
     // =======================================================================
-    // 6. EVENT LISTENER UTAMA (UPDATED)
+    // 7. FUNGSI SLA DIGITAL KREATIF (BARU)
+    // =======================================================================
+    const slaDigitalUrl = "/dashboard-sla/digital";
+
+    async function loadSlaDigital() {
+        try {
+            const response = await fetch(slaDigitalUrl);
+            const data = await response.json();
+            const kpi = data.kpi;
+            const details = data.content_details;
+
+            // 1. Update Filter Display
+            updateFilterDisplay(kpi.filters, 'digital_sla_period');
+
+            // 2. Update KPI Konten
+            $('#digital-content-sla')
+                .text(formatPercent(kpi.content_sla_compliance))
+                .attr('class', `fs-1 fw-bold ${getSlaClass(kpi.content_sla_compliance)}`);
+
+            $('#digital-content-total').text(kpi.total_content_uploaded);
+            $('#digital-weeks-met').text(kpi.weeks_met);
+            $('#digital-weeks-total').text(kpi.total_weeks_evaluated);
+
+            // 3. Update KPI Ticketing
+            $('#digital-ticket-res-sla')
+                .text(formatPercent(kpi.ticket_resolution_compliance))
+                .attr('class', `fs-2 fw-bold ${getSlaClass(kpi.ticket_resolution_compliance)}`);
+
+            $('#digital-ticket-resp-sla')
+                .text(formatPercent(kpi.ticket_response_compliance))
+                .attr('class', `fs-2 fw-bold ${getSlaClass(kpi.ticket_response_compliance)}`);
+
+            $('#digital-ticket-avg').text(formatHours(kpi.avg_resolution_time));
+
+            // 4. Render Tabel Mingguan
+            const tableBody = $('#digital-weekly-table-body');
+            tableBody.empty();
+
+            if (details.length === 0) {
+                tableBody.html('<tr><td colspan="4" class="text-center py-3">Tidak ada data periode.</td></tr>');
+            } else {
+                details.forEach(item => {
+                    let badge = (item.status === 'Met')
+                        ? '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Tercapai</span>'
+                        : '<span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Gagal</span>';
+
+                    let rowClass = (item.status !== 'Met') ? 'table-danger' : '';
+
+                    tableBody.append(`
+                        <tr class="${rowClass}">
+                            <td class="align-middle fw-medium">${item.week_range}</td>
+                            <td class="text-center align-middle fs-5 fw-bold">${item.count}</td>
+                            <td class="text-center align-middle text-muted">${item.target}</td>
+                            <td class="text-center align-middle">${badge}</td>
+                        </tr>
+                    `);
+                });
+            }
+
+        } catch (error) {
+            console.error('Gagal Load SLA Digital:', error);
+            $('#digital_sla_period').html('<span class="text-danger">Gagal memuat data dashboard.</span>');
+        }
+    }
+
+
+    // =======================================================================
+    // 8. EVENT LISTENER UTAMA (UPDATED)
     // =======================================================================
     $('#itsm-pills-tab').on('shown.bs.tab', 'button[data-bs-toggle="pill"], a[data-bs-toggle="pill"]', function (event) {
         const activePill = $(event.target);
@@ -2149,10 +2174,18 @@ $(document).ready(function() {
         // --- Logika Tab SLA ---
         if (activePill.hasClass('sla-tab-trigger')) {
 
-            // A. Logika Tab Event Webinar (BARU)
+            // A. Logika Tab Digital Kreatif (BARU)
+            if (activePillId === 'pills-sla-digital-tab') {
+                if (!isLoaded) {
+                    loadSlaDigital();
+                    activePill.data('loaded', true);
+                }
+                return;
+            }
+
+            // B. Logika Tab Event Webinar
             if (activePillId === 'pills-sla-event-tab') {
                 if (!isLoaded) {
-                    // Coba load otomatis jika dropdown punya nilai default
                     const selectedEvent = $('#eventSlaFilter').val();
                     if(selectedEvent) {
                         loadSlaEvent(selectedEvent);
@@ -2162,7 +2195,7 @@ $(document).ready(function() {
                 return;
             }
 
-            // B. Logika Tab Tim IT (Programmer & TS)
+            // C. Logika Tab Tim IT (Programmer & TS)
             const team = activePill.data('team');
             if (!isLoaded && team) {
                 if (team === 'programmer') {
@@ -2173,7 +2206,7 @@ $(document).ready(function() {
                 activePill.data('loaded', true);
             }
 
-        // --- Logika Tab Lama ---
+        // --- Logika Tab Lama (Legacy) ---
         } else {
             if (!isLoaded) {
                 switch (activePillId) {

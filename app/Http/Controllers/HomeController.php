@@ -31,49 +31,49 @@ class HomeController extends Controller
      */
     public function index()
     {
-            $now = Carbon::now();
-            $startOfWeek = $now->startOfWeek()->toDateString(); // Mengambil tanggal awal minggu ini
-            $endOfWeek = $now->endOfWeek()->toDateString();
-            $idInstruktur = auth()->user()->id_instruktur;
-            $totalkaryawan = User::count();
-            $kelasmingguini = RKM::where('instruktur_key', $idInstruktur)
+        $now = Carbon::now();
+        $startOfWeek = $now->startOfWeek()->toDateString(); // Mengambil tanggal awal minggu ini
+        $endOfWeek = $now->endOfWeek()->toDateString();
+        $idInstruktur = auth()->user()->id_instruktur;
+        $totalkaryawan = User::count();
+        $kelasmingguini = RKM::where('instruktur_key', $idInstruktur)
             ->whereBetween('tanggal_awal', [$startOfWeek, $endOfWeek])
             ->count();
-            $jumlahmengajar1 = RKM::where('instruktur_key', $idInstruktur)->count();
-            $jumlahmengajar2 = RKM::where('instruktur_key2', $idInstruktur)->count();
-            $jumlahmengajar = $jumlahmengajar1 + $jumlahmengajar2;
-            $pesertaanda = Registrasi::with('rkm', 'peserta.perusahaan', 'materi')
+        $jumlahmengajar1 = RKM::where('instruktur_key', $idInstruktur)->count();
+        $jumlahmengajar2 = RKM::where('instruktur_key2', $idInstruktur)->count();
+        $jumlahmengajar = $jumlahmengajar1 + $jumlahmengajar2;
+        $pesertaanda = Registrasi::with('rkm', 'peserta.perusahaan', 'materi')
             ->whereHas('rkm', function ($query) use ($idInstruktur) {
                 $query->where('instruktur_key', $idInstruktur);
             })
             ->count();
-            $kelasmingguini1 = RKM::where('instruktur_key', $idInstruktur)->whereBetween('tanggal_awal', [$startOfWeek, $endOfWeek])
+        $kelasmingguini1 = RKM::where('instruktur_key', $idInstruktur)->whereBetween('tanggal_awal', [$startOfWeek, $endOfWeek])
             ->count();
-            $kelasmingguini2 = RKM::where('instruktur_key', $idInstruktur)->whereBetween('tanggal_awal', [$startOfWeek, $endOfWeek])
+        $kelasmingguini2 = RKM::where('instruktur_key', $idInstruktur)->whereBetween('tanggal_awal', [$startOfWeek, $endOfWeek])
             ->count();
-            $kelasmingguini = $kelasmingguini1 + $kelasmingguini2;
-            $runningclass = RKM::whereBetween('tanggal_awal', [$startOfWeek, $endOfWeek])
+        $kelasmingguini = $kelasmingguini1 + $kelasmingguini2;
+        $runningclass = RKM::whereBetween('tanggal_awal', [$startOfWeek, $endOfWeek])
             ->count();
-            $karyawanaktif = User::where('status_akun', '1')->count();
-            $pesertaaktif = Registrasi::all()->count();
+        $karyawanaktif = User::where('status_akun', '1')->count();
+        $pesertaaktif = Registrasi::all()->count();
 
-           // Mengambil tanggal awal dan akhir minggu ini
-            $startDate = Carbon::now()->startOfWeek();
-            $endDate = Carbon::now()->endOfWeek();
-            $sekarang = Carbon::now()->toDateString();
-            // Mengambil notifikasi yang berada di antara tanggal awal dan akhir minggu ini
-            $notifikasi = Notif::with('users')
-                ->where(function($query) use ($startDate, $endDate) {
-                    $query->whereBetween('tanggal_awal', [$startDate, $endDate])
-                        ->orWhereBetween('tanggal_akhir', [$startDate, $endDate]);
-                })
+        // Mengambil tanggal awal dan akhir minggu ini
+        $startDate = Carbon::now()->startOfWeek();
+        $endDate = Carbon::now()->endOfWeek();
+        $sekarang = Carbon::now()->toDateString();
+        // Mengambil notifikasi yang berada di antara tanggal awal dan akhir minggu ini
+        $notifikasi = Notif::with('users')
+            ->where(function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('tanggal_awal', [$startDate, $endDate])
+                    ->orWhereBetween('tanggal_akhir', [$startDate, $endDate]);
+            })
             ->get();
-            $id_karyawan = auth()->user()->karyawan->id;
-            $absenHariIni = AbsensiKaryawan::where('id_karyawan', $id_karyawan)
-                            ->where('tanggal', $sekarang)
-                            ->first();
-            // return $absenHariIni;
-            return view('layouts.menus', compact('notifikasi', 'absenHariIni'));
+        $id_karyawan = auth()->user()->karyawan->id;
+        $absenHariIni = AbsensiKaryawan::where('id_karyawan', $id_karyawan)
+            ->where('tanggal', $sekarang)
+            ->first();
+        // return $absenHariIni;
+        return view('layouts.menus', compact('notifikasi', 'absenHariIni'));
 
     }
     private function getTotalSales($year)
@@ -83,9 +83,10 @@ class HomeController extends Controller
             ->whereYear('tanggal_awal', $year) // Tambahkan kondisi berdasarkan tahun
             ->select(DB::raw('SUM(CAST(harga_jual AS UNSIGNED) * CAST(pax AS UNSIGNED)) as total_sales'))
             ->value('total_sales');
-    }    
+    }
 
-    public function getYearSales($year) {
+    public function getYearSales($year)
+    {
         $tahun = $year;
         $targetdatabase = target::where('quartal', 'All')->where('tahun', $tahun)->first();
         $target = $targetdatabase ? (int) $targetdatabase->target : 0;
@@ -105,7 +106,7 @@ class HomeController extends Controller
         // Now $progress is safe to use
 
         // $totalSales = 10000000000; // Fetch total sales from the database
-        $formatTarget = function($value) {
+        $formatTarget = function ($value) {
             if ($value >= 1000000000) {
                 // If the value is in billions, display in 'M' (for millions)
                 return ($value / 1000000000) . ' M';
@@ -123,7 +124,7 @@ class HomeController extends Controller
                 return number_format($value);
             }
         };
-        
+
         // Divide the target into 8 sections, using the helper function to format each one
         $targetLabels = [];
         for ($i = 0; $i <= 8; $i++) {

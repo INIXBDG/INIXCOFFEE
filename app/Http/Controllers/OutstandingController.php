@@ -2,21 +2,30 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\RkmExport;
+use App\Models\AbsensiPDF;
+use App\Models\Certificate;
 use App\Models\Invoice;
 use App\Models\jabatan;
 use App\Models\karyawan;
 use App\Models\Outstanding;
+use App\Models\outstanding as ModelsOutstanding;
+use App\Models\Registrasi;
 use App\Models\RKM;
+use App\Models\SertifikatPDF;
 use App\Models\trackingOutstanding;
 use App\Models\User;
 use App\Notifications\OutstandingNotification;
+use App\Notifications\OutstandingPaNotification;
 use App\Notifications\OutstandingSelesai;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
+use Illuminate\Support\Facades\Storage;
 use setasign\Fpdi\Tcpdf\Fpdi;
 use Mostafaznv\PdfOptimizer\Laravel\Facades\PdfOptimizer;
 use Mostafaznv\PdfOptimizer\Enums\PdfSettings;
@@ -187,7 +196,7 @@ class OutstandingController extends Controller
         $user = auth()->user();
         $idSales = $user->jabatan == 'SPV Sales' ? '' : $user->id_sales;
 
-        $query = outstanding::with('rkm', 'rkm.perusahaan', 'rkm.materi', 'tracking_outstanding')
+        $query = outstanding::with('rkm.invoice', 'rkm.perusahaan', 'rkm.materi', 'tracking_outstanding')
             ->where('status_pembayaran', '0');
 
         if ($idSales) {
@@ -237,6 +246,38 @@ class OutstandingController extends Controller
             'data' => $outstanding,
         ]);
     }
+
+    public function getOutstandingPA()
+    {
+        $startDate = Carbon::now();
+        $endDate   = Carbon::now()->addMonth();
+
+        $rkm = RKM::with(['perhitunganNetSales', 'outstanding', 'perusahaan', 'materi'])
+            ->whereHas('outstanding', function ($query) {
+                $query->where('status_pembayaran', '1');
+            })
+            ->whereHas('perhitunganNetSales')
+            ->whereBetween('tanggal_akhir', [$startDate, $endDate])
+            ->get();
+
+        return response()->json([
+            'data' => $rkm
+        ]);
+    }
+
+    public function detailPA($id)
+    {
+        $rkm = RKM::with(['perhitunganNetSales.peserta', 'outstanding', 'perusahaan', 'materi'])
+            ->where('id', $id)
+            ->whereHas('outstanding', function ($query) {
+                $query->where('status_pembayaran', '1');
+            })
+            ->whereHas('perhitunganNetSales')
+            ->firstOrFail();
+
+        return view('outstanding.detailPA', compact('rkm'));
+    }
+
 
     public function create()
     {
@@ -676,25 +717,84 @@ class OutstandingController extends Controller
         }
 
         if ($request->status_pembayaran == '1') {
-            $rkm = RKM::with('perusahaan', 'materi')->where('id', $post->id_rkm)->first();
-            $user = User::where('id_sales', $post->sales_key)->where('jabatan', 'Finance & Accounting')->get();
+
+            $rkm = RKM::with(['perusahaan', 'materi'])
+                ->where('id', $post->id_rkm)
+                ->first();
+
+            $users = User::where('id_sales', $post->sales_key)
+                ->where('jabatan', 'Finance & Accounting')
+                ->get();
+
+            $data = [
+                'perusahaan' => $rkm->perusahaan->nama_perusahaan,
+                'materi'     => $rkm->materi->nama_materi,
+                'tgl_bayar'  => $post->tanggal_bayar,
+                'no_invoice' => $post->no_invoice,
+                'periode'    => $rkm->tanggal_awal . ' -> ' . $rkm->tanggal_akhir,
+            ];
+
+            NotificationFacade::send($users, new OutstandingSelesai($data));
+        }
+
+
+        if ($request->status_pembayaran == '1') {
+            $rkm = RKM::with('outstanding', 'perusahaan', 'materi')->where('id', $post->id_rkm)->first();
+            $penerima = User::where('jabatan', 'Finance & Accounting') // Cek apakah seharusnya 'Accounting'?
+                ->where('status_akun', '1')
+                ->get();
+
             $data = [
                 'perusahaan' => $rkm->perusahaan->nama_perusahaan,
                 'materi' => $rkm->materi->nama_materi,
-                'tgl_bayar' => $post->tanggal_bayar,
-                'no_invoice' => $post->no_invoice,
                 'periode' => $rkm->tanggal_awal . ' -> ' . $rkm->tanggal_akhir,
             ];
-            $receiverId = $user->id;
-            NotificationFacade::send($user, new OutstandingSelesai($data, $receiverId));
+
+            $path = '/outstanding/' . $rkm->id . '/detail';
+            NotificationFacade::send($penerima, new OutstandingPaNotification($data, $path));
         }
 
         return redirect()->route('outstanding.index')->with(['success' => 'Data Berhasil Disimpan!']);
     }
 
+    public function generatePdfPeserta($id)
+    {
+        $rkm = RKM::with(
+            'instruktur',
+            'instruktur2',
+            'asisten',
+            'materi',
+            'perusahaan'
+        )->findOrFail($id);
+
+        $peserta = Registrasi::with('peserta')
+            ->where('id_rkm', $id)
+            ->get();
+
+        $pdf = Pdf::loadView('outstanding.pdfPeserta', compact('rkm', 'peserta'));
+
+        $fileName = 'peserta_rkm_' . $rkm->id . '.pdf';
+        $path = 'public/rkm/' . $fileName;
+
+        if ($rkm->pdf_peserta && Storage::exists($rkm->pdf_peserta)) {
+            Storage::delete($rkm->pdf_peserta);
+        }
+
+        Storage::put($path, $pdf->output());
+
+        $rkm->update([
+            'pdf_peserta' => $path
+        ]);
+
+        return $path;
+    }
+
+
+
     public function dokumenGabungan($id)
     {
         $outstanding = Outstanding::findOrFail($id);
+        $absensi = AbsensiPDF::where('id_rkm', $outstanding->id_rkm)->first();
 
         $filesToMerge = [];
 
@@ -711,6 +811,49 @@ class OutstandingController extends Controller
             $dokumenPath = storage_path('app/' . $outstanding->path_dokumen_tambahan);
             if (file_exists($dokumenPath)) {
                 $filesToMerge[] = $dokumenPath;
+            }
+        }
+
+        // 3. Absensi Peserta
+        if ($absensi) {
+            $absensis = storage_path('app/' . $absensi->pdf_path);
+            if (file_exists($absensis)) {
+                $filesToMerge[] = $absensis;
+            }
+        }
+
+        // 4. PDF Peserta
+        $rkm = RKM::find($outstanding->id_rkm);
+
+        if ($rkm) {
+            if (!$rkm->pdf_peserta || !Storage::exists($rkm->pdf_peserta)) {
+                $this->generatePdfPeserta($rkm->id);
+                $rkm->refresh();
+            }
+
+            $pesertaPdfPath = storage_path('app/' . $rkm->pdf_peserta);
+            if (file_exists($pesertaPdfPath)) {
+                $filesToMerge[] = $pesertaPdfPath;
+            }
+        }
+
+        // 5. Sertifikat Peserta bro
+        $certs = Certificate::where('rkm_id', $outstanding->id_rkm)->get();
+
+        foreach ($certs as $cert) {
+            if ($cert->pdf_path) {
+                $certificate = storage_path('app/public/' . $cert->pdf_path);
+                $filesToMerge[] = $certificate;
+            }
+        }
+
+        // 6. Sertifikat Peserta input
+        $certPeserta = SertifikatPDF::where('id_rkm', $outstanding->id_rkm)->get();
+
+        foreach ($certPeserta as $cert) {
+            if ($cert->pdf_path) {
+                $holding = storage_path('app/' . $cert->pdf_path);
+                $filesToMerge[] = $holding;
             }
         }
 
@@ -740,7 +883,6 @@ class OutstandingController extends Controller
 
         $pdf->Output($outputPath, 'F');
 
-        // Optimasi PDF (biar ukurannya kecil)
         $optimizedPath = str_replace('.pdf', '_optimized.pdf', $outputPath);
 
         $result = FacadePdfOptimizer::fromDisk('local')
@@ -752,7 +894,6 @@ class OutstandingController extends Controller
 
         $finalFile = $result->status ? $optimizedPath : $outputPath;
 
-        // Nama file download yang lebih informatif
         $rkm = RKM::with('perusahaan')->find($outstanding->id_rkm);
         $namaPerusahaan = $rkm?->perusahaan?->nama_perusahaan ?? 'Outstanding';
         $fileName = 'Dokumen_Lengkap_' . preg_replace('/[^A-Za-z0-9\-]/', '_', $namaPerusahaan) . '_' . $id . '.pdf';
@@ -808,7 +949,7 @@ class OutstandingController extends Controller
         }
         return ucwords(trim($words)) . ' rupiah';
     }
-    
+
     public function destroy($id)
     {
         $post = outstanding::findOrFail($id);
