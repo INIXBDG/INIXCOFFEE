@@ -117,7 +117,7 @@ class RKMController extends Controller
 
         $path = 'exports/' . $filename;
 
-        Excel::store(new RKMExport($data), $path, 'local');
+        Excel::store(new RKMExport($data, $bulan), $path, 'local');
 
         return response()->json(['filename' => $path]);
     }

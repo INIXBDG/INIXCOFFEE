@@ -223,7 +223,7 @@ class Kernel extends ConsoleKernel
 
         $schedule->command('app:update-status')->dailyAt('23:00');
 
-        $schedule->command('uptime:check')->everySixHours();
+        $schedule->command('uptime:check')->everySecond();
 
         // Di dalam method schedule(Schedule $schedule)
         $schedule->call(function () {
