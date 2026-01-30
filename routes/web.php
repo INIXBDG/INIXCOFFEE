@@ -136,28 +136,28 @@ Route::resource('/comment', \App\Http\Controllers\CommentController::class);
 
 Route::resource('/perusahaan', \App\Http\Controllers\PerusahaanController::class);
 Route::resource('/materi', \App\Http\Controllers\MateriController::class);
-Route::resource('/rkm', \App\Http\Controllers\RKMController::class);
+Route::resource('/rkm', App\Http\Controllers\RKMController::class);
 Route::resource('/peserta', \App\Http\Controllers\PesertaController::class);
 Route::resource('/registrasi', \App\Http\Controllers\RegistrasiController::class);
 Route::resource('/feedback', \App\Http\Controllers\feedbackController::class);
 Route::resource('/jabatan', \App\Http\Controllers\jabatanController::class);
 Route::resource('/nilaifeedback', \App\Http\Controllers\nilaifeedbackController::class);
 Route::resource('/notif', \App\Http\Controllers\notifController::class);
-Route::resource('/exam', \App\Http\Controllers\examController::class);
+Route::resource('/exam', examController::class);
 Route::resource('/listexams', App\Http\Controllers\ListExamController::class);
 Route::resource('/creditcard', \App\Http\Controllers\creditcardController::class);
 Route::resource('/registexam', \App\Http\Controllers\registexamController::class);
-Route::resource('/souvenir', \App\Http\Controllers\SouvenirController::class);
+Route::resource('/souvenir', SouvenirController::class);
 Route::resource('/pengajuancuti', \App\Http\Controllers\PengajuancutiController::class);
-Route::resource('/pengajuanizin', \App\Http\Controllers\izinTigaJamController::class);
+Route::resource('/pengajuanizin', izinTigaJamController::class);
 Route::resource('/pengajuanbarang', \App\Http\Controllers\PengajuanBarangController::class);
 Route::resource('/suratperjalanan', \App\Http\Controllers\SuratPerjalananController::class);
 Route::resource('/rekapitulasiabsen', \App\Http\Controllers\RekapitulasiAbsenController::class);
-Route::resource('/kelasanalisis', \App\Http\Controllers\KelasAnalisisController::class);
-Route::resource('/paymantAdvance', \App\Http\Controllers\netSalesController::class)->except(['show']);
+Route::resource('/kelasanalisis', KelasAnalisisController::class);
+Route::resource('/paymantAdvance', netSalesController::class)->except(['show']);
 Route::resource('/databasekpi', \App\Http\Controllers\DatabaseKPIController::class);
 Route::resource('/target', \App\Http\Controllers\targetController::class);
-Route::resource('/outstanding', \App\Http\Controllers\OutstandingController::class);
+Route::resource('/outstanding', OutstandingController::class);
 Route::resource('/tunjangan', \App\Http\Controllers\TunjanganController::class);
 Route::resource('/tunjanganEducation', \App\Http\Controllers\tunjanganEducationController::class);
 Route::resource('/rekapmengajarinstruktur', \App\Http\Controllers\rekapInstrukturController::class);
@@ -165,12 +165,12 @@ Route::resource('/lembur', \App\Http\Controllers\LemburController::class);
 Route::resource('/overtime', \App\Http\Controllers\OvertimeController::class);
 Route::resource('/pengajuanlabsdansubs', \App\Http\Controllers\PengajuanLabdanSubsController::class);
 Route::resource('/pengajuansouvenir', \App\Http\Controllers\PengajuanSouvenirController::class);
-Route::resource('/daily-activities', \App\Http\Controllers\DailyActivityController::class);
+Route::resource('/daily-activities', DailyActivityController::class);
 Route::resource('/registry', \App\Http\Controllers\RegistryFeatureController::class)->parameters(['registry' => 'tugas']);
 Route::resource('permissions', \App\Http\Controllers\PermissionController::class);
 Route::resource('roles', \App\Http\Controllers\RoleController::class);
 Route::resource('penambahansouvenir', \App\Http\Controllers\PenambahanSouvenirController::class);
-Route::resource('penukaransouvenir', \App\Http\Controllers\PenukaranSouvenirController::class);
+Route::resource('penukaransouvenir', PenukaranSouvenirController::class);
 Route::resource('content-schedules', \App\Http\Controllers\ContentScheduleController::class);
 
 
@@ -397,7 +397,7 @@ Route::put('notifications/{notification}/read', [App\Http\Controllers\CommentCon
 Route::put('/notifications/markAllAsRead', [App\Http\Controllers\CommentController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
 Route::get('/rkm/{id}/absensi', [App\Http\Controllers\RKMController::class, 'absensiPeserta'])->name('absensiPeserta');
 Route::put('/suratperjalanan/{id}/approval', [App\Http\Controllers\SuratPerjalananController::class, 'approval'])->name('suratperjalanan.approval');
-Route::get('/fetch-attendance', [\App\Http\Controllers\RKMController::class, 'fetchAttendance'])->name('attendance.fetch');
+Route::get('/fetch-attendance', [RKMController::class, 'fetchAttendance'])->name('attendance.fetch');
 Route::post('/absensi', [\App\Http\Controllers\AbsensiKaryawanController::class, 'storeAbsensi'])->name('absensi.masuk');
 Route::get('/absensi/karyawan', [App\Http\Controllers\AbsensiKaryawanController::class, 'absensiKaryawan'])->name('absensi.karyawan');
 Route::get('/absensi/pengajuan-klaim/no-recorded', [App\Http\Controllers\AbsensiKaryawanController::class, 'noRecord'])->name('absensi.noRecord');
@@ -618,8 +618,10 @@ Route::get('/laporan-insiden/hapus/{id}', [laporanInsidentController::class, 'ha
 Route::post('/laporan-insiden/update', [laporanInsidentController::class, 'update'])->name('uodate.laporanInsiden');
 //management-kelas-offline
 Route::get('/management-kelas/get', [managementKelasController::class, 'get'])->name('managementKelas.get');
-Route::post('/management-kelas/store', [managementKelasController::class, 'store'])->name('managementKelas.store');
-Route::resource('managemetkelas', \App\Http\Controllers\managementKelasController::class);
+Route::get('/management-kelas/store', [managementKelasController::class, 'store'])->name('managementKelas.store');
+Route::resource('management-kelas', managementKelasController::class);
+Route::post('/management-kelas/{id}/batalkan', [ManagementKelasController::class, 'batalkan']);
+
 
 Route::get('/exam/assign-room/{id}', [examController::class, 'assignRoom'])
     ->name('exam.assignRoom')

@@ -14,12 +14,12 @@
                 <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
                     <div class="card-body p-4">
                         <div class="d-flex align-items-center">
-                            <div class="flex-shrink-0">
+                            <div class="shrink-0">
                                 <div class="avatar avatar-xl bg-opacity-15 rounded-circle p-3">
                                     <i class="bx bx-user text-primary" style="font-size: 2.5rem;color:white;"></i>
                                 </div>
                             </div>
-                            <div class="flex-grow-1 ms-4">
+                            <div class="grow ms-4">
                                 <h6 class="text-muted mb-2 text-uppercase small tracking-wider">Total Karyawan Aktif</h6>
                                 <h2 class="mb-0 text-primary fw-bold">{{ $total_karyawan }}</h2>
                             </div>
@@ -37,12 +37,12 @@
                         data-bs-target="#modalDivisi{{ $index }}" role="button" tabindex="0">
                         <div class="card-body p-4">
                             <div class="d-flex align-items-center mb-3">
-                                <div class="flex-shrink-0">
+                                <div class="shrink-0">
                                     <div class="avatar avatar-md bg-{{ $divisi['color'] }} bg-opacity-15 rounded-pill">
                                         <i class="{{ $divisi['icon'] }}" style="font-size: 1.5rem;color:white"></i>
                                     </div>
                                 </div>
-                                <div class="flex-grow-1 ms-3">
+                                <div class="grow ms-3">
                                     <h6 class="text-muted mb-1 small text-uppercase tracking-wider">{{ $divisi['nama'] }}
                                     </h6>
                                     <h3 class="mb-0 fw-bold text-dark">{{ $divisi['total'] }}</h3>
@@ -96,14 +96,14 @@
                                 @foreach ($tidakHadirList as $item)
                                     <div class="list-group-item bg-transparent px-0 py-3 border-bottom">
                                         <div class="d-flex align-items-center">
-                                            <div class="flex-shrink-0">
+                                            <div class="shrink-0">
                                                 <div class="avatar avatar-sm bg-opacity-15 rounded-circle">
                                                     <span class="text-danger fw-bold small">
                                                         {{ strtoupper(substr($item['nama'], 0, 1)) }}
                                                     </span>
                                                 </div>
                                             </div>
-                                            <div class="flex-grow-1 ms-3">
+                                            <div class="grow ms-3">
                                                 <h6 class="mb-1 fw-medium text-dark">{{ $item['nama'] }}</h6>
                                                 <small class="text-muted d-block">{{ $item['divisi'] }}</small>
                                                 <span class="badge bg-warning text-dark mt-1">Tidak Hadir</span>
