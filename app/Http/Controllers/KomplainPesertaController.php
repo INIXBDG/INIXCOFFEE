@@ -166,7 +166,7 @@ class KomplainPesertaController extends Controller
 
     public function destroy(string $id)
     {
-        KomplainPeserta::findOrFail($id)->delete();
+        KomplainPeserta::where('nilaifeedback_id', $id)->delete();
 
         return redirect()->route('komplain-peserta')->with('success', 'Komplain Berhasil Dihapus!');
     }
