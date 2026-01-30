@@ -1823,7 +1823,24 @@
                                                     </div>
                                                 </div>
                                                 @endcan
-
+                                                @can('Komplain Peserta')
+                                                <div class="col-sm-6 mt-2">
+                                                    <div class="card" id="card-hover">
+                                                        <div class="card-body d-flex">
+                                                            <div class="col-md-2 ">
+                                                                <i class="fa fa-comment" style="font-size: 30px;"></i>
+                                                            </div>
+                                                            <div class="col-md-10" style="margin-left: 10px">
+                                                                <a href="/komplain-peserta"
+                                                                    class="link stretched-link text-decoration-none">
+                                                                    <h5 class="card-title">Komplain Peserta</h5>
+                                                                </a>
+                                                                <p class="card-text">Komplain peserta.</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                @endcan
                                             </div>
                                         </div>
                                     </div>
