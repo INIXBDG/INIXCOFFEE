@@ -14,30 +14,37 @@ class Sertifikasi extends Model
     protected $fillable = [
         'user_id',
         'nama_sertifikat',
-        'penyedia',
+        // 'penyedia',
         'tanggal_ujian',
         'tanggal_berlaku_dari',
         'tanggal_berlaku_sampai',
         'harga',
         'vendor',
         'status_approval',
+        'keterangan',
         'approved_by',
         'approved_at',
+        'id_pengajuan_barang',
+        'bukti_sertifikasi',
     ];
 
-    /**
-     * Mengambil data pemilik sertifikat
-     */
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    /**
-     * Mengambil data manager yang melakukan approval
-     */
     public function approver()
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function pengajuan_barang()
+    {
+        return $this->belongsTo(PengajuanBarang::class, 'id_pengajuan_barang');
+    }
+
+    public function pelatihan()
+    {
+        return $this->hasOne(Pelatihan::class, 'id_sertifikasi');
     }
 }

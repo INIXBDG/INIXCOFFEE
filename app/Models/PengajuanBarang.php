@@ -26,7 +26,7 @@ class PengajuanBarang extends Model
         'id_tracking',
         'tipe',
         'invoice',
-  
+
     ];
 
     /**
@@ -52,6 +52,16 @@ class PengajuanBarang extends Model
     public function detail()
     {
         return $this->hasMany(detailPengajuanBarang::class, 'id_pengajuan_barang', 'id');
+    }
+
+    public function pelatihan()
+    {
+        return $this->hasOne(Pelatihan::class, 'id_pengajuan_barang');
+    }
+
+    public function sertifikasi()
+    {
+        return $this->hasOne(Sertifikasi::class, 'id_pengajuan_barang');
     }
 
 }
