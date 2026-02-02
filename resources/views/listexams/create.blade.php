@@ -373,8 +373,16 @@ $(document).ready(function() {
     }
 
     // Remove Rupiah format for calculations
-    function removeRupiahFormat(angka) {
-        return parseFloat(angka.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
+    function removeRupiahFormat(value) {
+        if (!value) return 0;
+
+        // jika ada titik desimal → USD
+        if (value.includes('.')) {
+            return parseFloat(value);
+        }
+
+        // Rupiah
+        return parseFloat(value.replace(/[^\d]/g, '')) || 0;
     }
 
     // Validate numeric input
@@ -416,12 +424,18 @@ $(document).ready(function() {
         hitungTotal();
     });
 
-    // Format and validate numeric inputs
-    $('#harga, #kurs, #biaya_admin, #kurs_dollar').on('input', function() {
-        if (validateInput($(this), $(this).attr('name'))) {
-            $(this).val(formatRupiah($(this).val()));
-            hitungTotal();
+    $('#harga').on('input', function () {
+        let mataUang = $('#mata_uang').val();
+        let value = $(this).val();
+
+        if (mataUang === 'Rupiah') {
+            $(this).val(formatRupiah(value));
+        } else {
+            // Dollar, Euro, Pound, CHF
+            $(this).val(formatUSD(value));
         }
+
+        hitungTotal();
     });
 
     // Pax event

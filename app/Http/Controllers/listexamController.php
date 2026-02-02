@@ -46,10 +46,12 @@ class listexamController extends Controller
             'nama_exam' => 'required',
             'vendor' => 'required',
             'mata_uang' => 'required|string|in:Rupiah,Dollar,Poundsterling,Euro,Franc Swiss',
-            'valid_until' => 'nullable|date'
+            'valid_until' => 'nullable|date',
+            'harga_exam' => 'required',
+            'estimasi_durasi_booking' => 'string|max:255',
         ]);
 
-        $harga            = (float) str_replace('.', '', $request->harga);
+        $harga            = $request->harga;
         // $kurs             = (float) str_replace('.', '', $request->kurs ?? 0);
         // $kursDollar       = (float) str_replace('.', '', $request->kurs_dollar);
         // $biayaAdmin       = (float) str_replace('.', '', $request->biaya_admin);
@@ -105,14 +107,13 @@ class listexamController extends Controller
             'nama_exam' => 'required|string|max:255',
             'kode_exam' => 'required|string|max:255',
             'vendor' => 'required|string|max:255',
-            'harga_exam' => 'numeric',
+            'harga_exam' => 'required',
             'estimasi_durasi_booking' => 'string|max:255',
-            'note' => 'string|max:255',
         ]);
 
         $exam = ListExam::findOrFail($id);
 
-        $harga            = (float) str_replace('.', '', $request->harga);
+        $harga            = $request->harga;
         // $kurs             = (float) str_replace('.', '', $request->kurs ?? 0);
         // $kursDollar       = (float) str_replace('.', '', $request->kurs_dollar);
         // $biayaAdmin       = (float) str_replace('.', '', $request->biaya_admin);
