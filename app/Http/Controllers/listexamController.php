@@ -47,7 +47,7 @@ class listexamController extends Controller
             'vendor' => 'required',
             'mata_uang' => 'required|string|in:Rupiah,Dollar,Poundsterling,Euro,Franc Swiss',
             'valid_until' => 'nullable|date',
-            'harga_exam' => 'required',
+            'harga' => 'required',
             'estimasi_durasi_booking' => 'string|max:255',
         ]);
 
@@ -107,7 +107,7 @@ class listexamController extends Controller
             'nama_exam' => 'required|string|max:255',
             'kode_exam' => 'required|string|max:255',
             'vendor' => 'required|string|max:255',
-            'harga_exam' => 'required',
+            'harga' => 'required',
             'estimasi_durasi_booking' => 'string|max:255',
         ]);
 
