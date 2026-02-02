@@ -345,28 +345,27 @@ class ActivityInstrukturController extends Controller
 
         $manualActivities = $manualQuery->get();
 
-        // Grouping Manual berdasarkan Nama
+        // PERUBAHAN DI SINI: Grouping Manual berdasarkan Tipe Aktivitas
         $manualDetails = $manualActivities->groupBy(function($item) {
-            // Ambil nama karyawan, fallback ke user name
-            return optional(optional($item->user)->karyawan)->nama_lengkap 
-                ?? optional($item->user)->name ?? 'Unknown';
+            // Group by activity_type, jika null anggap 'Lainnya'
+            return $item->activity_type ?? 'Lainnya';
         })->map(function($group) {
             
-            // --- TAMBAHAN LOGIKA DI SINI ---
-            // Hitung jumlah per activity_type di dalam grup user ini
-            $types = $group->groupBy('activity_type')->map(function($typeGroup) {
-                return $typeGroup->count();
+            // Di dalam setiap Tipe, kita cari Siapa saja yang melakukannya
+            $users = $group->groupBy(function($item) {
+                return optional(optional($item->user)->karyawan)->nama_lengkap 
+                    ?? optional($item->user)->name ?? 'Unknown';
+            })->map(function($userGroup) {
+                return $userGroup->count(); // Hitung jumlah per orang untuk tipe ini
             });
-            // -------------------------------
 
             return [
                 'total'       => $group->count(),
                 'selesai'     => $group->where('status', 'Selesai')->count(),
                 'on_progress' => $group->where('status', '!=', 'Selesai')->count(),
-                'types'       => $types // <--- Masukkan data tipe aktivitas ke response JSON
+                'users'       => $users // <--- Data Instruktur dikirim ke sini
             ];
-        });
-
+            });
         // --- 2. BAGIAN 1: RKM (LOGIKA DIPERBARUI) ---
         $rkmQuery = RKM::where('tanggal_awal', '<=', $end)
             ->where('tanggal_akhir', '>=', $start);

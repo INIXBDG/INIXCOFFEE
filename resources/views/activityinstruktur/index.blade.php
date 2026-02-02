@@ -51,7 +51,7 @@
                                 <option value="Sharing Knowledge">Sharing Knowledge</option>
                                 <option value="Webinar">Webinar</option>
                                 <option value="Projek">Projek</option>
-                                <option value="Buat Materi">Buat Materi</option>
+                                <option value="Pembuatan Materi">Pembuatan Materi</option>
                             </select>
                         </div>
                         
@@ -206,7 +206,7 @@
             html += `
                 <div class="mb-3">
                     <h6 class="border-bottom pb-2 mb-2 text-success">
-                        <i class="bi bi-person-video3 me-1"></i> Mengajar (RKM)
+                        <i class="bi bi-person-video3 me-1"></i> Mengajar
                         <span class="badge bg-success float-end">${data.rkm_summary.total_all}</span>
                     </h6>
                     <ul class="list-group list-group-flush small">
@@ -226,48 +226,50 @@
             }
             html += `</ul></div>`;
 
-            // --- BAGIAN 2: AKTIVITAS MANUAL (DIPERBARUI) ---
+           // --- BAGIAN 2: AKTIVITAS MANUAL ---
             html += `
                 <div class="mb-3">
                     <h6 class="border-bottom pb-2 mb-2 text-primary">
-                        <i class="bi bi-pencil-square me-1"></i> Aktivitas Manual
+                        <i class="bi bi-pencil-square me-1"></i> Aktivitas
                         <span class="badge bg-primary float-end">${data.manual_summary.total_all}</span>
                     </h6>
                     <ul class="list-group list-group-flush small">
             `;
 
             if (Object.keys(data.manual_summary.details).length > 0) {
-                $.each(data.manual_summary.details, function(name, stats) {
+                // Loop per Tipe Aktivitas (Contoh: "Sharing Knowledge")
+                $.each(data.manual_summary.details, function(type, stats) {
                     
-                    // 1. Buat HTML untuk rincian activity_type
-                    let typesHtml = '<div class="mt-1 d-flex flex-wrap gap-1">';
-                    if (stats.types) {
-                        $.each(stats.types, function(typeName, typeCount) {
-                            // Jika typeName kosong/null, ganti jadi "Lainnya"
-                            let label = typeName && typeName !== 'null' ? typeName : 'Lainnya';
-                            typesHtml += `
-                                <span class="badge bg-light text-secondary border" style="font-weight:normal; font-size: 0.7em;">
-                                    ${label}: ${typeCount}
-                                </span>
+                    // 1. Buat List Nama Instruktur ke bawah
+                    let usersHtml = '<div class="mt-2 ps-3 border-start">'; // Beri indentasi sedikit
+                    if (stats.users) {
+                        $.each(stats.users, function(userName, userCount) {
+                            // Format sesuai permintaan: Nama [Jumlah]
+                            usersHtml += `
+                                <div class="mb-1 text-secondary">
+                                    ${userName} <span class="badge bg-secondary">${userCount}</span>
+                                </div>
                             `;
                         });
                     }
-                    typesHtml += '</div>';
+                    usersHtml += '</div>';
 
-                    // 2. Render List Item
+                    // 2. Render Item Utama
                     html += `
-                        <li class="list-group-item px-0 py-2">
-                            <div class="d-flex justify-content-between mb-1">
-                                <span class="fw-bold text-truncate" style="max-width: 180px;" title="${name}">${name}</span>
-                                <span class="badge bg-secondary">${stats.total}</span>
+                        <li class="list-group-item px-0 py-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold text-dark" style="font-size: 1rem;">
+                                    ${type}
+                                </span>
+                                <span class="badge bg-light text-dark border">${stats.total}</span>
                             </div>
                             
-                            <div class="progress" style="height: 4px;">
+                            <div class="progress mb-2" style="height: 3px;">
                                 <div class="progress-bar bg-success" role="progressbar" style="width: ${(stats.selesai / stats.total) * 100}%"></div>
                                 <div class="progress-bar bg-warning" role="progressbar" style="width: ${(stats.on_progress / stats.total) * 100}%"></div>
                             </div>
                             
-                            ${typesHtml}
+                            ${usersHtml}
                         </li>
                     `;
                 });
@@ -276,7 +278,6 @@
             }
             html += `</ul></div>`;
 
-            // Render ke element
             $('#summaryContent').html(html);
         }
 
@@ -393,7 +394,7 @@
             const startOfThisWeek = moment().startOf('isoWeek'); // Senin minggu ini
 
             if (dateCarbon.isBefore(startOfThisWeek)) {
-                isLocked = true; // Minggu lalu & sebelumnya
+                isLocked = false; // Minggu lalu & sebelumnya true
             }
 
             console.log({

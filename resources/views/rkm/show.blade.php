@@ -59,13 +59,13 @@
                                                         </a>
                                                         @endcan
                                                         @can('Delete RKM')
-                                                        <form onsubmit="return confirm('Apakah Anda Yakin ?');" action="{{ route('rkm.destroy', $post->id) }}" method="POST">
+                                                        {{-- <form onsubmit="return confirm('Apakah Anda Yakin ?');" action="{{ route('rkm.destroy', $post->id) }}" method="POST">
                                                             @csrf
                                                             @method('DELETE')
                                                             <button class="btn click-danger mx-1">
                                                                 <img src="{{ asset('icon/trash.svg') }}" class="img-responsive" width="20px"> Hapus RKM
                                                             </button>
-                                                        </form>
+                                                        </form> --}}
                                                         @endcan
                                                         @endif
                                                         @can('Absensi RKM')
