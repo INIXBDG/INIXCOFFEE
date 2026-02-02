@@ -96,8 +96,10 @@ class listexamController extends Controller
 
     public function edit($id)
     {
+        $provider = provider::get();
+        $vendor = vendor::get();
         $exam = ListExam::findOrFail($id);
-        return view('listexams.edit', compact('exam'));
+        return view('listexams.edit', compact('exam', 'provider', 'vendor'));
     }
 
     public function update(Request $request, $id)

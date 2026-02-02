@@ -22,6 +22,11 @@
                                     <option value="Pearson Vue" {{ $exam->provider == 'Pearson Vue' ? 'selected' : '' }}>Pearson Vue</option>
                                     <option value="On Vue" {{ $exam->provider == 'On Vue' ? 'selected' : '' }}>On Vue</option>
                                     <option value="PSI" {{ $exam->provider == 'PSI' ? 'selected' : '' }}>PSI</option>
+                                    <option value="Exam Shield" {{ $exam->provider == 'Exam Shield' ? 'selected' : '' }}>Exam Shield</option>
+                                    <option value="Examity" {{ $exam->provider == 'Examity' ? 'selected' : '' }}>Examity</option>
+                                    @foreach ($provider as $p)
+                                        <option value="{{ $p->nama }}" {{ $exam->provider == $p->nama ? 'selected' : '' }}>{{ $p->nama }}</option>
+                                    @endforeach
                                 </select>
                                 @error('provider')
                                     <span class="invalid-feedback" role="alert">
@@ -72,6 +77,9 @@
                                     <option value="CompTIA" {{ $exam->vendor == 'CompTIA' ? 'selected' : '' }}>CompTIA</option>
                                     <option value="BNSP" {{ $exam->vendor == 'BNSP' ? 'selected' : '' }}>BNSP</option>
                                     <option value="Inixindo Certificate" {{ $exam->vendor == 'Inixindo Certificate' ? 'selected' : '' }}>Inixindo Certificate</option>
+                                    @foreach ($vendor as $v)
+                                        <option value="{{ $v->nama }}" {{ $exam->vendor == $v->nama ? 'selected' : '' }}>{{ $v->nama }}</option>
+                                    @endforeach
                                 </select>
                                 @error('vendor')
                                     <span class="invalid-feedback" role="alert">
@@ -99,14 +107,13 @@
                                 @enderror
                             </div>
                         </div>
-
                         <div class="row mb-3" id="harga_div">
                             <label for="harga" class="col-md-4 col-form-label text-md-start">{{ __('Harga') }}</label>
                             <div class="col-md-6">
                                 <div class="input-group mb-3">
                                     <span class="input-group-text" id="currency-symbol">$</span>
                                     <input type="text" class="form-control @error('harga') is-invalid @enderror" 
-                                           name="harga" id="harga" required>
+                                           name="harga" id="harga" required value="{{ $exam->mata_uang === 'Rupiah' ? number_format($exam->harga_exam ?? 0, 0, ',', '.') : number_format($exam->harga_exam ?? 0, 2, '.', ',') }}">
                                 </div>
                                 @error('harga')
                                     <span class="invalid-feedback" role="alert">
@@ -256,6 +263,27 @@ $(document).ready(function(){
         return (prefix === undefined ? rupiah : (rupiah ? 'Rp. ' + rupiah : ''));
     }
 
+    // Set currency format saat pertama load
+    function setCurrencyUI(mataUang) {
+        if (!mataUang) return;
+
+        $('#currency-symbol').text(currencySymbols[mataUang] || '$');
+        $('#symbol').text(kursSymbols[mataUang] || '');
+
+        if (mataUang === 'Rupiah' || mataUang === 'Dollar') {
+            $('#kurs_harga_div').hide();
+            $('#kurs').prop('disabled', true);
+        } else {
+            $('#kurs_harga_div').show();
+            $('#kurs').prop('disabled', false);
+        }
+
+        $('#kurs_dollar_div').show();
+        $('#kurs_dollar').prop('disabled', false);
+        $('#biaya_admin').prop('disabled', false);
+    }
+
+
     // Remove Rupiah format for calculations
     function removeRupiahFormat(value) {
         if (!value) return 0;
@@ -282,31 +310,13 @@ $(document).ready(function(){
 
     // Currency change event
     $('#mata_uang').on('change', function() {
-        var val = $(this).val();
-        if (!val) {
-            alert('Pilih mata uang terlebih dahulu!');
-            $('#harga, #kurs, #biaya_admin, #kurs_dollar, #harga_rupiah, #total').val('');
-            $('#kurs_harga_div, #kurs_dollar_div').hide();
-            return;
-        }
+        let val = $(this).val();
+        if (!val) return;
 
-        $('#currency-symbol').text(currencySymbols[val] || '$');
-        $('#symbol').text(kursSymbols[val] || '');
-
-        // Show/hide kurs fields based on currency
-        if (val === 'Rupiah' || val === 'Dollar') {
-            $('#kurs_harga_div').hide();
-            $('#kurs').val('').prop('disabled', true);
-        } else {
-            $('#kurs_harga_div').show();
-            $('#kurs').prop('disabled', false);
-        }
-        $('#kurs_dollar_div').show();
-        $('#kurs_dollar').prop('disabled', false);
-        $('#biaya_admin').prop('disabled', false);
-
+        setCurrencyUI(val);
         hitungTotal();
     });
+
 
     $('#harga').on('input', function () {
         let mataUang = $('#mata_uang').val();
@@ -368,6 +378,9 @@ $(document).ready(function(){
         // Update hidden fields
         $('#total_final').val(totalNet);
     }
+
+    let initialCurrency = $('#mata_uang').val();
+    setCurrencyUI(initialCurrency);
 });
 </script>
 @endpush
