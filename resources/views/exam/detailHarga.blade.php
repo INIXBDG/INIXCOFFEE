@@ -33,17 +33,28 @@
                                 <input disabled id="kode_exam" type="text" class="form-control" name="kode_exam" value="{{ $exam->kode_exam }}">
                             </div>
                         </div>
+
+                        @php
+                            $symbolMap = [
+                                'Rupiah' => 'Rp',
+                                'Dollar' => '$',
+                                'Euro' => '€',
+                                'Poundsterling' => '£',
+                                'Franc Swiss' => 'CHF'
+                            ];
+
+                            $symbol = $symbolMap[$exam->mata_uang] ?? '';
+                        @endphp
                         <div class="row mb-3">
                             <label for="harga" class="col-md-4 col-form-label text-md-start">{{ __('Harga') }}</label>
                             <div class="col-md-6">
-                                <input disabled id="harga" type="text" class="form-control" name="harga" value="Rp {{ number_format($exam->harga_exam ?? 0, 0, ',', '.') }}">
+                                <input disabled id="harga" type="text" class="form-control" value=" {{ $symbol }} {{ $exam->mata_uang === 'Rupiah' ? number_format($exam->harga_exam ?? 0, 0, ',', '.') : number_format($exam->harga_exam ?? 0, 2, '.', ',') }}">
                             </div>
                         </div>
                         <div class="row mb-3">
                             <label for="last_update" class="col-md-4 col-form-label text-md-start">{{ __('Last Update Harga') }}</label>
                             <div class="col-md-6">
-                                <input disabled id="last_update" type="text" class="form-control" name="last_update" value="{{ $exam->updated_at?->format('d/m/Y') ?? '-' }}
-">
+                                <input disabled id="last_update" type="text" class="form-control" name="last_update" value="{{ $exam->updated_at?->format('d/m/Y') ?? '-' }}">
                             </div>
                         </div>
                         <div class="row mb-3">
