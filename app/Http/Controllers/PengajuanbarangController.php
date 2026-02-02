@@ -134,7 +134,7 @@ class PengajuanBarangController extends Controller
         $karyawan = karyawan::findOrFail($user);
         return view('pengajuanbarang.create', compact('karyawan'));
     }
-
+    
     /**
      * Menyimpan Pengajuan Barang baru ke dalam database.
      */

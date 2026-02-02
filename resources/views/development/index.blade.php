@@ -2,7 +2,6 @@
 
 @section('content')
 <div class="container-fluid">
-    {{-- 1. Loading Modal (Cube Style) --}}
     <div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="spinnerModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="cube">
@@ -14,7 +13,7 @@
         </div>
     </div>
 
-    {{-- 2. Modal Create Sertifikasi --}}
+    {{-- Modal Create Sertifikasi --}}
     <div class="modal fade" id="createSertifikasiModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -30,17 +29,17 @@
                                 <label class="form-label">Nama Sertifikat</label>
                                 <input type="text" name="nama_sertifikat" class="form-control" required>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            {{-- <div class="col-md-6 mb-3">
                                 <label class="form-label">Penyedia</label>
                                 <input type="text" name="penyedia" class="form-control" required>
-                            </div>
+                            </div> --}}
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Vendor</label>
                                 <input type="text" name="vendor" class="form-control" required>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Harga</label>
-                                <input type="number" name="harga" class="form-control" required>
+                                <input type="number" name="harga" class="form-control">
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">Tanggal Ujian</label>
@@ -48,16 +47,22 @@
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">Berlaku Dari</label>
-                                <input type="date" name="tanggal_berlaku_dari" class="form-control" required>
+                                <input type="date" name="tanggal_berlaku_dari" class="form-control">
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">Berlaku Sampai</label>
                                 <input type="date" name="tanggal_berlaku_sampai" class="form-control">
                                 <small class="text-muted">Kosongkan jika seumur hidup</small>
                             </div>
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">Keterangan</label>
+                                <textarea name="keterangan" class="form-control" rows="3"></textarea>
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">
+                        <small class="text-muted me-auto fst-italic">*kosongkan bagian harga, untuk sertifikasi tanpa pengajuan</small>
+
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
                         <button type="submit" class="btn btn-primary">Simpan</button>
                     </div>
@@ -66,7 +71,65 @@
         </div>
     </div>
 
-    {{-- 3. Modal Create Pelatihan --}}
+    {{-- Modal Upload Bukti Pelatihan --}}
+    <div class="modal fade" id="uploadBuktiModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Upload Bukti Pelatihan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="formUploadBukti" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            Silakan upload sertifikat atau bukti penilaian pelatihan yang telah diselesaikan.
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">File Bukti <span class="text-danger">*</span></label>
+                            <input type="file" name="bukti_pelatihan" class="form-control" required accept=".pdf,.jpg,.jpeg,.png">
+                            <small class="text-muted">Format: PDF, JPG, PNG. Maks: 5MB</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">Upload</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal Upload Bukti SERTIFIKASI --}}
+    <div class="modal fade" id="uploadBuktiSertifikasiModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Upload Dokumen Sertifikat</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="formUploadBuktiSertifikasi" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            Silakan upload file sertifikat asli yang telah Anda terima.
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">File Sertifikat <span class="text-danger">*</span></label>
+                            <input type="file" name="bukti_sertifikasi" class="form-control" required accept=".pdf,.jpg,.jpeg,.png">
+                            <small class="text-muted">Format: PDF, JPG, PNG. Maks: 5MB</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">Upload</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal Create Pelatihan --}}
     <div class="modal fade" id="createPelatihanModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -74,17 +137,22 @@
                     <h5 class="modal-title">Tambah Pelatihan</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form action="{{ route('pelatihan.store') }}" method="POST">
+                <form action="{{ route('pelatihan.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="modal-body">
                         <div class="row">
+                            {{-- Input Data Pelatihan --}}
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Nama Pelatihan</label>
                                 <input type="text" name="nama_pelatihan" class="form-control" required>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            {{-- <div class="col-md-6 mb-3">
                                 <label class="form-label">Penyedia</label>
                                 <input type="text" name="penyedia" class="form-control" required>
+                            </div> --}}
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Vendor</label>
+                                <input type="text" name="vendor" class="form-control" required>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Tanggal Mulai</label>
@@ -102,6 +170,43 @@
                                 <label class="form-label">Keterangan</label>
                                 <textarea name="keterangan" class="form-control" rows="3"></textarea>
                             </div>
+
+                            {{-- TOGGLE --}}
+                            <div class="col-md-12 mb-3">
+                                <div class="d-flex p-3 border rounded bg-light align-items-start">
+                                    <div class="form-check form-switch me-3">
+                                        <input class="form-check-input" type="checkbox" id="is_sertifikasi_toggle" name="is_sertifikasi" value="1" style="width: 3em; height: 1.5em; cursor: pointer;">
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <label class="form-check-label fw-bold text-dark" for="is_sertifikasi_toggle" style="cursor: pointer;">
+                                            Juga sebagai Sertifikasi?
+                                        </label>
+                                        <div class="text-muted small mt-1" style="line-height: 1.3;">
+                                            Jika diaktifkan, form tambahan akan muncul untuk data sertifikasi.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- FORM TAMBAHAN (Hidden by Default) --}}
+                            <div id="sertifikasi_inputs" class="col-md-12" style="display: none;">
+                                <div class="card bg-light border-primary mb-3">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-primary fw-bold mb-3">Detail Sertifikasi</h6>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label">Nama Sertifikat <span class="text-danger">*</span></label>
+                                                <input type="text" name="nama_sertifikat_manual" id="input_nama_sertifikat" class="form-control" placeholder="Masukkan nama sertifikat...">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label">Tanggal Ujian</label>
+                                                <input type="date" name="tgl_ujian_sertifikasi" id="input_tgl_ujian" class="form-control">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -113,7 +218,7 @@
         </div>
     </div>
 
-    {{-- 4. Modal Approval (Shared) --}}
+    {{-- Modal Approval --}}
     <div class="modal fade" id="approveModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -142,7 +247,7 @@
         </div>
     </div>
 
-    {{-- 5. Modal Edit Sertifikasi --}}
+    {{-- Modal Edit Sertifikasi --}}
     <div class="modal fade" id="editSertifikasiModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -154,16 +259,15 @@
                     @csrf
                     @method('PUT')
                     <div class="modal-body">
-                        {{-- Isi form sama dengan create, tapi tambahkan ID untuk JS --}}
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Nama Sertifikat</label>
                                 <input type="text" name="nama_sertifikat" id="edit_nama_sertifikat" class="form-control" required>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            {{-- <div class="col-md-6 mb-3">
                                 <label class="form-label">Penyedia</label>
                                 <input type="text" name="penyedia" id="edit_penyedia" class="form-control" required>
-                            </div>
+                            </div> --}}
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Vendor</label>
                                 <input type="text" name="vendor" id="edit_vendor" class="form-control" required>
@@ -178,11 +282,15 @@
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">Berlaku Dari</label>
-                                <input type="date" name="tanggal_berlaku_dari" id="edit_tanggal_berlaku_dari" class="form-control" required>
+                                <input type="date" name="tanggal_berlaku_dari" id="edit_tanggal_berlaku_dari" class="form-control">
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">Berlaku Sampai</label>
                                 <input type="date" name="tanggal_berlaku_sampai" id="edit_tanggal_berlaku_sampai" class="form-control">
+                            </div>
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">Keterangan</label>
+                                <textarea name="keterangan" id="edit_keterangan_sertifikasi" class="form-control" rows="3"></textarea>
                             </div>
                         </div>
                     </div>
@@ -195,7 +303,7 @@
         </div>
     </div>
 
-    {{-- 6. Modal Edit Pelatihan --}}
+    {{-- Modal Edit Pelatihan --}}
     <div class="modal fade" id="editPelatihanModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -212,9 +320,13 @@
                                 <label class="form-label">Nama Pelatihan</label>
                                 <input type="text" name="nama_pelatihan" id="edit_nama_pelatihan" class="form-control" required>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            {{-- <div class="col-md-6 mb-3">
                                 <label class="form-label">Penyedia</label>
                                 <input type="text" name="penyedia" id="edit_penyedia_pelatihan" class="form-control" required>
+                            </div> --}}
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Vendor</label>
+                                <input type="text" name="vendor" id="edit_penyedia_vendor" class="form-control" required>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Tanggal Mulai</label>
@@ -230,7 +342,7 @@
                             </div>
                             <div class="col-md-12 mb-3">
                                 <label class="form-label">Keterangan</label>
-                                <textarea name="keterangan" id="edit_keterangan" class="form-control" rows="3"></textarea>
+                                <textarea name="keterangan" id="edit_keterangan_pelatihan" class="form-control" rows="3"></textarea>
                             </div>
                         </div>
                     </div>
@@ -257,7 +369,7 @@
 
             <div class="tab-content" id="myTabContent">
 
-                {{-- TAB 1: Sertifikasi --}}
+                {{-- TAB : Sertifikasi --}}
                 <div class="tab-pane fade show active" id="sertifikasi" role="tabpanel">
                     <div class="card mt-3 border-top-0">
                         <div class="card-body">
@@ -275,66 +387,120 @@
                                             <th>Tanggal Dibuat</th>
                                             <th>Nama Karyawan</th>
                                             <th>Nama Sertifikat</th>
-                                            <th>Penyedia</th>
+                                            <th>Vendor
                                             <th>Tgl Ujian</th>
                                             <th>Masa Berlaku</th>
                                             <th>Harga</th>
+                                            <th>Keterangan</th>
                                             <th>Status</th>
                                             <th>Aksi</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @foreach($sertifikasis as $item)
-                                        {{-- LOGIKA CEK EXPIRED --}}
                                         @php
                                             $isExpired = $item->tanggal_berlaku_sampai && \Carbon\Carbon::parse($item->tanggal_berlaku_sampai)->endOfDay()->isPast();
+
+                                            // Cek Tracking dari Sertifikasi Langsung
+                                            $trackingSertifikasi = $item->pengajuan_barang->tracking->tracking ?? null;
+
+                                            // Cek Tracking dari Pelatihan Terkait (Jika via Pelatihan)
+                                            $trackingPelatihan = $item->pelatihan->pengajuan_barang->tracking->tracking ?? null;
+
+                                            // Ambil salah satu tracking yang tersedia
+                                            $finalTracking = $trackingSertifikasi ?? $trackingPelatihan;
+
+                                            // Ambil ID Pengajuan Barang untuk link detail
+                                            $idPengajuan = $item->pengajuan_barang->id ?? ($item->pelatihan->pengajuan_barang->id ?? null);
                                         @endphp
 
                                         <tr>
                                             <td>{{ \Carbon\Carbon::parse($item->created_at)->translatedFormat('d F Y') }}</td>
                                             <td>{{ $item->user->karyawan->nama_lengkap ?? '-' }}</td>
                                             <td>{{ $item->nama_sertifikat }}</td>
-                                            <td>{{ $item->penyedia }} <br> <small class="text-muted">{{ $item->vendor }}</small></td>
-                                            <td>{{ \Carbon\Carbon::parse($item->tanggal_ujian)->translatedFormat('d F Y') }}</td>
-
-                                            {{-- 1. Tampilkan Tanggal (Merah jika expired) --}}
-                                            <td class="{{ $isExpired ? 'text-danger fw-bold' : '' }}">
-                                                {{ \Carbon\Carbon::parse($item->tanggal_berlaku_dari)->translatedFormat('d F Y') }} -
-                                                {{ $item->tanggal_berlaku_sampai ? \Carbon\Carbon::parse($item->tanggal_berlaku_sampai)->translatedFormat('d F Y') : 'Seumur Hidup' }}
-
-                                                @if($isExpired)
-                                                    <div style="font-size: 0.8em;">(Kadaluarsa)</div>
-                                                @endif
-                                            </td>
-
-                                            <td>Rp {{ number_format($item->harga, 0, ',', '.') }}</td>
-
-                                            {{-- 2. Tampilkan Status (Retired jika expired & approved) --}}
+                                            <td>{{ $item->vendor }}</td>
                                             <td>
-                                                @if($item->status_approval == 'approved')
-                                                    @if($isExpired)
-                                                        <span class="badge bg-secondary">RETIRED</span>
-                                                    @else
-                                                        <span class="badge bg-success">Approved</span>
-                                                    @endif
-                                                @elseif($item->status_approval == 'rejected')
-                                                    <span class="badge bg-danger">Rejected</span>
+                                                @if($item->tanggal_ujian)
+                                                    {{ \Carbon\Carbon::parse($item->tanggal_ujian)->translatedFormat('d F Y') }}
                                                 @else
-                                                    <span class="badge bg-warning text-dark">Pending</span>
+                                                    <span class="badge bg-secondary">Belum Diisi</span>
                                                 @endif
                                             </td>
+                                            <td class="{{ $isExpired ? 'text-danger fw-bold' : '' }}">
+                                                @if($item->tanggal_berlaku_dari)
+                                                    {{ \Carbon\Carbon::parse($item->tanggal_berlaku_dari)->translatedFormat('d F Y') }} -
+                                                    {{ $item->tanggal_berlaku_sampai ? \Carbon\Carbon::parse($item->tanggal_berlaku_sampai)->translatedFormat('d F Y') : 'Seumur Hidup' }}
 
+                                                    @if($isExpired)
+                                                        <div style="font-size: 0.8em;">(Kadaluarsa)</div>
+                                                    @endif
+                                                @else
+                                                    <span class="badge bg-secondary">Belum Diisi</span>
+                                                @endif
+                                            </td>
+                                            <td>Rp {{ number_format($item->harga, 0, ',', '.') }}</td>
+                                            <td>{{($item->keterangan) }}</td>
+
+                                            <td>
+                                                @if($finalTracking)
+                                                    <small class="d-block text-bold" style="font-size: 11px; line-height: 1.2;">
+                                                        {{ $finalTracking }}
+                                                    </small>
+                                                @else
+                                                    @if($item->status_approval == 'approved')
+                                                        @if($isExpired)
+                                                            <span class="badge bg-secondary">RETIRED</span>
+                                                        @else
+                                                            <span class="badge bg-success">Approved</span>
+                                                        @endif
+                                                    @elseif($item->status_approval == 'rejected')
+                                                        <span class="badge bg-danger">Rejected</span>
+                                                    @else
+                                                        <span class="badge bg-warning text-dark">Pending</span>
+                                                    @endif
+                                                @endif
+                                            </td>
                                             <td>
                                                 <div class="dropdown">
-                                                    <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>
+                                                    <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>
                                                     <div class="dropdown-menu">
-                                                        @if(auth()->user()->jabatan === 'Education Manager' && $item->status_approval === 'pending')
-                                                            <button class="dropdown-item" onclick="openApproveModal('{{ route('sertifikasi.approve', $item->id) }}')">
-                                                                <img src="{{ asset('icon/check-circle.svg') }}"> Approval
-                                                            </button>
+                                                        @if($idPengajuan)
+                                                            <a class="dropdown-item" href="{{ url('/pengajuanbarang/' . $idPengajuan) }}" target="_blank">
+                                                                <img src="{{ asset('icon/eye.svg') }}" width="16px"> Detail di Pengajuan Barang
+                                                            </a>
+                                                            <li><hr class="dropdown-divider"></li>
                                                         @endif
-
-                                                        @if($item->status_approval !== 'approved' && auth()->id() == $item->user_id)
+                                                        @if($item->status_approval === 'approved')
+                                                            @if($item->bukti_sertifikasi)
+                                                                <a class="dropdown-item" href="{{ asset('storage/' . $item->bukti_sertifikasi) }}" target="_blank">
+                                                                    <img src="{{ asset('icon/file-text.svg') }}" width="16px"> Lihat Bukti Sertifikat
+                                                                </a>
+                                                                @if(auth()->id() == $item->user_id)
+                                                                    <button class="dropdown-item" onclick="openUploadBuktiSertifikasiModal('{{ $item->id }}')">
+                                                                        <img src="{{ asset('icon/upload.svg') }}" width="16px"> Ganti Bukti Sertifikat
+                                                                    </button>
+                                                                @endif
+                                                            @else
+                                                                @if(auth()->id() == $item->user_id)
+                                                                    <button class="dropdown-item" onclick="openUploadBuktiSertifikasiModal('{{ $item->id }}')">
+                                                                        <img src="{{ asset('icon/upload.svg') }}" width="16px"> Upload Bukti Sertifikat
+                                                                    </button>
+                                                                @endif
+                                                            @endif
+                                                            <li><hr class="dropdown-divider"></li>
+                                                        @endif
+                                                        @if(auth()->user()->karyawan->jabatan === 'Education Manager' && $item->status_approval === 'pending')
+                                                            @if($item->pelatihan)
+                                                                <span class="dropdown-item-text text-muted fst-italic" style="font-size: 11px; max-width: 200px; white-space: normal;">
+                                                                    <i class="bi bi-info-circle"></i> Approval wajib dilakukan via menu <strong>Pelatihan</strong>.
+                                                                </span>
+                                                            @else
+                                                                <button class="dropdown-item" onclick="openApproveModal('{{ route('sertifikasi.approve', $item->id) }}')">
+                                                                    <img src="{{ asset('icon/check-circle.svg') }}"> Approval
+                                                                </button>
+                                                            @endif
+                                                            <li><hr class="dropdown-divider"></li>
+                                                        @endif
                                                             <button class="dropdown-item" onclick='openEditSertifikasi(@json($item))'>
                                                                 <img src="{{ asset('icon/edit.svg') }}" width="16px"> Edit
                                                             </button>
@@ -344,7 +510,6 @@
                                                                     <img src="{{ asset('icon/trash-danger.svg') }}"> Hapus
                                                                 </button>
                                                             </form>
-                                                        @endif
                                                     </div>
                                                 </div>
                                             </td>
@@ -376,7 +541,7 @@
                                             <th>Tanggal Dibuat</th>
                                             <th>Nama Karyawan</th>
                                             <th>Nama Pelatihan</th>
-                                            <th>Penyedia</th>
+                                            <th>Vendor</th>
                                             <th>Pelaksanaan</th>
                                             <th>Keterangan</th>
                                             <th>Harga</th>
@@ -390,35 +555,65 @@
                                             <td>{{ \Carbon\Carbon::parse($item->created_at)->translatedFormat('d F Y') }}</td>
                                             <td>{{ $item->user->karyawan->nama_lengkap ?? '-' }}</td>
                                             <td>{{ $item->nama_pelatihan }}</td>
-                                            <td>{{ $item->penyedia }}</td>
+                                            <td>{{ $item->vendor }}</td>
                                             <td>
                                                 {{ \Carbon\Carbon::parse($item->tanggal_mulai)->translatedFormat('d F Y') }}
                                                 -
                                                 {{ \Carbon\Carbon::parse($item->tanggal_selesai)->translatedFormat('d F Y') }}
                                             </td>
 
-                                            <td>{{ Str::limit($item->keterangan, 30) }}</td>
+                                            <td>{{($item->keterangan) }}</td>
                                             <td>Rp {{ number_format($item->harga, 0, ',', '.') }}</td>
                                             <td>
-                                                @if($item->status_approval == 'approved')
-                                                    <span class="badge bg-success">Approved</span>
-                                                @elseif($item->status_approval == 'rejected')
-                                                    <span class="badge bg-danger">Rejected</span>
+                                                @if($item->pengajuan_barang && $item->pengajuan_barang->tracking)
+                                                    <small class="d-block text-bold" style="font-size: 11px; line-height: 1.2;">
+                                                        {{ $item->pengajuan_barang->tracking->tracking }}
+                                                    </small>
                                                 @else
-                                                    <span class="badge bg-warning text-dark">Pending</span>
+                                                    @if($item->status_approval == 'approved')
+                                                        <span class="badge bg-success">Approved</span>
+                                                    @elseif($item->status_approval == 'rejected')
+                                                        <span class="badge bg-danger">Rejected</span>
+                                                    @else
+                                                        <span class="badge bg-warning text-dark">Pending</span>
+                                                    @endif
                                                 @endif
                                             </td>
                                             <td>
                                                 <div class="dropdown">
-                                                    <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>
+                                                    <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>
                                                     <div class="dropdown-menu">
-                                                        @if(auth()->user()->jabatan === 'Education Manager' && $item->status_approval === 'pending')
+                                                        @if($item->pengajuan_barang)
+                                                            <a class="dropdown-item" href="{{ url('/pengajuanbarang/' . $item->pengajuan_barang->id) }}" target="_blank">
+                                                                <img src="{{ asset('icon/eye.svg') }}" width="16px"> Detail di Pengajuan Barang
+                                                            </a>
+                                                            <li><hr class="dropdown-divider"></li>
+                                                        @endif
+                                                        @if($item->status_approval === 'approved')
+                                                            @if($item->bukti_pelatihan)
+                                                                <a class="dropdown-item" href="{{ asset('storage/' . $item->bukti_pelatihan) }}" target="_blank">
+                                                                    <img src="{{ asset('icon/file-text.svg') }}" width="16px"> Lihat Bukti Pelatihan
+                                                                </a>
+                                                                @if(auth()->id() == $item->user_id)
+                                                                    <button class="dropdown-item" onclick="openUploadBuktiModal('{{ $item->id }}')">
+                                                                        <img src="{{ asset('icon/upload.svg') }}" width="16px"> Ganti Bukti Pelatihan
+                                                                    </button>
+                                                                @endif
+                                                            @else
+                                                                @if(auth()->id() == $item->user_id)
+                                                                    <button class="dropdown-item" onclick="openUploadBuktiModal('{{ $item->id }}')">
+                                                                        <img src="{{ asset('icon/upload.svg') }}" width="16px"> Upload Bukti Pelatihan
+                                                                    </button>
+                                                                @endif
+                                                            @endif
+                                                            <li><hr class="dropdown-divider"></li>
+                                                        @endif
+                                                        @if(auth()->user()->karyawan->jabatan === 'Education Manager' && $item->status_approval === 'pending')
                                                             <button class="dropdown-item" onclick="openApproveModal('{{ route('pelatihan.approve', $item->id) }}')">
                                                                 <img src="{{ asset('icon/check-circle.svg') }}"> Approval
                                                             </button>
                                                         @endif
 
-                                                        @if($item->status_approval !== 'approved' && auth()->id() == $item->user_id)
                                                             <button class="dropdown-item" onclick='openEditPelatihan(@json($item))'>
                                                                 <img src="{{ asset('icon/edit.svg') }}" width="16px"> Edit
                                                             </button>
@@ -428,7 +623,6 @@
                                                                     <img src="{{ asset('icon/trash-danger.svg') }}"> Hapus
                                                                 </button>
                                                             </form>
-                                                        @endif
                                                     </div>
                                                 </div>
                                             </td>
@@ -447,7 +641,6 @@
 </div>
 
 <style>
-    /* Styling Cube Loader */
     .cube {
         width: 40px;
         height: 40px;
@@ -492,8 +685,6 @@
 <script>
     $(document).ready(function() {
         var activeTab = localStorage.getItem('activeTab');
-
-        // Jika ada history tab, buka tab tersebut
         if (activeTab) {
             var tabTrigger = document.querySelector('button[data-bs-target="' + activeTab + '"]');
             if (tabTrigger) {
@@ -502,14 +693,13 @@
             }
         }
 
-        // Event Listener: Setiap kali ganti tab, simpan ID-nya
         $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
-            var target = $(e.target).attr('data-bs-target'); // Contoh: #pelatihan
+            var target = $(e.target).attr('data-bs-target');
             localStorage.setItem('activeTab', target);
         });
 
         $('#tableSertifikasi').DataTable({
-            "order": [[0, "desc"]], // Urutkan berdasarkan kolom pertama (Tanggal) descending
+            "order": [[0, "desc"]],
         });
 
         $('#tablePelatihan').DataTable({
@@ -543,10 +733,31 @@
             Swal.fire({
                 icon: 'warning',
                 title: 'Validasi Gagal',
-                text: errorMessages, // Menampilkan detail error validasi
+                text: errorMessages,
                 confirmButtonText: 'Perbaiki'
             });
         @endif
+
+        var $toggle = $('#is_sertifikasi_toggle');
+        var $inputs = $('#sertifikasi_inputs');
+        var $namaSertifikat = $('#input_nama_sertifikat');
+        var $tglUjian = $('#input_tgl_ujian');
+
+        function handleToggleSertifikasi() {
+            if ($toggle.is(':checked')) {
+                $inputs.slideDown();
+                $namaSertifikat.prop('required', true);
+                $tglUjian.prop('required', false);
+            } else {
+                $inputs.slideUp();
+                $namaSertifikat.prop('required', false);
+                $tglUjian.prop('required', false);
+            }
+        }
+        $toggle.change(handleToggleSertifikasi);
+        if ($toggle.length) {
+            handleToggleSertifikasi();
+        }
 
     });
 
@@ -564,39 +775,43 @@
         }
     });
 
-    // Fungsi Buka Modal Edit Sertifikasi
     function openEditSertifikasi(data) {
-        // Set Action Form
         $('#formEditSertifikasi').attr('action', '/development/sertifikasi/' + data.id);
-
-        // Isi Input
         $('#edit_nama_sertifikat').val(data.nama_sertifikat);
-        $('#edit_penyedia').val(data.penyedia);
+        // $('#edit_penyedia').val(data.penyedia);
         $('#edit_vendor').val(data.vendor);
         $('#edit_harga_sertifikasi').val(data.harga);
         $('#edit_tanggal_ujian').val(data.tanggal_ujian);
         $('#edit_tanggal_berlaku_dari').val(data.tanggal_berlaku_dari);
         $('#edit_tanggal_berlaku_sampai').val(data.tanggal_berlaku_sampai);
-
-        // Buka Modal
+        $('#edit_keterangan_sertifikasi').val(data.keterangan);
         $('#editSertifikasiModal').modal('show');
     }
 
-    // Fungsi Buka Modal Edit Pelatihan
     function openEditPelatihan(data) {
-        // Set Action Form
         $('#formEditPelatihan').attr('action', '/development/pelatihan/' + data.id);
-
-        // Isi Input
         $('#edit_nama_pelatihan').val(data.nama_pelatihan);
-        $('#edit_penyedia_pelatihan').val(data.penyedia);
+        // $('#edit_penyedia_pelatihan').val(data.penyedia);
+        $('#edit_penyedia_vendor').val(data.vendor);
         $('#edit_tanggal_mulai').val(data.tanggal_mulai);
         $('#edit_tanggal_selesai').val(data.tanggal_selesai);
         $('#edit_harga_pelatihan').val(data.harga);
-        $('#edit_keterangan').val(data.keterangan);
-
-        // Buka Modal
+        $('#edit_keterangan_pelatihan').val(data.keterangan);
         $('#editPelatihanModal').modal('show');
+    }
+
+    function openUploadBuktiModal(id) {
+        var url = "/development/pelatihan/" + id + "/upload-bukti";
+        $('#formUploadBukti').attr('action', url);
+        $('#formUploadBukti').find('input[type="file"]').val('');
+        $('#uploadBuktiModal').modal('show');
+    }
+
+    function openUploadBuktiSertifikasiModal(id) {
+        var url = "/development/sertifikasi/" + id + "/upload-bukti";
+        $('#formUploadBuktiSertifikasi').attr('action', url);
+        $('#formUploadBuktiSertifikasi').find('input[type="file"]').val('');
+        $('#uploadBuktiSertifikasiModal').modal('show');
     }
 
 </script>

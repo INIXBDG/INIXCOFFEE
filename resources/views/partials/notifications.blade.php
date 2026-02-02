@@ -1352,7 +1352,7 @@
             </div>
         @endif
 
-        
+
     @if ($notification->data['message']['tipe'] == 'Preorder Modul')
         <div class="notification mb-3 p-3 border rounded bg-light">
             <div class="d-flex justify-content-between align-items-start">
@@ -1426,7 +1426,7 @@
             </div>
         </div>
     @endif
-    
+
     @if ($notification->data['message']['tipe'] == 'Persetujuan Preorder')
         <div class="notification mb-3 p-3 border rounded bg-light">
             <div class="w-100">
@@ -1542,18 +1542,18 @@
             $msg = $notification->data['message'];
             $kategori = $msg['tipe_kategori'] ?? 'Umum';
             $namaItem = $msg['nama_item'] ?? '-';
+
+            // AMBIL DATA TAMBAHAN
+            $namaSertifTambahan = $msg['nama_sertifikasi_tambahan'] ?? null;
+
             $harga = $msg['harga'] ?? 0;
-            
             // Data Tanggal
             $tglUjian = $msg['tanggal_ujian'] ?? null;
             $tglBerlakuDari = $msg['berlaku_dari'] ?? null;
             $tglBerlakuSampai = $msg['berlaku_sampai'] ?? null;
-            
-            // UPDATE: Ambil Tanggal Mulai & Selesai untuk Pelatihan
+            // Data Tanggal Pelatihan
             $tglMulai = $msg['tanggal_mulai'] ?? null;
             $tglSelesai = $msg['tanggal_selesai'] ?? null;
-            
-            // Fallback untuk notifikasi lama (jika ada)
             $tglPelatihanLama = $msg['tanggal_pelatihan'] ?? null;
 
             $tglPengajuan = $msg['tanggal_pengajuan'] ?? $msg['tanggal'] ?? null;
@@ -1567,47 +1567,58 @@
 
                 @if ($msg['tipe'] == 'Mengajukan Pengembangan Diri')
                     telah <strong>membuat pengajuan baru</strong> untuk
+
                 @elseif ($msg['tipe'] == 'Pengembangan Diri Disetujui')
-                    telah <strong>menyetujui</strong> pengajuan
+                    telah <strong>menyetujui</strong>. <br>
+                    <span class="text-success fst-italic">
+                        "Telah disetujui Education Manager dan Sudah menjadi pengajuan barang dengan kategori Sertifikasi dan Pelatihan"
+                    </span> <br>
+                    untuk data
+
                 @elseif ($msg['tipe'] == 'Pengembangan Diri Ditolak')
                     telah <strong>menolak</strong> pengajuan
                 @endif
 
-                <strong>{{ $kategori }}</strong>: 
-                "{{ $namaItem }}".
+                <strong>{{ $kategori }}</strong>:
+                "{{ $namaItem }}"
+
+                {{-- LOGIKA TAMPILAN GANDA --}}
+                @if($namaSertifTambahan)
+                     dan <strong>Sertifikasi</strong>: "{{ $namaSertifTambahan }}"
+                @endif
+                .
             </p>
 
             {{-- === AREA DETAIL INFORMASI === --}}
             <div class="alert alert-light border py-2 px-3 mb-2" style="font-size: 0.9rem;">
-                
+
                 {{-- A. Tampilkan Detail Sertifikasi --}}
                 @if($kategori == 'Sertifikasi' && $tglUjian)
+                    {{-- ... (Kode Lama Tetap Sama) ... --}}
                     <div class="row">
                         <div class="col-12 mb-1">
-                            <i class="bi bi-calendar-event text-primary"></i> 
+                            <i class="bi bi-calendar-event text-primary"></i>
                             Tgl Ujian: <strong>{{ \Carbon\Carbon::parse($tglUjian)->translatedFormat('d M Y') }}</strong>
                         </div>
-                        <div class="col-12 mb-1">
-                            <i class="bi bi-clock-history text-warning"></i> 
-                            Berlaku: 
+                         <div class="col-12 mb-1">
+                            <i class="bi bi-clock-history text-warning"></i>
+                            Berlaku:
                             {{ $tglBerlakuDari ? \Carbon\Carbon::parse($tglBerlakuDari)->translatedFormat('d M Y') : '-' }}
                             s/d
                             {{ $tglBerlakuSampai ? \Carbon\Carbon::parse($tglBerlakuSampai)->translatedFormat('d M Y') : 'Seumur Hidup' }}
                         </div>
                     </div>
 
-                {{-- B. Tampilkan Detail Pelatihan (UPDATE: Rentang Tanggal) --}}
+                {{-- B. Tampilkan Detail Pelatihan --}}
                 @elseif($kategori == 'Pelatihan' && ($tglMulai || $tglPelatihanLama))
                     <div class="mb-1">
-                        <i class="bi bi-calendar-check text-primary"></i> 
-                        Pelaksanaan: 
+                        <i class="bi bi-calendar-check text-primary"></i>
+                        Pelaksanaan:
                         @if($tglMulai)
-                            {{-- Format Baru: Range Tanggal --}}
                             <strong>{{ \Carbon\Carbon::parse($tglMulai)->translatedFormat('d M Y') }}</strong>
                             s/d
                             <strong>{{ \Carbon\Carbon::parse($tglSelesai)->translatedFormat('d M Y') }}</strong>
                         @else
-                            {{-- Format Lama (Fallback) --}}
                             <strong>{{ \Carbon\Carbon::parse($tglPelatihanLama)->translatedFormat('d F Y') }}</strong>
                         @endif
                     </div>
@@ -1621,8 +1632,6 @@
                     </strong>
                 </div>
             </div>
-            {{-- === END DETAIL === --}}
-
             <p class="mb-2 text-muted">
                 @if (isset($msg['status']))
                     <i class="bi bi-info-circle"></i> {{ $msg['status'] }}<br>
