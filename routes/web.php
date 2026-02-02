@@ -60,8 +60,7 @@ use App\Http\Controllers\Webinar\TimelineItemController;
 use App\Http\Controllers\Webinar\ChecklistController;
 use App\HTTP\Controllers\SentryWebhookController;
 use App\Http\Controllers\InstructorDevelopmentController;
-
-
+use App\Http\Controllers\KomplainPesertaController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -176,6 +175,14 @@ Route::resource('penambahansouvenir', \App\Http\Controllers\PenambahanSouvenirCo
 Route::resource('penukaransouvenir', PenukaranSouvenirController::class);
 Route::resource('content-schedules', \App\Http\Controllers\ContentScheduleController::class);
 
+Route::get('/komplain-peserta', [KomplainPesertaController::class, 'index'])->name('komplain-peserta');
+Route::get('/dataNilaiPenilaian/{id}', [KomplainPesertaController::class, 'dataNilaiPenilaian'])->name('dataNilaiPenilaian');
+Route::get('komplain-peserta/create', [KomplainPesertaController::class, 'create'])->name('createKomplain');
+Route::post('komplain-peserta/store', [KomplainPesertaController::class, 'store'])->name('storeKomplain');
+Route::get('/komplain-peserta/{nilaifeedback_id}/edit', [KomplainPesertaController::class, 'edit'])->name('editKomplain');
+Route::post('komplain-peserta/{nilaifeedback_id}/update', [KomplainPesertaController::class, 'update'])->name('updateKomplain');
+Route::get('komplain-peserta/dataKomplain', [KomplainPesertaController::class, 'dataKomplain'])->name('dataKomplain');
+Route::post('komplain-peserta/delete/{id}', [KomplainPesertaController::class, 'destroy'])->name('hapusKomplain');
 
 Route::get('/rkmEditInstruktur/{id}', [App\Http\Controllers\RKMController::class, 'editInstruktur'])->name('editInstruktur');
 Route::put('/rkmUpdateInstruktur', [App\Http\Controllers\RKMController::class, 'updateInstruktur'])->name('updateInstruktur');
