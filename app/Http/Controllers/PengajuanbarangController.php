@@ -140,6 +140,7 @@ class PengajuanBarangController extends Controller
      */
     public function store(Request $request)
     {
+        // dd($request->all());
         $request->validate([
             'id_karyawan' => 'required|string|max:255',
             'id_kegiatan' => 'nullable|integer',
