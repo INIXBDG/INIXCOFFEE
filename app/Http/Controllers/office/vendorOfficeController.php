@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers\office;
 
-use App\Http\Controllers\Controller;
-use App\Models\vendorBengkel;
-use App\Models\vendorCoffeeBreak;
-use App\Models\vendorMakansiang;
-use App\Models\vendorSouvenir;
+use App\Models\karyawan;
 use Illuminate\Http\Request;
+use App\Models\vendorBengkel;
+use App\Models\vendorSouvenir;
+use App\Models\vendorMakansiang;
+use App\Models\vendorCoffeeBreak;
+use App\Http\Controllers\Controller;
 
 class vendorOfficeController extends Controller
 {
@@ -31,8 +32,10 @@ class vendorOfficeController extends Controller
             default:
                 abort(404);
         }
+        $user = auth()->user()->karyawan_id;
+        $karyawan = karyawan::findOrFail($user);
 
-        return view('office.vendor.index', compact('data', 'itemValue'));
+        return view('office.vendor.index', compact('data', 'itemValue', 'karyawan'));
     }
 
     public function store(Request $request)
