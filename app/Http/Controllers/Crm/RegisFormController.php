@@ -47,6 +47,7 @@ class RegisFormController extends Controller
             ->where('status_aktif', '1')
             ->get();
         // dd($users);
+        $exam = listexam::all();
 
         $month = Carbon::now()->month;
         $year  = Carbon::now()->year;
@@ -73,7 +74,7 @@ class RegisFormController extends Controller
         // Gabungkan ke format nomormu
         $no = "000/MKT-" . Auth::user()->id_sales . "-INIX/BDG/" . $romanMonth . "/" . $year;
         // dd($deskripsi);
-        return view('crm.regisform.penawaran', compact('sales', 'perusahaan', 'materi', 'ketentuan', 'deskripsi', 'no', 'users', 'perusahaans'));
+        return view('crm.regisform.penawaran', compact('sales', 'perusahaan', 'materi', 'ketentuan', 'deskripsi', 'no', 'users', 'perusahaans', 'exam'));
     }
 
     public function upload(Request $request)
