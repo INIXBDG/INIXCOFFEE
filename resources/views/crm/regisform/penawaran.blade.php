@@ -374,7 +374,7 @@
                 display: flex;
                 flex-wrap: wrap;
                 gap: 5mm;
-                margin-top: 8mm;
+                margin-top: 16mm;
                 justify-content: space-between;
                 page-break-inside: avoid;
             }
@@ -460,6 +460,11 @@
         <input type="number" id="ppn-rate" value="11" min="0" max="100" step="0.1" required>
         <label><input type="checkbox" id="include-ppn" checked> Termasuk PPN</label>
         <div id="pelatihan-list"></div>
+        <select name="listexam" id="exam" style="display: none">
+            @foreach ($exam as $item)
+                <option value="{{ $item->nama_exam }}">{{ $item->nama_exam }}</option>
+            @endforeach
+        </select>
         <button type="button" id="add-pelatihan">Tambah Pelatihan</button>
 
         <h3>Fasilitas dan Perlengkapan</h3>
@@ -471,12 +476,18 @@
         <button type="button" id="add-keuntungan">Tambah Keuntungan</button>
 
         <h3>Syarat dan Ketentuan</h3>
-        <label>Pilih Syarat (bisa lebih dari satu):</label>
-        <select id="syarat-select" multiple>
+        <label>Pilih Syarat dan Ketentuan:</label>
+        <div id="syarat-checkbox-list"
+            style="border: 1px solid #ccc; padding: 10px; max-height: 200px; overflow-y: auto;">
             @foreach ($ketentuan as $ket)
-                <option value="{{ $ket->id }}" data-content="{{ $ket->ketentuan }}">{{ $ket->ketentuan }}</option>
+                <div style="display: flex; align-items: flex-start; gap: 8px; margin-bottom: 5px;">
+                    <input type="checkbox" class="syarat-checkbox" id="syarat-{{ $ket->id }}"
+                        data-content="{{ $ket->ketentuan }}" style="width: auto; margin-top: 4px;">
+                    <label for="syarat-{{ $ket->id }}"
+                        style="cursor: pointer; font-size: 13px;">{{ $ket->ketentuan }}</label>
+                </div>
             @endforeach
-        </select>
+        </div>
 
         <h3>Data Sales</h3>
         @php
@@ -642,30 +653,40 @@
             const row = document.createElement('div');
             row.className = 'pelatihan-row';
 
-            row.innerHTML = `
+            const examOptions = document.getElementById('exam').innerHTML;
+
+          row.innerHTML = `
                 <div style="display: flex; gap: 5px;">
                     <select class="materi-select" style="width: 30%;">
-                        <option value="">-- Pilih Template Materi --</option>
+                        <option value="">-- Template Materi --</option>
                         ${materiData.map(m => `<option value="${m.id}" data-nama="${m.nama_materi}" data-durasi="${m.durasi}">${m.nama_materi}</option>`).join('')}
                     </select>
-                    <input type="text" class="materi-text" placeholder="Nama Materi (Bisa diedit)" required style="width: 70%;">
+                    <input type="text" class="materi-text" placeholder="Nama Materi" required style="width: 70%;">
                 </div>
                 
-                <div style="display: flex; align-items: center; gap: 5px;">
-                    <input type="number" class="durasi-pelatihan" placeholder="Durasi" min="1" required style="width: 70px;">
+                <div style="display: flex; gap: 5px; margin-top: 5px;">
+                    <select class="exam-select" style="width: 100%;">
+                        <option value="-">-- Tanpa Exam --</option>
+                        ${examOptions}
+                    </select>
                 </div>
 
-                <input type="date" class="tanggal-awal-pelatihan" required>
-                <input type="text" class="tanggal-pelatihan" readonly placeholder="Tanggal Akhir Otomatis">
-                <input type="text" class="harga-pelatihan" placeholder="Harga (Rp)" required>
-                <input type="text" class="ppn-amount" readonly placeholder="PPN Amount">
-                <button type="button" onclick="this.parentElement.remove()">Hapus</button>
+                <div style="display: flex; align-items: center; gap: 5px; margin-top: 5px;">
+                    <input type="number" class="durasi-pelatihan" placeholder="Durasi" min="1" required style="width: 70px;">
+                    <input type="date" class="tanggal-awal-pelatihan" required style="flex: 1;">
+                </div>
+
+                <input type="text" class="tanggal-pelatihan" readonly placeholder="Tanggal Akhir Otomatis" style="margin-top: 5px;">
+                <input type="text" class="harga-pelatihan" placeholder="Harga (Rp)" required style="margin-top: 5px;">
+                <input type="text" class="ppn-amount" readonly placeholder="PPN Amount" style="margin-top: 5px;">
+                <button type="button" onclick="this.parentElement.remove()" style="background: #ff4d4d; color: white; border: none; cursor: pointer;">Hapus Baris</button>
             `;
             document.getElementById('pelatihan-list').appendChild(row);
 
             // Seleksi elemen
             const materiSelect = row.querySelector('.materi-select');
-            const materiTextInput = row.querySelector('.materi-text'); // Input baru untuk nama materi yg di customize
+            const materiTextInput = row.querySelector(
+                '.materi-text'); // Input baru untuk nama materi yg di customize
             const durasiInput = row.querySelector('.durasi-pelatihan');
             const tanggalAwalInput = row.querySelector('.tanggal-awal-pelatihan');
             const tanggalPelatihanInput = row.querySelector('.tanggal-pelatihan');
@@ -676,14 +697,16 @@
                 const ppnRate = parseFloat(document.getElementById('ppn-rate').value) || 0;
                 const includePPN = document.getElementById('include-ppn').checked;
                 const price = parseFloat(hargaInput.value) || 0;
-                const { ppnAmount } = calculatePriceWithPPN(price, ppnRate, includePPN);
+                const {
+                    ppnAmount
+                } = calculatePriceWithPPN(price, ppnRate, includePPN);
                 ppnAmountInput.value = formatRupiah(ppnAmount);
             }
 
             function updateEndDate() {
-                const durasi = parseInt(durasiInput.value) || 0; 
+                const durasi = parseInt(durasiInput.value) || 0;
                 const startDate = tanggalAwalInput.value;
-                
+
                 if (durasi > 0 && startDate) {
                     const endDate = calculateEndDate(startDate, durasi);
                     tanggalPelatihanInput.value = endDate || 'Tanggal tidak valid';
@@ -807,13 +830,10 @@
             let isPelatihanValid = true;
 
             pelatihanRows.forEach(row => {
-                // MODIFIKASI DISINI: Ambil nilai dari input text .materi-text
                 const materi = row.querySelector('.materi-text').value || '';
-                
-                // Ambil nilai durasi langsung, tambahkan teks "Hari" manual karena inputnya type number
+                const exam = row.querySelector('.exam-select').value || '-'; // Ambil nilai exam
                 const durasiVal = row.querySelector('.durasi-pelatihan').value;
                 const durasi = durasiVal ? `${durasiVal} Hari` : '';
-
                 const tanggal = row.querySelector('.tanggal-pelatihan').value || '';
                 const harga = parseFloat(row.querySelector('.harga-pelatihan').value) || 0;
 
@@ -827,7 +847,7 @@
                 pelatihanHTML += `
                     <tr>
                         <td>${materi}</td>
-                        <td>${durasi}</td>
+                        <td>${exam}</td> <td>${durasi}</td>
                         <td>${tanggal}</td>
                         <td>${formatRupiah(total)}</td>
                     </tr>
@@ -875,19 +895,18 @@
                 return;
             }
 
-            // Proses syarat
-            const select = document.getElementById('syarat-select');
-            const selectedOptions = Array.from(select.selectedOptions);
+            const selectedCheckboxes = document.querySelectorAll('.syarat-checkbox:checked');
             let syaratList = '';
-            if (selectedOptions.length === 0) {
+
+            if (selectedCheckboxes.length === 0) {
                 syaratList = `
                     <li>Harga penawaran di atas sudah termasuk PPN ${ppnRate}%.</li>
                     <li>Form pendaftaran harus dikirim paling lambat 14 hari sebelum pelaksanaan pelatihan.</li>
                     <li>Pelatihan berlangsung pukul 09.00 hingga selesai.</li>
                     <li>Pelatihan diselenggarakan di Kantor Inixindo Bandung, Jalan Cipaganti No 95, Bandung.</li>`;
             } else {
-                selectedOptions.forEach(option => {
-                    const content = option.dataset.content || '';
+                selectedCheckboxes.forEach(cb => {
+                    const content = cb.getAttribute('data-content') || '';
                     syaratList += `<li>${content}</li>`;
                 });
             }
@@ -912,7 +931,7 @@
             `;
 
             const signatureHTML = signatureUrl && signatureUrl !== '' ? `
-                <img src="${signatureUrl}" alt="Tanda Tangan ${namaSales}" class="signature-img" />
+                <img src="${signatureUrl}" alt="Tanda Tangan ${namaSales}" class="signature-img" style="width: auto; height: 15mm; "/>
             ` : `<p>Tanda Tangan Tidak Tersedia</p>`;
 
             // Split content into two parts for page break before keuntungan
@@ -948,14 +967,14 @@
                             <p class="font-semibold">Dengan Hormat,</p>
                             <p>${getDeskripsi()}</p>
                             <table class="training-table">
-                                <thead>
-                                    <tr>
-                                        <th>Materi Pelatihan</th>
-                                        <th>Durasi Pelatihan</th>
-                                        <th>Tanggal Pelatihan</th>
-                                        <th>Harga Penawaran Per Peserta ${includePPN ? `(Termasuk PPN ${ppnRate}%)` : ''}</th>
-                                    </tr>
-                                </thead>
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 30%;">Materi Pelatihan</th>
+                                            <th style="width: 20%;">Exam</th> <th style="width: 15%;">Durasi</th>
+                                            <th style="width: 15%;">Tanggal</th>
+                                            <th style="width: 20%;">Harga ${includePPN ? `(Incl. PPN ${ppnRate}%)` : ''}</th>
+                                        </tr>
+                                    </thead>
                                 <tbody>
                                     ${pelatihanHTML}
                                 </tbody>
@@ -988,7 +1007,7 @@
                                 <p class="contact-info"><span class="label">Email</span><span class="value"><a href="mailto:${emailSales}" style="text-decoration:none; color: black;">: ${emailSales}</a></span></p>
                                 <br />
                                 <p class="mt-2">Hormat kami,</p>
-                                <p class="font-bold" style="padding-bottom:4%;">INIXINDO BANDUNG</p>
+                                <p class="font-bold">INIXINDO BANDUNG</p>
                                 <div class="signature">
                                     ${signatureHTML}
                                     <p><strong>${namaSales}</strong></p>
@@ -1040,7 +1059,7 @@
                     }
                     .content-container { margin-left:10mm;}
                     .logo img { width: 60mm; }
-                    .office-info { font-size: 9pt; line-height: 8pt; max-width: 70mm; }
+                    .office-info { font-size: 9pt; line-height: 4pt; max-width: 70mm; }
                     .waktu { text-align: right; font-size: 9pt; margin: 1mm 0; line-height: 12pt; }
                     .lampiran { font-size: 9pt; margin: 1mm 0; line-height: 8pt; }
                     .lampiran p { display: flex; align-items: flex-start; }
@@ -1059,17 +1078,14 @@
                     .training-table th { background-color: #f2f2f2; }
                     .list-disc { list-style-type: disc; padding-left: 15px; }
                     .list-decimal { list-style-type: decimal; padding-left: 30px; }
-                    .signature { margin-top: 13mm; }
-                    .signature-img { width: 30mm; height: auto; object-fit: contain; margin-bottom: 5mm; }
                     .vendor-images {
-                        display: flex;
-                        flex-wrap: wrap;
+                        display: grid;
+                        grid-template-columns: repeat(5, 1fr);
                         gap: 5mm;
-                        margin-top: 55mm;
-                        justify-content: space-between;
+                        margin-top: 80mm;
                     }
                     .vendor-images img {
-                        width: 30mm;
+                        width: 25mm;
                         height: auto;
                         object-fit: contain;
                     }
