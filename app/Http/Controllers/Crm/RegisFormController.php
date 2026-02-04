@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Deskripsi;
 use App\Models\karyawan;
 use App\Models\KetentuanForm;
+use App\Models\listexam;
 use App\Models\Materi;
 use App\Models\Peluang;
 use App\Models\Perusahaan;
