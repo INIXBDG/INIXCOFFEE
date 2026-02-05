@@ -56,7 +56,7 @@ class PengajuanbarangNotification extends Notification implements ShouldBroadcas
             'status' => 'unread',
         ]);
     }
-
+    
 
     public function toArray($notifiable): array
     {

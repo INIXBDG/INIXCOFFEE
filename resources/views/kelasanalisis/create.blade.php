@@ -190,6 +190,21 @@
                                 </div>
 
                                 <div class="row mb-3">
+                                    <label for="transportasi" class="col-md-4 col-form-label text-md-start">{{ __('Transportasi') }}</label>
+                                    <div class="col-md-6">
+                                        <div class="input-group">
+                                            <span class="input-group-text" id="currency-symbol">Rp.</span>
+                                            <input id="transportasi" type="text" class="form-control @error('transportasi') is-invalid @enderror" name="transportasi" autocomplete="transportasi" autofocus>
+                                        </div>
+                                        @error('transportasi')
+                                            <span class="invalid-feedback" role="alert">
+                                                <strong>{{ $message }}</strong>
+                                            </span>
+                                        @enderror
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
                                     <label for="pc_pax" class="col-md-4 col-form-label text-md-start">{{ __('PC per Pax') }}</label>
                                     <div class="col-md-5">
                                         <div class="input-group">
@@ -531,6 +546,10 @@
             $(this).val(formatRupiah(inputVal));
             updateSouvenir();
         });
+        $('#transportasi').on('input', function () {
+            let inputVal = $(this).val().replace(/[^,\d]/g, '');
+            $(this).val(formatRupiah(inputVal));
+        });
         $('#pc_pax, #pc_instruktur, #pc_peserta' ).on('input', function () {
             let inputVal = $(this).val().replace(/[^,\d]/g, '');
             $(this).val(formatRupiah(inputVal));
@@ -663,13 +682,14 @@
         const exam = parseFloat(removeRupiahFormat($('#exam').val())) || 0;
         const pc = parseFloat(removeRupiahFormat($('#pc').val())) || 0;
         const souvenir = parseFloat(removeRupiahFormat($('#souvenir').val())) || 0;
+        const transportasi = parseFloat(removeRupiahFormat($('#transportasi').val())) || 0;
         const konsumsi = parseFloat(removeRupiahFormat($('#konsumsi').val())) || 0;
         const biaya_modul_regular = parseFloat(removeRupiahFormat($('#biaya_modul_regular').val())) || 0;
         const biaya_modul_regular_dollar = parseFloat(removeRupiahFormat($('#biaya_modul_regular_dollar').val())) || 0;
         const alat = parseFloat(removeRupiahFormat($('#alat').val())) || 0;
         const pa_hotel = parseFloat(removeRupiahFormat($('#pa_hotel').val())) || 0;
         const total_harga_jual = parseFloat(removeRupiahFormat($('#total_harga_jual').val())) || 0;
-        var nett_penjualan = total_harga_jual - (total_fee_instruktur + pc + souvenir + konsumsi + biaya_modul_regular + biaya_modul_regular_dollar + alat + pa_hotel + exam);
+        var nett_penjualan = total_harga_jual - (total_fee_instruktur + pc + souvenir + transportasi + konsumsi + biaya_modul_regular + biaya_modul_regular_dollar + alat + pa_hotel + exam);
 
         // Debugging check to see the raw value of nett_penjualan
         console.log('Nett Penjualan before formatting:', nett_penjualan);
@@ -704,6 +724,7 @@
         const fee_instruktur = parseFloat(removeRupiahFormat($('#fee_instruktur').val())) || 0;
         const pc = parseFloat(removeRupiahFormat($('#pc').val())) || 0;
         const souvenir = parseFloat(removeRupiahFormat($('#souvenir').val())) || 0;
+        const transportasi = parseFloat(removeRupiahFormat($('#transportasi').val())) || 0;
         const konsumsi = parseFloat(removeRupiahFormat($('#konsumsi').val())) || 0;
         const biaya_modul_regular = parseFloat(removeRupiahFormat($('#biaya_modul_regular').val())) || 0;
         const biaya_modul_regular_dollar = parseFloat(removeRupiahFormat($('#biaya_modul_regular_dollar').val())) || 0;
@@ -723,6 +744,7 @@
         $('#total_fee_instruktur').val(total_fee_instruktur);
         $('#pc').val(pc);
         $('#souvenir').val(souvenir);
+        $('#transportasi').val(transportasi);
         $('#konsumsi').val(konsumsi);
         $('#biaya_modul_regular').val(biaya_modul_regular);
         $('#biaya_modul_regular_dollar').val(biaya_modul_regular_dollar);
