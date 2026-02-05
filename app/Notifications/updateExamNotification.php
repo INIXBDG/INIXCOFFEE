@@ -31,8 +31,8 @@ class updateExamNotification extends Notification implements ShouldBroadcast
 
     public function broadcastOn()
     {
-        return new PrivateChannel('private-notifikasi.' . $this->receiverId);
-    }
+        return new PrivateChannel('notifikasi.' . $this->receiverId);
+    }   
 
     public function broadcastAs(): string
     {
