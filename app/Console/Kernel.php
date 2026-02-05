@@ -236,6 +236,9 @@ class Kernel extends ConsoleKernel
                 ->update(['is_locked' => 1]);
         })->dailyAt('01:00'); // Jalankan setiap hari pukul 01:00
         $schedule->command('RKM:auto-job')->mondays()->at('10:47');
+
+        // update jatah cuit
+        $schedule->command('app:update-cuti')->yearlyOn(2, 1, '00:01');
     }
     /**
      * Register the commands for the application.
