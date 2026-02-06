@@ -59,13 +59,13 @@
                                                         </a>
                                                         @endcan
                                                         @can('Delete RKM')
-                                                        {{-- <form onsubmit="return confirm('Apakah Anda Yakin ?');" action="{{ route('rkm.destroy', $post->id) }}" method="POST">
+                                                        <form onsubmit="return confirm('Apakah Anda Yakin ?');" action="{{ route('rkm.destroy', $post->id) }}" method="POST">
                                                             @csrf
                                                             @method('DELETE')
                                                             <button class="btn click-danger mx-1">
                                                                 <img src="{{ asset('icon/trash.svg') }}" class="img-responsive" width="20px"> Hapus RKM
                                                             </button>
-                                                        </form> --}}
+                                                        </form>
                                                         @endcan
                                                         @endif
                                                         @can('Absensi RKM')
@@ -311,21 +311,6 @@
                                                         @endif
                                                     </div>
                                                     @endif
-                                                    @if ( auth()->user()->jabatan == 'SPV Sales' || auth()->user()->jabatan == 'Admin Sales' || auth()->user()->jabatan == 'Education Manager' || auth()->user()->jabatan == 'Office Manager' || auth()->user()->jabatan == 'Koordinator Office' || auth()->user()->jabatan == 'GM' || auth()->user()->jabatan == 'Finance & Accounting' || auth()->user()->jabatan == 'Adm Sales' || $kode_karyawan == $post->sales_key)
-                                                    <div class="col-md-4 col-sm-4 col-xs-4">
-                                                        <p>Registrasi Form</p>
-                                                        <p id="titikdua"> :</p>
-                                                    </div>
-                                                    <div class="col-md-1 col-sm-1 col-xs-1">
-                                                        <p>:</p>
-                                                    </div>
-                                                    <div class="col-md-7 col-sm-7 col-xs-7">
-                                                        @if (isset($post->registrasi_form))
-                                                        <a href="{{ asset('storage/' . $post->registrasi_form) }}" class="btn click-primary" target="_blank">Lihat Registrasi Form</a>
-                                                        @else
-                                                        <p>-</p>
-                                                        @endif
-                                                    </div>
                                                     <div class="col-md-4 col-sm-4 col-xs-4">
                                                         <p>Rekomendasi Materi Lanjutan</p>
                                                         <p id="titikdua"> :</p>
@@ -346,6 +331,21 @@
                                                                 data-bs-target="#modalDetailRekomendasi-{{ $post->id }}">
                                                             Lihat Rekomendasi
                                                         </button>
+                                                        @else
+                                                        <p>-</p>
+                                                        @endif
+                                                    </div>
+                                                    @if ( auth()->user()->jabatan == 'SPV Sales' || auth()->user()->jabatan == 'Admin Sales' || auth()->user()->jabatan == 'Education Manager' || auth()->user()->jabatan == 'Office Manager' || auth()->user()->jabatan == 'Koordinator Office' || auth()->user()->jabatan == 'GM' || auth()->user()->jabatan == 'Finance & Accounting' || auth()->user()->jabatan == 'Adm Sales' || $kode_karyawan == $post->sales_key)
+                                                    <div class="col-md-4 col-sm-4 col-xs-4">
+                                                        <p>Registrasi Form</p>
+                                                        <p id="titikdua"> :</p>
+                                                    </div>
+                                                    <div class="col-md-1 col-sm-1 col-xs-1">
+                                                        <p>:</p>
+                                                    </div>
+                                                    <div class="col-md-7 col-sm-7 col-xs-7">
+                                                        @if (isset($post->registrasi_form))
+                                                        <a href="{{ asset('storage/' . $post->registrasi_form) }}" class="btn click-primary" target="_blank">Lihat Registrasi Form</a>
                                                         @else
                                                         <p>-</p>
                                                         @endif

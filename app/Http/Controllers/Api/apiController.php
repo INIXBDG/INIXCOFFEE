@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivityInstruktur;
 use App\Models\Inventaris;
 use App\Models\jabatan;
 use Illuminate\Http\Request;
@@ -11,6 +12,7 @@ use App\Models\Materi;
 use App\Models\Perusahaan;
 use App\Models\Peserta;
 use App\Models\Registrasi;
+use App\Models\RekomendasiLanjutan;
 use App\Models\RKM;
 use App\Models\User;
 use Carbon\Carbon;
@@ -21,7 +23,7 @@ class apiController extends Controller
 {
     public function getFeedbacks()
     {
-        $feedbacks = Nilaifeedback::with('rkm')->whereYear('created_at', now()->year)->get();
+        $feedbacks = Nilaifeedback::with('rkm')->whereYear('created_at', '2025')->get();
 
         // $groupedFeedbacks = $feedbacks->groupBy('id_rkm');
         $groupedFeedbacks = $feedbacks->groupBy(function ($feedback) {
@@ -368,5 +370,81 @@ class apiController extends Controller
             'data' => $data
         ]);
     }
+
+    public function CSATinstruktur(Request $request)
+    {
+        $response = $this->getFeedbacks();
+
+        // Ambil data dari JsonResponse
+        $data = collect($response->getData(true)['data']);
+
+        $total = $data->sum('averageI');
+        $count = $data->whereNotNull('averageI')->count();
+
+        $rataRata = $count > 0 ? round($total / $count, 2) : 0;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'CSAT Instruktur',
+            'total' => $total,
+            'rata_rata' => $rataRata
+        ]);
+    }
+
+   public function AktivitasInstruktur(Request $request)
+    {
+        $tahun = Carbon::now()->year;
+        $sharingKnowledge = ActivityInstruktur::where('activity_type', 'Sharing Knowledge')
+            ->whereYear('created_at', $tahun)
+            ->count();
+
+        $pembuatanMateri = ActivityInstruktur::where('activity_type', 'Pembuatan Materi')
+            ->whereYear('created_at', $tahun)
+            ->count();
+        return response()->json([
+            'success' => true,
+            'sharingKnowledge' => $sharingKnowledge,
+            'pembuatanMateri' => $pembuatanMateri,
+        ]);
+    }
+
+
+    //  use Carbon\Carbon;
+
+    public function RekomendasiMateri(Request $request)
+    {
+        $tahun = Carbon::now()->year;
+
+        // total rekomendasi berdasarkan RKM tahun ini
+        $total = RekomendasiLanjutan::whereHas('rkm', function ($q) use ($tahun) {
+            $q->whereYear('tanggal_awal', $tahun);
+        })->count();
+
+        // filled = rekomendasi yang keterangannya terisi (bukan null / kosong)
+        $filled = RekomendasiLanjutan::whereHas('rkm', function ($q) use ($tahun) {
+            $q->whereYear('tanggal_awal', $tahun);
+        })
+        // ->whereNotNull('keterangan')
+        // ->where('keterangan', '!=', '')
+        ->count();
+
+        $persen = $total > 0 ? round(($filled / $total) * 100) : 0;
+
+        return response()->json([
+            'success' => true,
+            'persen' => $persen,
+            'total' => $total,
+            'filled' => $filled
+        ]);
+    }
+
+
+
+
+
+
+
+
+
 
 }
