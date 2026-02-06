@@ -57,6 +57,8 @@ use App\Http\Controllers\ForumSSOController;
 use App\Http\Controllers\Webinar\TimelineItemController;
 use App\Http\Controllers\Webinar\ChecklistController;
 use App\HTTP\Controllers\SentryWebhookController;
+use App\Http\Controllers\KnowledgeBaseController;
+
 
 
 /*
@@ -842,3 +844,11 @@ Route::patch('content-schedules/{contentSchedule}/mark-uploaded', [App\Http\Cont
     ->name('content-schedules.mark-uploaded');
 
 Route::get('/dashboard/feedback', [OfficeController::class, 'index']);
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('knowledgebase', [KnowledgeBaseController::class, 'index'])->name('knowledgebase.index');
+    Route::post('knowledgebase', [KnowledgeBaseController::class, 'store'])->name('knowledgebase.store');
+    Route::put('knowledgebase/{knowledgeBase}', [KnowledgeBaseController::class, 'update'])->name('knowledgebase.update');
+    Route::delete('knowledgebase/{knowledgeBase}', [KnowledgeBaseController::class, 'destroy'])->name('knowledgebase.destroy');
+    Route::get('knowledgebase/{knowledgeBase}/download', [KnowledgeBaseController::class, 'download'])->name('knowledgebase.download');
+});
