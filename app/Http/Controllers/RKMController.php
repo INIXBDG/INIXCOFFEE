@@ -48,6 +48,7 @@ class RKMController extends Controller
         $dataMateri = Materi::get();
         return view('rkm.index', compact('dataMateri'));
     }
+    
 
 
     public function excelDownload(Request $request)

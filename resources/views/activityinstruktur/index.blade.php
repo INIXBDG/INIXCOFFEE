@@ -33,9 +33,16 @@
                 <form id="activityFormDetail" method="POST" enctype="multipart/form-data">
                     @csrf 
                     <div class="modal-header">
-                        <h5 class="modal-title" id="activityModalLabel">Aktivitas <span id="modalDate"></span></h5>
+                        <div>
+                            <h5 class="modal-title" id="activityModalLabel">Aktivitas <span id="modalDate"></span></h5>
+                            <div class="form-check form-switch mt-1 d-none" id="editModeContainer">
+                                <input class="form-check-input" type="checkbox" id="enableEditMode">
+                                <label class="form-check-label small text-muted" for="enableEditMode">Mode Edit</label>
+                            </div>
+                        </div>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
+                    
                     <div class="modal-body">
                         <div id="lockAlert" class="alert alert-danger d-none"></div>
                         
@@ -45,24 +52,26 @@
 
                         <div class="mb-3">
                             <label for="formActivityType" class="form-label">Tipe Aktivitas</label>
-                            <select class="form-select" id="formActivityType" name="activity_type">
+                            <select class="form-select editable-field" id="formActivityType" name="activity_type">
                                 <option value="pilih" selected>Pilih Aktivitas</option>
-                                <option value="Mengajar" disabled>Mengajar</option>
                                 <option value="Sharing Knowledge">Sharing Knowledge</option>
                                 <option value="Webinar">Webinar</option>
                                 <option value="Projek">Projek</option>
                                 <option value="Pembuatan Materi">Pembuatan Materi</option>
+                                <option value="Pembuatan Silabus">Pembuatan Silabus</option>
+                                <option value="Aktivitas Internal Kantor">Aktivitas Internal Kantor</option>
+                                <option value="Meeting">Meeting</option>
                             </select>
                         </div>
                         
                         <div class="mb-3">
                             <label for="formActivity" class="form-label">Judul Aktivitas</label>
-                            <input type="text" class="form-control" id="formActivity" name="activity" required>
+                            <input type="text" class="form-control editable-field" id="formActivity" name="activity" required>
                         </div>
                         
                         <div class="mb-3">
                             <label for="formDesc" class="form-label">Deskripsi / Detail</label>
-                            <textarea class="form-control" id="formDesc" name="desc" rows="3"></textarea>
+                            <textarea class="form-control editable-field" id="formDesc" name="desc" rows="3"></textarea>
                         </div>
 
                         <div id="proofUploadSection" class="mt-4 border p-3 rounded d-none">
@@ -72,39 +81,22 @@
                                 <div class="input-group">
                                     <input type="text" class="form-control" id="formDoc" name="doc" placeholder="https://...">
                                     <a href="#" id="btnViewDoc" target="_blank" class="btn btn-outline-primary d-none">
-                                        <i class="bi bi-box-arrow-up-right"></i> Buka Link
+                                        <i class="bi bi-box-arrow-up-right"></i> Buka
                                     </a>
                                 </div>
                                 <small id="docInfo" class="form-text text-muted"></small>
                             </div>
                         </div>
-
                     </div>
+                    
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-                        <button type="submit" class="btn btn-primary" id="saveActivityDetailBtn">Simpan Detail</button>
+                        <button type="submit" class="btn btn-primary" id="saveActivityDetailBtn">Simpan</button>
                     </div>
                 </form>
+                
                 <div id="rkmDetailSection" class="rounded p-3 mb-3 d-none">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="activityModalLabel">Detail Mengajar (RKM)</h5></span></h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <strong>Materi:</strong> <span id="rkmMateri"></span>
-                        </div>
-                        <div class="mb-3">
-                            <strong>Tanggal:</strong> <span id="rkmTanggal"></span>
-                        </div>
-                        <div class="mb-3">
-                            <strong>Kelas:</strong> <span id="rkmKelas"></span>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -226,7 +218,7 @@
             }
             html += `</ul></div>`;
 
-           // --- BAGIAN 2: AKTIVITAS MANUAL ---
+            // --- BAGIAN 5: AKTIVITAS MANUAL ---
             html += `
                 <div class="mb-3">
                     <h6 class="border-bottom pb-2 mb-2 text-primary">
@@ -237,14 +229,12 @@
             `;
 
             if (Object.keys(data.manual_summary.details).length > 0) {
-                // Loop per Tipe Aktivitas (Contoh: "Sharing Knowledge")
                 $.each(data.manual_summary.details, function(type, stats) {
                     
-                    // 1. Buat List Nama Instruktur ke bawah
-                    let usersHtml = '<div class="mt-2 ps-3 border-start">'; // Beri indentasi sedikit
+                    // List Nama Instruktur
+                    let usersHtml = '<div class="mt-2 ps-3 border-start">';
                     if (stats.users) {
                         $.each(stats.users, function(userName, userCount) {
-                            // Format sesuai permintaan: Nama [Jumlah]
                             usersHtml += `
                                 <div class="mb-1 text-secondary">
                                     ${userName} <span class="badge bg-secondary">${userCount}</span>
@@ -254,7 +244,7 @@
                     }
                     usersHtml += '</div>';
 
-                    // 2. Render Item Utama
+                    // Item Utama
                     html += `
                         <li class="list-group-item px-0 py-3">
                             <div class="d-flex justify-content-between align-items-center mb-1">
@@ -263,12 +253,10 @@
                                 </span>
                                 <span class="badge bg-light text-dark border">${stats.total}</span>
                             </div>
-                            
                             <div class="progress mb-2" style="height: 3px;">
                                 <div class="progress-bar bg-success" role="progressbar" style="width: ${(stats.selesai / stats.total) * 100}%"></div>
                                 <div class="progress-bar bg-warning" role="progressbar" style="width: ${(stats.on_progress / stats.total) * 100}%"></div>
                             </div>
-                            
                             ${usersHtml}
                         </li>
                     `;
@@ -276,7 +264,70 @@
             } else {
                 html += `<li class="list-group-item text-muted px-0 fst-italic">Tidak ada aktivitas.</li>`;
             }
+            
             html += `</ul></div>`;
+             // --- BAGIAN 2: IZIN 3 JAM (BARU) ---
+            if (data.izin_summary && data.izin_summary.total_all > 0) {
+                html += `
+                    <div class="mb-3">
+                        <h6 class="border-bottom pb-2 mb-2 text-info">
+                            <i class="bi bi-clock me-1"></i> Izin 3 Jam
+                            <span class="badge bg-info text-dark float-end">${data.izin_summary.total_all}</span>
+                        </h6>
+                        <ul class="list-group list-group-flush small">
+                `;
+                $.each(data.izin_summary.details, function(name, count) {
+                    html += `
+                        <li class="list-group-item d-flex justify-content-between px-0 py-1">
+                            <span class="text-truncate" style="max-width: 180px;">${name}</span>
+                            <span class="fw-bold">${count}</span>
+                        </li>
+                    `;
+                });
+                html += `</ul></div>`;
+            }
+
+            // --- BAGIAN 3: CUTI (BARU) ---
+            if (data.cuti_summary && data.cuti_summary.total_all > 0) {
+                html += `
+                    <div class="mb-3">
+                        <h6 class="border-bottom pb-2 mb-2 text-warning">
+                            <i class="bi bi-airplane me-1"></i> Cuti
+                            <span class="badge bg-warning text-dark float-end">${data.cuti_summary.total_all} hari</span>
+                        </h6>
+                        <ul class="list-group list-group-flush small">
+                `;
+                $.each(data.cuti_summary.details, function(name, count) {
+                    html += `
+                        <li class="list-group-item d-flex justify-content-between px-0 py-1">
+                            <span class="text-truncate" style="max-width: 180px;">${name}</span>
+                            <span class="fw-bold">${count} hari</span>
+                        </li>
+                    `;
+                });
+                html += `</ul></div>`;
+            }
+
+            // --- BAGIAN 4: SAKIT (BARU) ---
+            if (data.sakit_summary && data.sakit_summary.total_all > 0) {
+                html += `
+                    <div class="mb-3">
+                        <h6 class="border-bottom pb-2 mb-2 text-danger">
+                            <i class="bi bi-hospital me-1"></i> Sakit
+                            <span class="badge bg-danger float-end">${data.sakit_summary.total_all} hari</span>
+                        </h6>
+                        <ul class="list-group list-group-flush small">
+                `;
+                $.each(data.sakit_summary.details, function(name, count) {
+                    html += `
+                        <li class="list-group-item d-flex justify-content-between px-0 py-1">
+                            <span class="text-truncate" style="max-width: 180px;">${name}</span>
+                            <span class="fw-bold">${count} hari</span>
+                        </li>
+                    `;
+                });
+                html += `</ul></div>`;
+            }
 
             $('#summaryContent').html(html);
         }
@@ -312,178 +363,105 @@
         }
 
         
-        function showActivityModal(tipe,date,activityId,activityData,title) 
-        {
+        // Variable global untuk menyimpan state form
+        let isEditMode = false;
+
+        // 1. Event Listener untuk Switch Edit Mode
+        $('#enableEditMode').on('change', function() {
+            isEditMode = $(this).is(':checked');
+            toggleFormInputs(isEditMode);
+        });
+
+        // 2. Fungsi untuk Enable/Disable Input
+        function toggleFormInputs(enable) {
+            // Pastikan tombol selalu muncul dulu (hapus d-none), kecuali dilock (logic lain)
+            $('#saveActivityDetailBtn').removeClass('d-none');
+
+            if (enable) {
+                // --- MODE EDIT AKTIF ---
+                // 1. Enable semua input field
+                $('.editable-field').prop('disabled', false).removeClass('bg-light');
+                
+                // 2. Ubah Teks Tombol & Enable Tombol
+                $('#saveActivityDetailBtn')
+                    .text('Simpan Perubahan')
+                    .prop('disabled', false); // Pastikan tombol bisa diklik
+                    
+            } else {
+                // --- MODE VIEW (MATI) ---
+                // 1. Disable input field & beri warna abu
+                $('.editable-field').prop('disabled', true).addClass('bg-light');
+                
+                // 2. Ubah Teks Tombol (Untuk sekadar update bukti)
+                $('#saveActivityDetailBtn')
+                    .text('Update Bukti')
+                    .prop('disabled', false); // Tetap enable agar bisa simpan Bukti/Link
+            }
+        }
+
+        // 3. Update Fungsi showActivityModal (Integrasi Logic)
+        function showActivityModal(tipe, date, activityId, activityData, title) {
             resetActivityModal();
+            // ... (Logika reset section RKM dll tetap sama) ...
+
             $('#rkmDetailSection').addClass('d-none');
             $('#activityFormDetail').removeClass('d-none');
-
-            $('#rkmMateri').text('');
-            $('#rkmTanggal').text('');
-            $('#rkmKelas').text('');
-
-            $('#formActivity').val('');
-            $('#formDesc').val('');
-            $('#formActivityType').val('pilih');
             
-            
-            console.log(title);
-            // --- Langkah 2: Set Data Awal & Variabel Kunci ---
-            
+            // Set Value
             $('#modalDate').text(moment(date).format('DD MMMM YYYY'));
             $('#formActivityDate').val(date);
             $('#formActivityId').val(activityId);
-            console.log(activityData);
-            var isTeachingActivity = activityData && activityData.type === 'rkm';
-            var activity_type = activityData && activityData.activity_type;
-            var isExistingActivity = activityId !== null;
-            var isCompleted = activityData && activityData.status === 'Selesai';
-            var isLocked = false; 
 
-            // Muat Data jika event diklik
-            if (activityData) {
+            // Cek Locking
+            var isLocked = false; 
+            var dateCarbon = moment(date);
+            const startOfThisWeek = moment().startOf('isoWeek');
+            if (dateCarbon.isBefore(startOfThisWeek)) {
+                isLocked = false;
+            }
+
+            // -- LOGIKA UTAMA --
+            if (activityData) { // DATA SUDAH ADA (Edit / View)
+                
+                // Isi Form
                 $('#formActivity').val(title);
                 $('#formDesc').val(activityData.desc);
-                $('#formActivityType').val(activity_type);
-                $('#formActivity').prop('disabled', true);
-                // $('#formDesc').prop('disabled', true);
-                $('#formActivityType').prop('disabled', true);
-                
-                // Ambil status lock dari data event
-                if (activityData.is_locked) {
-                    isLocked = true;
-                }
-            } else {
-                // Jika dateClick (aktivitas baru), pastikan formActivityType adalah Manual
-                $('#formActivityType').val('pilih');
-            }
-            // ===============================
-            // DOKUMEN TERSIMPAN
-            // ===============================
-            $('#docInfo').addClass('d-none').html('');
-            $('#btnViewDoc').addClass('d-none'); // Sembunyikan tombol secara default
-
-            if (activityData && activityData.doc) {
-                // Set value ke input
+                $('#formActivityType').val(activityData.activity_type || 'pilih');
                 $('#formDoc').val(activityData.doc);
 
-                // Jika isinya diawali http (Link), jadikan button "Open New Tab"
-                if (activityData.doc.startsWith('http')) {
-                    $('#btnViewDoc')
-                        .removeClass('d-none')
-                        .attr('href', activityData.doc);
-                } 
-                // Jika isinya path file storage (asumsi kode lama Anda)
-                else {
-                    const fileUrl = `/storage/${activityData.doc}`;
-                    const fileName = activityData.doc.split('/').pop();
+                // Setup Edit Mode Switch
+                $('#editModeContainer').removeClass('d-none'); // Tampilkan switch
+                $('#enableEditMode').prop('checked', false);   // Default off
+                toggleFormInputs(false);                       // Default disabled
+                
+                // Setup Form Action ke UPDATE
+                $('#activityFormDetail').attr('action', API_PROOF_UPDATE_URL);
 
-                    $('#btnViewDoc')
-                        .removeClass('d-none')
-                        .attr('href', fileUrl);
-                        
-                    $('#docInfo')
-                        .removeClass('d-none')
-                        .html(`📎 File: ${fileName}`);
-                }
-            }
-
-            
-            // Cek Status Locked Berdasarkan Tanggal (Frontend Check)
-            var dateCarbon = moment(date);
-            const startOfThisWeek = moment().startOf('isoWeek'); // Senin minggu ini
-
-            if (dateCarbon.isBefore(startOfThisWeek)) {
-                isLocked = false; // Minggu lalu & sebelumnya true
-            }
-
-            console.log({
-                klik: dateCarbon.format('YYYY-MM-DD'),
-                startOfThisWeek: startOfThisWeek.format('YYYY-MM-DD'),
-                locked: isLocked
-            });
-            // --- Langkah 3: Terapkan Logika Tiga Skenario (UI/UX) ---
-
-            if (isLocked) {
-                // ===============================
-                // SKENARIO 1: LOCKED
-                // ===============================
-
-                // Tampilkan alert lock
-                $('#lockAlert')
-                    .removeClass('d-none')
-                    .addClass('alert-danger')
-                    .html('Laporan minggu ini sudah <strong>dikunci</strong> dan tidak dapat diubah.');
-
-                // Jika aktivitas mengajar (RKM)
-                if (isTeachingActivity) {
-
-                    // Tampilkan detail RKM
-                    $('#rkmDetailSection').removeClass('d-none');
-                    $('#activityFormDetail').addClass('d-none');
-
-                    $('#rkmMateri').text(activityData.materi);
-                    $('#rkmTanggal').text(
-                        moment(activityData.tanggal_awal).format('DD MMM YYYY') +
-                        ' - ' +
-                        moment(activityData.tanggal_akhir).format('DD MMM YYYY')
-                    );
-                    $('#rkmKelas').text(activityData.metode_kelas ?? '-');
-
+                // Setup Bagian Bukti
+                $('#proofUploadSection').removeClass('d-none');
+                
+                if(activityData.doc) {
+                    $('#btnViewDoc').removeClass('d-none').attr('href', activityData.doc);
                 }
 
-                // Lock semua input (1x saja)
-                $('.form-control, .form-select').prop('disabled', true);
-
-                // Pastikan tidak ada tombol simpan
-                $('#saveActivityDetailBtn').addClass('d-none');
-            } else if (isExistingActivity) {
+            } else { // DATA BARU (Create)
                 
-                // --- Aktivitas SUDAH ADA (Update/Edit Mode) ---
-                
-                 if (isTeachingActivity) {
-
-                    $('#rkmDetailSection').removeClass('d-none');
-                    $('#activityFormDetail').addClass('d-none');
-
-                    $('#rkmMateri').text(activityData.materi);
-                    $('#rkmTanggal').text(
-                        moment(activityData.tanggal_awal).format('DD MMM YYYY') +
-                        ' - ' +
-                        moment(activityData.tanggal_akhir).format('DD MMM YYYY')
-                    );
-                    $('#rkmKelas').text(activityData.metode_kelas);
-
-                    // Semua form jadi readonly
-                    $('.form-control, .form-select').prop('disabled', true);
-                    $('#saveActivityDetailBtn').addClass('d-none');
-                } else {
-                    // **SKENARIO 3: MANUAL + DATA ADA**
-                    
-                    // BISA Update Detail (Tombol Simpan Detail muncul)
-                    $('#saveActivityDetailBtn').removeClass('d-none').text('Update Detail Aktivitas');
-                    $('#activityFormDetail').attr('action', API_PROOF_UPDATE_URL);
-                    $('#activityFormDetail').attr('method', 'POST');
-                    // BISA Update Bukti/Selesai (Bagian upload muncul)
-                    $('#proofUploadSection').removeClass('d-none');
-                    
-                    if (isCompleted) {
-                        $('#uploadProofBtn').text('Bukti Sudah Diunggah').prop('disabled', true);
-                    }
-                }
-                
-            } else { 
-                // **SKENARIO 4: DATA BELUM ADA (DateClick)**
+                // Setup Form Action ke STORE
                 $('#activityFormDetail').attr('action', API_STORE_URL);
-                $('#activityFormDetail').attr('method', 'POST');
-                // HANYA BISA Store Baru (Aktivitas Manual)
-                $('#saveActivityDetailBtn').removeClass('d-none').text('Simpan Aktivitas Baru');
                 
-                // Bagian upload bukti disembunyikan
-                $('#proofUploadSection').addClass('d-none');
+                $('#editModeContainer').addClass('d-none'); // Sembunyikan switch edit mode
+                toggleFormInputs(true); // Input harus aktif untuk data baru
+                $('#proofUploadSection').addClass('d-none'); // Sembunyikan upload bukti dulu
+                $('#saveActivityDetailBtn').text('Simpan Aktivitas Baru');
             }
-            
-            // 4. Tampilkan Modal
+
+            // Jika Terkunci (Locked)
+            if (isLocked) {
+                $('#lockAlert').removeClass('d-none').html('Mohon maaf laporan minggu yang dipilih terkunci.');
+                $('#editModeContainer').addClass('d-none'); // Tidak bisa edit
+                $('.form-control, .form-select, button[type="submit"]').prop('disabled', true);
+            }
+
             $('#activityModal').modal('show');
         }
     });

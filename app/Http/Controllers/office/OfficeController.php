@@ -7,8 +7,6 @@ use App\Models\RKM;
 use App\Models\Tickets;
 use App\Models\Feedback;
 use App\Models\Nilaifeedback;
-use App\Models\karyawan;
-use Illuminate\Http\Request;
 use App\Models\pengajuancuti;
 use App\Models\AbsensiKaryawan;
 use Barryvdh\DomPDF\Facade\Pdf;

@@ -187,7 +187,7 @@
         getDataRKM();
     });
 
- function excelDownloadAdmSales() {
+function excelDownloadAdmSales() {
         var tahun = document.getElementById('tahun').value;
         var bulan = document.getElementById('bulan').value;
 
@@ -221,43 +221,44 @@
         setTimeout(() => {
             document.body.removeChild(form);
         }, 1000);
-    }
+        
+}
 
-function getDataRKM() {
-    var tahun = document.getElementById('tahun').value;
-    var bulan = document.getElementById('bulan').value;
+// function getDataRKM() {
+//     var tahun = document.getElementById('tahun').value;
+//     var bulan = document.getElementById('bulan').value;
 
-        var form = document.createElement('form');
-        form.method = 'POST';
-        form.action = "{{ route('excel') }}";
-        form.style.display = 'none';
+//         var form = document.createElement('form');
+//         form.method = 'POST';
+//         form.action = "{{ route('excel') }}";
+//         form.style.display = 'none';
 
-        var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-        var csrf = document.createElement('input');
-        csrf.type = 'hidden';
-        csrf.name = '_token';
-        csrf.value = token;
-        form.appendChild(csrf);
+//         var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+//         var csrf = document.createElement('input');
+//         csrf.type = 'hidden';
+//         csrf.name = '_token';
+//         csrf.value = token;
+//         form.appendChild(csrf);
 
-        var inputTahun = document.createElement('input');
-        inputTahun.type = 'hidden';
-        inputTahun.name = 'tahun';
-        inputTahun.value = tahun;
-        form.appendChild(inputTahun);
+//         var inputTahun = document.createElement('input');
+//         inputTahun.type = 'hidden';
+//         inputTahun.name = 'tahun';
+//         inputTahun.value = tahun;
+//         form.appendChild(inputTahun);
 
-        var inputBulan = document.createElement('input');
-        inputBulan.type = 'hidden';
-        inputBulan.name = 'bulan';
-        inputBulan.value = bulan;
-        form.appendChild(inputBulan);
+//         var inputBulan = document.createElement('input');
+//         inputBulan.type = 'hidden';
+//         inputBulan.name = 'bulan';
+//         inputBulan.value = bulan;
+//         form.appendChild(inputBulan);
 
-        document.body.appendChild(form);
-        form.submit();
+//         document.body.appendChild(form);
+//         form.submit();
 
-        setTimeout(() => {
-            document.body.removeChild(form);
-        }, 1000);
-    }
+//         setTimeout(() => {
+//             document.body.removeChild(form);
+//         }, 1000);
+//     }
 
     function getDataRKM() {
         var tahun = document.getElementById('tahun').value;
@@ -438,12 +439,21 @@ function getDataRKM() {
                                     var myKode = userKode.toUpperCase();
                                     var showButton = (jabatan === 'Instruktur' && instrukturRKM.includes(myKode) || jabatan === 'Education Manager' && instrukturRKM.includes(myKode));
                                     const idList = rkm.id_all ? String(rkm.id_all).split(',').map(i => i.trim()) : [];
-                                    console.log(jabatan, instrukturRKM, myKode, showButton);
+                                    // console.log(jabatan, instrukturRKM, myKode, showButton);
                                     // 2. Siapkan Array Nama Perusahaan
                                     const perusahaanList = rkm.perusahaan.map(p => p.nama_perusahaan);
-                                    // console.log(perusahaanList);
-                                    const existingRecs = rkm.rekomendasi_group || [];
+                                    
+                                    let existingRecs = rkm.rekomendasi_group || []; 
+
                                     // Encode data ke JSON String untuk data-attribute
+                                    let rawRecs = rkm.rekomendasilanjutan; 
+
+                                    // Logika ini sekarang akan BERHASIL karena variabelnya 'let'
+                                    if (Array.isArray(rawRecs)) {
+                                        existingRecs = rawRecs;
+                                    } else if (rawRecs) {
+                                        existingRecs = [rawRecs];
+                                    }
                                     const jsonIds = JSON.stringify(idList).replace(/"/g, '&quot;');
                                     const jsonPT = JSON.stringify(perusahaanList).replace(/"/g, '&quot;');
                                     const jsonRecs = JSON.stringify(existingRecs).replace(/"/g, '&quot;');
@@ -555,29 +565,39 @@ function getDataRKM() {
         $('#Tanggal_View').text($(this).data('tanggal'));
 
         // 2. Ambil & Parse Data Array
-        let ids = $(this).data('ids');           // Array ID
-        let pts = $(this).data('perusahaan');    // Array PT
-        let recs = $(this).data('recs');         // Array Existing Data
+        let ids = $(this).data('ids');
+        let pts = $(this).data('perusahaan');
+        let recs = $(this).data('recs');
 
-        // Fallback parsing (aman jika data sudah berupa object)
+        // Parsing JSON aman
         if (typeof ids === 'string') ids = JSON.parse(ids);
         if (typeof pts === 'string') pts = JSON.parse(pts);
         if (typeof recs === 'string') recs = JSON.parse(recs);
+        // Pastikan recs adalah array (handle jika null/undefined)
+        if (!Array.isArray(recs)) recs = recs ? [recs] : [];
 
         // 3. Generate Form Loop
         let $container = $('#form-dynamic-container');
-        $container.empty(); // Reset container sebelum isi ulang
+        $container.empty(); 
 
         ids.forEach((rkmId, index) => {
             let namaPT = pts[index] || 'Perusahaan Lain';
 
-            // Cari data rekomendasi lama
+            // 1. CARI DATA LAMA (EXISTING DATA)
+            // Cari data di array 'recs' yang id_rkm-nya cocok
             let currentRec = recs.find(r => r.id_rkm == rkmId) || {};
-            // Pastikan selectedMateri array valid
-            let selectedMateri = currentRec.id_materi ? String(currentRec.id_materi).split(',') : [];
-            let textKeterangan = currentRec.keterangan || '';
+            
+            // 2. SIAPKAN DATA MATERI (Untuk Select2)
+            let selectedMateri = [];
+            if (currentRec.id_materi) {
+                selectedMateri = String(currentRec.id_materi).split(',').map(s => s.trim());
+            }
+            
+            // 3. SIAPKAN DATA KETERANGAN (Untuk Textarea)
+            // Jika null/undefined, ganti jadi string kosong ''
+            let textKeterangan = currentRec.keterangan || ''; 
 
-            // Template HTML Per Item
+            // 4. RENDER HTML
             let htmlItem = `
                 <div class="card bg-light border-0 mb-3 shadow-sm">
                     <div class="card-body">
@@ -598,7 +618,11 @@ function getDataRKM() {
 
                         <div class="form-group">
                             <label class="mb-1">Keterangan</label>
-                            <textarea name="data[${index}][keterangan]" class="form-control" rows="2" placeholder="Keterangan untuk ${namaPT}...">${textKeterangan}</textarea>
+                            
+                            <textarea name="data[${index}][keterangan]" 
+                                    class="form-control" 
+                                    rows="2" 
+                                    placeholder="Masukkan keterangan tambahan...">${textKeterangan}</textarea>
                         </div>
                     </div>
                 </div>
@@ -606,40 +630,37 @@ function getDataRKM() {
             $container.append(htmlItem);
         });
 
-        // 4. Inisialisasi Select2 setelah elemen masuk ke DOM
+        // 4. Inisialisasi Select2
         initDynamicSelect2(); 
     });
 
-    // Fungsi Helper Init Select2
     function initDynamicSelect2() {
-        // Ambil HTML options dari sumber tersembunyi (Langkah 1)
+        // Ambil opsi master dari HTML tersembunyi
         let optionsHtml = $('#source-options-materi').html();
 
         $('.rekomendasi-dynamic').each(function() {
             let $el = $(this);
             
-            // 1. Masukkan Option Materi ke dalam Select
+            // 1. Isi opsi select (Wajib ada sebelum .val() dipanggil)
             $el.html(optionsHtml);
 
-            // 2. Ambil data value yang tersimpan (jika ada)
-            // Kita parse JSON string array yang kita simpan di data-selected tadi
-            let selectedValues = $el.data('selected'); 
-
-            // 3. Aktifkan Select2
+            // 2. Aktifkan Select2
             $el.select2({
                 placeholder: "Pilih Materi",
                 allowClear: true,
                 width: '100%',
-                dropdownParent: $('#modalRekomendasiLanjutan') // Wajib agar input search bisa diklik di modal
+                dropdownParent: $('#modalRekomendasiLanjutan')
             });
 
-            // 4. Set Value Terpilih (Trigger change agar Select2 update tampilan)
-            if (selectedValues && selectedValues.length > 0) {
-                $el.val(selectedValues).trigger('change');
+            // 3. [INTI SOLUSI] Set Value dari data lama
+            let savedValues = $el.data('selected'); // Ambil array ["29", "30"]
+            
+            if (savedValues && Array.isArray(savedValues) && savedValues.length > 0) {
+                // Set value dan paksakan trigger change agar UI Select2 berubah
+                $el.val(savedValues).trigger('change');
             }
         });
     }
-
         $('#formStoreRekomendasi').on('submit', function(e) {
             e.preventDefault();
 
