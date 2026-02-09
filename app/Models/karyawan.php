@@ -38,6 +38,13 @@ class karyawan extends Model
         'whatsapp',
         'telepon',
         'gaji',
+        'alamat_lengkap',
+        'gender',
+        'tempat_lahir',
+        'tanggal_lahir',
+        'religion',
+        'provinsi',
+        'kota',
     ];
 
     public function user()
@@ -98,5 +105,10 @@ class karyawan extends Model
     public function getHashidsAttribute()
     {
         return Hashids::encode($this->id);
+    }
+
+    public function educations()
+    {
+        return $this->hasMany(EducationalBackground::class, 'kode_karyawan', 'kode_karyawan');
     }
 }

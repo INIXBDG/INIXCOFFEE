@@ -99,7 +99,7 @@
                                 <h5 class="card-title text-dark fw-bold mb-3">
                                 Sertifikasi
                                 </h5>
-                                
+
                                 @if($sertifikasis->count() > 0)
                                     <div class="list-group list-group-flush">
                                         @foreach($sertifikasis as $sertifikat)
@@ -123,7 +123,7 @@
                                                         @endif
                                                     </small>
                                                 </div>
-                                                
+
                                                 {{-- Logika Badge Retired/Approved --}}
                                                 @if($isExpired)
                                                     <span class="badge bg-secondary">RETIRED</span>
@@ -250,6 +250,34 @@
                                 @endif
                             </div>
                             @endif
+                        </div>
+                    </div>
+                    @endif
+
+                    @if ($users->karyawan->educations && $users->karyawan->educations->count() > 0)
+                    <div class="card education-card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Latar Belakang Pendidikan</h5>
+                            <div class="detail-list">
+                                {{-- Gunakan align-items-start agar label tetap di posisi atas --}}
+                                <div class="detail-row" style="align-items: flex-start;">
+
+                                    {{-- Kolom Kiri: Label (Hanya 1 kali) --}}
+                                    <span class="detail-label">Pendidikan</span>
+
+                                    {{-- Kolom Kanan: Loop Data Sekolah --}}
+                                    <span class="detail-value text-end">
+                                        @foreach ($users->karyawan->educations as $education)
+                                            {{-- Item sekolah --}}
+                                            <div class="{{ !$loop->last ? 'mb-2 pb-2' : '' }}"
+                                                 style="{{ !$loop->last ? 'border-bottom: 1px dashed #e9ecef;' : '' }}">
+                                                {{ $education->name }}
+                                            </div>
+                                        @endforeach
+                                    </span>
+
+                                </div>
+                            </div>
                         </div>
                     </div>
                     @endif

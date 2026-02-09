@@ -17,6 +17,7 @@ use App\Models\PengajuanBarang;
 use App\Models\detailPengajuanBarang;
 use App\Notifications\ApprovalbarangNotification;
 use Illuminate\Support\Facades\Storage;
+use App\Models\SpecializationArea;
 
 
 class InstructorDevelopmentController extends Controller
@@ -31,6 +32,7 @@ class InstructorDevelopmentController extends Controller
         $jabatan = $user->karyawan->jabatan;
         $isManager = ($jabatan === 'Education Manager');
 
+        // 1. Query Sertifikasi
         $sertifikasiQuery = Sertifikasi::with([
             'user.karyawan',
             'approver',
@@ -38,6 +40,7 @@ class InstructorDevelopmentController extends Controller
             'pengajuan_barang.tracking'
         ]);
 
+        // 2. Query Pelatihan
         $pelatihanQuery = Pelatihan::with(['user.karyawan', 'approver', 'pengajuan_barang.tracking']);
 
         if (!$isManager) {
@@ -48,7 +51,21 @@ class InstructorDevelopmentController extends Controller
         $sertifikasis = $sertifikasiQuery->latest()->get();
         $pelatihans = $pelatihanQuery->latest()->get();
 
-        return view('development.index', compact('sertifikasis', 'pelatihans'));
+        // 3. Query Specialization Area
+        if ($isManager) {
+            // Manager: Melihat SEMUA data specialization
+            $specializations = SpecializationArea::latest()->get();
+        } else {
+            // Non-Manager: Melihat HANYA data miliknya sendiri
+            $specializations = collect();
+            if ($user->karyawan && $user->karyawan->kode_karyawan) {
+                $specializations = SpecializationArea::where('kode_instruktur', $user->karyawan->kode_karyawan)
+                    ->latest()
+                    ->get();
+            }
+        }
+
+        return view('development.index', compact('sertifikasis', 'pelatihans', 'specializations'));
     }
 
     public function storeSertifikasi(Request $request)
@@ -256,7 +273,6 @@ class InstructorDevelopmentController extends Controller
 
     public function approveSertifikasi(Request $request, $id)
     {
-        // 1. Validasi Jabatan
         if (auth()->user()->karyawan->jabatan !== 'Education Manager') {
             abort(403, 'Unauthorized');
         }
@@ -267,19 +283,28 @@ class InstructorDevelopmentController extends Controller
             $sertifikasi = Sertifikasi::with('user.karyawan')->findOrFail($id);
             $status = $request->status_approval;
 
-            // 2. Update Status Sertifikasi
+            // --- LOGIKA DETEKSI RENEWAL YANG LEBIH KUAT ---
+            // 1. Cek History: Apakah sudah pernah punya ID Pengajuan Barang?
+            $hasHistory = !is_null($sertifikasi->id_pengajuan_barang);
+
+            // 2. Cek Intent: Apakah di keterangan ada kata 'Perpanjangan'?
+            $hasKeyword = stripos($sertifikasi->keterangan, 'Perpanjangan') !== false;
+
+            // Jika salah satu terpenuhi, anggap sebagai renewal
+            $isRenewal = $hasHistory || $hasKeyword;
+
+            // Update Status Sertifikasi
             $sertifikasi->update([
                 'status_approval' => $status,
                 'approved_by'     => Auth::id(),
                 'approved_at'     => now(),
             ]);
 
-            // 3. Logika Jika Approved (Buat Pengajuan Barang & Tracking)
             if ($status === 'approved') {
                 $karyawan = $sertifikasi->user->karyawan;
 
                 if ($karyawan) {
-                    // A. Buat Header Pengajuan Barang
+                    // A. Buat Header Pengajuan Barang BARU
                     $pengajuan = PengajuanBarang::create([
                         'id_karyawan' => $karyawan->id,
                         'tipe'        => 'Training & Sertifikasi',
@@ -287,51 +312,54 @@ class InstructorDevelopmentController extends Controller
                         'id_tracking' => 0,
                     ]);
 
+                    // B. Update relasi ke ID Pengajuan yang baru
                     $sertifikasi->update([
                         'id_pengajuan_barang' => $pengajuan->id
                     ]);
 
+                    // C. MODIFIKASI NAMA BARANG
+                    $namaBarang = $sertifikasi->nama_sertifikat;
+
+                    if ($isRenewal) {
+                        // Tambahkan suffix (Perpanjang)
+                        $namaBarang .= ' (Perpanjang)';
+                    }
+
                     $keteranganDetail = 'Sertifikasi: ' . $sertifikasi->nama_sertifikat .
                                         ' via ' . $sertifikasi->vendor .
-                                        ' (Ujian: ' . \Carbon\Carbon::parse($sertifikasi->tanggal_ujian)->format('d M Y') . ')';
+                                        ' (Tanggal: ' . \Carbon\Carbon::parse($sertifikasi->tanggal_ujian)->format('d M Y') . ')';
 
+                    // D. Simpan Detail dengan Nama yang sudah dimodifikasi
                     detailPengajuanBarang::create([
                         'id_pengajuan_barang' => $pengajuan->id,
-                        'nama_barang'         => $sertifikasi->nama_sertifikat,
+                        'nama_barang'         => $namaBarang, // <--- Pastikan variabel ini yang dipakai
                         'qty'                 => 1,
                         'harga'               => $sertifikasi->harga,
                         'keterangan'          => $keteranganDetail,
                     ]);
 
-                    // D. Create Tracking 1 (Backdate ke waktu pengajuan dibuat)
+                    // E. Tracking & Notifikasi (Tetap sama)
                     tracking_pengajuan_barang::create([
                         'id_pengajuan_barang' => $pengajuan->id,
                         'tracking'            => 'Diajukan dan Sedang Ditinjau oleh Education Manager',
                         'tanggal'             => $sertifikasi->created_at,
                     ]);
 
-                    // E. Create Tracking 2 (Approval Saat Ini)
                     $trackingTerbaru = tracking_pengajuan_barang::create([
                         'id_pengajuan_barang' => $pengajuan->id,
                         'tracking'            => 'Telah disetujui oleh Education Manager dan sedang diproses oleh Finance',
                         'tanggal'             => now(),
                     ]);
 
-                    // F. Update Header Tracking ID
                     $pengajuan->update(['id_tracking' => $trackingTerbaru->id]);
 
-                    // G. Notifikasi ke Finance
+                    // Notifikasi Finance
                     $finances = karyawan::where('jabatan', 'Finance & Accounting')->get();
                     foreach ($finances as $finance) {
                         $userFinance = User::whereHas('karyawan', fn($q) => $q->where('kode_karyawan', $finance->kode_karyawan))->first();
                         if ($userFinance) {
-                            $dataNotifFinance = [
-                                'tanggal' => now(),
-                                'status'  => 'Menunggu Proses Finance',
-                            ];
-                            // Mengirim Notifikasi ke Finance
                             NotificationFacade::send($userFinance, new ApprovalbarangNotification(
-                                $dataNotifFinance,
+                                ['tanggal' => now(), 'status' => 'Menunggu Proses Finance'],
                                 '/pengajuanbarang',
                                 $karyawan->nama_lengkap,
                                 'Training & Sertifikasi',
@@ -342,27 +370,25 @@ class InstructorDevelopmentController extends Controller
                 }
             }
 
-            // 4. Notifikasi Balik ke User Pengaju
+            // Notifikasi Balik ke User
             $pengaju = $sertifikasi->user;
             if ($pengaju) {
                 $notifType = ($status == 'approved') ? 'Pengembangan Diri Disetujui' : 'Pengembangan Diri Ditolak';
                 $pesanStatus = ($status == 'approved') ? 'Disetujui & Diproses Finance' : 'Ditolak';
 
+                // Nama item di notifikasi juga ikut berubah
+                $namaNotif = $sertifikasi->nama_sertifikat . ($isRenewal ? ' (Perpanjang)' : '');
+
                 $dataNotif = [
                     'tipe_kategori'     => 'Sertifikasi',
-                    'nama_item'         => $sertifikasi->nama_sertifikat,
+                    'nama_item'         => $namaNotif,
                     'status'            => 'Status diubah menjadi: ' . $pesanStatus,
                     'tanggal_pengajuan' => now(),
                     'tanggal_ujian'     => $sertifikasi->tanggal_ujian,
-                    'berlaku_dari'      => $sertifikasi->tanggal_berlaku_dari,
-                    'berlaku_sampai'    => $sertifikasi->tanggal_berlaku_sampai,
                     'harga'             => $sertifikasi->harga,
                 ];
 
-                $path = '/development';
-                $receiverId = $pengaju->id;
-
-                NotificationFacade::send($pengaju, new DevelopmentNotification($dataNotif, $path, $notifType, $receiverId));
+                NotificationFacade::send($pengaju, new DevelopmentNotification($dataNotif, '/development', $notifType, $pengaju->id));
             }
 
             DB::commit();
@@ -372,7 +398,7 @@ class InstructorDevelopmentController extends Controller
             return redirect()->back()->with('error', 'Gagal update status: ' . $e->getMessage());
         }
 
-        return redirect()->back()->with('success', 'Status Sertifikasi diperbarui' . ($status == 'approved' ? ', data diteruskan ke Finance.' : '.'));
+        return redirect()->back()->with('success', 'Status Sertifikasi diperbarui.');
     }
 
     public function approvePelatihan(Request $request, $id)
@@ -549,9 +575,9 @@ class InstructorDevelopmentController extends Controller
     {
         $sertifikasi = Sertifikasi::where('user_id', Auth::id())->findOrFail($id);
 
-        if ($sertifikasi->status_approval === 'approved') {
-            return redirect()->back()->with('error', 'Data yang sudah disetujui tidak dapat diedit.');
-        }
+        // if ($sertifikasi->status_approval === 'approved') {
+        //     return redirect()->back()->with('error', 'Data yang sudah disetujui tidak dapat diedit.');
+        // }
 
         $request->validate([
             'nama_sertifikat'        => 'required|string|max:255',
@@ -624,5 +650,146 @@ class InstructorDevelopmentController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Gagal mengupload file: ' . $e->getMessage());
         }
+    }
+
+    public function storeSpecialization(Request $request)
+    {
+        $request->validate([
+            'specialization'        => 'required|string|max:255',
+            'detail_specialization' => 'required|string|max:255',
+        ]);
+
+        try {
+            $user = Auth::user();
+            $kodeInstruktur = $user->karyawan->kode_karyawan ?? null;
+
+            if (!$kodeInstruktur) {
+                return redirect()->back()->with('error', 'Gagal: Kode Instruktur/Karyawan tidak ditemukan.');
+            }
+
+            // Cek apakah instruktur sudah punya data (karena schema unique)
+            $exists = SpecializationArea::where('kode_instruktur', $kodeInstruktur)->exists();
+            if ($exists) {
+                return redirect()->back()->with('error', 'Gagal: Anda sudah memiliki data Specialization Area (Data harus unik per instruktur). Silakan edit data yang ada.');
+            }
+
+            SpecializationArea::create([
+                'specialization'        => $request->specialization,
+                'detail_specialization' => $request->detail_specialization,
+                'kode_instruktur'       => $kodeInstruktur,
+            ]);
+
+            return redirect()->back()->with('success', 'Specialization Area berhasil ditambahkan.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal menyimpan data: ' . $e->getMessage());
+        }
+    }
+
+    public function updateSpecialization(Request $request, $id)
+    {
+        $request->validate([
+            'specialization'        => 'required|string|max:255',
+            'detail_specialization' => 'required|string|max:255',
+        ]);
+
+        try {
+            $specialization = SpecializationArea::findOrFail($id);
+
+            // Validasi kepemilikan
+            if($specialization->kode_instruktur !== Auth::user()->karyawan->kode_karyawan) {
+                return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk mengedit data ini.');
+            }
+
+            $specialization->update([
+                'specialization'        => $request->specialization,
+                'detail_specialization' => $request->detail_specialization,
+            ]);
+
+            return redirect()->back()->with('success', 'Specialization Area berhasil diperbarui.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal memperbarui data: ' . $e->getMessage());
+        }
+    }
+
+    public function destroySpecialization($id)
+    {
+        try {
+            $specialization = SpecializationArea::findOrFail($id);
+
+            // Validasi kepemilikan
+            if($specialization->kode_instruktur !== Auth::user()->karyawan->kode_karyawan) {
+                return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk menghapus data ini.');
+            }
+
+            $specialization->delete();
+
+            return redirect()->back()->with('success', 'Specialization Area berhasil dihapus.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal menghapus data: ' . $e->getMessage());
+        }
+    }
+
+    public function storeRenewal(Request $request, $id)
+    {
+        $sertifikasi = Sertifikasi::where('user_id', Auth::id())->findOrFail($id);
+
+        $request->validate([
+            'tanggal_ujian'          => 'required|date',
+            'tanggal_berlaku_dari'   => 'nullable|date',
+            'tanggal_berlaku_sampai' => 'nullable|date|after_or_equal:tanggal_berlaku_dari',
+            'harga'                  => 'required|numeric|min:0',
+            'keterangan'             => 'nullable|string',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // PASTIKAN keterangan mengandung kata kunci agar mudah dideteksi saat approval
+            $keterangan = $request->keterangan;
+            if (stripos($keterangan, 'Perpanjangan') === false) {
+                $keterangan = 'Perpanjangan. ' . $keterangan;
+            }
+
+            $sertifikasi->update([
+                'tanggal_ujian'          => $request->tanggal_ujian,
+                'tanggal_berlaku_dari'   => $request->tanggal_berlaku_dari,
+                'tanggal_berlaku_sampai' => $request->tanggal_berlaku_sampai,
+                'harga'                  => $request->harga,
+                'keterangan'             => $keterangan, // Keterangan sudah ada keyword
+                'status_approval'        => 'pending',
+                'approved_by'            => null,
+                'approved_at'            => null,
+            ]);
+
+            // ... (Kode notifikasi tetap sama) ...
+            $managers = karyawan::where('jabatan', 'Education Manager')->get();
+            foreach ($managers as $manager) {
+                $userManager = User::whereHas('karyawan', fn($q) => $q->where('kode_karyawan', $manager->kode_karyawan))->first();
+                if ($userManager) {
+                    $dataNotif = [
+                        'id_user'           => Auth::id(),
+                        'tipe_kategori'     => 'Sertifikasi (Perpanjangan)',
+                        'nama_item'         => $sertifikasi->nama_sertifikat,
+                        'tanggal_pengajuan' => now(),
+                        'tanggal_ujian'     => $sertifikasi->tanggal_ujian,
+                        'berlaku_dari'      => $sertifikasi->tanggal_berlaku_dari,
+                        'berlaku_sampai'    => $sertifikasi->tanggal_berlaku_sampai,
+                        'harga'             => $sertifikasi->harga,
+                    ];
+                    NotificationFacade::send($userManager, new DevelopmentNotification($dataNotif, '/development', 'Mengajukan Pengembangan Diri', $userManager->id));
+                }
+            }
+
+            DB::commit();
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal mengajukan perpanjangan: ' . $e->getMessage());
+        }
+
+        return redirect()->back()->with('success', 'Pengajuan perpanjangan dikirim.');
     }
 }
