@@ -26,7 +26,7 @@ class PengajuanBarang extends Model
         'id_tracking',
         'tipe',
         'invoice',
-  
+
     ];
 
     /**
@@ -53,5 +53,4 @@ class PengajuanBarang extends Model
     {
         return $this->hasMany(detailPengajuanBarang::class, 'id_pengajuan_barang', 'id');
     }
-
 }

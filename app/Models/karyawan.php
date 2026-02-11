@@ -14,31 +14,7 @@ class karyawan extends Model
     use Notifiable;
     protected $appends = ['hashids'];
 
-    protected $fillable = [
-        'foto',
-        'nip',
-        'nama_lengkap',
-        'email',
-        'divisi',
-        'jabatan',
-        'rekening_maybank',
-        'rekening_bca',
-        'status_aktif',
-        'awal_probation',
-        'akhir_probation',
-        'awal_kontrak',
-        'akhir_kontrak',
-        'awal_tetap',
-        'akhir_tetap',
-        'keterangan',
-        'kode_karyawan',
-        'ttd',
-        'cuti',
-        'email',
-        'whatsapp',
-        'telepon',
-        'gaji',
-    ];
+    protected $fillable = ['foto', 'nip', 'nama_lengkap', 'email', 'divisi', 'jabatan', 'rekening_maybank', 'rekening_bca', 'status_aktif', 'awal_probation', 'akhir_probation', 'awal_kontrak', 'akhir_kontrak', 'awal_tetap', 'akhir_tetap', 'keterangan', 'kode_karyawan', 'ttd', 'cuti', 'email', 'whatsapp', 'telepon', 'gaji'];
 
     public function user()
     {
@@ -80,9 +56,7 @@ class karyawan extends Model
     }
     protected function image(): Attribute
     {
-        return Attribute::make(
-            get: fn($foto) => url('/storage/posts/' . $foto),
-        );
+        return Attribute::make(get: fn($foto) => url('/storage/posts/' . $foto));
     }
 
     public function tunjangankaryawan()
@@ -98,5 +72,10 @@ class karyawan extends Model
     public function getHashidsAttribute()
     {
         return Hashids::encode($this->id);
+    }
+
+    public function pickupDriver()
+    {
+        return $this->hasMany(pickupDriver::class, 'id_karyawan');
     }
 }

@@ -15,19 +15,19 @@
 
     <ul class="menu-inner py-1" style="flex-grow: 1; overflow-y: auto; overflow-x: hidden; height: 100%;">
         @php
-            $user = Auth::user();
-            $allowedRoles = [
-                'Adm Sales',
-                'HRD',
-                'Finance & Accounting',
-                'GM',
-                'Sales',
-                'Direktur Utama',
-                'Direktur',
-                'SPV Sales',
-                'Customer Care',
-                'Admin Holding',
-            ];
+        $user = Auth::user();
+        $allowedRoles = [
+        'Adm Sales',
+        'HRD',
+        'Finance & Accounting',
+        'GM',
+        'Sales',
+        'Direktur Utama',
+        'Direktur',
+        'SPV Sales',
+        'Customer Care',
+        'Admin Holding',
+        ];
         @endphp
 
         <li class="menu-item {{ request()->is('office/dashboard') ? 'active' : '' }}">
@@ -123,6 +123,28 @@
                 <div class="text-truncate" data-i18n="contact">Dashboard Souvenir</div>
             </a>
         </li>
+
+        <li class="menu-header small text-uppercase">
+            <span class="menu-header-text">DRIVER</span>
+        </li>
+
+        <li class="menu-item {{ request()->routeIs('office.pickupDriver.index') ? 'active open' : '' }}">
+            <a href="{{ route('office.pickupDriver.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-car"></i>
+                <div class="text-truncate" data-i18n="contact">Koordinasi Driver</div>
+            </a>
+        </li>
+
+        @if ($user->jabatan === "Driver")
+        
+        @endif
+        <li class="menu-item {{ request()->routeIs('office.biayaTransportasi.index') ? 'active open' : '' }}">
+            <a href="{{ route('office.biayaTransportasi.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-receipt"></i>
+                <div class="text-truncate" data-i18n="contact">Biaya Transportasi</div>
+            </a>
+        </li>
+
 
         <li class="menu-item mb-4"></li>
     </ul>
