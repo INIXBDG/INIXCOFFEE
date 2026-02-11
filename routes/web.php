@@ -134,6 +134,8 @@ Route::middleware('auth')->get('/notifications/unread-count', function () {
     ]);
 })->name('notifications.unread-count');
 
+Route::get('/daily-activities-data', [DailyActivityController::class, 'activitiesData']);
+
 
 Route::get('/paymantAdvance/edit/{id}', [netSalesController::class, 'edit'])->name('netSales.edit.index');
 Route::get('paymantAdvance/{year}/{month}', [App\Http\Controllers\netSalesController::class, 'getRkmDataPerBulanPerMinggu']);

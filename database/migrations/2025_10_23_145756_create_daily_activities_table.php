@@ -19,8 +19,7 @@ return new class extends Migration
             $table->enum('status', ['On Progres', 'On Progres Dilanjutkan Besok','Gagal','Selesai'])->default('On Progres');
             $table->text('description')->nullable();
             $table->string('doc')->nullable();
-            $table->date('activity_date')->default(now());
-
+            $table->date('start_date')->default(now());
             $table->timestamp('on_progress_at')->nullable();
             $table->timestamp('on_progress_next_day_at')->nullable();
             $table->timestamp('failed_at')->nullable();
