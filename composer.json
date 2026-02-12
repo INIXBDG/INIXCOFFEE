@@ -25,7 +25,6 @@
         "romanzipp/laravel-queue-monitor": "^5.4",
         "sentry/sentry-laravel": "^4.16",
         "setasign/fpdi": "^2.6",
-        "setasign/fpdi-tcpdf": "^2.3",
         "spatie/laravel-image-optimizer": "^1.8",
         "spatie/laravel-permission": "^6.13",
         "vinkla/hashids": "^11.0"

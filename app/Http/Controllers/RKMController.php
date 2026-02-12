@@ -312,7 +312,7 @@ class RKMController extends Controller
         foreach ($rkm as $data) {
             // Gabung comments (kode lama)
             $comments = $comments->merge($data->comments);
-            
+
             // Ambil souvenir (kode lama)
             if (!$souvenir) {
                 $souvenir = souvenirinhouse::where('id_rkm', $data->id)->first();
@@ -320,21 +320,21 @@ class RKMController extends Controller
 
             // --- PROSES PEMANGGILAN MATERI REKOMENDASI ---
             if ($data->rekomendasilanjutan && $data->rekomendasilanjutan->id_materi) {
-            // 1. Pecah string menjadi array awal
-            $raw_ids = explode(',', $data->rekomendasilanjutan->id_materi);
-            $materi_ids = [];
+                // 1. Pecah string menjadi array awal
+                $raw_ids = explode(',', $data->rekomendasilanjutan->id_materi);
+                $materi_ids = [];
 
-            // 2. Loop (Foreach) untuk membersihkan ID (trim spasi)
-            foreach ($raw_ids as $id) {
-                $clean_id = trim($id); // Hapus spasi depan/belakang
-                if (!empty($clean_id)) {
-                    $materi_ids[] = $clean_id;
+                // 2. Loop (Foreach) untuk membersihkan ID (trim spasi)
+                foreach ($raw_ids as $id) {
+                    $clean_id = trim($id); // Hapus spasi depan/belakang
+                    if (!empty($clean_id)) {
+                        $materi_ids[] = $clean_id;
+                    }
                 }
-            }
 
-            // 3. Ambil data materi sekaligus (Query whereIn lebih efisien daripada query di dalam loop)
-            $data->rekomendasilanjutan->list_materi_lanjutan = Materi::whereIn('id', $materi_ids)->get();
-            // dd($materi_ids, $data->rekomendasilanjutan->list_materi_lanjutan);
+                // 3. Ambil data materi sekaligus (Query whereIn lebih efisien daripada query di dalam loop)
+                $data->rekomendasilanjutan->list_materi_lanjutan = Materi::whereIn('id', $materi_ids)->get();
+                // dd($materi_ids, $data->rekomendasilanjutan->list_materi_lanjutan);
             } else {
                 // Jika tidak ada data, set koleksi kosong
                 if ($data->rekomendasilanjutan) {
@@ -679,7 +679,8 @@ class RKMController extends Controller
 
         $perubahan = [];
         foreach ($changes as $field => $newValue) {
-            if ($field === 'updated_at') continue;
+            if ($field === 'updated_at')
+                continue;
             $perubahan[$field] = [
                 'old' => $oldData[$field] ?? null,
                 'new' => $newValue,
@@ -694,67 +695,67 @@ class RKMController extends Controller
             'user_update' => auth()->user()->username,
         ];
 
-            $bersangkutan = RKM::findOrFail($id);
+        $bersangkutan = RKM::findOrFail($id);
 
-            $Offman = karyawan::where('jabatan', 'Office Manager')->first();
-            $kooroff = karyawan::where('jabatan', 'Koordinator Office')->first();
-            $Eduman = karyawan::where('jabatan', 'Education Manager')->first();
-            $SPVSales = karyawan::where('jabatan', 'SPV Sales')->first();
-            $GM = karyawan::where('jabatan', 'GM')->first();
-            $cs_codes = karyawan::where('jabatan', 'Customer Care')->latest()->get();
-            $ah_codes = karyawan::where('jabatan', 'Admin Holding')->latest()->get();
-            $ts_codes = karyawan::where('jabatan', 'Technical Support')->latest()->get();
+        $Offman = karyawan::where('jabatan', 'Office Manager')->first();
+        $kooroff = karyawan::where('jabatan', 'Koordinator Office')->first();
+        $Eduman = karyawan::where('jabatan', 'Education Manager')->first();
+        $SPVSales = karyawan::where('jabatan', 'SPV Sales')->first();
+        $GM = karyawan::where('jabatan', 'GM')->first();
+        $cs_codes = karyawan::where('jabatan', 'Customer Care')->latest()->get();
+        $ah_codes = karyawan::where('jabatan', 'Admin Holding')->latest()->get();
+        $ts_codes = karyawan::where('jabatan', 'Technical Support')->latest()->get();
 
-            $CS = $cs_codes->pluck('kode_karyawan')->filter()->all();
-            $AH = $ah_codes->pluck('kode_karyawan')->filter()->all();
-            $TS = $ts_codes->pluck('kode_karyawan')->filter()->all();
+        $CS = $cs_codes->pluck('kode_karyawan')->filter()->all();
+        $AH = $ah_codes->pluck('kode_karyawan')->filter()->all();
+        $TS = $ts_codes->pluck('kode_karyawan')->filter()->all();
 
-            $sales = karyawan::where('kode_karyawan', $bersangkutan->sales_key)->first();
-            $instrukturs = karyawan::whereIn('kode_karyawan', [
-                $bersangkutan->instruktur_key,
-                $bersangkutan->instruktur_key2,
-                $bersangkutan->asisten_key
-            ])->get();
+        $sales = karyawan::where('kode_karyawan', $bersangkutan->sales_key)->first();
+        $instrukturs = karyawan::whereIn('kode_karyawan', [
+            $bersangkutan->instruktur_key,
+            $bersangkutan->instruktur_key2,
+            $bersangkutan->asisten_key
+        ])->get();
 
-            // Array untuk single users (yang pakai mapping)
-            $singleUsers = array_map(function ($user) {
-                return $user === '-' ? null : $user;
-            }, [
-                $request->sales_key,
-                $Eduman->kode_karyawan ?? null,
-                $Offman->kode_karyawan ?? null,
-                $kooroff->kode_karyawan ?? null,
-                $SPVSales->kode_karyawan ?? null,
-                $GM->kode_karyawan ?? null,
-                $sales->kode_karyawan ?? null,
-            ]);
+        // Array untuk single users (yang pakai mapping)
+        $singleUsers = array_map(function ($user) {
+            return $user === '-' ? null : $user;
+        }, [
+            $request->sales_key,
+            $Eduman->kode_karyawan ?? null,
+            $Offman->kode_karyawan ?? null,
+            $kooroff->kode_karyawan ?? null,
+            $SPVSales->kode_karyawan ?? null,
+            $GM->kode_karyawan ?? null,
+            $sales->kode_karyawan ?? null,
+        ]);
 
-            $instrukturKeys = $instrukturs->pluck('kode_karyawan')->toArray();
+        $instrukturKeys = $instrukturs->pluck('kode_karyawan')->toArray();
 
-            // Gabungkan single users dengan array CS, AH, TS
-            $usersFlat = collect($singleUsers)
-                ->merge($CS)  // Tambahkan semua Customer Care
-                ->merge($AH)  // Tambahkan semua Admin Holding
-                ->merge($TS)  // Tambahkan semua Technical Support
-                ->filter()    // Hapus nilai kosong/null
-                ->unique()    // Hapus duplikat
-                ->values()    // Reset index
-                ->all();      // Konversi ke PHP array
+        // Gabungkan single users dengan array CS, AH, TS
+        $usersFlat = collect($singleUsers)
+            ->merge($CS)  // Tambahkan semua Customer Care
+            ->merge($AH)  // Tambahkan semua Admin Holding
+            ->merge($TS)  // Tambahkan semua Technical Support
+            ->filter()    // Hapus nilai kosong/null
+            ->unique()    // Hapus duplikat
+            ->values()    // Reset index
+            ->all();      // Konversi ke PHP array
 
-            // Query users
-            $users = User::whereHas('karyawan', function ($query) use ($usersFlat) {
-                $query->whereIn('kode_karyawan', $usersFlat);
-            })->get();
+        // Query users
+        $users = User::whereHas('karyawan', function ($query) use ($usersFlat) {
+            $query->whereIn('kode_karyawan', $usersFlat);
+        })->get();
 
-            $path = '/rkm/' . $request->materi_key . 'ixb' . $hari . 'ie' . $tahun . 'ie' . $bulan . 'ixb' . $kelas;
+        $path = '/rkm/' . $request->materi_key . 'ixb' . $hari . 'ie' . $tahun . 'ie' . $bulan . 'ixb' . $kelas;
 
-            foreach ($users as $user) {
-                $receiverId = $user->id;
-                NotificationFacade::send($user, new RKMUpdateNotification($data, $path, $receiverId));
-            }
+        foreach ($users as $user) {
+            $receiverId = $user->id;
+            NotificationFacade::send($user, new RKMUpdateNotification($data, $path, $receiverId));
+        }
 
-            return redirect()->route('rkm.index')->with(['success' => 'Data Berhasil Diubah!']);
-             }
+        return redirect()->route('rkm.index')->with(['success' => 'Data Berhasil Diubah!']);
+    }
     /**
      * destroy
      *
@@ -818,10 +819,10 @@ class RKMController extends Controller
                 return preg_replace('/[^\w\d\-_.]+/u', '_', trim($str));
             }
 
-            $nama_materi     = sanitizeFileName($post->materi->nama_materi ?? 'materi');
+            $nama_materi = sanitizeFileName($post->materi->nama_materi ?? 'materi');
             $nama_perusahaan = sanitizeFileName($post->perusahaan->nama_perusahaan ?? 'perusahaan');
-            $tanggal_awal    = sanitizeFileName($post->tanggal_awal ?? date('Y-m-d'));
-            $tanggal_akhir   = sanitizeFileName($post->tanggal_akhir ?? date('Y-m-d'));
+            $tanggal_awal = sanitizeFileName($post->tanggal_awal ?? date('Y-m-d'));
+            $tanggal_akhir = sanitizeFileName($post->tanggal_akhir ?? date('Y-m-d'));
 
             // Compose safe filename.
             $filename =
@@ -1223,4 +1224,98 @@ class RKMController extends Controller
             'data' => array_values($monthlyData)
         ]);
     }
+
+    public function chartHariMengajarInstrukturPerTahun(Request $request)
+    {
+        $validated = $request->validate([
+            'tahun' => ['required', 'integer', 'min:2000', 'max:' . (date('Y') + 1)]
+        ]);
+
+        $tahun = $validated['tahun'];
+
+        $rkms = RKM::with(['instruktur', 'instruktur2', 'asisten'])
+            ->whereYear('tanggal_awal', $tahun)
+            ->where('status', '!=', 'Cancel')
+            ->get();
+
+        if ($rkms->isEmpty()) {
+            return response()->json([
+                'labels' => [],
+                'data' => [],
+                'max_value' => 10,
+                'tahun' => $tahun,
+                'has_data' => false
+            ]);
+        }
+
+        $instrukturMap = [];
+
+        foreach ($rkms as $rkm) {
+            if ($rkm->instruktur_key && $rkm->instruktur) {
+                $key = $rkm->instruktur_key;
+                $nama = $rkm->instruktur->nama_lengkap
+                    ?? $rkm->instruktur->nama_karyawan
+                    ?? 'Instruktur ' . $key;
+
+                if (!isset($instrukturMap[$key])) {
+                    $instrukturMap[$key] = ['nama' => $nama, 'total_hari' => 0];
+                }
+
+                $tglAwal = Carbon::parse($rkm->tanggal_awal);
+                $tglAkhir = Carbon::parse($rkm->tanggal_akhir);
+                $instrukturMap[$key]['total_hari'] += $tglAwal->diffInDays($tglAkhir) + 1;
+            }
+
+            if ($rkm->instruktur_key2 && $rkm->instruktur2) {
+                $key = $rkm->instruktur_key2;
+                $nama = $rkm->instruktur2->nama_lengkap
+                    ?? $rkm->instruktur2->nama_karyawan
+                    ?? 'Instruktur ' . $key;
+
+                if (!isset($instrukturMap[$key])) {
+                    $instrukturMap[$key] = ['nama' => $nama, 'total_hari' => 0];
+                }
+
+                $tglAwal = Carbon::parse($rkm->tanggal_awal);
+                $tglAkhir = Carbon::parse($rkm->tanggal_akhir);
+                $instrukturMap[$key]['total_hari'] += $tglAwal->diffInDays($tglAkhir) + 1;
+            }
+
+            if ($rkm->asisten_key && $rkm->asisten) {
+                $key = $rkm->asisten_key;
+                $nama = $rkm->asisten->nama_lengkap
+                    ?? $rkm->asisten->nama_karyawan
+                    ?? 'Instruktur ' . $key;
+
+                if (!isset($instrukturMap[$key])) {
+                    $instrukturMap[$key] = ['nama' => $nama, 'total_hari' => 0];
+                }
+
+                $tglAwal = Carbon::parse($rkm->tanggal_awal);
+                $tglAkhir = Carbon::parse($rkm->tanggal_akhir);
+                $instrukturMap[$key]['total_hari'] += $tglAwal->diffInDays($tglAkhir) + 1;
+            }
+        }
+
+        $instrukturData = array_values($instrukturMap);
+        usort($instrukturData, function ($a, $b) {
+            return $b['total_hari'] <=> $a['total_hari'];
+        });
+
+        $instrukturData = array_slice($instrukturData, 0, 15);
+
+        $labels = array_column($instrukturData, 'nama');
+        $dataValues = array_column($instrukturData, 'total_hari');
+
+        $maxValue = !empty($dataValues) ? max($dataValues) + 10 : 10;
+
+        return response()->json([
+            'labels' => $labels,
+            'data' => $dataValues,
+            'max_value' => $maxValue,
+            'tahun' => $tahun,
+            'has_data' => !empty($instrukturData)
+        ]);
+    }
 }
+
