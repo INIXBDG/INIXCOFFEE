@@ -8,6 +8,7 @@ use App\Models\Certificate;
 use App\Models\Invoice;
 use App\Models\jabatan;
 use App\Models\karyawan;
+use App\Models\Kwitansi;
 use App\Models\Outstanding;
 use App\Models\outstanding as ModelsOutstanding;
 use App\Models\Registrasi;
@@ -253,10 +254,10 @@ class OutstandingController extends Controller
         $endDate   = Carbon::now()->addMonth();
 
         $rkm = RKM::with(['perhitunganNetSales', 'outstanding', 'perusahaan', 'materi'])
-            ->whereHas('outstanding', function ($query) {
-                $query->where('status_pembayaran', '1');
-            })
-            ->whereHas('perhitunganNetSales')
+            // ->whereHas('outstanding', function ($query) {
+            //     $query->where('status_pembayaran', '1');
+            // })
+            // ->whereHas('perhitunganNetSales')
             ->whereBetween('tanggal_akhir', [$startDate, $endDate])
             ->get();
 
@@ -855,6 +856,22 @@ class OutstandingController extends Controller
                 $holding = storage_path('app/' . $cert->pdf_path);
                 $filesToMerge[] = $holding;
             }
+        }
+
+        // 7. Invoice 
+        $invoice = Invoice::where('id_rkm', $outstanding->id_rkm)->get();
+
+        if($invoice->file_path) {
+            $file = storage_path('app/'.$invoice->file_path);
+            $filesToMerge[] = $file;
+        }
+
+        // 8. Kwitansi 
+        $kwitansi = Kwitansi::where('id_rkm', $outstanding->id_rkm)->get();
+
+        if($kwitansi->file_path) {
+            $file = storage_path('app/'.$kwitansi->file_path);
+            $filesToMerge[] = $file;
         }
 
         if (empty($filesToMerge)) {

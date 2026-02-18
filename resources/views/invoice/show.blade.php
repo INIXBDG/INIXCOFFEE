@@ -275,9 +275,9 @@
 
     <!-- TOMBOL PRINT -->
     <div class="no-print text-center" style="margin-top:40px;">
-        <button onclick="window.print()" class="btn btn-primary">
-            <i class="bi bi-printer"></i> Print
-        </button>
+        <a href="{{ route('download.pdf', $invoice->id) }}" class="btn btn-primary">
+            <i class="bi bi-printer"></i> Pdf
+        </a>
     </div>
 </body>
 

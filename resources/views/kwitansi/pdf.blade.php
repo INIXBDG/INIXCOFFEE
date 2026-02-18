@@ -142,7 +142,7 @@
     <table class="meta">
         <tr>
             <td style="width:60%; vertical-align:top;">
-                <img src="{{ asset('icon/logoo.png') }}" alt="Logo" style="width:150px;"><br>
+                <img src="{{ public_path('icon/logoo.png') }}" alt="Logo" style="width:150px;"><br>
                 <p style="margin:0; font-weight:bold;">PT. INIXINDO AMIETE MANDIRI</p>
                 <p style="margin:0;">Jl. Cipaganti No.95, Bandung 40161</p>
                 <p style="margin:0;">Ph. (022) 2032831 / Fax. (022) 2032831</p>
@@ -159,10 +159,6 @@
             </td>
         </tr>
     </table>
-
-    <div class="no-print" style="position: absolute; top: 20px; right: 20px;">
-        <a href="{{ route('invoice.index') }}" class="btn btn-secondary">Kembali</a>
-    </div>
 
     <table style="margin-bottom:20px; white-space:nowrap;">
         <tr style="font-weight: bold;">
@@ -210,14 +206,13 @@
             <p style="margin:0; font-weight:bold;">a/n {{ $accountName }}</p>
 
             @if($kwitansi->invoice->catatan_pembayaran)
-                <p style="margin:0;">{{ $invoice->catatan_pembayaran }}</p>
+                <p style="margin:0;">{{ $kwitansi->invoice->catatan_pembayaran }}</p>
             @else
                 <p style="margin:0;">Note : Mohon nomor invoice dan nama perusahaan dicantumkan</p>
             @endif
         </td>
     </tr>
 </table>
-
 
     <table class="signature">
         <tr>
@@ -230,29 +225,5 @@
             </td>
         </tr>
     </table>
-    <div class="no-print" style="text-align: center;">
-        <a href="{{ route('kwitansi.pdf', $kwitansi->id) }}" class="btn btn-primary">
-            <i class="bi bi-printer"></i> Pdf
-        </a>
-    </div>
 </body>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script>
-    function downloadPDF() {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-
-        // Ambil isi halaman (sederhana, bisa pakai html2canvas untuk layout lengkap)
-        doc.html(document.body, {
-            callback: function (doc) {
-                // Nama file: Kwitansi + nomor invoice
-                let nomorInvoice = "{{ $kwitansi->invoice->invoice_number ?? 'NoInvoice' }}";
-                doc.save("Kwitansi-" + nomorInvoice + ".pdf");
-            },
-            x: 10,
-            y: 10
-        });
-    }
-</script>
 </html>
