@@ -1670,17 +1670,9 @@ function generateChartColors(count, opacity) {
     return colors;
 }
 
-/**
- * ============================================
- * CHART SILABUS PER INSTRUKTUR PER TAHUN
- * ============================================
- */
 
 let silabusPerInstrukturPerTahunChart = null;
 
-/**
- * Load Chart Silabus Per Instruktur Per Tahun
- */
 function loadSilabusPerInstrukturPerTahunChart() {
     var tahun = $('#tahun').val();
     var canvasId = 'silabusPerInstrukturPerTahunChart';
@@ -1695,20 +1687,16 @@ function loadSilabusPerInstrukturPerTahunChart() {
 
     $('#silabusPerInstrukturPerTahunEmpty').addClass('d-none');
 
-    // ✅ DESTROY CHART LAMA DENGAN BENAR
-    // Method 1: Cek dengan Chart.getChart()
     var existingChart = Chart.getChart(canvasId);
     if (existingChart) {
         existingChart.destroy();
     }
 
-    // Method 2: Destroy dari variable
     if (silabusPerInstrukturPerTahunChart) {
         silabusPerInstrukturPerTahunChart.destroy();
         silabusPerInstrukturPerTahunChart = null;
     }
 
-    // Method 3: Force cleanup semua chart di canvas ini
     Object.values(Chart.instances).forEach(chart => {
         if (chart.canvas.id === canvasId) {
             chart.destroy();
@@ -1720,7 +1708,6 @@ function loadSilabusPerInstrukturPerTahunChart() {
         method: 'GET',
         data: { tahun: tahun },
         success: function (response) {
-            // Validasi response
             if (!Array.isArray(response) || response.length === 0) {
                 $('#silabusPerInstrukturPerTahunEmpty')
                     .text('Tidak ada data silabus untuk tahun ' + tahun)
@@ -1742,14 +1729,11 @@ function loadSilabusPerInstrukturPerTahunChart() {
                 return;
             }
 
-            // Get canvas context
             const ctx = document.getElementById(canvasId).getContext('2d');
 
-            // Generate warna dinamis
             const backgroundColors = labels.map((_, index) => getChartColor(index) + '80');
             const borderColors = labels.map((_, index) => getChartColor(index));
 
-            // ✅ BUAT CHART BARU
             silabusPerInstrukturPerTahunChart = new Chart(ctx, {
                 type: 'bar',
                 data: {

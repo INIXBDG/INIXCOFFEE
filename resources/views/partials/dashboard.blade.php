@@ -646,8 +646,8 @@
                                 <option value="12">Desember</option>
                             </select>
                             <div class="position-relative w-100 d-flex justify-content-center"
-                                style="min-height: 320px;">
-                                <canvas id="jumlahUpdateMateriPerbulanChart" style="max-width: 900px;"></canvas>
+                                style="min-height: 700px;">
+                                <canvas id="jumlahUpdateMateriPerbulanChart" style="max-width: 1500px;"></canvas>
                                 <div id="chartLoading_JumlahUpdateMateriPerbulan"
                                     class="position-absolute top-50 start-50 translate-middle text-center d-none">
                                     <div class="spinner-border text-primary" style="width:3rem;height:3rem;"></div>
@@ -667,7 +667,7 @@
                         <div class="card d-flex flex-column p-3">
                             <h5 class="text-center mb-3">Silabus Per Instruktur Per Tahun</h5>
 
-                            <div style="height: 320px">
+                            <div style="height: 700px">
                                 <canvas id="silabusPerInstrukturPerTahunChart"></canvas>
                             </div>
 
@@ -680,7 +680,7 @@
                         <div class="card d-flex flex-column p-3">
                             <h5 class="text-center mb-3">Rata-Rata Feedback Instruktur</h5>
 
-                            <div style="height: 320px">
+                            <div style="height: 700px">
                                 <canvas id="feedbackChart"></canvas>
                             </div>
 
@@ -694,7 +694,7 @@
                         <div class="card d-flex flex-column p-3">
                             <h5 class="text-center mb-3">Hari Mengajar Instruktur Per Tahun</h5>
 
-                            <div style="height: 320px; position: relative;">
+                            <div style="height: 700px; position: relative;">
                                 <canvas id="hariMengajarInstrukturPerTahunChart"></canvas>
                             </div>
 
