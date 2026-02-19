@@ -55,7 +55,7 @@ class RekomendasiLanjutanController extends Controller
                 $start = $startOfWeek->format('Y-m-d');
                 $end = $endOfWeek->format('Y-m-d');
 
-                $rows = RKM::with(['materi', 'peluang', 'rekomendasilanjutan.materi'])
+                $rows = RKM::with(['materi', 'peluang', 'rekomendasilanjutan'])
                     ->whereBetween('tanggal_awal', [$start, $end])
                     ->whereDoesntHave('peluang', function ($query) {
                         $query->where('tentatif', 1);
@@ -91,34 +91,41 @@ class RekomendasiLanjutanController extends Controller
 
     public function store(Request $request)
     {
+        // Validasi input sebagai array
         $request->validate([
-            'id_rkm' => 'required',
-            'id_materi' => 'required',
+            'data' => 'required|array',
+            'data.*.id_rkm' => 'required',
+            'data.*.rekomendasi' => 'nullable|array', // Bisa null jika user tidak mengisi untuk salah satu PT
+            'data.*.keterangan' => 'nullable|string',
         ]);
 
-        if ($request->input('id_rekomendasi')) {
-            $rekomendasi = RekomendasiLanjutan::where('id' ,$request->input('id_rekomendasi'))->first();
-            $rekomendasi->id_materi = $request->id_materi;
-            $saved = $rekomendasi->save();
-            $message = 'Rekomendasi berhasil diperbarui.';
-        } else {
-            $rekomendasi = new RekomendasiLanjutan();
-            $rekomendasi->id_rkm = $request->id_rkm;
-            $rekomendasi->id_materi = $request->id_materi;
-            $saved = $rekomendasi->save();
-            $message = 'Rekomendasi berhasil diajukan.';
-        }
+        try {
+            // Loop setiap item data (per perusahaan/RKM ID)
+            foreach ($request->data as $item) {
+                // Cek jika user memilih materi (jika kosong, skip atau hapus data lama)
+                if (!empty($item['rekomendasi'])) {
+                    $materi_string = implode(',', $item['rekomendasi']);
 
-        if ($saved) {
+                    RekomendasiLanjutan::updateOrCreate(
+                        ['id_rkm' => $item['id_rkm']], 
+                        [
+                            'id_materi' => $materi_string,
+                            'keterangan' => $item['keterangan'] ?? null
+                        ]
+                    );
+                }
+            }
+
             return response()->json([
                 'success' => true,
-                'message' => $message
+                'message' => 'Semua rekomendasi berhasil disimpan.'
             ]);
-        }
 
-        return response()->json([
-            'success' => false,
-            'message' => 'Gagal menyimpan rekomendasi.'
-        ], 500);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

@@ -13,6 +13,7 @@ function initializeYearlySales() {
         fetchTotalMateri(year, 'All');
         fetchTotalMengajarPerMateri(year, 'All');
         fetchAbsenPerbulan(year, 'All');
+        dashboardEdu();
         // fetchNilaiFeedback(year, '1');
         // fetchJumlahPICData();
         // fetchJumlahTicketingData();
@@ -1319,7 +1320,6 @@ function renderTotalMengajarPerMateriChart(labels, data, title) {
         });
     }
 }
-
 function generateRandomColor() {
     // Fungsi untuk menghasilkan warna acak
     const letters = '0123456789ABCDEF';
@@ -1329,7 +1329,6 @@ function generateRandomColor() {
     }
     return color;
 }
-
 function secondsToHMS(seconds) {
     // Handle null atau undefined seconds
     if (seconds === null || typeof seconds === 'undefined') {
@@ -1344,6 +1343,40 @@ function secondsToHMS(seconds) {
         secs.toString().padStart(2, '0')
     ].join(':');
 }
+function dashboardEdu() {
+
+    // CSAT
+    fetch('/api/dashboard/csat-instruktur')
+        .then(res => res.json())
+        .then(res => {
+            if (res.success) {
+                document.getElementById('csatValue').innerText = res.rata_rata;
+                document.getElementById('csatBar').style.width = (res.rata_rata / 5 * 100) + '%';
+            }
+        });
+
+    // Rekomendasi Materi
+    fetch('/api/dashboard/rekomendasi-materi')
+        .then(res => res.json())
+        .then(res => {
+            if (res.success) {
+                document.getElementById('rekomendasiValue').innerText = res.persen + '%';
+                document.getElementById('rekomendasiBar').style.width = res.persen + '%';
+            }
+        });
+
+    // Sharing Knowledge
+    fetch('/api/dashboard/aktivitas-instruktur')
+        .then(res => res.json())
+        .then(res => {
+            if (res.success) {
+                document.getElementById('sharingValue').innerText = res.sharingKnowledge;
+                document.getElementById('materiValue').innerText = res.pembuatanMateri;
+            }
+        });
+}
+
+
 
 /**
  * Mengambil daftar bulan dari server dan mengisi dropdown.

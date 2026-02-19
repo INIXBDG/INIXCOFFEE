@@ -718,6 +718,7 @@
 
     $(document).ready(function() {
         loadData();
+        loadProgressData();
     });
 
     function loadData() {
@@ -1168,6 +1169,16 @@
             },
             error: function(err) {
                 console.error('Gagal load data:', err);
+            }
+        });
+    }
+
+    function loadProgressData() {
+        $.ajax({
+            url: "{{ route('kpi.getProgressDasboard') }}",
+            type:'get',
+            success: function (response) {
+
             }
         });
     }

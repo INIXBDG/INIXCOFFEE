@@ -107,6 +107,25 @@
         var tableIndex1 = 1;
         var tableIndex2 = 1;
 
+        function formatCurrencyIntl(value, currency) {
+            const map = {
+                Rupiah: { locale: 'id-ID', currency: 'IDR' },
+                Dollar: { locale: 'en-US', currency: 'USD' },
+                Euro: { locale: 'de-DE', currency: 'EUR' },
+                Poundsterling: { locale: 'en-GB', currency: 'GBP' },
+                'Franc Swiss': { locale: 'de-CH', currency: 'CHF' }
+            };
+
+            const cfg = map[currency];
+            if (!cfg) return value;
+
+            return new Intl.NumberFormat(cfg.locale, {
+                style: 'currency',
+                currency: cfg.currency,
+                minimumFractionDigits: 0
+            }).format(value);
+        }
+
         $('#listexamtable').DataTable({
             "scrollX": true,
             "ajax": {
@@ -139,12 +158,10 @@
                 {"data": "kode_exam"},
                 {
                     "data": "harga_exam",
-                    "render": function(data) {
+                    "render": function (data, type, row) {
                         if (!data) return '-';
 
-                        return `
-                            <div>Rp ${Number(data).toLocaleString('id-ID')}</div>
-                        `;
+                        return `<div>${formatCurrencyIntl(data, row.mata_uang)}</div>`;
                     }
                 },
                 {

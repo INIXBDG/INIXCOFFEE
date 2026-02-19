@@ -20,16 +20,18 @@
             </div>
         </div>
     @endif
-     @if ($notification->data['message']['tipe'] == 'survey_reminder')
+    @if ($notification->data['message']['tipe'] == 'survey_reminder')
         <div class="notification mb-3">
             <p><strong style="text-transform: capitalize;">{{ $notification->data['message']['judul'] }}</strong>
-            <br>
-            {{ $notification->data['message']['deskripsi'] }}
+                <br>
+                {{ $notification->data['message']['deskripsi'] }}
             </p>
             <div class="d-flex">
-                <a href="{{ $notification->data['path'] }}" class="btn btn-primary btn-sm" style="margin-right:8px;">Lihat
+                <a href="{{ $notification->data['path'] }}" class="btn btn-primary btn-sm"
+                    style="margin-right:8px;">Lihat
                     Selengkapnya</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
+                    class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai
@@ -42,29 +44,31 @@
     @if ($notification->data['message']['tipe'] == 'Update Catering')
         <div class="notification mb-3">
             <p><strong style="text-transform: capitalize;">Update Pengajuan Catering</strong>
-            <br>
-            @php
-                $pesan = $notification->data['message']['pesan'];
-                $lines = explode("\n", $pesan);
-                $header = array_shift($lines);
-            @endphp
+                <br>
+                @php
+                    $pesan = $notification->data['message']['pesan'];
+                    $lines = explode("\n", $pesan);
+                    $header = array_shift($lines);
+                @endphp
 
-            {{ $header }}
-            @if (!empty($lines))
-                <ul class="mt-2 mb-0" style="padding-left: 20px; margin-bottom: 0;">
-                    @foreach ($lines as $line)
-                        @if (trim($line))
-                            <li>{{ trim(str_replace('• ', '', $line)) }}</li>
-                        @endif
-                    @endforeach
-                </ul>
-            @endif
+                {{ $header }}
+                @if (!empty($lines))
+                    <ul class="mt-2 mb-0" style="padding-left: 20px; margin-bottom: 0;">
+                        @foreach ($lines as $line)
+                            @if (trim($line))
+                                <li>{{ trim(str_replace('• ', '', $line)) }}</li>
+                            @endif
+                        @endforeach
+                    </ul>
+                @endif
             </p>
             <br>
             <div class="d-flex">
-                <a href="{{ $notification->data['path'] }}" class="btn btn-primary btn-sm" style="margin-right:8px;">Lihat
+                <a href="{{ $notification->data['path'] }}" class="btn btn-primary btn-sm"
+                    style="margin-right:8px;">Lihat
                     Selengkapnya</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
+                    class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai
@@ -76,13 +80,16 @@
     @if ($notification->data['message']['tipe'] == 'Pengajuan catering')
         <div class="notification mb-3">
             <p><strong style="text-transform: capitalize;">Pengajuan Catering</strong>
-            <br>
-            <strong>{{ $notification->data['message']['nama_lengkap'] }}</strong> telah mengajukan catering pada tanggal {{ $notification->data['message']['tanggal_pengajuan'] }}
+                <br>
+                <strong>{{ $notification->data['message']['nama_lengkap'] }}</strong> telah mengajukan catering pada
+                tanggal {{ $notification->data['message']['tanggal_pengajuan'] }}
             </p>
             <div class="d-flex">
-                <a href="{{ $notification->data['path'] }}" class="btn btn-primary btn-sm" style="margin-right:8px;">Lihat
+                <a href="{{ $notification->data['path'] }}" class="btn btn-primary btn-sm"
+                    style="margin-right:8px;">Lihat
                     Selengkapnya</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
+                    class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai
@@ -94,13 +101,15 @@
     @if ($notification->data['message']['tipe'] == 'survey_reminder')
         <div class="notification mb-3">
             <p><strong style="text-transform: capitalize;">{{ $notification->data['message']['judul'] }}</strong>
-            <br>
-            {{ $notification->data['message']['deskripsi'] }}
+                <br>
+                {{ $notification->data['message']['deskripsi'] }}
             </p>
             <div class="d-flex">
-                <a href="{{ $notification->data['path'] }}" class="btn btn-primary btn-sm" style="margin-right:8px;">Lihat
+                <a href="{{ $notification->data['path'] }}" class="btn btn-primary btn-sm"
+                    style="margin-right:8px;">Lihat
                     Selengkapnya</a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
+                    class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai
@@ -202,7 +211,9 @@
     @endif
     @if ($notification->data['message']['tipe'] == 'Penilaian 360')
         <div class="notification mb-3">
-            <p>Mohon untuk <strong style="text-transform: capitalize;">{{ $notification->data['message']['content'] }}</strong>. terima kasih
+            <p>Mohon untuk <strong
+                    style="text-transform: capitalize;">{{ $notification->data['message']['content'] }}</strong>.
+                terima kasih
             <p>Dibuat Pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
             <div class="d-flex">
                 <a href="{{ $notification->data['path'] }}" class="btn btn-primary btn-sm"
@@ -219,7 +230,8 @@
     @endif
     @if ($notification->data['message']['tipe'] == 'RKM Baru')
         <div class="notification mb-3">
-            <p><strong style="text-transform: capitalize;">{{ $notification->data['user'] }}</strong> telah menambahkan
+            <p><strong style="text-transform: capitalize;">{{ $notification->data['user'] }}</strong> telah
+                menambahkan
                 {{ $notification->data['message']['tipe'] }} dengan judul
                 "{{ $notification->data['message']['nama_materi'] }}" dengan peserta dari
                 {{ $notification->data['message']['nama_perusahaan'] }}</p>
@@ -252,10 +264,12 @@
             @endif
             <p>Pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
             <div class="d-flex">
-                <a href="{{ $notification->data['path'] }}" class="btn btn-primary btn-sm" style="margin-right:8px;">
+                <a href="{{ $notification->data['path'] }}" class="btn btn-primary btn-sm"
+                    style="margin-right:8px;">
                     Lihat RKM
                 </a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
+                    class="d-inline">
                     @csrf
                     @method('PUT')
                     <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">
@@ -267,7 +281,8 @@
     @endif
     @if ($notification->data['message']['tipe'] == 'Assign Kelas')
         <div class="notification mb-3">
-            <p><strong style="text-transform: capitalize;">{{ $notification->data['user'] }}</strong> telah menambahkan
+            <p><strong style="text-transform: capitalize;">{{ $notification->data['user'] }}</strong> telah
+                menambahkan
                 anda sebagai {{ $notification->data['message']['role'] }} di kelas
                 "{{ $notification->data['message']['nama_materi'] }}" dengan peserta dari
                 {{ $notification->data['message']['nama_perusahaan'] }}</p>
@@ -376,7 +391,11 @@
             </div>
         </div>
     @endif
-    @if ($notification->data['message']['tipe'] == 'Menyetujui' || $notification->data['message']['tipe'] == 'Menolak' || $notification->data['message']['tipe'] == 'Menyetujui Cuti' || $notification->data['message']['tipe'] == 'Menolak Cuti')
+    @if (
+        $notification->data['message']['tipe'] == 'Menyetujui' ||
+            $notification->data['message']['tipe'] == 'Menolak' ||
+            $notification->data['message']['tipe'] == 'Menyetujui Cuti' ||
+            $notification->data['message']['tipe'] == 'Menolak Cuti')
         <div class="notification mb-3">
             <p><strong style="text-transform: capitalize;">{{ $notification->data['user'] }}</strong> telah
                 {{ $notification->data['message']['tipe'] }} {{ $notification->data['message']['jenis_cuti'] }}
@@ -551,8 +570,46 @@
             </div>
         </div>
     @endif
+    @if (
+            $notification->data['message']['tipe'] == 'Koordinasi Driver' ||
+            $notification->data['message']['tipe'] == 'Update Koordinasi Driver' ||
+            $notification->data['message']['tipe'] == 'Mengajukan Koordinasi Driver'
+        )
+        <div class="notification mb-4 p-3 border rounded shadow-sm bg-light">
+            <h6 class="mb-2 fw-bold text-primary">
+                {{ $notification->data['message']['tipe'] }}
+            </h6>
+
+            <div class="small text-muted">
+                <div><strong>Dari:</strong> {{ $notification->data['user'] }}</div>
+                <div><strong>Tipe:</strong>
+                    {{ $notification->data['message']['tipe_koordinasi'] ?? 'Koordinasi Driver' }}</div>
+                <div><strong>Tanggal:</strong>
+                    {{ \Carbon\Carbon::parse($notification->data['message']['tanggal_pembuatan'] ?? $notification->created_at)->format('d/m/Y') }}
+                </div>
+            </div>
+
+            <div class="mt-3 d-flex gap-2">
+                <a href="{{ $notification->data['path'] }}" class="btn btn-sm btn-primary">
+                    Lihat Detail
+                </a>
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
+                    class="d-inline">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                        Tandai Dibaca
+                    </button>
+                </form>
+            </div>
+
+            <small class="text-muted d-block mt-2">
+                {{ $notification->created_at->diffForHumans() }}
+            </small>
+        </div>
+    @endif
     @if ($notification->data['message']['tipe'] == 'Approved Expense Hub ')
-       <div class="notification mb-3">
+        <div class="notification mb-3">
             <p><strong style="text-transform: capitalize;">{{ $notification->data['user'] }}</strong> telah
                 {{ $notification->data['message']['tipe'] }}
                 <strong>{{ $notification->data['message']['tipe_barang'] }}</strong> Pada Tanggal
@@ -574,7 +631,7 @@
         </div>
     @endif
     @if ($notification->data['message']['tipe'] == 'Pengajuan ExpenseHub')
-       <div class="notification mb-3">
+        <div class="notification mb-3">
             <p><strong style="text-transform: capitalize;">{{ $notification->data['user'] }}</strong> telah
                 Mengajukan <strong>{{ $notification->data['message']['tipe_barang'] }}</strong> Pada Tanggal
                 {{ \Carbon\Carbon::parse($notification->data['message']['tanggal_pengajuan'])->format('d M Y') }}
@@ -779,69 +836,75 @@
         </div>
     @endif
     @if ($notification->data['message']['tipe'] == 'Pembayaran_from_web')
-            <div class="notification mb-3">
-                <p>
-                    Pembayaran berhasil dilakukan oleh <strong>{{ $notification->data['message']['nama'] }}</strong>
-                    @if(!empty($notification->data['message']['instansi']))
-                        dari instansi <strong>{{ $notification->data['message']['instansi'] }}</strong>
-                    @endif
-                    dengan email <strong>{{ $notification->data['message']['email'] }}</strong>.
-                </p>
-                <p>
-                    Total pembayaran sebesar <strong>Rp{{ number_format($notification->data['message']['total_harga'], 0, ',', '.') }}</strong>.
-                </p>
-                <p>Pada tanggal {{ $notification->created_at->format('d M Y H:i:s') }}</p>
-
-                <strong style="text-transform: capitalize;">
-                        Status: {{ is_array($notification->data['message']['status']) ? json_encode($notification->data['message']['status']) : $notification->data['message']['status'] }}
-                </strong>
-                    <br>
-
-                @if(!empty($notification->data['message']['cartItems']) && is_array($notification->data['message']['cartItems']) && count($notification->data['message']['cartItems']) > 0)
-                    <p>Items dalam keranjang:</p>
-                    <ul>
-                        @foreach ($notification->data['message']['cartItems'] as $item)
-                            <li>{{ $item['name'] ?? 'Item' }} - Jumlah: {{ $item['quantity'] ?? '-' }}</li>
-                        @endforeach
-                    </ul>
-                @else
-                    <p><em>Tidak ada item dalam keranjang.</em></p>
+        <div class="notification mb-3">
+            <p>
+                Pembayaran berhasil dilakukan oleh <strong>{{ $notification->data['message']['nama'] }}</strong>
+                @if (!empty($notification->data['message']['instansi']))
+                    dari instansi <strong>{{ $notification->data['message']['instansi'] }}</strong>
                 @endif
+                dengan email <strong>{{ $notification->data['message']['email'] }}</strong>.
+            </p>
+            <p>
+                Total pembayaran sebesar
+                <strong>Rp{{ number_format($notification->data['message']['total_harga'], 0, ',', '.') }}</strong>.
+            </p>
+            <p>Pada tanggal {{ $notification->created_at->format('d M Y H:i:s') }}</p>
 
-                <div class="d-flex mt-3">
-                    <a href="https://inixindobdg.co.id/admin" class="btn btn-primary btn-sm" style="margin-right:8px;">
-                        Lihat Selengkapnya
-                    </a>
-                    <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
-                        @csrf
-                        @method('PUT')
-                        <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">
-                            Tandai sebagai Dibaca
-                        </button>
-                    </form>
-                </div>
+            <strong style="text-transform: capitalize;">
+                Status:
+                {{ is_array($notification->data['message']['status']) ? json_encode($notification->data['message']['status']) : $notification->data['message']['status'] }}
+            </strong>
+            <br>
+
+            @if (
+                !empty($notification->data['message']['cartItems']) &&
+                    is_array($notification->data['message']['cartItems']) &&
+                    count($notification->data['message']['cartItems']) > 0)
+                <p>Items dalam keranjang:</p>
+                <ul>
+                    @foreach ($notification->data['message']['cartItems'] as $item)
+                        <li>{{ $item['name'] ?? 'Item' }} - Jumlah: {{ $item['quantity'] ?? '-' }}</li>
+                    @endforeach
+                </ul>
+            @else
+                <p><em>Tidak ada item dalam keranjang.</em></p>
+            @endif
+
+            <div class="d-flex mt-3">
+                <a href="https://inixindobdg.co.id/admin" class="btn btn-primary btn-sm" style="margin-right:8px;">
+                    Lihat Selengkapnya
+                </a>
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
+                    class="d-inline">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">
+                        Tandai sebagai Dibaca
+                    </button>
+                </form>
             </div>
-        @endif
-        @if ($notification->data['message']['tipe'] == 'Request Penawaran')
-            <div class="notification mb-3">
-                <p>
-                    Ada Request Penawaran dari peserta <strong>{{ $notification->data['message']['nama'] }}</strong>
-                    @if(!empty($notification->data['message']['instansi']))
-                        dari instansi <strong>{{ $notification->data['message']['instansi'] }}</strong>
-                    @endif
-                    dengan email <strong>{{ $notification->data['message']['email'] }}</strong>.
-                </p>
-                <p>
-                    untuk materi <strong>{{$notification->data['message']['nama_materi']}}</strong>.
-                </p>
-                <p>Pada tanggal {{ $notification->created_at->format('d M Y H:i:s') }}</p>
+        </div>
+    @endif
+    @if ($notification->data['message']['tipe'] == 'Request Penawaran')
+        <div class="notification mb-3">
+            <p>
+                Ada Request Penawaran dari peserta <strong>{{ $notification->data['message']['nama'] }}</strong>
+                @if (!empty($notification->data['message']['instansi']))
+                    dari instansi <strong>{{ $notification->data['message']['instansi'] }}</strong>
+                @endif
+                dengan email <strong>{{ $notification->data['message']['email'] }}</strong>.
+            </p>
+            <p>
+                untuk materi <strong>{{ $notification->data['message']['nama_materi'] }}</strong>.
+            </p>
+            <p>Pada tanggal {{ $notification->created_at->format('d M Y H:i:s') }}</p>
 
-                {{-- <strong style="text-transform: capitalize;">
+            {{-- <strong style="text-transform: capitalize;">
                         Status: {{ is_array($notification->data['message']['status']) ? json_encode($notification->data['message']['status']) : $notification->data['message']['status'] }}
                 </strong> --}}
-                    <br>
+            <br>
 
-                {{-- @if(!empty($notification->data['message']['cartItems']) && is_array($notification->data['message']['cartItems']) && count($notification->data['message']['cartItems']) > 0)
+            {{-- @if (!empty($notification->data['message']['cartItems']) && is_array($notification->data['message']['cartItems']) && count($notification->data['message']['cartItems']) > 0)
                     <p>Items dalam keranjang:</p>
                     <ul>
                         @foreach ($notification->data['message']['cartItems'] as $item)
@@ -852,25 +915,28 @@
                     <p><em>Tidak ada item dalam keranjang.</em></p>
                 @endif --}}
 
-                <div class="d-flex">
-                    <a href="https://inixindobdg.co.id/admin" class="btn btn-primary btn-sm" style="margin-right:8px;">
-                        Lihat Selengkapnya
-                    </a>
-                    <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
-                        @csrf
-                        @method('PUT')
-                        <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">
-                            Tandai sebagai Dibaca
-                        </button>
-                    </form>
-                </div>
+            <div class="d-flex">
+                <a href="https://inixindobdg.co.id/admin" class="btn btn-primary btn-sm" style="margin-right:8px;">
+                    Lihat Selengkapnya
+                </a>
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
+                    class="d-inline">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">
+                        Tandai sebagai Dibaca
+                    </button>
+                </form>
             </div>
-        @endif
-        @if ($notification->data['message']['tipe'] == 'Ticketing Baru')
+        </div>
+    @endif
+    @if ($notification->data['message']['tipe'] == 'Ticketing Baru')
         <div class="notification mb-3">
             <p><strong style="text-transform: capitalize;">{{ $notification->data['user'] }}</strong> divisi
                 {{ $notification->data['message']['divisi'] }} telah membuat
-                {{ $notification->data['message']['tipe'] }} dengan keperluan {{ $notification->data['message']['keperluan'] }} di kategori {{ $notification->data['message']['kategori'] }}</p>
+                {{ $notification->data['message']['tipe'] }} dengan keperluan
+                {{ $notification->data['message']['keperluan'] }} di kategori
+                {{ $notification->data['message']['kategori'] }}</p>
             <p>Pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
             {{-- <p><strong>Status:</strong> {{ $notification->data['status'] }}</p> --}}
             <div class="d-flex">
@@ -885,119 +951,123 @@
                 </form>
             </div>
         </div>
-        @endif
-        @if ($notification->data['message']['tipe'] == 'Mengajukan Lab' || $notification->data['message']['tipe'] == 'Mengajukan Subscription')
-            <div class="notification mb-3 p-3 border rounded bg-light">
-                {{-- <div class="card-body"> --}}
-                    <p class="mb-2">
-                        <strong class="text-capitalize">{{ $notification->data['user'] }}</strong>
-                        telah membuat
-                        <strong>{{ $notification->data['message']['tipe'] }}</strong>
+    @endif
+    @if (
+        $notification->data['message']['tipe'] == 'Mengajukan Lab' ||
+            $notification->data['message']['tipe'] == 'Mengajukan Subscription')
+        <div class="notification mb-3 p-3 border rounded bg-light">
+            {{-- <div class="card-body"> --}}
+            <p class="mb-2">
+                <strong class="text-capitalize">{{ $notification->data['user'] }}</strong>
+                telah membuat
+                <strong>{{ $notification->data['message']['tipe'] }}</strong>
 
-                        @if(!empty($notification->data['message']['nama']))
-                            dengan nama <strong>{{ $notification->data['message']['nama'] }}</strong>
-                        @endif
+                @if (!empty($notification->data['message']['nama']))
+                    dengan nama <strong>{{ $notification->data['message']['nama'] }}</strong>
+                @endif
 
-                        @if(!empty($notification->data['message']['deskripsi']))
-                            ({{ $notification->data['message']['deskripsi'] }})
-                        @endif
+                @if (!empty($notification->data['message']['deskripsi']))
+                    ({{ $notification->data['message']['deskripsi'] }})
+                @endif
+            </p>
+
+            {{-- Jika ada relasi RKM --}}
+            @if (!empty($notification->data['message']['rkm']))
+                @php $rkm = $notification->data['message']['rkm']; @endphp
+                <div class="ms-3 mb-2">
+                    <p class="mb-1">
+                        Terkait RKM:
+                        <strong>{{ $rkm['nama_materi'] ?? '-' }}</strong>
+                        di perusahaan <strong>{{ $rkm['nama_perusahaan'] ?? '-' }}</strong>
                     </p>
 
-                    {{-- Jika ada relasi RKM --}}
-                    @if(!empty($notification->data['message']['rkm']))
-                        @php $rkm = $notification->data['message']['rkm']; @endphp
-                        <div class="ms-3 mb-2">
-                            <p class="mb-1">
-                                Terkait RKM:
-                                <strong>{{ $rkm['nama_materi'] ?? '-' }}</strong>
-                                di perusahaan <strong>{{ $rkm['nama_perusahaan'] ?? '-' }}</strong>
-                            </p>
-
-                            <p class="mb-0">
-                                @if(!empty($rkm['tanggal_awal']))
-                                    Mulai {{ \Carbon\Carbon::parse($rkm['tanggal_awal'])->translatedFormat('d F Y') }}
-                                @endif
-                                @if(!empty($rkm['tanggal_akhir']))
-                                    sampai {{ \Carbon\Carbon::parse($rkm['tanggal_akhir'])->translatedFormat('d F Y') }}
-                                @endif
-                            </p>
-                        </div>
-                    @endif
-
-                    <p class="text-muted mb-3">
-                        Pada {{ $notification->created_at->translatedFormat('d F Y H:i') }}
+                    <p class="mb-0">
+                        @if (!empty($rkm['tanggal_awal']))
+                            Mulai {{ \Carbon\Carbon::parse($rkm['tanggal_awal'])->translatedFormat('d F Y') }}
+                        @endif
+                        @if (!empty($rkm['tanggal_akhir']))
+                            sampai {{ \Carbon\Carbon::parse($rkm['tanggal_akhir'])->translatedFormat('d F Y') }}
+                        @endif
                     </p>
-
-                    <div class="d-flex">
-                        <a href="{{ $notification->data['path'] }}" class="btn btn-sm btn-primary me-2">
-                            Lihat Selengkapnya
-                        </a>
-                        <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
-                            @csrf
-                            @method('PUT')
-                            <button type="submit" class="btn btn-outline-danger btn-sm">
-                                Tandai sebagai Dibaca
-                            </button>
-                        </form>
-                    </div>
-                {{-- </div> --}}
-            </div>
-        @endif
-        @if (
-            $notification->data['message']['tipe'] == 'Menyetujui Pengajuan Lab/Subscription' ||
-            $notification->data['message']['tipe'] == 'Menolak Pengajuan Lab/Subscription' ||
-            $notification->data['message']['tipe'] == 'Update Status Pencairan oleh Finance'
-        )
-            <div class="notification mb-3 p-3 border rounded bg-light">
-                <p>
-                    <strong style="text-transform: capitalize;">
-                        {{ $notification->data['user'] }}
-                    </strong>
-
-                    {{-- Tentukan kalimat sesuai tipe notifikasi --}}
-                    @if ($notification->data['message']['tipe'] == 'Menyetujui Pengajuan Lab/Subscription')
-                        telah <strong>menyetujui</strong> pengajuan
-                    @elseif ($notification->data['message']['tipe'] == 'Menolak Pengajuan Lab/Subscription')
-                        telah <strong>menolak</strong> pengajuan
-                    @elseif ($notification->data['message']['tipe'] == 'Update Status Pencairan oleh Finance')
-                        telah melakukan <strong>update status pencairan</strong> pada pengajuan
-                    @endif
-
-                    milik <strong>{{ $notification->data['message']['nama_lengkap'] }}</strong>.
-                </p>
-
-                {{-- Tampilkan status & tanggal --}}
-                <p>
-                    <em>{{ $notification->data['message']['status'] }}</em><br>
-                    <small>Pada {{ \Carbon\Carbon::parse($notification->data['message']['tanggal'])->translatedFormat('d F Y H:i') }}</small>
-                </p>
-
-                <div class="d-flex">
-                    <a href="{{ $notification->data['path'] }}" class="btn btn-primary btn-sm me-2">
-                        Lihat Detail Pengajuan
-                    </a>
-                    <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
-                        @csrf
-                        @method('PUT')
-                        <button type="submit" class="btn btn-outline-danger btn-sm">
-                            Tandai sebagai Dibaca
-                        </button>
-                    </form>
                 </div>
-            </div>
-        @endif
+            @endif
 
-        @if ($notification->data['message']['tipe'] == 'Perubahan Payment Advance')
-            <div class="notification mb-3 p-3 border rounded bg-light">
-                <p>
-                    <strong style="text-transform: capitalize;">
-                        {{ $notification->data['message']['karyawan'] }}
-                    </strong>
-                    telah melakukan <strong>perubahan</strong> pada Payment Advance
-                    untuk kelas <strong>{{ $notification->data['message']['rkm'] }}</strong>,
-                    yang berjalan di <strong>{{ $notification->data['message']['waktu'] }}</strong>.<br>
-                    Data ini milik <strong>{{ $notification->data['message']['milik'] }}</strong>.
-                </p>
+            <p class="text-muted mb-3">
+                Pada {{ $notification->created_at->translatedFormat('d F Y H:i') }}
+            </p>
+
+            <div class="d-flex">
+                <a href="{{ $notification->data['path'] }}" class="btn btn-sm btn-primary me-2">
+                    Lihat Selengkapnya
+                </a>
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
+                    class="d-inline">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                        Tandai sebagai Dibaca
+                    </button>
+                </form>
+            </div>
+            {{-- </div> --}}
+        </div>
+    @endif
+    @if (
+        $notification->data['message']['tipe'] == 'Menyetujui Pengajuan Lab/Subscription' ||
+            $notification->data['message']['tipe'] == 'Menolak Pengajuan Lab/Subscription' ||
+            $notification->data['message']['tipe'] == 'Update Status Pencairan oleh Finance')
+        <div class="notification mb-3 p-3 border rounded bg-light">
+            <p>
+                <strong style="text-transform: capitalize;">
+                    {{ $notification->data['user'] }}
+                </strong>
+
+                {{-- Tentukan kalimat sesuai tipe notifikasi --}}
+                @if ($notification->data['message']['tipe'] == 'Menyetujui Pengajuan Lab/Subscription')
+                    telah <strong>menyetujui</strong> pengajuan
+                @elseif ($notification->data['message']['tipe'] == 'Menolak Pengajuan Lab/Subscription')
+                    telah <strong>menolak</strong> pengajuan
+                @elseif ($notification->data['message']['tipe'] == 'Update Status Pencairan oleh Finance')
+                    telah melakukan <strong>update status pencairan</strong> pada pengajuan
+                @endif
+
+                milik <strong>{{ $notification->data['message']['nama_lengkap'] }}</strong>.
+            </p>
+
+            {{-- Tampilkan status & tanggal --}}
+            <p>
+                <em>{{ $notification->data['message']['status'] }}</em><br>
+                <small>Pada
+                    {{ \Carbon\Carbon::parse($notification->data['message']['tanggal'])->translatedFormat('d F Y H:i') }}</small>
+            </p>
+
+            <div class="d-flex">
+                <a href="{{ $notification->data['path'] }}" class="btn btn-primary btn-sm me-2">
+                    Lihat Detail Pengajuan
+                </a>
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
+                    class="d-inline">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                        Tandai sebagai Dibaca
+                    </button>
+                </form>
+            </div>
+        </div>
+    @endif
+
+    @if ($notification->data['message']['tipe'] == 'Perubahan Payment Advance')
+        <div class="notification mb-3 p-3 border rounded bg-light">
+            <p>
+                <strong style="text-transform: capitalize;">
+                    {{ $notification->data['message']['karyawan'] }}
+                </strong>
+                telah melakukan <strong>perubahan</strong> pada Payment Advance
+                untuk kelas <strong>{{ $notification->data['message']['rkm'] }}</strong>,
+                yang berjalan di <strong>{{ $notification->data['message']['waktu'] }}</strong>.<br>
+                Data ini milik <strong>{{ $notification->data['message']['milik'] }}</strong>.
+            </p>
 
                 {{-- ✅ Tambahan bagian perubahan --}}
                 @if (!empty($notification->data['message']['perubahan']))
@@ -1043,19 +1113,61 @@
                     </div>
                 @endif
 
+            <small class="text-muted">
+                Pada
+                {{ \Carbon\Carbon::parse($notification->data['message']['waktu_perubahan'])->locale('id')->translatedFormat('d F Y H:i') }}
+            </small>
+
+            <div class="mt-2">
+                <a href="{{ $notification->data['path'] }}" class="btn btn-primary btn-sm me-2">
+                    Lihat Detail
+                </a>
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
+                    class="d-inline">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                        Tandai sebagai Dibaca
+                    </button>
+                </form>
+            </div>
+        </div>
+    @endif
+    @if ($notification->data['message']['tipe'] == 'Pembayaran Outstanding Selesai')
+        <div
+            class="alert alert-success d-flex justify-content-between align-items-start shadow-sm p-3 mb-3 border-start border-4 border-success">
+            <div>
+                <h6 class="fw-bold mb-2 text-success">
+                    <i class="bi bi-check-circle-fill me-2"></i>Pembayaran Outstanding Selesai
+                </h6>
+                <p class="mb-1">
+                    <strong>{{ $notification->data['message']['perusahaan'] }}</strong> telah menyelesaikan pembayaran
+                    untuk
+                    <strong>{{ $notification->data['message']['materi'] }}</strong>
+                    <span class="text-primary">({{ $notification->data['message']['periode'] }})</span>.
+                </p>
+                <p class="mb-2 small text-muted">
+                    No. Invoice: <strong>{{ $notification->data['message']['no_invoice'] ?? '-' }}</strong> |
+                    Tanggal Bayar:
+                    <strong>
+                        {{ $notification->data['message']['tgl_bayar']
+                            ? \Carbon\Carbon::parse($notification->data['message']['tgl_bayar'])->locale('id')->translatedFormat('d F Y')
+                            : '-' }}
+                    </strong>
+                </p>
                 <small class="text-muted">
-                    Pada {{ \Carbon\Carbon::parse($notification->data['message']['waktu_perubahan'])->locale('id')->translatedFormat('d F Y H:i') }}
+                    Dikirim:
+                    {{ \Carbon\Carbon::parse($notification->created_at)->locale('id')->translatedFormat('d F Y H:i') }}
+                    WIB
                 </small>
 
                 <div class="mt-2">
-                    <a href="{{ $notification->data['path'] }}" class="btn btn-primary btn-sm me-2">
-                        Lihat Detail
-                    </a>
-                    <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
+                    <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
+                        class="d-inline">
                         @csrf
                         @method('PUT')
-                        <button type="submit" class="btn btn-outline-danger btn-sm">
-                            Tandai sebagai Dibaca
+                        <button type="submit" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-check2"></i> Tandai Dibaca
                         </button>
                     </form>
                 </div>
@@ -1102,281 +1214,293 @@
             $notification->data['message']['tipe'] == 'Mengajukan Permintaan Souvenir' ||
             $notification->data['message']['tipe'] == 'Pengajuan Souvenir Disetujui' ||
             $notification->data['message']['tipe'] == 'Pengajuan Souvenir Ditolak' ||
-            $notification->data['message']['tipe'] == 'Pengajuan Souvenir Diperbarui'
-        )
-            <div class="notification mb-3 p-3 border rounded bg-light">
-                <p>
-                    <strong style="text-transform: capitalize;">
-                        {{ $notification->data['user'] }}
+            $notification->data['message']['tipe'] == 'Pengajuan Souvenir Diperbarui')
+        <div class="notification mb-3 p-3 border rounded bg-light">
+            <p>
+                <strong style="text-transform: capitalize;">
+                    {{ $notification->data['user'] }}
+                </strong>
+
+                {{-- Logika Kalimat Berdasarkan Tipe --}}
+                @if ($notification->data['message']['tipe'] == 'Mengajukan Permintaan Souvenir')
+                    telah <strong>membuat pengajuan baru</strong> untuk permintaan
+                @elseif ($notification->data['message']['tipe'] == 'Pengajuan Souvenir Disetujui')
+                    telah <strong>menyetujui</strong> pengajuan
+                @elseif ($notification->data['message']['tipe'] == 'Pengajuan Souvenir Ditolak')
+                    telah <strong>menolak</strong> pengajuan
+                @elseif ($notification->data['message']['tipe'] == 'Pengajuan Souvenir Diperbarui')
+                    telah <strong>memperbarui status</strong> pengajuan
+                @endif
+
+                {{-- Konteks (Barang / Pemilik) --}}
+                @if (isset($notification->data['message']['tipe_barang']))
+                    <strong>{{ $notification->data['message']['tipe_barang'] }}</strong>.
+                @elseif (isset($notification->data['message']['nama_lengkap']))
+                    milik <strong>{{ $notification->data['message']['nama_lengkap'] }}</strong>.
+                @endif
+            </p>
+
+            {{-- Detail Tambahan (Status & Tanggal) --}}
+            <p class="mb-2 text-muted">
+                @if (isset($notification->data['message']['status']))
+                    <i class="bi bi-info-circle"></i> {{ $notification->data['message']['status'] }}<br>
+                @endif
+
+                {{-- Menangani format tanggal yang berbeda (tanggal_pengajuan vs tanggal) --}}
+                @php
+                    $tgl =
+                        $notification->data['message']['tanggal'] ??
+                        ($notification->data['message']['tanggal_pengajuan'] ?? null);
+                @endphp
+
+                @if ($tgl)
+                    <small><i class="bi bi-clock"></i>
+                        {{ \Carbon\Carbon::parse($tgl)->translatedFormat('d F Y H:i') }}</small>
+                @endif
+            </p>
+
+            {{-- Tombol Aksi --}}
+            <div class="d-flex gap-2">
+                <a href="{{ $notification->data['path'] }}" class="btn btn-primary btn-sm">
+                    <img src="{{ asset('icon/eye.svg') }}" width="16px" style="filter: invert(1);"> Lihat Detail
+                </a>
+
+                {{-- Tombol Tandai Dibaca --}}
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">
+                        Tandai Dibaca
+                    </button>
+                </form>
+            </div>
+        </div>
+    @endif
+    @if ($notification->data['message']['tipe'] == 'Pembayaran Outstanding Selesai')
+        <div
+            class="alert alert-success d-flex justify-content-between align-items-start shadow-sm p-3 mb-3 border-start border-4 border-success">
+            <div>
+                <h6 class="fw-bold mb-2 text-success">
+                    <i class="bi bi-check-circle-fill me-2"></i>Pembayaran Outstanding Selesai
+                </h6>
+                <p class="mb-1">
+                    <strong>{{ $notification->data['message']['perusahaan'] }}</strong> telah menyelesaikan pembayaran
+                    untuk
+                    <strong>{{ $notification->data['message']['materi'] }}</strong>
+                    <span class="text-primary">({{ $notification->data['message']['periode'] }})</span>.
+                </p>
+                <p class="mb-2 small text-muted">
+                    No. Invoice: <strong>{{ $notification->data['message']['no_invoice'] ?? '-' }}</strong> |
+                    Tanggal Bayar:
+                    <strong>
+                        {{ $notification->data['message']['tgl_bayar']
+                            ? \Carbon\Carbon::parse($notification->data['message']['tgl_bayar'])->locale('id')->translatedFormat('d F Y')
+                            : '-' }}
                     </strong>
-
-                    {{-- Logika Kalimat Berdasarkan Tipe --}}
-                    @if ($notification->data['message']['tipe'] == 'Mengajukan Permintaan Souvenir')
-                        telah <strong>membuat pengajuan baru</strong> untuk permintaan
-
-                    @elseif ($notification->data['message']['tipe'] == 'Pengajuan Souvenir Disetujui')
-                        telah <strong>menyetujui</strong> pengajuan
-
-                    @elseif ($notification->data['message']['tipe'] == 'Pengajuan Souvenir Ditolak')
-                        telah <strong>menolak</strong> pengajuan
-
-                    @elseif ($notification->data['message']['tipe'] == 'Pengajuan Souvenir Diperbarui')
-                        telah <strong>memperbarui status</strong> pengajuan
-                    @endif
-
-                    {{-- Konteks (Barang / Pemilik) --}}
-                    @if (isset($notification->data['message']['tipe_barang']))
-                        <strong>{{ $notification->data['message']['tipe_barang'] }}</strong>.
-                    @elseif (isset($notification->data['message']['nama_lengkap']))
-                        milik <strong>{{ $notification->data['message']['nama_lengkap'] }}</strong>.
-                    @endif
                 </p>
+                <small class="text-muted">
+                    Dikirim:
+                    {{ \Carbon\Carbon::parse($notification->created_at)->locale('id')->translatedFormat('d F Y H:i') }}
+                    WIB
+                </small>
 
-                {{-- Detail Tambahan (Status & Tanggal) --}}
-                <p class="mb-2 text-muted">
-                    @if (isset($notification->data['message']['status']))
-                        <i class="bi bi-info-circle"></i> {{ $notification->data['message']['status'] }}<br>
-                    @endif
-
-                    {{-- Menangani format tanggal yang berbeda (tanggal_pengajuan vs tanggal) --}}
-                    @php
-                        $tgl = $notification->data['message']['tanggal'] ?? $notification->data['message']['tanggal_pengajuan'] ?? null;
-                    @endphp
-
-                    @if($tgl)
-                        <small><i class="bi bi-clock"></i> {{ \Carbon\Carbon::parse($tgl)->translatedFormat('d F Y H:i') }}</small>
-                    @endif
-                </p>
-
-                {{-- Tombol Aksi --}}
-                <div class="d-flex gap-2">
-                    <a href="{{ $notification->data['path'] }}" class="btn btn-primary btn-sm">
-                        <img src="{{ asset('icon/eye.svg') }}" width="16px" style="filter: invert(1);"> Lihat Detail
-                    </a>
-
-                    {{-- Tombol Tandai Dibaca --}}
-                    <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST">
+                <div class="mt-2">
+                    <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
+                        class="d-inline">
                         @csrf
                         @method('PUT')
                         <button type="submit" class="btn btn-outline-secondary btn-sm">
-                            Tandai Dibaca
+                            <i class="bi bi-check2"></i> Tandai Dibaca
                         </button>
                     </form>
                 </div>
             </div>
-        @endif
-        @if ($notification->data['message']['tipe'] == 'Pembayaran Outstanding Selesai')
-            <div class="alert alert-success d-flex justify-content-between align-items-start shadow-sm p-3 mb-3 border-start border-4 border-success">
-                <div>
-                    <h6 class="fw-bold mb-2 text-success">
-                        <i class="bi bi-check-circle-fill me-2"></i>Pembayaran Outstanding Selesai
-                    </h6>
+        </div>
+    @endif
+    @if ($notification->data['message']['tipe'] == 'Laporan Distribusi Souvenir')
+        <div class="notification mb-3 p-3 border rounded bg-light">
+            <div class="d-flex justify-content-between align-items-start">
+                <div style="width: 100%;">
+                    {{-- Header: User & Aksi --}}
                     <p class="mb-1">
-                        <strong>{{ $notification->data['message']['perusahaan'] }}</strong> telah menyelesaikan pembayaran untuk
-                        <strong>{{ $notification->data['message']['materi'] }}</strong>
-                        <span class="text-primary">({{ $notification->data['message']['periode'] }})</span>.
-                    </p>
-                    <p class="mb-2 small text-muted">
-                        No. Invoice: <strong>{{ $notification->data['message']['no_invoice'] ?? '-' }}</strong> |
-                        Tanggal Bayar:
-                        <strong>
-                            {{ $notification->data['message']['tgl_bayar']
-                                ? \Carbon\Carbon::parse($notification->data['message']['tgl_bayar'])->locale('id')->translatedFormat('d F Y')
-                                : '-' }}
+                        <strong class="text-capitalize text-primary">
+                            {{ $notification->data['user'] }}
                         </strong>
+                        telah mendistribusikan
+                        <strong>{{ $notification->data['message']['tipe_barang'] ?? 'Souvenir' }}</strong>.
                     </p>
-                    <small class="text-muted">
-                        Dikirim: {{ \Carbon\Carbon::parse($notification->created_at)->locale('id')->translatedFormat('d F Y H:i') }} WIB
-                    </small>
 
-                    <div class="mt-2">
-                        <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
-                            @csrf
-                            @method('PUT')
-                            <button type="submit" class="btn btn-outline-secondary btn-sm">
-                                <i class="bi bi-check2"></i> Tandai Dibaca
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        @endif
-        @if ($notification->data['message']['tipe'] == 'Laporan Distribusi Souvenir')
-            <div class="notification mb-3 p-3 border rounded bg-light">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div style="width: 100%;">
-                        {{-- Header: User & Aksi --}}
-                        <p class="mb-1">
-                            <strong class="text-capitalize text-primary">
-                                {{ $notification->data['user'] }}
-                            </strong>
-                            telah mendistribusikan
-                            <strong>{{ $notification->data['message']['tipe_barang'] ?? 'Souvenir' }}</strong>.
-                        </p>
-
-                        {{-- SECTION 1: INFORMASI PENERIMA (BARU) --}}
-                        <div class="mt-2 mb-2">
-                            <small class="text-muted d-block text-uppercase" style="font-size: 0.7rem; font-weight: bold;">
-                                Diberikan Kepada:
-                            </small>
-                            <div class="d-flex align-items-center">
-                                <i class="bi bi-person-badge text-secondary me-2"></i>
-                                <div>
-                                    <span class="text-dark fw-bold">
-                                        {{ $notification->data['message']['penerima_nama'] ?? 'Tanpa Nama' }}
-                                    </span>
-                                    <span class="text-muted ms-1" style="font-size: 0.85rem;">
-                                        ({{ $notification->data['message']['penerima_jabatan'] ?? '-' }})
-                                    </span>
-                                </div>
+                    {{-- SECTION 1: INFORMASI PENERIMA (BARU) --}}
+                    <div class="mt-2 mb-2">
+                        <small class="text-muted d-block text-uppercase"
+                            style="font-size: 0.7rem; font-weight: bold;">
+                            Diberikan Kepada:
+                        </small>
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-person-badge text-secondary me-2"></i>
+                            <div>
+                                <span class="text-dark fw-bold">
+                                    {{ $notification->data['message']['penerima_nama'] ?? 'Tanpa Nama' }}
+                                </span>
+                                <span class="text-muted ms-1" style="font-size: 0.85rem;">
+                                    ({{ $notification->data['message']['penerima_jabatan'] ?? '-' }})
+                                </span>
                             </div>
                         </div>
-
-                        {{-- SECTION 2: LIST ITEM YANG DIBERIKAN (BARU - LOOPING) --}}
-                        @if(!empty($notification->data['message']['detail_barang']))
-                            <div class="p-2 bg-white border rounded mb-2">
-                                <small class="text-muted d-block text-uppercase mb-1" style="font-size: 0.7rem; font-weight: bold;">
-                                    Detail Item:
-                                </small>
-                                <ul class="list-unstyled mb-0" style="font-size: 0.9rem;">
-                                    @foreach($notification->data['message']['detail_barang'] as $item)
-                                        <li class="d-flex justify-content-between align-items-center border-bottom pb-1 mb-1 last:border-0">
-                                            <span class="text-secondary">
-                                                <i class="bi bi-box-seam me-1"></i>
-                                                {{ $item['nama_souvenir'] }}
-                                            </span>
-                                            <span class="badge bg-success rounded-pill">
-                                                {{ $item['qty'] }} pcs
-                                            </span>
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        @endif
-
-                        {{-- SECTION 3: INFORMASI RKM (KONTEKS ACARA) --}}
-                        @if(!empty($notification->data['message']['nama_rkm']))
-                            <div class="mt-2 p-2 bg-white border rounded">
-                                <small class="text-muted d-block text-uppercase" style="font-size: 0.7rem; font-weight: bold;">
-                                    Kegiatan / Materi:
-                                </small>
-                                <span class="text-dark fw-bold">
-                                    {{ $notification->data['message']['nama_rkm'] }}
-                                </span>
-
-                                {{-- Tanggal Pelaksanaan RKM --}}
-                                @if(!empty($notification->data['message']['rkm_start']) && !empty($notification->data['message']['rkm_end']))
-                                    <div class="mt-1 text-secondary" style="font-size: 0.85rem;">
-                                        <i class="bi bi-calendar-range me-1"></i>
-                                        {{ \Carbon\Carbon::parse($notification->data['message']['rkm_start'])->format('d M') }}
-                                        s/d
-                                        {{ \Carbon\Carbon::parse($notification->data['message']['rkm_end'])->format('d M Y') }}
-                                    </div>
-                                @endif
-                            </div>
-                        @endif
-
-                        {{-- Waktu Input Sistem --}}
-                        <small class="text-muted mt-2 d-block">
-                            <i class="bi bi-clock"></i> Diinput pada:
-                            {{ \Carbon\Carbon::parse($notification->data['message']['tanggal_pengajuan'])->translatedFormat('d F Y') }}
-                        </small>
                     </div>
-                </div>
 
-                {{-- Tombol Aksi --}}
-                <div class="d-flex gap-2 mt-3">
-                    <a href="{{ $notification->data['path'] }}" class="btn btn-sm btn-primary">
-                        <img src="{{ asset('icon/eye.svg') }}" width="14px" style="filter: invert(1);" class="me-1">
-                        Lihat Data
-                    </a>
+                    {{-- SECTION 2: LIST ITEM YANG DIBERIKAN (BARU - LOOPING) --}}
+                    @if (!empty($notification->data['message']['detail_barang']))
+                        <div class="p-2 bg-white border rounded mb-2">
+                            <small class="text-muted d-block text-uppercase mb-1"
+                                style="font-size: 0.7rem; font-weight: bold;">
+                                Detail Item:
+                            </small>
+                            <ul class="list-unstyled mb-0" style="font-size: 0.9rem;">
+                                @foreach ($notification->data['message']['detail_barang'] as $item)
+                                    <li
+                                        class="d-flex justify-content-between align-items-center border-bottom pb-1 mb-1 last:border-0">
+                                        <span class="text-secondary">
+                                            <i class="bi bi-box-seam me-1"></i>
+                                            {{ $item['nama_souvenir'] }}
+                                        </span>
+                                        <span class="badge bg-success rounded-pill">
+                                            {{ $item['qty'] }} pcs
+                                        </span>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
 
-                    <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST">
-                        @csrf
-                        @method('PUT')
-                        <button type="submit" class="btn btn-sm btn-outline-secondary">
-                            Tandai Dibaca
-                        </button>
-                    </form>
-                </div>
-            </div>
-        @endif
-        @if ($notification->data['message']['tipe'] == 'Penukaran Souvenir')
-            <div class="notification mb-3 p-3 border rounded bg-light">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        {{-- Header: User & Aksi --}}
-                        <p class="mb-1">
-                            <strong class="text-capitalize text-primary">
-                                {{ $notification->data['user'] }}
-                            </strong>
-                            telah melakukan
-                            <strong>Penukaran Souvenir</strong>.
-                        </p>
-
-                        {{-- Detail Penukaran (Box Putih) --}}
+                    {{-- SECTION 3: INFORMASI RKM (KONTEKS ACARA) --}}
+                    @if (!empty($notification->data['message']['nama_rkm']))
                         <div class="mt-2 p-2 bg-white border rounded">
-                            {{-- Nama Peserta --}}
-                            <small class="text-muted d-block text-uppercase" style="font-size: 0.7rem; font-weight: bold;">
-                                Pemilik / Peserta:
+                            <small class="text-muted d-block text-uppercase"
+                                style="font-size: 0.7rem; font-weight: bold;">
+                                Kegiatan / Materi:
                             </small>
-                            <div class="mb-2">
-                                <i class="bi bi-person-circle text-secondary me-1"></i>
-                                <span class="text-dark fw-bold">
-                                    {{ $notification->data['message']['nama_peserta'] ?? 'Peserta' }}
+                            <span class="text-dark fw-bold">
+                                {{ $notification->data['message']['nama_rkm'] }}
+                            </span>
+
+                            {{-- Tanggal Pelaksanaan RKM --}}
+                            @if (!empty($notification->data['message']['rkm_start']) && !empty($notification->data['message']['rkm_end']))
+                                <div class="mt-1 text-secondary" style="font-size: 0.85rem;">
+                                    <i class="bi bi-calendar-range me-1"></i>
+                                    {{ \Carbon\Carbon::parse($notification->data['message']['rkm_start'])->format('d M') }}
+                                    s/d
+                                    {{ \Carbon\Carbon::parse($notification->data['message']['rkm_end'])->format('d M Y') }}
+                                </div>
+                            @endif
+                        </div>
+                    @endif
+
+                    {{-- Waktu Input Sistem --}}
+                    <small class="text-muted mt-2 d-block">
+                        <i class="bi bi-clock"></i> Diinput pada:
+                        {{ \Carbon\Carbon::parse($notification->data['message']['tanggal_pengajuan'])->translatedFormat('d F Y') }}
+                    </small>
+                </div>
+            </div>
+
+            {{-- Tombol Aksi --}}
+            <div class="d-flex gap-2 mt-3">
+                <a href="{{ $notification->data['path'] }}" class="btn btn-sm btn-primary">
+                    <img src="{{ asset('icon/eye.svg') }}" width="14px" style="filter: invert(1);"
+                        class="me-1">
+                    Lihat Data
+                </a>
+
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                        Tandai Dibaca
+                    </button>
+                </form>
+            </div>
+        </div>
+    @endif
+    @if ($notification->data['message']['tipe'] == 'Penukaran Souvenir')
+        <div class="notification mb-3 p-3 border rounded bg-light">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    {{-- Header: User & Aksi --}}
+                    <p class="mb-1">
+                        <strong class="text-capitalize text-primary">
+                            {{ $notification->data['user'] }}
+                        </strong>
+                        telah melakukan
+                        <strong>Penukaran Souvenir</strong>.
+                    </p>
+
+                    {{-- Detail Penukaran (Box Putih) --}}
+                    <div class="mt-2 p-2 bg-white border rounded">
+                        {{-- Nama Peserta --}}
+                        <small class="text-muted d-block text-uppercase"
+                            style="font-size: 0.7rem; font-weight: bold;">
+                            Pemilik / Peserta:
+                        </small>
+                        <div class="mb-2">
+                            <i class="bi bi-person-circle text-secondary me-1"></i>
+                            <span class="text-dark fw-bold">
+                                {{ $notification->data['message']['nama_peserta'] ?? 'Peserta' }}
+                            </span>
+                        </div>
+
+                        {{-- Visualisasi Tukar Barang (Lama -> Baru) --}}
+                        <div class="d-flex align-items-center p-2 bg-light rounded border border-light">
+                            {{-- Barang Lama (Merah/Coret) --}}
+                            <div class="text-danger" style="font-size: 0.85rem;" title="Dikembalikan">
+                                <i class="bi bi-x-circle me-1"></i>
+                                <span class="text-decoration-line-through text-secondary">
+                                    {{ $notification->data['message']['souvenir_lama'] }}
                                 </span>
                             </div>
 
-                            {{-- Visualisasi Tukar Barang (Lama -> Baru) --}}
-                            <div class="d-flex align-items-center p-2 bg-light rounded border border-light">
-                                {{-- Barang Lama (Merah/Coret) --}}
-                                <div class="text-danger" style="font-size: 0.85rem;" title="Dikembalikan">
-                                    <i class="bi bi-x-circle me-1"></i>
-                                    <span class="text-decoration-line-through text-secondary">
-                                        {{ $notification->data['message']['souvenir_lama'] }}
-                                    </span>
-                                </div>
+                            {{-- Panah --}}
+                            <div class="mx-2 text-muted">
+                                <i class="bi bi-arrow-right"></i>
+                            </div>
 
-                                {{-- Panah --}}
-                                <div class="mx-2 text-muted">
-                                    <i class="bi bi-arrow-right"></i>
-                                </div>
-
-                                {{-- Barang Baru (Hijau/Bold) --}}
-                                <div class="text-success fw-bold" style="font-size: 0.85rem;" title="Diterima">
-                                    <i class="bi bi-check-circle me-1"></i>
-                                    {{ $notification->data['message']['souvenir_baru'] }}
-                                </div>
+                            {{-- Barang Baru (Hijau/Bold) --}}
+                            <div class="text-success fw-bold" style="font-size: 0.85rem;" title="Diterima">
+                                <i class="bi bi-check-circle me-1"></i>
+                                {{ $notification->data['message']['souvenir_baru'] }}
                             </div>
                         </div>
-
-                        {{-- Waktu Transaksi --}}
-                        <small class="text-muted mt-2 d-block">
-                            <i class="bi bi-clock"></i> Diproses pada:
-                            {{ \Carbon\Carbon::parse($notification->data['message']['tanggal_tukar'])->translatedFormat('d F Y H:i') }} WIB
-                        </small>
                     </div>
-                </div>
 
-                {{-- Tombol Aksi --}}
-                <div class="d-flex gap-2 mt-3">
-                    <a href="{{ $notification->data['path'] }}" class="btn btn-sm btn-primary">
-                        <img src="{{ asset('icon/eye.svg') }}" width="14px" style="filter: invert(1);" class="me-1">
-                        Lihat Riwayat
-                    </a>
-
-                    <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST">
-                        @csrf
-                        @method('PUT')
-                        <button type="submit" class="btn btn-sm btn-outline-secondary">
-                            Tandai Dibaca
-                        </button>
-                    </form>
+                    {{-- Waktu Transaksi --}}
+                    <small class="text-muted mt-2 d-block">
+                        <i class="bi bi-clock"></i> Diproses pada:
+                        {{ \Carbon\Carbon::parse($notification->data['message']['tanggal_tukar'])->translatedFormat('d F Y H:i') }}
+                        WIB
+                    </small>
                 </div>
             </div>
-        @endif
 
-        
+            {{-- Tombol Aksi --}}
+            <div class="d-flex gap-2 mt-3">
+                <a href="{{ $notification->data['path'] }}" class="btn btn-sm btn-primary">
+                    <img src="{{ asset('icon/eye.svg') }}" width="14px" style="filter: invert(1);"
+                        class="me-1">
+                    Lihat Riwayat
+                </a>
+
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                        Tandai Dibaca
+                    </button>
+                </form>
+            </div>
+        </div>
+    @endif
+
+
     @if ($notification->data['message']['tipe'] == 'Preorder Modul')
         <div class="notification mb-3 p-3 border rounded bg-light">
             <div class="d-flex justify-content-between align-items-start">
@@ -1450,7 +1574,7 @@
             </div>
         </div>
     @endif
-    
+
     @if ($notification->data['message']['tipe'] == 'Persetujuan Preorder')
         <div class="notification mb-3 p-3 border rounded bg-light">
             <div class="w-100">
@@ -1503,55 +1627,55 @@
     <div class="notification mb-3 p-3 border rounded bg-light">
         <div class="w-100">
 
-            <p class="mb-2 text-success fw-bold">
-                Pembayaran Outstanding Telah Diselesaikan
-            </p>
+                <p class="mb-2 text-success fw-bold">
+                    Pembayaran Outstanding Telah Diselesaikan
+                </p>
 
-            <div class="mb-2">
-                <small class="text-muted d-block">Perusahaan</small>
-                <span class="fw-bold">
-                    {{ $notification->data['message']['perusahaan'] ?? '-' }}
-                </span>
-            </div>
+                <div class="mb-2">
+                    <small class="text-muted d-block">Perusahaan</small>
+                    <span class="fw-bold">
+                        {{ $notification->data['message']['perusahaan'] ?? '-' }}
+                    </span>
+                </div>
 
-            <div class="mb-2">
-                <small class="text-muted d-block">Materi</small>
-                <span>
-                    {{ $notification->data['message']['materi'] ?? '-' }}
-                </span>
-            </div>
+                <div class="mb-2">
+                    <small class="text-muted d-block">Materi</small>
+                    <span>
+                        {{ $notification->data['message']['materi'] ?? '-' }}
+                    </span>
+                </div>
 
-            <div class="mb-2">
-                <small class="text-muted d-block">Periode Kelas</small>
-                <span class="badge bg-info text-dark">
-                    {{ $notification->data['message']['periode'] ?? '-' }}
-                </span>
-            </div>
+                <div class="mb-2">
+                    <small class="text-muted d-block">Periode Kelas</small>
+                    <span class="badge bg-info text-dark">
+                        {{ $notification->data['message']['periode'] ?? '-' }}
+                    </span>
+                </div>
 
-            <div class="alert alert-info py-2 px-3 mb-3" style="font-size: 0.85rem;">
-                <i class="bi bi-info-circle me-1"></i>
-                Data <strong>Payment Advance (PA)</strong> tersedia.
-            </div>
+                <div class="alert alert-info py-2 px-3 mb-3" style="font-size: 0.85rem;">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Data <strong>Payment Advance (PA)</strong> tersedia.
+                </div>
 
-            <small class="text-muted d-block">
-                <i class="bi bi-clock"></i>
-                Dibuat pada:
-                {{ $notification->created_at->translatedFormat('d F Y H:i') }} WIB
-            </small>
+                <small class="text-muted d-block">
+                    <i class="bi bi-clock"></i>
+                    Dibuat pada:
+                    {{ $notification->created_at->translatedFormat('d F Y H:i') }} WIB
+                </small>
 
-            <div class="d-flex gap-2 mt-3">
-                <a href="{{ $notification->data['path'] }}" target="_blank" class="btn btn-sm btn-primary">
-                    <i class="bi bi-eye me-1"></i>Detail
-                </a>
+                <div class="d-flex gap-2 mt-3">
+                    <a href="{{ $notification->data['path'] }}" target="_blank" class="btn btn-sm btn-primary">
+                        <i class="bi bi-eye me-1"></i>Detail
+                    </a>
 
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST">
-                    @csrf
-                    @method('PUT')
-                    <button type="submit" class="btn btn-sm btn-outline-secondary">
-                        Tandai Dibaca
-                    </button>
-                </form>
-            </div>
+                    <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST">
+                        @csrf
+                        @method('PUT')
+                        <button type="submit" class="btn btn-sm btn-outline-secondary">
+                            Tandai Dibaca
+                        </button>
+                    </form>
+                </div>
 
             </div>
         </div>
@@ -1566,18 +1690,18 @@
             $msg = $notification->data['message'];
             $kategori = $msg['tipe_kategori'] ?? 'Umum';
             $namaItem = $msg['nama_item'] ?? '-';
+
+            // AMBIL DATA TAMBAHAN
+            $namaSertifTambahan = $msg['nama_sertifikasi_tambahan'] ?? null;
+
             $harga = $msg['harga'] ?? 0;
-            
             // Data Tanggal
             $tglUjian = $msg['tanggal_ujian'] ?? null;
             $tglBerlakuDari = $msg['berlaku_dari'] ?? null;
             $tglBerlakuSampai = $msg['berlaku_sampai'] ?? null;
-            
-            // UPDATE: Ambil Tanggal Mulai & Selesai untuk Pelatihan
+            // Data Tanggal Pelatihan
             $tglMulai = $msg['tanggal_mulai'] ?? null;
             $tglSelesai = $msg['tanggal_selesai'] ?? null;
-            
-            // Fallback untuk notifikasi lama (jika ada)
             $tglPelatihanLama = $msg['tanggal_pelatihan'] ?? null;
 
             $tglPengajuan = $msg['tanggal_pengajuan'] ?? $msg['tanggal'] ?? null;
@@ -1591,47 +1715,58 @@
 
                 @if ($msg['tipe'] == 'Mengajukan Pengembangan Diri')
                     telah <strong>membuat pengajuan baru</strong> untuk
+
                 @elseif ($msg['tipe'] == 'Pengembangan Diri Disetujui')
-                    telah <strong>menyetujui</strong> pengajuan
+                    telah <strong>menyetujui</strong>. <br>
+                    <span class="text-success fst-italic">
+                        "Telah disetujui Education Manager dan Sudah menjadi pengajuan barang dengan kategori Sertifikasi dan Pelatihan"
+                    </span> <br>
+                    untuk data
+
                 @elseif ($msg['tipe'] == 'Pengembangan Diri Ditolak')
                     telah <strong>menolak</strong> pengajuan
                 @endif
 
-                <strong>{{ $kategori }}</strong>: 
-                "{{ $namaItem }}".
+                <strong>{{ $kategori }}</strong>:
+                "{{ $namaItem }}"
+
+                {{-- LOGIKA TAMPILAN GANDA --}}
+                @if($namaSertifTambahan)
+                     dan <strong>Sertifikasi</strong>: "{{ $namaSertifTambahan }}"
+                @endif
+                .
             </p>
 
             {{-- === AREA DETAIL INFORMASI === --}}
             <div class="alert alert-light border py-2 px-3 mb-2" style="font-size: 0.9rem;">
-                
+
                 {{-- A. Tampilkan Detail Sertifikasi --}}
                 @if($kategori == 'Sertifikasi' && $tglUjian)
+                    {{-- ... (Kode Lama Tetap Sama) ... --}}
                     <div class="row">
                         <div class="col-12 mb-1">
-                            <i class="bi bi-calendar-event text-primary"></i> 
+                            <i class="bi bi-calendar-event text-primary"></i>
                             Tgl Ujian: <strong>{{ \Carbon\Carbon::parse($tglUjian)->translatedFormat('d M Y') }}</strong>
                         </div>
-                        <div class="col-12 mb-1">
-                            <i class="bi bi-clock-history text-warning"></i> 
-                            Berlaku: 
+                         <div class="col-12 mb-1">
+                            <i class="bi bi-clock-history text-warning"></i>
+                            Berlaku:
                             {{ $tglBerlakuDari ? \Carbon\Carbon::parse($tglBerlakuDari)->translatedFormat('d M Y') : '-' }}
                             s/d
                             {{ $tglBerlakuSampai ? \Carbon\Carbon::parse($tglBerlakuSampai)->translatedFormat('d M Y') : 'Seumur Hidup' }}
                         </div>
                     </div>
 
-                {{-- B. Tampilkan Detail Pelatihan (UPDATE: Rentang Tanggal) --}}
+                {{-- B. Tampilkan Detail Pelatihan --}}
                 @elseif($kategori == 'Pelatihan' && ($tglMulai || $tglPelatihanLama))
                     <div class="mb-1">
-                        <i class="bi bi-calendar-check text-primary"></i> 
-                        Pelaksanaan: 
+                        <i class="bi bi-calendar-check text-primary"></i>
+                        Pelaksanaan:
                         @if($tglMulai)
-                            {{-- Format Baru: Range Tanggal --}}
                             <strong>{{ \Carbon\Carbon::parse($tglMulai)->translatedFormat('d M Y') }}</strong>
                             s/d
                             <strong>{{ \Carbon\Carbon::parse($tglSelesai)->translatedFormat('d M Y') }}</strong>
                         @else
-                            {{-- Format Lama (Fallback) --}}
                             <strong>{{ \Carbon\Carbon::parse($tglPelatihanLama)->translatedFormat('d F Y') }}</strong>
                         @endif
                     </div>
@@ -1645,8 +1780,6 @@
                     </strong>
                 </div>
             </div>
-            {{-- === END DETAIL === --}}
-
             <p class="mb-2 text-muted">
                 @if (isset($msg['status']))
                     <i class="bi bi-info-circle"></i> {{ $msg['status'] }}<br>

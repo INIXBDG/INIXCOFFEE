@@ -253,6 +253,25 @@
                                     </div>
 
                                     <div class="row mb-3">
+                                        <label for="transportasi"
+                                            class="col-md-4 col-form-label text-md-start">{{ __('Transportasi') }}</label>
+                                        <div class="col-md-6">
+                                            <div class="input-group">
+                                                <span class="input-group-text" id="currency-symbol">Rp.</span>
+                                                <input id="transportasi" type="text"
+                                                    value="{{ isset($post) ? $post->transportasi : '' }}"
+                                                    class="form-control @error('transportasi') is-invalid @enderror"
+                                                    name="transportasi" autocomplete="transportasi" autofocus>
+                                            </div>
+                                            @error('transportasi')
+                                                <span class="invalid-feedback" role="alert">
+                                                    <strong>{{ $message }}</strong>
+                                                </span>
+                                            @enderror
+                                        </div>
+                                    </div>
+
+                                    <div class="row mb-3">
                                         <label for="pc_pax"
                                             class="col-md-4 col-form-label text-md-start">{{ __('PC per Pax') }}</label>
                                         <div class="col-md-5">
@@ -685,6 +704,10 @@
                 $(this).val(formatRupiah(inputVal));
                 updateSouvenir();
             });
+            $('#transportasi').on('input', function() {
+                let inputVal = $(this).val().replace(/[^,\d]/g, '');
+                $(this).val(formatRupiah(inputVal));
+            });
             $('#pc_pax, #pc_instruktur, #pc_peserta').on('input', function() {
                 let inputVal = $(this).val().replace(/[^,\d]/g, '');
                 $(this).val(formatRupiah(inputVal));
@@ -872,6 +895,7 @@
             const exam = parseFloat(removeRupiahFormat($('#exam').val())) || 0;
             const pc = parseFloat(removeRupiahFormat($('#pc').val())) || 0;
             const souvenir = parseFloat(removeRupiahFormat($('#souvenir').val())) || 0;
+            const transportasi = parseFloat(removeRupiahFormat($('#transportasi').val())) || 0;
             const konsumsi = parseFloat(removeRupiahFormat($('#konsumsi').val())) || 0;
             const biaya_modul_regular = parseFloat(removeRupiahFormat($('#biaya_modul_regular').val())) || 0;
             const biaya_modul_regular_dollar = parseFloat(removeRupiahFormat($('#biaya_modul_regular_dollar').val())) || 0;
@@ -885,6 +909,7 @@
                 total_fee_instruktur +
                 pc +
                 souvenir +
+                transportasi +
                 konsumsi +
                 biaya_modul_regular +
                 biaya_modul_regular_dollar +
@@ -930,6 +955,7 @@
             const fee_instruktur = parseFloat(removeRupiahFormat($('#fee_instruktur').val())) || 0;
             const pc = parseFloat(removeRupiahFormat($('#pc').val())) || 0;
             const souvenir = parseFloat(removeRupiahFormat($('#souvenir').val())) || 0;
+            const transportasi = parseFloat(removeRupiahFormat($('#transportasi').val())) || 0;
             const konsumsi = parseFloat(removeRupiahFormat($('#konsumsi').val())) || 0;
             const biaya_modul_regular = parseFloat(removeRupiahFormat($('#biaya_modul_regular').val())) || 0;
             const biaya_modul_regular_dollar = parseFloat(removeRupiahFormat($('#biaya_modul_regular_dollar').val())) || 0;
@@ -949,6 +975,7 @@
             $('#total_fee_instruktur').val(total_fee_instruktur);
             $('#pc').val(pc);
             $('#souvenir').val(souvenir);
+            $('#transportasi').val(transportasi);
             $('#konsumsi').val(konsumsi);
             $('#biaya_modul_regular').val(biaya_modul_regular);
             $('#biaya_modul_regular_dollar').val(biaya_modul_regular_dollar);

@@ -14,29 +14,37 @@ class Pelatihan extends Model
     protected $fillable = [
         'user_id',
         'nama_pelatihan',
-        'penyedia',
-        'tanggal_mulai', 
+        // 'penyedia',
+        'vendor',
+        'tanggal_mulai',
         'tanggal_selesai',
         'keterangan',
         'harga',
         'status_approval',
         'approved_by',
         'approved_at',
+        'id_pengajuan_barang',
+        'bukti_pelatihan',
+        'id_sertifikasi',
     ];
 
-    /**
-     * Mengambil data peserta pelatihan
-     */
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    /**
-     * Mengambil data manager yang melakukan approval
-     */
     public function approver()
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function pengajuan_barang()
+    {
+        return $this->belongsTo(PengajuanBarang::class, 'id_pengajuan_barang');
+    }
+
+    public function sertifikasi()
+    {
+        return $this->belongsTo(Sertifikasi::class, 'id_sertifikasi');
     }
 }

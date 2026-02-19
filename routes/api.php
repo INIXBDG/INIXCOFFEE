@@ -2,13 +2,15 @@
 
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\AktivitasController;
+use App\Http\Controllers\Api\apiController;
 use App\Http\Controllers\CatatanSalesController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\PeluangController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WebhookController;
-
+use App\Http\Controllers\WebPushController;
+use App\Http\Controllers\TelegramController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -19,6 +21,13 @@ use App\Http\Controllers\WebhookController;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+
+Route::middleware('auth:api')->group(function () {
+    Route::post('/webpush/subscribe', [WebPushController::class, 'subscribe'])->name('webpush.subscribe');
+    Route::post('/webpush/unsubscribe', [WebPushController::class, 'unsubscribe'])->name('webpush.unsubscribe');
+    Route::get('/webpush/vapid-key', [WebPushController::class, 'getVapidKey'])->name('webpush.vapid-key');
+    Route::post('/webpush/test', [WebPushController::class, 'testNotification'])->name('webpush.test');
+});
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -48,8 +57,15 @@ Route::get('materiinix', [App\Http\Controllers\Api\apiController::class, 'getMat
 Route::get('materiinix/{id}', [App\Http\Controllers\Api\apiController::class, 'getMateriInixByID'])->name('materiinixID');
 // Route::get('getPerusahaanById', [App\Http\Controllers\Api\PerusahaanController::class, 'getPerusahaanById'])->name('getPerusahaanById');
 Route::get('getInventaris', [App\Http\Controllers\Api\apiController::class, 'getInventaris'])->name('getInventaris');
+Route::get('/dashboard/csat-instruktur', [apiController::class, 'CSATinstruktur'])->name('CSATinstruktur');
+Route::get('/dashboard/aktivitas-instruktur', [apiController::class, 'AktivitasInstruktur'])->name('AktivitasInstruktur');
+Route::get('/dashboard/rekomendasi-materi', [apiController::class, 'RekomendasiMateri'])->name('RekomendasiMateri');
+
 
 
 Route::post('/create/ticket', [TicketController::class, 'store']);
 
 Route::match(['get', 'post'], '/webhook/fonnte', [WebhookController::class, 'handle']);
+
+Route::get('/telegram/setwebhook', [TelegramController::class, 'setWebhook'])->name('telegram.setwebhook');
+Route::post('/telegram/webhook', [TelegramController::class, 'webhook'])->name('telegram.webhook');

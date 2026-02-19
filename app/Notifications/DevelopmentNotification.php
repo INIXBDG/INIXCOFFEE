@@ -41,27 +41,28 @@ class DevelopmentNotification extends Notification implements ShouldBroadcast
         return 'notifikasi-event';
     }
 
-    /**
-     * Helper private agar struktur data konsisten antara toBroadcast dan toArray
-     */
     private function buildPayload()
     {
         return [
             'tipe'              => $this->type,
             'tipe_kategori'     => $this->data['tipe_kategori'] ?? 'Umum',
             'nama_item'         => $this->data['nama_item'] ?? '-',
+
+            // TAMBAHAN BARU: Nama sertifikasi jika pelatihan include sertifikasi
+            'nama_sertifikasi_tambahan' => $this->data['nama_sertifikasi_tambahan'] ?? null,
+
             'status'            => $this->data['status'] ?? null,
             'id_user'           => $this->data['id_user'] ?? null,
             'tanggal_pengajuan' => $this->data['tanggal_pengajuan'] ?? now(),
-            
+
             'harga'             => $this->data['harga'] ?? 0,
-            
+
             // Sertifikasi
             'tanggal_ujian'     => $this->data['tanggal_ujian'] ?? null,
             'berlaku_dari'      => $this->data['berlaku_dari'] ?? null,
             'berlaku_sampai'    => $this->data['berlaku_sampai'] ?? null,
 
-            // Pelatihan (UPDATE DISINI)
+            // Pelatihan
             'tanggal_mulai'     => $this->data['tanggal_mulai'] ?? null,
             'tanggal_selesai'   => $this->data['tanggal_selesai'] ?? null,
         ];

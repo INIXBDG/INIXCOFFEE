@@ -262,8 +262,13 @@
                         }
 
                         // Role Technical Support atau Koordinator ITSM
-                        if ((userRole === 'Technical Support' || userRole === 'Koordinator ITSM') &&
-                            (status.includes('ditinjau oleh Koordinator ITSM'))) {
+                        if (
+                            (userRole === 'Technical Support' || userRole === 'Koordinator ITSM') &&
+                            (
+                                status.includes('ditinjau oleh Koordinator ITSM') ||
+                                status === 'Diajukan dan Sedang Ditinjau oleh Koordinator ITSM'
+                            )
+                        ) {
                             actionBtns += `
                                 <li><button class="dropdown-item" onclick="editPengajuan(${item.id})">
                                     <img src="{{ asset('icon/edit-warning.svg') }}" width="16"> Edit</button></li>
@@ -289,7 +294,6 @@
                                 <li><button class="dropdown-item" onclick="viewDetail(${item.id})">
                                     <img src="{{ asset('icon/clipboard-primary.svg') }}" width="16"> Detail</button></li>
                             `;
-                            actionBtns += invoiceAction(item.id, item.invoice, item);
                         }
 
                         // Default Detail jika tidak ada aksi

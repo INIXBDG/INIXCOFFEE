@@ -86,4 +86,9 @@ class Nilaifeedback extends Model
     {
         return $this->belongsTo(Registrasi::class, 'id_regist', 'id');
     }
+
+    public function komplainPeserta()
+    {
+        return $this->hasMany(KomplainPeserta::class, 'nilaifeedback_id');
+    }
 }

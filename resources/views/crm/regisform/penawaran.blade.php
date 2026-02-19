@@ -466,7 +466,6 @@
                 <option value="{{ $item->nama_exam }}">{{ $item->nama_exam }}</option>
             @endforeach
         </select>
-
         <button type="button" id="add-pelatihan">Tambah Pelatihan</button>
 
         <h3>Fasilitas dan Perlengkapan</h3>
@@ -703,7 +702,7 @@
 
             const examOptions = document.getElementById('exam').innerHTML;
 
-            row.innerHTML = `
+          row.innerHTML = `
                 <div style="display: flex; gap: 5px;">
                     <select class="materi-select" style="width: 30%;">
                         <option value="">-- Template Materi --</option>

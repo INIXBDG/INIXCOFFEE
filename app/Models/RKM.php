@@ -4,9 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class RKM extends Model
 {
+    use SoftDeletes;
     use HasFactory;
     protected $primaryKey = 'id';
     protected $fillable = [
@@ -86,7 +88,6 @@ class RKM extends Model
     {
         return $this->hasOne(RekomendasiLanjutan::class, 'id_rkm', 'id');
     }
-
 
     public function exam()
     {

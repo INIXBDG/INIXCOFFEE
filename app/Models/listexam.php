@@ -14,8 +14,13 @@ class listexam extends Model
         'nama_exam',
         'vendor',
         'harga_exam',
-        'valid_until',
+        'valid_until',  
         'estimasi_durasi_booking',
-        'note'
+        'note',
+        'mata_uang',
+        'harga',
+        'kurs',
+        'biaya_admin',
+        'kurs_dollar'
     ];
 }
