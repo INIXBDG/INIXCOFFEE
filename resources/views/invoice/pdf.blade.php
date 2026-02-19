@@ -4,26 +4,52 @@
 <head>
     <meta charset="UTF-8">
     <title>Invoice #{{ $invoice->invoice_number }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
+        @media print {
+            td {
+                white-space: nowrap;
+            }
+        }
+
+        @page {
+            margin: 40px;
+            size: A4;
+        }
+
         body {
             font-family: DejaVu Sans, sans-serif;
             font-size: 12px;
+            margin: 0;
         }
 
-        .invoice-table {
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+        }
+
+        .table-invoice {
+            border: 1px solid #000;
             border-collapse: collapse;
             width: 100%;
+            page-break-inside: avoid;
         }
 
-        .invoice-table th,
-        .invoice-table td {
+        .table-invoice th,
+        .table-invoice td {
             border: 1px solid #000;
-            padding: 6px;
+            padding: 6px 8px;
             vertical-align: top;
         }
 
-        .invoice-table th {
+        .table-invoice th {
             background: #f1f1f1;
+            text-align: center;
+        }
+
+        .fw-bold {
+            font-weight: bold;
         }
 
         .text-end {
@@ -34,123 +60,211 @@
             text-align: center;
         }
 
-        .fw-bold {
-            font-weight: bold;
+        /* Pastikan tabel float tidak overflow */
+        div[style*="overflow: hidden"] table {
+            display: inline-table;
+            width: 40% !important;
+            page-break-inside: avoid;
         }
 
-        .footer-section {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 40px;
-        }
-
-        .footer-left {
-            width: 50%;
-            text-align: left;
-        }
-
-        .footer-right {
-            width: 40%;
-            text-align: center;
+        /* Pastikan nested table tidak bermasalah */
+        table table {
+            width: 100%;
+            border-collapse: collapse;
         }
     </style>
 </head>
 
 <body>
-    <div style="margin-bottom:10px;">
-        <img src="{{ public_path('icon/logoo.png') }}" alt="Logo Inixindo" style="width:120px;">
-        <div style="margin-top:8px;">
-            <p style="margin:0;"><strong>PT. INIXINDO AMIETE MANDIRI</strong></p>
-            <p style="margin:0;">Jl. Cipaganti No.95, Pasteur, Kec. Sukajadi, Kota Bandung, Jawa Barat 40161</p>
-            <p style="margin:0;">Telp. (022) 2032831 / Fax. (022) 2032831</p>
-        </div>
-    </div>
+    <!-- HEADER -->
+    <table style="width:100%; margin-bottom:10px; border-collapse:collapse;">
+        <tr>
+            <td style="width:60%; vertical-align:top;">
+                <img src="{{ public_path('icon/logoo.png') }}" alt="Logo" style="width:150px;"><br>
+                <p style="margin:0; font-weight:bold;">PT. INIXINDO AMIETE MANDIRI</p>
+                <p style="margin:0;">Jl. Cipaganti No.95, Bandung 40161</p>
+                <p style="margin:0;">Ph. (022) 2032831 / Fax. (022) 2032831</p>
+            </td>
+        <tr class="no-print">
+        </tr>
+        <table style="width:100%; border-collapse:collapse;">
+            <tr>
+                <td style="width:60%; vertical-align:top; padding-right:10px;">
+                    <table style="width:100%; border-collapse:collapse; border:1px solid #000; margin-top:40px;">
+                        <tr>
+                            <td style="background:#ddd; font-weight:bold; padding:6px; border-bottom:1px solid #000;">
+                                Bill To
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding:10px; height:100px; ">
+                                {{ $invoice->rkm->perusahaan->nama_perusahaan ?? 'Bank Indonesia' }}
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+                <td style="width:40%; vertical-align:top; text-align:center;">
+                    <h2 style="margin:0; font-weight:bold;">INVOICE</h2>
+                    <hr style="border:1px solid #000; margin:2px 0;">
+                    <table style="width:100%; border-collapse:collapse; font-size:14px; margin-top:5px; margin-bottom:20px;">
+                        <tr>
+                            <td style="border:1px solid #000; padding:6px; font-weight:bold; width:50%;">Invoice Date</td>
+                            <td style="border:1px solid #000; padding:6px; font-weight:bold; width:50%;">Invoice No</td>
+                        </tr>
+                        <tr>
+                            <td style="border:1px solid #000; padding:6px;">
+                                {{ \Carbon\Carbon::parse($invoice->tanggal_invoice)->translatedFormat('l, d F Y') }}
+                            </td>
+                            <td style="border:1px solid #000; padding:6px;">
+                                {{ $invoice->invoice_number }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="border:1px solid #000; padding:6px; font-weight:bold;">Purchase Order No.</td>
+                            <td style="border:1px solid #000; padding:6px; font-weight:bold;">Due Date</td>
+                        </tr>
+                        <tr>
+                            <td style="border:1px solid #000; padding:6px;">
+                                {{ $invoice->purchase_order ?? '-' }}
+                            </td>
+                            <td style="border:1px solid #000; padding:6px;">
+                                {{ $invoice->due_date ? \Carbon\Carbon::parse($invoice->due_date)->translatedFormat('l, d F Y') : '-' }}
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+        </tr>
+    </table>
 
-    <h2 class="text-center">Detail Invoice #{{ $invoice->invoice_number }}</h2>
-
-    <table class="invoice-table">
+    <!-- DETAIL BIAYA -->
+    <table class="table-invoice">
+        <thead>
+            <tr>
+                <th style="width:5%;">No</th>
+                <th style="width:45%;">Description</th>
+                <th style="width:10%;">Qty</th>
+                <th style="width:20%;">Unit Price</th>
+                <th style="width:20%;">Amount</th>
+            </tr>
+        </thead>
         <tbody>
             <tr>
-                <td colspan="3" class="fw-bold">Nomor Invoice:</td>
-                <td colspan="2">{{ $invoice->invoice_number }}</td>
-            </tr>
-            <tr>
-                <td colspan="3" class="fw-bold">Tanggal Invoice:</td>
-                <td colspan="2">{{ \Carbon\Carbon::parse($invoice->tanggal_invoice)->format('d F Y') }}</td>
-            </tr>
-            <tr>
-                <td colspan="5" class="fw-bold text-center">Detail RKM</td>
-            </tr>
-            <tr>
-                <td colspan="3">Perusahaan:</td>
-                <td colspan="2"><b>{{ $invoice->rkm->perusahaan->nama_perusahaan ?? '-' }}</b></td>
-            </tr>
-            <tr>
-                <td colspan="3">Materi:</td>
-                <td colspan="2"><b>{{ $invoice->rkm->materi->nama_materi ?? '-' }}</b></td>
-            </tr>
-            <tr>
-                <td colspan="3">Tanggal:</td>
-                <td colspan="2"><b>{{ \Carbon\Carbon::parse($invoice->rkm->tanggal_awal)->format('d F Y') }}
-                        s/d {{ \Carbon\Carbon::parse($invoice->rkm->tanggal_akhir)->format('d F Y') }}</b></td>
-            </tr>
-            <tr>
-                <td colspan="3">Peserta:</td>
-                <td colspan="2"><b>{{ $invoice->rkm->pax ?? '-' }}</b></td>
-            </tr>
-            <tr>
-                <th style="width: 5%;">No</th>
-                <th style="width: 45%;">Deskripsi</th>
-                <th style="width: 10%;">Pax</th>
-                <th style="width: 20%;">Harga Unit</th>
-                <th style="width: 20%;">Jumlah</th>
-            </tr>
-            <tr>
-                <td>1</td>
+                <td class="text-center">1</td>
                 <td>
-                    Materi: {{ $invoice->rkm->materi->nama_materi ?? '-' }} <br>
-                    Tanggal: {{ \Carbon\Carbon::parse($invoice->rkm->tanggal_awal)->format('d F Y') }} s/d {{ \Carbon\Carbon::parse($invoice->rkm->tanggal_akhir)->format('d F Y') }} <br>
-                    Peserta: {{ $invoice->rkm->pax ?? '-' }} orang
+                    <table style="border-collapse: collapse; width:100%;">
+                        <tr>
+                            <td style="border:none; padding: 2px 6px;"><strong>Materi</strong></td>
+                            <td style="border:none; padding: 2px 6px;">:</td>
+                            <td style="border:none; padding: 2px 6px;">
+                                {{ optional($invoice->rkm->materi)->nama_materi ?? '-' }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="border:none; padding: 2px 6px;"><strong>Tanggal</strong></td>
+                            <td style="border:none; padding: 2px 6px;">:</td>
+                            <td style="border:none; padding: 2px 6px;">
+                                {{ optional($invoice->rkm)->tanggal_awal ? \Carbon\Carbon::parse($invoice->rkm->tanggal_awal)->format('d F Y') : '-' }}
+                                s/d
+                                {{ optional($invoice->rkm)->tanggal_akhir ? \Carbon\Carbon::parse($invoice->rkm->tanggal_akhir)->format('d F Y') : '-' }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="border:none; padding: 2px 6px;"><strong>Peserta</strong></td>
+                            <td style="border:none; padding: 2px 6px;">:</td>
+                            <td style="border:none; padding: 2px 6px;">
+                                {{ optional($invoice->rkm)->pax ?? '-' }} orang
+                            </td>
+                        </tr>
+                    </table>
                 </td>
-                <td>{{ $invoice->rkm->pax ?? '-' }}</td>
-                <td>Rp. {{ number_format($invoice->rkm->harga_jual ?? 0, 0, ',', '.') }}</td>
-                <td>Rp. {{ number_format(($invoice->rkm->harga_jual ?? 0) * ($invoice->rkm->pax ?? 0), 0, ',', '.') }}</td>
+
+
+                <td class="text-center">{{ $invoice->rkm->pax ?? '-' }}</td>
+                <td class="text-end">Rp {{ number_format($invoice->rkm->harga_jual ?? 0, 0, ',', '.') }}</td>
+                <td class="text-end">Rp {{ number_format(($invoice->rkm->harga_jual ?? 0) * ($invoice->rkm->pax ?? 0), 0, ',', '.') }}</td>
             </tr>
             <tr>
-                <td colspan="3" rowspan="3"></td>
-                <td class="text-end">SubTotal</td>
-                <td class="text-end">Rp. {{ number_format(($invoice->rkm->harga_jual ?? 0) * ($invoice->rkm->pax ?? 0), 0, ',', '.') }}</td>
+                <td colspan="3" rowspan="4"></td>
+                <td class="text-end">Sub Total</td>
+                <td class="text-end">
+                    Rp {{ number_format(($invoice->rkm->harga_jual ?? 0) * ($invoice->rkm->pax ?? 0), 0, ',', '.') }}
+                </td>
             </tr>
             <tr>
                 <td class="text-end">PPN 11%</td>
-                <td class="text-end">Rp. {{ number_format((($invoice->rkm->harga_jual ?? 0) * ($invoice->rkm->pax ?? 0)) * 0.11, 0, ',', '.') }}</td>
+                <td class="text-end">
+                    Rp {{ number_format((($invoice->rkm->harga_jual ?? 0) * ($invoice->rkm->pax ?? 0)) * 0.11, 0, ',', '.') }}
+                </td>
+            </tr>
+            <tr>
+                <td class="text-end">PPh 23 (2%)</td>
+                <td class="text-end">
+                    - Rp {{ number_format((($invoice->rkm->harga_jual ?? 0) * ($invoice->rkm->pax ?? 0)) * 0.02, 0, ',', '.') }}
+                </td>
             </tr>
             <tr>
                 <td class="text-end fw-bold">TOTAL</td>
-                <td class="text-end fw-bold">Rp. {{ number_format($invoice->amount, 0, ',', '.') }}</td>
+                <td class="text-end fw-bold">
+                    Rp {{ number_format($invoice->amount, 0, ',', '.') }}
+                </td>
             </tr>
+
             <tr>
-                <td colspan="5" class="text-center fw-bold"><i>{{ $terbilang }}</i></td>
+                <td colspan="5" class="text-center fw-bold" style="background-color: #ddd;"><i>{{ $terbilang }}</i></td>
             </tr>
         </tbody>
     </table>
 
-    <div style="width:100%; margin-top:40px;">
-        <div style="width:55%; float:left; text-align:left;">
-            <p class="fw-bold">Pembayaran dapat dilakukan melalui transfer ke:</p>
-            <p style="margin:0;">BANK MANDIRI KK BANDUNG CIHAMPELAS</p>
-            <p style="margin:0;">a/n PT. INIXINDO AMIETE MANDIRI</p>
-            <p style="margin:0;">Account No: 131-00-0734797-6</p>
-        </div>
-        <div style="width:40%; float:right; text-align:center;">
-            <p style="margin-bottom:40px;">Bandung, {{ \Carbon\Carbon::now()->format('d F Y') }}</p>
-            <p style="margin:0;"><strong>Hormat kami,</strong></p>
-            <p style="margin-bottom:40px;">PT. INIXINDO AMIETE MANDIRI</p>
-            <p style="margin:0;" class="fw-bold"><u>{{ $user->name ?? 'Nama Penanggung Jawab' }}</u></p>
-            <small>Accounting & Finance</small>
-        </div>
-    </div>
-    <div style="clear:both;"></div>
+    <!-- FOOTER -->
+    <!-- FOOTER -->
+    <table style="width:100%; margin-top:40px; border-collapse:collapse; border: 1px solid #000;">
+        <tr>
+            <td style="width:100%; text-align:center; vertical-align:top; border: 1px solid #000;">
+                <p style="margin:0;">Pembayaran dapat dilakukan melalui transfer ke :</p>
+                <p style="margin:0; font-weight:bold;">{{ $invoice->bank_name ?? 'BANK MANDIRI KK BANDUNG CIHAMPELAS' }}</p>
+                <p style="margin:0; font-weight:bold;">No. Rek : {{ $invoice->account_number ?? '131-00-0734797-6' }}</p>
+
+                @php
+                $accountName = 'PT. INIXINDO AMIETE MANDIRI';
+                if (($invoice->bank_name ?? '') === 'BANK BCA KK BANDUNG ABDUL RIVAI') {
+                $accountName = 'RAY GUTAFSON MANURUNG';
+                }
+                @endphp
+
+                <p style="margin:0; font-weight:bold;">a/n {{ $accountName }}</p>
+
+                @if($invoice->catatan_pembayaran)
+                <p style="margin:0;">{{ $invoice->catatan_pembayaran }}</p>
+                @else
+                <p style="margin:0;">Note : Mohon nomor invoice dan nama perusahaan dicantumkan</p>
+                @endif
+            </td>
+        </tr>
+    </table>
+    </table>
+
+    <table style="width:100%; margin-top:40px; border-collapse:collapse;">
+        <tr>
+            <td style="width:50%; text-align:center; vertical-align:top;">
+                <p><b>Recieved by,</b></p>
+                <div style="height:60px;"></div>
+                <p style="margin:0;">
+                    <u>{{ $invoice->rkm->perusahaan->nama_perusahaan ?? 'Customer Stamp & Signature' }}</u>
+                </p>
+                <small>Customer Stamp & Signature</small>
+            </td>
+
+            <td style="width:50%; text-align:center; vertical-align:top;">
+                <div style="height:60px; margin-top: 35px;"></div>
+                <p style="margin:0;">
+                    <u>{{ $karyawan->nama_lengkap ?? 'Nama Penanggung Jawab Kanan' }}</u>
+                </p>
+                <small>{{ $karyawan->jabatan ?? 'Accounting & Finance' }}</small>
+            </td>
+        </tr>
+    </table>
 
 </body>
 

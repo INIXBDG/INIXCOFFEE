@@ -654,11 +654,25 @@
                         $('#totalNetSalesHutang').html(formatRupiah(total, 'Rp. '));
                     },
                     "createdRow": function(row, data) {
-                        if (moment(data.due_date).isBefore(moment())) {
-                            $(row).css({
-                                'background-color': 'red',
-                                'color': 'white'
-                            });
+                        if (!data.due_date) return;
+
+                        let today = moment().startOf('day');
+                        let dueDate = moment(data.due_date).startOf('day');
+
+                        let overDueDate = today.diff(dueDate, 'days');
+
+                        $(row).removeClass('row-white row-red row-ligth-blue');
+
+                        if (overDueDate > 180) {
+                            $(row).css('background-color', '#872819');
+                            $(row).css('color', 'white');
+                        }
+                        else if (overDueDate > 30) {
+                            $(row).css('background-color', '#07b0ff');
+                            $(row).css('color', 'white');
+                        } 
+                        else {
+                            $(row).css('color', 'black');
                         }
                     }
                 });
@@ -734,6 +748,10 @@
                             }
                         }
                     ],
+                    "createdRow": function (row) {
+                        $(row).css('background-color', '#FAB12F');
+                        $(row).css('color', 'white');
+                    },
                     "footerCallback": function(row, data, start, end, display) {
                         var total = 0;
                         // Loop data untuk menghitung total net_sales dari relasi outstanding
