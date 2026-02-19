@@ -7,6 +7,7 @@
     <title>Form Surat Penawaran</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -374,7 +375,7 @@
                 display: flex;
                 flex-wrap: wrap;
                 gap: 5mm;
-                margin-top: 8mm;
+                margin-top: 16mm;
                 justify-content: space-between;
                 page-break-inside: avoid;
             }
@@ -433,7 +434,7 @@
 
         <h3>Data Penerima (Klien)</h3>
         <label>Pilih Perusahaan:</label>
-        <select id="perusahaan" required>
+        <select id="perusahaan" class="select2-init" required>
             <option value="">Pilih Perusahaan</option>
             @if ($isAdmin)
                 @foreach ($perusahaans as $p)
@@ -449,7 +450,7 @@
         </select>
 
         <label>Nama Pimpinan/Perusahaan:</label>
-        <input type="text" id="penerima" class="readonly" readonly>
+        <input type="text" id="penerima">
 
         <h3>Deskripsi</h3>
         <label>Deskripsi Penawaran:</label>
@@ -460,6 +461,12 @@
         <input type="number" id="ppn-rate" value="11" min="0" max="100" step="0.1" required>
         <label><input type="checkbox" id="include-ppn" checked> Termasuk PPN</label>
         <div id="pelatihan-list"></div>
+        <select name="listexam" id="exam" style="display: none">
+            @foreach ($exam as $item)
+                <option value="{{ $item->nama_exam }}">{{ $item->nama_exam }}</option>
+            @endforeach
+        </select>
+
         <button type="button" id="add-pelatihan">Tambah Pelatihan</button>
 
         <h3>Fasilitas dan Perlengkapan</h3>
@@ -471,12 +478,18 @@
         <button type="button" id="add-keuntungan">Tambah Keuntungan</button>
 
         <h3>Syarat dan Ketentuan</h3>
-        <label>Pilih Syarat (bisa lebih dari satu):</label>
-        <select id="syarat-select" multiple>
+        <label>Pilih Syarat dan Ketentuan:</label>
+        <div id="syarat-checkbox-list"
+            style="border: 1px solid #ccc; padding: 10px; max-height: 200px; overflow-y: auto;">
             @foreach ($ketentuan as $ket)
-                <option value="{{ $ket->id }}" data-content="{{ $ket->ketentuan }}">{{ $ket->ketentuan }}</option>
+                <div style="display: flex; align-items: flex-start; gap: 8px; margin-bottom: 5px;">
+                    <input type="checkbox" class="syarat-checkbox" id="syarat-{{ $ket->id }}"
+                        data-content="{{ $ket->ketentuan }}" style="width: auto; margin-top: 4px;">
+                    <label for="syarat-{{ $ket->id }}"
+                        style="cursor: pointer; font-size: 13px;">{{ $ket->ketentuan }}</label>
+                </div>
             @endforeach
-        </select>
+        </div>
 
         <h3>Data Sales</h3>
         @php
@@ -528,13 +541,30 @@
 
 
         <button type="button" id="preview-btn">Generate PDF</button>
+        <button type="button" id="download-word">Generate WORD</button>
     </form>
 
     <div id="preview-modal">
         <div id="preview-content"></div>
     </div>
 
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
+        $(document).ready(function() {
+            $('#perusahaan').select2({
+                placeholder: "Pilih Perusahaan",
+                allowClear: true,
+                width: '100%'
+            });
+
+            $('#perusahaan').on('select2:select', function (e) {
+                const data = e.params.data.element;
+                const nama = data.getAttribute('data-nama') || '';
+                document.getElementById('penerima').value = nama;
+            });
+        });
+
         const {
             jsPDF
         } = window.jspdf;
@@ -637,53 +667,139 @@
             document.getElementById('penerima').value = nama;
         });
 
+        function updateFasilitasDanKeuntunganBasedOnMetode() {
+            const metodeRows = document.querySelectorAll('.pelatihan-row .metode-select');
+            let hasOnline = false;
+
+            metodeRows.forEach(select => {
+                if (select.value === 'Online') {
+                    hasOnline = true;
+                }
+            });
+
+            document.querySelectorAll('.fasilitas-row').forEach(row => row.remove());
+            document.querySelectorAll('.keuntungan-row').forEach(row => row.remove());
+
+            fasilitasKonstan.forEach(item => {
+                if (hasOnline && !['Instruktur', 'E-Modul', 'E-Lab'].includes(item)) {
+                    return;
+                }
+                addFasilitasRow(item);
+            });
+
+            keuntunganKonstan.forEach(item => {
+                // Hilangkan Souvenir jika ada kelas Online
+                if (hasOnline && item.includes('Souvenir')) {
+                    return;
+                }
+                addKeuntunganRow(item);
+            });
+        }
+
         // Fungsi untuk menambahkan baris pelatihan
         document.getElementById('add-pelatihan').addEventListener('click', () => {
             const row = document.createElement('div');
             row.className = 'pelatihan-row';
 
+            const examOptions = document.getElementById('exam').innerHTML;
+
             row.innerHTML = `
                 <div style="display: flex; gap: 5px;">
                     <select class="materi-select" style="width: 30%;">
-                        <option value="">-- Pilih Template Materi --</option>
+                        <option value="">-- Template Materi --</option>
                         ${materiData.map(m => `<option value="${m.id}" data-nama="${m.nama_materi}" data-durasi="${m.durasi}">${m.nama_materi}</option>`).join('')}
                     </select>
-                    <input type="text" class="materi-text" placeholder="Nama Materi (Bisa diedit)" required style="width: 70%;">
+                    <input type="text" class="materi-text" placeholder="Nama Materi" required style="width: 70%;">
                 </div>
                 
-                <div style="display: flex; align-items: center; gap: 5px;">
-                    <input type="number" class="durasi-pelatihan" placeholder="Durasi" min="1" required style="width: 70px;">
+                <div style="display: flex; gap: 5px; margin-top: 5px;">
+                    <select class="exam-select" style="width: 100%;">
+                        <option value="-">-- Tanpa Exam --</option>
+                        ${examOptions}
+                    </select>
+                    <input type="text" class="harga-exam" placeholder="Harga Exam (Rp)" style="width: 45%;" inputmode="numeric">
                 </div>
 
-                <input type="date" class="tanggal-awal-pelatihan" required>
-                <input type="text" class="tanggal-pelatihan" readonly placeholder="Tanggal Akhir Otomatis">
-                <input type="text" class="harga-pelatihan" placeholder="Harga (Rp)" required>
-                <input type="text" class="ppn-amount" readonly placeholder="PPN Amount">
-                <button type="button" onclick="this.parentElement.remove()">Hapus</button>
+                <div style="display: flex; gap: 5px; margin-top: 8px; align-items: center;">
+                    <select class="metode-select" style="width: 140px;" required>
+                        <option value="">-- Metode --</option>
+                        <option value="Online">Online</option>
+                        <option value="Offline">Offline</option>
+                        <option value="Inhouse">Inhouse</option>
+                    </select>
+                    <input type="number" class="durasi-pelatihan" placeholder="Durasi" min="1" required style="width: 80px;">
+                    <input type="date" class="tanggal-awal-pelatihan" required style="flex: 1;">
+                </div>
+
+                <input type="text" class="tanggal-pelatihan" readonly placeholder="Tanggal Akhir Otomatis" style="margin-top: 5px;">
+                <input type="text" class="harga-pelatihan" placeholder="Harga (Rp)" required style="margin-top: 5px;">
+                <input type="text" class="ppn-amount" readonly placeholder="PPN Amount" style="margin-top: 5px;">
+                <button type="button" onclick="this.parentElement.remove()" style="background: #ff4d4d; color: white; border: none; cursor: pointer;">Hapus Baris</button>
             `;
+
             document.getElementById('pelatihan-list').appendChild(row);
+
+            $(row).find('.materi-select').select2({
+                placeholder: "Pilih Materi",
+                width: '50%'
+            });
+
+            $(row).find('.exam-select').select2({
+                placeholder: "Pilih Exam",
+                width: '50%'
+            });
+
+            $(row).find('.materi-select').on('select2:select', function(e) {
+                const data = e.params.data.element;
+                const nama = data.getAttribute('data-nama') || '';
+                const durasi = data.getAttribute('data-durasi') || '';
+                
+                const rowElement = $(this).closest('.pelatihan-row');
+                rowElement.find('.materi-text').val(nama);
+                rowElement.find('.durasi-pelatihan').val(durasi).trigger('input'); 
+            });
 
             // Seleksi elemen
             const materiSelect = row.querySelector('.materi-select');
-            const materiTextInput = row.querySelector('.materi-text'); // Input baru untuk nama materi yg di customize
+            const materiTextInput = row.querySelector(
+                '.materi-text'); // Input baru untuk nama materi yg di customize
             const durasiInput = row.querySelector('.durasi-pelatihan');
             const tanggalAwalInput = row.querySelector('.tanggal-awal-pelatihan');
             const tanggalPelatihanInput = row.querySelector('.tanggal-pelatihan');
             const hargaInput = row.querySelector('.harga-pelatihan');
             const ppnAmountInput = row.querySelector('.ppn-amount');
+            const hargaExamInput = row.querySelector('.harga-exam');
+
+            const metodeSelect = row.querySelector('.metode-select');
+
+            metodeSelect.addEventListener('change', () => {
+                updateFasilitasDanKeuntunganBasedOnMetode();
+            });
 
             function updatePPN() {
                 const ppnRate = parseFloat(document.getElementById('ppn-rate').value) || 0;
                 const includePPN = document.getElementById('include-ppn').checked;
-                const price = parseFloat(hargaInput.value) || 0;
-                const { ppnAmount } = calculatePriceWithPPN(price, ppnRate, includePPN);
+
+                const pricePelatihan = parseFloat(hargaInput.value) || 0;
+                const priceExam = parseFloat(hargaExamInput.value.replace(/[^0-9]/g, '')) || 0;
+                const totalBeforePPN = pricePelatihan + priceExam;
+
+                const {
+                    total,
+                    ppnAmount
+                } = calculatePriceWithPPN(totalBeforePPN, ppnRate, includePPN);
+
                 ppnAmountInput.value = formatRupiah(ppnAmount);
             }
 
+            hargaInput.addEventListener('input', updatePPN);
+            document.getElementById('ppn-rate').addEventListener('input', updatePPN);
+            document.getElementById('include-ppn').addEventListener('change', updatePPN);
+
             function updateEndDate() {
-                const durasi = parseInt(durasiInput.value) || 0; 
+                const durasi = parseInt(durasiInput.value) || 0;
                 const startDate = tanggalAwalInput.value;
-                
+
                 if (durasi > 0 && startDate) {
                     const endDate = calculateEndDate(startDate, durasi);
                     tanggalPelatihanInput.value = endDate || 'Tanggal tidak valid';
@@ -805,21 +921,33 @@
             const pelatihanRows = document.querySelectorAll('.pelatihan-row');
             let pelatihanHTML = '';
             let isPelatihanValid = true;
+            let hasOnline = false;
 
             pelatihanRows.forEach(row => {
-                // MODIFIKASI DISINI: Ambil nilai dari input text .materi-text
                 const materi = row.querySelector('.materi-text').value || '';
-                
-                // Ambil nilai durasi langsung, tambahkan teks "Hari" manual karena inputnya type number
+                const metode = row.querySelector('.metode-select').value || '-';
+                const examName = row.querySelector('.exam-select').value || '-';
+                const hargaExamRaw = row.querySelector('.harga-exam').value.replace(/[^0-9]/g, '') ||
+                    '0';
+                const hargaExam = parseInt(hargaExamRaw) || 0;
+                const examDisplay = examName === '-' ? '-' :
+                    `${examName} ${hargaExam > 0 ? `(${formatRupiah(hargaExam)})` : ''}`;
+
                 const durasiVal = row.querySelector('.durasi-pelatihan').value;
                 const durasi = durasiVal ? `${durasiVal} Hari` : '';
-
                 const tanggal = row.querySelector('.tanggal-pelatihan').value || '';
-                const harga = parseFloat(row.querySelector('.harga-pelatihan').value) || 0;
 
-                const { total } = calculatePriceWithPPN(harga, ppnRate, includePPN);
+                const hargaPelatihan = parseFloat(row.querySelector('.harga-pelatihan').value) || 0;
+                const totalBeforePPN = hargaPelatihan + hargaExam;
+                if (metode === 'Online') {
+                    hasOnline = true;
+                }
 
-                if (!materi || !durasi || !tanggal || !harga) {
+                const {
+                    total
+                } = calculatePriceWithPPN(totalBeforePPN, ppnRate, includePPN);
+
+                if (!materi || !durasi || !tanggal || !hargaPelatihan) {
                     isPelatihanValid = false;
                     return;
                 }
@@ -827,6 +955,8 @@
                 pelatihanHTML += `
                     <tr>
                         <td>${materi}</td>
+                        <td>${metode}</td>
+                        <td>${examDisplay}</td>
                         <td>${durasi}</td>
                         <td>${tanggal}</td>
                         <td>${formatRupiah(total)}</td>
@@ -875,19 +1005,18 @@
                 return;
             }
 
-            // Proses syarat
-            const select = document.getElementById('syarat-select');
-            const selectedOptions = Array.from(select.selectedOptions);
+            const selectedCheckboxes = document.querySelectorAll('.syarat-checkbox:checked');
             let syaratList = '';
-            if (selectedOptions.length === 0) {
+
+            if (selectedCheckboxes.length === 0) {
                 syaratList = `
                     <li>Harga penawaran di atas sudah termasuk PPN ${ppnRate}%.</li>
                     <li>Form pendaftaran harus dikirim paling lambat 14 hari sebelum pelaksanaan pelatihan.</li>
                     <li>Pelatihan berlangsung pukul 09.00 hingga selesai.</li>
                     <li>Pelatihan diselenggarakan di Kantor Inixindo Bandung, Jalan Cipaganti No 95, Bandung.</li>`;
             } else {
-                selectedOptions.forEach(option => {
-                    const content = option.dataset.content || '';
+                selectedCheckboxes.forEach(cb => {
+                    const content = cb.getAttribute('data-content') || '';
                     syaratList += `<li>${content}</li>`;
                 });
             }
@@ -912,11 +1041,16 @@
             `;
 
             const signatureHTML = signatureUrl && signatureUrl !== '' ? `
-                <img src="${signatureUrl}" alt="Tanda Tangan ${namaSales}" class="signature-img" />
+                <img src="${signatureUrl}" alt="Tanda Tangan ${namaSales}" class="signature-img" style="width: auto; height: 15mm; "/>
             ` : `<p>Tanda Tangan Tidak Tersedia</p>`;
 
-            // Split content into two parts for page break before keuntungan
-            const firstPageContent = `
+            const keuntunganSection = `
+                <p class="font-semibold mt-2" style="font-weight:bold;">Keuntungan yang Akan Anda Dapatkan:</p>
+                <ul class="list-disc pl-6">${keuntunganHTML}</ul>
+            `;
+
+            // --- firstPageContent ---
+            let firstPageContent = `
                 <div class="container">
                     <img src="${backgroundUrl}" class="background-image" alt="Background">
                     <div class="header-container">
@@ -940,8 +1074,7 @@
                         </div>
                         <div class="penerima text-sm text-gray-700">
                             <p>Kepada Yth.</p>
-                            <p>Bapak/Ibu</p>
-                            <p>Pimpinan ${penerima}</p>
+                            <p>${penerima}</p>
                             <p>Di Tempat</p>
                         </div>
                         <div class="deskripsi text-sm text-gray-800">
@@ -950,10 +1083,12 @@
                             <table class="training-table">
                                 <thead>
                                     <tr>
-                                        <th>Materi Pelatihan</th>
-                                        <th>Durasi Pelatihan</th>
-                                        <th>Tanggal Pelatihan</th>
-                                        <th>Harga Penawaran Per Peserta ${includePPN ? `(Termasuk PPN ${ppnRate}%)` : ''}</th>
+                                        <th style="width: 27%;">Materi Pelatihan</th>
+                                        <th style="width: 10%;">Metode</th>
+                                        <th style="width: 20%;">Exam</th>
+                                        <th style="width: 15%;">Durasi</th>
+                                        <th style="width: 15%;">Tanggal</th>
+                                        <th style="width: 13%;">Harga ${includePPN ? `(PPN ${ppnRate}%)` : ''}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -967,20 +1102,61 @@
                             <p class="font-semibold mt-2" style="font-weight:bold;">Fasilitas dan Perlengkapan yang Kami Sediakan:</p>
                             <ol class="list-decimal pl-6">${fasilitasHTML}</ol>
                         </div>
-                    </div>
-                </div>
             `;
 
-            const secondPageContent = `
-                <div class="container">
-                    <div class="content-container">
-                        <img src="${backgroundUrl}" class="background-image" alt="Background">
-                        <div class="keuntungan-closing-container">
-                            <div class="terms text-sm text-gray-800">
-                                <p class="font-semibold mt-2" style="font-weight:bold;">Keuntungan yang Akan Anda Dapatkan:</p>
-                                <ul class="list-disc pl-6">${keuntunganHTML}</ul>
+            // Tambahkan keuntungan jika ada Online
+            if (hasOnline) {
+                firstPageContent += `
+                                    <div class="terms text-sm text-gray-800">
+                                        ${keuntunganSection}
+                                    </div>
+                            `;
+            }
+
+            firstPageContent += `
+                                </div>
                             </div>
-                            <div class="closing text-sm text-gray-700">
+                        `;
+
+            // --- secondPageContent (hanya jika TIDAK ada Online) ---
+            let secondPageContent = '';
+
+            if (!hasOnline) {
+                secondPageContent = `
+                    <div class="container">
+                        <div class="content-container">
+                            <img src="${backgroundUrl}" class="background-image" alt="Background">
+                            <div class="keuntungan-closing-container">
+                                <div class="terms text-sm text-gray-800">
+                                    ${keuntunganSection}
+                                </div>
+                                <div class="closing text-sm text-gray-700">
+                                    <p>Demikian surat penawaran ini kami sampaikan. Besar harapan kami dapat bekerja sama dengan Bapak/Ibu.</p>
+                                    <p style="margin-bottom:9mm;"><strong>Untuk informasi lebih lanjut dan penyesuaian harga maupun fasilitas, mohon hubungi:</strong></p>
+                                    <p class="contact-info"><span class="label">Whatsapp</span><span class="value">: ${waSales}</span></p>
+                                    <p class="contact-info"><span class="label">Telepon</span><span class="value">: ${telpSales}</span></p>
+                                    <p class="contact-info"><span class="label">Email</span><span class="value"><a href="mailto:${emailSales}" style="text-decoration:none; color: black;">: ${emailSales}</a></span></p>
+                                    <br />
+                                    <p class="mt-2">Hormat kami,</p>
+                                    <p class="font-bold">INIXINDO BANDUNG</p>
+                                    <div class="signature">
+                                        ${signatureHTML}
+                                        <p><strong>${namaSales}</strong></p>
+                                        <p>${jabatanSales},</p> 
+                                        <p>Inixindo Bandung</p>
+                                    </div>
+                                    ${vendorImagesHTML}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                secondPageContent = `
+                    <div class="container">
+                        <div class="content-container">
+                            <img src="${backgroundUrl}" class="background-image" alt="Background">
+                            <div class="closing text-sm text-gray-700" style="margin-top: 10mm;">
                                 <p>Demikian surat penawaran ini kami sampaikan. Besar harapan kami dapat bekerja sama dengan Bapak/Ibu.</p>
                                 <p style="margin-bottom:9mm;"><strong>Untuk informasi lebih lanjut dan penyesuaian harga maupun fasilitas, mohon hubungi:</strong></p>
                                 <p class="contact-info"><span class="label">Whatsapp</span><span class="value">: ${waSales}</span></p>
@@ -988,7 +1164,7 @@
                                 <p class="contact-info"><span class="label">Email</span><span class="value"><a href="mailto:${emailSales}" style="text-decoration:none; color: black;">: ${emailSales}</a></span></p>
                                 <br />
                                 <p class="mt-2">Hormat kami,</p>
-                                <p class="font-bold" style="padding-bottom:4%;">INIXINDO BANDUNG</p>
+                                <p class="font-bold">INIXINDO BANDUNG</p>
                                 <div class="signature">
                                     ${signatureHTML}
                                     <p><strong>${namaSales}</strong></p>
@@ -999,9 +1175,8 @@
                             </div>
                         </div>
                     </div>
-                </div>
-            `;
-
+                `;
+            }
             // Generate PDF
             await generatePDF(firstPageContent, secondPageContent);
         });
@@ -1040,7 +1215,7 @@
                     }
                     .content-container { margin-left:10mm;}
                     .logo img { width: 60mm; }
-                    .office-info { font-size: 9pt; line-height: 8pt; max-width: 70mm; }
+                    .office-info { font-size: 9pt; line-height: 4pt; max-width: 70mm; }
                     .waktu { text-align: right; font-size: 9pt; margin: 1mm 0; line-height: 12pt; }
                     .lampiran { font-size: 9pt; margin: 1mm 0; line-height: 8pt; }
                     .lampiran p { display: flex; align-items: flex-start; }
@@ -1055,21 +1230,24 @@
                     .closing p.contact-info span.label { flex: 0 0 20mm; text-align: left; }
                     .closing p.contact-info span.value { flex: 1; text-align: left; }
                     .training-table { width: 100%; margin: 1mm 0; border-collapse: collapse; }
-                    .training-table th, .training-table td { font-size: 9pt; padding: 3pt 5pt; border: 1px solid #ccc; text-align: left; word-wrap: break-word; line-height: 12pt; }
+                    .training-table th, .training-table td { font-size: 9pt; padding: 3pt 5pt; border: 1px solid #ccc; text-align: center; word-wrap: break-word; line-height: 12pt; }
                     .training-table th { background-color: #f2f2f2; }
                     .list-disc { list-style-type: disc; padding-left: 15px; }
                     .list-decimal { list-style-type: decimal; padding-left: 30px; }
-                    .signature { margin-top: 13mm; }
-                    .signature-img { width: 30mm; height: auto; object-fit: contain; margin-bottom: 5mm; }
                     .vendor-images {
-                        display: flex;
-                        flex-wrap: wrap;
+                        position: absolute;
+                        bottom: 0;
+                        top: 135mm;   
+                        left: 15mm;
+                        right: 0;
+                        display: grid;
+                        grid-template-columns: repeat(5, 1fr);
                         gap: 5mm;
-                        margin-top: 55mm;
-                        justify-content: space-between;
+                        margin-top: 90mm;
+                        margin-left: 10mm
                     }
                     .vendor-images img {
-                        width: 30mm;
+                        width: 20mm;
                         height: auto;
                         object-fit: contain;
                     }

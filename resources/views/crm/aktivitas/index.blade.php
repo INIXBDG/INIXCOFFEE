@@ -100,6 +100,8 @@
                                     <th style="text-align: center;">Pax</th>
                                     <th style="text-align: center;">Harga</th>
                                     <th style="text-align: center;">Total</th>
+                                    <th style="text-align: center;">Foto</th>
+                                    <th style="text-align: center;">Lokasi</th>
                                     <th style="text-align: center;">Aksi</th>
                                 </tr>
                             </thead>
@@ -121,7 +123,8 @@
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title" id="activityModalLabel">Tambah Aktivitas</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
                             <form id="activityForm" action="{{ route('store.aktivitas.new') }}" method="POST">
@@ -236,7 +239,19 @@
                                         name="waktu_aktivitas" required>
                                 </div>
 
-                                <button type="submit" class="btn btn-primary">Simpan</button>
+                                <input type="hidden" name="foto_lokasi" id="foto_lokasi">
+                                <input type="hidden" name="latitude" id="latitude">
+                                <input type="hidden" name="longitude" id="longitude">
+
+                                <div id="camera_wrapper" style="display: none; margin-bottom: 15px;">
+                                    <label class="form-label">Foto Lokasi Visit</label>
+                                    <div id="camera"
+                                        style="width: 320px; height: 240px; border: 2px solid #ddd; border-radius: 5px;">
+                                    </div>
+                                    <small class="text-muted">Pastikan kamera aktif untuk aktivitas Visit</small>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary" id="btnSubmitAktivitas">Simpan</button>
                             </form>
                         </div>
                     </div>
@@ -340,6 +355,7 @@
     <!-- JS -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ asset('js/webcam.js') }}"></script>
     <script>
         // ===============================
         // 🔹 Fungsi Format Angka (IDR)
@@ -354,11 +370,40 @@
             return parseInt(value, 10).toLocaleString('id-ID');
         }
 
+        // Function untuk reverse koordinat
+        async function updateAddressText(lat, lng, elementId) {
+            try {
+                const response = await fetch(
+                    `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18`);
+                const data = await response.json();
+
+                const targetElement = document.getElementById(elementId);
+                if (targetElement) {
+                    const address = data.display_name || "Alamat tidak ditemukan";
+                    const shortAddress = [
+                        data.address.village || '',
+                        data.address.subdistrict || '',
+                        data.address.state || ''
+                    ].filter(Boolean).join(', ');
+                    
+                    targetElement.innerHTML = `
+                        <span title="${address}"><strong>${shortAddress}</strong></span><br>
+                            <a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" class="ms-1 text-primary">
+                            <small class="text-muted">${data.address.city || data.address.town || data.address.village || ''}</small>
+                        </a>
+                    `;
+                }
+            } catch (error) {
+                console.error("Geocode Error:", error);
+                const targetElement = document.getElementById(elementId);
+                if (targetElement) targetElement.innerHTML = "Gagal memuat alamat";
+            }
+        }
+
         // ===============================
         // 🔹 DataTable & Form Events
         // ===============================
         $(document).ready(function() {
-            // === DataTable ===
             $('#aktivitasTable').DataTable({
                 processing: true,
                 serverSide: true,
@@ -374,7 +419,6 @@
                         d.filter_created_end = $('#filter_created_end').val();
                     },
                     dataSrc: function(json) {
-                        // tampilkan total di bawah tabel
                         if (json.total !== undefined) {
                             $('#totalContainer').html(
                                 `Total Keseluruhan: <span class="text-success">Rp ${formatNumber(json.total)}</span>`
@@ -426,6 +470,34 @@
                         render: d => d ? formatNumber(d) : '-'
                     },
                     {
+                        data: 'foto_lokasi',
+                        render: function(data) {
+                            if (data) {
+                                return `<img src="/${data}" alt="Foto" style="width: 80px; height: auto; border-radius: 5px; cursor: pointer;" 
+                    onclick="window.open(this.src)" class="img-thumbnail">`;
+                            }
+                            return '<span class="text-muted">-</span>';
+                        },
+                        className: "text-center"
+                    },
+                    {
+                        data: null,
+                        render: function(data, type, row) {
+                            const lat = row.latitude;
+                            const lng = row.longitude;
+
+                            if (!lat || !lng)
+                                return '<span class="text-muted">Koordinat tidak ada</span>';
+
+                            const cellId = `loc-${row.id}`;
+
+                            updateAddressText(lat, lng, cellId);
+
+                            return `<div id="${cellId}" class="small"><i class="fa fa-spinner fa-spin"></i> Mencari alamat...</div>`;
+                        },
+                        className: "text-start"
+                    },
+                    {
                         data: 'id',
                         render: function(id, type, row) {
                             const isDisabled = row.aktivitas === 'DB';
@@ -466,15 +538,6 @@
                 const formatted = parseInt(raw, 10).toLocaleString('id-ID');
                 input.value = formatted;
                 input.setSelectionRange(formatted.length, formatted.length);
-            });
-
-            // === Form Submit (Create) ===
-            $('#activityForm').on('submit', function(e) {
-                const hargaEl = document.getElementById('harga');
-                if (hargaEl) {
-                    const raw = unformatNumber(hargaEl.value);
-                    hargaEl.value = isNaN(raw) ? '' : raw;
-                }
             });
 
             // === Form Submit (Edit) ===
@@ -742,6 +805,7 @@
             const contactTypeInput = document.getElementById("contact_type");
             const newContactFields = document.getElementById("newContactFields");
             const aktivitasOption = document.getElementById("aktivitas");
+            const cameraWrapper = document.getElementById("camera_wrapper");
             const hiddenContainer = document.getElementById("hidden-container");
             const paxInput = document.getElementById("pax");
             const hargaInput = document.getElementById("harga");
@@ -809,15 +873,57 @@
                 }
             });
 
-            // Show/hide hidden container berdasarkan jenis aktivitas (create)
             aktivitasOption.addEventListener('change', function() {
-                const selected = this.value;
-                if (['PA', 'Form_Masuk', 'Form_Keluar'].includes(selected)) {
-                    hiddenContainer.style.display = 'block';
+                if (this.value === 'Visit') {
+                    $(cameraWrapper).show();
+                    Webcam.set({
+                        width: 320,
+                        height: 240,
+                        image_format: 'jpeg',
+                        jpeg_quality: 90
+                    });
+                    Webcam.attach('#camera');
+
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(function(position) {
+                            document.getElementById('latitude').value = position.coords.latitude;
+                            document.getElementById('longitude').value = position.coords.longitude;
+                        }, function(error) {
+                            alert("Gagal mengambil lokasi. Pastikan GPS aktif dan izin diberikan.");
+                        });
+                    }
                 } else {
-                    hiddenContainer.style.display = 'none';
-                    if (paxInput) paxInput.value = '';
-                    if (hargaInput) hargaInput.value = '';
+                    $(cameraWrapper).hide();
+                    Webcam.reset();
+                }
+            });
+
+            $('#activityForm').on('submit', function(e) {
+
+                const hargaEl = document.getElementById('harga');
+                if (hargaEl) {
+                    const raw = unformatNumber(hargaEl.value);
+                    hargaEl.value = isNaN(raw) ? '' : raw;
+                }
+
+                const activityType = $('#aktivitas').val();
+
+                if (activityType === 'Visit') {
+                    e.preventDefault();
+                    const form = this;
+
+                    Webcam.snap(function(data_uri) {
+                        document.getElementById('foto_lokasi').value = data_uri;
+
+                        if (!document.getElementById('latitude').value) {
+                            alert(
+                                "Lokasi belum terdeteksi. Silakan tunggu sebentar atau muat ulang halaman."
+                            );
+                            return;
+                        }
+
+                        form.submit();
+                    });
                 }
             });
 

@@ -120,6 +120,10 @@ public function index(): View
         $rkm = RKM::with('perusahaan', 'materi')->findOrFail($id);
         return view('invoice.create', compact('rkm'));
     }
+
+    // public function downloadPDF($id){
+
+    // }
 // app/Http/Controllers/InvoiceRKMController.php
 
 public function createKwitansi($invoiceId)
@@ -139,7 +143,7 @@ public function createKwitansi($invoiceId)
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\RedirectResponse
      */
-public function store(Request $request): RedirectResponse
+public function store(Request $request)
 {
     $request->validate([
         'invoice_number' => 'required|string|max:255|unique:invoices',
@@ -155,7 +159,7 @@ public function store(Request $request): RedirectResponse
         'terbilang' => 'nullable|string',
     ]);
 
-    Invoice::create([
+    $invoice = Invoice::create([
         'invoice_number' => $request->input('invoice_number'),
         'tanggal_invoice' => $request->input('tanggal_invoice'),
         'due_date' => $request->input('due_date'), 
@@ -180,7 +184,9 @@ public function store(Request $request): RedirectResponse
         $outstanding->update();
     }
 
-    return redirect()->route('invoice.index')->with(['success' => 'Invoice berhasil dibuat!']);
+    return $this->downloadPdf($invoice->id);
+
+    // return redirect()->route('invoice.index')->with(['success' => 'Invoice berhasil dibuat!']);
 }
 
 public function storeKwitansi(Request $request)

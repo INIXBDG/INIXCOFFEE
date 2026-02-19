@@ -794,9 +794,26 @@ class OutstandingController extends Controller
     public function dokumenGabungan($id)
     {
         $outstanding = Outstanding::findOrFail($id);
+        $invoice = Invoice::where('id_rkm', $outstanding->id_rkm)->first();
         $absensi = AbsensiPDF::where('id_rkm', $outstanding->id_rkm)->first();
 
         $filesToMerge = [];
+
+        // 0. Invoice
+        // if ($invoice) {
+        //     $fakturPath = storage_path('app/' . $outstanding->path_faktur_pajak);
+        //     if (file_exists($fakturPath)) {
+        //         $filesToMerge[] = $fakturPath;
+        //     }
+        // }
+
+        // 1. Faktur Pajak
+        if ($outstanding->path_faktur_pajak) {
+            $fakturPath = storage_path('app/' . $outstanding->path_faktur_pajak);
+            if (file_exists($fakturPath)) {
+                $filesToMerge[] = $fakturPath;
+            }
+        }
 
         // 1. Faktur Pajak
         if ($outstanding->path_faktur_pajak) {

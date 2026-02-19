@@ -73,4 +73,8 @@ class User extends Authenticatable
     public function kondisiKendaraan(){
         return $this->hasMany(KondisiKendaraan::class, 'user_id', 'id');
     }
+
+    public function historyNetSales(){
+        return $this->hasMany(HistoryNetSales::class, 'id_user');
+    }
 }

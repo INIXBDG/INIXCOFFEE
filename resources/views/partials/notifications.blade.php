@@ -1004,15 +1004,38 @@
                     <div class="mt-2">
                         <strong>Detail perubahan:</strong>
                         <ul class="mt-1 mb-0">
-                            @foreach ($notification->data['message']['perubahan'] as $field => $values)
+                            @php
+                                // Ambil data perubahan
+                                $perubahanData = $notification->data['message']['perubahan'];
+                                
+                                // Cek jika data berupa string (JSON), maka decode dulu
+                                if (is_string($perubahanData)) {
+                                    $perubahanData = json_decode($perubahanData, true);
+                                }
+                            @endphp
+
+                            @foreach ($perubahanData as $field => $values)
                                 <li>
                                     <strong>{{ ucfirst(str_replace('_', ' ', $field)) }}</strong>:
+                                    
+                                    {{-- TAMPILAN DATA SEBELUM (BEFORE) --}}
                                     <span class="text-danger">
-                                        {{ number_format($values['before'] ?? 0, 0, ',', '.') }}
+                                        @if(isset($values['before']) && is_numeric($values['before']))
+                                            {{ number_format((float)$values['before'], 0, ',', '.') }}
+                                        @else
+                                            {{ $values['before'] ?? '-' }}
+                                        @endif
                                     </span>
+
                                     →
+
+                                    {{-- TAMPILAN DATA SESUDAH (AFTER) --}}
                                     <span class="text-success">
-                                        {{ number_format($values['after'] ?? 0, 0, ',', '.') }}
+                                        @if(isset($values['after']) && is_numeric($values['after']))
+                                            {{ number_format((float)$values['after'], 0, ',', '.') }}
+                                        @else
+                                            {{ $values['after'] ?? '-' }}
+                                        @endif
                                     </span>
                                 </li>
                             @endforeach
@@ -1038,6 +1061,7 @@
                 </div>
             </div>
         @endif
+        
         @if ($notification->data['message']['tipe'] == 'Pembayaran Outstanding Selesai')
             <div class="alert alert-success d-flex justify-content-between align-items-start shadow-sm p-3 mb-3 border-start border-4 border-success">
                 <div>
