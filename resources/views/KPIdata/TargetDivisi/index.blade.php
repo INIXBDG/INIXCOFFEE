@@ -860,6 +860,7 @@
                                 const allowedAssistantRoutes = [
                                     'dorong inovasi pelayanan',
                                     'pemasukan bersih',
+                                    'inisiatif efisiensi keuangan',
                                     'rasio biaya operasional terhadap revenue'
                                 ];
 
@@ -1393,7 +1394,8 @@
                         const allowedAssistantRoutes = [
                             'dorong inovasi pelayanan',
                             'pemasukan bersih',
-                            'rasio biaya operasional terhadap revenue'
+                            'rasio biaya operasional terhadap revenue',
+                            'inisiatif efisiensi keuangan'
                         ];
 
                         const allowedAssistantRoutesForRupiah = [
@@ -2087,6 +2089,7 @@
             const hasTS = selectedJabatan.includes('Technical Support');
             const hasCC = selectedJabatan.includes('Customer Care');
             const hasFinance = selectedJabatan.includes('Finance & Accounting');
+            const hasHRD = selectedJabatan.includes('HRD');
 
             let options = '<option selected disabled>-- Pilih Assistant Route --</option>';
 
@@ -2125,9 +2128,17 @@
                 else if (hasFinance) {
                     options += `
                         <option value="outstanding">Banyak Tagihan Client Yang Belum Lunas</option>
+                        <option value="inisiatif efisiensi keuangan">Inisiatif Efisiensi keuangan</option>
                     `;
                 }
 
+                //HRD
+                else if (hasHRD) {
+                    options += `
+                        <option value="pelaksanaan kegiatan karyawan">Pelaksanaan Kegiatan Karyawan</option>
+                    `;
+                }
+                
                 //ITSM
                 //Koordinator ITSM
                 else if (hasKoorITSM) {

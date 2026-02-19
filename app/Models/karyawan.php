@@ -78,4 +78,9 @@ class karyawan extends Model
     {
         return $this->hasMany(pickupDriver::class, 'id_karyawan');
     }
+    
+    public function educations()
+    {
+        return $this->hasMany(EducationalBackground::class, 'kode_karyawan', 'kode_karyawan');
+    }
 }

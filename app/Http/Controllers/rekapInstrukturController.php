@@ -66,6 +66,8 @@ class rekapInstrukturController extends Controller
                 $q->where('r_k_m_s.tanggal_awal', '<=', $endOfMonth)
                 ->where('r_k_m_s.tanggal_akhir', '>=', $startOfMonth);
             })
+			->whereNotNull('r_k_m_s.instruktur_key') 
+            ->where('r_k_m_s.instruktur_key', '<>', '')
             ->whereNotIn('r_k_m_s.id', $id_rkm)
             ->select(
                 'r_k_m_s.materi_key',

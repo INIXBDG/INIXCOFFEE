@@ -18,13 +18,6 @@ class penilaianExcangheNotifikasi extends Notification implements ShouldBroadcas
     protected $path;
     protected $receiverId;
 
-    /**
-     * Create a new notification instance.
-     *
-     * @param  mixed  $comment
-     * @param  string  $path
-     * @param  int  $receiverId
-     */
     public function __construct($comment, string $path, int $receiverId)
     {
         $this->comment     = $comment;
@@ -32,19 +25,11 @@ class penilaianExcangheNotifikasi extends Notification implements ShouldBroadcas
         $this->receiverId  = $receiverId;
     }
 
-    /**
-     * Get the notification's delivery channels.
-     *
-     * @return array<int, string>
-     */
     public function via($notifiable): array
     {
         return ['database', 'broadcast'];
     }
 
-    /**
-     * Get the broadcastable representation of the notification.
-     */
     public function toBroadcast($notifiable): BroadcastMessage
     {
         $user = auth()->user();
@@ -63,11 +48,6 @@ class penilaianExcangheNotifikasi extends Notification implements ShouldBroadcas
         ]);
     }
 
-    /**
-     * Get the array representation of the notification.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray($notifiable): array
     {
         $user = auth()->user();

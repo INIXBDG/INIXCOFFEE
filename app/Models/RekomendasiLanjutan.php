@@ -9,7 +9,7 @@ class RekomendasiLanjutan extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['id_materi', 'id_rkm'];
+    protected $fillable = ['id_materi', 'id_rkm', 'keterangan'];
 
 
     public function rkm()

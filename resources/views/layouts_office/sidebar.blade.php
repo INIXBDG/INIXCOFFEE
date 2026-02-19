@@ -1,4 +1,5 @@
-<aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme" style="display: flex; flex-direction: column; height: 100vh;">
+<aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme"
+    style="display: flex; flex-direction: column; height: 100vh;">
     <div class="app-brand demo" style="flex-shrink: 0;">
         <a href="{{ route('office.dashboard') }}" class="app-brand-link">
             <span class="app-brand-logo demo text-primary">
@@ -56,6 +57,15 @@
                 <div class="text-truncate" data-i18n="contact">Pemesanan Modul</div>
             </a>
         </li>
+
+        @if (Auth::user()->jabatan === 'HRD')
+            <li class="menu-item {{ request()->routeIs('office.indexKegiatan') ? 'active open' : '' }}">
+                <a href="{{ route('office.indexKegiatan') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-group"></i>
+                    <div class="text-truncate" data-i18n="contact">Pengajuan Kegiatan</div>
+                </a>
+            </li>
+        @endif
 
         <li class="menu-header small text-uppercase">
             <span class="menu-header-text">Vendor</span>
@@ -150,7 +160,8 @@
     </ul>
 
     <div class="sidebar-footer p-3 bg-menu-theme" style="flex-shrink: 0; border-top: 1px solid rgba(0,0,0,0.05);">
-        <a href="{{ route('home') }}" class="btn btn-primary w-100 d-flex align-items-center justify-content-center shadow-sm">
+        <a href="{{ route('home') }}"
+            class="btn btn-primary w-100 d-flex align-items-center justify-content-center shadow-sm">
             <i class="bx bx-home me-2"></i>
             <span>BACK TO INIXCOFFE</span>
         </a>

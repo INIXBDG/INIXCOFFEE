@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Notifications\ApprovalExamNotification;
 use App\Notifications\BayarExamNotification;
 use App\Notifications\PengajuanexamNotification;
+use App\Notifications\updateExamNotification;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -452,7 +453,7 @@ public function show(string $id)
     $biaya_admin = $rkm->biaya_admin * $rkm->kurs_dollar;
     $harga = $rkm->harga * $rkm->kurs;
 
-    \Log::info('Exam Show - ID: ' . $id . ', RKM: ' . json_encode($rkm)); // Debug
+    Log::info('Exam Show - ID: ' . $id . ', RKM: ' . json_encode($rkm)); // Debug
     return view('exam.show', compact('rkm', 'exam', 'approvalexam', 'biaya_admin', 'harga'));
 }
     /**
@@ -862,7 +863,7 @@ public function assignRoom($id)
             return redirect()->route('exam.index')->with('success', 'Ruangan berhasil di-assign untuk exam.');
 
         } catch (\Exception $e) {
-            \Log::error('Exam room assignment failed: ' . $e->getMessage());
+            Log::error('Exam room assignment failed: ' . $e->getMessage());
             return redirect()->route('exam.index')->with('error', 'Gagal assign ruangan: ' . $e->getMessage());
         }
     }
@@ -948,5 +949,34 @@ public function assignRoom($id)
         });
 
         return Excel::download(new rekapExamExport($data), 'Rekap Exam '.$year . '-'. $month.'.xlsx');
+    }
+
+    public function hargaExam() 
+    {
+        $exams = listexam::all();
+        return view('exam.hargaExam', compact('exams'));
+    }
+
+    public function detailHargaExam($id) {
+        $exam = listexam::findOrFail($id);
+                
+        return view('exam.detailHarga', compact('exam'));
+    }
+
+    public function pengajuanUpdateExam(Request $request, $id) {
+        $technical_support = user::where('jabatan', 'Technical Support')->get();
+        $path = "/listexams/{$id}/edit";
+        $exam = listexam::findOrFail($id);
+
+        $data = [
+            'nama_exam' => $exam->nama_exam,
+        ];
+
+        foreach ($technical_support as $user) {
+            $receiverId = $user->id;
+            NotificationFacade::send($user, new updateExamNotification($data, $path, $receiverId));
+        }
+
+        return redirect()->back()->with(['success' => 'Pengajuan Berhasil Dibuat!']);
     }
 }

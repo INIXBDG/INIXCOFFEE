@@ -59,9 +59,9 @@
         </div>
 
         <div>
-            <label for="activity_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Aktivitas <span class="text-red-500">*</span></label>
-            <input type="date" name="activity_date" id="activity_date" value="{{ old('activity_date', now()->format('Y-m-d')) }}" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 @error('activity_date') border-red-500 @enderror" required>
-            @error('activity_date')
+            <label for="start_date" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Mulai Aktivitas <span class="text-red-500">*</span></label>
+            <input type="date" name="start_date" id="start_date" value="{{ old('start_date', now()->format('Y-m-d')) }}" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 @error('start_date') border-red-500 @enderror" required>
+            @error('start_date')
                 <p class="text-red-500 text-xs italic mt-2">{{ $message }}</p>
             @enderror
         </div>

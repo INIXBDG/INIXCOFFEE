@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\KPI;
 
 use App\Http\Controllers\Controller;
+use App\Models\AbsensiKaryawan;
 use App\Models\activityLog;
 use Illuminate\Http\Request;
 use App\Models\ContentSchedule;
 use App\Models\detailPersonKPI;
 use App\Models\DetailTargetKPI;
 use App\Models\karyawan;
+use App\Models\Kegiatan;
 use App\Models\Nilaifeedback;
 use App\Models\outstanding;
 use App\Models\RKM;
@@ -325,14 +327,16 @@ class TargetKPIController extends Controller
         }
 
         if (!$karyawan) {
-            return response()->json([
-                'average_progress' => 0,
-                'message' => 'Karyawan tidak ditemukan'
-            ], 404);
+            return response()->json(
+                [
+                    'average_progress' => 0,
+                    'message' => 'Karyawan tidak ditemukan',
+                ],
+                404,
+            );
         }
 
-        $query = targetKPI::with(['detailTargetKPI.detailPersonKPI'])
-            ->whereYear('created_at', now()->year);
+        $query = targetKPI::with(['detailTargetKPI.detailPersonKPI'])->whereYear('created_at', now()->year);
 
         if (filled($idUser) && filled($typeGet)) {
             $query->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($idUser) {
@@ -379,6 +383,10 @@ class TargetKPIController extends Controller
                 $progress = $this->calculateKonsistensiCampaignDigital($item, $personId);
             } elseif ($item->asistant_route === 'keberhasilan support memenuhi sla') {
                 $progress = $this->calculateTingkatKeberhasilanSupportMemenuhiSLA($item, $personId);
+            } elseif ($item->asistant_route === 'inisiatif efisiensi keuangan') {
+                $progress = $this->calculateInisiatifEfisiensiKeuangan($item, $personId);
+            } elseif ($item->asistant_route === 'pelaksanaan kegiatan karyawan') {
+                $progress = $this->calculatePelaksanaanKegiatanKaryawan($item, $personId);
             }
 
             if (is_numeric($progress)) {
@@ -389,7 +397,7 @@ class TargetKPIController extends Controller
 
         return response()->json([
             'average_progress' => $count > 0 ? round($totalProgress / $count, 2) : 0,
-            'total_kpi' => $query
+            'total_kpi' => $query,
         ]);
     }
 
@@ -486,6 +494,13 @@ class TargetKPIController extends Controller
                     //finance
                     elseif ($item->asistant_route === 'outstanding') {
                         $progress = $this->calculateOutstanding($item, $personId);
+                    } elseif ($item->asistant_route === 'inisiatif efisiensi keuangan') {
+                        $progress = $this->calculateInisiatifEfisiensiKeuangan($item, $personId);
+                    }
+
+                    //HRD
+                    elseif ($item->asistant_route === 'pelaksanaan kegiatan karyawan') {
+                        $progress = $this->calculatePelaksanaanKegiatanKaryawan($item, $personId);
                     }
 
                     //ITSM
@@ -645,7 +660,7 @@ class TargetKPIController extends Controller
         $labaKotor = $this->calculatePemasukanKotor($item, $personId);
 
         if ($labaKotor == 0) {
-            return 0; 
+            return 0;
         }
 
         if (is_null($detail) || is_null($detail->manual_value)) {
@@ -664,7 +679,7 @@ class TargetKPIController extends Controller
             $progress = min(100, $progress);
         }
 
-        return round($progress, 1); 
+        return round($progress, 1);
     }
 
     private function calculateRasioBiayaOperasionalTerhadapRevenue($item, $personId)
@@ -674,7 +689,7 @@ class TargetKPIController extends Controller
         $labaKotor = $this->calculatePemasukanKotor($item, $personId);
 
         if ($labaKotor == 0) {
-            return 0; 
+            return 0;
         }
 
         if (is_null($detail) || is_null($detail->manual_value)) {
@@ -689,7 +704,7 @@ class TargetKPIController extends Controller
             $progress = min(100, $progress);
         }
 
-        return round($progress, 1); 
+        return round($progress, 1);
     }
 
     //CS
@@ -789,16 +804,97 @@ class TargetKPIController extends Controller
 
         $hariIni = now()->startOfDay();
 
-        $totalData = Outstanding::whereBetween('created_at', [$start, $end])
-            ->count();
+        $totalData = Outstanding::whereBetween('created_at', [$start, $end])->count();
 
-        $tepatTenggat = Outstanding::whereBetween('created_at', [$start, $end])->where('status_pembayaran', '1')
+        $tepatTenggat = Outstanding::whereBetween('created_at', [$start, $end])
+            ->where('status_pembayaran', '1')
             ->whereDate('due_date', '>', 'tanggal_bayar')
             ->count();
-        
+
         $presentase = ($tepatTenggat / $totalData) * 100;
 
         return round($presentase, 1);
+    }
+
+    private function calculateInisiatifEfisiensiKeuangan($item, $personId)
+    {
+        $detail = $item->detailTargetKPI->first();
+
+        if (is_null($detail) || is_null($detail->manual_value)) {
+            return 0;
+        }
+
+        $progress = 0;
+        $manualValue = (float) $detail->manual_value;
+        $targetValue = (float) $detail->nilai_target;
+
+        if ($targetValue == null) {
+            return 0;
+        }
+
+        if ($manualValue > 0) {
+            $progress = ($manualValue / $targetValue) * 100;
+            $progress = min(100, $progress);
+        }
+
+        return round($progress, 1);
+    }
+
+    //HRD
+    private function calculatePelaksanaanKegiatanKaryawan($item, $personId)
+    {
+        $detail = $item->detailTargetKPI->first();
+
+        if (is_null($detail) || is_null($detail->manual_value)) {
+            return 0;
+        }
+
+        $tahun = (int) $detail->detail_jangka;
+
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            return 0;
+        }
+
+        $startOfYear = Carbon::create($tahun, 1, 1)->startOfDay();
+        $endOfYear = Carbon::create($tahun, 12, 31)->endOfDay();
+
+        $kegiatans = Kegiatan::whereBetween('created_at', [$startOfYear, $endOfYear])->get();
+
+        $totalKegiatan = $kegiatans->count();
+        $totalKehadiranValid = 0;
+
+        foreach ($kegiatans as $kegiatan) {
+            $pesertaIds = is_array($kegiatan->id_peserta) ? $kegiatan->id_peserta : json_decode($kegiatan->id_peserta, true);
+
+            if (empty($pesertaIds)) {
+                continue;
+            }
+
+            $jumlahPeserta = count($pesertaIds);
+
+            $tanggalKegiatan = Carbon::parse($kegiatan->waktu_kegiatan);
+            $startOfDay = $tanggalKegiatan->copy()->startOfDay();
+            $endOfDay = $tanggalKegiatan->copy()->endOfDay();
+
+            $jumlahHadir = AbsensiKaryawan::whereIn('id_karyawan', $pesertaIds)
+                ->whereBetween('created_at', [$startOfDay, $endOfDay])
+                ->where('keterangan', 'Masuk') 
+                ->count();
+
+            $persentase = ($jumlahHadir / $jumlahPeserta) * 100;
+
+            if ($persentase >= 80) {
+                $totalKehadiranValid++;
+            }
+        }
+
+        if ($totalKegiatan == 0) {
+            return 0;
+        }
+
+        $progress = ($totalKehadiranValid / $totalKegiatan) * 100;
+
+        return round($progress, 1);
     }
 
     //target ITSM
@@ -1490,6 +1586,8 @@ class TargetKPIController extends Controller
                     //finance
                     elseif ($itemDetail->asistant_route === 'outstanding') {
                         $data = $this->calculateOutstandingDetail($itemDetail);
+                    } elseif ($itemDetail->asistant_route === 'inisiatif efisiensi keuangan') {
+                        $data = $this->calculateInisiatifEfisiensiKeuanganDetail($itemDetail);
                     }
 
                     //Target Detail ITSM
@@ -1555,6 +1653,7 @@ class TargetKPIController extends Controller
 
         return response()->json($data);
     }
+
     //Target Detail Office
     //gm
     private function calculateProgressKepuasanPelangganDetail($itemDetail)
@@ -1723,11 +1822,7 @@ class TargetKPIController extends Controller
             ];
         }
 
-        $sales = RKM::where('status', '0')
-            ->whereYear('tanggal_awal', $tahun)
-            ->select(DB::raw('tanggal_awal, SUM(CAST(harga_jual AS UNSIGNED) * CAST(pax AS UNSIGNED)) as total'))
-            ->groupBy('tanggal_awal')
-            ->get();
+        $sales = RKM::where('status', '0')->whereYear('tanggal_awal', $tahun)->select(DB::raw('tanggal_awal, SUM(CAST(harga_jual AS UNSIGNED) * CAST(pax AS UNSIGNED)) as total'))->groupBy('tanggal_awal')->get();
 
         $progress = 0;
         $dailyBreakdownPerMonth = [];
@@ -1790,9 +1885,9 @@ class TargetKPIController extends Controller
         $personId = 0;
 
         $labaKotor = $this->calculatePemasukanKotor($item, $personId);
- 
+
         if ($labaKotor == 0) {
-            return 0; 
+            return 0;
         }
 
         if (is_null($detail) || is_null($detail->manual_value)) {
@@ -1861,9 +1956,9 @@ class TargetKPIController extends Controller
         $personId = 0;
 
         $labaKotor = $this->calculatePemasukanKotor($item, $personId);
- 
+
         if ($labaKotor == 0) {
-            return 0; 
+            return 0;
         }
 
         if (is_null($detail) || is_null($detail->manual_value)) {
@@ -2121,7 +2216,7 @@ class TargetKPIController extends Controller
         }
 
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
-        $end   = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
+        $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
         $outstandings = Outstanding::whereBetween('created_at', [$start, $end])->get();
 
@@ -2137,16 +2232,12 @@ class TargetKPIController extends Controller
 
         $totalData = $outstandings->count();
 
-        $tepatTenggat = $outstandings
-            ->where('due_date', '<', 'tanggal_bayar')
-            ->where('status_pembayaran', '1');
+        $tepatTenggat = $outstandings->where('due_date', '<', 'tanggal_bayar')->where('status_pembayaran', '1');
 
         $above = $tepatTenggat->count();
         $below = $totalData - $above;
 
-        $progress = $totalData > 0
-            ? ($above / $totalData) * 100
-            : 0;
+        $progress = $totalData > 0 ? ($above / $totalData) * 100 : 0;
 
         $progress = round($progress, 1);
 
@@ -2162,12 +2253,7 @@ class TargetKPIController extends Controller
             $monthKey = $date->format('Y-m');
             $dayKey = $date->format('Y-m-d');
 
-            $isTepat = (
-                $data->status_pembayaran == '1' &&
-                $data->tanggal_bayar &&
-                $data->due_date &&
-                Carbon::parse($data->tanggal_bayar)->lt(Carbon::parse($data->due_date))
-            ) ? 1 : 0;
+            $isTepat = $data->status_pembayaran == '1' && $data->tanggal_bayar && $data->due_date && Carbon::parse($data->tanggal_bayar)->lt(Carbon::parse($data->due_date)) ? 1 : 0;
 
             $monthlyData[$monthKey][] = $isTepat * 100;
 
@@ -2197,6 +2283,73 @@ class TargetKPIController extends Controller
             ],
             'monthly_data' => $monthlyAverages,
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
+        ];
+    }
+
+    private function calculateInisiatifEfisiensiKeuanganDetail($itemDetail)
+    {
+        $detail = $itemDetail->detailTargetKPI->first();
+
+        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
+            return [
+                'progress' => 0,
+                'gap' => 0,
+                'pie_chart' => ['above' => 0, 'below' => 0],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+            ];
+        }
+
+        $item = $itemDetail;
+        $personId = 0;
+
+        if (is_null($detail) || is_null($detail->manual_value)) {
+            return 0;
+        }
+
+        $nilaiTarget = (float) $detail->nilai_target;
+        $manualValue = (float) $detail->manual_value;
+
+        if ($manualValue == null) {
+            return 0;
+        }
+
+        $tahun = (int) $detail->detail_jangka;
+
+        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
+            return [
+                'progress' => 0,
+                'gap' => 0,
+                'pie_chart' => ['above' => 0, 'below' => 0],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+            ];
+        }
+
+        $progress = 0;
+
+        if (!is_null($detail->manual_value)) {
+            $manualValue = (float) $detail->manual_value;
+
+            if ($manualValue > 0) {
+                $progress = ($manualValue / $nilaiTarget) * 100;
+                $progress = min(100, $progress);
+            }
+        }
+
+        $progress = round($progress, 1);
+        $gapRaw = $progress - $nilaiTarget;
+        $gap = $nilaiTarget - $manualValue;
+
+        return [
+            'progress' => $progress,
+            'gap' => $gap,
+            'dataManual' => [
+                'manual_document' => $detail->manual_document,
+            ],
+            'pie_chart' => ['above' => 0, 'below' => 0],
+            'monthly_data' => [],
+            'daily_breakdown_per_month' => [],
         ];
     }
 
@@ -3533,6 +3686,11 @@ class TargetKPIController extends Controller
                 return $this->calculatePesertaPuasDenganPelayananDanFasilitasTraining($target, $personId);
             case 'dorong inovasi pelayanan':
                 return $this->calculateDorongInovasiPelayanan($target, $personId);
+            //Finance
+            case 'inisiatif efesiensi keuangan':
+                return $this->calculateInisiatifEfisiensiKeuangan($target, $personId);
+            case 'outstanding':
+                return $this->calculateOutstanding($target, $personId);
 
             //Target ITSM
             //All kecuali Koordinator ITSM
