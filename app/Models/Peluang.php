@@ -49,7 +49,7 @@ class Peluang extends Model
 
     public function regis()
     {
-        return $this->belongsTo(RegisForm::class, 'id_peluang');
+        return $this->hasOne(RegisForm::class, 'id_peluang', 'id');
     }
 
     // public static function updateNetSalesFromRkm(int $id_rkm): void

@@ -1069,26 +1069,49 @@
                 Data ini milik <strong>{{ $notification->data['message']['milik'] }}</strong>.
             </p>
 
-            {{-- ✅ Tambahan bagian perubahan --}}
-            @if (!empty($notification->data['message']['perubahan']))
-                <div class="mt-2">
-                    <strong>Detail perubahan:</strong>
-                    <ul class="mt-1 mb-0">
-                        @foreach ($notification->data['message']['perubahan'] as $field => $values)
-                            <li>
-                                <strong>{{ ucfirst(str_replace('_', ' ', $field)) }}</strong>:
-                                <span class="text-danger">
-                                    {{ number_format($values['before'] ?? 0, 0, ',', '.') }}
-                                </span>
-                                →
-                                <span class="text-success">
-                                    {{ number_format($values['after'] ?? 0, 0, ',', '.') }}
-                                </span>
-                            </li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
+                {{-- ✅ Tambahan bagian perubahan --}}
+                @if (!empty($notification->data['message']['perubahan']))
+                    <div class="mt-2">
+                        <strong>Detail perubahan:</strong>
+                        <ul class="mt-1 mb-0">
+                            @php
+                                // Ambil data perubahan
+                                $perubahanData = $notification->data['message']['perubahan'];
+                                
+                                // Cek jika data berupa string (JSON), maka decode dulu
+                                if (is_string($perubahanData)) {
+                                    $perubahanData = json_decode($perubahanData, true);
+                                }
+                            @endphp
+
+                            @foreach ($perubahanData as $field => $values)
+                                <li>
+                                    <strong>{{ ucfirst(str_replace('_', ' ', $field)) }}</strong>:
+                                    
+                                    {{-- TAMPILAN DATA SEBELUM (BEFORE) --}}
+                                    <span class="text-danger">
+                                        @if(isset($values['before']) && is_numeric($values['before']))
+                                            {{ number_format((float)$values['before'], 0, ',', '.') }}
+                                        @else
+                                            {{ $values['before'] ?? '-' }}
+                                        @endif
+                                    </span>
+
+                                    →
+
+                                    {{-- TAMPILAN DATA SESUDAH (AFTER) --}}
+                                    <span class="text-success">
+                                        @if(isset($values['after']) && is_numeric($values['after']))
+                                            {{ number_format((float)$values['after'], 0, ',', '.') }}
+                                        @else
+                                            {{ $values['after'] ?? '-' }}
+                                        @endif
+                                    </span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
 
             <small class="text-muted">
                 Pada
@@ -1149,10 +1172,46 @@
                     </form>
                 </div>
             </div>
-        </div>
-    @endif
-    @if (
-        $notification->data['message']['tipe'] == 'Mengajukan Permintaan Souvenir' ||
+        @endif
+        
+        @if ($notification->data['message']['tipe'] == 'Pembayaran Outstanding Selesai')
+            <div class="alert alert-success d-flex justify-content-between align-items-start shadow-sm p-3 mb-3 border-start border-4 border-success">
+                <div>
+                    <h6 class="fw-bold mb-2 text-success">
+                        <i class="bi bi-check-circle-fill me-2"></i>Pembayaran Outstanding Selesai
+                    </h6>
+                    <p class="mb-1">
+                        <strong>{{ $notification->data['message']['perusahaan'] }}</strong> telah menyelesaikan pembayaran untuk
+                        <strong>{{ $notification->data['message']['materi'] }}</strong>
+                        <span class="text-primary">({{ $notification->data['message']['periode'] }})</span>.
+                    </p>
+                    <p class="mb-2 small text-muted">
+                        No. Invoice: <strong>{{ $notification->data['message']['no_invoice'] ?? '-' }}</strong> |
+                        Tanggal Bayar:
+                        <strong>
+                            {{ $notification->data['message']['tgl_bayar']
+                                ? \Carbon\Carbon::parse($notification->data['message']['tgl_bayar'])->locale('id')->translatedFormat('d F Y')
+                                : '-' }}
+                        </strong>
+                    </p>
+                    <small class="text-muted">
+                        Dikirim: {{ \Carbon\Carbon::parse($notification->created_at)->locale('id')->translatedFormat('d F Y H:i') }} WIB
+                    </small>
+
+                    <div class="mt-2">
+                        <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
+                            @csrf
+                            @method('PUT')
+                            <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-check2"></i> Tandai Dibaca
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        @endif
+        @if (
+            $notification->data['message']['tipe'] == 'Mengajukan Permintaan Souvenir' ||
             $notification->data['message']['tipe'] == 'Pengajuan Souvenir Disetujui' ||
             $notification->data['message']['tipe'] == 'Pengajuan Souvenir Ditolak' ||
             $notification->data['message']['tipe'] == 'Pengajuan Souvenir Diperbarui')

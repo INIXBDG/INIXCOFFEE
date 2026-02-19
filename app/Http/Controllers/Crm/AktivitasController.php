@@ -78,7 +78,7 @@ class AktivitasController extends Controller
             $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'SPV Sales'];
 
             $query = Aktivitas::with(['contact.perusahaan', 'peserta.perusahaan'])
-                ->select('id', 'id_sales', 'id_contact', 'id_peserta', 'aktivitas', 'pax', 'total', 'harga', 'deskripsi', 'waktu_aktivitas', 'created_at');
+                ->select('id', 'id_sales', 'id_contact', 'id_peserta', 'aktivitas', 'pax', 'total', 'harga', 'deskripsi', 'waktu_aktivitas', 'created_at', 'foto_lokasi', 'longitude', 'latitude');
 
             if ($user->jabatan === 'Sales') {
                 $query->where('id_sales', $user->id_sales);
@@ -214,6 +214,9 @@ class AktivitasController extends Controller
                         'deskripsi' => $deskripsi,
                         'waktu_aktivitas' => \Carbon\Carbon::parse($item->waktu_aktivitas)->format('d/m/Y'),
                         'id_contact' => $idContact,
+                        'foto_lokasi' => $item->foto_lokasi,
+                        'longitude' => $item->longitude,
+                        'latitude' => $item->latitude,
                     ];
                 });
 
@@ -449,118 +452,88 @@ class AktivitasController extends Controller
 
     public function storeNew(Request $request)
     {
-        Log::info('StoreNew called', [
-            'user_id' => auth()->id(),
-            'jabatan' => auth()->user()->jabatan ?? null,
-            'input' => $request->all()
-        ]);
-
-        $user = auth()->user();
-
         $rules = [
             'id_perusahaan'   => 'nullable|integer',
             'id_contact'      => 'nullable',
-            'id_peluang'      => 'nullable',
-            'contact_type'    => 'nullable|string|in:contact,peserta',
             'aktivitas'       => 'required|in:Call,Email,Visit,Meet,Incharge,PA,PI,DB,Telemarketing,Form_Masuk,Form_Keluar',
             'deskripsi'       => 'nullable|string',
             'waktu_aktivitas' => 'required|date',
+            'foto_lokasi'     => 'nullable|string',
+            'latitude'        => 'nullable|string',
+            'longitude'       => 'nullable|string',
         ];
 
-        // Hanya aktivitas BUKAN Visit yang WAJIB punya kontak
-        if ($request->filled('aktivitas') && $request->aktivitas !== 'Visit') {
+        if ($request->aktivitas !== 'Visit') {
             $rules['id_contact'] = 'required';
         }
 
         $validated = $request->validate($rules);
-        Log::info('Validated', $validated);
+        $user = auth()->user();
 
         if (in_array($user->jabatan, ['Adm Sales', 'SPV Sales'])) {
-            $validated['id_sales'] = $request->input('id_sales');
-            if (empty($validated['id_sales'])) {
-                return back()->withErrors(['id_sales' => 'Sales harus dipilih.']);
-            }
+            $validated['id_sales'] = $request->id_sales;
         } else {
             $validated['id_sales'] = $user->id_sales;
         }
 
         $aktivitasData = $validated;
 
-        if ($request->id_contact === 'new') {
-            Log::info('Memblage kontak baru');
+        if ($request->aktivitas === 'Visit' && $request->filled('foto_lokasi')) {
+            $img = $request->foto_lokasi;
+            $folderPath = "uploads/aktivitas/visit/";
+            
+            $image_parts = explode(";base64,", $img);
+            $image_type_aux = explode("image/", $image_parts[0]);
+            $image_type = $image_type_aux[1];
+            $image_base64 = base64_decode($image_parts[1]);
+            
+            $fileName = 'visit_' . time() . '_' . uniqid() . '.' . $image_type;
+            $file = public_path($folderPath) . $fileName;
 
+            if (!file_exists(public_path($folderPath))) {
+                mkdir(public_path($folderPath), 0777, true);
+            }
+
+            file_put_contents($file, $image_base64);
+            $aktivitasData['foto_lokasi'] = $folderPath . $fileName;
+            $aktivitasData['latitude'] = $request->latitude;
+            $aktivitasData['longitude'] = $request->longitude;
+        }
+
+        if ($request->id_contact === 'new') {
             $contact = Contact::create([
                 'id_perusahaan' => (int) $request->id_perusahaan,
-                'sales_key'     => $validated['id_sales'],
+                'sales_key'     => $aktivitasData['id_sales'],
                 'nama'          => trim($request->nama_perusahaan),
                 'email'         => trim($request->email_perusahaan),
                 'cp'            => trim($request->cp_perusahaan),
                 'divisi'        => trim($request->divisi_perusahaan),
                 'status'        => '1'
             ]);
-
             $aktivitasData['id_contact'] = $contact->id;
-            $aktivitasData['id_peserta'] = null;
-            Aktivitas::create([
-                'id_sales'        => $validated['id_sales'],
-                'id_contact'      => $contact->id,
-                'aktivitas'       => 'Contact',
-                'deskripsi'       => 'Contact baru berhasil ditambahkan',
-                'waktu_aktivitas' => $validated['waktu_aktivitas'],
-            ]);
-
-            Log::info('Kontak baru dibuat', ['id' => $contact->id]);
-        }
-        elseif ($request->filled('id_contact') && $request->id_contact !== 'new') {
-            $contactId = (int) $request->id_contact;
-
-            if ($contactId <= 0) {
-                return back()->withErrors(['id_contact' => 'Pilih kontak/peserta yang valid.']);
-            }
-
+        } elseif ($request->filled('id_contact') && $request->id_contact !== 'new') {
             if ($request->contact_type === 'peserta') {
-                if (!Peserta::where('id', $contactId)->exists()) {
-                    return back()->withErrors(['id_contact' => 'Peserta tidak ditemukan.']);
-                }
-                $aktivitasData['id_peserta'] = $contactId;
+                $aktivitasData['id_peserta'] = $request->id_contact;
                 $aktivitasData['id_contact'] = null;
-                Log::info('Peserta dipilih', ['id_peserta' => $contactId]);
             } else {
-                if (!Contact::where('id', $contactId)->exists()) {
-                    return back()->withErrors(['id_contact' => 'Kontak tidak ditemukan.']);
-                }
-                $aktivitasData['id_contact'] = $contactId;
+                $aktivitasData['id_contact'] = $request->id_contact;
                 $aktivitasData['id_peserta'] = null;
-                Log::info('Kontak dipilih', ['id_contact' => $contactId]);
             }
-        }
-        // ---------- JIKA TIDAK ADA KONTAK (hanya boleh untuk Visit) ----------
-        else {
-            // Jika bukan Visit → error
-            if ($validated['aktivitas'] !== 'Visit') {
-                return back()->withErrors(['id_contact' => 'Kontak wajib diisi.']);
-            }
-            // Jika Visit → boleh kosong
-            $aktivitasData['id_contact'] = null;
-            $aktivitasData['id_peserta'] = null;
-            Log::info('Visit tanpa kontak → NULL');
         }
 
         if ($request->filled('pax')) $aktivitasData['pax'] = $request->pax;
-        if ($request->filled('harga')) $aktivitasData['harga'] = $request->harga;
+        if ($request->filled('harga')) $aktivitasData['harga'] = (int)str_replace('.', '', $request->harga);
         if ($request->filled('pax') && $request->filled('harga')) {
-            $aktivitasData['total'] = $request->pax * $request->harga;
+            $aktivitasData['total'] = $aktivitasData['pax'] * $aktivitasData['harga'];
         }
 
         try {
             $aktivitas = Aktivitas::create($aktivitasData);
-            Log::info('Aktivitas berhasil disimpan', ['id' => $aktivitas->id]);
+            return back()->with(['message' => 'Aktivitas Visit berhasil direkam dengan foto dan lokasi.']);
         } catch (\Exception $e) {
-            Log::error('Gagal insert', ['error' => $e->getMessage()]);
-            return back()->withErrors(['db' => 'Gagal menyimpan data.']);
+            Log::error('Gagal simpan aktivitas', ['error' => $e->getMessage()]);
+            return back()->withErrors(['db' => 'Gagal menyimpan data ke database.']);
         }
-
-        return back()->with(['message' => 'Aktivitas berhasil direkam.', 'data' => $aktivitas]);
     }
 
     public function delete($id)

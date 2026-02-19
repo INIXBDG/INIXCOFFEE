@@ -138,16 +138,9 @@ class PeluangController extends Controller
 
         $netsales = perhitunganNetSales::with('trackingNetSales', 'approvedNetSales', 'peserta')
             ->where('id_rkm', $peluang->id_rkm)
-            ->get();
+            ->first();
 
         $regis = Regisform::where('id_peluang', $id)->first();
-
-        $ids_peserta_yang_sudah_ada = perhitunganNetSales::where('id_rkm', $peluang->rkm->id)->pluck('id_peserta');
-
-        $regisuser = Registrasi::with('peserta')
-            ->where('id_rkm', $peluang->rkm->id)
-            ->whereNotIn('id_peserta', $ids_peserta_yang_sudah_ada)
-            ->get();
 
         // 🔹 Ambil semua aktivitas seperti $aktivitass
         $perusahaan = $peluang->perusahaan;
@@ -192,7 +185,6 @@ class PeluangController extends Controller
             'netsales',
             'regis',
             'items',
-            'regisuser',
             'aktivitasTambahan'
         ));
     }
@@ -555,7 +547,7 @@ class PeluangController extends Controller
                 WHEN MONTH(merah) BETWEEN 4 AND 6 THEN "TR2"
                 WHEN MONTH(merah) BETWEEN 7 AND 9 THEN "TR3"
                 WHEN MONTH(merah) BETWEEN 10 AND 12 THEN "TR4"
-            END as triwulan'),
+                END as triwulan'),
                 DB::raw('SUM(netsales * pax) as total_jumlah'),
             )
             ->groupBy('id_sales', 'triwulan')
@@ -634,25 +626,24 @@ class PeluangController extends Controller
 
         $request->validate([
             'id_rkm' => 'required|numeric',
-            'id_peserta' => 'required|numeric',
 
             'transportasi' => 'nullable|numeric',
             'jenis_transportasi' => 'nullable|string',
-            'desc' => 'nullable|string',
 
             'akomodasi_peserta' => 'nullable|numeric',
-            'penginapan_meeting_room' => 'nullable|numeric',
-            'akomodasi_sales_instruktur' => 'nullable|numeric',
-            'reimburse_transport_sales_instruktur' => 'nullable|numeric',
-            'sewa_laptop' => 'nullable|numeric',
-
+            'akomodasi_tim' => 'nullable|numeric',
+            'keterangan_akomodasi_tim' => 'nullable|string',
+            
             'fresh_money' => 'nullable|numeric',
-            'diskon' => 'nullable|numeric',
             'entertaint' => 'nullable|numeric',
-            'deskripsi_entertaint' => 'nullable|string',
-
+            'keterangan_entertaint' => 'nullable|string',
+            'souvenir' => 'nullable|numeric',
+            'cashback' => 'nullable|numeric',
+            
+            'sewa_laptop' => 'nullable|numeric',
+            'tgl_pa' => 'required|date',
             'tipe_pembayaran' => 'required|string',
-            'tanggalPayment' => 'required|date',
+            'deskripsi_tambahan' => 'nullable|string',
         ]);
 
         Log::info("[PA] Validation passed");
@@ -688,26 +679,24 @@ class PeluangController extends Controller
 
         $netSales = new perhitunganNetSales();
         $netSales->id_rkm = $request->id_rkm;
-        $netSales->id_peserta = $request->id_peserta;
-
-        $netSales->harga_penawaran = $request->harga_penawaran;
+        
         $netSales->transportasi = $request->transportasi;
         $netSales->jenis_transportasi = $request->jenis_transportasi;
-        $netSales->desc = $request->desc;
 
         $netSales->akomodasi_peserta = $request->akomodasi_peserta;
-        $netSales->penginapan_meeting_room = $request->penginapan_meeting_room;
-        $netSales->akomodasi_sales_instruktur = $request->akomodasi_sales_instruktur;
-        $netSales->reimburse_transport_sales_instruktur = $request->reimburse_transport_sales_instruktur;
-        $netSales->sewa_laptop = $request->sewa_laptop;
-
+        $netSales->akomodasi_tim = $request->akomodasi_tim;
+        $netSales->keterangan_akomodasi_tim = $request->keterangan_akomodasi_tim;
+        
         $netSales->fresh_money = $request->fresh_money;
-        $netSales->diskon = $request->diskon;
         $netSales->entertaint = $request->entertaint;
-        $netSales->deskripsi_entertaint = $request->deskripsi_entertaint;
-
+        $netSales->keterangan_entertaint = $request->keterangan_entertaint;
+        $netSales->souvenir = $request->souvenir;
+        $netSales->cashback = $request->cashback;
+        
+        $netSales->sewa_laptop = $request->sewa_laptop;
         $netSales->tipe_pembayaran = $request->tipe_pembayaran;
-        $netSales->tgl_pa = $request->tanggalPayment;
+        $netSales->tgl_pa = $request->tgl_pa;
+        $netSales->deskripsi_tambahan = $request->deskripsi_tambahan;
 
         $netSales->id_tracking = $idTracking;
         $netSales->save();
