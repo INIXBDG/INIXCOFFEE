@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('activity_instrukturs', function (Blueprint $table) {
             $table->id();
             $table->string('user_id');
+            $table->string('activity_type')->nullable();
             $table->string('activity')->nullable();
             $table->text('desc')->nullable();
             $table->string('doc')->nullable();

@@ -45,7 +45,7 @@ class RKMController extends Controller
                 $start = $startOfWeek->format('Y-m-d');
                 $end = $endOfWeek->format('Y-m-d');
                 $startOfWeek = $startOfWeek->addWeek();
-                $rows = RKM::with(['materi', 'peluang'])
+                $rows = RKM::with(['materi', 'peluang', 'rekomendasilanjutan'])
                     ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
                     ->whereBetween('r_k_m_s.tanggal_awal', [$start, $end])
                     ->whereDoesntHave('peluang', function ($query) {
@@ -53,6 +53,7 @@ class RKMController extends Controller
                     })
                     ->select(
                         DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'), // Gabungkan semua id
+                        DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id_all'), // Gabungkan semua id
                         'r_k_m_s.materi_key',
                         'r_k_m_s.ruang',
                         'r_k_m_s.metode_kelas',
@@ -116,7 +117,7 @@ class RKMController extends Controller
 
         $path = 'exports/' . $filename;
 
-        Excel::store(new RKMExport($data), $path, 'local');
+        Excel::store(new RKMExport($data, $bulan), $path, 'local');
 
         return response()->json(['filename' => $path]);
     }

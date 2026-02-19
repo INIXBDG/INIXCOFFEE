@@ -47,7 +47,7 @@
                                         <option value="Finance Menunggu Approve Direksi">Finance Menunggu Approve Direksi</option>
                                         <option value="Membuat Permintaan Ke Direktur Utama">Membuat Permintaan Ke Direktur Utama</option>
                                         <option value="Pengajuan sedang dalam proses Pencairan">Pengajuan sedang dalam proses Pencairan</option>
-                                        <option value="Pencairan Sudah Selesai">Pencairan Sudah Selesai</option>
+                                        <option value="Selesai">Pencairan Sudah Selesai</option>
                                         <option value="Selesai">Selesai</option>
                                     </select>
                                 </div>
@@ -96,7 +96,7 @@
             @php
                 $jabatan = auth()->user()->karyawan->jabatan ?? '';
             @endphp
-            @if (in_array($jabatan, ['Finance & Accounting', 'GM', 'Koordinator ITSM', 'Technical Support']))
+            @if (in_array($jabatan, ['Finance & Accounting', 'GM', 'Koordinator ITSM', 'Technical Support','Education Manager']))
                 <div class="card my-3">
                     <div class="card-body d-flex justify-content-center">
                         <div class="col-md-4 mx-1">
@@ -262,8 +262,13 @@
                         }
 
                         // Role Technical Support atau Koordinator ITSM
-                        if ((userRole === 'Technical Support' || userRole === 'Koordinator ITSM') &&
-                            (status.includes('ditinjau oleh Koordinator ITSM'))) {
+                        if (
+                            (userRole === 'Technical Support' || userRole === 'Koordinator ITSM') &&
+                            (
+                                status.includes('ditinjau oleh Koordinator ITSM') ||
+                                status === 'Diajukan dan Sedang Ditinjau oleh Koordinator ITSM'
+                            )
+                        ) {
                             actionBtns += `
                                 <li><button class="dropdown-item" onclick="editPengajuan(${item.id})">
                                     <img src="{{ asset('icon/edit-warning.svg') }}" width="16"> Edit</button></li>
@@ -289,7 +294,6 @@
                                 <li><button class="dropdown-item" onclick="viewDetail(${item.id})">
                                     <img src="{{ asset('icon/clipboard-primary.svg') }}" width="16"> Detail</button></li>
                             `;
-                            actionBtns += invoiceAction(item.id, item.invoice, item);
                         }
 
                         // Default Detail jika tidak ada aksi

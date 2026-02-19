@@ -1202,9 +1202,11 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <a href=>
-                                                    Forum Diskusi
-                                                </a>
+                                            </div>
+                                            <!-- <a href=>
+                                                Forum Diskusi
+                                            </a> -->
+
                                             @endcan
                                             {{-- @can('View DataKaryawan') --}}
                                             <div class="col-sm-6 mt-2">
@@ -1221,6 +1223,23 @@
                                                             </a>
                                                             <p class="card-text">aktivitas per hari untuk masing-masing
                                                                 divisi</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6 mt-2">
+                                                <div class="card" id="card-hover">
+                                                    <div class="card-body d-flex">
+                                                        <div class="col-md-2">
+                                                            <img src="{{ asset('icon/table.svg') }}"
+                                                                class="img-responsive" width="30px">
+                                                        </div>
+                                                        <div class="col-md-10" style="margin-left: 10px">
+                                                            <a href="/management-kelas"
+                                                                class="link stretched-link text-decoration-none">
+                                                                <h5 class="card-title">Management Ruangan</h5>
+                                                            </a>
+                                                            <p class="card-text">Management Ruangan yang ada di kantor Inixindo.</p>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1562,6 +1581,42 @@
                                                     </div>
                                                 </div>
                                             @endcan
+                                            @can('Fitur Labs dan Subs')
+                                            <div class="col-sm-6 mt-2">
+                                                <div class="card" id="card-hover">
+                                                    <div class="card-body d-flex">
+                                                        <div class="col-md-2">
+                                                            <i class="fa-solid fa-timeline" style="font-size: 30px;"></i>
+                                                        </div>
+                                                        <div class="col-md-10" style="margin-left: 10px">
+                                                            <a href="{{ route('pengajuanlabsdansubs.index') }}"
+                                                                class="link stretched-link text-decoration-none">
+                                                                <h5 class="card-title">Pengajuan Labs dan Subs</h5>
+                                                            </a>
+                                                            <p class="card-text">menejemen labs dan subs.</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            @endcan
+                                            @can('Fitur Content')
+                                            <div class="col-sm-6 mt-2">
+                                              <div class="card" id="card-hover">
+                                                  <div class="card-body d-flex">
+                                                      <div class="col-md-2">
+                                                          <i class="fa-solid fa-timeline" style="font-size: 30px;"></i>
+                                                      </div>
+                                                      <div class="col-md-10" style="margin-left: 10px">
+                                                          <a href="{{ route('content-schedules.index') }}"
+                                                              class="link stretched-link text-decoration-none">
+                                                              <h5 class="card-title">Content Harian</h5>
+                                                          </a>
+                                                          <p class="card-text">merekap konten harian</p>
+                                                      </div>
+                                                  </div>
+                                              </div>
+                                            </div>
+                                            @endcan
                                             @if (Auth::user()->karyawan && Auth::user()->karyawan->divisi === 'IT Service Management')
                                                 <div class="col-sm-6 mt-2">
                                                     <div class="card" id="card-hover">
@@ -1767,29 +1822,66 @@
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    @endcan
-                                                    @can('View AnalisisRKM')
-                                                        <div class="col-sm-6 mt-2">
-                                                            <div class="card" id="card-hover">
-                                                                <div class="card-body d-flex">
-                                                                    <div class="col-md-2">
-                                                                        <img src="{{ asset('icon/stats.svg') }}"
-                                                                            class="img-responsive" width="30px">
-                                                                    </div>
-                                                                    <div class="col-md-10" style="margin-left: 10px">
-                                                                        <a href="/kelasanalisis"
-                                                                            class="link stretched-link text-decoration-none">
-                                                                            <h5 class="card-title">Kelas Analisis</h5>
-                                                                        </a>
-                                                                        <p class="card-text">Analisis Rencana Kelas
-                                                                            Mingguan.</p>
-                                                                    </div>
-                                                                </div>
+                                                    </div>
+                                                </div>
+                                                @endcan
+                                                @can("List Exam Sales")
+                                                <div class="col-sm-6 mt-2">
+                                                    <div class="card" id="card-hover">
+                                                        <div class="card-body d-flex">
+                                                            <div class="col-md-2">
+                                                                <img src="{{ asset('icon/dollar-sign.svg') }}"
+                                                                    class="img-responsive" width="30px">
+                                                            </div>
+                                                            <div class="col-md-10" style="margin-left: 10px">
+                                                                <a href="/hargaExam"
+                                                                class="link stretched-link text-decoration-none">
+                                                                    <h5 class="card-title">Harga Exam</h5>
+                                                                </a>
+                                                                <p class="card-text">Data Harga Exam.</p>
                                                             </div>
                                                         </div>
-                                                    @endcan
-
+                                                    </div>
                                                 </div>
+                                                @endcan
+                                                @can('View AnalisisRKM')
+                                                <div class="col-sm-6 mt-2">
+                                                    <div class="card" id="card-hover">
+                                                        <div class="card-body d-flex">
+                                                            <div class="col-md-2">
+                                                                <img src="{{ asset('icon/stats.svg') }}"
+                                                                    class="img-responsive" width="30px">
+                                                            </div>
+                                                            <div class="col-md-10" style="margin-left: 10px">
+                                                                <a href="/kelasanalisis"
+                                                                    class="link stretched-link text-decoration-none">
+                                                                    <h5 class="card-title">Kelas Analisis</h5>
+                                                                </a>
+                                                                <p class="card-text">Analisis Rencana Kelas
+                                                                    Mingguan.</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                @endcan
+                                                @can('Komplain Peserta')
+                                                <div class="col-sm-6 mt-2">
+                                                    <div class="card" id="card-hover">
+                                                        <div class="card-body d-flex">
+                                                            <div class="col-md-2 ">
+                                                                <i class="fa fa-comment" style="font-size: 30px;"></i>
+                                                            </div>
+                                                            <div class="col-md-10" style="margin-left: 10px">
+                                                                <a href="/komplain-peserta"
+                                                                    class="link stretched-link text-decoration-none">
+                                                                    <h5 class="card-title">Komplain Peserta</h5>
+                                                                </a>
+                                                                <p class="card-text">Komplain peserta.</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                @endcan
                                             </div>
                                         </div>
                                     </div>
@@ -1978,29 +2070,69 @@
                                     </div>
                                 </div>
                             </div>
-                            @can('Fitur Menu Education')
-                                <div class="row">
-                                    <div class="col-md-12 mt-1">
-                                        <div class="card">
-                                            <div class="card-body">
-                                                <h5 class="text-center card-title">Education</h5>
-                                                <div class="row">
-                                                    <div class="col-sm-6 mt-2">
-                                                        <div class="card" id="card-hover">
-                                                            <div class="card-body d-flex">
-                                                                <div class="col-md-2">
-                                                                    <img src="{{ asset('icon/calendar.svg') }}"
-                                                                        class="img-responsive" width="30px">
-                                                                </div>
-                                                                <div class="col-md-10" style="margin-left: 10px">
-                                                                    <a href="/kanban"
-                                                                        class="link stretched-link text-decoration-none">
-                                                                        <h5 class="card-title">Papan Kanban</h5>
-                                                                    </a>
-                                                                    <p class="card-text">untuk menejemen projek.
-                                                                    </p>
-                                                                </div>
-                                                            </div>
+                        </div>
+                        @can('Fitur Menu Education')
+                        <div class="row">
+                            <div class="col-md-12 mt-1">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5 class="text-center card-title">Education</h5>
+                                        <div class="row">
+                                            <div class="col-sm-6 mt-2">
+                                                <div class="card" id="card-hover">
+                                                    <div class="card-body d-flex">
+                                                        <div class="col-md-2">
+                                                            <img src="{{ asset('icon/calendar.svg') }}"
+                                                                class="img-responsive" width="30px">
+                                                        </div>
+                                                        <div class="col-md-10" style="margin-left: 10px">
+                                                            <a href="/kanban"
+                                                                class="link stretched-link text-decoration-none">
+                                                                <h5 class="card-title">Papan Kanban</h5>
+                                                            </a>
+                                                            <p class="card-text">untuk menejemen projek.
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6 mt-2">
+                                                <div class="card" id="card-hover">
+                                                    <div class="card-body d-flex">
+                                                        <div class="col-md-2">
+                                                            <img src="{{ asset('icon/calendar.svg') }}"
+                                                                class="img-responsive" width="30px">
+                                                        </div>
+                                                        <div class="col-md-10" style="margin-left: 10px">
+                                                            <a href="/development"
+                                                                class="link stretched-link text-decoration-none">
+                                                                <h5 class="card-title">Sertifikasi & Pelatihan</h5>
+                                                            </a>
+                                                            <p class="card-text">untuk menejemen sertifikat dan Pelatihan Instruktur.
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            @can('View TunjanganEducation')
+                                            <div class="col-sm-6 mt-2">
+                                                <div class="card" id="card-hover">
+                                                    <div class="card-body d-flex">
+                                                        <div class="col-md-2">
+                                                            <img src="{{ asset('icon/table.svg') }}"
+                                                                class="img-responsive" width="30px">
+                                                        </div>
+                                                        <div class="col-md-10"
+                                                            style="margin-left: 10px">
+                                                            <a href="/tunjanganEducation"
+                                                                class="link stretched-link text-decoration-none">
+                                                                <h5 class="card-title">Tunjangan
+                                                                    Education
+                                                                </h5>
+                                                            </a>
+                                                            <p class="card-text">Data Tunjangan
+                                                                Education.
+                                                            </p>
                                                         </div>
                                                     </div>
                                                     @can('View TunjanganEducation')
@@ -2358,16 +2490,44 @@
                                                     aria-controls="nav-inixlatte"
                                                     aria-selected="false">Inixlatte</button>
                                             </div>
-                                            <div class="tab-content">
-                                                <div class="tab-pane fade" id="nav-inixcoffee" role="tabpanel">
-                                                    <div class="card">
-                                                        <div class="card-body">
-                                                            <div class="card-title">uptime monitoring INIXCOFFEE</div>
-                                                            <div class="p-4">
-                                                                <canvas id="uptimeChartInixcoffee"
-                                                                    height="350"></canvas>
-                                                            </div>
-                                                        </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6 mt-2">
+                                    <div class="card" id="card-hover">
+                                        <div class="card-body d-flex">
+                                            <div class="col-md-2">
+                                                <img src="{{ asset('icon/bell.svg') }}"
+                                                    class="img-responsive" width="30px">
+                                            </div>
+                                            <div class="col-md-10" style="margin-left: 10px">
+                                                <a href="https://inixindo.sentry.io/issues/"
+                                                    class="link stretched-link text-decoration-none">
+                                                    <h5 class="card-title">Sentry Dashboard</h5>
+                                                </a>
+                                                <p class="card-text">Sentry laravel.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                @if (auth()->user()->jabatan === 'Koordinator ITSM')
+                                <div class="col mt-12">
+                                    <div class="mt-5 mb-3">
+                                        Uptime Monitoring
+                                    </div>
+                                    <div class="nav nav-tabs mt-3" role="tablist">
+                                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#nav-inixcoffee" type="button" role="tab" aria-controls="nav-inixcoffee" aria-selected="false">Inixcoffee</button>
+                                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#nav-inixlatte" type="button" role="tab" aria-controls="nav-inixlatte" aria-selected="false">Inixlatte</button>
+                                    </div>
+                                    <div class="tab-content">
+                                        <div class="tab-pane fade" id="nav-inixcoffee" role="tabpanel">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <div class="card-title">uptime monitoring INIXCOFFEE</div>
+                                                    <div class="p-4">
+                                                        <canvas id="uptimeChartInixcoffee" height="350"></canvas>
                                                     </div>
                                                 </div>
                                                 <div class="tab-pane fade" id="nav-inixlatte" role="tabpanel">
@@ -2748,7 +2908,7 @@
                 method: "GET",
                 dataType: "json",
                 success: function(response) {
-                    console.log("Data mentah dari server:", response); // Tambahkan ini 
+                    console.log("Data mentah dari server:", response); // Tambahkan ini
                     if (!response || typeof response !== 'object' || response.error) {
                         console.error("Data tidak valid:", response);
                         return;

@@ -1564,10 +1564,9 @@
             </div>
         </div>
     @endif
-
     @if ($notification->data['message']['tipe'] == 'Outstanding Lunas dengan data PA')
-        <div class="notification mb-3 p-3 border rounded bg-light">
-            <div class="w-100">
+    <div class="notification mb-3 p-3 border rounded bg-light">
+        <div class="w-100">
 
                 <p class="mb-2 text-success fw-bold">
                     Pembayaran Outstanding Telah Diselesaikan
@@ -1622,8 +1621,410 @@
             </div>
         </div>
     @endif
+    @if (
+        isset($notification->data['message']['tipe']) && (
+        $notification->data['message']['tipe'] == 'Mengajukan Pengembangan Diri' ||
+        $notification->data['message']['tipe'] == 'Pengembangan Diri Disetujui' ||
+        $notification->data['message']['tipe'] == 'Pengembangan Diri Ditolak')
+    )
+        @php
+            $msg = $notification->data['message'];
+            $kategori = $msg['tipe_kategori'] ?? 'Umum';
+            $namaItem = $msg['nama_item'] ?? '-';
+
+            // AMBIL DATA TAMBAHAN
+            $namaSertifTambahan = $msg['nama_sertifikasi_tambahan'] ?? null;
+
+            $harga = $msg['harga'] ?? 0;
+            // Data Tanggal
+            $tglUjian = $msg['tanggal_ujian'] ?? null;
+            $tglBerlakuDari = $msg['berlaku_dari'] ?? null;
+            $tglBerlakuSampai = $msg['berlaku_sampai'] ?? null;
+            // Data Tanggal Pelatihan
+            $tglMulai = $msg['tanggal_mulai'] ?? null;
+            $tglSelesai = $msg['tanggal_selesai'] ?? null;
+            $tglPelatihanLama = $msg['tanggal_pelatihan'] ?? null;
+
+            $tglPengajuan = $msg['tanggal_pengajuan'] ?? $msg['tanggal'] ?? null;
+        @endphp
+
+        <div class="notification mb-3 p-3 border rounded bg-light">
+            <p>
+                <strong style="text-transform: capitalize;">
+                    {{ $notification->data['user'] ?? 'User' }}
+                </strong>
+
+                @if ($msg['tipe'] == 'Mengajukan Pengembangan Diri')
+                    telah <strong>membuat pengajuan baru</strong> untuk
+
+                @elseif ($msg['tipe'] == 'Pengembangan Diri Disetujui')
+                    telah <strong>menyetujui</strong>. <br>
+                    <span class="text-success fst-italic">
+                        "Telah disetujui Education Manager dan Sudah menjadi pengajuan barang dengan kategori Sertifikasi dan Pelatihan"
+                    </span> <br>
+                    untuk data
+
+                @elseif ($msg['tipe'] == 'Pengembangan Diri Ditolak')
+                    telah <strong>menolak</strong> pengajuan
+                @endif
+
+                <strong>{{ $kategori }}</strong>:
+                "{{ $namaItem }}"
+
+                {{-- LOGIKA TAMPILAN GANDA --}}
+                @if($namaSertifTambahan)
+                     dan <strong>Sertifikasi</strong>: "{{ $namaSertifTambahan }}"
+                @endif
+                .
+            </p>
+
+            {{-- === AREA DETAIL INFORMASI === --}}
+            <div class="alert alert-light border py-2 px-3 mb-2" style="font-size: 0.9rem;">
+
+                {{-- A. Tampilkan Detail Sertifikasi --}}
+                @if($kategori == 'Sertifikasi' && $tglUjian)
+                    {{-- ... (Kode Lama Tetap Sama) ... --}}
+                    <div class="row">
+                        <div class="col-12 mb-1">
+                            <i class="bi bi-calendar-event text-primary"></i>
+                            Tgl Ujian: <strong>{{ \Carbon\Carbon::parse($tglUjian)->translatedFormat('d M Y') }}</strong>
+                        </div>
+                         <div class="col-12 mb-1">
+                            <i class="bi bi-clock-history text-warning"></i>
+                            Berlaku:
+                            {{ $tglBerlakuDari ? \Carbon\Carbon::parse($tglBerlakuDari)->translatedFormat('d M Y') : '-' }}
+                            s/d
+                            {{ $tglBerlakuSampai ? \Carbon\Carbon::parse($tglBerlakuSampai)->translatedFormat('d M Y') : 'Seumur Hidup' }}
+                        </div>
+                    </div>
+
+                {{-- B. Tampilkan Detail Pelatihan --}}
+                @elseif($kategori == 'Pelatihan' && ($tglMulai || $tglPelatihanLama))
+                    <div class="mb-1">
+                        <i class="bi bi-calendar-check text-primary"></i>
+                        Pelaksanaan:
+                        @if($tglMulai)
+                            <strong>{{ \Carbon\Carbon::parse($tglMulai)->translatedFormat('d M Y') }}</strong>
+                            s/d
+                            <strong>{{ \Carbon\Carbon::parse($tglSelesai)->translatedFormat('d M Y') }}</strong>
+                        @else
+                            <strong>{{ \Carbon\Carbon::parse($tglPelatihanLama)->translatedFormat('d F Y') }}</strong>
+                        @endif
+                    </div>
+                @endif
+
+                {{-- C. Tampilkan Harga --}}
+                <div class="mt-1 border-top pt-1 text-end">
+                    <small class="text-muted">Estimasi Biaya:</small><br>
+                    <strong class="text-success">
+                        Rp {{ number_format($harga, 0, ',', '.') }}
+                    </strong>
+                </div>
+            </div>
+            <p class="mb-2 text-muted">
+                @if (isset($msg['status']))
+                    <i class="bi bi-info-circle"></i> {{ $msg['status'] }}<br>
+                @endif
+
+                @if($tglPengajuan)
+                    <small><i class="bi bi-clock"></i> {{ \Carbon\Carbon::parse($tglPengajuan)->translatedFormat('d F Y H:i') }}</small>
+                @endif
+            </p>
+
+            <div class="d-flex gap-2">
+                <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm">
+                    <img src="{{ asset('icon/eye.svg') }}" width="16px" style="filter: invert(1);"> Lihat Detail
+                </a>
+
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">
+                        Tandai Dibaca
+                    </button>
+                </form>
+            </div>
+        </div>
+    @endif
+
+    @if ($notification->data['message']['tipe'] == 'Notif Kegiatan')
+    <div class="notification mb-3 p-3 border rounded bg-light">
+        <div class="w-100">
+
+            <p class="mb-2 text-primary fw-bold">
+                Pengajuan Kegiatan Baru Telah Diajukan
+            </p>
+
+            <div class="mb-2">
+                <small class="text-muted d-block">Nama Kegiatan</small>
+                <span class="fw-bold">
+                    {{ $notification->data['message']['kegiatan'] ?? '-' }}
+                </span>
+            </div>
+
+            <div class="mb-2">
+                <small class="text-muted d-block">Tipe RAB</small>
+                <span class="fw-bold text-uppercase">
+                    {{ $notification->data['message']['tipe_kegiatan'] ?? '-' }}
+                </span>
+            </div>
+
+            <div class="mb-2">
+                <small class="text-muted d-block">Lama Kegiatan</small>
+                <span>
+                    {{ $notification->data['message']['lama_kegiatan'] ?? '-' }}
+                </span>
+            </div>
+
+            <div class="mb-2">
+                <small class="text-muted d-block">Waktu Pelaksanaan</small>
+                <span class="badge bg-info text-dark">
+                    {{ $notification->data['message']['waktu_kegiatan'] ?? '-' }}
+                </span>
+            </div>
+
+            <div class="mb-2">
+                <small class="text-muted d-block">Penanggung Jawab</small>
+                <span class="badge bg-info text-dark">
+                    {{ $notification->data['message']['pic'] ?? '-' }}
+                </span>
+            </div>
+
+            <div class="alert alert-warning py-2 px-3 mb-3" style="font-size: 0.85rem;">
+                <i class="bi bi-clock me-1"></i>
+                Pengajuan sedang diproses. Silakan cek kembali beberapa saat lagi untuk melihat status terbaru.
+            </div>
+
+            <small class="text-muted d-block">
+                <i class="bi bi-clock"></i>
+                Dibuat pada:
+                {{ $notification->created_at->translatedFormat('d F Y H:i') }} WIB
+            </small>
+
+            <div class="d-flex gap-2 mt-3">
+                <a href="{{ $notification->data['path'] }}" target="_blank" class="btn btn-sm btn-primary">
+                    <i class="bi bi-eye me-1"></i>Detail
+                </a>
+
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                        Tandai Dibaca
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+@endif
+
+@if ($notification->data['message']['tipe'] == 'Status Approved')
+    <div class="notification mb-3 p-3 border rounded bg-light">
+        <div class="w-100">
+
+            <p class="mb-2 text-success fw-bold">
+                Kegiatan Telah Disetujui (Approved)
+            </p>
+
+            <div class="mb-3">
+                <span class="fw-bold">
+                    {{ $notification->data['message']['kegiatan'] ?? 'Kegiatan' }}
+                </span>
+                <span class="text-muted"> telah disetujui oleh General Manager.</span>
+            </div>
+
+            <div class="alert alert-success py-2 px-3 mb-3" style="font-size: 0.85rem;">
+                <i class="bi bi-check-circle me-1"></i>
+                Status kegiatan telah berubah menjadi <strong>Approved</strong>. Silakan lanjutkan proses selanjutnya dibagian Finance.
+            </div>
+
+            <small class="text-muted d-block">
+                <i class="bi bi-clock"></i>
+                Dibuat pada:
+                {{ $notification->created_at->translatedFormat('d F Y H:i') }} WIB
+            </small>
+
+            <div class="d-flex gap-2 mt-3">
+                <a href="{{ $notification->data['path'] }}" target="_blank" class="btn btn-sm btn-primary">
+                    <i class="bi bi-eye me-1"></i>Detail Kegiatan
+                </a>
+
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                        Tandai Dibaca
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+@endif
+
+@if ($notification->data['message']['tipe'] == 'Status Pencairan')
+    <div class="notification mb-3 p-3 border rounded bg-light">
+        <div class="w-100">
+
+            <p class="mb-2 text-info fw-bold">
+                Dana Kegiatan Telah Dicairkan
+            </p>
+
+            <div class="mb-3">
+                <span class="fw-bold">
+                    {{ $notification->data['message']['kegiatan'] ?? 'Kegiatan' }}
+                </span>
+                <span class="text-muted"> telah selesai proses pencairan dana.</span>
+            </div>
+
+            <div class="alert alert-info py-2 px-3 mb-3" style="font-size: 0.85rem;">
+                <i class="bi bi-cash-coin me-1"></i>
+                Dana kegiatan telah <strong>dicairkan</strong> oleh Finance. Silakan lanjutkan pelaksanaan kegiatan dan selesaikan.
+            </div>
+
+            <small class="text-muted d-block">
+                <i class="bi bi-clock"></i>
+                Dibuat pada:
+                {{ $notification->created_at->translatedFormat('d F Y H:i') }} WIB
+            </small>
+
+            <div class="d-flex gap-2 mt-3">
+                <a href="{{ $notification->data['path'] }}" target="_blank" class="btn btn-sm btn-primary">
+                    <i class="bi bi-eye me-1"></i>Detail Kegiatan
+                </a>
+
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                        Tandai Dibaca
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+@endif
 
 
+@if ($notification->data['message']['tipe'] == 'Status Menunggu')
+    <div class="notification mb-3 p-3 border rounded bg-light">
+        <div class="w-100">
+
+            <p class="mb-2 text-warning fw-bold">
+                Kegiatan Dalam Status Menunggu
+            </p>
+
+            <div class="mb-3">
+                <span class="fw-bold">
+                    {{ $notification->data['message']['kegiatan'] ?? 'Kegiatan' }}
+                </span>
+                <span class="text-muted"> memerlukan peninjauan lebih lanjut.</span>
+            </div>
+
+            <div class="alert alert-warning py-2 px-3 mb-3" style="font-size: 0.85rem;">
+                <i class="bi bi-hourglass-split me-1"></i>
+                Status kegiatan saat ini <strong>Menunggu</strong>. Mohon lakukan review atau tindakan yang diperlukan.
+            </div>
+
+            <small class="text-muted d-block">
+                <i class="bi bi-clock"></i>
+                Dibuat pada:
+                {{ $notification->created_at->translatedFormat('d F Y H:i') }} WIB
+            </small>
+
+            <div class="d-flex gap-2 mt-3">
+                <a href="{{ $notification->data['path'] }}" target="_blank" class="btn btn-sm btn-primary">
+                    <i class="bi bi-eye me-1"></i>Detail Kegiatan
+                </a>
+
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                        Tandai Dibaca
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+@endif
+
+
+@if ($notification->data['message']['tipe'] == 'Laporan Kondisi Kendaraan')
+    <div class="notification mb-3 p-3 border rounded bg-light">
+        <div class="w-100">
+
+            <p class="mb-2 text-success fw-bold">
+                Laporan Kondisi Kendaraan Diperbarui
+            </p>
+
+            <div class="mb-3">
+                <span class="fw-bold">
+                    {{ $notification->data['message']['user'] ?? 'User' }}
+                </span>
+                <span class="text-muted">
+                    telah mengupdate kondisi kendaraan
+                </span>
+                <span class="fw-bold">
+                    {{ $notification->data['message']['kendaraan'] ?? '-' }}
+                </span>
+            </div>
+
+            <div class="alert alert-success py-2 px-3 mb-3" style="font-size: 0.85rem;">
+                <i class="bi bi-truck me-1"></i>
+                Pemeriksaan dilakukan pada tanggal
+                <strong>
+                    {{ \Carbon\Carbon::parse(
+                        $notification->data['message']['tanggal_pemeriksaan'] ?? now()
+                    )->translatedFormat('d F Y') }}
+                </strong>
+            </div>
+
+            <small class="text-muted d-block">
+                <i class="bi bi-clock"></i>
+                Dibuat pada:
+                {{ $notification->created_at->translatedFormat('d F Y H:i') }} WIB
+            </small>
+
+            <div class="d-flex gap-2 mt-3">
+                <a href="{{ $notification->data['path'] }}" target="_blank" class="btn btn-sm btn-primary">
+                    <i class="bi bi-eye me-1"></i>Detail Kondisi
+                </a>
+
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                        Tandai Dibaca
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+@endif
+
+@if ($notification->data['message']['tipe'] == 'Mengajukan Update Exam')
+    <div class="notification mb-3">
+        <p><strong style="text-transform: capitalize;">{{ $notification->data['user'] }}</strong> telah
+            {{ $notification->data['message']['tipe'] }} </p> {{ $notification->data['message']['nama_exam'] }}
+        <p>Pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
+        <div class="d-flex">
+            <a href="{{ $notification->data['path'] }}" class="btn btn-primary btn-sm"
+                style="margin-right:8px;">Lihat Selengkapnya</a>
+            <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
+                class="d-inline">
+                @csrf
+                @method('PUT')
+                <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai
+                    Dibaca</button>
+            </form>
+        </div>
+    </div>
+@endif
 
     <hr>
 @endforeach

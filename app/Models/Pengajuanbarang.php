@@ -23,6 +23,7 @@ class PengajuanBarang extends Model
      */
     protected $fillable = [
         'id_karyawan',
+        'id_kegiatan',
         'id_tracking',
         'tipe',
         'invoice',
@@ -53,4 +54,15 @@ class PengajuanBarang extends Model
     {
         return $this->hasMany(detailPengajuanBarang::class, 'id_pengajuan_barang', 'id');
     }
+
+    public function pelatihan()
+    {
+        return $this->hasOne(Pelatihan::class, 'id_pengajuan_barang');
+    }
+
+    public function sertifikasi()
+    {
+        return $this->hasOne(Sertifikasi::class, 'id_pengajuan_barang');
+    }
+
 }

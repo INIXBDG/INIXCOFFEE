@@ -14,7 +14,38 @@ class karyawan extends Model
     use Notifiable;
     protected $appends = ['hashids'];
 
-    protected $fillable = ['foto', 'nip', 'nama_lengkap', 'email', 'divisi', 'jabatan', 'rekening_maybank', 'rekening_bca', 'status_aktif', 'awal_probation', 'akhir_probation', 'awal_kontrak', 'akhir_kontrak', 'awal_tetap', 'akhir_tetap', 'keterangan', 'kode_karyawan', 'ttd', 'cuti', 'email', 'whatsapp', 'telepon', 'gaji'];
+    protected $fillable = [
+        'foto',
+        'nip',
+        'nama_lengkap',
+        'email',
+        'divisi',
+        'jabatan',
+        'rekening_maybank',
+        'rekening_bca',
+        'status_aktif',
+        'awal_probation',
+        'akhir_probation',
+        'awal_kontrak',
+        'akhir_kontrak',
+        'awal_tetap',
+        'akhir_tetap',
+        'keterangan',
+        'kode_karyawan',
+        'ttd',
+        'cuti',
+        'email',
+        'whatsapp',
+        'telepon',
+        'gaji',
+        'alamat_lengkap',
+        'gender',
+        'tempat_lahir',
+        'tanggal_lahir',
+        'religion',
+        'provinsi',
+        'kota',
+    ];
 
     public function user()
     {
@@ -77,5 +108,10 @@ class karyawan extends Model
     public function pickupDriver()
     {
         return $this->hasMany(pickupDriver::class, 'id_karyawan');
+    }
+
+    public function educations()
+    {
+        return $this->hasMany(EducationalBackground::class, 'kode_karyawan', 'kode_karyawan');
     }
 }
