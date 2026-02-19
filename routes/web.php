@@ -49,6 +49,7 @@ use App\Http\Controllers\BroadcastAuthController;
 use App\Http\Controllers\PusherAuthController;
 use App\Http\Controllers\office\vendorOfficeController;
 use App\Http\Controllers\ActivityInstrukturController;
+use App\Http\Controllers\dbklienController;
 use App\Http\Controllers\PenukaranSouvenirController;
 use App\Http\Controllers\office\DashboardSouvenirController;
 use App\Http\Controllers\Webinar\CalendarController;
@@ -914,3 +915,7 @@ Route::put('/development/sertifikasi/{id}', [InstructorDevelopmentController::cl
 Route::put('/development/pelatihan/{id}', [InstructorDevelopmentController::class, 'updatePelatihan'])->name('pelatihan.update');
 Route::post('/development/pelatihan/{id}/upload-bukti', [InstructorDevelopmentController::class, 'uploadBukti'])->name('pelatihan.uploadBukti');
 Route::post('/development/sertifikasi/{id}/upload-bukti', [InstructorDevelopmentController::class, 'uploadBuktiSertifikasi'])->name('sertifikasi.uploadBukti');
+
+Route::get('/db-klien', [dbklienController::class, 'index'])->name('dbklien.index');
+Route::post('import-klien', [dbklienController::class, 'import']);
+Route::get('download-template-klien', [dbklienController::class, 'downloadTemplate'])->name('excel.dbklien');
