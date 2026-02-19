@@ -192,7 +192,7 @@ class OutstandingController extends Controller
 
     public function getOutstandingHutang(Request $request)
     {
-        $type = $request->input('type', 'semua'); // default 'semua'
+        $type = $request->input('type', 'semua'); 
         $user = auth()->user();
         $idSales = $user->jabatan == 'SPV Sales' ? '' : $user->id_sales;
 

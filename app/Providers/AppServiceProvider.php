@@ -2,7 +2,10 @@
 
 namespace App\Providers;
 
+use App\Channels\WebPushChannel;
+use App\Services\WebPushService;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Pagination\Paginator;
 
 class AppServiceProvider extends ServiceProvider
@@ -21,5 +24,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Paginator::useBootstrap();
+        $this->app->bind('channel:webpush', function ($app) {
+            return new \App\Channels\WebPushChannel($app->make(\App\Services\WebPushService::class));
+        });
     }
 }

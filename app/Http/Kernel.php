@@ -35,9 +35,10 @@ class Kernel extends HttpKernel
             \Illuminate\Session\Middleware\StartSession::class,
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
-            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \App\Http\Middleware\DetectSessionExpired::class,
             \App\Http\Middleware\SessionTimeout::class,
             \App\Http\Middleware\LogActivity::class,
+            \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
 
         'api' => [
@@ -74,6 +75,7 @@ class Kernel extends HttpKernel
 
     protected $routeMiddleware = [
         // Middleware lainnya...
+        
         'logviewer.access' => \App\Http\Middleware\LogViewerAccessMiddleware::class,
     ];
 }
