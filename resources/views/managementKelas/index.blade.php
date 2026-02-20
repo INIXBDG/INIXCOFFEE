@@ -91,9 +91,8 @@
     <div class="modal fade" id="modalKelolaManagement" tabindex="-1" aria-labelledby="modalKelolaManagementLabel"
         aria-hidden="true">
         <div class="modal-dialog">
-            @csrf
             <div class="modal-content">
-                <form action="{{ route('managementKelas.store') }}" method="post">
+                <form id="formKelolaManagement" method="post">
                     @csrf
                     <div class="modal-header">
                         <h5 class="modal-title" id="modalKelolaManagementLabel">
@@ -115,11 +114,10 @@
                                 Simpan
                             @endif
                         </button>
+                    </div>
                 </form>
-                @csrf
             </div>
         </div>
-    </div>
     </div>
 
     <style>
@@ -138,6 +136,7 @@
             box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
             cursor: pointer;
             animation: zoomFade 0.8s ease both;
+            position: relative;
         }
 
         .ruang.exam-assign-mode:not(.ruang-ada) {
@@ -196,9 +195,8 @@
     </style>
 
     @push('js')
-        {{-- DIPERBAIKI: Hapus spasi berlebih di URL script --}}
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment-with-locales.min.js"></script>
         <script>
             let kelolaModal;
             let containerFilters = {};
@@ -249,13 +247,119 @@
                     }
                 });
 
-                // Prevent clicking occupied rooms in exam mode
                 $(document).on("click", ".ruang.ruang-ada", function (e) {
                     if (isExamMode) {
                         e.preventDefault();
                         alert('Ruangan ini sudah terisi. Silakan pilih ruangan lain.');
                         return false;
                     }
+                });
+
+                $('#formKelolaManagement').on('submit', function (e) {
+                    e.preventDefault();
+                    const form = $(this);
+                    const formData = form.serialize();
+                    const actionUrl = form.attr('action');
+                    const method = form.find('input[name="_method"]').val() || 'POST';
+
+                    console.log('=== FORM SUBMIT DEBUG ===');
+                    console.log('URL:', actionUrl);
+                    console.log('Method:', method);
+                    console.log('Data:', formData);
+                    console.log('CSRF Token:', $('input[name="_token"]').val());
+                    console.log('=========================');
+
+                    // ✅ HELPER: Fungsi restore button - dipanggil di SEMUA case
+                    function restoreButton() {
+                        const btn = form.find('button[type="submit"]');
+                        const originalText = btn.data('original-text') || 'Simpan';
+                        btn.prop('disabled', false).html(originalText);
+                    }
+
+                    $.ajax({
+                        url: actionUrl,
+                        type: method,
+                        data: formData,
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        beforeSend: function () {
+                            const btn = form.find('button[type="submit"]');
+                            // ✅ SIMPAN original text button
+                            btn.data('original-text', btn.html());
+                            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Memproses...');
+                        },
+                        success: function (res) {
+                            console.log('✅ Success Response:', res);
+
+                            // Deteksi jika response HTML (fallback)
+                            if (typeof res === 'string' && res.trim().startsWith('<!doctype')) {
+                                console.warn('⚠️ Server mengembalikan HTML');
+                                if (res.includes('Ruangan berhasil dijadwalkan')) {
+                                    alert('✅ Data berhasil disimpan!');
+                                } else {
+                                    alert('⚠️ Terjadi kesalahan format response');
+                                }
+                                restoreButton();  // ✅ RESTORE sebelum hide modal
+                                kelolaModal.hide();
+                                loadAllContainers($("#filterStart").val());
+                                return;
+                            }
+
+                            if (res.success) {
+                                alert(res.message || 'Data berhasil disimpan!');
+                                // ✅ RESTORE button SEBELUM hide modal (penting!)
+                                restoreButton();
+                                kelolaModal.hide();
+                                loadAllContainers($("#filterStart").val());
+                            } else {
+                                alert('Error: ' + (res.message || 'Terjadi kesalahan pada server'));
+                                restoreButton();  // ✅ RESTORE di error branch juga
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            console.log('❌ Error Response:', {
+                                status: xhr.status,
+                                responseText: xhr.responseText,
+                                responseJSON: xhr.responseJSON,
+                                error: error
+                            });
+
+                            // Deteksi HTML response
+                            if (xhr.responseText && xhr.responseText.trim().startsWith('<!doctype')) {
+                                if (xhr.responseText.includes('Ruangan berhasil dijadwalkan')) {
+                                    alert('✅ Data berhasil disimpan! (Response HTML detected)');
+                                    restoreButton();
+                                    kelolaModal.hide();
+                                    loadAllContainers($("#filterStart").val());
+                                    return;
+                                }
+                            }
+
+                            let errorMsg = 'Terjadi kesalahan sistem';
+
+                            if (xhr.status === 422 && xhr.responseJSON?.errors) {
+                                const errors = xhr.responseJSON.errors;
+                                errorMsg = Object.values(errors).flat().join('\n');
+                                alert('⚠️ Validasi Gagal:\n\n' + errorMsg);
+                            }
+                            else if (xhr.status === 419) {
+                                alert('⚠️ Session expired. Silakan refresh halaman.');
+                                location.reload();
+                                return;
+                            }
+                            else if (xhr.status === 500) {
+                                errorMsg = 'Server error. Cek log: storage/logs/laravel.log';
+                                alert('❌ ' + errorMsg);
+                            }
+                            else {
+                                errorMsg = xhr.responseJSON?.message || xhr.responseText || error;
+                                alert('❌ Error: ' + errorMsg);
+                            }
+
+                            restoreButton();  // ✅ RESTORE di semua error case
+                        }
+                    });
                 });
             });
 
@@ -321,7 +425,6 @@
                     tanggalSpan.text(filterUtama);
                     ruangBox.removeClass("ruang-ada manajemen rkm").css("background", "");
 
-                    // Add exam mode indicator for empty rooms
                     if (isExamMode) {
                         info.html('<span class="text-success"><i class="fas fa-check"></i> Tersedia untuk Exam</span>');
                     }
@@ -338,20 +441,29 @@
                     tanggalSpan.text(manajemen.tanggal || filterUtama);
 
                     if (!isExamMode) {
-                        kelola.html(`<button type="button" class="btn btn-primary btn-kelola" data-bs-toggle="modal" data-bs-target="#modalKelolaManagement" data-ruang="${manajemen.ruangan}">Kelola</button>`);
+                        let btnKelola = `<button type="button" class="btn btn-primary btn-kelola" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#modalKelolaManagement" 
+                                                    data-ruang="${manajemen.ruangan}"
+                                                    data-id="${manajemen.id || ''}"
+                                                    data-tanggal="${manajemen.tanggal || ''}"
+                                                    data-jam-mulai="${manajemen.jam_mulai || ''}"
+                                                    data-jam-selesai="${manajemen.jam_selesai || ''}"
+                                                    data-kebutuhan="${manajemen.kebutuhan || ''}"
+                                                    data-keterangan="${manajemen.keterangan || ''}"
+                                                    data-is-exam="${manajemen.is_exam || 0}"
+                                                    data-exam-id="${manajemen.exam_id || ''}"
+                                                    >Kelola</button>`;
 
-                        // === BARU: Tombol Batalkan untuk jadwal masa depan ===
                         const today = new Date().toISOString().split('T')[0];
                         if (manajemen.tanggal >= today && manajemen.id) {
-                            kelola.append(
-                                `<button type="button" class="btn btn-danger btn-batalkan ms-2 tombol-container" 
-                                                            data-id="${manajemen.id}" 
-                                                            data-ruang="${manajemen.ruangan}"
-                                                            data-tanggal="${manajemen.tanggal}">
-                                                            <i class="fas fa-ban"></i> Batalkan
-                                                        </button>`
-                            );
+                            btnKelola += `<button type="button" class="btn btn-danger btn-batalkan ms-2" 
+                                                        data-id="${manajemen.id}" 
+                                                        data-ruang="${manajemen.ruangan}"
+                                                        data-tanggal="${manajemen.tanggal}">
+                                                        <i class="fas fa-ban"></i> Batalkan</button>`;
                         }
+                        kelola.html(btnKelola);
                     }
                     return;
                 }
@@ -366,109 +478,155 @@
 
                     if (!isExamMode) {
                         kelola.html(`<button type="button" class="btn btn-info btn-detail" data-bs-toggle="modal" data-bs-target="#modalDetailRKM"
-                            data-ruang="${rkm.ruang}" 
-                            data-tanggal_awal="${rkm.tanggal_awal}" 
-                            data-tanggal_akhir="${rkm.tanggal_akhir}" 
-                            data-materi="${rkm.materi}" 
-                            data-sales="${rkm.sales}" 
-                            data-instruktur="${rkm.instruktur}" 
-                            data-instruktur2="${rkm.instruktur2}" 
-                            data-asisten="${rkm.asisten}" 
-                            data-perusahaan="${rkm.perusahaan}" 
-                            data-pax="${rkm.pax}" 
-                            data-exam="${rkm.exam}" 
-                            data-authorize="${rkm.authorize}" 
-                            >Detail</button>`);
+                                                    data-ruang="${rkm.ruang}" 
+                                                    data-tanggal-awal="${rkm.tanggal_awal}" 
+                                                    data-tanggal-akhir="${rkm.tanggal_akhir}" 
+                                                    data-materi="${rkm.materi}" 
+                                                    data-sales="${rkm.sales}" 
+                                                    data-instruktur="${rkm.instruktur}" 
+                                                    data-instruktur2="${rkm.instruktur2}" 
+                                                    data-asisten="${rkm.asisten}" 
+                                                    data-perusahaan="${rkm.perusahaan}" 
+                                                    data-pax="${rkm.pax}" 
+                                                    data-exam="${rkm.exam}" 
+                                                    data-authorize="${rkm.authorize}" 
+                                                    >Detail</button>`);
                     }
                     return;
                 }
             }
 
-            function openModalKelola(ruang) {
-                $("#modalKelolaManagementLabel").text("Kelola Ruang " + ruang);
+            function openModalKelola(ruang, existingData = null) {
+                const isEdit = existingData && existingData.id;
+
+                $("#modalKelolaManagementLabel").text(isEdit ? "Edit Kelola Ruang " + ruang : "Kelola Ruang " + ruang);
+
+                const val = (key, fallback = '') => existingData ? (existingData[key] || fallback) : fallback;
+
+                // Set form action dinamis
+                const form = $("#formKelolaManagement");
+                if (isEdit) {
+                    form.attr('action', `/management-kelas/${existingData.id}`);
+                    if (!form.find('input[name="_method"]').length) {
+                        form.append('<input type="hidden" name="_method" value="PUT">');
+                    }
+                } else {
+                    form.attr('action', "{{ route('managementKelas.store') }}");
+                    form.find('input[name="_method"]').remove();
+                }
+
                 $("#modalKelolaManagement .modal-body").html(`
-                    <input type="hidden" name="ruang" value="${ruang}">
-                    <div class="form-group mt-3">
-                        <label>Nama Ruangan</label>
-                        <input type="text" class="form-control" value="Ruang ${ruang}" readonly>
-                    </div>
-                    <div class="form-group mt-3">
-                        <label>Tanggal</label>
-                        <input type="date" class="form-control" name="tanggal">
-                    </div>
-                    <div class="form-group mt-3">
-                        <label>Jam Mulai</label>
-                        <input type="time" class="form-control" name="jam_mulai" id="jamMulai">
-                    </div>
-                    <div class="form-group mt-3">
-                        <label>Jam Selesai</label>
-                        <input type="time" class="form-control" name="jam_selesai" id="jamSelesai">
-                    </div>
-                    <small id="errorMsg" class="text-danger d-none">Jam selesai harus minimal 1 jam setelah jam mulai</small>
-                    <div class="form-group mt-3">
-                        <label>Kebutuhan</label>
-                        <textarea name="kebutuhan" class="form-control"></textarea>
-                    </div>
-                    <div class="form-group mt-3">
-                        <label>Keterangan</label>
-                        <textarea name="keterangan" class="form-control"></textarea>
-                    </div>
-                `);
+                                            <input type="hidden" name="id" value="${val('id', '')}">
+                                            <input type="hidden" name="ruang" value="${ruang}">
+                                            <input type="hidden" name="is_exam" value="${val('is_exam', 0)}">
+                                            <input type="hidden" name="exam_id" value="${val('exam_id', '')}">
+
+                                            <div class="form-group mt-3 text-start">
+                                                <label class="form-label">Nama Ruangan</label>
+                                                <input type="text" class="form-control" value="Ruang ${ruang}" readonly>
+                                            </div>
+                                            <div class="form-group mt-3 text-start">
+                                                <label class="form-label">Tanggal <span class="text-danger">*</span></label>
+                                                <input type="date" class="form-control" name="tanggal" value="${val('tanggal')}" required>
+                                            </div>
+                                            <div class="form-group mt-3 text-start">
+                                                <label class="form-label">Jam Mulai <span class="text-danger">*</span></label>
+                                                <input type="time" class="form-control" name="jam_mulai" id="jamMulai" value="${val('jam_mulai')}" required>
+                                            </div>
+                                            <div class="form-group mt-3 text-start">
+                                                <label class="form-label">Jam Selesai <span class="text-danger">*</span></label>
+                                                <input type="time" class="form-control" name="jam_selesai" id="jamSelesai" value="${val('jam_selesai')}" required>
+                                            </div>
+                                            <small id="errorMsg" class="text-danger d-none">Jam selesai harus minimal 1 jam setelah jam mulai</small>
+                                            <div class="form-group mt-3 text-start">
+                                                <label class="form-label">Kebutuhan</label>
+                                                <textarea name="kebutuhan" class="form-control" rows="3">${val('kebutuhan', '')}</textarea>
+                                            </div>
+                                            <div class="form-group mt-3 text-start">
+                                                <label class="form-label">Keterangan</label>
+                                                <textarea name="keterangan" class="form-control" rows="3">${val('keterangan', '')}</textarea>
+                                            </div>
+                                        `);
+
+                if (val('jam_mulai') && val('jam_selesai')) {
+                    $("#jamMulai, #jamSelesai").trigger('change');
+                }
 
                 kelolaModal.show();
-
             }
 
-            function openModalKelolaExam(ruang) {
-                $("#modalKelolaManagementLabel").text("Assign Exam ke Ruang " + ruang);
+            function openModalKelolaExam(ruang, existingData = null) {
+                const isEdit = existingData && existingData.id;
+
+                $("#modalKelolaManagementLabel").text(isEdit ? "Edit Assign Exam ke Ruang " + ruang : "Assign Exam ke Ruang " + ruang);
+
+                const val = (key, fallback = '') => existingData ? (existingData[key] || fallback) : fallback;
+
+                const form = $("#formKelolaManagement");
+                if (isEdit) {
+                    form.attr('action', `/management-kelas/${existingData.id}`);
+                    if (!form.find('input[name="_method"]').length) {
+                        form.append('<input type="hidden" name="_method" value="PUT">');
+                    }
+                } else {
+                    form.attr('action', "{{ route('managementKelas.store') }}");
+                    form.find('input[name="_method"]').remove();
+                }
+
                 $("#modalKelolaManagement .modal-body").html(`
-                    <input type="hidden" name="ruang" value="${ruang}">
-                    <div class="alert alert-info">
-                        <strong>Exam Details:</strong><br>
-                        @if($examData)
-                            Materi: {{ $examData['materi'] }}<br>
-                            Perusahaan: {{ $examData['perusahaan'] }}<br>
-                            Pax: {{ $examData['pax'] }}<br>
-                            Invoice: {{ $examData['invoice'] }}
-                        @endif
-                    </div>
-                    <div class="form-group mt-3">
-                        <label>Nama Ruangan</label>
-                        <input type="text" class="form-control" value="Ruang ${ruang}" readonly>
-                    </div>
-                    <div class="form-group mt-3">
-                        <label>Tanggal Exam <span class="text-danger">*</span></label>
-                        <input type="date" class="form-control" name="tanggal" required>
-                    </div>
-                    <div class="form-group mt-3">
-                        <label>Jam Mulai <span class="text-danger">*</span></label>
-                        <input type="time" class="form-control" name="jam_mulai" id="jamMulai" required>
-                    </div>
-                    <div class="form-group mt-3">
-                        <label>Jam Selesai <span class="text-danger">*</span></label>
-                        <input type="time" class="form-control" name="jam_selesai" id="jamSelesai" required>
-                    </div>
-                    <small id="errorMsg" class="text-danger d-none">Jam selesai harus minimal 1 jam setelah jam mulai</small>
-                    <div class="form-group mt-3">
-                        <label>Kebutuhan (Optional)</label>
-                        <textarea name="kebutuhan" class="form-control" placeholder="Akan diisi otomatis jika kosong"></textarea>
-                        <small class="form-text text-muted">Default: Exam - [Nama Materi]</small>
-                    </div>
-                    <div class="form-group mt-3">
-                        <label>Keterangan (Optional)</label>
-                        <textarea name="keterangan" class="form-control" placeholder="Akan diisi otomatis jika kosong"></textarea>
-                        <small class="form-text text-muted">Default: Exam untuk [Perusahaan] (Pax: [Jumlah])</small>
-                    </div>
-                `);
+                                            <input type="hidden" name="id" value="${val('id', '')}">
+                                            <input type="hidden" name="ruang" value="${ruang}">
+                                            <input type="hidden" name="is_exam" value="1">
+                                            <input type="hidden" name="exam_id" value="${val('exam_id', '')}">
+
+                                            <div class="alert alert-info text-start">
+                                                <strong>Exam Details:</strong><br>
+                                                @if($examData)
+                                                    Materi: {{ $examData['materi'] }}<br>
+                                                    Perusahaan: {{ $examData['perusahaan'] }}<br>
+                                                    Pax: {{ $examData['pax'] }}<br>
+                                                    Invoice: {{ $examData['invoice'] }}
+                                                @endif
+                                            </div>
+                                            <div class="form-group mt-3 text-start">
+                                                <label class="form-label">Nama Ruangan</label>
+                                                <input type="text" class="form-control" value="Ruang ${ruang}" readonly>
+                                            </div>
+                                            <div class="form-group mt-3 text-start">
+                                                <label class="form-label">Tanggal Exam <span class="text-danger">*</span></label>
+                                                <input type="date" class="form-control" name="tanggal" value="${val('tanggal')}" required>
+                                            </div>
+                                            <div class="form-group mt-3 text-start">
+                                                <label class="form-label">Jam Mulai <span class="text-danger">*</span></label>
+                                                <input type="time" class="form-control" name="jam_mulai" id="jamMulai" value="${val('jam_mulai')}" required>
+                                            </div>
+                                            <div class="form-group mt-3 text-start">
+                                                <label class="form-label">Jam Selesai <span class="text-danger">*</span></label>
+                                                <input type="time" class="form-control" name="jam_selesai" id="jamSelesai" value="${val('jam_selesai')}" required>
+                                            </div>
+                                            <small id="errorMsg" class="text-danger d-none">Jam selesai harus minimal 1 jam setelah jam mulai</small>
+                                            <div class="form-group mt-3 text-start">
+                                                <label class="form-label">Kebutuhan (Optional)</label>
+                                                <textarea name="kebutuhan" class="form-control" placeholder="Akan diisi otomatis jika kosong" rows="2">${val('kebutuhan', `Exam - {{ $examData['materi'] ?? '' }}`)}</textarea>
+                                                <small class="form-text text-muted">Default: Exam - [Nama Materi]</small>
+                                            </div>
+                                            <div class="form-group mt-3 text-start">
+                                                <label class="form-label">Keterangan (Optional)</label>
+                                                <textarea name="keterangan" class="form-control" placeholder="Akan diisi otomatis jika kosong" rows="2">${val('keterangan', `Exam untuk {{ $examData['perusahaan'] ?? '' }} (Pax: {{ $examData['pax'] ?? '' }})`)}</textarea>
+                                                <small class="form-text text-muted">Default: Exam untuk [Perusahaan] (Pax: [Jumlah])</small>
+                                            </div>
+                                        `);
+
+                if (val('jam_mulai') && val('jam_selesai')) {
+                    $("#jamMulai, #jamSelesai").trigger('change');
+                }
 
                 kelolaModal.show();
-
             }
 
             function openModalDetail(data) {
                 $("#modalDetailRKMLabel").text("Detail Ruang " + data.ruang);
 
-                // Helper: Format tanggal ke bahasa Indonesia dengan validasi
                 const formatTanggal = (tanggal) => {
                     if (!tanggal || tanggal === '-') return '-';
                     const m = moment(tanggal);
@@ -479,36 +637,34 @@
                 const tanggalAkhir = formatTanggal(data.tanggal_akhir);
 
                 $("#modalDetailRKM #bodyContent").html(`
-                        <div class="container-fluid">
-                            <div class="row g-3">
-                                ${field("Nama Ruangan", `Ruang ${data.ruang}`)}
-                                ${field("Tanggal Awal", tanggalAwal)}
-                                ${field("Tanggal Akhir", tanggalAkhir)}
-                                ${field("Materi", data.materi)}
-                                ${field("Sales", data.sales)}
-                                ${field("Instruktur 1", data.instruktur)}
-                                ${field("Instruktur 2", data.instruktur2)}
-                                ${field("Asisten", data.asisten)}
-                                ${field("Perusahaan", data.perusahaan)}
-                                ${field("Pax", data.pax)}
-                                ${field("Exam", data.exam)}
-                                ${field("Authorize", data.authorize)}
-                            </div>
-                        </div>
-                    `);
+                                                <div class="container-fluid">
+                                                    <div class="row g-3">
+                                                        ${field("Nama Ruangan", `Ruang ${data.ruang}`)}
+                                                        ${field("Tanggal Awal", tanggalAwal)}
+                                                        ${field("Tanggal Akhir", tanggalAkhir)}
+                                                        ${field("Materi", data.materi)}
+                                                        ${field("Sales", data.sales)}
+                                                        ${field("Instruktur 1", data.instruktur)}
+                                                        ${field("Instruktur 2", data.instruktur2)}
+                                                        ${field("Asisten", data.asisten)}
+                                                        ${field("Perusahaan", data.perusahaan)}
+                                                        ${field("Pax", data.pax)}
+                                                        ${field("Exam", data.exam)}
+                                                        ${field("Authorize", data.authorize)}
+                                                    </div>
+                                                </div>
+                                            `);
             }
 
             function field(label, value) {
                 return `
-                    <div class="col-md-6">
-                        <label class="form-label text-muted small">${label}</label>
-                        <input type="text" class="form-control form-control-sm" value="${value ?? '-'}" readonly>
-                    </div>
-                `;
+                                            <div class="col-md-6">
+                                                <label class="form-label text-muted small">${label}</label>
+                                                <input type="text" class="form-control form-control-sm" value="${value ?? '-'}" readonly>
+                                            </div>
+                                        `;
             }
 
-
-            // Validasi jam
             $(document).on("change", "#jamMulai, #jamSelesai", function () {
                 let mulai = $("#jamMulai").val();
                 let selesai = $("#jamSelesai").val();
@@ -527,18 +683,30 @@
 
             $(document).on("click", ".btn-kelola", function () {
                 let ruang = $(this).data("ruang");
+
+                let existingData = {
+                    id: $(this).data("id") || null,
+                    tanggal: $(this).data("tanggal") || null,
+                    jam_mulai: $(this).data("jam-mulai") || null,
+                    jam_selesai: $(this).data("jam-selesai") || null,
+                    kebutuhan: $(this).data("kebutuhan") || null,
+                    keterangan: $(this).data("keterangan") || null,
+                    is_exam: $(this).data("is-exam") || 0,
+                    exam_id: $(this).data("exam-id") || null
+                };
+
                 if (isExamMode) {
-                    openModalKelolaExam(ruang);
+                    openModalKelolaExam(ruang, existingData);
                 } else {
-                    openModalKelola(ruang);
+                    openModalKelola(ruang, existingData);
                 }
             });
 
             $(document).on("click", ".btn-detail", function () {
                 let data = {
                     ruang: $(this).data("ruang"),
-                    tanggal_awal: $(this).data("tanggal_awal"),
-                    tanggal_akhir: $(this).data("tanggal_akhir"),
+                    tanggal_awal: $(this).data("tanggal-awal"),
+                    tanggal_akhir: $(this).data("tanggal-akhir"),
                     materi: $(this).data("materi"),
                     sales: $(this).data("sales"),
                     instruktur: $(this).data("instruktur"),
@@ -552,7 +720,6 @@
                 openModalDetail(data);
             });
 
-            // === BARU: Event handler tombol Batalkan ===
             $(document).on("click", ".btn-batalkan", function () {
                 const id = $(this).data("id");
                 const ruang = $(this).data("ruang");
@@ -572,7 +739,6 @@
                     success: function (res) {
                         if (res.success) {
                             alert(res.message);
-                            // Refresh hanya container ruangan ini
                             const container = $(`#container-ruang-${ruang}`);
                             loadContainer(container, ruang, [$("#filterStart").val()]);
                         } else {
@@ -590,6 +756,9 @@
             $('#modalKelolaManagement').on('hidden.bs.modal', function () {
                 $('.modal-backdrop').remove();
                 $('body').removeClass('modal-open');
+                $('#formKelolaManagement')[0].reset();
+                $('#formKelolaManagement').attr('action', "{{ route('managementKelas.store') }}");
+                $('#formKelolaManagement').find('input[name="_method"]').remove();
             });
 
         </script>
