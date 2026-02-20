@@ -34,6 +34,7 @@ use App\Models\Feedback;
 use App\Models\izinTigaJam;
 use App\Models\Nilaifeedback;
 use App\Models\PengajuanBarang;
+use App\Models\RecomendedTask;
 use App\Models\SuratPerjalanan;
 use App\Models\SurveyKepuasan;
 use App\Models\target;
@@ -675,174 +676,173 @@ class DatabaseKPIController extends Controller
         return back()->with(['status', 'success']);
     }
 
-public function getDetailPenilaian(Request $request)
-{
-    $request->validate([
-        'id_karyawan' => 'required',
-        'kodeForm'    => 'required|string',
-        'jenis_form'  => 'required|string',
-    ]);
+    public function getDetailPenilaian(Request $request)
+    {
+        $request->validate([
+            'id_karyawan' => 'required',
+            'kodeForm'    => 'required|string',
+            'jenis_form'  => 'required|string',
+        ]);
 
-    $id_karyawan = $request->input('id_karyawan');
-    $kodeForm    = $request->input('kodeForm');
-    $jenis_form  = $request->input('jenis_form');
+        $id_karyawan = $request->input('id_karyawan');
+        $kodeForm    = $request->input('kodeForm');
+        $jenis_form  = $request->input('jenis_form');
 
-    $formPenilaians = formPenilaian::with('karyawan')
-        ->where('id_karyawan', $id_karyawan)
-        ->where('kode_form', $kodeForm)
-        ->where('jenis_form', $jenis_form)
-        ->get();
-
-    if ($formPenilaians->isEmpty()) {
-        return response()->json(['message' => 'Data tidak ditemukan'], 404);
-    }
-
-    $form = $formPenilaians->first();
-
-    $quartal = $form->quartal;
-    $semesterLabel = '';
-
-    if (in_array($quartal, ['Q1', 'Q2'])) {
-        $semesterLabel = 'S1';
-    } elseif (in_array($quartal, ['Q3', 'Q4'])) {
-        $semesterLabel = 'S2';
-    } else {
-        $semesterLabel = $quartal;
-    }
-
-    $evaluated = [
-        'nama'        => optional($form->karyawan)->nama_lengkap . ' - ' . (optional($form->karyawan)->divisi ?? '-'),
-        'id_karyawan' => $form->id_karyawan,
-        'quartal'     => $semesterLabel,
-        'tahun'       => $form->tahun,
-        'catatan'     => $form->catatan,
-        'kode_form'   => $form->kode_form
-    ];
-
-    $currentMonth = now()->month;
-    $currentQuartal = match (true) {
-        $currentMonth >= 1 && $currentMonth <= 3 => [1, 2, 3],
-        $currentMonth >= 4 && $currentMonth <= 6 => [4, 5, 6],
-        $currentMonth >= 7 && $currentMonth <= 9 => [7, 8, 9],
-        default => [10, 11, 12],
-    };
-
-    $dataAbsensi = AbsensiKaryawan::where('id_karyawan', $form->id_karyawan)
-        ->whereIn(DB::raw('MONTH(created_at)'), $currentQuartal)
-        ->get();
-
-    $dataAbsen = [
-        'sakit' => $dataAbsensi->where('keterangan', 'Sakit')->count(),
-        'telat' => $dataAbsensi->where('keterangan', 'Telat')->count(),
-        'izin'  => $dataAbsensi->where('keterangan', 'Izin')->count()
-    ];
-
-    $allKategoriKPIs = $formPenilaians->flatMap(function ($form) {
-        return kategoriKPI::where('kode_kategori', $form->kode_kategori)->get();
-    })->unique('judul_kategori')->values();
-
-    $allEvaluatorData = $formPenilaians->flatMap(function ($form) {
-        return shareForm::with('evaluator')
-            ->where('id_evaluated', $form->id_karyawan)
-            ->where('kode_form', $form->kode_form)
+        $formPenilaians = formPenilaian::with('karyawan')
+            ->where('id_karyawan', $id_karyawan)
+            ->where('kode_form', $kodeForm)
+            ->where('jenis_form', $jenis_form)
             ->get();
-    });
 
-    $allNilaiKPI = nilaiKPI::where('id_evaluated', $id_karyawan)
-        ->where('kode_form', $kodeForm)
-        ->get();
-
-    $evaluatorList = [];
-
-    foreach ($allEvaluatorData as $evaluatorItem) {
-
-        $jenis_penilaian = $evaluatorItem->jenis_penilaian;
-        $listNilaiEvaluator = [];
-
-        foreach ($allKategoriKPIs as $kategori) {
-
-            $judul_kategori = $kategori->judul_kategori;
-
-            $nilaiItem = $allNilaiKPI
-                ->where('jenis_penilaian', $jenis_penilaian)
-                ->where('name_variabel', $judul_kategori)
-                ->where('id_evaluator', $evaluatorItem->id_evaluator);
-
-            if ($nilaiItem->count() > 0) {
-                $firstItem = $nilaiItem->first();
-                $listNilaiEvaluator[] = [
-                    'pesan' => $firstItem->pesan ?? '-',
-                    'nilai' => $firstItem->nilai ?? '-'
-                ];
-            } else {
-                $listNilaiEvaluator[] = [
-                    'pesan' => '-',
-                    'nilai' => '-'
-                ];
-            }
+        if ($formPenilaians->isEmpty()) {
+            return response()->json(['message' => 'Data tidak ditemukan'], 404);
         }
 
-        $namaEvaluator = optional($evaluatorItem->evaluator)->nama_lengkap
-            ? optional($evaluatorItem->evaluator)->nama_lengkap . ' - ' . optional($evaluatorItem->evaluator)->divisi
-            : '-';
+        $form = $formPenilaians->first();
 
-        $evaluatorList[] = [
-            'nama'            => $namaEvaluator,
-            'jenis_penilaian' => $jenis_penilaian ?? '-',
-            'nilai'           => $listNilaiEvaluator
+        $quartal = $form->quartal;
+        $semesterLabel = '';
+
+        if (in_array($quartal, ['Q1', 'Q2'])) {
+            $semesterLabel = 'S1';
+        } elseif (in_array($quartal, ['Q3', 'Q4'])) {
+            $semesterLabel = 'S2';
+        } else {
+            $semesterLabel = $quartal;
+        }
+
+        $evaluated = [
+            'nama'        => optional($form->karyawan)->nama_lengkap . ' - ' . (optional($form->karyawan)->divisi ?? '-'),
+            'id_karyawan' => $form->id_karyawan,
+            'quartal'     => $semesterLabel,
+            'tahun'       => $form->tahun,
+            'catatan'     => $form->catatan,
+            'kode_form'   => $form->kode_form
         ];
-    }
 
-    $evaluatorList = collect($evaluatorList)
-        ->unique(fn($item) => $item['nama'] . $item['jenis_penilaian'])
-        ->values();
+        $currentMonth = now()->month;
+        $currentQuartal = match (true) {
+            $currentMonth >= 1 && $currentMonth <= 3 => [1, 2, 3],
+            $currentMonth >= 4 && $currentMonth <= 6 => [4, 5, 6],
+            $currentMonth >= 7 && $currentMonth <= 9 => [7, 8, 9],
+            default => [10, 11, 12],
+        };
 
-    $dataKriteria = $formPenilaians
-        ->groupBy(fn($item) => $item->kode_form . '|' . $item->nama_penilaian)
-        ->map(function ($groupedForms, $combinedKey) {
+        $dataAbsensi = AbsensiKaryawan::where('id_karyawan', $form->id_karyawan)
+            ->whereIn(DB::raw('MONTH(created_at)'), $currentQuartal)
+            ->get();
 
-            [$kodeForm, $namaPenilaian] = explode('|', $combinedKey);
+        $dataAbsen = [
+            'sakit' => $dataAbsensi->where('keterangan', 'Sakit')->count(),
+            'telat' => $dataAbsensi->where('keterangan', 'Telat')->count(),
+            'izin'  => $dataAbsensi->where('keterangan', 'Izin')->count()
+        ];
 
-            $kategoriKPIs = $groupedForms->flatMap(function ($form) {
-                return kategoriKPI::where('kode_kategori', $form->kode_kategori)->get();
-            })->unique('judul_kategori')->values();
+        $allKategoriKPIs = $formPenilaians->flatMap(function ($form) {
+            return kategoriKPI::where('kode_kategori', $form->kode_kategori)->get();
+        })->unique('judul_kategori')->values();
 
-            $detailKriteria = $kategoriKPIs->map(function ($kategori) {
+        $allEvaluatorData = $formPenilaians->flatMap(function ($form) {
+            return shareForm::with('evaluator')
+                ->where('id_evaluated', $form->id_karyawan)
+                ->where('kode_form', $form->kode_form)
+                ->get();
+        });
 
-                $tipeDetails = tipeKategoriTabel::where('id_kategori', $kategori->id)->get();
+        $allNilaiKPI = nilaiKPI::where('id_evaluated', $id_karyawan)
+            ->where('kode_form', $kodeForm)
+            ->get();
+
+        $evaluatorList = [];
+
+        foreach ($allEvaluatorData as $evaluatorItem) {
+
+            $jenis_penilaian = $evaluatorItem->jenis_penilaian;
+            $listNilaiEvaluator = [];
+
+            foreach ($allKategoriKPIs as $kategori) {
+
+                $judul_kategori = $kategori->judul_kategori;
+
+                $nilaiItem = $allNilaiKPI
+                    ->where('jenis_penilaian', $jenis_penilaian)
+                    ->where('name_variabel', $judul_kategori)
+                    ->where('id_evaluator', $evaluatorItem->id_evaluator);
+
+                if ($nilaiItem->count() > 0) {
+                    $firstItem = $nilaiItem->first();
+                    $listNilaiEvaluator[] = [
+                        'pesan' => $firstItem->pesan ?? '-',
+                        'nilai' => $firstItem->nilai ?? '-'
+                    ];
+                } else {
+                    $listNilaiEvaluator[] = [
+                        'pesan' => '-',
+                        'nilai' => '-'
+                    ];
+                }
+            }
+
+            $namaEvaluator = optional($evaluatorItem->evaluator)->nama_lengkap
+                ? optional($evaluatorItem->evaluator)->nama_lengkap . ' - ' . optional($evaluatorItem->evaluator)->divisi
+                : '-';
+
+            $evaluatorList[] = [
+                'nama'            => $namaEvaluator,
+                'jenis_penilaian' => $jenis_penilaian ?? '-',
+                'nilai'           => $listNilaiEvaluator
+            ];
+        }
+
+        $evaluatorList = collect($evaluatorList)
+            ->unique(fn($item) => $item['nama'] . $item['jenis_penilaian'])
+            ->values();
+
+        $dataKriteria = $formPenilaians
+            ->groupBy(fn($item) => $item->kode_form . '|' . $item->nama_penilaian)
+            ->map(function ($groupedForms, $combinedKey) {
+
+                [$kodeForm, $namaPenilaian] = explode('|', $combinedKey);
+
+                $kategoriKPIs = $groupedForms->flatMap(function ($form) {
+                    return kategoriKPI::where('kode_kategori', $form->kode_kategori)->get();
+                })->unique('judul_kategori')->values();
+
+                $detailKriteria = $kategoriKPIs->map(function ($kategori) {
+
+                    $tipeDetails = tipeKategoriTabel::where('id_kategori', $kategori->id)->get();
+
+                    return [
+                        'sub_kriteria' => $kategori->judul_kategori,
+                        'bobot' => $kategori->bobot,
+                        'tipe_input' => $kategori->tipe_kategori,
+                        'detailTipeSubKriteria' => $tipeDetails->map(fn($tipe) => [
+                            'ket_sub_tipe' => $tipe->ket_tipe,
+                            'nilai_ket_sub_tipe' => $tipe->nilai_ket_sub_tipe
+                        ])->toArray()
+                    ];
+                });
 
                 return [
-                    'sub_kriteria' => $kategori->judul_kategori,
-                    'bobot' => $kategori->bobot,
-                    'tipe_input' => $kategori->tipe_kategori,
-                    'detailTipeSubKriteria' => $tipeDetails->map(fn($tipe) => [
-                        'ket_sub_tipe' => $tipe->ket_tipe,
-                        'nilai_ket_sub_tipe' => $tipe->nilai_ket_sub_tipe
-                    ])->toArray()
+                    'kriteria' => $namaPenilaian,
+                    'kodeForm' => $kodeForm,
+                    'detailKriteria' => $detailKriteria
                 ];
-            });
+            })
+            ->values()
+            ->toArray();
 
-            return [
-                'kriteria' => $namaPenilaian,
-                'kodeForm' => $kodeForm,
-                'detailKriteria' => $detailKriteria
-            ];
-        })
-        ->values()
-        ->toArray();
-
-    return response()->json([
-        'data' => [[
-            'evaluated' => $evaluated,
-            'dataAbsen' => $dataAbsen,
-            'data' => [
-                'evaluator' => $evaluatorList,
-                'dataKriteria' => $dataKriteria,
-            ],
-        ]]
-    ]);
-}
-
+        return response()->json([
+            'data' => [[
+                'evaluated' => $evaluated,
+                'dataAbsen' => $dataAbsen,
+                'data' => [
+                    'evaluator' => $evaluatorList,
+                    'dataKriteria' => $dataKriteria,
+                ],
+            ]]
+        ]);
+    }
 
     public function getDetailChartPenilaian(Request $request)
     {
@@ -2761,13 +2761,18 @@ public function getDetailPenilaian(Request $request)
             ];
         }
 
+        $idUser = auth()->user()->id;
+
+        $dataRecomendedTask = RecomendedTask::where('id_karyawan', $idUser)->get();
+
         return response()->json([
             'semester'             => $semesterLabel,
             'dataCard_first'       => $dataCard_utama,
             'dataChartPenilaian'   => $dataChartJumlahPenilaianBerjalan,
             'dataDivisi'           => $dataDivisi,
             'dataRangking'         => $hasilPenilaian,
-            'dataFormulir'         => $dataFormulir
+            'dataFormulir'         => $dataFormulir,
+            'recomended'           => $dataRecomendedTask
         ]);
     }
 
