@@ -49,6 +49,7 @@ use App\Http\Controllers\BroadcastAuthController;
 use App\Http\Controllers\PusherAuthController;
 use App\Http\Controllers\office\vendorOfficeController;
 use App\Http\Controllers\ActivityInstrukturController;
+use App\Http\Controllers\dbklienController;
 use App\Http\Controllers\PenukaranSouvenirController;
 use App\Http\Controllers\office\DashboardSouvenirController;
 use App\Http\Controllers\Webinar\CalendarController;
@@ -59,8 +60,6 @@ use App\Http\Controllers\KPI\TargetKPIController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\office\BiayaTransportasiController;
 use App\Http\Controllers\Office\pickupDriverController;
-use App\Http\Controllers\Webinar\TimelineItemController;
-use App\Http\Controllers\Webinar\ChecklistController;
 use App\Http\Controllers\WebPushController;
 use App\Http\Controllers\KegiatanController;
 use App\Http\Controllers\KendaraanController;
@@ -975,6 +974,7 @@ Route::patch('content-schedules/{contentSchedule}/mark-uploaded', [App\Http\Cont
 
 Route::get('/dashboard/feedback', [OfficeController::class, 'index']);
 Route::get('/development', [InstructorDevelopmentController::class, 'index'])->name('development.index');
+Route::get('/development', [InstructorDevelopmentController::class, 'index'])->name('development.index');
 Route::post('/development/sertifikasi', [InstructorDevelopmentController::class, 'storeSertifikasi'])->name('sertifikasi.store');
 Route::delete('/development/sertifikasi/{id}', [InstructorDevelopmentController::class, 'destroySertifikasi'])->name('sertifikasi.destroy');
 Route::post('/development/sertifikasi/{id}/approve', [InstructorDevelopmentController::class, 'approveSertifikasi'])->name('sertifikasi.approve');
@@ -990,6 +990,9 @@ Route::put('/specialization/{id}', [InstructorDevelopmentController::class, 'upd
 Route::delete('/specialization/{id}', [InstructorDevelopmentController::class, 'destroySpecialization'])->name('specialization.destroy');
 Route::post('/development/sertifikasi/{id}/renew', [InstructorDevelopmentController::class, 'storeRenewal'])->name('sertifikasi.renew');
 
+Route::get('/db-klien', [dbklienController::class, 'index'])->name('dbklien.index');
+Route::post('import-klien', [dbklienController::class, 'import']);
+Route::get('download-template-klien', [dbklienController::class, 'downloadTemplate'])->name('excel.dbklien');
 
-Route::get('/internal/open-tickets', [TicketController::class, 'handleInternalUpdate']);
-Route::post('/internal/update-ticket', [TicketController::class, 'getOpenTickets']);
+Route::post('/internal/update-tickets', [TicketController::class, 'handleInternalUpdate']);
+Route::get('/internal/open-tickets', [TicketController::class, 'getOpenTickets']);

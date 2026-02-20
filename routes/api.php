@@ -60,6 +60,7 @@ Route::get('getInventaris', [App\Http\Controllers\Api\apiController::class, 'get
 Route::get('/dashboard/csat-instruktur', [apiController::class, 'CSATinstruktur'])->name('CSATinstruktur');
 Route::get('/dashboard/aktivitas-instruktur', [apiController::class, 'AktivitasInstruktur'])->name('AktivitasInstruktur');
 Route::get('/dashboard/rekomendasi-materi', [apiController::class, 'RekomendasiMateri'])->name('RekomendasiMateri');
+Route::get('getDBKlien', [App\Http\Controllers\Api\apiController::class, 'getDBKlien'])->name('getDBKlien');
 
 
 
