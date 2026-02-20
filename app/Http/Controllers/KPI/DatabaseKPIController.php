@@ -34,7 +34,6 @@ use App\Models\Feedback;
 use App\Models\izinTigaJam;
 use App\Models\Nilaifeedback;
 use App\Models\PengajuanBarang;
-use App\Models\RecomendedTask;
 use App\Models\SuratPerjalanan;
 use App\Models\SurveyKepuasan;
 use App\Models\target;
@@ -2763,7 +2762,6 @@ class DatabaseKPIController extends Controller
 
         $idUser = auth()->user()->id;
 
-        $dataRecomendedTask = RecomendedTask::where('id_karyawan', $idUser)->get();
 
         return response()->json([
             'semester'             => $semesterLabel,
@@ -2772,7 +2770,6 @@ class DatabaseKPIController extends Controller
             'dataDivisi'           => $dataDivisi,
             'dataRangking'         => $hasilPenilaian,
             'dataFormulir'         => $dataFormulir,
-            'recomended'           => $dataRecomendedTask
         ]);
     }
 
