@@ -497,7 +497,7 @@
         <input type="text" id="nama-perusahaan" class="readonly" value="{{ $lead->perusahaan->nama_perusahaan ?? '-' }}"
             readonly>
         <label>Alamat:</label>
-        <input type="text" id="alamat" class="readonly" value="{{ $lead->perusahaan->alamat ?? '-' }}" readonly>
+        <input type="text" id="alamat" value="{{ $lead->perusahaan->alamat ?? '-' }}">
         <label>PIC Penagihan:</label>
         <input type="text" id="pic">
         <label>Telepon:</label>
@@ -505,7 +505,7 @@
         <label>Email:</label>
         <input type="text" id="email">
         <label>NPWP:</label>
-        <input type="text" id="npwp" class="readonly" value="{{ $lead->perusahaan->npwp ?? '-' }}" readonly>
+        <input type="text" id="npwp" value="{{ $lead->perusahaan->npwp ?? '-' }}">
 
         <label>Materi dan Tanggal Pelatihan:</label>
         <input type="text" class="readonly" id="materi"
@@ -518,12 +518,17 @@
 
         <h3>Syarat & Ketentuan</h3>
         <label>Pilih Syarat (bisa lebih dari satu):</label>
-        <select id="syarat-select" multiple required>
+        <div id="syarat-checkbox-list"
+            style="border: 1px solid #ccc; padding: 10px; max-height: 200px; overflow-y: auto;">
             @foreach ($ketentuan as $ket)
-                <option value="{{ $ket->id }}" data-content="{{ $ket->ketentuan }}">{{ $ket->ketentuan }}
-                </option>
+                <div style="display: flex; align-items: flex-start; gap: 8px; margin-bottom: 5px;">
+                    <input type="checkbox" class="syarat-checkbox" id="syarat-{{ $ket->id }}"
+                        data-content="{{ $ket->ketentuan }}" style="width: auto; margin-top: 4px;">
+                    <label for="syarat-{{ $ket->id }}"
+                        style="cursor: pointer; font-size: 13px;">{{ $ket->ketentuan }}</label>
+                </div>
             @endforeach
-        </select>
+        </div>
 
         @php
             use App\Models\Karyawan;
@@ -645,14 +650,18 @@
             }
 
             // Proses syarat dan ketentuan
-            const select = document.getElementById('syarat-select');
-            const selectedOptions = Array.from(select.selectedOptions);
+            const selectedCheckboxes = document.querySelectorAll('.syarat-checkbox:checked');
             let syaratList = '';
-            if (selectedOptions.length === 0) {
-                syaratList = '<li>Tidak ada syarat yang dipilih.</li>';
+
+            if (selectedCheckboxes.length === 0) {
+                syaratList = `
+                    <li>Harga penawaran di atas sudah termasuk PPN ${ppnRate}%.</li>
+                    <li>Form pendaftaran harus dikirim paling lambat 14 hari sebelum pelaksanaan pelatihan.</li>
+                    <li>Pelatihan berlangsung pukul 09.00 hingga selesai.</li>
+                    <li>Pelatihan diselenggarakan di Kantor Inixindo Bandung, Jalan Cipaganti No 95, Bandung.</li>`;
             } else {
-                selectedOptions.forEach(option => {
-                    const content = option.dataset.content || '';
+                selectedCheckboxes.forEach(cb => {
+                    const content = cb.getAttribute('data-content') || '';
                     syaratList += `<li>${content}</li>`;
                 });
             }

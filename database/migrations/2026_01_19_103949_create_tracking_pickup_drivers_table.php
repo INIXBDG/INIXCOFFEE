@@ -11,9 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('invoices', function (Blueprint $table) {
-            $table->string('bank_name')->nullable()->after('amount');
-            $table->string('account_number')->nullable()->after('bank_name');
+        Schema::create('tracking_pickup_drivers', function (Blueprint $table) {
+            $table->id();
+            $table->integer('pickup_driver_id');
+            $table->text('status');
+            $table->integer('diubah_oleh');
+            $table->timestamps();
         });
     }
 
@@ -22,8 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('invoices', function (Blueprint $table) {
-            $table->dropColumn(['bank_name', 'account_number']);
-        });
+        Schema::dropIfExists('tracking_pickup_drivers');
     }
 };

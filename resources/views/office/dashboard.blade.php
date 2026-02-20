@@ -653,11 +653,289 @@
             </div>
         @endforeach
 
+    @auth
+        <div class="web-push-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
+            <button id="webpush-btn" class="btn btn-primary btn-sm shadow-sm"
+                style="border-radius: 20px; padding: 6px 16px;">
+                <i class="fas fa-bell"></i> Aktifkan Notifikasi
+            </button>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', async function() {
+                if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                    document.getElementById('webpush-btn')?.remove();
+                    return;
+                }
+
+                const btn = document.getElementById('webpush-btn');
+                if (!btn) return;
+
+                let isSubscribed = false;
+                let vapidPublicKey = null;
+
+                try {
+                    const registration = await registerServiceWorker();
+                    if (!registration) {
+                        btn.style.display = 'none';
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch('{{ route('webpush.vapid-key') }}', {
+                            headers: {
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'Accept': 'application/json'
+                            }
+                        });
+                        const data = await response.json();
+                        vapidPublicKey = data.publicKey;
+                    } catch (error) {
+                        console.error('Error getting VAPID key:', error);
+                        showToast('Gagal memuat konfigurasi notifikasi', 'error');
+                        btn.disabled = true;
+                        return;
+                    }
+
+                    // Check subscription status
+                    await checkSubscriptionStatus();
+
+                } catch (error) {
+                    console.error('Service Worker registration failed:', error);
+                    btn.style.display = 'none';
+                }
+
+                function updateButtonState() {
+                    if (isSubscribed) {
+                        btn.className = 'btn btn-success btn-sm shadow-sm';
+                        btn.innerHTML = '<i class="fas fa-bell"></i> Notifikasi Aktif';
+                    } else {
+                        btn.className = 'btn btn-primary btn-sm shadow-sm';
+                        btn.innerHTML = '<i class="fas fa-bell"></i> Aktifkan Notifikasi';
+                    }
+                    btn.disabled = false;
+                }
+
+                btn.addEventListener('click', function() {
+                    if (isSubscribed) {
+                        unsubscribe();
+                    } else {
+                        subscribe();
+                    }
+                });
+
+                async function registerServiceWorker() {
+                    try {
+                        const registration = await navigator.serviceWorker.register('/service-worker.js', {
+                            scope: '/',
+                            updateViaCache: 'none'
+                        });
+                        console.log('[SW] Registered successfully:', registration.scope);
+                        return registration;
+                    } catch (error) {
+                        console.error('[SW] Registration failed:', error);
+                        showToast('Gagal registrasi Service Worker', 'error');
+                        return null;
+                    }
+                }
+
+                async function checkSubscriptionStatus() {
+                    try {
+                        const registration = await navigator.serviceWorker.ready;
+                        const subscription = await registration.pushManager.getSubscription();
+                        isSubscribed = !!subscription;
+                        updateButtonState();
+                    } catch (error) {
+                        console.error('Check subscription error:', error);
+                    }
+                }
+
+                async function subscribe() {
+                    if (!vapidPublicKey) {
+                        showToast('Konfigurasi tidak lengkap', 'error');
+                        return;
+                    }
+
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengaktifkan...';
+
+                    try {
+                        // Check permission first
+                        const permission = await Notification.requestPermission();
+                        if (permission !== 'granted') {
+                            throw new Error('Izin notifikasi ditolak');
+                        }
+
+                        const registration = await navigator.serviceWorker.ready;
+                        const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
+
+                        const subscription = await registration.pushManager.subscribe({
+                            userVisibleOnly: true,
+                            applicationServerKey: convertedVapidKey
+                        });
+
+                        const response = await fetch('{{ route('webpush.subscribe') }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify(subscription)
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            isSubscribed = true;
+                            updateButtonState();
+                            showToast('✅ Notifikasi berhasil diaktifkan!', 'success');
+                        } else {
+                            throw new Error(data.message || 'Gagal subscribe ke server');
+                        }
+
+                    } catch (error) {
+                        console.error('Subscribe error:', error);
+                        showToast('❌ ' + getErrorMessage(error), 'error');
+                        btn.disabled = false;
+                        updateButtonState();
+                    }
+                }
+
+                async function unsubscribe() {
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mematikan...';
+
+                    try {
+                        const registration = await navigator.serviceWorker.ready;
+                        const subscription = await registration.pushManager.getSubscription();
+
+                        if (subscription) {
+                            await subscription.unsubscribe();
+
+                            await fetch('{{ route('webpush.unsubscribe') }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    endpoint: subscription.endpoint
+                                })
+                            });
+
+                            isSubscribed = false;
+                            updateButtonState();
+                            showToast('ℹ️ Notifikasi berhasil dimatikan', 'info');
+                        }
+                    } catch (error) {
+                        console.error('Unsubscribe error:', error);
+                        showToast('❌ Gagal mematikan notifikasi', 'error');
+                        btn.disabled = false;
+                        updateButtonState();
+                    }
+                }
+
+                function getErrorMessage(error) {
+                    if (error.name === 'NotAllowedError') {
+                        return 'Izin notifikasi ditolak. Buka pengaturan browser untuk mengaktifkan.';
+                    } else if (error.name === 'InvalidStateError') {
+                        return 'Service Worker error. Silakan refresh halaman.';
+                    } else if (error.name === 'AbortError') {
+                        return 'Operasi dibatalkan.';
+                    } else if (error.message.includes('NetworkError')) {
+                        return 'Koneksi internet bermasalah.';
+                    }
+                    return error.message || 'Terjadi kesalahan';
+                }
+
+                function urlBase64ToUint8Array(base64String) {
+                    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+                    const base64 = (base64String + padding)
+                        .replace(/-/g, '+')
+                        .replace(/_/g, '/');
+                    const rawData = window.atob(base64);
+                    const outputArray = new Uint8Array(rawData.length);
+                    for (let i = 0; i < rawData.length; ++i) {
+                        outputArray[i] = rawData.charCodeAt(i);
+                    }
+                    return outputArray;
+                }
+
+                function showToast(message, type = 'info') {
+                    const colors = {
+                        success: '#28a745',
+                        error: '#dc3545',
+                        warning: '#ffc107',
+                        info: '#17a2b8'
+                    };
+
+                    const icons = {
+                        success: 'check-circle',
+                        error: 'exclamation-circle',
+                        warning: 'exclamation-triangle',
+                        info: 'info-circle'
+                    };
+
+                    const toast = document.createElement('div');
+                    toast.style.cssText = `
+                                position: fixed;
+                                top: 20px;
+                                right: 20px;
+                                background: ${colors[type] || colors.info};
+                                color: white;
+                                padding: 12px 20px;
+                                border-radius: 6px;
+                                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                                z-index: 99999;
+                                animation: slideIn 0.3s, fadeOut 0.5s 2.5s forwards;
+                                font-weight: 500;
+                                display: flex;
+                                align-items: center;
+                                gap: 10px;
+                                max-width: 350px;
+                            `;
+                    toast.innerHTML = `<i class="fas fa-${icons[type] || icons.info}"></i> ${message}`;
+                    document.body.appendChild(toast);
+
+                    setTimeout(() => toast.remove(), 3000);
+                }
+            });
+        </script>
+
         <style>
-            :root {
-                --bs-primary: #5b73e8;
-                --bs-primary-rgb: 91, 115, 232;
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
             }
+
+            @keyframes fadeOut {
+                from {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
+
+                to {
+                    opacity: 0;
+                    transform: translateX(20px);
+                }
+            }
+        </style>
+    @endauth
+
+    <style>
+        :root {
+            --bs-primary: #5b73e8;
+            --bs-primary-rgb: 91, 115, 232;
+        }
 
             .hover-card {
                 transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);

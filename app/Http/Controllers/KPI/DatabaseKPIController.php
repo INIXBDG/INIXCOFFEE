@@ -1,7 +1,9 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\KPI;
 
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use App\Models\activityLog;
 use App\Models\formPenilaian;
 use App\Models\karyawan;
@@ -16,7 +18,6 @@ use App\Models\User;
 use App\Notifications\CommentNotification;
 use App\Notifications\penilaianExcangheNotifikasi;
 use Google\Service\AnalyticsReporting\Activity;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Contracts\Service\Attribute\Required;
 use Illuminate\Support\Str;
@@ -27,11 +28,17 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules\Unique;
 use App\Mail\mailPenilaian;
 use App\Models\AbsensiKaryawan;
+use App\Models\ContentSchedule;
+use App\Models\DetailTargetKPI;
+use App\Models\Feedback;
 use App\Models\izinTigaJam;
 use App\Models\Nilaifeedback;
 use App\Models\PengajuanBarang;
 use App\Models\SuratPerjalanan;
+use App\Models\SurveyKepuasan;
+use App\Models\target;
 use App\Models\targetKPI;
+use App\Models\Tickets;
 use Illuminate\Support\Facades\Mail;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
@@ -630,7 +637,7 @@ class DatabaseKPIController extends Controller
 
             return response()->json(['success' => true]);
         } catch (\Exception $e) {
-            \Log::error('Gagal mengirim email penilaian', [
+            Log::error('Gagal mengirim email penilaian', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -1358,7 +1365,7 @@ class DatabaseKPIController extends Controller
                     Notification::send($user, new penilaianExcangheNotifikasi(
                         $dummyComment,
                         $url,
-                        $user->id  
+                        $user->id
                     ));
                 }
             }
@@ -2780,462 +2787,5 @@ class DatabaseKPIController extends Controller
 
         $dataUser = user::where('id', $idUser)->first();
         return view('KPIproject.createTugas', compact('dataUser'));
-    }
-
-    public function kpiIndex()
-    {
-        $daftarKaryawan = Karyawan::all();
-
-        $labels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun'];
-        $targets = [10000000, 12000000, 11000000, 13000000, 12500000, 14000000];
-        $realisasi = [9500000, 11000000, 9000000, 12500000, 10000000, 13500000];
-
-        $karyawanPerluPerhatian = collect([
-            (object)['nama' => 'Andi', 'target' => 10000000, 'pencapaian' => 7500000],
-            (object)['nama' => 'Budi', 'target' => 12000000, 'pencapaian' => 9000000],
-        ]);
-
-        $karyawanGagalTarget = collect([
-            (object)['nama' => 'Cici', 'target' => 10000000, 'pencapaian' => 5000000],
-        ]);
-
-        return view('KPIdata.index', compact(
-            'daftarKaryawan',
-            'karyawanPerluPerhatian',
-            'karyawanGagalTarget'
-        ))->with('chartData', [
-            'labels' => $labels,
-            'targets' => $targets,
-            'realisasi' => $realisasi
-        ]);
-    }
-
-    public function kpiOverview()
-    {
-        return view('kpidata.overview');
-    }
-
-    public function createTarget(Request $request)
-    {
-        $validated = $request->validate([
-            'id_pembuat'        => 'required',
-            'judul_kpi'         => 'required',
-            'jabatan'           => 'required|string',
-            'jangka_target'     => 'required|string',
-            'detail_jangka'     => 'nullable',
-            'tipe_target'       => 'required|string',
-            'nilai_target'      => 'required',
-            'assistant_route'   => 'required'
-        ]);
-
-        $dataDivisi = karyawan::where('jabatan', $validated['jabatan'])->first();
-
-        targetKPI::create([
-            'id_assistant'   => null,
-            'id_pembuat'     => $validated['id_pembuat'],
-            'judul'          => $validated['judul_kpi'],
-            'deskripsi'      => $request->input('deskripsi_kpi'),
-            'assistant_route' => $validated['assistant_route'],
-            'jabatan'        => $validated['jabatan'],
-            'divisi'         => $dataDivisi->divisi,
-            'jangka_target'  => $validated['jangka_target'],
-            'detail_jangka'  => $validated['detail_jangka'],
-            'tipe_target'    => $validated['tipe_target'],
-            'nilai_target'   => $validated['nilai_target'],
-            'status'         => '0',
-        ]);
-
-        return response()->json([
-            'message' => 'Target berhasil dibuat',
-        ], 201);
-    }
-
-    public function hapusTarget($id)
-    {
-        $hapusTarget = targetKPI::where('id', $id)->first();
-        $hapusTarget->delete();
-
-        return response()->json(['message' => 'berhasil menghapus target!']);
-    }
-
-    public function updateTarget(Request $request)
-    {
-        $validated = $request->validate([
-            'id' => 'required|integer',
-            'judul_kpi' => 'required|string|max:255',
-            'deskripsi_kpi' => 'nullable|string',
-            'tipe_target' => 'required',
-            'jangka_target' => 'required|string|in:Tahunan,Quartal,Bulanan,Mingguan',
-            'detail_jangka' => 'required|string',
-            'nilai_target' => 'required|string',
-        ]);
-
-        $cleanNilai = preg_replace('/[^0-9]/', '', $validated['nilai_target']);
-        $cleanNilai = $cleanNilai === '' ? 0 : (int) $cleanNilai;
-
-        $data = targetKPI::where('id', $validated['id'])->first();
-        $data->update([
-            'judul' => $validated['judul_kpi'],
-            'deskripsi' => $validated['deskripsi_kpi'],
-            'tipe_target' => $validated['tipe_target'],
-            'jangka_target' => $validated['jangka_target'],
-            'detail_jangka' => $validated['detail_jangka'],
-            'nilai_target' => $cleanNilai,
-        ]);
-
-        return response()->json([
-            'message' => 'Target berhasil diperbarui!',
-        ]);
-    }
-
-    public function getDataTarget()
-    {
-        $user = auth()->user();
-        $id_pembuat = $user->id;
-        $jabatan_pembuat = $user->jabatan;
-        $karyawan = karyawan::find($id_pembuat);
-        if (!$karyawan) {
-            return response()->json(['message' => 'Karyawan tidak ditemukan'], 404);
-        }
-        $divisi = $karyawan->divisi;
-        $dataJabatan = $jabatan_pembuat === 'HRD'
-            ? karyawan::whereNotIn('jabatan', ['Direktur Utama', 'Direktur'])->distinct()->pluck('jabatan')
-            : karyawan::where('divisi', $divisi)->distinct()->pluck('jabatan');
-
-        $detailList = targetKPI::with('karyawan')
-            ->where('id_pembuat', $id_pembuat)
-            ->whereYear('created_at', now()->year)
-            ->get();
-
-        $data = [
-            'detail' => $detailList->map(function ($item) {
-                $tenggat_waktu = null;
-                switch (strtolower($item->jangka_target)) {
-                    case 'tahunan':
-                        $year = (int) $item->detail_jangka;
-                        $tenggat_waktu = date('Y-m-d', strtotime("last day of December $year"));
-                        break;
-                    case 'bulanan':
-                        [$bulan, $tahun] = array_map('trim', explode('-', str_replace(' ', '', $item->detail_jangka)));
-                        $tenggat_waktu = date('Y-m-d', strtotime("last day of $tahun-$bulan"));
-                        break;
-                    case 'quartal':
-                        if (preg_match('/Q\s*(\d)\s*-\s*(\d{4})/i', trim($item->detail_jangka), $matches)) {
-                            $quartal = (int) $matches[1];
-                            $tahun = (int) $matches[2];
-                            $bulan_akhir = match ($quartal) {
-                                1 => 3,
-                                2 => 6,
-                                3 => 9,
-                                4 => 12,
-                                default => 12
-                            };
-                            $tenggat_waktu = date('Y-m-t', strtotime("$tahun-$bulan_akhir-01"));
-                        }
-                        break;
-                    case 'mingguan':
-                        if (preg_match('/(\d{2})-(\d{2})\s*-\s*(\d{2})-(\d{2})\s*-\s*(\d{4})/', str_replace(' ', '', $item->detail_jangka), $matches)) {
-                            $tgl = $matches[3];
-                            $bulan = $matches[4];
-                            $tahun = $matches[5];
-                            $tenggat_waktu = sprintf('%04d-%02d-%02d', $tahun, $bulan, $tgl);
-                        }
-                        break;
-                }
-
-                $progress = null;
-
-                if ($item->assistant_route === 'Kepuasan Pelanggan') {
-                    $jangkaFilter = $item->jangka_target;
-                    $detailJangka = $item->detail_jangka;
-                    $feedbacks = collect();
-
-                    if ($jangkaFilter === 'Tahunan') {
-                        $tahun = (int) $detailJangka;
-                        $start = "$tahun-01-01";
-                        $end = "$tahun-12-31";
-                        $feedbacks = Nilaifeedback::with('rkm')->whereBetween('created_at', [$start, $end])->get();
-                    } elseif ($jangkaFilter === 'Bulanan') {
-                        if (preg_match('/(\d{2})\s*-\s*(\d{4})/', $detailJangka, $matches)) {
-                            $bulan = (int) $matches[1];
-                            $tahun = (int) $matches[2];
-                            $start = date('Y-m-01', strtotime("$tahun-$bulan-01"));
-                            $end = date('Y-m-t', strtotime("$tahun-$bulan-01"));
-                            $feedbacks = Nilaifeedback::with('rkm')->whereBetween('created_at', [$start, $end])->get();
-                        }
-                    } elseif (in_array($jangkaFilter, ['Kuartal', 'Quartal'])) {
-                        if (preg_match('/Q(\d)\s*-\s*(\d{4})/i', $detailJangka, $matches)) {
-                            $kuartal = (int) $matches[1];
-                            $tahun = (int) $matches[2];
-                            $bulanAwal = ($kuartal - 1) * 3 + 1;
-                            $bulanAkhir = $kuartal * 3;
-                            $start = date('Y-m-01', strtotime("$tahun-$bulanAwal-01"));
-                            $end = date('Y-m-t', strtotime("$tahun-$bulanAkhir-01"));
-                            $feedbacks = Nilaifeedback::with('rkm')->whereBetween('created_at', [$start, $end])->get();
-                        }
-                    } elseif ($jangkaFilter === 'Mingguan') {
-                        if (preg_match('/(\d{2})-(\d{2})\s*-\s*(\d{2})-(\d{2})\s*-\s*(\d{4})/', $detailJangka, $matches)) {
-                            $start = date('Y-m-d', strtotime("{$matches[5]}-{$matches[2]}-{$matches[1]}"));
-                            $end = date('Y-m-d', strtotime("{$matches[5]}-{$matches[4]}-{$matches[3]}"));
-                            $feedbacks = Nilaifeedback::with('rkm')->whereBetween('created_at', [$start, $end])->get();
-                        }
-                    }
-
-                    $groupedFeedbacks = $feedbacks->groupBy(function ($feedback) {
-                        return $feedback->rkm->materi->nama_materi . '/' . $feedback->rkm->tanggal_awal;
-                    });
-
-                    $averageFeedbacks = [];
-
-                    foreach ($groupedFeedbacks as $group) {
-                        $totalFeedbacks = $group->count();
-
-                        $totalM1 = $group->sum('M1');
-                        $totalM2 = $group->sum('M2');
-                        $totalM3 = $group->sum('M3');
-                        $totalM4 = $group->sum('M4');
-                        $totalP1 = $group->sum('P1');
-                        $totalP2 = $group->sum('P2');
-                        $totalP3 = $group->sum('P3');
-                        $totalP4 = $group->sum('P4');
-                        $totalP5 = $group->sum('P5');
-                        $totalP6 = $group->sum('P6');
-                        $totalP7 = $group->sum('P7');
-                        $totalF1 = $group->sum('F1');
-                        $totalF2 = $group->sum('F2');
-                        $totalF3 = $group->sum('F3');
-                        $totalF4 = $group->sum('F4');
-                        $totalF5 = $group->sum('F5');
-                        $totalI1 = $group->sum('I1');
-                        $totalI2 = $group->sum('I2');
-                        $totalI3 = $group->sum('I3');
-                        $totalI4 = $group->sum('I4');
-                        $totalI5 = $group->sum('I5');
-                        $totalI6 = $group->sum('I6');
-                        $totalI7 = $group->sum('I7');
-                        $totalI8 = $group->sum('I8');
-                        $totalI1b = $group->sum('I1b');
-                        $totalI2b = $group->sum('I2b');
-                        $totalI3b = $group->sum('I3b');
-                        $totalI4b = $group->sum('I4b');
-                        $totalI5b = $group->sum('I5b');
-                        $totalI6b = $group->sum('I6b');
-                        $totalI7b = $group->sum('I7b');
-                        $totalI8b = $group->sum('I8b');
-                        $totalI1as = $group->sum('I1as');
-                        $totalI2as = $group->sum('I2as');
-                        $totalI3as = $group->sum('I3as');
-                        $totalI4as = $group->sum('I4as');
-                        $totalI5as = $group->sum('I5as');
-                        $totalI6as = $group->sum('I6as');
-                        $totalI7as = $group->sum('I7as');
-                        $totalI8as = $group->sum('I8as');
-
-                        $averageM = round(($totalM1 + $totalM2 + $totalM3 + $totalM4) / ($totalFeedbacks * 4), 1);
-                        $averageP = round(($totalP1 + $totalP2 + $totalP3 + $totalP4 + $totalP5 + $totalP6 + $totalP7) / ($totalFeedbacks * 7), 1);
-                        $averageF = round(($totalF1 + $totalF2 + $totalF3 + $totalF4 + $totalF5) / ($totalFeedbacks * 5), 1);
-                        $averageI = round(($totalI1 + $totalI2 + $totalI3 + $totalI4 + $totalI5 + $totalI6 + $totalI7 + $totalI8) / ($totalFeedbacks * 8), 1);
-                        $averageIb = round(($totalI1b + $totalI2b + $totalI3b + $totalI4b + $totalI5b + $totalI6b + $totalI7b + $totalI8b) / ($totalFeedbacks * 8), 1);
-                        $averageIas = round(($totalI1as + $totalI2as + $totalI3as + $totalI4as + $totalI5as + $totalI6as + $totalI7as + $totalI8as) / ($totalFeedbacks * 8), 1);
-
-                        $averageValues = [$averageM, $averageP, $averageF, $averageI];
-                        if ($averageIb > 0) $averageValues[] = $averageIb;
-                        if ($averageIas > 0) $averageValues[] = $averageIas;
-                        $averageTotal = round(array_sum($averageValues) / count($averageValues), 1);
-
-                        $averageFeedbacks[] = $averageTotal;
-                    }
-
-                    $total = count($averageFeedbacks);
-                    if ($total > 0) {
-                        $above = count(array_filter($averageFeedbacks, fn($v) => $v >= 3.5));
-                        $progress = round(($above / $total) * 100, 1);
-                    } else {
-                        $progress = 0;
-                    }
-                }
-
-                return [
-                    'id' => $item->id,
-                    'pembuat' => $item->karyawan->nama_lengkap ?? null,
-                    'id_pembuat' => $item->id_pembuat,
-                    'judul' => $item->judul,
-                    'deskripsi' => $item->deskripsi,
-                    'jabatan' => $item->jabatan,
-                    'divisi' => $item->divisi,
-                    'assistant_route' => $item->assistant_route,
-                    'jangka_target' => $item->jangka_target,
-                    'detail_jangka' => $item->detail_jangka,
-                    'tipe_target' => $item->tipe_target,
-                    'nilai_target' => $item->nilai_target,
-                    'status' => $item->status,
-                    'created_at' => $item->created_at,
-                    'tenggat_waktu' => $tenggat_waktu,
-                    'progress' => $progress,
-                ];
-            }),
-            'jabatan_list' => $dataJabatan,
-        ];
-
-        return response()->json($data);
-    }
-
-    public function detailData(Request $request)
-    {
-        $id = $request->input('id');
-
-        $dataFindTarget = targetKPI::where('id', $id)->first();
-
-        if ($dataFindTarget->assistant_route === 'Kepuasan Pelanggan') {
-            $jangkaFilter = $dataFindTarget->jangka_target;
-            $detailJangka = $dataFindTarget->detail_jangka;
-
-            if ($jangkaFilter === 'Tahunan') {
-                $tahun = (int) $detailJangka;
-                $start = "$tahun-01-01";
-                $end = "$tahun-12-31";
-
-                $feedbacks = Nilaifeedback::with('rkm')
-                    ->whereBetween('created_at', [$start, $end])
-                    ->get();
-            } elseif ($jangkaFilter === 'Bulanan') {
-                if (preg_match('/(\d{2})\s*-\s*(\d{4})/', $detailJangka, $matches)) {
-                    $bulan = (int) $matches[1];
-                    $tahun = (int) $matches[2];
-                    $start = date('Y-m-01', strtotime("$tahun-$bulan-01"));
-                    $end = date('Y-m-t', strtotime("$tahun-$bulan-01"));
-                }
-
-                $feedbacks = Nilaifeedback::with('rkm')
-                    ->whereBetween('created_at', [$start, $end])
-                    ->get();
-            } elseif ($jangkaFilter === 'Kuartal' || $jangkaFilter === 'Quartal') {
-                if (preg_match('/Q(\d)\s*-\s*(\d{4})/i', $detailJangka, $matches)) {
-                    $kuartal = (int) $matches[1];
-                    $tahun = (int) $matches[2];
-
-                    $bulanAwal = ($kuartal - 1) * 3 + 1;
-                    $bulanAkhir = $kuartal * 3;
-
-                    $start = date('Y-m-01', strtotime("$tahun-$bulanAwal-01"));
-                    $end = date('Y-m-t', strtotime("$tahun-$bulanAkhir-01"));
-                }
-
-                $feedbacks = Nilaifeedback::with('rkm')
-                    ->whereBetween('created_at', [$start, $end])
-                    ->get();
-            } elseif ($jangkaFilter === 'Mingguan') {
-                if (preg_match('/(\d{2})-(\d{2})\s*-\s*(\d{2})-(\d{2})\s*-\s*(\d{4})/', $detailJangka, $matches)) {
-                    $start = date('Y-m-d', strtotime("{$matches[5]}-{$matches[2]}-{$matches[1]}"));
-                    $end = date('Y-m-d', strtotime("{$matches[5]}-{$matches[4]}-{$matches[3]}"));
-                }
-
-                $feedbacks = Nilaifeedback::with('rkm')
-                    ->whereBetween('created_at', [$start, $end])
-                    ->get();
-            }
-
-
-            $groupedFeedbacks = $feedbacks->groupBy(function ($feedback) {
-                return $feedback->rkm->materi->nama_materi . '/' . $feedback->rkm->tanggal_awal;
-            });
-
-            $averageFeedbacks = [];
-
-            foreach ($groupedFeedbacks as $materi_key => $feedbackGroup) {
-                $materi_key = $feedbackGroup->first()->rkm->materi_key;
-                $nama_materi = $feedbackGroup->first()->rkm->materi->nama_materi;
-                $instruktur_key = $feedbackGroup->first()->rkm->instruktur_key;
-                $sales_key = $feedbackGroup->first()->rkm->sales_key;
-                $created_at = $feedbackGroup->first()->created_at;
-                $tanggal_awal = Carbon::parse($feedbackGroup->first()->rkm->tanggal_awal)->format('Y-m-d');
-                $tanggal_akhir = $feedbackGroup->first()->rkm->tanggal_akhir;
-                $totalFeedbacks = $feedbackGroup->count();
-
-                $totalM1 = $feedbackGroup->sum('M1');
-                $totalM2 = $feedbackGroup->sum('M2');
-                $totalM3 = $feedbackGroup->sum('M3');
-                $totalM4 = $feedbackGroup->sum('M4');
-                $totalP1 = $feedbackGroup->sum('P1');
-                $totalP2 = $feedbackGroup->sum('P2');
-                $totalP3 = $feedbackGroup->sum('P3');
-                $totalP4 = $feedbackGroup->sum('P4');
-                $totalP5 = $feedbackGroup->sum('P5');
-                $totalP6 = $feedbackGroup->sum('P6');
-                $totalP7 = $feedbackGroup->sum('P7');
-                $totalF1 = $feedbackGroup->sum('F1');
-                $totalF2 = $feedbackGroup->sum('F2');
-                $totalF3 = $feedbackGroup->sum('F3');
-                $totalF4 = $feedbackGroup->sum('F4');
-                $totalF5 = $feedbackGroup->sum('F5');
-                $totalI1 = $feedbackGroup->sum('I1');
-                $totalI2 = $feedbackGroup->sum('I2');
-                $totalI3 = $feedbackGroup->sum('I3');
-                $totalI4 = $feedbackGroup->sum('I4');
-                $totalI5 = $feedbackGroup->sum('I5');
-                $totalI6 = $feedbackGroup->sum('I6');
-                $totalI7 = $feedbackGroup->sum('I7');
-                $totalI8 = $feedbackGroup->sum('I8');
-                $totalI1b = $feedbackGroup->sum('I1b');
-                $totalI2b = $feedbackGroup->sum('I2b');
-                $totalI3b = $feedbackGroup->sum('I3b');
-                $totalI4b = $feedbackGroup->sum('I4b');
-                $totalI5b = $feedbackGroup->sum('I5b');
-                $totalI6b = $feedbackGroup->sum('I6b');
-                $totalI7b = $feedbackGroup->sum('I7b');
-                $totalI8b = $feedbackGroup->sum('I8b');
-                $totalI1as = $feedbackGroup->sum('I1as');
-                $totalI2as = $feedbackGroup->sum('I2as');
-                $totalI3as = $feedbackGroup->sum('I3as');
-                $totalI4as = $feedbackGroup->sum('I4as');
-                $totalI5as = $feedbackGroup->sum('I5as');
-                $totalI6as = $feedbackGroup->sum('I6as');
-                $totalI7as = $feedbackGroup->sum('I7as');
-                $totalI8as = $feedbackGroup->sum('I8as');
-
-                $averageM = round(($totalM1 + $totalM2 + $totalM3 + $totalM4) / ($totalFeedbacks * 4), 1);
-                $averageP = round(($totalP1 + $totalP2 + $totalP3 + $totalP4 + $totalP5 + $totalP6 + $totalP7) / ($totalFeedbacks * 7), 1);
-                $averageF = round(($totalF1 + $totalF2 + $totalF3 + $totalF4 + $totalF5) / ($totalFeedbacks * 5), 1);
-                $averageI = round(($totalI1 + $totalI2 + $totalI3 + $totalI4 + $totalI5 + $totalI6 + $totalI7 + $totalI8) / ($totalFeedbacks * 8), 1);
-                $averageIb = round(($totalI1b + $totalI2b + $totalI3b + $totalI4b + $totalI5b + $totalI6b + $totalI7b + $totalI8b) / ($totalFeedbacks * 8), 1);
-                $averageIas = round(($totalI1as + $totalI2as + $totalI3as + $totalI4as + $totalI5as + $totalI6as + $totalI7as + $totalI8as) / ($totalFeedbacks * 8), 1);
-
-                $averageValues = [$averageM, $averageP, $averageF, $averageI];
-                if ($averageIb > 0) $averageValues[] = $averageIb;
-                if ($averageIas > 0) $averageValues[] = $averageIas;
-                $averageTotal = round(array_sum($averageValues) / count($averageValues), 1);
-
-                $averageFeedbacks[] = [
-                    'nama_materi' => $nama_materi,
-                    'materi_key' => $materi_key,
-                    'instruktur_key' => $instruktur_key,
-                    'sales_key' => $sales_key,
-                    'tanggal_awal' => $tanggal_awal,
-                    'tanggal_akhir' => $tanggal_akhir,
-                    'created_at' => $created_at,
-                    'averageTotal' => $averageTotal,
-                ];
-            }
-
-            $sortedFeedbacks = collect($averageFeedbacks)->sortByDesc('created_at')->values()->all();
-
-            $totalAllFeedbacks = count($sortedFeedbacks);
-            $totalBelow35 = collect($sortedFeedbacks)->where('averageTotal', '<', 3.5)->count();
-            $totalAbove35 = collect($sortedFeedbacks)->where('averageTotal', '>=', 3.5)->count();
-
-            $data = [
-                'detailData' => $sortedFeedbacks,
-                'totalFeedback' => $totalAllFeedbacks,
-                'totalKurang' => $totalBelow35,
-                'totalLebih' => $totalAbove35,
-                'nilaiTarget' => $dataFindTarget->nilai_target,
-            ];
-
-            return response()->json($data);
-        } else if ($dataFindTarget->assistant_route === 'Pemasukan Kotor') {
-        } else if ($dataFindTarget->assistant_route === 'Pemasukan Bersih') {
-        } else if ($dataFindTarget->assistant_route === 'Rasio Biaya Operasional') {
-        } else if ($dataFindTarget->assistant_route === 'Rata Rata Pencapaian Departement') {
-        }
     }
 }

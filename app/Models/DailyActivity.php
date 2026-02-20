@@ -16,15 +16,17 @@ class DailyActivity extends Model
         'status',
         'description',
         'doc',
-        'activity_date',
+        'start_date',
+        'end_date',
         'on_progress_at',
         'on_progress_next_day_at',
         'failed_at',
         'completed_at',
-    ];
+    ];  
 
     protected $casts = [
-        'activity_date' => 'date',
+        'start_date' => 'date',
+        'end_date' => 'date',
         'on_progress_at' => 'datetime',
         'on_progress_next_day_at' => 'datetime',
         'failed_at' => 'datetime',

@@ -144,7 +144,6 @@ $canSurvey = !$latestSurvey || Carbon::parse($latestSurvey->created_at)->diffInM
                         <i class="fas fa-star" data-rating="2"></i>
                         <i class="fas fa-star" data-rating="3"></i>
                         <i class="fas fa-star" data-rating="4"></i>
-                        <i class="fas fa-star" data-rating="5"></i>
                     </div>
                     <input type="hidden" name="q1" id="q1" value="0">
                 </div>
@@ -182,7 +181,6 @@ $canSurvey = !$latestSurvey || Carbon::parse($latestSurvey->created_at)->diffInM
                         <i class="fas fa-star" data-rating="2"></i>
                         <i class="fas fa-star" data-rating="3"></i>
                         <i class="fas fa-star" data-rating="4"></i>
-                        <i class="fas fa-star" data-rating="5"></i>
                     </div>
                     <input type="hidden" name="q4" id="q4" value="0">
                 </div>

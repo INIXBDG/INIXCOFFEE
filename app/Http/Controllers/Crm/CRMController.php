@@ -65,23 +65,17 @@ class CRMController extends Controller
 
             // 3. Logika Penentuan Rentang Waktu (Filter Waktu)
             if ($mingguKe) {
-                // KASUS A: Filter Minggu Spesifik
-                // Hitung awal minggu berdasarkan offset minggu ke-n
                 $startOfWeek = (clone $monthStart)->addWeeks($mingguKe - 1)->startOfWeek(Carbon::MONDAY);
                 $endOfWeek = (clone $startOfWeek)->endOfWeek(Carbon::SUNDAY);
 
-                // Clamping: Potong tanggal jika minggu dimulai sebelum bulan berjalan
                 if ($startOfWeek->lt($monthStart)) {
                     $startOfWeek = $monthStart;
                 }
 
-                // Clamping: Potong tanggal jika minggu berakhir setelah bulan berjalan
                 if ($endOfWeek->gt($monthEnd)) {
                     $endOfWeek = $monthEnd;
                 }
             } else {
-                // KASUS B: Filter "Semua" (Minggu Kosong)
-                // Gunakan rentang Full 1 Bulan sesuai tahun & bulan yang dipilih
                 $startOfWeek = $monthStart;
                 $endOfWeek = $monthEnd;
             }
@@ -96,7 +90,7 @@ class CRMController extends Controller
             // 6. Ambil Aktivitas Berdasarkan Rentang Waktu yang Sudah Dihitung
             $aktivitas = Aktivitas::with(['contact.perusahaan', 'peserta'])
                 ->whereBetween('waktu_aktivitas', [$startOfWeek, $endOfWeek])
-                ->get(); // whereYear tidak diperlukan lagi karena whereBetween sudah spesifik tanggal & tahun
+                ->get();
 
             // 7. Ambil Daftar Sales Aktif
             $sales = User::where('jabatan', 'Sales')
@@ -108,10 +102,8 @@ class CRMController extends Controller
             $activitysales = [];
 
             foreach ($sales as $id_sales) {
-                // Filter koleksi aktivitas milik sales ini
                 $userAktivitas = $aktivitas->where('id_sales', $id_sales);
 
-                // Kelompokkan data berdasarkan jenis aktivitas
                 $contactData = $userAktivitas->where('aktivitas', 'Contact');
                 $callData = $userAktivitas->where('aktivitas', 'Call');
                 $emailData = $userAktivitas->where('aktivitas', 'Email');
@@ -125,10 +117,8 @@ class CRMController extends Controller
                 $formKeluarData = $userAktivitas->where('aktivitas', 'Form_Keluar');
                 $dbData = $userAktivitas->where('aktivitas', 'DB');
 
-                // Ambil target spesifik sales
                 $salesTarget = $target[$id_sales] ?? null;
 
-                // Masukkan ke array hasil
                 $activitysales[] = [
                     'id_sales' => $id_sales,
 
@@ -180,6 +170,8 @@ class CRMController extends Controller
                     'data_DB' => $dbData->values(),
                 ];
             }
+
+            // dd($activitysales);
 
             // 3. Top 5 produk paling banyak terjual
             $best = RKM::with('materi')
@@ -444,7 +436,6 @@ class CRMController extends Controller
                 ->select('materis.vendor', DB::raw('count(*) as total'))
                 ->groupBy('materis.vendor')
                 ->orderBy('total', 'desc')
-                ->limit(5)
                 ->get();
 
             // 17. Top 5 Kategori Materi Terjual
@@ -454,7 +445,6 @@ class CRMController extends Controller
                 ->select('materis.kategori_materi', DB::raw('count(*) as total'))
                 ->groupBy('materis.kategori_materi')
                 ->orderBy('total', 'desc')
-                ->limit(5)
                 ->get();
 
             // 18. Top 5 Spend Perusahaan per Segmentasi
@@ -468,8 +458,9 @@ class CRMController extends Controller
                 )
                 ->groupBy('perusahaans.kategori_perusahaan')
                 ->orderByDesc('total')
-                ->limit(5)
                 ->get();
+
+            // dd($topSpendSeg, $topKategoriMateri, $topVendors);
 
             return view('crm.dashboard', compact(
                 'chartData',
@@ -491,12 +482,94 @@ class CRMController extends Controller
                 'mingguKe',
                 'bulanTahun',
                 'tanggalRange',
+                'topSpendSeg',
+                'topKategoriMateri',
+                'topVendors',
             ));
         } else {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
     }
 
+    public function chartRKM(Request $request)
+    {
+        $key = $request->input('key');
+        $type = $request->input('type');
+
+        $query = DB::table('r_k_m_s')
+            ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
+            ->join('perusahaans', 'r_k_m_s.perusahaan_key', '=', 'perusahaans.id')
+            ->where('r_k_m_s.status', '0');
+
+        if ($type === 'vendor') {
+            $query->where('materis.vendor', $key);
+        } elseif ($type === 'materi') {
+            $query->where('materis.kategori_materi', $key);
+        } elseif ($type === 'spend') {
+            $query->where('perusahaans.kategori_perusahaan', $key);
+        }
+
+        $data = $query->select(
+            'materis.nama_materi',
+            'perusahaans.nama_perusahaan',
+            'r_k_m_s.sales_key',
+            'r_k_m_s.harga_jual',
+            'r_k_m_s.created_at'
+        )->get();
+
+        return response()->json($data);
+    }
+
+    public function chartPerusahaan(Request $request)
+    {
+        $key = $request->input('key');
+
+        $query = DB::table('perusahaans')->where('kategori_perusahaan', $key);
+
+        $data = $query->select(
+            'nama_perusahaan',
+            'sales_key',
+            'status',
+        )->get();
+
+        return response()->json($data);
+    }
+
+    public function chartClosed(Request $request)
+    {
+        $id_sales = $request->id_sales;
+        $triwulan = $request->triwulan;
+        $tahun = $request->tahun ?? now()->year;
+        $status = $request->status ?? 'win';
+
+        $dateColumn = $status === 'lost' ? 'lost' : 'merah';
+
+        $query = Peluang::with('materiRelation', 'perusahaan')
+            ->where('id_sales', $id_sales)
+            ->whereNotNull($dateColumn)
+            ->whereYear($dateColumn, $tahun);
+        $range = [
+            'TR1' => [1, 3],
+            'TR2' => [4, 6],
+            'TR3' => [7, 9],
+            'TR4' => [10, 12],
+        ];
+
+        if (isset($range[$triwulan])) {
+            $query->whereBetween(DB::raw("MONTH($dateColumn)"), $range[$triwulan]);
+        }
+
+        $data = $query->select(
+            'materi',
+            'id_contact',
+            'netsales',
+            'pax',
+            DB::raw('(netsales * pax) as total'),
+            'merah'
+        )->get();
+
+        return response()->json($data);
+    }
 
     public function getProfile()
     {

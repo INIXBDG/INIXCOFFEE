@@ -13,7 +13,6 @@ class LogActivity
     {
         $response = $next($request);
 
-        // kalau belum login, jangan dicatat
         if (!Auth::check()) {
             return $response;
         }
@@ -89,7 +88,7 @@ class LogActivity
             case 'DELETE':
                 return 'delete';
             default:
-                return 'visit'; // GET
+                return 'visit';
         }
     }
 }

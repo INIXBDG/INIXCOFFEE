@@ -826,6 +826,10 @@ class RKMController extends Controller
 
         // Storage::delete('public/npwp/'. $post->foto_npwp);
 
+        
+        $post->deleted_by = auth()->user()->karyawan->kode_karyawan;
+        $post->save();
+
         $peluang->delete();
         $post->delete();
         $registrasi->delete();
