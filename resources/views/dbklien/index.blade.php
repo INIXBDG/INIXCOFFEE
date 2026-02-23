@@ -143,6 +143,7 @@
                         <thead>
                             <tr>
                                 <th scope="col">No</th>
+                                <th scope="col">No</th>
                                 <th scope="col">Nama</th>
                                 <th scope="col">Jenis Kelamin</th>
                                 <th scope="col">Usia</th>
@@ -281,6 +282,7 @@
                         return tableIndex++
                     }
                 },
+                {"data": "created_at", "visible": false},
                 {"data": "nama_formatted"},
                 {"data": "jenis_kelamin"},
                 {"data": "usia"},
@@ -344,7 +346,9 @@
                         }
                     }
                 }
-            ]
+            ],
+            "order": [[1, 'desc']], // Ubah urutan menjadi descending untuk kolom ke-6
+            "columnDefs" : [{"targets":[1], "type":"date"}],
         });
         fetchDashboard();
         let usiaRendered = false;

@@ -181,7 +181,7 @@
             @can('View DBKlien')
                 <li class="menu-item {{ request()->routeIs('dbklien.index') ? 'active open' : '' }}">
                     <a href="{{ route('dbklien.index') }}" class="menu-link">
-                        <i class='menu-icon tf-icons bx bx-user-circle'></i>
+                        <i class='menu-icon tf-icons bx bx-container'></i>
                         <div class="text-truncate" data-i18n="aktivitas">Database Klien Full</div>
                     </a>
                 </li>
