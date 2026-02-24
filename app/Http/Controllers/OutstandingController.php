@@ -175,7 +175,7 @@ class OutstandingController extends Controller
 
         $query = Outstanding::with('rkm', 'rkm.perusahaan', 'rkm.materi', 'tracking_outstanding')
             ->where('status_pembayaran', '1')
-            ->whereYear('due_date', $tahun); // Filter Tahun
+            ->whereYear('created_at', $tahun);
 
         if ($idSales) {
             $query->whereHas('rkm', function ($q) use ($idSales) {
@@ -194,7 +194,7 @@ class OutstandingController extends Controller
 
         $query = Outstanding::with('rkm.invoice', 'rkm.perusahaan', 'rkm.materi', 'tracking_outstanding')
             ->where('status_pembayaran', '0')
-            ->whereYear('due_date', $tahun); // Filter Tahun
+            ->whereYear('created_at', $tahun);
 
         if ($idSales) {
             $query->whereHas('rkm', function ($q) use ($idSales) {
@@ -243,6 +243,9 @@ class OutstandingController extends Controller
         $rkm = RKM::with(['perhitunganNetSales', 'outstanding', 'perusahaan', 'materi'])
             ->whereYear('tanggal_akhir', $carbonDate->year)
             ->whereMonth('tanggal_akhir', $carbonDate->month)
+            ->whereHas('outstanding', function ($query) {
+                $query->where('status_pembayaran', '1');
+            })
             ->get();
 
         return response()->json(['data' => $rkm]);
@@ -860,16 +863,16 @@ class OutstandingController extends Controller
         // 7. Invoice
         $invoice = Invoice::where('id_rkm', $outstanding->id_rkm)->get();
 
-        if($invoice->file_path) {
-            $file = storage_path('app/'.$invoice->file_path);
+        if ($invoice->file_path) {
+            $file = storage_path('app/' . $invoice->file_path);
             $filesToMerge[] = $file;
         }
 
         // 8. Kwitansi
         $kwitansi = Kwitansi::where('id_rkm', $outstanding->id_rkm)->get();
 
-        if($kwitansi->file_path) {
-            $file = storage_path('app/'.$kwitansi->file_path);
+        if ($kwitansi->file_path) {
+            $file = storage_path('app/' . $kwitansi->file_path);
             $filesToMerge[] = $file;
         }
 
