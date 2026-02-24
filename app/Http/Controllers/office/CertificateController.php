@@ -74,11 +74,11 @@ class CertificateController extends Controller
             ->where('id_peserta', $peserta_id)
             ->first();
 
-        if ($existingCert) {
-            return redirect()
-                ->route('office.certificate.show', $existingCert->id)
-                ->with('info', 'Sertifikat sudah ada.');
-        }
+        // if ($existingCert) {
+        //     return redirect()
+        //         ->route('office.certificate.show', $existingCert->id)
+        //         ->with('info', 'Sertifikat sudah ada.');
+        // }
 
 
         $initialNumber = 26082;
@@ -150,6 +150,7 @@ class CertificateController extends Controller
     {
         $certificate = Certificate::with(['rkm.materi', 'peserta'])->findOrFail($id);
         $penandatangan = Karyawan::find(4);
+        // dd($certificate);
 
         return view('office.certificate.show', compact('certificate', 'penandatangan'));
     }
@@ -171,17 +172,54 @@ class CertificateController extends Controller
     // Download PDF by RKM & Peserta
     public function downloadByPeserta($rkm_id, $peserta_id)
     {
-        $certificate = Certificate::where('rkm_id', $rkm_id)
+        $certificates = Certificate::where('rkm_id', $rkm_id)
             ->where('id_peserta', $peserta_id)
-            ->firstOrFail();
+            ->get();
 
-        if ($certificate->pdf_path && Storage::exists('public/' . $certificate->pdf_path)) {
-            // Ganti "/" dengan "-" untuk nama file download yang aman
-            $downloadName = str_replace('/', '-', $certificate->nomor_sertifikat) . '.pdf';
-            return Storage::download('public/' . $certificate->pdf_path, $downloadName);
+        if ($certificates->count() === 0) {
+            return back()->with('error', 'File PDF tidak ditemukan');
         }
 
-        return back()->with('error', 'File PDF tidak ditemukan');
+        // Jika hanya satu sertifikat, download langsung
+        if ($certificates->count() === 1) {
+            $certificate = $certificates->first();
+            if ($certificate->pdf_path && Storage::exists('public/' . $certificate->pdf_path)) {
+                $downloadName = str_replace('/', '-', $certificate->nomor_sertifikat) . '.pdf';
+                return Storage::download('public/' . $certificate->pdf_path, $downloadName);
+            }
+            return back()->with('error', 'File PDF tidak ditemukan');
+        }
+
+        // Jika lebih dari satu, buat ZIP
+        $zipFilename = 'sertifikat_' . $rkm_id . '_' . $peserta_id . '_' . date('YmdHis') . '.zip';
+        $zipPath = storage_path('app/public/' . $zipFilename);
+
+        $zip = new \ZipArchive();
+        if ($zip->open($zipPath, \ZipArchive::CREATE) !== TRUE) {
+            return back()->with('error', 'Gagal membuat file ZIP');
+        }
+
+        $added = false;
+        foreach ($certificates as $certificate) {
+            if ($certificate->pdf_path && Storage::exists('public/' . $certificate->pdf_path)) {
+                $pdfFullPath = storage_path('app/public/' . $certificate->pdf_path);
+                $downloadName = str_replace('/', '-', $certificate->nomor_sertifikat) . '.pdf';
+                $zip->addFile($pdfFullPath, $downloadName);
+                $added = true;
+            }
+        }
+        $zip->close();
+
+        if (!$added) {
+            // Hapus file ZIP jika tidak ada file yang ditambahkan
+            if (file_exists($zipPath)) {
+                unlink($zipPath);
+            }
+            return back()->with('error', 'Tidak ada file PDF yang ditemukan');
+        }
+
+        // Download ZIP
+        return response()->download($zipPath)->deleteFileAfterSend(true);
     }
 
     // Preview PDF di browser
