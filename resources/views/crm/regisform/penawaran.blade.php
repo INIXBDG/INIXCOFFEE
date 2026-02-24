@@ -710,7 +710,7 @@
                     </select>
                     <input type="text" class="materi-text" placeholder="Nama Materi" required style="width: 70%;">
                 </div>
-                
+
                 <div style="display: flex; gap: 5px; margin-top: 5px;">
                     <select class="exam-select" style="width: 100%;">
                         <option value="-">-- Tanpa Exam --</option>
@@ -752,10 +752,10 @@
                 const data = e.params.data.element;
                 const nama = data.getAttribute('data-nama') || '';
                 const durasi = data.getAttribute('data-durasi') || '';
-                
+
                 const rowElement = $(this).closest('.pelatihan-row');
                 rowElement.find('.materi-text').val(nama);
-                rowElement.find('.durasi-pelatihan').val(durasi).trigger('input'); 
+                rowElement.find('.durasi-pelatihan').val(durasi).trigger('input');
             });
 
             // Seleksi elemen
@@ -1104,58 +1104,94 @@
             `;
 
             // Tambahkan keuntungan jika ada Online
-            if (hasOnline) {
-                firstPageContent += `
-                                    <div class="terms text-sm text-gray-800">
-                                        ${keuntunganSection}
-                                    </div>
-                            `;
-            }
+            // if (hasOnline) {
+            //     firstPageContent += `
+            //                         <div class="terms text-sm text-gray-800">
+            //                             ${keuntunganSection}
+            //                         </div>
+            //                 `;
+            // }
+
+            // firstPageContent += `
+            //                     </div>
+            //                 </div>
+            //             `;
+
+            // // --- secondPageContent (hanya jika TIDAK ada Online) ---
+            // let secondPageContent = '';
+
+            // if (!hasOnline) {
+            //     secondPageContent = `
+            //         <div class="container">
+            //             <div class="content-container">
+            //                 <img src="${backgroundUrl}" class="background-image" alt="Background">
+            //                 <div class="keuntungan-closing-container">
+            //                     <div class="terms text-sm text-gray-800">
+            //                         ${keuntunganSection}
+            //                     </div>
+            //                     <div class="closing text-sm text-gray-700">
+            //                         <p>Demikian surat penawaran ini kami sampaikan. Besar harapan kami dapat bekerja sama dengan Bapak/Ibu.</p>
+            //                         <p style="margin-bottom:9mm;"><strong>Untuk informasi lebih lanjut dan penyesuaian harga maupun fasilitas, mohon hubungi:</strong></p>
+            //                         <p class="contact-info"><span class="label">Whatsapp</span><span class="value">: ${waSales}</span></p>
+            //                         <p class="contact-info"><span class="label">Telepon</span><span class="value">: ${telpSales}</span></p>
+            //                         <p class="contact-info"><span class="label">Email</span><span class="value"><a href="mailto:${emailSales}" style="text-decoration:none; color: black;">: ${emailSales}</a></span></p>
+            //                         <br />
+            //                         <p class="mt-2">Hormat kami,</p>
+            //                         <p class="font-bold">INIXINDO BANDUNG</p>
+            //                         <div class="signature">
+            //                             ${signatureHTML}
+            //                             <p><strong>${namaSales}</strong></p>
+            //                             <p>${jabatanSales},</p>
+            //                             <p>Inixindo Bandung</p>
+            //                         </div>
+            //                         ${vendorImagesHTML}
+            //                     </div>
+            //                 </div>
+            //             </div>
+            //         </div>
+            //     `;
+            // } else {
+            //     secondPageContent = `
+            //         <div class="container">
+            //             <div class="content-container">
+            //                 <img src="${backgroundUrl}" class="background-image" alt="Background">
+            //                 <div class="closing text-sm text-gray-700" style="margin-top: 10mm;">
+            //                     <p>Demikian surat penawaran ini kami sampaikan. Besar harapan kami dapat bekerja sama dengan Bapak/Ibu.</p>
+            //                     <p style="margin-bottom:9mm;"><strong>Untuk informasi lebih lanjut dan penyesuaian harga maupun fasilitas, mohon hubungi:</strong></p>
+            //                     <p class="contact-info"><span class="label">Whatsapp</span><span class="value">: ${waSales}</span></p>
+            //                     <p class="contact-info"><span class="label">Telepon</span><span class="value">: ${telpSales}</span></p>
+            //                     <p class="contact-info"><span class="label">Email</span><span class="value"><a href="mailto:${emailSales}" style="text-decoration:none; color: black;">: ${emailSales}</a></span></p>
+            //                     <br />
+            //                     <p class="mt-2">Hormat kami,</p>
+            //                     <p class="font-bold">INIXINDO BANDUNG</p>
+            //                     <div class="signature">
+            //                         ${signatureHTML}
+            //                         <p><strong>${namaSales}</strong></p>
+            //                         <p>${jabatanSales},</p>
+            //                         <p>Inixindo Bandung</p>
+            //                     </div>
+            //                     ${vendorImagesHTML}
+            //                 </div>
+            //             </div>
+            //         </div>
+            //     `;
+            // }
 
             firstPageContent += `
                                 </div>
                             </div>
                         `;
 
-            // --- secondPageContent (hanya jika TIDAK ada Online) ---
-            let secondPageContent = '';
-
-            if (!hasOnline) {
-                secondPageContent = `
-                    <div class="container">
-                        <div class="content-container">
-                            <img src="${backgroundUrl}" class="background-image" alt="Background">
-                            <div class="keuntungan-closing-container">
-                                <div class="terms text-sm text-gray-800">
-                                    ${keuntunganSection}
-                                </div>
-                                <div class="closing text-sm text-gray-700">
-                                    <p>Demikian surat penawaran ini kami sampaikan. Besar harapan kami dapat bekerja sama dengan Bapak/Ibu.</p>
-                                    <p style="margin-bottom:9mm;"><strong>Untuk informasi lebih lanjut dan penyesuaian harga maupun fasilitas, mohon hubungi:</strong></p>
-                                    <p class="contact-info"><span class="label">Whatsapp</span><span class="value">: ${waSales}</span></p>
-                                    <p class="contact-info"><span class="label">Telepon</span><span class="value">: ${telpSales}</span></p>
-                                    <p class="contact-info"><span class="label">Email</span><span class="value"><a href="mailto:${emailSales}" style="text-decoration:none; color: black;">: ${emailSales}</a></span></p>
-                                    <br />
-                                    <p class="mt-2">Hormat kami,</p>
-                                    <p class="font-bold">INIXINDO BANDUNG</p>
-                                    <div class="signature">
-                                        ${signatureHTML}
-                                        <p><strong>${namaSales}</strong></p>
-                                        <p>${jabatanSales},</p> 
-                                        <p>Inixindo Bandung</p>
-                                    </div>
-                                    ${vendorImagesHTML}
-                                </div>
+            // --- secondPageContent ---
+            let secondPageContent = `
+                <div class="container">
+                    <div class="content-container">
+                        <img src="${backgroundUrl}" class="background-image" alt="Background">
+                        <div class="keuntungan-closing-container">
+                            <div class="terms text-sm text-gray-800">
+                                ${keuntunganSection}
                             </div>
-                        </div>
-                    </div>
-                `;
-            } else {
-                secondPageContent = `
-                    <div class="container">
-                        <div class="content-container">
-                            <img src="${backgroundUrl}" class="background-image" alt="Background">
-                            <div class="closing text-sm text-gray-700" style="margin-top: 10mm;">
+                            <div class="closing text-sm text-gray-700">
                                 <p>Demikian surat penawaran ini kami sampaikan. Besar harapan kami dapat bekerja sama dengan Bapak/Ibu.</p>
                                 <p style="margin-bottom:9mm;"><strong>Untuk informasi lebih lanjut dan penyesuaian harga maupun fasilitas, mohon hubungi:</strong></p>
                                 <p class="contact-info"><span class="label">Whatsapp</span><span class="value">: ${waSales}</span></p>
@@ -1167,15 +1203,16 @@
                                 <div class="signature">
                                     ${signatureHTML}
                                     <p><strong>${namaSales}</strong></p>
-                                    <p>${jabatanSales},</p> 
+                                    <p>${jabatanSales},</p>
                                     <p>Inixindo Bandung</p>
                                 </div>
                                 ${vendorImagesHTML}
                             </div>
                         </div>
                     </div>
-                `;
-            }
+                </div>
+            `;
+
             // Generate PDF
             await generatePDF(firstPageContent, secondPageContent);
         });
@@ -1190,19 +1227,19 @@
             // CSS styles for PDF rendering
             const styles = `
                 <style>
-                    body { 
-                        margin: 0; 
-                        padding: 0; 
-                        font-size: 9pt; 
-                        font-family: Arial, sans-serif; 
-                        position: relative; 
+                    body {
+                        margin: 0;
+                        padding: 0;
+                        font-size: 9pt;
+                        font-family: Arial, sans-serif;
+                        position: relative;
                     }
-                    .container { 
-                        max-width: 190mm; 
-                        width: 100%; 
-                        margin: 0; 
-                        padding: 5mm; 
-                        background: transparent; 
+                    .container {
+                        max-width: 190mm;
+                        width: 100%;
+                        margin: 0;
+                        padding: 5mm;
+                        background: transparent;
                     }
                     .header-container {
                         width: 183mm;
@@ -1236,7 +1273,7 @@
                     .vendor-images {
                         position: absolute;
                         bottom: 0;
-                        top: 135mm;   
+                        top: 135mm;
                         left: 15mm;
                         right: 0;
                         display: grid;
