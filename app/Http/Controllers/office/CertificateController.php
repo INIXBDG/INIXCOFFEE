@@ -81,7 +81,7 @@ class CertificateController extends Controller
         }
 
 
-        $initialNumber = 25737;
+        $initialNumber = 26082;
 
         $lastCert = Certificate::orderBy('nomor_sertifikat', 'desc')->first();
 
