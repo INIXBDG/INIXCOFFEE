@@ -49,6 +49,7 @@ use App\Http\Controllers\BroadcastAuthController;
 use App\Http\Controllers\PusherAuthController;
 use App\Http\Controllers\office\vendorOfficeController;
 use App\Http\Controllers\ActivityInstrukturController;
+use App\Http\Controllers\dbklienController;
 use App\Http\Controllers\PenukaranSouvenirController;
 use App\Http\Controllers\office\DashboardSouvenirController;
 use App\Http\Controllers\Webinar\CalendarController;
@@ -67,6 +68,9 @@ use App\Http\Controllers\Webinar\ChecklistController;
 use App\HTTP\Controllers\SentryWebhookController;
 use App\Http\Controllers\InstructorDevelopmentController;
 use App\Http\Controllers\KomplainPesertaController;
+
+
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -538,7 +542,9 @@ Route::get('/paymantAdvance/detail/{id}/view', [netSalesController::class, 'deta
 Route::post('/paymantAdvance/detail/data/get', [netSalesController::class, 'dataDetail'])->name('netsales.data.detail.get');
 Route::post('/paymantAdvance/approved', [approvedNetSalesController::class, 'approve'])->name('netsales.approved');
 Route::post('/paymantAdvance/data/get/', [netSalesController::class, 'dataEdit'])->name('netSales.edit.get');
-Route::post('/paymantAdvance/data/update', [netSalesController::class, 'updateNetSales'])->name('netSales.update');
+Route::put('/paymantAdvance/data/update', [netSalesController::class, 'updateNetSales'])->name('netSales.update');
+Route::get('/download/pdf/netsales/{year}/{month}', [netSalesController::class, 'DownloadPDF'])->name('netSales.download');
+Route::get('/download/pdf/netsales/{id}', [netSalesController::class, 'pdfSendiri'])->name('netSales.download.pdfSendiri');
 
 // Inventaris Route
 Route::get('/inventaris/index', [InventarisController::class, 'index'])->name('IndexInventaris');
@@ -565,6 +571,9 @@ Route::prefix('crm')->group(function () {
     Route::get('/', [CRMController::class, 'index'])->name('CRM.index');
     Route::get('/my-dashboard', [salesPribadiController::class, 'index'])->name('CRM.myDasboard');
     Route::get('/profile', [CRMController::class, 'getProfile'])->middleware('auth')->name('crm.profile');
+    Route::get('/chartRKM', [CRMController::class, 'chartRKM'])->name('chartRKM');
+    Route::get('/chartPerusahaan', [CRMController::class, 'chartPerusahaan'])->name('chartPerusahaan');
+    Route::get('/chartClosed', [CRMController::class, 'chartClosed'])->name('chartClosed');
 
     // Contact CRM
     Route::get('/contact/index', [ContactController::class, 'index'])->name('index.contact');
@@ -624,6 +633,7 @@ Route::prefix('crm')->group(function () {
     Route::delete('/delete/ketentuan/{id}', [RegisFormController::class, 'deleteKetentuan'])->name('crm.delete.ketentuan');
     Route::get('/generate/regis/form/{id}', [RegisFormController::class, 'index'])->name('crm.index.regis');
     Route::get('/generate/penawaran/form', [RegisFormController::class, 'indexPenawaran'])->name('crm.index.penawaran');
+    Route::post('/generate/word', [RegisFormController::class, 'generateWord'])->name('crm.generate.word');
     Route::post('/store/deskripsi', [RegisFormController::class, 'storeDeskripsi'])->name('crm.store.deskripsi');
     Route::put('/update/deskripsi/{id}', [RegisFormController::class, 'updateDeskripsi'])->name('crm.update.deskripsi');
     Route::delete('/delete/deskripsi/{id}', [RegisFormController::class, 'deleteDeskripsi'])->name('crm.delete.deskripsi');
@@ -671,6 +681,7 @@ Route::post('/kwitansi/store', [InvoiceRKMController::class, 'storeKwitansi'])
     ->name('kwitansi.store');
 // Contoh rute untuk menampilkan detail kwitansi
 Route::get('/kwitansi/{id}', [InvoiceRKMController::class, 'showKwitansi'])->name('kwitansi.show');
+Route::get('/kwitansi/download/{id}', [InvoiceRKMController::class, 'downloadPdfKwitansi'])->name('kwitansi.pdf');
 
 //laporan-insiden-route
 Route::get('/laporan-insiden', [laporanInsidentController::class, 'index'])->name('index.laporanInsiden');
@@ -834,6 +845,7 @@ Route::prefix('office')->name('office.')->middleware(['auth'])->group(function (
         [OfficeController::class, 'exportPdf']
     )->name('feedbackinstrukturpdf');
 
+
     // Certificate Routes
     Route::prefix('certificate')->name('certificate.')->group(function () {
         Route::get('/', [CertificateController::class, 'index'])->name('index');
@@ -903,7 +915,6 @@ Route::prefix('office')->name('office.')->middleware(['auth'])->group(function (
     });
 
     Route::prefix('kendaraan')->group(function(){
-        //kondisi
         Route::get('/index/kondisi', [KendaraanController::class, 'indexKondisi'])->name('indexKondisiKendaraan');
         Route::get('/detail/kondisi/{id}', [KendaraanController::class, 'detailKondisi'])->name('detailKondisiKendaraan');
         Route::post('/store/kondisi', [KendaraanController::class, 'storeKondisi'])->name('storeKondisiKendaraan');
@@ -987,3 +998,10 @@ Route::post('/specialization', [InstructorDevelopmentController::class, 'storeSp
 Route::put('/specialization/{id}', [InstructorDevelopmentController::class, 'updateSpecialization'])->name('specialization.update');
 Route::delete('/specialization/{id}', [InstructorDevelopmentController::class, 'destroySpecialization'])->name('specialization.destroy');
 Route::post('/development/sertifikasi/{id}/renew', [InstructorDevelopmentController::class, 'storeRenewal'])->name('sertifikasi.renew');
+
+Route::get('/db-klien', [dbklienController::class, 'index'])->name('dbklien.index');
+Route::post('import-klien', [dbklienController::class, 'import']);
+Route::get('download-template-klien', [dbklienController::class, 'downloadTemplate'])->name('excel.dbklien');
+
+Route::post('/internal/update-tickets', [TicketController::class, 'handleInternalUpdate']);
+Route::get('/internal/open-tickets', [TicketController::class, 'getOpenTickets']);

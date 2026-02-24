@@ -578,7 +578,81 @@
             </div>
         </div>
 
-<<<<<<< HEAD
+        <!-- Modals untuk setiap Divisi -->
+        @foreach ($divisiStats as $index => $divisi)
+            <div class="modal fade" id="modalDivisi{{ $index }}" tabindex="-1"
+                aria-labelledby="modalLabel{{ $index }}" aria-hidden="true">
+                <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
+                    <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                        <div class="modal-header bg-{{ $divisi['color'] }} bg-opacity-10 border-bottom-0">
+                            <h5 class="modal-title fw-bold" id="modalLabel{{ $index }}">
+                                <i class="{{ $divisi['icon'] }} text-{{ $divisi['color'] }} me-2"
+                                    style="font-size: 1.5rem;"></i>
+                                Data Karyawan - {{ $divisi['nama'] }}
+                                <span class="badge bg-{{ $divisi['color'] }} ms-3 mb-2">{{ $divisi['total'] }}
+                                    orang</span>
+                            </h5>
+                            <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body p-0">
+                            @if ($divisi['data']->count() > 0)
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-striped align-middle mb-0">
+                                        <thead class="bg-light sticky-top">
+                                            <tr>
+                                                <th class="ps-4" width="60">#</th>
+                                                <th class="ps-4">Nama Lengkap</th>
+                                                <th>NIP</th>
+                                                <th>Jabatan</th>
+                                                <th>Email</th>
+                                                <th width="100">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($divisi['data'] as $key => $karyawan)
+                                                <tr class="hover-bg">
+                                                    <td class="ps-4 fw-medium">{{ $key + 1 }}</td>
+                                                    <td class="ps-4">
+                                                        <div class="d-flex align-items-center">
+                                                            <div
+                                                                class="avatar avatar-sm bg-opacity-15 rounded-circle me-3">
+                                                                <span class="text-{{ $divisi['color'] }} fw-bold small">
+                                                                    {{ strtoupper(substr($karyawan->nama_lengkap, 0, 1)) }}
+                                                                </span>
+                                                            </div>
+                                                            <span class="fw-medium">{{ $karyawan->nama_lengkap }}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td><code class="small">{{ $karyawan->nip ?? '-' }}</code></td>
+                                                    <td>{{ $karyawan->jabatan ?? '-' }}</td>
+                                                    <td><small class="text-muted">{{ $karyawan->email ?? '-' }}</small>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-success">Aktif</span>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @else
+                                <div class="text-center py-6 text-muted">
+                                    <i class="bx bx-user-x" style="font-size: 4rem; opacity: 0.5;"></i>
+                                    <p class="mt-3 fw-medium">Belum ada data karyawan di divisi ini</p>
+                                </div>
+                            @endif
+                        </div>
+                        <div class="modal-footer border-top-0 bg-light" style="padding: 6px">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                                <i class="bx bx-x me-1"></i> Tutup
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endforeach
+
     @auth
         <div class="web-push-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
             <button id="webpush-btn" class="btn btn-primary btn-sm shadow-sm"
@@ -862,88 +936,6 @@
             --bs-primary: #5b73e8;
             --bs-primary-rgb: 91, 115, 232;
         }
-=======
-        <!-- Modals untuk setiap Divisi -->
-        @foreach ($divisiStats as $index => $divisi)
-            <div class="modal fade" id="modalDivisi{{ $index }}" tabindex="-1"
-                aria-labelledby="modalLabel{{ $index }}" aria-hidden="true">
-                <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
-                    <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-                        <div class="modal-header bg-{{ $divisi['color'] }} bg-opacity-10 border-bottom-0">
-                            <h5 class="modal-title fw-bold" id="modalLabel{{ $index }}">
-                                <i class="{{ $divisi['icon'] }} text-{{ $divisi['color'] }} me-2"
-                                    style="font-size: 1.5rem;"></i>
-                                Data Karyawan - {{ $divisi['nama'] }}
-                                <span class="badge bg-{{ $divisi['color'] }} ms-3 mb-2">{{ $divisi['total'] }}
-                                    orang</span>
-                            </h5>
-                            <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal"
-                                aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body p-0">
-                            @if ($divisi['data']->count() > 0)
-                                <div class="table-responsive">
-                                    <table class="table table-hover table-striped align-middle mb-0">
-                                        <thead class="bg-light sticky-top">
-                                            <tr>
-                                                <th class="ps-4" width="60">#</th>
-                                                <th class="ps-4">Nama Lengkap</th>
-                                                <th>NIP</th>
-                                                <th>Jabatan</th>
-                                                <th>Email</th>
-                                                <th width="100">Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach ($divisi['data'] as $key => $karyawan)
-                                                <tr class="hover-bg">
-                                                    <td class="ps-4 fw-medium">{{ $key + 1 }}</td>
-                                                    <td class="ps-4">
-                                                        <div class="d-flex align-items-center">
-                                                            <div
-                                                                class="avatar avatar-sm bg-opacity-15 rounded-circle me-3">
-                                                                <span class="text-{{ $divisi['color'] }} fw-bold small">
-                                                                    {{ strtoupper(substr($karyawan->nama_lengkap, 0, 1)) }}
-                                                                </span>
-                                                            </div>
-                                                            <span class="fw-medium">{{ $karyawan->nama_lengkap }}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td><code class="small">{{ $karyawan->nip ?? '-' }}</code></td>
-                                                    <td>{{ $karyawan->jabatan ?? '-' }}</td>
-                                                    <td><small class="text-muted">{{ $karyawan->email ?? '-' }}</small>
-                                                    </td>
-                                                    <td>
-                                                        <span class="badge bg-success">Aktif</span>
-                                                    </td>
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-                            @else
-                                <div class="text-center py-6 text-muted">
-                                    <i class="bx bx-user-x" style="font-size: 4rem; opacity: 0.5;"></i>
-                                    <p class="mt-3 fw-medium">Belum ada data karyawan di divisi ini</p>
-                                </div>
-                            @endif
-                        </div>
-                        <div class="modal-footer border-top-0 bg-light" style="padding: 6px">
-                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                                <i class="bx bx-x me-1"></i> Tutup
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        @endforeach
->>>>>>> 47a8b4db8a19b263d9fc2de1c3a5ba1d895f0de0
-
-        <style>
-            :root {
-                --bs-primary: #5b73e8;
-                --bs-primary-rgb: 91, 115, 232;
-            }
 
             .hover-card {
                 transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);

@@ -126,7 +126,7 @@ class RKM extends Model
 
     public function peluang()
     {
-        return $this->hasOne(Peluang::class, 'id_rkm', 'id'); // Relasi dengan Peluang
+        return $this->hasOne(Peluang::class, 'id_rkm', 'id');
     }
 
     public function invoice()

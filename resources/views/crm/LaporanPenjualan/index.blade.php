@@ -496,7 +496,9 @@
                                             <p><strong>NetSales:</strong> ${formatRupiah(rowData.netsales)}</p>
                                             <p><strong>Grand Total:</strong> ${formatRupiah(rowData.grandtotal)}</p>
                                         </div>
-</div>
+
+                                        <a href="/storage/${rowData.path_regis}" target="_blank">PDF E-regis</a>
+                                    </div>
 
                                     <hr class="my-3">
                                     <h6 class="mb-3">Informasi Invoice</h6>
@@ -537,23 +539,20 @@
                                         <table class="table table-bordered table-striped">
                                             <thead>
                                                 <tr>
-                                                    <th>Nama</th>
-                                                    <th>Harga Penawaran</th>
                                                     <th>Transportasi</th>
                                                     <th>Jenis Transportasi</th>
                                                     <th>Akomodasi Peserta</th>
-                                                    <th>Meeting Room / Penginapan</th>
-                                                    <th>Akomodasi</th>
-                                                    <th>Reimburse Transport</th>
-                                                    <th>Sewa Laptop</th>
+                                                    <th>Akomodasi Tim</th>
+                                                    <th>Keterangan Akomodasi Tim</th>
                                                     <th>Fresh Money</th>
                                                     <th>Entertaint</th>
-                                                    <th>Deskripsi Entertaint</th>
+                                                    <th>Keterangan Entertaint</th>
                                                     <th>Souvenir</th>
                                                     <th>Cashback</th>
+                                                    <th>Sewa Laptop</th>
+                                                    <th>Deskripsi Tambahan</th>
                                                     <th>Tanggal PA</th>
                                                     <th>Tipe Pembayaran</th>
-                                                    <th>Deskripsi Tambahan</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -562,23 +561,20 @@
                                             rowData.perhitungannet.forEach(item => {
                                                 html += `
                                         <tr>
-                                            <td>${item.peserta?.nama ?? '-'}</td>
-                                            <td>${formatRupiah(item.harga_penawaran)}</td>
                                             <td>${formatRupiah(item.transportasi)}</td>
                                             <td>${item.jenis_transportasi ?? '-'}</td>
                                             <td>${formatRupiah(item.akomodasi_peserta)}</td>
-                                            <td>${formatRupiah(item.penginapan_meeting_room)}</td>
-                                            <td>${formatRupiah(item.akomodasi_sales_instruktur)}</td>
-                                            <td>${formatRupiah(item.reimburse_transport_sales_instruktur)}</td>
-                                            <td>${item.sewa_laptop ? formatRupiah(item.sewa_laptop) : '-'}</td>
+                                            <td>${formatRupiah(item.akomodasi_tim)}</td>
+                                            <td>${item.keterangan_akomodasi_tim ?? '-'}</td>
                                             <td>${item.fresh_money ? formatRupiah(item.fresh_money) : '-'}</td>
                                             <td>${item.entertaint ? formatRupiah(item.entertaint) : '-'}</td>
-                                            <td>${item.deskripsi_entertaint ?? '-'}</td>
+                                            <td>${item.keterangan_entertaint ?? '-'}</td>
                                             <td>${item.souvenir ? formatRupiah(item.souvenir) : '-'}</td>
                                             <td>${item.cashback ? formatRupiah(item.cashback) : '-'}</td>
+                                            <td>${item.sewa_laptop ? formatRupiah(item.sewa_laptop) : '-'}</td>
+                                            <td>${item.deskripsi_tambahan ?? '-'}</td>
                                             <td>${item.tgl_pa ? moment(item.tgl_pa).format('DD MMMM YYYY') : '-'}</td>
                                             <td>${item.tipe_pembayaran ? item.tipe_pembayaran.toUpperCase() : '-'}</td>
-                                            <td>${item.desc ?? '-'}</td>
                                         </tr>`;
                                             });
 

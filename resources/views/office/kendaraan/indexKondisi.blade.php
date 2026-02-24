@@ -134,9 +134,8 @@
                                 <label class="form-label small">Jenis Kendaraan <span class="text-danger">*</span></label>
                                 <select name="jenis_kendaraan" class="form-select form-select-sm" required>
                                     <option value="">Pilih Jenis Kendaraan</option>
-                                    @foreach ($kendaraan as $data)
-                                        <option value="{{ $data }}">{{ $data }}</option>
-                                    @endforeach
+                                    <option value="Innova">Innova</option>
+                                    <option value="H1">H1</option>
                                 </select>
                             </div>
                             <div class="col-md-4">

@@ -125,8 +125,7 @@
                                         <input type="text" 
                                             name="nomor_sertifikat" 
                                             class="form-control border-start-0 @error('nomor_sertifikat') is-invalid @enderror" 
-                                            value="{{ old('nomor_sertifikat', $nomorSertifikatBaru) }}"
-                                            readonly>
+                                            value="{{ old('nomor_sertifikat', $nomorSertifikatBaru) }}">
 
                                     @error('nama')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -146,8 +145,7 @@
                                         <input type="text" 
                                             name="nama_peserta" 
                                             class="form-control border-start-0 @error('nama_peserta') is-invalid @enderror" 
-                                            value="{{ old('nama_peserta', $peserta->nama) }}"
-                                            readonly>
+                                            value="{{ old('nama_peserta', $peserta->nama) }}">
 
                                     @error('nama')
                                     <div class="invalid-feedback">{{ $message }}</div>

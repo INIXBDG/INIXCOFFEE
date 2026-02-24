@@ -9,14 +9,14 @@
         </div>
 
         <!-- Alert Success -->
-        @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show shadow-sm rounded-3 border-0 mb-4" role="alert">
-            <div class="d-flex align-items-center">
-                <i class="bx bx-check-circle me-2" style="font-size: 1.5rem;"></i>
-                <div>{{ session('success') }}</div>
+        @if (session('success'))
+            <div class="alert alert-success alert-dismissible fade show shadow-sm rounded-3 border-0 mb-4" role="alert">
+                <div class="d-flex align-items-center">
+                    <i class="bx bx-check-circle me-2" style="font-size: 1.5rem;"></i>
+                    <div>{{ session('success') }}</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
         @endif
 
         <div class="row">
@@ -26,8 +26,8 @@
                     <div class="card-body p-5 text-center">
                         <div class="success-animation mb-4">
                             <div class="avatar-xl mx-auto mb-3 position-relative">
-                                <div class="avatar-title rounded-circle bg-success-subtle text-success" 
-                                     style="width: 100px; height: 100px; animation: scaleIn 0.5s ease-out;">
+                                <div class="avatar-title rounded-circle bg-success-subtle text-success"
+                                    style="width: 100px; height: 100px; animation: scaleIn 0.5s ease-out;">
                                     <i class="bx bx-check" style="font-size: 60px;"></i>
                                 </div>
                             </div>
@@ -92,15 +92,23 @@
                                 <i class="bx bx-calendar me-2"></i>Periode Pelatihan
                             </label>
                             <div class="col-sm-8 d-flex align-items-center">
+                                @php
+                                    use Carbon\Carbon;
+
+                                    [$start, $end] = explode(' - ', $certificate->tanggal_pelatihan);
+
+                                    $startDate = Carbon::parse($start)->translatedFormat('d F Y');
+                                    $endDate = Carbon::parse($end)->translatedFormat('d F Y');
+                                @endphp
                                 <div>
                                     <span class="badge bg-info-subtle text-info px-3 py-2 me-2">
                                         <i class="bx bx-calendar-event me-1"></i>
-                                        {{ \Carbon\Carbon::parse($certificate->tanggal_awal)->translatedFormat('d F Y') }}
+                                        {{$startDate}}
                                     </span>
                                     <span class="text-muted">s/d</span>
                                     <span class="badge bg-info-subtle text-info px-3 py-2 ms-2">
                                         <i class="bx bx-calendar-event me-1"></i>
-                                        {{ \Carbon\Carbon::parse($certificate->tanggal_akhir)->translatedFormat('d F Y') }}
+                                        {{$endDate}}
                                     </span>
                                 </div>
                             </div>
@@ -123,17 +131,15 @@
                     <!-- Action Buttons Footer -->
                     <div class="card-footer border-top py-3">
                         <div class="d-flex flex-wrap gap-2 justify-content-center">
-                            <a href="{{ route('office.certificate.preview', $certificate->id) }}" 
-                               class="btn btn-info shadow-sm hover-scale"
-                               target="_blank">
+                            <a href="{{ route('office.certificate.preview', $certificate->id) }}"
+                                class="btn btn-info shadow-sm hover-scale" target="_blank">
                                 <i class="bx bx-show me-1"></i>Preview PDF
                             </a>
-                            <a href="{{ route('office.certificate.download', $certificate->id) }}" 
-                               class="btn btn-success shadow-sm hover-scale">
+                            <a href="{{ route('office.certificate.download', $certificate->id) }}"
+                                class="btn btn-success shadow-sm hover-scale">
                                 <i class="bx bx-download me-1"></i>Download PDF
                             </a>
-                            <a href="{{ route('office.certificate.index') }}" 
-                               class="btn btn-light shadow-sm">
+                            <a href="{{ route('office.certificate.index') }}" class="btn btn-light shadow-sm">
                                 <i class="bx bx-arrow-back me-1"></i>Kembali
                             </a>
                         </div>
@@ -149,9 +155,11 @@
                 transform: scale(0);
                 opacity: 0;
             }
+
             50% {
                 transform: scale(1.1);
             }
+
             100% {
                 transform: scale(1);
                 opacity: 1;
@@ -163,6 +171,7 @@
                 opacity: 0;
                 transform: translateY(20px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -215,14 +224,16 @@
         }
 
         @media (max-width: 576px) {
-            .col-sm-4, .col-sm-8 {
+
+            .col-sm-4,
+            .col-sm-8 {
                 text-align: left !important;
             }
-            
+
             .d-flex.flex-wrap {
                 flex-direction: column !important;
             }
-            
+
             .btn {
                 width: 100%;
             }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActivityInstruktur;
+use App\Models\dbklien;
 use App\Models\Inventaris;
 use App\Models\jabatan;
 use Illuminate\Http\Request;
@@ -16,6 +17,7 @@ use App\Models\RekomendasiLanjutan;
 use App\Models\RKM;
 use App\Models\User;
 use Carbon\Carbon;
+use DB;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
 
@@ -437,6 +439,99 @@ class apiController extends Controller
             'filled' => $filled
         ]);
     }
+
+    public function getDBKlien()
+{
+    // ================= DATA 1
+    $data1 = DB::table('dbkliens')
+        ->leftJoin(
+            'perusahaans',
+            'dbkliens.nama_perusahaan',
+            '=',
+            'perusahaans.id'
+        )
+        ->select(
+            'dbkliens.nama',
+            'dbkliens.jenis_kelamin',
+            'dbkliens.email',
+            'dbkliens.no_hp',
+            'dbkliens.tanggal_lahir',
+            'dbkliens.nama_perusahaan',
+            'perusahaans.lokasi',
+            'dbkliens.sales_key',
+            'dbkliens.nama_materi',
+            'dbkliens.created_at'
+        );
+
+    // ================= DATA 2
+    $data2 = DB::table('registrasis')
+        ->join('pesertas','registrasis.id_peserta','=','pesertas.id')
+        ->join('materis','registrasis.id_materi','=','materis.id')
+        ->leftJoin('perusahaans','pesertas.perusahaan_key','=','perusahaans.id')
+        ->select(
+            'pesertas.nama',
+            'pesertas.jenis_kelamin',
+            'pesertas.email',
+            'pesertas.no_hp',
+            'pesertas.tanggal_lahir',
+            'perusahaans.nama_perusahaan',
+            'perusahaans.lokasi',
+            'perusahaans.sales_key',
+            'materis.nama_materi',
+            'registrasis.created_at'
+        );
+
+    // ================= UNION
+    $union = $data1->unionAll($data2);
+
+    // ================= GROUP PESERTA
+    $data = DB::query()
+        ->fromSub($union, 'x')
+        ->get()
+        ->groupBy(function($item){
+            return
+                strtolower($item->nama).'|'.
+                strtolower($item->email).'|'.
+                strtolower($item->jenis_kelamin);
+        })
+        ->map(function($rows){
+
+            $first = $rows->first();
+
+            // FORMAT NAMA
+            $first->nama_formatted =
+                \App\Models\Peserta::formatNama(
+                    $first->nama
+                );
+
+            // USIA
+            $first->usia =
+                $first->tanggal_lahir
+                ? Carbon::parse(
+                    $first->tanggal_lahir
+                  )->age
+                : '';
+
+            // LIST MATERI
+            $first->materi_list =
+                $rows->pluck('nama_materi')
+                    ->map(function($m){
+                        return $m ?? '-'; // ganti null jadi "-"
+                    })
+                    ->unique()
+                    ->values();
+
+
+            return $first;
+        })
+        ->values();
+
+    return response()->json([
+        'data' => $data
+    ]);
+}
+
+
 
 
 
