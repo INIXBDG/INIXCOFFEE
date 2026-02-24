@@ -1305,6 +1305,91 @@
             // Download PDF
             doc.save('Surat_Penawaran.pdf');
         }
+
+        document.getElementById('download-word').addEventListener('click', async () => {
+            const pelatihan = [];
+            document.querySelectorAll('.pelatihan-row').forEach(row => {
+                pelatihan.push({
+                    materi: row.querySelector('.materi-text').value,
+                    exam: row.querySelector('.exam-select').value,
+                    harga_exam: row.querySelector('.harga-exam').value,
+                    metode: row.querySelector('.metode-select').value,
+                    durasi: row.querySelector('.durasi-pelatihan').value,
+                    tanggal_awal: row.querySelector('.tanggal-awal-pelatihan').value,
+                    tanggal: row.querySelector('.tanggal-pelatihan').value,
+                    harga: row.querySelector('.harga-pelatihan').value
+                });
+            });
+
+            const fasilitas = [];
+            document.querySelectorAll('.fasilitas-item').forEach(item => {
+                fasilitas.push(item.value);
+            });
+
+            const keuntungan = [];
+            document.querySelectorAll('.keuntungan-item').forEach(item => {
+                keuntungan.push(item.value);
+            });
+
+            const syarat = [];
+            document.querySelectorAll('.syarat-checkbox:checked').forEach(checkbox => {
+                syarat.push(checkbox.getAttribute('data-content'));
+            });
+
+            const data = {
+                _token: "{{ csrf_token() }}",
+                no_surat: document.getElementById('no-surat').value,
+                hal: document.getElementById('hal').value,
+                lampiran: document.getElementById('lampiran').value,
+                penerima: document.getElementById('penerima').value,
+                perusahaan_id: document.getElementById('perusahaan').value,
+                deskripsi: document.getElementById('deskripsi').value,
+                ppn_rate: document.getElementById('ppn-rate').value,
+                include_ppn: document.getElementById('include-ppn').checked,
+                pelatihan: pelatihan,
+                fasilitas: fasilitas,
+                keuntungan: keuntungan,
+                syarat: syarat,
+                nama_sales: document.getElementById('nama-sales').value,
+                jabatan_sales: document.getElementById('jabatan-sales').value,
+                wa_sales: document.getElementById('wa-sales').value,
+                telp_sales: document.getElementById('telp-sales').value,
+                email_sales: document.getElementById('email-sales').value
+            };
+
+            if (!data.no_surat || !data.penerima) {
+                alert('Harap isi No Surat dan Penerima');
+                return;
+            }
+
+            try {
+                const response = await fetch("{{ route('crm.generate.word') }}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Surat_Penawaran_${data.no_surat}.docx`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan saat generate Word: ' + error.message);
+            }
+        });
     </script>
 </body>
 
