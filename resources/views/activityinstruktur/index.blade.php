@@ -61,6 +61,7 @@
                                 <option value="Pembuatan Silabus">Pembuatan Silabus</option>
                                 <option value="Aktivitas Internal Kantor">Aktivitas Internal Kantor</option>
                                 <option value="Meeting">Meeting</option>
+                                <option value="Research / Pendalaman Materi">Research / Pendalaman Materi</option>
                             </select>
                         </div>
                         
