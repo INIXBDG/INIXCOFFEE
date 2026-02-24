@@ -116,6 +116,9 @@
                                 <tr>
                                     <th>Ranking</th>
                                     <th>Nama</th>
+                                    <th>No HP</th>
+                                    <th>Email</th>
+                                    <th>Perusahaan</th>
                                     <th>Jumlah Kelas</th>
                                     <th>Daftar Materi</th>
                                 </tr>
@@ -142,6 +145,7 @@
                     <table class="table table-striped" id="dbklienTable">
                         <thead>
                             <tr>
+                                <th scope="col">No</th>
                                 <th scope="col">No</th>
                                 <th scope="col">Nama</th>
                                 <th scope="col">Jenis Kelamin</th>
@@ -281,6 +285,7 @@
                         return tableIndex++
                     }
                 },
+                {"data": "created_at", "visible": false},
                 {"data": "nama_formatted"},
                 {"data": "jenis_kelamin"},
                 {"data": "usia"},
@@ -344,7 +349,9 @@
                         }
                     }
                 }
-            ]
+            ],
+            "order": [[1, 'desc']], // Ubah urutan menjadi descending untuk kolom ke-6
+            "columnDefs" : [{"targets":[1], "type":"date"}],
         });
         fetchDashboard();
         let usiaRendered = false;
@@ -480,35 +487,37 @@
             if (!map[nama]) {
                 map[nama] = {
                     nama: nama,
+                    no_hp: p.no_hp ?? '-',
+                    perusahaan: p.nama_perusahaan ?? '-',
+                    email: p.email ?? '-',
                     materi: new Set()
                 };
             }
 
-            // 🔥 PENTING — pakai materi_list
+            // 🔥 ambil semua materi
             if (p.materi_list && p.materi_list.length > 0) {
-
                 p.materi_list.forEach(m => {
                     map[nama].materi.add(m);
                 });
-
             }
 
         });
 
         let data = Object.values(map).map(p => ({
             nama: p.nama,
+            no_hp: p.no_hp,
+            perusahaan: p.perusahaan,
+            email: p.email,
             jumlah_kelas: p.materi.size,
             materi: [...p.materi]
         }));
 
-        data.sort(
-            (a,b) => b.jumlah_kelas - a.jumlah_kelas
-        );
+        data = data.filter(p => p.jumlah_kelas > 1); // exclude 1 kelas
+
+        data.sort((a,b) => b.jumlah_kelas - a.jumlah_kelas);
 
         renderStandingTable(data);
     }
-
-
 
     function prepareCardPesertaTahun() {
         let kelompok = {};
@@ -532,8 +541,6 @@
 
         renderCardPesertaTahun(kelompok);
     }
-
-
 
     function renderUsiaChart(labels, data) {
         const canvas = document.getElementById('UsiaChart');
@@ -698,19 +705,25 @@
                 .destroy();
         }
 
+        // 🔥 FILTER: hanya yang jumlah_kelas > 1
+        const filtered = data.filter(p => p.jumlah_kelas > 1);
+
         let html = '';
 
-        data.forEach((p, i) => {
+        filtered.forEach((p, i) => {
 
             html += `
                 <tr>
                     <td>${i+1}</td>
-                    <td>${p.nama}</td>
-                    <td>${p.jumlah_kelas}</td>
+                    <td>${p.nama ?? '-'}</td>
+                    <td>${p.no_hp ?? '-'}</td>
+                    <td>${p.email ?? '-'}</td>
+                    <td>${p.perusahaan ?? '-'}</td>
+                    <td>${p.jumlah_kelas ?? 0}</td>
                     <td>
                         ${
                             p.materi?.length
-                            ? p.materi.join('<br>----------<br>')
+                            ? p.materi.join('<br><hr><br>')
                             : '-'
                         }
                     </td>
@@ -722,7 +735,7 @@
 
         $('#standingTable').DataTable({
             pageLength: 10,
-            order: [[2, 'desc']],
+            order: [[5, 'desc']], // kolom jumlah_kelas
             responsive: true,
             language: {
                 search: "Cari Peserta:",
