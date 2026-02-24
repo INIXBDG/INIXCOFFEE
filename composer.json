@@ -21,6 +21,7 @@
         "maatwebsite/excel": "^3.1",
         "minishlink/web-push": "^10.0",
         "mostafaznv/pdf-optimizer": "^1.2",
+        "phpoffice/phpword": "^1.4",
         "pusher/pusher-php-server": "^7.2",
         "rap2hpoutre/laravel-log-viewer": "^2.4",
         "romanzipp/laravel-queue-monitor": "^5.4",
