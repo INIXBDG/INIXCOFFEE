@@ -167,38 +167,15 @@ class OutstandingController extends Controller
         }
     }
 
-    public function getOutstandingLunas()
+    public function getOutstandingLunas(Request $request)
     {
+        $tahun = $request->input('tahun', date('Y'));
         $users = auth()->user();
-        $user = $users->id_sales;
-        if ($users->jabatan == 'SPV Sales') {
-            $user = '';
-        }
-        if ($user) {
-            $outstanding = outstanding::with('rkm', 'rkm.perusahaan', 'rkm.materi', 'tracking_outstanding')
-                ->where('status_pembayaran', '1')
-                ->whereHas('rkm', function ($query) use ($user) {
-                    $query->where('sales_key', $user);
-                })
-                ->get();
-        } else {
-            $outstanding = outstanding::with('rkm', 'rkm.perusahaan', 'rkm.materi', 'tracking_outstanding')->where('status_pembayaran', '1')->get();
-        }
-        return response()->json([
-            'success' => true,
-            'message' => 'List Outstanding Lunas',
-            'data' => $outstanding,
-        ]);
-    }
+        $idSales = ($users->jabatan == 'SPV Sales') ? '' : $users->id_sales;
 
-    public function getOutstandingHutang(Request $request)
-    {
-        $type = $request->input('type', 'semua'); 
-        $user = auth()->user();
-        $idSales = $user->jabatan == 'SPV Sales' ? '' : $user->id_sales;
-
-        $query = outstanding::with('rkm.invoice', 'rkm.perusahaan', 'rkm.materi', 'tracking_outstanding')
-            ->where('status_pembayaran', '0');
+        $query = Outstanding::with('rkm', 'rkm.perusahaan', 'rkm.materi', 'tracking_outstanding')
+            ->where('status_pembayaran', '1')
+            ->whereYear('due_date', $tahun); // Filter Tahun
 
         if ($idSales) {
             $query->whereHas('rkm', function ($q) use ($idSales) {
@@ -206,17 +183,26 @@ class OutstandingController extends Controller
             });
         }
 
-        if ($type === 'minggu_ini') {
-            $query->whereBetween('due_date', [now()->startOfWeek(), now()->endOfWeek()]);
+        return response()->json(['data' => $query->get()]);
+    }
+
+    public function getOutstandingHutang(Request $request)
+    {
+        $tahun = $request->input('tahun', date('Y'));
+        $user = auth()->user();
+        $idSales = ($user->jabatan == 'SPV Sales') ? '' : $user->id_sales;
+
+        $query = Outstanding::with('rkm.invoice', 'rkm.perusahaan', 'rkm.materi', 'tracking_outstanding')
+            ->where('status_pembayaran', '0')
+            ->whereYear('due_date', $tahun); // Filter Tahun
+
+        if ($idSales) {
+            $query->whereHas('rkm', function ($q) use ($idSales) {
+                $q->where('sales_key', $idSales);
+            });
         }
 
-        $outstanding = $query->get();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'List Outstanding Hutang',
-            'data' => $outstanding,
-        ]);
+        return response()->json(['data' => $query->get()]);
     }
 
     public function getOutstandingRKM($year, $month)
@@ -248,22 +234,18 @@ class OutstandingController extends Controller
         ]);
     }
 
-    public function getOutstandingPA()
+    public function getOutstandingPA(Request $request)
     {
-        $startDate = Carbon::now();
-        $endDate   = Carbon::now()->addMonth();
+        // Ambil input bulan (format: 2026-02)
+        $bulanInput = $request->input('bulan', date('Y-m'));
+        $carbonDate = Carbon::parse($bulanInput);
 
         $rkm = RKM::with(['perhitunganNetSales', 'outstanding', 'perusahaan', 'materi'])
-            // ->whereHas('outstanding', function ($query) {
-            //     $query->where('status_pembayaran', '1');
-            // })
-            // ->whereHas('perhitunganNetSales')
-            ->whereBetween('tanggal_akhir', [$startDate, $endDate])
+            ->whereYear('tanggal_akhir', $carbonDate->year)
+            ->whereMonth('tanggal_akhir', $carbonDate->month)
             ->get();
 
-        return response()->json([
-            'data' => $rkm
-        ]);
+        return response()->json(['data' => $rkm]);
     }
 
     public function detailPA($id)
@@ -288,7 +270,7 @@ class OutstandingController extends Controller
 
     public function store(Request $request)
     {
-        // Validasi form  
+        // Validasi form
         $this->validate($request, [
             'id_rkm' => 'required',
             'net_sales' => 'nullable',
@@ -299,7 +281,7 @@ class OutstandingController extends Controller
             'sales_key' => 'required',
         ]);
 
-        // Simpan data outstanding  
+        // Simpan data outstanding
         $outstanding = Outstanding::create([
             'id_rkm' => $request->id_rkm,
             'net_sales' => $request->net_sales,
@@ -311,7 +293,7 @@ class OutstandingController extends Controller
             'status' => $request->status,
         ]);
 
-        // Inisialisasi status tracking  
+        // Inisialisasi status tracking
         $status_tracking = [
             'invoice' => 0,
             'faktur_pajak' => 0,
@@ -323,10 +305,10 @@ class OutstandingController extends Controller
             'pembayaran' => 0,
         ];
 
-        // Ambil status dari request  
+        // Ambil status dari request
         $request_status = $request->status_tracking;
 
-        // Daftar status yang harus diaktifkan  
+        // Daftar status yang harus diaktifkan
         $active_statuses = [
             'invoice' => ['invoice'],
             'faktur_pajak' => ['invoice', 'faktur_pajak'],
@@ -338,25 +320,25 @@ class OutstandingController extends Controller
             'pembayaran' => ['invoice', 'faktur_pajak', 'dokumen_tambahan', 'konfir_cs', 'tracking_dokumen', 'no_resi', 'konfir_pic', 'pembayaran'],
         ];
 
-        // Atur status tracking berdasarkan request  
+        // Atur status tracking berdasarkan request
         if (array_key_exists($request_status, $active_statuses)) {
             foreach ($active_statuses[$request_status] as $status) {
                 $status_tracking[$status] = 1;
             }
         }
 
-        // Cek entri di trackingOutstanding  
+        // Cek entri di trackingOutstanding
         $tracking = trackingOutstanding::where('id_outstanding', $outstanding->id)->first();
 
         if ($tracking) {
-            // Update entri yang ada  
+            // Update entri yang ada
             $tracking->update(array_merge($status_tracking, [
                 'status_resi' => $request->status_resi ?? '-',
                 'status_pic' => $request->status_pic ?? '-',
                 'updated_at' => now(),
             ]));
         } else {
-            // Buat entri baru  
+            // Buat entri baru
             trackingOutstanding::create(array_merge($status_tracking, [
                 'id_outstanding' => $outstanding->id,
                 'status_resi' => $request->status_resi ?? '-',
@@ -875,7 +857,7 @@ class OutstandingController extends Controller
             }
         }
 
-        // 7. Invoice 
+        // 7. Invoice
         $invoice = Invoice::where('id_rkm', $outstanding->id_rkm)->get();
 
         if($invoice->file_path) {
@@ -883,7 +865,7 @@ class OutstandingController extends Controller
             $filesToMerge[] = $file;
         }
 
-        // 8. Kwitansi 
+        // 8. Kwitansi
         $kwitansi = Kwitansi::where('id_rkm', $outstanding->id_rkm)->get();
 
         if($kwitansi->file_path) {
