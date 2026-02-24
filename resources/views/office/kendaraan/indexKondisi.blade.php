@@ -134,8 +134,9 @@
                                 <label class="form-label small">Jenis Kendaraan <span class="text-danger">*</span></label>
                                 <select name="jenis_kendaraan" class="form-select form-select-sm" required>
                                     <option value="">Pilih Jenis Kendaraan</option>
-                                    <option value="Innova">Innova</option>
-                                    <option value="H1">H1</option>
+                                    @foreach ($kendaraan as $data)
+                                        <option value="{{ $data }}">{{ $data }}</option>
+                                    @endforeach
                                 </select>
                             </div>
                             <div class="col-md-4">
@@ -243,6 +244,11 @@
                                 <textarea name="catatan_fasilitas" class="form-control form-control-sm" rows="2"
                                     placeholder="Catatan terkait fasilitas kendaraan..."></textarea>
                             </div>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label small mb-1">Ajukan Keluhan/Permintaan Perbaikan (opsional)</label>
+                            <textarea name="keluhan" class="form-control form-control-sm" rows="2"
+                                placeholder="Masukan keluhan/permintaan perbaikan..."></textarea>
                         </div>
                     </form>
                 </div>

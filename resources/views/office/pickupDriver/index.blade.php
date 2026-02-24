@@ -158,8 +158,9 @@
                             <div class="col-md-9">
                                 <select name="kendaraan" class="form-select">
                                     <option value="">Belum Dipilih</option>
-                                    <option value="Inova">Inova</option>
-                                    <option value="H1">H1</option>
+                                    @foreach ($kendaraan as $data)
+                                        <option value="{{ $data }}">{{ $data }}</option>
+                                    @endforeach
                                 </select>
                             </div>
                         </div>
@@ -462,12 +463,13 @@
                 <div class="d-flex gap-2 align-items-center">
                     <select class="form-select form-select-sm vehicle-select" style="width:120px">
                         <option disabled selected>Pilih</option>
-                        <option value="Inova">Inova</option>
-                        <option value="H1">H1</option>
+                            @foreach ($kendaraan as $data)
+                                <option value="{{ $data }}">{{ $data }}</option>
+                            @endforeach
                     </select>
                     <button class="btn btn-sm btn-warning btn-driver" data-id="${item.id}">Terima</button>
                 </div>`;
-                }
+            }
             return `<span class="badge bg-secondary-subtle text-secondary">Menunggu</span>`;
         }
 

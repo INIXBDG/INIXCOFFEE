@@ -163,6 +163,13 @@
                         </div>
                     </div>
 
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-12">
+                            <label class="form-label small text-muted">Ajukan Keluhan/Permintaan Perbaikan (opsional)</label>
+                            <textarea name="keluhan" class="form-control" rows="2" @disabled($isReadOnly)>{{ old('keluhan', $kondisi->keluhan) }}</textarea>
+                        </div>
+                    </div>
+
                     {{-- Tombol Aksi (Hanya muncul jika Driver / !isReadOnly) --}}
                     @if (!$isReadOnly)
                         <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">

@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\activityLog;
 use App\Models\BiayaTransportasiDriver;
+use App\Models\PerbaikanKendaraan;
 use App\Models\TrackingPickupDriver;
 use App\Models\User;
 use App\Notifications\KoordinasiDriverNotifcation;
@@ -19,9 +20,30 @@ class pickupDriverController extends Controller
 {
     public function index()
     {
+        $latestPerKendaraan = PerbaikanKendaraan::select('kendaraan')->selectRaw('MAX(id) as max_id')->groupBy('kendaraan');
+
+        $kendaraan = PerbaikanKendaraan::joinSub($latestPerKendaraan, 'latest', function ($join) {
+            $join->on('perbaikan_kendaraans.id', '=', 'latest.max_id');
+        })
+            ->where(function ($query) {
+                $query->where('type_condition', '!=', 'Kecelakaan')->orWhere('status', 'Selesai');
+            })
+            ->where(function ($query) {
+                $query->where('type_vehicle_condition', '!=', ['Kerusakan Berat', 'Kerusakan Total'])->orWhere('status', 'Selesai');
+            })
+            ->pluck('perbaikan_kendaraans.kendaraan');
+
+        if ($kendaraan->isEmpty()) {
+            $kendaraan = collect(['H1', 'Innova']);
+        }
+
+        if ($kendaraan === "Innova") {
+            $kendaraan === "Inova";
+        }
+
         $dataDriver = karyawan::where('jabatan', 'Driver')->get();
 
-        return view('office.pickupdriver.index', compact('dataDriver'));
+        return view('office.pickupdriver.index', compact('dataDriver', 'kendaraan'));
     }
 
     public function create()
@@ -298,7 +320,6 @@ class pickupDriverController extends Controller
             'diubah_oleh' => auth()->user()->id,
         ]);
 
-        
         $creator = auth()->user();
         $creatorKaryawan = $creator->karyawan;
         $creatorJabatan = $creatorKaryawan->jabatan;
