@@ -175,6 +175,7 @@ Route::resource('/rekapitulasiabsen', \App\Http\Controllers\RekapitulasiAbsenCon
 Route::resource('/kelasanalisis', \App\Http\Controllers\KelasAnalisisController::class);
 Route::resource('/paymantAdvance', \App\Http\Controllers\netSalesController::class)->except(['show']);
 Route::resource('/databasekpi', KPIDatabaseKPIController::class);
+
 Route::resource('/target', \App\Http\Controllers\targetController::class);
 Route::resource('/outstanding', OutstandingController::class);
 Route::resource('/tunjangan', \App\Http\Controllers\TunjanganController::class);
@@ -919,6 +920,14 @@ Route::prefix('office')->name('office.')->middleware(['auth'])->group(function (
         Route::post('/store/kondisi', [KendaraanController::class, 'storeKondisi'])->name('storeKondisiKendaraan');
         Route::put('/update/kondisi/{id}', [KendaraanController::class, 'updateKondisi'])->name('updateKondisiKendaraan');
         Route::delete('/delete/kondisi/{id}', [KendaraanController::class, 'deleteKondisi'])->name('deleteKondisiKendaraan');
+
+        //perbaikan
+        Route::get('/index/perbaikan', [KendaraanController::class, 'indexPerbaikan'])->name('indexPerbaikanKendaraan');
+        Route::get('/detail/perbaikan/{id}', [KendaraanController::class, 'detailPerbaikan'])->name('detailPerbaikanKendaraan');
+        Route::post('/store/perbaikan', [KendaraanController::class, 'storePerbaikan'])->name('storePerbaikanKendaraan');
+        Route::put('/update/perbaikan/{id}', [KendaraanController::class, 'updatePerbaikan'])->name('updatePerbaikanKendaraan');
+        Route::delete('/delete/perbaikan/{id}', [KendaraanController::class, 'deletePerbaikan'])->name('deletePerbaikanKendaraan');
+        Route::post('/update/status/perbaikan', [KendaraanController::class, 'updateStatusPerbaikan'])->name('updateStatusPerbaikanKendaraan');
     });
 });
 
@@ -974,7 +983,6 @@ Route::patch('content-schedules/{contentSchedule}/mark-uploaded', [App\Http\Cont
     ->name('content-schedules.mark-uploaded');
 
 Route::get('/dashboard/feedback', [OfficeController::class, 'index']);
-Route::get('/development', [InstructorDevelopmentController::class, 'index'])->name('development.index');
 Route::get('/development', [InstructorDevelopmentController::class, 'index'])->name('development.index');
 Route::post('/development/sertifikasi', [InstructorDevelopmentController::class, 'storeSertifikasi'])->name('sertifikasi.store');
 Route::delete('/development/sertifikasi/{id}', [InstructorDevelopmentController::class, 'destroySertifikasi'])->name('sertifikasi.destroy');

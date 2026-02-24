@@ -3,11 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\AbsensiKaryawan;
+use App\Models\DetailPickupDriver;
 use App\Models\karyawan;
 use App\Models\Kegiatan;
 use App\Models\PengajuanBarang;
+use App\Models\pickupDriver;
 use App\Models\RincianKegiatan;
 use App\Models\tracking_pengajuan_barang;
+use App\Models\TrackingPickupDriver;
 use App\Models\User;
 use App\Notifications\KegiatanApproved;
 use App\Notifications\KegiatanMenunggu;
@@ -18,10 +21,11 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
+use App\Notifications\KoordinasiDriverNotifcation;
+use Illuminate\Support\Facades\Notification as NotificationFacade;
 
 class KegiatanController extends Controller
 {
-
     protected $PengajuanBarangController;
 
     public function __construct(PengajuanBarangController $PengajuanBarangController)
@@ -33,7 +37,15 @@ class KegiatanController extends Controller
     public function index()
     {
         $kegiatan = Kegiatan::all();
-        return view('office.rab.index', compact('kegiatan'));
+        $drivers = karyawan::where('jabatan', 'Driver')
+            ->where(function ($query) {
+                $query->whereDoesntHave('pickupDriver')->orWhereHas('pickupDriver', function ($q) {
+                    $q->whereIn('status_driver', ['Selesai, Driver Ready']);
+                });
+            })
+            ->get();
+
+        return view('office.rab.index', compact('kegiatan', 'drivers'));
     }
 
     public function show($id)
@@ -41,9 +53,7 @@ class KegiatanController extends Controller
         $kegiatan = Kegiatan::with('rincian')->findOrFail($id);
         $totalRincian = $kegiatan->rincian->sum('total');
 
-        $absensi = AbsensiKaryawan::with('karyawan')
-            ->whereDate('tanggal', $kegiatan->waktu_kegiatan)
-            ->get();
+        $absensi = AbsensiKaryawan::with('karyawan')->whereDate('tanggal', $kegiatan->waktu_kegiatan)->get();
 
         $karyawan = karyawan::where('status_aktif', '1')->get();
 
@@ -69,9 +79,7 @@ class KegiatanController extends Controller
         $kegiatan = Kegiatan::with('rincian')->findOrFail($id);
         $totalRincian = $kegiatan->rincian->sum('total');
 
-        $karyawan = AbsensiKaryawan::with('karyawan')
-            ->whereDate('tanggal', $kegiatan->waktu_kegiatan)
-            ->get();
+        $karyawan = AbsensiKaryawan::with('karyawan')->whereDate('tanggal', $kegiatan->waktu_kegiatan)->get();
 
         $idPeserta = $kegiatan->id_peserta ?? [];
 
@@ -87,10 +95,7 @@ class KegiatanController extends Controller
             $filename = 'pdf-kegiatan.pdf';
         }
 
-        $pdf = Pdf::loadView(
-            'office.rab.pdf',
-            compact('kegiatan', 'totalRincian', 'karyawan', 'dataPengajuanBarang', 'peserta')
-        )->setPaper('a4', 'landscape');
+        $pdf = Pdf::loadView('office.rab.pdf', compact('kegiatan', 'totalRincian', 'karyawan', 'dataPengajuanBarang', 'peserta'))->setPaper('a4', 'landscape');
 
         return $pdf->download($filename);
     }
@@ -107,23 +112,95 @@ class KegiatanController extends Controller
     public function storeKegiatan(Request $request)
     {
         $validated = $request->validate([
-            'nama_kegiatan'   => 'required|string|max:255',
-            'tipe'   => 'required|in:kegiatan,pembelian',
-            'waktu_kegiatan'  => 'nullable|date',
-            'lama_kegiatan'   => 'nullable|max:100',
-            'pic'             => 'nullable|string|max:255',
-            'status'          => 'nullable|in:Diajukan,Menunggu,Approved,Pencairan,Selesai',
+            'nama_kegiatan' => 'required|string|max:255',
+            'tipe' => 'required|in:kegiatan,pembelian',
+            'waktu_kegiatan' => 'nullable|date',
+            'lama_kegiatan' => 'nullable|max:100',
+            'pic' => 'nullable|string|max:255',
+            'status' => 'nullable|in:Diajukan,Menunggu,Approved,Pencairan,Selesai',
         ]);
 
         $kegiatan = new Kegiatan();
-        $kegiatan->nama_kegiatan  = $validated['nama_kegiatan'];
-        $kegiatan->tipe  = $validated['tipe'];
+        $kegiatan->nama_kegiatan = $validated['nama_kegiatan'];
+        $kegiatan->tipe = $validated['tipe'];
         $kegiatan->waktu_kegiatan = $validated['waktu_kegiatan'];
-        $kegiatan->lama_kegiatan  = $validated['lama_kegiatan'];
-        $kegiatan->pic            = $validated['pic'] ?? null;
-        $kegiatan->status         = $validated['status'] ?? 'Diajukan';
+        $kegiatan->lama_kegiatan = $validated['lama_kegiatan'];
+        $kegiatan->pic = $validated['pic'] ?? null;
+        $kegiatan->status = $validated['status'] ?? 'Diajukan';
 
         $kegiatan->save();
+
+        if ($kegiatan->tipe === "kegiatan") {
+            $pickupDriver = new pickupDriver();
+            $pickupDriver->id_karyawan = $request->id_driver;
+            $pickupDriver->id_pembuat = Auth()->user()->id;
+            $pickupDriver->status_apply = 0;
+            $pickupDriver->budget = $request->budget;
+            $pickupDriver->save();
+
+            if ($pickupDriver) {
+                $detailPickupDriver = new DetailPickupDriver();
+                $detailPickupDriver->pickup_driver_id = $pickupDriver->id;
+                $detailPickupDriver->tipe = "Pengantaran";
+                $detailPickupDriver->lokasi = $request->lokasi;
+
+                $waktuKegiatan = Carbon::parse($validated['waktu_kegiatan']);
+                $waktuBerangkat = $waktuKegiatan->copy()->subHour();
+
+                $detailPickupDriver->tanggal_keberangkatan = $waktuBerangkat->format('Y-m-d');
+                $detailPickupDriver->waktu_keberangkatan = $waktuBerangkat->format('H:i:s');
+                $detailPickupDriver->detail = "-";
+                $detailPickupDriver->save();
+            }
+
+            if ($pickupDriver) {
+                $trackingPickupDriver = new TrackingPickupDriver();
+                $trackingPickupDriver->pickup_driver_id = $pickupDriver->id;
+                $trackingPickupDriver->status = auth()->user()->username . ' telah membuat koordinasi baru';
+                $trackingPickupDriver->diubah_oleh = auth()->user()->id;
+                $trackingPickupDriver->save();
+
+                $creator = auth()->user();
+                $creatorKaryawan = $creator->karyawan;
+                $creatorJabatan = $creatorKaryawan->jabatan;
+
+                $driver = karyawan::findOrFail($request->id_driver);
+
+                $recipients = [];
+
+                if ($creatorJabatan == 'HRD') {
+                    $CS = karyawan::where('jabatan', 'Customer Care')->first();
+                    if ($CS) {
+                        $recipients[] = $CS->kode_karyawan;
+                    }
+                    $recipients[] = $driver->kode_karyawan;
+                } elseif ($creatorJabatan == 'Customer Care') {
+                    $HRD = karyawan::where('jabatan', 'HRD')->first();
+                    if ($HRD) {
+                        $recipients[] = $HRD->kode_karyawan;
+                    }
+                    $recipients[] = $driver->kode_karyawan;
+                }
+
+                $users = User::whereHas('karyawan', function ($query) use ($recipients) {
+                    $query->whereIn('kode_karyawan', $recipients);
+                })->get();
+
+                $data = [
+                    'id_karyawan' => $request->id_driver,
+                    'tipe' => $detailPickupDriver->tipe,
+                    'tanggal_pembuatan' => now(),
+                    'id_pengajuan' => $pickupDriver->id,
+                ];
+                $type = 'Koordinasi Driver';
+                $path = '/office/pickup-driver/index';
+
+                foreach ($users as $user) {
+                    $receiverId = $user->id;
+                    NotificationFacade::send($user, new KoordinasiDriverNotifcation($data, $path, $type, $receiverId));
+                }
+            }
+        }
 
         $penerima = User::where('jabatan', 'GM')->where('status_akun', '1')->first();
         $data = [
@@ -147,18 +224,18 @@ class KegiatanController extends Controller
         $kegiatan = Kegiatan::findOrFail($id);
 
         $validated = $request->validate([
-            'nama_kegiatan'   => 'required|string|max:255',
-            'waktu_kegiatan'  => 'nullable|date',
-            'lama_kegiatan'   => 'nullable|max:100',
-            'pic'             => 'nullable|string|max:255',
-            'status'          => 'nullable|in:Diajukan,Menunggu,Approved,Pencairan,Selesai',
+            'nama_kegiatan' => 'required|string|max:255',
+            'waktu_kegiatan' => 'nullable|date',
+            'lama_kegiatan' => 'nullable|max:100',
+            'pic' => 'nullable|string|max:255',
+            'status' => 'nullable|in:Diajukan,Menunggu,Approved,Pencairan,Selesai',
         ]);
 
-        $kegiatan->nama_kegiatan  =  $validated['nama_kegiatan'];
+        $kegiatan->nama_kegiatan = $validated['nama_kegiatan'];
         $kegiatan->waktu_kegiatan = $validated['waktu_kegiatan'];
-        $kegiatan->lama_kegiatan  = $validated['lama_kegiatan'];
-        $kegiatan->pic            = $validated['pic'] ?? null;
-        $kegiatan->status         = $validated['status'] ?? 'Diajukan';
+        $kegiatan->lama_kegiatan = $validated['lama_kegiatan'];
+        $kegiatan->pic = $validated['pic'] ?? null;
+        $kegiatan->status = $validated['status'] ?? 'Diajukan';
 
         $kegiatan->save();
 
@@ -261,10 +338,7 @@ class KegiatanController extends Controller
         $kegiatan->save();
 
         if ($request->status === 'Approved') {
-            $penerima = User::whereIn('jabatan', [
-                'Finance & Accounting',
-                'HRD'
-            ])
+            $penerima = User::whereIn('jabatan', ['Finance & Accounting', 'HRD'])
                 ->where('status_akun', '1')
                 ->get();
 
@@ -281,10 +355,7 @@ class KegiatanController extends Controller
         }
 
         if ($request->status === 'Menunggu') {
-            $user = User::where('jabatan', 'HRD')
-                ->where('status_akun', '1')
-                ->get();
-
+            $user = User::where('jabatan', 'HRD')->where('status_akun', '1')->get();
 
             $data = [
                 'status' => $request->status,
@@ -306,14 +377,11 @@ class KegiatanController extends Controller
         $kegiatan->pencairan = Carbon::now();
         $kegiatan->save();
 
-        $penerima = User::where('jabatan', 'HRD')
-            ->where('status_akun', '1')
-            ->get();
+        $penerima = User::where('jabatan', 'HRD')->where('status_akun', '1')->get();
 
         $data = [
             'status' => $request->status,
             'kegiatan' => $kegiatan->nama_kegiatan,
-
         ];
 
         $path = '/office/kegiatan/show/' . $kegiatan->id;

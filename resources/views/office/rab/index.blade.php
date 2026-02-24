@@ -1,6 +1,15 @@
 @extends('layouts_office.app')
 
 @section('office_contents')
+    <style>
+        #pickupDriverCondition {
+            display: none;
+        }
+
+        #pickupDriverCondition .hidePickup {
+            display: none;
+        }
+    </style>
     <div class="container-fluid py-4">
 
         @if (session('success'))
@@ -87,8 +96,9 @@
                                     </td>
                                     <td>
                                         <div class="d-flex gap-2 justify-content-center">
-                                            <a href="{{ route('office.downloadPdfRab', $item->id)}}">
-                                                <button class="btn btn-sm btn-outline-success d-flex align-items-center gap-1">
+                                            <a href="{{ route('office.downloadPdfRab', $item->id) }}">
+                                                <button
+                                                    class="btn btn-sm btn-outline-success d-flex align-items-center gap-1">
                                                     PDF
                                                 </button>
                                             </a>
@@ -170,7 +180,7 @@
                                 placeholder="Masukkan nama" required>
                         </div>
 
-                        <div class="col-12">
+                        <div class="col-12 mb-2">
                             <label class="form-label fw-semibold">
                                 <i class="fas fa-layer-group text-primary me-2"></i>Tipe RAB
                             </label>
@@ -179,6 +189,43 @@
                                 <option value="kegiatan">Kegiatan</option>
                                 <option value="pembelian">Pembelian</option>
                             </select>
+                        </div>
+
+                        <div id="pickupDriverCondition">
+                            <hr class="hidePickup">
+                            <small class="hidePickup text-danger">* digunakan hanya jika kegiatan diperlukan pengantaran driver!</small>
+
+                            <div class="col-12 mb-2 hidePickup" style="display: none;">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-car text-primary me-2"></i>Pilih Driver
+                                </label>
+                                <select name="id_driver" class="form-select text-dark form-select-lg">
+                                    <option value="" selected disabled>Pilih Driver</option>
+                                    @foreach ($drivers as $driver)
+                                        <option value="{{ $driver->id }}">{{ $driver->nama_lengkap }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-12 mb-2 hidePickup" style="display: none;">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-car text-primary me-2"></i>Budget Kendaraan
+                                </label>
+                                <input type="text" id="budgetInput" class="form-control form-control-lg"
+                                    placeholder="Rp 0 (opsional)">
+
+                                <input type="hidden" name="budget" id="budgetHidden">
+                            </div>
+
+                            <div class="col-12 mb-2 hidePickup" style="display: none;">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-car text-primary me-2"></i>Lokasi Pengantaran
+                                </label>
+                                <input type="text" class="form-control form-control-lg"
+                                    placeholder="lokasi kegiatan (opsional untuk driver)" name="lokasi">
+                            </div>
+
+                            <hr class="hidePickup">
                         </div>
 
                         {{-- Wrapper untuk field kondisional (Create) --}}
@@ -289,6 +336,54 @@
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const tipeSelect = document.getElementById('tipeRAB');
+            const pickupDriverCondition = document.getElementById('pickupDriverCondition');
+            const driverFields = pickupDriverCondition.querySelectorAll('.hidePickup');
+            const driverSelect = pickupDriverCondition.querySelector('select');
+
+            tipeSelect.addEventListener('change', function() {
+
+                if (this.value === 'kegiatan') {
+
+                    pickupDriverCondition.style.display = 'block';
+
+                    driverFields.forEach(field => {
+                        field.style.display = 'block';
+                    });
+
+                    driverSelect.setAttribute('required', true);
+
+                } else {
+
+                    pickupDriverCondition.style.display = 'none';
+
+                    driverFields.forEach(field => {
+                        field.style.display = 'none';
+                    });
+
+                    driverSelect.removeAttribute('required');
+                }
+            });
+
+            const input = document.getElementById("budgetInput");
+            const hidden = document.getElementById("budgetHidden");
+
+            input.addEventListener("input", function(e) {
+
+                let value = e.target.value.replace(/\D/g, "");
+
+                if (!value) {
+                    hidden.value = "";
+                    input.value = "";
+                    return;
+                }
+
+                hidden.value = value;
+                input.value = "Rp " + parseInt(value).toLocaleString("id-ID");
+            });
+        });
+
         document.addEventListener('DOMContentLoaded', function() {
 
             // ==========================================

@@ -7,22 +7,30 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Broadcasting\PrivateChannel;
 
 class KondisiKendaraan extends Notification
 {
     use Queueable;
     protected $data;
     protected $path;
+    public $receiverId;
 
-    public function __construct(array $data, string $path)
+    public function __construct(array $data, string $path, $receiverId)
     {
         $this->data = $data;
         $this->path = $path;
+        $this->receiverId = $receiverId;
     }
 
     public function via($notifiable): array
     {
         return ['database', 'broadcast'];
+    }
+
+    public function broadcastOn(): PrivateChannel
+    {
+        return new PrivateChannel('notifikasi.' . $this->receiverId);
     }
 
     public function broadcastAs(): string

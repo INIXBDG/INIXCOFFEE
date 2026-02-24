@@ -684,8 +684,8 @@ class DatabaseKPIController extends Controller
         ]);
 
         $id_karyawan = $request->input('id_karyawan');
-        $kodeForm = $request->input('kodeForm');
-        $jenis_form = $request->input('jenis_form');
+        $kodeForm    = $request->input('kodeForm');
+        $jenis_form  = $request->input('jenis_form');
 
         $formPenilaians = formPenilaian::with('karyawan')
             ->where('id_karyawan', $id_karyawan)
@@ -731,14 +731,10 @@ class DatabaseKPIController extends Controller
             ->whereIn(DB::raw('MONTH(created_at)'), $currentQuartal)
             ->get();
 
-        $telat = $dataAbsensi->where('keterangan', 'Telat')->count();
-        $izin  = $dataAbsensi->where('keterangan', 'Izin')->count();
-        $sakit = $dataAbsensi->where('keterangan', 'Sakit')->count();
-
         $dataAbsen = [
-            'sakit' => $sakit,
-            'telat' => $telat,
-            'izin'  => $izin
+            'sakit' => $dataAbsensi->where('keterangan', 'Sakit')->count(),
+            'telat' => $dataAbsensi->where('keterangan', 'Telat')->count(),
+            'izin'  => $dataAbsensi->where('keterangan', 'Izin')->count()
         ];
 
         $allKategoriKPIs = $formPenilaians->flatMap(function ($form) {
@@ -756,20 +752,23 @@ class DatabaseKPIController extends Controller
             ->where('kode_form', $kodeForm)
             ->get();
 
-        $groupedNilaiKPI = $allNilaiKPI->groupBy(['jenis_penilaian', 'name_variabel']);
-
         $evaluatorList = [];
 
         foreach ($allEvaluatorData as $evaluatorItem) {
-            $jenis_penilaian = $evaluatorItem->jenis_penilaian;
 
+            $jenis_penilaian = $evaluatorItem->jenis_penilaian;
             $listNilaiEvaluator = [];
 
             foreach ($allKategoriKPIs as $kategori) {
-                $judul_kategori = $kategori->judul_kategori;
-                $nilaiItem = $groupedNilaiKPI->get($jenis_penilaian, collect())->get($judul_kategori);
 
-                if ($nilaiItem && $nilaiItem->count() > 0) {
+                $judul_kategori = $kategori->judul_kategori;
+
+                $nilaiItem = $allNilaiKPI
+                    ->where('jenis_penilaian', $jenis_penilaian)
+                    ->where('name_variabel', $judul_kategori)
+                    ->where('id_evaluator', $evaluatorItem->id_evaluator);
+
+                if ($nilaiItem->count() > 0) {
                     $firstItem = $nilaiItem->first();
                     $listNilaiEvaluator[] = [
                         'pesan' => $firstItem->pesan ?? '-',
@@ -783,9 +782,13 @@ class DatabaseKPIController extends Controller
                 }
             }
 
+            $namaEvaluator = optional($evaluatorItem->evaluator)->nama_lengkap
+                ? optional($evaluatorItem->evaluator)->nama_lengkap . ' - ' . optional($evaluatorItem->evaluator)->divisi
+                : '-';
+
             $evaluatorList[] = [
-                'nama'            => optional($evaluatorItem->evaluator)->nama_lengkap . ' - ' . optional($evaluatorItem->evaluator)->divisi ?? '-',
-                'jenis_penilaian' => $evaluatorItem->jenis_penilaian ?? '-',
+                'nama'            => $namaEvaluator,
+                'jenis_penilaian' => $jenis_penilaian ?? '-',
                 'nilai'           => $listNilaiEvaluator
             ];
         }
@@ -797,6 +800,7 @@ class DatabaseKPIController extends Controller
         $dataKriteria = $formPenilaians
             ->groupBy(fn($item) => $item->kode_form . '|' . $item->nama_penilaian)
             ->map(function ($groupedForms, $combinedKey) {
+
                 [$kodeForm, $namaPenilaian] = explode('|', $combinedKey);
 
                 $kategoriKPIs = $groupedForms->flatMap(function ($form) {
@@ -804,6 +808,7 @@ class DatabaseKPIController extends Controller
                 })->unique('judul_kategori')->values();
 
                 $detailKriteria = $kategoriKPIs->map(function ($kategori) {
+
                     $tipeDetails = tipeKategoriTabel::where('id_kategori', $kategori->id)->get();
 
                     return [
@@ -2755,13 +2760,16 @@ class DatabaseKPIController extends Controller
             ];
         }
 
+        $idUser = auth()->user()->id;
+
+
         return response()->json([
             'semester'             => $semesterLabel,
             'dataCard_first'       => $dataCard_utama,
             'dataChartPenilaian'   => $dataChartJumlahPenilaianBerjalan,
             'dataDivisi'           => $dataDivisi,
             'dataRangking'         => $hasilPenilaian,
-            'dataFormulir'         => $dataFormulir
+            'dataFormulir'         => $dataFormulir,
         ]);
     }
 

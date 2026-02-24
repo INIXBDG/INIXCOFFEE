@@ -16,19 +16,19 @@
 
     <ul class="menu-inner py-1" style="flex-grow: 1; overflow-y: auto; overflow-x: hidden; height: 100%;">
         @php
-        $user = Auth::user();
-        $allowedRoles = [
-        'Adm Sales',
-        'HRD',
-        'Finance & Accounting',
-        'GM',
-        'Sales',
-        'Direktur Utama',
-        'Direktur',
-        'SPV Sales',
-        'Customer Care',
-        'Admin Holding',
-        ];
+            $user = Auth::user();
+            $allowedRoles = [
+                'Adm Sales',
+                'HRD',
+                'Finance & Accounting',
+                'GM',
+                'Sales',
+                'Direktur Utama',
+                'Direktur',
+                'SPV Sales',
+                'Customer Care',
+                'Admin Holding',
+            ];
         @endphp
 
         <li class="menu-item {{ request()->is('office/dashboard') ? 'active' : '' }}">
@@ -145,9 +145,6 @@
             </a>
         </li>
 
-        @if ($user->jabatan === "Driver")
-        
-        @endif
         <li class="menu-item {{ request()->routeIs('office.biayaTransportasi.index') ? 'active open' : '' }}">
             <a href="{{ route('office.biayaTransportasi.index') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-receipt"></i>
@@ -155,6 +152,19 @@
             </a>
         </li>
 
+        <li class="menu-item {{ request()->routeIs('office.indexKondisiKendaraan') ? 'active open' : '' }}">
+            <a href="{{ route('office.indexKondisiKendaraan') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-clipboard"></i>
+                <div class="text-truncate" data-i18n="contact">Kondisi Kendaraan</div>
+            </a>
+        </li>
+
+        <li class="menu-item {{ request()->routeIs('office.indexPerbaikanKendaraan') ? 'active open' : '' }}">
+            <a href="{{ route('office.indexPerbaikanKendaraan') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-wrench"></i>
+                <div class="text-truncate" data-i18n="contact">Perbaikan Kendaraan</div>
+            </a>
+        </li>
 
         <li class="menu-item mb-4"></li>
     </ul>

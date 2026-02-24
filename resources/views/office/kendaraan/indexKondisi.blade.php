@@ -244,6 +244,11 @@
                                     placeholder="Catatan terkait fasilitas kendaraan..."></textarea>
                             </div>
                         </div>
+                        <div class="col-md-12">
+                            <label class="form-label small mb-1">Ajukan Keluhan/Permintaan Perbaikan (opsional)</label>
+                            <textarea name="keluhan" class="form-control form-control-sm" rows="2"
+                                placeholder="Masukan keluhan/permintaan perbaikan..."></textarea>
+                        </div>
                     </form>
                 </div>
 

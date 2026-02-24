@@ -5,6 +5,7 @@ namespace App\Http\Controllers\office;
 use Carbon\Carbon;
 use App\Models\RKM;
 use App\Models\Tickets;
+use Illuminate\Http\Request;
 use App\Models\Feedback;
 use App\Models\Nilaifeedback;
 use App\Models\pengajuancuti;
@@ -12,6 +13,7 @@ use App\Models\AbsensiKaryawan;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use App\Models\karyawan;
 use Illuminate\Support\Facades\Http;
 
 use function PHPUnit\Framework\matches;
@@ -21,7 +23,7 @@ class OfficeController extends Controller
     public function dashboard(Request $request)
     {
         // 1. Total Karyawan & Divisi Stats
-        $total_karyawan = Karyawan::where('status_aktif', '1')
+        $total_karyawan = karyawan::where('status_aktif', '1')
             ->where('divisi', '!=', 'Direksi')
             ->where('jabatan', '!=', 'GM')
             ->where('id', '!=', ['36', '38', '45', '46', '47', '48', '49', '52', '53', '54'])

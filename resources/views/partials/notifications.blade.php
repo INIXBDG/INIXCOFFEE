@@ -1500,7 +1500,6 @@
         </div>
     @endif
 
-
     @if ($notification->data['message']['tipe'] == 'Preorder Modul')
         <div class="notification mb-3 p-3 border rounded bg-light">
             <div class="d-flex justify-content-between align-items-start">
