@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Crm;
 
 use App\Http\Controllers\Controller;
 use App\Models\Deskripsi;
-use App\Models\Karyawan;
+use App\Models\karyawan;
 use App\Models\KetentuanForm;
 use App\Models\listexam;
 use App\Models\Materi;
@@ -28,8 +28,8 @@ class RegisFormController extends Controller
         $lead = Peluang::with('perusahaan', 'aktivitas', 'rkm', 'materiRelation')
             ->findOrFail($id);
         $ketentuan = KetentuanForm::all();
-        $ttdauth = Karyawan::where('id', auth()->id())->value('ttd');
-        $ttdSPV = Karyawan::where('jabatan', 'SPV Sales')->value('ttd');
+        $ttdauth = karyawan::where('id', auth()->id())->value('ttd');
+        $ttdSPV = karyawan::where('jabatan', 'SPV Sales')->value('ttd');
         $ttd = [
             'ttd_user' => $ttdauth,
             'ttd_spv'  => $ttdSPV,
@@ -46,7 +46,7 @@ class RegisFormController extends Controller
         $materi = Materi::all();
         $ketentuan = KetentuanForm::all();
         $deskripsi = Deskripsi::first();
-        $users = Karyawan::whereIn('jabatan', ['Sales', 'Adm Sales', 'Spv Sales'])
+        $users = karyawan::whereIn('jabatan', ['Sales', 'Adm Sales', 'Spv Sales'])
             ->where('status_aktif', '1')
             ->get();
         // dd($users);
@@ -252,7 +252,7 @@ class RegisFormController extends Controller
         $template->setValue('waSales', $request->wa_sales ?? '');
         $template->setValue('telpSales', $request->telp_sales ?? '');
         $template->setValue('emailSales', $request->email_sales ?? '');
-        
+
         $ttdAuth = karyawan::where('id', Auth::id())->value('ttd');
         // Gunakan local file path untuk TTD
         $ttdPath = $ttdAuth ? public_path('storage/ttd/' . $ttdAuth) : '';
@@ -333,7 +333,7 @@ class RegisFormController extends Controller
             $sanitizedNoSurat = str_replace(['/', '\\', ':', '*', '?', '"', '<', '>', '|'], '-', $request->no_surat ?? 'template');
             $fileName = 'Surat_Penawaran_' . $sanitizedNoSurat . '.docx';
             $filePath = storage_path($fileName);
-            
+
             $template->saveAs($filePath);
 
             return response()->download($filePath)
