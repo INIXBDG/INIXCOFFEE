@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityInstruktur;
 use App\Models\Materi;
 use App\Models\RKM;
 use Illuminate\Http\RedirectResponse;
@@ -213,116 +214,105 @@ class MateriController extends Controller
         ], 200);
     }
     // MateriController.php
-    public function chartJumlahUpdateMateriPerbulan(Request $request)
-    {
-        try {
-            $validated = $request->validate([
-                'bulan' => ['nullable', 'string', Rule::in(['All', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'])],
-                'tahun' => ['required', 'integer', 'min:2000', 'max:' . (date('Y') + 1)]
-            ]);
+public function chartJumlahUpdateMateriPerbulan(Request $request)
+{
+    try {
+        $validated = $request->validate([
+            'bulan' => ['nullable', 'string', Rule::in(['All', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'])],
+            'tahun' => ['required', 'integer', 'min:2000', 'max:' . (date('Y') + 1)]
+        ]);
 
-            $bulan = $validated['bulan'] ?? 'All';
-            $tahun = $validated['tahun'];
+        $bulan = $validated['bulan'] ?? 'All';
+        $tahun = $validated['tahun'];
 
-            // Query untuk menghitung update materi per kategori
-            $query = Materi::query()
-                ->whereYear('updated_at', $tahun);
+        $query = ActivityInstruktur::query()
+            ->selectRaw('
+                users.id as user_id,
+                COALESCE(karyawans.nama_lengkap, users.username, "Instruktur Tidak Dikenal") as nama_instruktur,
+                COUNT(*) as total
+            ')
+            ->join('users', 'activity_instrukturs.user_id', '=', 'users.id')
+            ->leftJoin('karyawans', 'users.karyawan_id', '=', 'karyawans.id')
+            ->where('activity_instrukturs.activity_type', 'Pembuatan Materi')
+            ->whereYear('activity_instrukturs.activity_date', $tahun)
+            ->groupBy('users.id', 'karyawans.nama_lengkap', 'users.username')
+            ->orderBy('total', 'desc');
 
-            // Filter bulan jika dipilih
-            if ($bulan !== 'All') {
-                $query->whereMonth('updated_at', (int) $bulan);
-            }
-
-            // Group by kategori_materi dan hitung
-            $data = $query->selectRaw('kategori_materi, COUNT(*) as total')
-                ->groupBy('kategori_materi')
-                ->orderBy('total', 'desc')
-                ->get();
-
-            // Prepare labels dan data
-            $labels = $data->pluck('kategori_materi')->toArray();
-            $values = $data->pluck('total')->toArray();
-
-            return response()->json([
-                'labels' => $labels,
-                'data' => $values,
-                'tahun' => $tahun,
-                'bulan_terpilih' => $bulan,
-                'has_data' => $data->isNotEmpty()
-            ]);
-
-        } catch (\Exception $e) {
-            \Log::error('Chart Jumlah Update Materi Perbulan error', [
-                'message' => $e->getMessage()
-            ]);
-
-            return response()->json([
-                'error' => 'Terjadi kesalahan saat memuat data',
-                'message' => $e->getMessage()
-            ], 500);
+        if ($bulan !== 'All') {
+            $query->whereMonth('activity_instrukturs.activity_date', (int) $bulan);
         }
-    }
 
-        public function chartSilabusPerInstrukturPerTahun(Request $request)
+        $data = $query->get();
+
+        $labels = $data->pluck('nama_instruktur')->map(function($nama) {
+            return strlen($nama) > 25 ? substr($nama, 0, 23) . '...' : $nama;
+        })->toArray();
+        
+        $values = $data->pluck('total')->map(fn($v) => (int) $v)->toArray();
+
+        return response()->json([
+            'labels' => $labels,
+            'data' => $values,
+            'tahun' => $tahun,
+            'bulan_terpilih' => $bulan,
+            'has_data' => $data->isNotEmpty()
+        ]);
+
+    } catch (\Exception $e) {
+        \Log::error('Chart Jumlah Update Materi Perbulan error', [
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
+        ]);
+
+        return response()->json([
+            'error' => 'Terjadi kesalahan saat memuat data',
+            'message' => $e->getMessage()
+        ], 500);
+    }
+}
+    public function chartSilabusPerInstrukturPerTahun(Request $request)
     {
         $tahun = $request->input('tahun', date('Y'));
 
-        // Ambil semua RKM untuk tahun tertentu yang memiliki materi
-        $rkms = RKM::where('tahun', $tahun)
-            ->whereNotNull('materi_key')
-            ->with(['materi', 'instruktur', 'instruktur2', 'asisten'])
+        $activities = ActivityInstruktur::where('activity_type', 'Pembuatan Silabus')
+            ->whereYear('activity_date', $tahun)
+            ->with(['user'])
             ->get();
 
         $instrukturMap = [];
 
-        foreach ($rkms as $rkm) {
-            $materi = $rkm->materi;
-            
-            // Skip jika tidak ada materi atau silabus kosong
-            if (!$materi || empty(trim($materi->silabus))) {
+        foreach ($activities as $activity) {
+            $user = $activity->user;
+
+            if (!$user) {
                 continue;
             }
 
-            // Helper untuk proses instruktur
-            $processInstruktur = function($key, $relasi, &$map) use ($materi) {
-                if ($key && $relasi) {
-                    // Gunakan KODE sebagai identifier unik (bukan nama)
-                    $kode = $key;
-                    
-                    // Ambil nama lengkap dari relasi
-                    $namaLengkap = $relasi->nama ?? $relasi->nama_lengkap ?? $relasi->name ?? $kode;
-                    
-                    if (!isset($map[$kode])) {
-                        $map[$kode] = [
-                            'kode_instruktur' => $kode,
-                            'nama_lengkap' => $namaLengkap,
-                            'silabus_set' => []
-                        ];
-                    }
-                    
-                    // Simpan silabus unique menggunakan hash
-                    $silabusKey = md5(trim(strtolower($materi->silabus)));
-                    $map[$kode]['silabus_set'][$silabusKey] = trim($materi->silabus);
-                }
-            };
+            $userId = $activity->user_id;
 
-            // Proses ketiga role instruktur
-            $processInstruktur($rkm->instruktur_key, $rkm->instruktur, $instrukturMap);
-            $processInstruktur($rkm->instruktur_key2, $rkm->instruktur2, $instrukturMap);
-            $processInstruktur($rkm->asisten_key, $rkm->asisten, $instrukturMap);
+            $namaLengkap = $user->name ?? $user->nama ?? $userId;
+
+            if (!isset($instrukturMap[$userId])) {
+                $instrukturMap[$userId] = [
+                    'user_id' => $userId,
+                    'nama_lengkap' => $namaLengkap,
+                    'jumlah_silabus' => 0
+                ];
+            }
+
+            $instrukturMap[$userId]['jumlah_silabus']++;
         }
 
-        // Format hasil dengan nama lengkap
         $result = [];
         foreach ($instrukturMap as $item) {
             $result[] = [
-                'nama_instruktur' => $item['nama_lengkap'], // ✅ Nama lengkap
-                'jumlah_silabus' => count($item['silabus_set'])
+                'nama_instruktur' => $item['nama_lengkap'],
+                'jumlah_silabus' => $item['jumlah_silabus']
             ];
         }
 
-        // Urutkan descending berdasarkan jumlah silabus
-        usort($result, function($a, $b) {
+        usort($result, function ($a, $b) {
             return $b['jumlah_silabus'] - $a['jumlah_silabus'];
         });
 

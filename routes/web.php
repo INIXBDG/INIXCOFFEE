@@ -200,8 +200,7 @@ Route::get('getSouvenir', [App\Http\Controllers\SouvenirController::class, 'getS
 Route::get('getSouvenirPeserta', [App\Http\Controllers\SouvenirController::class, 'getSouvenirPeserta'])->name('getSouvenirPeserta');
 Route::get('getFeedbacksByMonth/{year}/{month}', [App\Http\Controllers\feedbackController::class, 'getFeedbacksByMonth'])->name('getFeedbacksByMonth');
 Route::get('/getTotalFeedbackPertahun', [App\Http\Controllers\feedbackController::class, 'getTotalFeedbackPertahun'])->name('office.feedback.get');
-Route::get('/chart/jumlah-update-materi-perbulan',[App\Http\Controllers\MateriController::class, 'chartJumlahUpdateMateriPerbulan'])->middleware('auth')->name('chart.jumlah-update-materi-perbulan');
-Route::get('/chart/silabus-per-instruktur-per-tahun', [App\Http\Controllers\MateriController::class, 'chartSilabusPerInstrukturPerTahun'])->middleware('auth');
+Route::get('/chart/jumlah-update-materi-perbulan', [MateriController::class, 'chartJumlahUpdateMateriPerbulan'])->name('chart.jumlah-update-materi-perbulan')->middleware('auth');Route::get('/chart/silabus-per-instruktur-per-tahun', [App\Http\Controllers\MateriController::class, 'chartSilabusPerInstrukturPerTahun'])->middleware('auth');
 Route::get('/chart/hari-mengajar-instruktur-per-tahun', [App\Http\Controllers\RKMController::class, 'chartHariMengajarInstrukturPerTahun'])->name('chart.hari-mengajar-instruktur-per-tahun');Route::get('getPengajuanCuti', [App\Http\Controllers\PengajuancutiController::class, 'getPengajuanCuti'])->name('getPengajuanCuti');
 Route::get('getPengajuanIzin', [App\Http\Controllers\izinTigaJamController::class, 'getPengajuanIzin'])->name('getPengajuanIzin');
 Route::get('/pengajuan-izin-3-jam/excel-download', [izinTigaJamController::class, 'pengajuanJamExcel'])->name('pengajuanIzin.excelDownload');

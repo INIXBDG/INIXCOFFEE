@@ -442,6 +442,98 @@
             </div>
             <div class="tab-pane fade" id="instruktur-tab-pane" role="tabpanel" aria-labelledby="instruktur-tab"
                 tabindex="0">
+                <div class="row m-2">
+                    {{-- <div class="card"> --}}
+                        {{-- <div class="card-body"> --}}
+                            <!-- From Uiverse.io by Yaya12085 -->
+                            <div class="card-dash">
+                                <div class="title-dash">
+                                    <span>
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                            viewBox="0 0 512 512"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.-->
+                                            <path
+                                                d="M171.5 38.8C192.3 4 236.5-10 274 7.6l7.2 3.8C316 32.3 330 76.5 312.4 114l0 0-14.1 30 109.7 0 7.4 .4c36.3 3.7 64.6 34.4 64.6 71.6 0 13.2-3.6 25.4-9.8 36 6.1 10.6 9.7 22.8 9.8 36 0 18.3-6.9 34.8-18 47.5 1.3 5.3 2 10.8 2 16.5 0 25.1-12.9 47-32.2 59.9-1.9 35.5-29.4 64.2-64.4 67.7l-7.4 .4-104.1 0c-18 0-35.9-3.4-52.6-9.9l-7.1-3-.7-.3-6.6-3.2-.7-.3-12.2-6.5c-12.3-6.5-23.3-14.7-32.9-24.1-4.1 26.9-27.3 47.4-55.3 47.4l-32 0c-30.9 0-56-25.1-56-56L0 200c0-30.9 25.1-56 56-56l32 0c10.8 0 20.9 3.1 29.5 8.5l50.1-106.5 .6-1.2 2.7-5 .6-.9zM56 192c-4.4 0-8 3.6-8 8l0 224c0 4.4 3.6 8 8 8l32 0c4.4 0 8-3.6 8-8l0-224c0-4.4-3.6-8-8-8l-32 0zM253.6 51c-14.8-6.9-32.3-1.6-40.7 12l-2.2 4-56.8 120.9c-3.5 7.5-5.5 15.5-6 23.7l-.1 4.2 0 112.9 .2 7.9c2.4 32.7 21.4 62.1 50.7 77.7l11.5 6.1 6.3 3.1c12.4 5.6 25.8 8.5 39.4 8.5l104.1 0 2.4-.1c12.1-1.2 21.6-11.5 21.6-23.9l-.2-2.6c-.1-.9-.2-1.7-.4-2.6-2.7-12.1 4.3-24.2 16-28 9.7-3.1 16.6-12.2 16.6-22.8 0-4.3-1.1-8.2-3.1-11.8-6.3-11.1-2.8-25.2 8-32 6.8-4.3 11.2-11.8 11.2-20.2 0-7.1-3.1-13.5-8.2-18-5.2-4.6-8.2-11.1-8.2-18s3-13.4 8.2-18c5.1-4.5 8.2-10.9 8.2-18l-.1-2.4c-1.1-11.3-10.1-20.3-21.4-21.4l-2.4-.1-147.5 0c-8.2 0-15.8-4.2-20.2-11.1-4.4-6.9-5-15.7-1.5-23.1L269 93.6c7-15 1.4-32.7-12.5-41L253.6 51z" />
+                                        </svg>
+                                    </span>
+                                    <p class="title-text-dash">
+                                        Skor CSAT
+                                    </p>
+                                </div>
+                                <div class="data-dash">
+                                    <p class="datacsat" id="csatValue">-</p>
+                                    <div class="range-dash">
+                                        <div class="fill-dash" id="csatBar"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-dash">
+                                <div class="title-dash">
+                                    <span>
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                            viewBox="0 0 512 512"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.-->
+                                            <path
+                                                d="M464 256a208 208 0 1 0 -416 0 208 208 0 1 0 416 0zM0 256a256 256 0 1 1 512 0 256 256 0 1 1 -512 0zm372.2 46.3c11.8-3.6 23.7 6.1 19.6 17.8-19.8 55.9-73.1 96-135.8 96-62.7 0-116-40-135.8-95.9-4.1-11.6 7.8-21.4 19.6-17.8 34.7 10.6 74.2 16.5 116.1 16.5 42 0 81.5-6 116.3-16.6zM144 208a32 32 0 1 1 64 0 32 32 0 1 1 -64 0zm192-32a32 32 0 1 1 0 64 32 32 0 1 1 0-64z" />
+                                        </svg>
+                                    </span>
+                                    <p class="title-text-dash">
+                                        Rekomendasi Materi
+                                    </p>
+                                </div>
+                                <div class="data-dash">
+                                    <p class="datacsat" id="rekomendasiValue">-</p>
+                                    <div class="range-dash">
+                                        <div class="fill-dash" id="rekomendasiBar"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-dash">
+                                <div class="title-dash">
+                                    <span>
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                            viewBox="0 0 576 512"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.-->
+                                            <path
+                                                d="M96 64c-35.3 0-64 28.7-64 64l0 256c-17.7 0-32 14.3-32 32s14.3 32 32 32l512 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l0-256c0-35.3-28.7-64-64-64L96 64zM480 384l-64 0 0-32c0-17.7-14.3-32-32-32l-96 0c-17.7 0-32 14.3-32 32l0 32-160 0 0-256 384 0 0 256z" />
+                                        </svg>
+                                    </span>
+                                    <p class="title-text-dash">
+                                        Sesi Sharing Knowledge
+                                    </p>
+                                </div>
+                                <div class="data-dash">
+                                    <p class="datacsat" id="sharingValue">-</p>
+                                    <div class="range-dash">
+                                        <div class="fill-dash">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-dash">
+                                <div class="title-dash">
+                                    <span>
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                            viewBox="0 0 576 512"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.-->
+                                            <path
+                                                d="M96 64c-35.3 0-64 28.7-64 64l0 256c-17.7 0-32 14.3-32 32s14.3 32 32 32l512 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l0-256c0-35.3-28.7-64-64-64L96 64zM480 384l-64 0 0-32c0-17.7-14.3-32-32-32l-96 0c-17.7 0-32 14.3-32 32l0 32-160 0 0-256 384 0 0 256z" />
+                                        </svg>
+                                    </span>
+                                    <p class="title-text-dash">
+                                        Materi Baru
+                                    </p>
+                                </div>
+                                <div class="data-dash">
+                                    <p class="datacsat" id="materiValue">-</p>
+                                    <div class="range-dash">
+                                        <div class="fill-dash">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            {{--
+                        </div> --}}
+                        {{-- </div> --}}
+                </div>
                 <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
                     <li class="nav-item mx-1" role="presentation">
                         <button class="nav-link" id="pills-nilaifeedbackperbulan-tab" data-bs-toggle="pill"
@@ -467,8 +559,7 @@
                     <li class="nav-item mx-1" role="presentation">
                         <button class="nav-link" id="pills-jumlahUpdateMateriPerbulan-tab" data-bs-toggle="pill"
                             data-bs-target="#pills-jumlahUpdateMateriPerbulan" type="button" role="tab"
-                            aria-controls="pills-jumlahUpdateMateriPerbulan" aria-selected="false"
-                            onclick="loadJumlahUpdateMateriChart()">
+                            aria-controls="pills-jumlahUpdateMateriPerbulan" aria-selected="false">
                             Jumlah Update Materi Perbulan
                         </button>
                     </li>
@@ -646,7 +737,7 @@
                                 <option value="12">Desember</option>
                             </select>
                             <div class="position-relative w-100 d-flex justify-content-center"
-                                style="min-height: 700px;">
+                                style="min-height: 500px;">
                                 <canvas id="jumlahUpdateMateriPerbulanChart" style="max-width: 1500px;"></canvas>
                                 <div id="chartLoading_JumlahUpdateMateriPerbulan"
                                     class="position-absolute top-50 start-50 translate-middle text-center d-none">
@@ -667,7 +758,7 @@
                         <div class="card d-flex flex-column p-3">
                             <h5 class="text-center mb-3">Silabus Per Instruktur Per Tahun</h5>
 
-                            <div style="height: 700px">
+                            <div style="height: 500px">
                                 <canvas id="silabusPerInstrukturPerTahunChart"></canvas>
                             </div>
 
@@ -680,7 +771,7 @@
                         <div class="card d-flex flex-column p-3">
                             <h5 class="text-center mb-3">Rata-Rata Feedback Instruktur</h5>
 
-                            <div style="height: 700px">
+                            <div style="height: 450px">
                                 <canvas id="feedbackChart"></canvas>
                             </div>
 
@@ -694,7 +785,7 @@
                         <div class="card d-flex flex-column p-3">
                             <h5 class="text-center mb-3">Hari Mengajar Instruktur Per Tahun</h5>
 
-                            <div style="height: 700px; position: relative;">
+                            <div style="height: 500px; position: relative;">
                                 <canvas id="hariMengajarInstrukturPerTahunChart"></canvas>
                             </div>
 

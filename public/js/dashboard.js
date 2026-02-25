@@ -1299,7 +1299,7 @@ function renderTotalMengajarPerMateriChart(labels, data, title) {
             options: {
                 scales: {
                     y: {
-                        beginAtZero: true // Menjaga agar sumbu Y mulai dari 0
+                        beginAtZero: true
                     }
                 },
                 responsive: true,
@@ -1319,420 +1319,244 @@ function renderTotalMengajarPerMateriChart(labels, data, title) {
         });
     }
 }
-// =======================================================================
-// CHART JUMLAH UPDATE MATERI PERBULAN - DENGAN DEBUG
-// =======================================================================
 
+// CHART JUMLAH PEMBUATAN MATERI PER INSTRUKTUR - VERSI FIX
 let jumlahUpdateMateriChart = null;
 
 $(document).ready(function () {
     const canvas = document.getElementById('jumlahUpdateMateriPerbulanChart');
-    const loadingEl = document.getElementById('chartLoading_JumlahUpdateMateriPerbulan');
-    const emptyEl = document.getElementById('chartEmpty_JumlahUpdateMateriPerbulan');
+    if (!canvas) return;
 
+    initJumlahUpdateMateriChart();
 
-    if (!canvas) {
-        console.error('[CHART] Canvas tidak ditemukan!');
-        return;
+    loadData();
+
+    $('#monthSelect_JumlahUpdateMateriPerbulan').on('change', loadData);
+    $('#tahun').on('change', function () {
+        $('#monthSelect_JumlahUpdateMateriPerbulan').val('All');
+        loadData();
+    });
+    $('#pills-jumlahUpdateMateriPerbulan-tab').on('shown.bs.tab', loadData);
+});
+
+function initJumlahUpdateMateriChart() {
+    const ctx = document.getElementById('jumlahUpdateMateriPerbulanChart').getContext('2d');
+
+    if (jumlahUpdateMateriChart) {
+        jumlahUpdateMateriChart.destroy();
+        jumlahUpdateMateriChart = null;
     }
 
-    const ctx = canvas.getContext('2d');
     jumlahUpdateMateriChart = new Chart(ctx, {
         type: 'bar',
-        data: { labels: [], datasets: [{ label: 'Jumlah Update', data: [], backgroundColor: 'rgba(54, 162, 235, 0.8)', borderColor: 'rgba(54, 162, 235, 1)', borderWidth: 1, barThickness: 40 }] },
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Jumlah Pembuatan Materi',
+                data: [],
+                backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1,
+            }]
+        },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
                 title: {
                     display: true,
-                    text: 'Update Materi Per Kategori',
+                    text: 'Pembuatan Materi Per Instruktur',
                     font: { size: 18, weight: 'bold' },
                     padding: { top: 10, bottom: 20 }
                 },
-                legend: { position: 'top' },
                 tooltip: {
                     callbacks: {
                         label: function (context) {
-                            return `Update: ${context.raw} (${context.label})`;
+                            return `Materi: ${context.raw} (${context.label})`;
                         }
                     }
                 }
             },
             scales: {
                 x: {
-                    title: { display: true, text: 'Kategori Materi' },
-                    ticks: { autoSkip: false, maxRotation: 45, minRotation: 45 }
+                    title: { display: true, text: 'Nama Instruktur' },
+                    ticks: {
+                        autoSkip: false,
+                        maxRotation: 45,
+                        minRotation: 45,
+                        font: { size: 11 }
+                    }
                 },
                 y: {
                     beginAtZero: true,
-                    title: { display: true, text: 'Jumlah Update' },
-                    ticks: { stepSize: 1 }
+                    title: { display: true, text: 'Jumlah Pembuatan Materi' },
+                    ticks: {
+                        stepSize: 1,
+                        precision: 0
+                    },
+                    max: 10
                 }
             },
             animation: { duration: 1000 }
         }
     });
+}
 
+function loadData() {
+    const bulan = $('#monthSelect_JumlahUpdateMateriPerbulan').val() || 'All';
+    const tahun = $('#tahun').val() || new Date().getFullYear();
 
-    function loadChart() {
-        const bulan = $('#monthSelect_JumlahUpdateMateriPerbulan').val() || 'All';
-        const tahun = $('#tahun').val() || new Date().getFullYear();
+    console.log('[CHART] Loading:', { bulan, tahun });
 
+    // ✅ SHOW LOADING
+    $('#chartLoading_JumlahUpdateMateriPerbulan').removeClass('d-none');
+    $('#chartEmpty_JumlahUpdateMateriPerbulan').addClass('d-none');
 
-        if (loadingEl) {
-            loadingEl.classList.remove('d-none');
+    $.ajax({
+        url: '/chart/jumlah-update-materi-perbulan',
+        type: 'GET',
+        data: { bulan: bulan, tahun: tahun },
+        dataType: 'json',
+        timeout: 15000,
+        success: function (response) {
+            console.log('[CHART] Response:', response);
+            handleSuccess(response);
+        },
+        error: function (xhr, status, error) {
+            console.error('[CHART] Error:', status, error);
+            handleError(xhr, status, error);
+        },
+        complete: function () {
+            $('#chartLoading_JumlahUpdateMateriPerbulan').addClass('d-none');
         }
-
-        if (emptyEl) {
-            emptyEl.classList.add('d-none');
-        }
-
-        $.ajax({
-            url: '/chart/jumlah-update-materi-perbulan',
-            type: 'GET',
-            data: { bulan: bulan, tahun: tahun },
-            dataType: 'json',
-            timeout: 15000,
-            success: function (res) {
-                if (res.has_data && res.labels && res.data) {
-                    try {
-                        let title = `Update Materi Tahun ${res.tahun}`;
-                        if (res.bulan_terpilih !== 'All') {
-                            const bulanNama = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-                            const bulanIndex = parseInt(res.bulan_terpilih) - 1;
-                            if (bulanIndex >= 0 && bulanIndex < bulanNama.length) {
-                                title = `Update Materi ${bulanNama[bulanIndex]} ${res.tahun}`;
-                            }
-                        }
-
-
-                        jumlahUpdateMateriChart.options.plugins.title.text = title;
-                        jumlahUpdateMateriChart.data.labels = res.labels;
-                        jumlahUpdateMateriChart.data.datasets[0].data = res.data;
-                        jumlahUpdateMateriChart.update();
-
-
-                        if (emptyEl) {
-                            emptyEl.classList.add('d-none');
-                        }
-                    } catch (error) {
-                        console.error('[CHART] Error updating chart:', error);
-                        if (emptyEl) {
-                            emptyEl.textContent = 'Error saat menampilkan chart: ' + error.message;
-                            emptyEl.classList.remove('d-none');
-                        }
-                    }
-                } else {
-                    if (emptyEl) {
-                        emptyEl.textContent = 'Tidak ada data update materi pada periode ini';
-                        emptyEl.classList.remove('d-none');
-                    }
-
-                    jumlahUpdateMateriChart.data.labels = [];
-                    jumlahUpdateMateriChart.data.datasets[0].data = [];
-                    jumlahUpdateMateriChart.update();
-                }
-            },
-            error: function (xhr, status, error) {
-                console.error('[CHART] AJAX Error:', status, error);
-                console.error('[CHART] Response:', xhr.responseText);
-
-                let errorMsg = 'Gagal memuat data';
-
-                if (xhr.status === 401 || xhr.status === 403) {
-                    errorMsg = 'Sesi berakhir. Silakan login ulang.';
-                    setTimeout(() => window.location.href = '/login', 3000);
-                } else if (xhr.status === 404) {
-                    errorMsg = 'Endpoint tidak ditemukan';
-                } else if (status === 'timeout') {
-                    errorMsg = 'Waktu permintaan habis';
-                } else if (xhr.responseText) {
-                    try {
-                        const errJson = JSON.parse(xhr.responseText);
-                        errorMsg = errJson.message || errJson.error || errorMsg;
-                    } catch (e) {
-                        errorMsg = 'Error: ' + error;
-                    }
-                }
-
-                if (emptyEl) {
-                    emptyEl.textContent = errorMsg;
-                    emptyEl.classList.remove('d-none');
-                }
-            },
-            complete: function () {
-
-                if (loadingEl) {
-                    loadingEl.classList.add('d-none');
-                }
-            }
-        });
-    }
-
-    $('#monthSelect_JumlahUpdateMateriPerbulan').on('change', function () {
-        loadChart();
     });
+}
 
-    $('#tahun').on('change', function () {
-        loadChart();
-    });
-
-    $('#pills-jumlahUpdateMateriPerbulan-tab').on('shown.bs.tab', function () {
-        loadChart();
-    });
-
-    loadChart();
-});
-
-function loadSilabusPerInstrukturPerTahunChart() {
-    var tahun = $('#tahun').val();
-    var ctx = document.getElementById('silabusPerInstrukturPerTahunChart').getContext('2d');
-    var $emptyMessage = $('#silabusPerInstrukturPerTahunEmpty');
-
-    // Hancurkan chart lama jika ada
-    var existingChart = Chart.getChart('silabusPerInstrukturPerTahunChart');
-    if (existingChart) {
-        existingChart.destroy();
-    }
-
-    // Validasi tahun
-    if (!tahun) {
-        $emptyMessage.removeClass('d-none').text('Pilih tahun terlebih dahulu');
+function handleSuccess(response) {
+    if (response.error) {
+        showError(response.message || 'Error dari server');
         return;
     }
 
-    $emptyMessage.addClass('d-none');
+    if (!response.has_data || !response.labels || !response.data) {
+        showError('Tidak ada data pembuatan materi pada periode ini');
+        return;
+    }
 
-    $.ajax({
-        url: '/api/chart/silabus-per-instruktur-per-tahun',
-        type: 'GET',
-        data: {
-            tahun: tahun
-        },
-        dataType: 'json',
-        beforeSend: function () {
-            console.log('Loading chart Silabus Per Instruktur untuk tahun ' + tahun);
-        },
-        success: function (response) {
-            if (response.labels.length === 0) {
-                $emptyMessage.removeClass('d-none').text('Tidak ada data silabus per instruktur untuk tahun ' + tahun);
-                return;
-            }
+    updateChart(response);
+}
 
-            // Generate warna dinamis
-            var backgroundColors = generateChartColors(response.labels.length, 0.7);
-            var borderColors = generateChartColors(response.labels.length, 1);
+function updateChart(data) {
+    try {
+        if (!jumlahUpdateMateriChart || !jumlahUpdateMateriChart.options) {
+            console.warn('[CHART] Chart tidak valid, menginisialisasi ulang...');
+            initChart();
+            setTimeout(() => updateChart(data), 100);
+            return;
+        }
 
-            // Buat chart baru
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: response.labels,
-                    datasets: [{
-                        label: 'Jumlah Silabus',
-                        data: response.data,
-                        backgroundColor: backgroundColors,
-                        borderColor: borderColors,
-                        borderWidth: 1,
-                        borderRadius: 5,
-                        hoverBackgroundColor: generateChartColors(response.labels.length, 0.9)
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Silabus Per Instruktur Tahun ' + response.tahun,
-                            font: {
-                                size: 16,
-                                weight: 'bold'
-                            },
-                            padding: {
-                                top: 10,
-                                bottom: 20
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function (context) {
-                                    return 'Jumlah Silabus: ' + context.parsed.y;
-                                }
-                            }
-                        },
-                        legend: {
-                            display: false
-                        },
-                        datalabels: {
-                            display: true,
-                            anchor: 'end',
-                            align: 'top',
-                            formatter: function (value) {
-                                return value;
-                            },
-                            font: {
-                                weight: 'bold',
-                                size: 11
-                            },
-                            color: '#333'
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Jumlah Silabus',
-                                font: {
-                                    weight: 'bold'
-                                }
-                            },
-                            ticks: {
-                                stepSize: 1,
-                                precision: 0
-                            },
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.1)'
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Instruktur',
-                                font: {
-                                    weight: 'bold'
-                                }
-                            },
-                            ticks: {
-                                maxRotation: 45,
-                                minRotation: 45,
-                                autoSkip: false
-                            },
-                            grid: {
-                                display: false
-                            }
-                        }
-                    },
-                    animation: {
-                        duration: 1000,
-                        easing: 'easeOutQuart'
-                    }
-                },
-                plugins: [ChartDataLabels]
-            });
+        const maxValue = Math.max(...data.data);
+        const maxY = maxValue + 2;
 
-            console.log('Chart loaded: ' + response.total_instruktur + ' instruktur, ' + response.total_silabus + ' total silabus');
-        },
-        error: function (xhr, status, error) {
-            console.error('Error loading chart:', error);
-            console.error('Status:', status);
-            console.error('Response:', xhr.responseText);
-
-            $emptyMessage.removeClass('d-none').text('Gagal memuat data chart. Silakan coba lagi.');
-
-            if (xhr.status === 404) {
-                console.error('API endpoint tidak ditemukan. Periksa konfigurasi route.');
-            } else if (xhr.status === 500) {
-                console.error('Error server. Periksa Laravel logs.');
+        let title = `Pembuatan Materi Tahun ${data.tahun}`;
+        if (data.bulan_terpilih !== 'All') {
+            const bulanNama = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            const idx = parseInt(data.bulan_terpilih) - 1;
+            if (idx >= 0 && idx < 12) {
+                title = `Pembuatan Materi ${bulanNama[idx]} ${data.tahun}`;
             }
         }
-    });
+
+        jumlahUpdateMateriChart.options.plugins.title.text = title;
+        jumlahUpdateMateriChart.options.scales.y.max = maxY;
+        jumlahUpdateMateriChart.data.labels = data.labels;
+        jumlahUpdateMateriChart.data.datasets[0].data = data.data;
+        jumlahUpdateMateriChart.update();
+
+        $('#chartEmpty_JumlahUpdateMateriPerbulan').addClass('d-none');
+
+        console.log(`[CHART] Chart updated successfully - Max Y: ${maxY} (Max Data: ${maxValue})`);
+    } catch (error) {
+        console.error('[CHART] Error updating chart:', error);
+        showError('Error saat menampilkan chart: ' + error.message);
+    }
 }
 
-/**
- * Helper function untuk generate warna chart
- */
-function generateChartColors(count, opacity) {
-    var baseColors = [
-        'rgba(54, 162, 235, ' + opacity + ')',  // Blue
-        'rgba(255, 99, 132, ' + opacity + ')',  // Red
-        'rgba(75, 192, 192, ' + opacity + ')',  // Teal
-        'rgba(255, 206, 86, ' + opacity + ')',  // Yellow
-        'rgba(153, 102, 255, ' + opacity + ')', // Purple
-        'rgba(255, 159, 64, ' + opacity + ')',  // Orange
-        'rgba(199, 199, 199, ' + opacity + ')', // Grey
-        'rgba(255, 99, 255, ' + opacity + ')',  // Pink
-        'rgba(54, 235, 162, ' + opacity + ')',  // Aqua
-        'rgba(102, 51, 153, ' + opacity + ')'   // Dark Purple
-    ];
+function handleError(xhr, status, error) {
+    let msg = 'Gagal memuat data';
 
-    if (count <= baseColors.length) {
-        return baseColors.slice(0, count);
+    if (xhr.status === 401 || xhr.status === 403) {
+        msg = 'Sesi berakhir. Silakan login ulang.';
+        setTimeout(() => window.location.href = '/login', 3000);
+    } else if (xhr.status === 404) {
+        msg = 'Endpoint tidak ditemukan';
+    } else if (status === 'timeout') {
+        msg = 'Waktu permintaan habis';
     }
 
-    // Jika lebih dari 10, ulang warna
-    var colors = [];
-    for (var i = 0; i < count; i++) {
-        colors.push(baseColors[i % baseColors.length]);
-    }
-    return colors;
+    showError(msg);
 }
 
+function showError(message) {
+    $('#chartEmpty_JumlahUpdateMateriPerbulan')
+        .text(message)
+        .removeClass('d-none');
 
+    if (jumlahUpdateMateriChart) {
+        jumlahUpdateMateriChart.data.labels = [];
+        jumlahUpdateMateriChart.data.datasets[0].data = [];
+        jumlahUpdateMateriChart.update();
+    }
+
+    console.error('[CHART ERROR]', message);
+}
+
+//============== SILABUS PER INSTRUKTUR PER TAHUN ==============
 let silabusPerInstrukturPerTahunChart = null;
 
 function loadSilabusPerInstrukturPerTahunChart() {
-    var tahun = $('#tahun').val();
-    var canvasId = 'silabusPerInstrukturPerTahunChart';
+    const tahun = $('#tahun').val();
+    const canvasId = 'silabusPerInstrukturPerTahunChart';
+    const $empty = $('#silabusPerInstrukturPerTahunEmpty');
 
-    // Validasi tahun
     if (!tahun) {
-        $('#silabusPerInstrukturPerTahunEmpty')
-            .text('Pilih tahun terlebih dahulu')
-            .removeClass('d-none');
+        $empty.text('Pilih tahun terlebih dahulu').removeClass('d-none');
         return;
     }
 
-    $('#silabusPerInstrukturPerTahunEmpty').addClass('d-none');
-
-    var existingChart = Chart.getChart(canvasId);
-    if (existingChart) {
-        existingChart.destroy();
-    }
-
-    if (silabusPerInstrukturPerTahunChart) {
-        silabusPerInstrukturPerTahunChart.destroy();
-        silabusPerInstrukturPerTahunChart = null;
-    }
-
-    Object.values(Chart.instances).forEach(chart => {
-        if (chart.canvas.id === canvasId) {
-            chart.destroy();
-        }
-    });
+    $empty.addClass('d-none');
 
     $.ajax({
         url: '/chart/silabus-per-instruktur-per-tahun',
         method: 'GET',
         data: { tahun: tahun },
         success: function (response) {
-            if (!Array.isArray(response) || response.length === 0) {
+
+            const ctx = document
+                .getElementById('silabusPerInstrukturPerTahunChart')
+                .getContext('2d');
+
+            // Destroy lama
+            if (silabusPerInstrukturPerTahunChart) {
+                silabusPerInstrukturPerTahunChart.destroy();
+            }
+
+            let labels = [];
+            let data = [];
+
+            if (Array.isArray(response) && response.length > 0) {
+                labels = response.map(item => item.nama_instruktur || 'Instruktur');
+                data = response.map(item => parseInt(item.jumlah_silabus) || 0);
+
+                $('#silabusPerInstrukturPerTahunEmpty').addClass('d-none');
+            } else {
+                data = [0];
+
                 $('#silabusPerInstrukturPerTahunEmpty')
                     .text('Tidak ada data silabus untuk tahun ' + tahun)
                     .removeClass('d-none');
-                return;
             }
-
-            $('#silabusPerInstrukturPerTahunEmpty').addClass('d-none');
-
-            // Extract labels dan data
-            const labels = response.map(item => item.nama_instruktur || 'Instruktur');
-            const data = response.map(item => parseInt(item.jumlah_silabus) || 0);
-
-            // Validasi data
-            if (labels.length === 0 || data.length === 0) {
-                $('#silabusPerInstrukturPerTahunEmpty')
-                    .text('Data tidak valid untuk ditampilkan')
-                    .removeClass('d-none');
-                return;
-            }
-
-            const ctx = document.getElementById(canvasId).getContext('2d');
-
-            const backgroundColors = labels.map((_, index) => getChartColor(index) + '80');
-            const borderColors = labels.map((_, index) => getChartColor(index));
 
             silabusPerInstrukturPerTahunChart = new Chart(ctx, {
                 type: 'bar',
@@ -1740,11 +1564,10 @@ function loadSilabusPerInstrukturPerTahunChart() {
                     labels: labels,
                     datasets: [{
                         label: 'Jumlah Silabus',
-                        data,
-                        backgroundColor: backgroundColors,
-                        borderColor: borderColors,
-                        borderWidth: 1,
-                        hoverBorderWidth: 2
+                        data: data,
+                        backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
                     }]
                 },
                 options: {
@@ -1753,173 +1576,51 @@ function loadSilabusPerInstrukturPerTahunChart() {
                     plugins: {
                         title: {
                             display: true,
-                            text: 'Silabus Per Instruktur Tahun ' + tahun,
-                            font: {
-                                size: 16,
-                                weight: 'bold'
-                            },
-                            padding: {
-                                top: 10,
-                                bottom: 20
-                            }
+                            font: { size: 16, weight: 'bold' }
                         },
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function (context) {
-                                    return 'Jumlah Silabus: ' + context.parsed.y;
-                                }
-                            }
-                        }
+                        legend: { display: false }
                     },
                     scales: {
                         y: {
                             beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Jumlah Silabus',
-                                font: {
-                                    weight: 'bold'
-                                }
-                            },
                             ticks: {
                                 stepSize: 1,
                                 precision: 0
-                            },
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.1)'
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Instruktur',
-                                font: {
-                                    weight: 'bold'
-                                }
-                            },
-                            ticks: {
-                                maxRotation: 45,
-                                minRotation: 45
-                            },
-                            grid: {
-                                display: false
                             }
                         }
-                    },
-                    animation: {
-                        duration: 1000,
-                        easing: 'easeOutQuart'
                     }
                 }
             });
         },
-        error: function (xhr, status, error) {
-            console.error('Error loading silabus chart:', error);
-
-            let errorMsg = 'Gagal memuat data chart';
-            if (xhr.status === 404) {
-                errorMsg = 'Endpoint tidak ditemukan. Periksa route.';
-            } else if (xhr.status === 500) {
-                errorMsg = 'Terjadi kesalahan server. Periksa logs Laravel.';
-            }
-
-            $('#silabusPerInstrukturPerTahunEmpty')
-                .text(errorMsg)
+        error: function () {
+            $empty
+                .text('Gagal memuat data chart')
                 .removeClass('d-none');
         }
     });
 }
-
-/**
- * Helper function untuk generate warna chart
- */
-function getChartColor(index) {
-    const colors = [
-        '#4e73df',
-        '#36b9cc',
-        '#1cc88a',
-        '#f6c23e',
-        '#e74a3b',
-        '#858796',
-        '#9d4edd',
-        '#ff6b6b',
-        '#4ecdc4',
-        '#45b7d1',
-        '#96ceb4',
-        '#ffeaa7',
-    ];
-    return colors[index % colors.length];
-}
-
-/**
- * ============================================
- * AUTO INIT - Event Listeners
- * ============================================
- */
 $(document).ready(function () {
-    // Auto load saat tab di-klik
+
     $('#pills-silabusPerInstrukturPerTahun-tab').on('shown.bs.tab', function () {
         loadSilabusPerInstrukturPerTahunChart();
     });
 
-    // Reload saat filter tahun berubah
     $('#tahun').on('change', function () {
         loadSilabusPerInstrukturPerTahunChart();
     });
 
-    // Load otomatis jika tab aktif saat halaman load
     if ($('#pills-silabusPerInstrukturPerTahun').hasClass('show')) {
-        setTimeout(function () {
-            loadSilabusPerInstrukturPerTahunChart();
-        }, 100);
+        loadSilabusPerInstrukturPerTahunChart();
     }
 });
 
 // ===================== CHART FEEDBACK INSTRUKTUR =====================
 let feedbackChart = null;
-const COLORS = [
-    '#4e73df',
-    '#36b9cc',
-    '#1cc88a',
-    '#f6c23e',
-    '#e74a3b',
-    '#858796',
-    '#9d4edd',
-    '#ff6b6b',
-    '#4ecdc4',
-    '#45b7d1',
-    '#96ceb4',
-    '#ffeaa7',
-    '#dfe6e9',
-    '#a29bfe',
-    '#00cec9',
-    '#00b894',
-    '#6c5ce7',
-    '#fd79a8',
-    '#e17055',
-    '#d63031'
-];
-
-function getRandomColor() {
-    const letters = '0123456789ABCDEF';
-    let color = '#';
-    for (let i = 0; i < 6; i++) {
-        color += letters[Math.floor(Math.random() * 16)];
-    }
-    return color;
-}
-
-function getColorByIndex(index) {
-    return COLORS[index % COLORS.length];
-}
 
 $(document).ready(function () {
     const feedbackCanvas = document.getElementById('feedbackChart');
     if (feedbackCanvas) {
-        initChart();
+        initFeedbackChart();
         loadFeedback();
 
         $('#tahun').on('change', function () {
@@ -1929,8 +1630,13 @@ $(document).ready(function () {
     }
 });
 
-function initChart() {
+function initFeedbackChart() {
     const ctx = document.getElementById('feedbackChart').getContext('2d');
+
+    if (feedbackChart) {
+        feedbackChart.destroy();
+        feedbackChart = null;
+    }
 
     feedbackChart = new Chart(ctx, {
         type: 'bar',
@@ -1939,10 +1645,9 @@ function initChart() {
             datasets: [{
                 label: 'Rata-rata Nilai',
                 data: [],
-                backgroundColor: [],
-                borderColor: [],
+                backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                borderColor: 'rgba(54, 162, 235, 1)',
                 borderWidth: 1,
-                barThickness: 30,
                 hoverBorderWidth: 3
             }]
         },
@@ -1971,15 +1676,21 @@ function initChart() {
             scales: {
                 y: {
                     beginAtZero: true,
-                    max: 5,
+                    max: 4,
                     ticks: {
-                        stepSize: 1,
+                        stepSize: 0.4,
                         font: {
                             size: 12
                         }
                     },
                     grid: {
-                        color: 'rgba(0, 0, 0, 0.05)'
+                        color: 'rgba(0, 0, 0, 0.05)',
+                        color: function (context) {
+                            if (context.tick.value === 3.2) {
+                                return 'rgba(255, 0, 0, 0.3)';
+                            }
+                            return 'rgba(0, 0, 0, 0.05)';
+                        }
                     }
                 },
                 x: {
@@ -2009,8 +1720,11 @@ function resetChart() {
 
     feedbackChart.data.labels = [];
     feedbackChart.data.datasets[0].data = [];
-    feedbackChart.data.datasets[0].backgroundColor = [];
-    feedbackChart.data.datasets[0].borderColor = [];
+
+    // Pastikan warna tetap statis saat reset, jangan dikosongkan
+    feedbackChart.data.datasets[0].backgroundColor = 'rgba(54, 162, 235, 0.8)';
+    feedbackChart.data.datasets[0].borderColor = 'rgba(54, 162, 235, 1)';
+
     feedbackChart.update();
 }
 
@@ -2038,24 +1752,22 @@ function loadFeedback() {
 
             const labels = [];
             const data = [];
-            const backgroundColors = [];
-            const borderColors = [];
 
-            res.forEach((item, index) => {
+            res.forEach((item) => {
                 if (item && item.nama_instruktur && item.nilai_rata_rata !== undefined) {
                     labels.push(item.nama_instruktur.trim() || 'Instruktur');
                     data.push(parseFloat(item.nilai_rata_rata) || 0);
-
-                    const color = getColorByIndex(index);
-                    backgroundColors.push(color + '80');
-                    borderColors.push(color);
                 }
             });
+
             if (labels.length > 0 && data.length > 0) {
                 feedbackChart.data.labels = labels;
                 feedbackChart.data.datasets[0].data = data;
-                feedbackChart.data.datasets[0].backgroundColor = backgroundColors;
-                feedbackChart.data.datasets[0].borderColor = borderColors;
+
+                // Terapkan Warna Statis Langsung ke Dataset
+                feedbackChart.data.datasets[0].backgroundColor = 'rgba(54, 162, 235, 0.8)';
+                feedbackChart.data.datasets[0].borderColor = 'rgba(54, 162, 235, 1)';
+
                 feedbackChart.update();
             } else {
                 resetChart();
@@ -2129,15 +1841,11 @@ $(document).ready(function () {
 
         const ctx = $canvas[0].getContext('2d');
 
-        const backgroundColors = data.data.map((_, i) => {
-            const hue = (i * 30) % 360;
-            return `hsla(${hue}, 70%, 60%, 0.8)`;
-        });
-
-        const borderColors = data.data.map((_, i) => {
-            const hue = (i * 30) % 360;
-            return `hsla(${hue}, 70%, 50%, 1)`;
-        });
+        // ============================================
+        // 🎨 WARNA STATIS (Sesuai Permintaan)
+        // ============================================
+        const staticBackgroundColor = 'rgba(54, 162, 235, 0.8)';
+        const staticBorderColor = 'rgba(54, 162, 235, 1)';
 
         chartInstance = new Chart(ctx, {
             type: 'bar',
@@ -2146,10 +1854,12 @@ $(document).ready(function () {
                 datasets: [{
                     label: 'Hari Mengajar',
                     data: data.data,
-                    backgroundColor: backgroundColors,
-                    borderColor: borderColors,
+                    backgroundColor: staticBackgroundColor,
+                    borderColor: staticBorderColor,
                     borderWidth: 1,
-                    barPercentage: 1
+                    barPercentage: 1,
+                    hoverBackgroundColor: 'rgba(54, 162, 235, 1)',
+                    hoverBorderColor: 'rgba(54, 162, 235, 1)'
                 }]
             },
             options: {
@@ -2217,7 +1927,6 @@ $(document).ready(function () {
 
     // ========== LOAD DATA ==========
     function loadChart() {
-        // Ambil tahun dari filter lokal atau global
         let tahun = $filterLocal.val()?.trim();
 
         if (!tahun && $filterGlobal.length) {
@@ -2272,13 +1981,11 @@ $(document).ready(function () {
     }
 
     // ========== EVENT HANDLERS ==========
-    // Tab shown event
     $tabBtn.on('shown.bs.tab', function () {
         console.log('탭 Tab "Hari Mengajar" ditampilkan');
         setTimeout(loadChart, 300);
     });
 
-    // Filter lokal change
     $filterLocal.on('change', function () {
         const isActive = $tabContent.hasClass('show') || $tabContent.hasClass('active');
         if (isActive) {
@@ -2287,7 +1994,6 @@ $(document).ready(function () {
         }
     });
 
-    // Filter global change (if exists)
     if ($filterGlobal.length) {
         $filterGlobal.on('change', function () {
             const isActive = $tabContent.hasClass('show') || $tabContent.hasClass('active');
@@ -2298,7 +2004,6 @@ $(document).ready(function () {
         });
     }
 
-    // Auto-load if tab is active on page load
     setTimeout(function () {
         const isActive = $tabBtn.hasClass('active') && $tabContent.hasClass('active');
         const isShowing = $tabContent.hasClass('show');
@@ -2311,7 +2016,6 @@ $(document).ready(function () {
         }
     }, 600);
 });
-
 
 function generateRandomColor() {
     // Fungsi untuk menghasilkan warna acak
