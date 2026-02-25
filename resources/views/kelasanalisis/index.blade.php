@@ -800,7 +800,7 @@
                                 html += `<td>${formatWithoutDecimals(a.biaya_modul_regular || 0)}</td>`;
                                 html += `<td>${formatWithoutDecimals(a.konsumsi || 0)}</td>`;
                                 html += `<td>${formatWithoutDecimals(a.souvenir || 0)}</td>`;
-                                html += `<td>${formatWithoutDecimals(a.transportasi || 0)}</td>`;
+                                html += `<td>${formatWithoutDecimals(a.transportasi * a.pax * a.durasi || 0)}</td>`;
                                 html += `<td>${formatWithoutDecimals(a.pa_hotel || 0)}</td>`;
                                 html += `<td>${formatWithoutDecimals(a.exam || 0)}</td>`;
                                 html += `<td>${formatWithoutDecimals(a.pc || 0)}</td>`;
