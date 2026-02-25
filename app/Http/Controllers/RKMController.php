@@ -29,6 +29,7 @@ use Illuminate\Support\Facades\Notification as NotificationFacade;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\RKMExport;
 use App\Models\Peluang;
+use App\Models\ChecklistKeperluan;
 // use Carbon\CarbonImmutable;
 use Carbon\Carbon;
 
@@ -48,7 +49,7 @@ class RKMController extends Controller
         $dataMateri = Materi::get();
         return view('rkm.index', compact('dataMateri'));
     }
-    
+
 
 
     public function excelDownload(Request $request)
@@ -365,7 +366,7 @@ class RKMController extends Controller
         foreach ($rkm as $data) {
             // Gabung comments (kode lama)
             $comments = $comments->merge($data->comments);
-            
+
             // Ambil souvenir (kode lama)
             if (!$souvenir) {
                 $souvenir = souvenirinhouse::where('id_rkm', $data->id)->first();
@@ -826,7 +827,7 @@ class RKMController extends Controller
 
         // Storage::delete('public/npwp/'. $post->foto_npwp);
 
-        
+
         $post->deleted_by = auth()->user()->karyawan->kode_karyawan;
         $post->save();
 
@@ -1278,6 +1279,48 @@ class RKMController extends Controller
         return response()->json([
             'status' => true,
             'data' => array_values($monthlyData)
+        ]);
+    }
+
+    public function getChecklist($id)
+    {
+        $singleId = explode(',', $id)[0];
+        $singleId = trim($singleId);
+
+        $checklist = ChecklistKeperluan::where('id_rkm', $singleId)->first();
+
+        return response()->json([
+            'status' => true,
+            'data' => $checklist
+        ]);
+    }
+
+    public function storeChecklist(Request $request)
+    {
+        $request->validate([
+            'id_rkm' => 'required',
+            'checklist' => 'nullable|array'
+        ]);
+
+        $singleId = explode(',', $request->id_rkm)[0];
+        $singleId = trim($singleId);
+
+        $checklists = $request->input('checklist', []);
+
+        $checklistKeperluan = ChecklistKeperluan::updateOrCreate(
+            ['id_rkm' => $singleId],
+            [
+                'materi' => in_array('Materi', $checklists),
+                'kelas' => in_array('Kelas', $checklists),
+                'cb' => in_array('Cb', $checklists),
+                'maksi' => in_array('Maksi', $checklists),
+                'keperluan_kelas' => in_array('Keperluan Kelas', $checklists),
+            ]
+        );
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Checklist Keperluan berhasil disimpan.'
         ]);
     }
 }
