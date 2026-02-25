@@ -33,7 +33,6 @@ use Illuminate\Support\Facades\Auth;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 use App\Http\Controllers\InvoiceRKMController;
 use App\Http\Controllers\KaryawanController;
-use App\Http\Controllers\MakananRkmController;
 use App\Http\Controllers\managementKelasController;
 use App\Http\Controllers\SouvenirController;
 use App\Http\Controllers\TicketController;
@@ -205,6 +204,8 @@ Route::get('/rkmEditInstruktur/{id}', [App\Http\Controllers\RKMController::class
 Route::put('/rkmUpdateInstruktur', [App\Http\Controllers\RKMController::class, 'updateInstruktur'])->name('updateInstruktur');
 Route::get('/rkmEdit', [App\Http\Controllers\RKMController::class, 'editRKM'])->name('rkmEdit');
 Route::put('/rkmUpdate', [App\Http\Controllers\RKMController::class, 'updateRKM'])->name('rkmUpdate');
+Route::get('/rkm/checklist/{id}', [App\Http\Controllers\RKMController::class, 'getChecklist'])->name('rkm.checklist.get');
+Route::post('/rkm/checklist/store', [App\Http\Controllers\RKMController::class, 'storeChecklist'])->name('rkm.checklist.store');
 
 Route::group(['middleware' => 'Admin'], function () {
     Route::get('/user/register', [App\Http\Controllers\UserController::class, 'create'])->name('user.register');
@@ -532,7 +533,7 @@ Route::get('/rkm/uploadSertifikat/{id}', [ControllersRKMController::class, 'uplo
 Route::post('/rkm/store/sertifikat', [ControllersRKMController::class, 'storeSertifikat'])->name('storeSertifikat');
 Route::post('/rkm/delete/sertifikat', [ControllersRKMController::class, 'deleteSertifikat'])->name('deleteSertifikat');
 // web.php
-Route::post('/rkm/update-makanan', [App\Http\Controllers\RkmController::class, 'updateMakanan'])
+Route::post('/rkm/update-makanan', [App\Http\Controllers\RKMController::class, 'updateMakanan'])
     ->name('rkm.updateMakanan');
 
 

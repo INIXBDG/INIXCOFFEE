@@ -44,7 +44,7 @@
                             </div>
 
                             <div id="form-dynamic-container"></div>
-                            
+
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -52,6 +52,55 @@
                         <button type="submit" class="btn btn-primary">Simpan</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="modalChecklist" tabindex="-1" aria-labelledby="modalChecklistLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalChecklistLabel">Checklist Keperluan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+
+                    <div class="progress mb-3" style="height: 20px;">
+                        <div id="checklistProgress" class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                    </div>
+
+                    <form id="formChecklistKeperluan">
+                        <input type="hidden" id="inputHiddenIdRkm" name="id_rkm">
+
+                        <div class="form-check mb-2">
+                            <input class="form-check-input checklist-item" type="checkbox" value="Materi" id="checkMateri" name="checklist[]">
+                            <label class="form-check-label" for="checkMateri">Materi</label>
+                        </div>
+
+                        <div class="form-check mb-2">
+                            <input class="form-check-input checklist-item" type="checkbox" value="Kelas" id="checkKelas" name="checklist[]">
+                            <label class="form-check-label" for="checkKelas">Kelas</label>
+                        </div>
+
+                        <div class="form-check mb-2">
+                            <input class="form-check-input checklist-item" type="checkbox" value="Cb" id="checkCb" name="checklist[]">
+                            <label class="form-check-label" for="checkCb">Coffe Break</label>
+                        </div>
+
+                        <div class="form-check mb-2">
+                            <input class="form-check-input checklist-item" type="checkbox" value="Maksi" id="checkMaksi" name="checklist[]">
+                            <label class="form-check-label" for="checkMaksi">Makan Siang</label>
+                        </div>
+
+                        <div class="form-check mb-2">
+                            <input class="form-check-input checklist-item" type="checkbox" value="Keperluan Kelas" id="checkKeperluanKelas" name="checklist[]">
+                            <label class="form-check-label" for="checkKeperluanKelas">Keperluan Kelas</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                    <button type="button" class="btn btn-primary" id="btnSimpanChecklist">Simpan</button>
+                </div>
             </div>
         </div>
     </div>
@@ -221,7 +270,7 @@ function excelDownloadAdmSales() {
         setTimeout(() => {
             document.body.removeChild(form);
         }, 1000);
-        
+
 }
 
 // function getDataRKM() {
@@ -429,70 +478,75 @@ function excelDownloadAdmSales() {
                                     html += '<button type="button" class="btn dropdown-toggle text-white" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
                                     html += 'Actions';
                                     html += '</button>';
-                                    html += '<div class="dropdown-menu">';
-                                    // Gunakan ID pertama untuk link Detail RKM
+
+                                    // Perbaikan Scroll: Penambahan max-height dan overflow-y
+                                    html += '<div class="dropdown-menu" style="max-height: 250px; overflow-y: auto;">';
+
+                                    // 1. Menu Detail RKM
                                     const firstId = rkm.id_all ? String(rkm.id_all).split(', ')[0] : '';
                                     html += '<a class="dropdown-item" href="/rkm/' + rkm.materi_key + 'ixb' + tanggal + 'ie' + hunta + 'ie' + lanbu + 'ixb' + kelas + '" data-toggle="tooltip" data-placement="top" title="Detail RKM">';
-                                    html += '<img src="{{ asset('icon/clipboard-primary.svg') }}" class="me-1"> Detail RKM</a>';
-                                    
-                                    var instrukturRKM = (rkm.instruktur_all || "").toUpperCase(); 
+                                    html += '<img src="{{ asset("icon/clipboard-primary.svg") }}" class="me-1"> Detail RKM</a>';
+
+                                    // 2. Menu Ajukan Rekomendasi
+                                    var instrukturRKM = (rkm.instruktur_all || "").toUpperCase();
                                     var myKode = userKode.toUpperCase();
                                     var showButton = (jabatan === 'Instruktur' && instrukturRKM.includes(myKode) || jabatan === 'Education Manager' && instrukturRKM.includes(myKode));
                                     const idList = rkm.id_all ? String(rkm.id_all).split(',').map(i => i.trim()) : [];
-                                    // console.log(jabatan, instrukturRKM, myKode, showButton);
-                                    // 2. Siapkan Array Nama Perusahaan
                                     const perusahaanList = rkm.perusahaan.map(p => p.nama_perusahaan);
-                                    
-                                    let existingRecs = rkm.rekomendasi_group || []; 
 
-                                    // Encode data ke JSON String untuk data-attribute
-                                    let rawRecs = rkm.rekomendasilanjutan; 
+                                    let existingRecs = rkm.rekomendasi_group || [];
+                                    let rawRecs = rkm.rekomendasilanjutan;
 
-                                    // Logika ini sekarang akan BERHASIL karena variabelnya 'let'
                                     if (Array.isArray(rawRecs)) {
                                         existingRecs = rawRecs;
                                     } else if (rawRecs) {
                                         existingRecs = [rawRecs];
                                     }
+
                                     const jsonIds = JSON.stringify(idList).replace(/"/g, '&quot;');
                                     const jsonPT = JSON.stringify(perusahaanList).replace(/"/g, '&quot;');
                                     const jsonRecs = JSON.stringify(existingRecs).replace(/"/g, '&quot;');
 
-                                    // Render Tombol
                                     if (showButton) {
-                                    html += '<a class="dropdown-item js-ajukan-rekomendasi" href="#" ' +
-                                        'data-materi="' + rkm.materi.nama_materi + '" ' +
-                                        'data-tanggal="' + moment(rkm.tanggal_awal).format('DD MMMM YYYY') + '" ' +
-                                        
-                                        // Kirim 3 Data Array Penting ini
-                                        'data-ids=\'' + jsonIds + '\' ' +
-                                        'data-perusahaan=\'' + jsonPT + '\' ' +
-                                        'data-recs=\'' + jsonRecs + '\' ' +
-
-                                        'data-bs-toggle="modal" data-bs-target="#modalRekomendasiLanjutan">' +
-                                        '<img src="{{ asset("icon/clipboard-primary.svg") }}" class="me-1"> Ajukan Rekomendasi</a>';
+                                        html += '<a class="dropdown-item js-ajukan-rekomendasi" href="#" ' +
+                                            'data-materi="' + rkm.materi.nama_materi + '" ' +
+                                            'data-tanggal="' + moment(rkm.tanggal_awal).format('DD MMMM YYYY') + '" ' +
+                                            'data-ids=\'' + jsonIds + '\' ' +
+                                            'data-perusahaan=\'' + jsonPT + '\' ' +
+                                            'data-recs=\'' + jsonRecs + '\' ' +
+                                            'data-bs-toggle="modal" data-bs-target="#modalRekomendasiLanjutan">' +
+                                            '<img src="{{ asset("icon/clipboard-primary.svg") }}" class="me-1"> Ajukan Rekomendasi</a>';
                                     }
-                                    html += '</div></div></td>';
+
+                                    // 3. Menu Checklist Keperluan (Akses Terbatas) - Dipindahkan ke atas
+                                    if (jabatan === 'HRD' || jabatan === 'GM' || jabatan === 'Customer Care' || jabatan === 'Admin Holding') {
+                                        html += '<div class="dropdown-divider"></div>';
+                                        html += '<a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#modalChecklist" data-id="' + rkm.id_all + '">';
+                                        html += '<img src="{{ asset("icon/clipboard-primary.svg") }}" class="me-1"> Checklist Keperluan</a>';
+                                    }
+
+                                    // 4. Submenu Makanan - Dipindahkan ke bawah
                                     if (jabatan == 'Customer Care') {
                                         html += '<div class="dropdown-divider"></div>';
                                         html += '<div class="dropdown-item dropdown-submenu left">';
-                                        html += '<a class="dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Makanan</a>';
+                                        html += '<a class="dropdown-toggle" style="color: inherit; text-decoration: none;" href="#" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Makanan</a>';
                                         html += '<div class="dropdown-menu">';
-                                        // Ambil nilai makanan pertama untuk penandaan centang
+
                                         const makananList = rkm.makanan ? String(rkm.makanan).split(', ') : [];
                                         const makananValue = makananList.length > 0 ? makananList[0] : 'Tidak Ada';
-                                        const idList = rkm.id ? String(rkm.id).split(',').map(i => i.trim()) : [];
-                                            // html += '<p class="text-muted small">IDs: ' + JSON.stringify(idList) + '</p>';
-                                        html += '<a class="dropdown-item js-update-makanan" href="#" ' + 'data-ids=\'' + JSON.stringify(rkm.id || []) + '\' ' + 'data-val="0">Tidak Ada</a>';
-                                        html += '<a class="dropdown-item js-update-makanan" href="#" ' + 'data-ids=\'' + JSON.stringify([rkm.id] || []) + '\' ' + 'data-val="1">' + (makananValue === '1' || makananValue === 'Nasi Box' ? '✔ ' : '') + 'Nasi Box</a>';
-                                        html += '<a class="dropdown-item js-update-makanan" href="#" ' + 'data-ids=\'' + JSON.stringify([rkm.id] || []) + '\' ' + 'data-val="2">' + (makananValue === '2' || makananValue === 'Prasmanan' ? '✔ ' : '') + 'Prasmanan</a>';
+
+                                        html += '<a class="dropdown-item js-update-makanan" href="#" data-ids=\'' + JSON.stringify(rkm.id || []) + '\' data-val="0">Tidak Ada</a>';
+                                        html += '<a class="dropdown-item js-update-makanan" href="#" data-ids=\'' + JSON.stringify([rkm.id] || []) + '\' data-val="1">' + (makananValue === '1' || makananValue === 'Nasi Box' ? '✔ ' : '') + 'Nasi Box</a>';
+                                        html += '<a class="dropdown-item js-update-makanan" href="#" data-ids=\'' + JSON.stringify([rkm.id] || []) + '\' data-val="2">' + (makananValue === '2' || makananValue === 'Prasmanan' ? '✔ ' : '') + 'Prasmanan</a>';
+
                                         html += '</div>';
                                         html += '</div>';
                                     }
+
                                     html += '</div>';
                                     html += '</div>';
                                     html += '</td>';
-                                }
+                                };
                                 html += '</tr>';
                             });
                         }
@@ -518,7 +572,7 @@ function excelDownloadAdmSales() {
 
     $(document).on('click', '.js-update-makanan', function(e) {
         e.preventDefault();
-        
+
         let ids = [];
         try {
             ids = JSON.parse($(this).attr('data-ids')); // ambil langsung attribute, bukan .data()
@@ -578,7 +632,7 @@ function excelDownloadAdmSales() {
 
         // 3. Generate Form Loop
         let $container = $('#form-dynamic-container');
-        $container.empty(); 
+        $container.empty();
 
         ids.forEach((rkmId, index) => {
             let namaPT = pts[index] || 'Perusahaan Lain';
@@ -586,16 +640,16 @@ function excelDownloadAdmSales() {
             // 1. CARI DATA LAMA (EXISTING DATA)
             // Cari data di array 'recs' yang id_rkm-nya cocok
             let currentRec = recs.find(r => r.id_rkm == rkmId) || {};
-            
+
             // 2. SIAPKAN DATA MATERI (Untuk Select2)
             let selectedMateri = [];
             if (currentRec.id_materi) {
                 selectedMateri = String(currentRec.id_materi).split(',').map(s => s.trim());
             }
-            
+
             // 3. SIAPKAN DATA KETERANGAN (Untuk Textarea)
             // Jika null/undefined, ganti jadi string kosong ''
-            let textKeterangan = currentRec.keterangan || ''; 
+            let textKeterangan = currentRec.keterangan || '';
 
             // 4. RENDER HTML
             let htmlItem = `
@@ -604,24 +658,24 @@ function excelDownloadAdmSales() {
                         <h6 class="card-title text-primary fw-bold mb-3 border-bottom pb-2">
                             ${index + 1}. ${namaPT}
                         </h6>
-                        
+
                         <input type="hidden" name="data[${index}][id_rkm]" value="${rkmId}">
 
                         <div class="form-group mb-3">
                             <label class="mb-1 fw-bold">Ajukan Rekomendasi Materi Selanjutnya</label>
-                            <select name="data[${index}][rekomendasi][]" 
-                                    class="form-control rekomendasi-dynamic" 
-                                    multiple="multiple" 
+                            <select name="data[${index}][rekomendasi][]"
+                                    class="form-control rekomendasi-dynamic"
+                                    multiple="multiple"
                                     data-selected='${JSON.stringify(selectedMateri)}'>
                             </select>
                         </div>
 
                         <div class="form-group">
                             <label class="mb-1">Keterangan</label>
-                            
-                            <textarea name="data[${index}][keterangan]" 
-                                    class="form-control" 
-                                    rows="2" 
+
+                            <textarea name="data[${index}][keterangan]"
+                                    class="form-control"
+                                    rows="2"
                                     placeholder="Masukkan keterangan tambahan...">${textKeterangan}</textarea>
                         </div>
                     </div>
@@ -631,7 +685,7 @@ function excelDownloadAdmSales() {
         });
 
         // 4. Inisialisasi Select2
-        initDynamicSelect2(); 
+        initDynamicSelect2();
     });
 
     function initDynamicSelect2() {
@@ -640,7 +694,7 @@ function excelDownloadAdmSales() {
 
         $('.rekomendasi-dynamic').each(function() {
             let $el = $(this);
-            
+
             // 1. Isi opsi select (Wajib ada sebelum .val() dipanggil)
             $el.html(optionsHtml);
 
@@ -654,7 +708,7 @@ function excelDownloadAdmSales() {
 
             // 3. [INTI SOLUSI] Set Value dari data lama
             let savedValues = $el.data('selected'); // Ambil array ["29", "30"]
-            
+
             if (savedValues && Array.isArray(savedValues) && savedValues.length > 0) {
                 // Set value dan paksakan trigger change agar UI Select2 berubah
                 $el.val(savedValues).trigger('change');
@@ -664,14 +718,14 @@ function excelDownloadAdmSales() {
         $('#formStoreRekomendasi').on('submit', function(e) {
             e.preventDefault();
 
-            // serialize() akan otomatis mengambil 'rekomendasi[]' dan 'id_rkm' 
+            // serialize() akan otomatis mengambil 'rekomendasi[]' dan 'id_rkm'
             // sehingga terbaca sebagai array oleh Laravel
-            var formData = $(this).serialize(); 
+            var formData = $(this).serialize();
 
             $.ajax({
                 url: '/rekomendasi-lanjutan/store',
                 method: 'POST',
-                data: formData, 
+                data: formData,
                 success: function(res) {
                     if (res.success) {
                         Swal.fire('Berhasil!', res.message, 'success');
@@ -698,6 +752,90 @@ function excelDownloadAdmSales() {
                 $('#rekomendasi').select2('destroy');
                 $('#keterangan_rekomendasi').val('');
             }
+        });
+
+        $(document).ready(function() {
+            // 1. Setup CSRF Token
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                }
+            });
+
+            // 2. Fungsi Kalkulasi Progress Bar
+            function updateProgressBar() {
+                var totalItems = 5; // Total jumlah kotak centang
+                var checkedItems = $('.checklist-item:checked').length;
+                var percentage = Math.round((checkedItems / totalItems) * 100);
+
+                $('#checklistProgress')
+                    .css('width', percentage + '%')
+                    .attr('aria-valuenow', percentage)
+                    .text(percentage + '%');
+            }
+
+            // 3. Event Listener untuk Perubahan Kotak Centang
+            $(document).on('change', '.checklist-item', function() {
+                updateProgressBar();
+            });
+
+            // 4. Logika Pembukaan Modal
+            $('#modalChecklist').on('show.bs.modal', function (event) {
+                var button = $(event.relatedTarget);
+                var idRkmStr = button.data('id');
+                var modal = $(this);
+
+                var idRkm = String(idRkmStr).split(',')[0].trim();
+
+                // Reset form dan progress bar
+                $('#formChecklistKeperluan')[0].reset();
+                modal.find('#inputHiddenIdRkm').val(idRkm);
+                updateProgressBar(); // Reset ke 0%
+
+                // Request AJAX untuk memuat data
+                $.ajax({
+                    url: '/rkm/checklist/' + idRkm,
+                    type: 'GET',
+                    success: function(response) {
+                        if (response.status && response.data) {
+                            var data = response.data;
+                            if (data.materi === 1) $('#checkMateri').prop('checked', true);
+                            if (data.kelas === 1) $('#checkKelas').prop('checked', true);
+                            if (data.cb === 1) $('#checkCb').prop('checked', true);
+                            if (data.maksi === 1) $('#checkMaksi').prop('checked', true);
+                            if (data.keperluan_kelas === 1) $('#checkKeperluanKelas').prop('checked', true);
+
+                            // Perbarui progress bar setelah data dimuat
+                            updateProgressBar();
+                        }
+                    },
+                    error: function() {
+                        console.error('Gagal mengambil data checklist dari server.');
+                    }
+                });
+            });
+
+            // 5. Logika Penyimpanan Data
+            $('#btnSimpanChecklist').click(function() {
+                var form = $('#formChecklistKeperluan');
+                var formData = form.serialize();
+
+                $.ajax({
+                    url: '{{ route("rkm.checklist.store") }}',
+                    type: 'POST',
+                    data: formData,
+                    success: function(response) {
+                        if (response.status) {
+                            $('#modalChecklist').modal('hide');
+                            alert(response.message);
+                        }
+                    },
+                    error: function(xhr) {
+                        console.error(xhr.responseText);
+                        alert('Terjadi kesalahan sistem saat menyimpan data.');
+                    }
+                });
+            });
         });
 </script>
 @endpush

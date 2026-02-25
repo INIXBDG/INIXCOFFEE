@@ -137,4 +137,9 @@ class RKM extends Model
     {
         return $this->hasMany(Kwitansi::class, 'id_rkm');
     }
+
+    public function checklistKeperluan()
+    {
+        return $this->hasOne(ChecklistKeperluan::class, 'id_rkm', 'id');
+    }
 }
