@@ -2,6 +2,10 @@
 
 @section('content')
 <meta name="csrf-token" content="{{ csrf_token() }}">
+@php
+    $jabatanUser = auth()->user()->jabatan ?? '';
+    $bisaEditChecklist = in_array($jabatanUser, ['Customer Care', 'Admin Holding']);
+@endphp
 <select id="source-options-materi" style="display: none;" multiple="multiple">
     @foreach ($dataMateri as $m)
         <option value="{{ $m->id }}">{{ $m->nama_materi }}</option>
@@ -72,34 +76,37 @@
                         <input type="hidden" id="inputHiddenIdRkm" name="id_rkm">
 
                         <div class="form-check mb-2">
-                            <input class="form-check-input checklist-item" type="checkbox" value="Materi" id="checkMateri" name="checklist[]">
+                            <input class="form-check-input checklist-item" type="checkbox" value="Materi" id="checkMateri" name="checklist[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
                             <label class="form-check-label" for="checkMateri">Materi</label>
                         </div>
 
                         <div class="form-check mb-2">
-                            <input class="form-check-input checklist-item" type="checkbox" value="Kelas" id="checkKelas" name="checklist[]">
+                            <input class="form-check-input checklist-item" type="checkbox" value="Kelas" id="checkKelas" name="checklist[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
                             <label class="form-check-label" for="checkKelas">Kelas</label>
                         </div>
 
                         <div class="form-check mb-2">
-                            <input class="form-check-input checklist-item" type="checkbox" value="Cb" id="checkCb" name="checklist[]">
+                            <input class="form-check-input checklist-item" type="checkbox" value="Cb" id="checkCb" name="checklist[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
                             <label class="form-check-label" for="checkCb">Coffe Break</label>
                         </div>
 
                         <div class="form-check mb-2">
-                            <input class="form-check-input checklist-item" type="checkbox" value="Maksi" id="checkMaksi" name="checklist[]">
+                            <input class="form-check-input checklist-item" type="checkbox" value="Maksi" id="checkMaksi" name="checklist[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
                             <label class="form-check-label" for="checkMaksi">Makan Siang</label>
                         </div>
 
                         <div class="form-check mb-2">
-                            <input class="form-check-input checklist-item" type="checkbox" value="Keperluan Kelas" id="checkKeperluanKelas" name="checklist[]">
+                            <input class="form-check-input checklist-item" type="checkbox" value="Keperluan Kelas" id="checkKeperluanKelas" name="checklist[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
                             <label class="form-check-label" for="checkKeperluanKelas">Keperluan Kelas</label>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-                    <button type="button" class="btn btn-primary" id="btnSimpanChecklist">Simpan</button>
+
+                    @if($bisaEditChecklist)
+                        <button type="button" class="btn btn-primary" id="btnSimpanChecklist">Simpan</button>
+                    @endif
                 </div>
             </div>
         </div>
