@@ -780,7 +780,63 @@ function renderAbsenPerbulanChart(labels, data, title) {
     });
 }
 
+function dashboardEdu() {
+    console.log('Mulai fetch data...');
 
+    fetch('/api/dashboard/csat-instruktur')
+        .then(res => {
+            console.log('CSAT status:', res.status);
+            return res.json();
+        })
+        .then(res => {
+            console.log('CSAT response:', res);
+            if (res.success) {
+                document.getElementById('csatValue').innerText = res.rata_rata;
+                document.getElementById('csatBar').style.width =
+                    (res.rata_rata / 5 * 100) + '%';
+            }
+        })
+        .catch(err => console.error('CSAT error:', err));
+
+    fetch('/api/dashboard/rekomendasi-materi')
+        .then(res => {
+            console.log('Rekomendasi status:', res.status);
+            return res.json();
+        })
+        .then(res => {
+            console.log('Rekomendasi response:', res);
+            if (res.success) {
+                document.getElementById('rekomendasiValue').innerText = res.persen + '%';
+                document.getElementById('rekomendasiBar').style.width =
+                    res.persen + '%';
+            }
+        })
+        .catch(err => console.error('Rekomendasi error:', err));
+
+    fetch('/api/dashboard/aktivitas-instruktur')
+        .then(res => {
+            console.log('Aktivitas status:', res.status);
+            return res.json();
+        })
+        .then(res => {
+            console.log('Aktivitas response:', res);
+            if (res.success) {
+                document.getElementById('sharingValue').innerText = res.sharingKnowledge;
+                document.getElementById('materiValue').innerText = res.pembuatanMateri;
+                document.getElementById('silabusValue').innerText = res.pembuatanSilabus;
+
+                document.getElementById('sharingBar').style.width = Math.min((res.sharingKnowledge / 100) * 100, 100) + '%';
+                document.getElementById('materiBar').style.width = Math.min((res.pembuatanMateri / 100) * 100, 100) + '%';
+                document.getElementById('silabusBar').style.width = Math.min((res.pembuatanSilabus / 100) * 100, 100) + '%';
+            }
+        })
+        .catch(err => console.error('Aktivitas error:', err));
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    console.log('Dashboard Edu Dimulai');
+    dashboardEdu();
+});
 
 
 function fetchTabInix(year) {

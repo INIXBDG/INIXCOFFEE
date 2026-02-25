@@ -502,7 +502,7 @@
                                 <div class="data-dash">
                                     <p class="datacsat" id="sharingValue">-</p>
                                     <div class="range-dash">
-                                        <div class="fill-dash">
+                                        <div class="fill-dash" id="sharingBar">
                                         </div>
                                     </div>
                                 </div>
@@ -523,13 +523,29 @@
                                 <div class="data-dash">
                                     <p class="datacsat" id="materiValue">-</p>
                                     <div class="range-dash">
-                                        <div class="fill-dash">
+                                        <div class="fill-dash" id="materiBar">
+                                            
                                         </div>
                                     </div>
                                 </div>
                             </div>
-
-
+                            <div class="card-dash">
+                                <div class="title-dash">
+                                    <span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512">
+                                            <path
+                                                d="M96 64c-35.3 0-64 28.7-64 64l0 256c-17.7 0-32 14.3-32 32s14.3 32 32 32l512 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l0-256c0-35.3-28.7-64-64-64L96 64zM480 384l-64 0 0-32c0-17.7-14.3-32-32-32l-96 0c-17.7 0-32 14.3-32 32l0 32-160 0 0-256 384 0 0 256z" />
+                                        </svg>
+                                    </span>
+                                    <p class="title-text-dash">Silabus Baru</p>
+                                </div>
+                                <div class="data-dash">
+                                    <p class="datacsat" id="silabusValue">-</p>
+                                    <div class="range-dash">
+                                        <div class="fill-dash" id="silabusBar"></div>
+                                    </div>
+                                </div>
+                            </div>
                             {{--
                         </div> --}}
                         {{-- </div> --}}
@@ -2270,6 +2286,87 @@
             padding: 3px;
             font-size: 0.7rem;
         }
+    }
+
+    /* From Uiverse.io by Yaya12085 */
+    .card-dash {
+        padding: 1rem;
+        margin: 1rem;
+        background-color: #fff;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        max-width: 320px;
+        border-radius: 20px;
+    }
+
+    .title-dash {
+        display: flex;
+        align-items: center;
+    }
+
+    .title-dash span {
+        position: relative;
+        padding: 0.5rem;
+        background-color: #10B981;
+        width: 1.5rem;
+        height: 1.5rem;
+        border-radius: 9999px;
+    }
+
+    .title-dash span svg {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #ffffff;
+        height: 1rem;
+    }
+
+    .title-text-dash {
+        margin-left: 0.5rem;
+        color: #374151;
+        margin-bottom: 0px;
+        font-size: 18px;
+    }
+
+    .percent-dash {
+        margin-left: 0.5rem;
+        color: #02972f;
+        font-weight: 600;
+        display: flex;
+    }
+
+    .data-dash {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+    }
+
+    .data-dash p {
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+        color: #1F2937;
+        font-size: 2.25rem;
+        line-height: 2.5rem;
+        font-weight: 700;
+        text-align: left;
+    }
+
+    .data-dash .range-dash {
+        position: relative;
+        background-color: #E5E7EB;
+        width: 100%;
+        height: 0.5rem;
+        border-radius: 0.25rem;
+    }
+
+    .data-dash .range-dash .fill-dash {
+        position: absolute;
+        top: 0;
+        left: 0;
+        background-color: #10B981;
+        width: 76%;
+        height: 100%;
+        border-radius: 0.25rem;
     }
 </style>
 <style>

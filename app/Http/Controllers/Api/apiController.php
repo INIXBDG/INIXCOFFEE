@@ -3,18 +3,20 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivityInstruktur;
 use App\Models\Inventaris;
 use App\Models\jabatan;
-use Illuminate\Http\Request;
-use App\Models\Nilaifeedback;
 use App\Models\Materi;
+use App\Models\Nilaifeedback;
 use App\Models\Perusahaan;
 use App\Models\Peserta;
 use App\Models\Registrasi;
+use App\Models\RekomendasiLanjutan;
 use App\Models\RKM;
 use App\Models\User;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class apiController extends Controller
@@ -25,11 +27,11 @@ class apiController extends Controller
 
         // $groupedFeedbacks = $feedbacks->groupBy('id_rkm');
         $groupedFeedbacks = $feedbacks->groupBy(function ($feedback) {
-			return
-				$feedback->rkm->materi->nama_materi . '/' .
-				$feedback->rkm->tanggal_awal . '/' .
-				$feedback->rkm->instruktur_key;
-		});
+            return
+                $feedback->rkm->materi->nama_materi . '/' .
+                $feedback->rkm->tanggal_awal . '/' .
+                $feedback->rkm->instruktur_key;
+        });
 
         // return $groupedFeedbacks;
         $averageFeedbacks = [];
@@ -149,12 +151,12 @@ class apiController extends Controller
         $sortedFeedbacks = collect($averageFeedbacks)->sortByDesc('created_at')->values()->all();
 
         // return response()->json(['feedbacks' => $sortedFeedbacks]);
-            return response()->json([
-                'success' => true,
-                'message' => 'List Feedbacks',
-                'data' => $sortedFeedbacks
-                // 'data' => $groupedFeedbacks
-            ]);
+        return response()->json([
+            'success' => true,
+            'message' => 'List Feedbacks',
+            'data' => $sortedFeedbacks
+            // 'data' => $groupedFeedbacks
+        ]);
 
     }
 
@@ -168,11 +170,11 @@ class apiController extends Controller
             'data' => $materi
         ]);
     }
-    
+
     public function getMateriInix()
     {
         $materi = Materi::whereIn('tipe_materi', ['Normal', 'Webinar/Workshop'])->get();
-        
+
         $groupMateri = $materi->groupBy(function ($item) {
             return $item->kategori_materi;
         })->map(function ($group) {
@@ -202,7 +204,7 @@ class apiController extends Controller
     public function getMateriInixByID($id)
     {
         $materi = Materi::findOrFail($id);
-        
+
         $materiData = [
             'id' => $materi->id,
             'nama_materi' => $materi->nama_materi,
@@ -212,7 +214,7 @@ class apiController extends Controller
             'durasi' => $materi->durasi,
             'status' => $materi->status ? $materi->status : 'Nonaktif',
             'deskripsi' => 'test',
-            'harga' => '5000000', 
+            'harga' => '5000000',
             'created_at' => $materi->created_at,
             'updated_at' => $materi->updated_at,
         ];
@@ -220,13 +222,14 @@ class apiController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Detail Materi',
-            'data' => $materiData        
+            'data' => $materiData
         ]);
     }
 
 
-    public function getMateris(){
-        $perusahaans = Materi::where('nama_materi', 'LIKE', '%'.request('q').'%')->where('status', 'Aktif')->paginate(20);
+    public function getMateris()
+    {
+        $perusahaans = Materi::where('nama_materi', 'LIKE', '%' . request('q') . '%')->where('status', 'Aktif')->paginate(20);
         return response()->json($perusahaans);
     }
 
@@ -283,7 +286,7 @@ class apiController extends Controller
         $startDate = $today->copy()->startOfMonth()->toDateString();
         $endDate = $today->copy()->addMonths(4)->endOfMonth()->toDateString();
 
-       // Ambil data RKM beserta relasi materi
+        // Ambil data RKM beserta relasi materi
         $rows = RKM::with('materi')
             ->whereBetween('tanggal_awal', [$startDate, $endDate])
             ->get();
@@ -348,7 +351,7 @@ class apiController extends Controller
 
         // Kelompokkan berdasarkan bulan
         $groupedByMonth = $result->groupBy('bulan')->sortKeys();
-    
+
 
         return response()->json([
             'success' => true,
@@ -357,7 +360,7 @@ class apiController extends Controller
         ]);
     }
 
-    
+
     public function getInventaris(Request $request)
     {
         $data = Inventaris::all();
@@ -369,4 +372,73 @@ class apiController extends Controller
         ]);
     }
 
+    public function CSATinstruktur(Request $request)
+    {
+        $response = $this->getFeedbacks();
+
+        // Ambil data dari JsonResponse
+        $data = collect($response->getData(true)['data']);
+
+        $total = $data->sum('averageI');
+        $count = $data->whereNotNull('averageI')->count();
+
+        $rataRata = $count > 0 ? round($total / $count, 2) : 0;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'CSAT Instruktur',
+            'total' => $total,
+            'rata_rata' => $rataRata
+        ]);
+    }
+
+    public function AktivitasInstruktur(Request $request)
+    {
+        $tahun = Carbon::now()->year;
+        $sharingKnowledge = ActivityInstruktur::where('activity_type', 'Sharing Knowledge')
+            ->whereYear('created_at', $tahun)
+            ->count();
+
+        $pembuatanMateri = ActivityInstruktur::where('activity_type', 'Pembuatan Materi')
+            ->whereYear('created_at', $tahun)
+            ->count();
+
+        $pembuatanSilabus = ActivityInstruktur::where('activity_type', 'Pembuatan Silabus')
+            ->whereYear('created_at', $tahun)
+            ->count();
+
+        return response()->json([
+            'success' => true,
+            'sharingKnowledge' => $sharingKnowledge,
+            'pembuatanMateri' => $pembuatanMateri,
+            'pembuatanSilabus' => $pembuatanSilabus,
+        ]);
+    }
+
+    public function RekomendasiMateri(Request $request)
+    {
+        $tahun = Carbon::now()->year;
+
+        // total rekomendasi berdasarkan RKM tahun ini
+        $total = RekomendasiLanjutan::whereHas('rkm', function ($q) use ($tahun) {
+            $q->whereYear('tanggal_awal', $tahun);
+        })->count();
+
+        // filled = rekomendasi yang keterangannya terisi (bukan null / kosong)
+        $filled = RekomendasiLanjutan::whereHas('rkm', function ($q) use ($tahun) {
+            $q->whereYear('tanggal_awal', $tahun);
+        })
+            // ->whereNotNull('keterangan')
+            // ->where('keterangan', '!=', '')
+            ->count();
+
+        $persen = $total > 0 ? round(($filled / $total) * 100) : 0;
+
+        return response()->json([
+            'success' => true,
+            'persen' => $persen,
+            'total' => $total,
+            'filled' => $filled
+        ]);
+    }
 }
