@@ -49,6 +49,7 @@ use App\Http\Controllers\BroadcastAuthController;
 use App\Http\Controllers\PusherAuthController;
 use App\Http\Controllers\office\vendorOfficeController;
 use App\Http\Controllers\ActivityInstrukturController;
+use App\Http\Controllers\colaboratorController;
 use App\Http\Controllers\dbklienController;
 use App\Http\Controllers\PenukaranSouvenirController;
 use App\Http\Controllers\office\DashboardSouvenirController;
@@ -192,6 +193,8 @@ Route::resource('roles', \App\Http\Controllers\RoleController::class);
 Route::resource('penambahansouvenir', \App\Http\Controllers\PenambahanSouvenirController::class);
 Route::resource('penukaransouvenir', PenukaranSouvenirController::class);
 Route::resource('content-schedules', \App\Http\Controllers\ContentScheduleController::class);
+Route::resource('colaborator', \App\Http\Controllers\colaboratorController::class)->except(['show']);
+
 
 Route::get('/komplain-peserta', [KomplainPesertaController::class, 'index'])->name('komplain-peserta');
 Route::get('/dataNilaiPenilaian/{id}', [KomplainPesertaController::class, 'dataNilaiPenilaian'])->name('dataNilaiPenilaian');
@@ -1005,3 +1008,6 @@ Route::get('download-template-klien', [dbklienController::class, 'downloadTempla
 
 Route::post('/internal/update-tickets', [TicketController::class, 'handleInternalUpdate']);
 Route::get('/internal/open-tickets', [TicketController::class, 'getOpenTickets']);
+
+
+Route::get('/colaborator/data', [colaboratorController::class, 'getData'])->name('colaborator.data');

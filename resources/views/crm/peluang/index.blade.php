@@ -226,7 +226,7 @@
                         data: 'rkm_data.perusahaan.nama_perusahaan',
                         render: function(data, type, row) {
                             var namaPerusahaan = data || '-';
-                            var cp = row.rkm_data.perusahaan.cp;
+                            var cp = row?.rkm_data?.perusahaan?.cp || null;
                             return cp ? namaPerusahaan + ' (' + cp + ')' : namaPerusahaan;
                         }
                     },
