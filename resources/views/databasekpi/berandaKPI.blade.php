@@ -302,12 +302,13 @@
                     @php
                         $auth = Auth()->user()->jabatan;
                     @endphp
-                    <li class="nav-item">
-                        <a class="nav-link" style="margin-left: -10px;">
-                            <span class="menu-title">KPI</span>
-                        </a>
-                    </li>
+
                     @if ($auth === 'Koordinator ITSM')
+                        <li class="nav-item">
+                            <a class="nav-link" style="margin-left: -10px;">
+                                <span class="menu-title">KPI</span>
+                            </a>
+                        </li>
                         <li class="nav-item {{ Request::routeIs('kpi.index') ? 'active' : '' }}">
                             <a class="nav-link" href="{{ route('kpi.index') }}">
                                 <span class="menu-title">Target Divisi</span>

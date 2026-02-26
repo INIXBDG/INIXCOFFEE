@@ -1168,11 +1168,13 @@
     <main class="container-fluid" style="height: 92vh" id="bgsvg">
         {{-- {{auth()->user()->hashids}} --}}
         <div class="tab-content" id="pills-tabContent">
+            @if (auth()->user()->jabatan === "HRD" || auth()->user()->jabatan === "Customer Care" || auth()->user()->jabatan === "Driver")
             <div id="subscribe-floating">
                 <button id="toggle-subscribe-btn" onclick="toggleSubscription()">
                     Aktifkan Notifikasi
                 </button>
             </div>
+            @endif
             <div class="tab-pane fade" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab">
                 <div class="row justify-content-between">
                     <div class="col-md-12 col-sm-12 col-xs-12 col-lg-6 col-xl-6">
@@ -2076,15 +2078,7 @@
                                                     @php
                                                         $auth = Auth()->user()->jabatan;
                                                     @endphp
-                                                    @if (
-                                                        $auth === 'HRD' ||
-                                                            $auth === 'GM' ||
-                                                            $auth === 'Direktur Utama' ||
-                                                            $auth === 'Direktur' ||
-                                                            $auth === 'Technical Support' ||
-                                                            $auth === 'Tim Digital' ||
-                                                            $auth === 'Programmer' ||
-                                                            $auth === 'Koordinator ITSM')
+
                                                         <div class="col-sm-6 mt-2">
                                                             <div class="card" id="card-hover">
                                                                 <div class="card-body d-flex">
@@ -2103,7 +2097,6 @@
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    @endif
                                                 </div>
                                             </div>
                                         </div>
