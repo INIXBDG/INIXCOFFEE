@@ -521,7 +521,7 @@
                     </div>
                 </div>
                 <div class="row g-3 mb-3">
-                    <div class="col-md-12">
+                    <div class="col-md-6">
                         <div class="border rounded-3 p-3">
                             <small class="text-muted">Budget Terpakai</small>
                             <h6 class="mb-0 fw-semibold">
@@ -529,12 +529,24 @@
                             </h6>
                         </div>
                     </div>
-                    <div class="col-md-12">
+
+                    <div class="col-md-6">
                         <div class="border rounded-3 p-3">
-                            <small class="text-muted">Budget Terpakai</small>
-                            <h6 class="mb-0 fw-semibold">
-                                ${item.sisa_Budget ? 'Rp ' + Number(item.sisa_Budget).toLocaleString('id-ID') : '-'}
+                            <small class="text-muted">Budget Tersisa</small>
+
+                            <h6 class="mb-0 fw-semibold 
+                                ${item.sisa_budget < 0 ? 'text-danger' : ''}">
+                                
+                                ${item.sisa_budget 
+                                    ? 'Rp ' + Number(item.sisa_budget).toLocaleString('id-ID') 
+                                    : '-'}
                             </h6>
+
+                            ${item.sisa_budget < 0 ? `
+                                <small class="text-danger">
+                                    Penggunaan dana melebihi budget
+                                </small>
+                            ` : ''}
                         </div>
                     </div>
                 </div>

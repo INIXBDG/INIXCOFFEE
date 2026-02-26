@@ -28,7 +28,7 @@ class pengajuanbarangNotification extends Notification implements ShouldQueue
 
     public function via($notifiable): array
     {
-        return ['database', 'broadcast', 'App\Channels\WebPushChannel'];
+        return ['database', 'broadcast', 'webpush'];
     }
 
     public function broadcastOn(): PrivateChannel
@@ -59,35 +59,37 @@ class pengajuanbarangNotification extends Notification implements ShouldQueue
 
     public function toWebPush($notifiable)
     {
-        $pengaju    = \App\Models\karyawan::find($this->data['id_karyawan'] ?? null);
+        $pengaju = \App\Models\karyawan::find($this->data['id_karyawan'] ?? null);
         $namaPengaju = $pengaju ? $pengaju->nama_lengkap : 'Sistem';
-        $tipeBarang  = $this->data['tipe'] ?? 'Barang';
-        $tanggal     = now()->format('d/m/Y'); 
+        $tipeBarang = $this->data['tipe'] ?? 'Barang';
+        $tanggal = now()->format('d/m/Y');
 
         $payload = [
             'title' => 'Pengajuan Baru Masuk',
-            'body'  => "Dari: {$namaPengaju} \n Tipe: {$tipeBarang} \n Tanggal: {$tanggal}",
-            
+            'body' => "Dari: {$namaPengaju} \n Tipe: {$tipeBarang} \n Tanggal: {$tanggal}",
 
-            'icon'  => '/icons/icon-512x512.png',
+            'icon' => '/icons/icon-512x512.png',
             'badge' => '/icons/badge-96x96.png',
-            
+
             'data' => [
                 'path' => $this->path ?? '/pengajuanbarang',
-                'id'   => $this->data['id_pengajuan'] ?? null,
+                'id' => $this->data['id_pengajuan'] ?? null,
             ],
-            
-            'actions' => [
-                ['action' => 'view', 'title' => 'Lihat Detail'],
-                ['action' => 'close', 'title' => 'Tutup'],
-            ],
-            
+
+            'actions' => [['action' => 'view', 'title' => 'Lihat Detail'], ['action' => 'close', 'title' => 'Tutup']],
+
             'requireInteraction' => false,
-            'silent'             => false,
-            'vibrate'            => [100, 50, 100],
-            'renotify'           => true,
-            'tag'                => 'pengajuan-' . ($this->data['id_pengajuan'] ?? time()),
+            'silent' => false,
+            'vibrate' => [100, 50, 100],
+            'renotify' => true,
+            'tag' => 'pengajuan-' . ($this->data['id_pengajuan'] ?? time()),
         ];
+
+        $json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new \Exception('JSON encode error: ' . json_last_error_msg());
+        }
+        return $json;
 
         return json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }

@@ -2522,7 +2522,7 @@ class DatabaseKPIController extends Controller
 
         $jabatanUserLogin = auth()->user()->jabatan;
         $idUserLogin = auth()->user()->id;
-        $isPrivileged = in_array($jabatanUserLogin, ['HRD', 'GM', 'Direktur Utama']);
+        $isPrivileged = in_array($jabatanUserLogin, ['HRD', 'GM', 'Direktur Utama', 'Direktur']);
 
         $totalKaryawan = Karyawan::where('status_aktif', '1')
             ->whereNot('divisi', 'Direksi')
