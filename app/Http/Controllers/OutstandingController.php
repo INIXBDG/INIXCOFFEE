@@ -246,6 +246,7 @@ class OutstandingController extends Controller
             ->whereHas('outstanding', function ($query) {
                 $query->where('status_pembayaran', '1');
             })
+            ->whereHas('perhitunganNetSales')
             ->get();
 
         return response()->json(['data' => $rkm]);
