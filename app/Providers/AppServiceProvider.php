@@ -24,8 +24,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Paginator::useBootstrap();
-        $this->app->bind('channel:webpush', function ($app) {
-            return new \App\Channels\WebPushChannel($app->make(\App\Services\WebPushService::class));
+        Notification::extend('webpush', function ($app) {
+            return $app->make(WebPushChannel::class);
         });
     }
 }

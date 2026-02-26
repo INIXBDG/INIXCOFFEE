@@ -121,6 +121,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/webpush/unsubscribe', [WebPushController::class, 'unsubscribe'])->name('webpush.unsubscribe');
     Route::get('/webpush/vapid-key', [WebPushController::class, 'getVapidKey'])->name('webpush.vapid-key');
     Route::post('/webpush/test', [WebPushController::class, 'testNotification'])->name('webpush.test');
+    Route::get( '/webpush/status',      [WebPushController::class, 'subscriptionStatus']);
 });
 // test
 Route::get('/testdata', [App\Http\Controllers\TestController::class, 'index'])->name('testdata');

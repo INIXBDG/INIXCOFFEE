@@ -48,7 +48,7 @@ class pickupDriverController extends Controller
 
     public function create()
     {
-        $dataDriver = karyawan::where('jabatan', 'Driver')
+        $dataDriver = karyawan::where('jabatan', 'Driver')->where('status_aktif', '1')
             ->where(function ($query) {
                 $query->whereDoesntHave('pickupDriver')->orWhereHas('pickupDriver', function ($q) {
                     $q->whereIn('status_driver', ['Selesai, Driver Ready']);
@@ -177,7 +177,7 @@ class pickupDriverController extends Controller
 
     public function getDriverStatus()
     {
-        $drivers = Karyawan::where('jabatan', 'Driver')->select('id', 'nama_lengkap', 'jabatan')->get();
+        $drivers = Karyawan::where('jabatan', 'Driver')->where('status_aktif', '1')->select('id', 'nama_lengkap', 'jabatan')->get();
 
         if ($drivers->isEmpty()) {
             return response()->json([
@@ -431,7 +431,7 @@ class pickupDriverController extends Controller
         $request->validate([
             'pickup_driver_id' => 'required|exists:pickup_drivers,id',
             'id_driver' => 'required|exists:karyawans,id',
-            'kendaraan' => 'nullable|in:Inova,H1',
+            'kendaraan' => 'nullable',
             'details' => 'required|array|min:1',
             'details.*.tipe' => 'required|in:Penjemputan,Pengantaran',
             'details.*.lokasi' => 'required|string',
