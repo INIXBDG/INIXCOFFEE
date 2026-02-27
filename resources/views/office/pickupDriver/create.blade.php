@@ -38,7 +38,7 @@
                                         @foreach ($dataDriver as $data)
                                             @php
                                                 $status = $data->pickupDriver->first()->status_driver ?? 'Ready';
-                                                $bolehDipilih = in_array($status, ['Ready', 'Selesai']);
+                                                $bolehDipilih = in_array($status, ['Ready', 'Selesai, Driver Ready']);
                                             @endphp
 
                                             <option value="{{ $data->id }}" {{ $bolehDipilih ? '' : 'disabled' }}>

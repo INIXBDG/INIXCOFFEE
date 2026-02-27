@@ -2,6 +2,8 @@
 
 namespace App\Channels;
 
+use App\Models\karyawan;
+use App\Models\User;
 use App\Services\WebPushService;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Log;
@@ -56,20 +58,12 @@ class WebPushChannel
     }
     protected function getUserId($notifiable)
     {
-        // Coba ambil dari berbagai sumber
-        if (isset($notifiable->id)) {
+        if ($notifiable instanceof User) {
             return $notifiable->id;
         }
-        if (isset($notifiable->user_id)) {
-            return $notifiable->user_id;
+        if ($notifiable instanceof karyawan && $notifiable->user) {
+            return $notifiable->user->id;
         }
-
-        // Untuk model User yang punya relasi ke karyawan
-        if (method_exists($notifiable, 'karyawan') && $notifiable->karyawan) {
-            $user = \App\Models\User::where('username', $notifiable->karyawan->kode_karyawan)->first();
-            return $user?->id;
-        }
-
         return null;
     }
 }

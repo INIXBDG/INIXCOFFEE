@@ -7,7 +7,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-
 use App\Models\BiayaTransportasiDriver;
 use App\Models\pickupDriver;
 use App\Models\PengajuanBarang;
@@ -16,12 +15,14 @@ use App\Models\tracking_pengajuan_barang;
 use App\Models\karyawan;
 use App\Models\User;
 use App\Notifications\PengajuanbarangNotification;
+use Carbon\Carbon;
 
 class BiayaTransportasiController extends Controller
 {
     public function index()
     {
         $dataPickup = pickupDriver::with(['karyawan', 'detailPickupDriver'])
+            ->where('created_at', '>=', Carbon::now()->subDays(2))
             ->latest()
             ->get();
 
@@ -35,7 +36,7 @@ class BiayaTransportasiController extends Controller
             'biaya' => 'required|array|min:1',
             'biaya.*.tipe' => 'required|in:BBM,TOL,Parkir,Lainnya',
             'biaya.*.harga' => 'required|numeric|min:500',
-            'biaya.*.bukti' => 'required|image|max:2048',
+            'biaya.*.bukti' => 'required|image',
             'biaya.*.keterangan' => 'nullable|string',
         ]);
 

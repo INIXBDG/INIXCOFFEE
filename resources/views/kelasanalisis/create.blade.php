@@ -201,6 +201,9 @@
                                                 <strong>{{ $message }}</strong>
                                             </span>
                                         @enderror
+                                        <div class="mt-2">
+                                            <input type="text" id="total_transportasi" class="form-control" value="0" readonly>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -549,7 +552,21 @@
         $('#transportasi').on('input', function () {
             let inputVal = $(this).val().replace(/[^,\d]/g, '');
             $(this).val(formatRupiah(inputVal));
+            updateTotalTransportasi();
         });
+
+        $('#durasi, #pax').on('input', function () {
+            updateTotalTransportasi();
+        });
+
+        function updateTotalTransportasi() {
+            const transportasi = parseFloat(removeRupiahFormat($('#transportasi').val())) || 0;
+            const durasi = parseInt($('#durasi').val(), 10) || 0;
+            const pax = parseInt($('#pax').val(), 10) || 0;
+            const total = transportasi * durasi * pax;
+            $('#total_transportasi').val(formatRupiah(total.toString()));
+        }
+
         $('#pc_pax, #pc_instruktur, #pc_peserta' ).on('input', function () {
             let inputVal = $(this).val().replace(/[^,\d]/g, '');
             $(this).val(formatRupiah(inputVal));

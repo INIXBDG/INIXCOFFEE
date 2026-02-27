@@ -781,8 +781,54 @@ function renderAbsenPerbulanChart(labels, data, title) {
     });
 }
 
+function dashboardEdu() {
+    console.log('Mulai fetch data...');
 
+    fetch('/api/dashboard/csat-instruktur')
+        .then(res => {
+            console.log('CSAT status:', res.status);
+            return res.json();
+        })
+        .then(res => {
+            console.log('CSAT response:', res);
+            if (res.success) {
+                document.getElementById('csatValue').innerText = res.rata_rata;
+                document.getElementById('csatBar').style.width =
+                    (res.rata_rata / 5 * 100) + '%';
+            }
+        })
+        .catch(err => console.error('CSAT error:', err));
 
+    fetch('/api/dashboard/rekomendasi-materi')
+        .then(res => {
+            console.log('Rekomendasi status:', res.status);
+            return res.json();
+        })
+        .then(res => {
+            console.log('Rekomendasi response:', res);
+            if (res.success) {
+                document.getElementById('rekomendasiValue').innerText = res.persen + '%';
+                document.getElementById('rekomendasiBar').style.width =
+                    res.persen + '%';
+            }
+        })
+        .catch(err => console.error('Rekomendasi error:', err));
+
+    fetch('/api/dashboard/aktivitas-instruktur')
+        .then(res => {
+            console.log('Aktivitas status:', res.status);
+            return res.json();
+        })
+        .then(res => {
+            console.log('Aktivitas response:', res);
+            if (res.success) {
+                document.getElementById('sharingValue').innerText = res.sharingKnowledge;
+                document.getElementById('materiValue').innerText = res.pembuatanMateri;
+                document.getElementById('silabusValue').innerText = res.pembuatanSilabus;
+            }
+        })
+    .catch(err => console.error('Aktivitas error:', err));
+}
 
 function fetchTabInix(year) {
     $.ajax({
@@ -1300,7 +1346,7 @@ function renderTotalMengajarPerMateriChart(labels, data, title) {
             options: {
                 scales: {
                     y: {
-                        beginAtZero: true // Menjaga agar sumbu Y mulai dari 0
+                        beginAtZero: true
                     }
                 },
                 responsive: true,
@@ -1320,6 +1366,704 @@ function renderTotalMengajarPerMateriChart(labels, data, title) {
         });
     }
 }
+
+// CHART JUMLAH PEMBUATAN MATERI PER INSTRUKTUR - VERSI FIX
+let jumlahUpdateMateriChart = null;
+
+$(document).ready(function () {
+    const canvas = document.getElementById('jumlahUpdateMateriPerbulanChart');
+    if (!canvas) return;
+
+    initJumlahUpdateMateriChart();
+
+    loadData();
+
+    $('#monthSelect_JumlahUpdateMateriPerbulan').on('change', loadData);
+    $('#tahun').on('change', function () {
+        $('#monthSelect_JumlahUpdateMateriPerbulan').val('All');
+        loadData();
+    });
+    $('#pills-jumlahUpdateMateriPerbulan-tab').on('shown.bs.tab', loadData);
+});
+
+function initJumlahUpdateMateriChart() {
+    const ctx = document.getElementById('jumlahUpdateMateriPerbulanChart').getContext('2d');
+
+    if (jumlahUpdateMateriChart) {
+        jumlahUpdateMateriChart.destroy();
+        jumlahUpdateMateriChart = null;
+    }
+
+    jumlahUpdateMateriChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Jumlah Pembuatan Materi',
+                data: [],
+                backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Pembuatan Materi Per Instruktur',
+                    font: { size: 18, weight: 'bold' },
+                    padding: { top: 10, bottom: 20 }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            return `Materi: ${context.raw} (${context.label})`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    title: { display: true, text: 'Nama Instruktur' },
+                    ticks: {
+                        autoSkip: false,
+                        maxRotation: 45,
+                        minRotation: 45,
+                        font: { size: 11 }
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'Jumlah Pembuatan Materi' },
+                    ticks: {
+                        stepSize: 1,
+                        precision: 0
+                    },
+                    max: 10
+                }
+            },
+            animation: { duration: 1000 }
+        }
+    });
+}
+
+function loadData() {
+    const bulan = $('#monthSelect_JumlahUpdateMateriPerbulan').val() || 'All';
+    const tahun = $('#tahun').val() || new Date().getFullYear();
+
+    console.log('[CHART] Loading:', { bulan, tahun });
+
+    // ✅ SHOW LOADING
+    $('#chartLoading_JumlahUpdateMateriPerbulan').removeClass('d-none');
+    $('#chartEmpty_JumlahUpdateMateriPerbulan').addClass('d-none');
+
+    $.ajax({
+        url: '/chart/jumlah-update-materi-perbulan',
+        type: 'GET',
+        data: { bulan: bulan, tahun: tahun },
+        dataType: 'json',
+        timeout: 15000,
+        success: function (response) {
+            console.log('[CHART] Response:', response);
+            handleSuccess(response);
+        },
+        error: function (xhr, status, error) {
+            console.error('[CHART] Error:', status, error);
+            handleError(xhr, status, error);
+        },
+        complete: function () {
+            $('#chartLoading_JumlahUpdateMateriPerbulan').addClass('d-none');
+        }
+    });
+}
+
+function handleSuccess(response) {
+    if (response.error) {
+        showError(response.message || 'Error dari server');
+        return;
+    }
+
+    if (!response.has_data || !response.labels || !response.data) {
+        showError('Tidak ada data pembuatan materi pada periode ini');
+        return;
+    }
+
+    updateChart(response);
+}
+
+function updateChart(data) {
+    try {
+        if (!jumlahUpdateMateriChart || !jumlahUpdateMateriChart.options) {
+            console.warn('[CHART] Chart tidak valid, menginisialisasi ulang...');
+            initChart();
+            setTimeout(() => updateChart(data), 100);
+            return;
+        }
+
+        const maxValue = Math.max(...data.data);
+        const maxY = maxValue + 2;
+
+        let title = `Pembuatan Materi Tahun ${data.tahun}`;
+        if (data.bulan_terpilih !== 'All') {
+            const bulanNama = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            const idx = parseInt(data.bulan_terpilih) - 1;
+            if (idx >= 0 && idx < 12) {
+                title = `Pembuatan Materi ${bulanNama[idx]} ${data.tahun}`;
+            }
+        }
+
+        jumlahUpdateMateriChart.options.plugins.title.text = title;
+        jumlahUpdateMateriChart.options.scales.y.max = maxY;
+        jumlahUpdateMateriChart.data.labels = data.labels;
+        jumlahUpdateMateriChart.data.datasets[0].data = data.data;
+        jumlahUpdateMateriChart.update();
+
+        $('#chartEmpty_JumlahUpdateMateriPerbulan').addClass('d-none');
+
+        console.log(`[CHART] Chart updated successfully - Max Y: ${maxY} (Max Data: ${maxValue})`);
+    } catch (error) {
+        console.error('[CHART] Error updating chart:', error);
+        showError('Error saat menampilkan chart: ' + error.message);
+    }
+}
+
+function handleError(xhr, status, error) {
+    let msg = 'Gagal memuat data';
+
+    if (xhr.status === 401 || xhr.status === 403) {
+        msg = 'Sesi berakhir. Silakan login ulang.';
+        setTimeout(() => window.location.href = '/login', 3000);
+    } else if (xhr.status === 404) {
+        msg = 'Endpoint tidak ditemukan';
+    } else if (status === 'timeout') {
+        msg = 'Waktu permintaan habis';
+    }
+
+    showError(msg);
+}
+
+function showError(message) {
+    $('#chartEmpty_JumlahUpdateMateriPerbulan')
+        .text(message)
+        .removeClass('d-none');
+
+    if (jumlahUpdateMateriChart) {
+        jumlahUpdateMateriChart.data.labels = [];
+        jumlahUpdateMateriChart.data.datasets[0].data = [];
+        jumlahUpdateMateriChart.update();
+    }
+
+    console.error('[CHART ERROR]', message);
+}
+
+//============== SILABUS PER INSTRUKTUR PER TAHUN ==============
+let silabusPerInstrukturPerTahunChart = null;
+
+function loadSilabusPerInstrukturPerTahunChart() {
+    const tahun = $('#tahun').val();
+    const canvasId = 'silabusPerInstrukturPerTahunChart';
+    const $empty = $('#silabusPerInstrukturPerTahunEmpty');
+
+    if (!tahun) {
+        $empty.text('Pilih tahun terlebih dahulu').removeClass('d-none');
+        return;
+    }
+
+    $empty.addClass('d-none');
+
+    $.ajax({
+        url: '/chart/silabus-per-instruktur-per-tahun',
+        method: 'GET',
+        data: { tahun: tahun },
+        success: function (response) {
+
+            const ctx = document
+                .getElementById('silabusPerInstrukturPerTahunChart')
+                .getContext('2d');
+
+            // Destroy lama
+            if (silabusPerInstrukturPerTahunChart) {
+                silabusPerInstrukturPerTahunChart.destroy();
+            }
+
+            let labels = [];
+            let data = [];
+
+            if (Array.isArray(response) && response.length > 0) {
+                labels = response.map(item => item.nama_instruktur || 'Instruktur');
+                data = response.map(item => parseInt(item.jumlah_silabus) || 0);
+
+                $('#silabusPerInstrukturPerTahunEmpty').addClass('d-none');
+            } else {
+                data = [0];
+
+                $('#silabusPerInstrukturPerTahunEmpty')
+                    .text('Tidak ada data silabus untuk tahun ' + tahun)
+                    .removeClass('d-none');
+            }
+
+            silabusPerInstrukturPerTahunChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Jumlah Silabus',
+                        data: data,
+                        backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            font: { size: 16, weight: 'bold' }
+                        },
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1,
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+        },
+        error: function () {
+            $empty
+                .text('Gagal memuat data chart')
+                .removeClass('d-none');
+        }
+    });
+}
+$(document).ready(function () {
+
+    $('#pills-silabusPerInstrukturPerTahun-tab').on('shown.bs.tab', function () {
+        loadSilabusPerInstrukturPerTahunChart();
+    });
+
+    $('#tahun').on('change', function () {
+        loadSilabusPerInstrukturPerTahunChart();
+    });
+
+    if ($('#pills-silabusPerInstrukturPerTahun').hasClass('show')) {
+        loadSilabusPerInstrukturPerTahunChart();
+    }
+});
+
+// ===================== CHART FEEDBACK INSTRUKTUR =====================
+let feedbackChart = null;
+
+$(document).ready(function () {
+    const feedbackCanvas = document.getElementById('feedbackChart');
+    if (feedbackCanvas) {
+        initFeedbackChart();
+        loadFeedback();
+
+        $('#tahun').on('change', function () {
+            resetChart();
+            loadFeedback();
+        });
+    }
+});
+
+function initFeedbackChart() {
+    const ctx = document.getElementById('feedbackChart').getContext('2d');
+
+    if (feedbackChart) {
+        feedbackChart.destroy();
+        feedbackChart = null;
+    }
+
+    feedbackChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Rata-rata Nilai',
+                data: [],
+                backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1,
+                hoverBorderWidth: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            return `Nilai: ${context.raw} (${context.label})`;
+                        }
+                    },
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleFont: {
+                        size: 14
+                    },
+                    bodyFont: {
+                        size: 13
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 4,
+                    ticks: {
+                        stepSize: 0.4,
+                        font: {
+                            size: 12
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)',
+                        color: function (context) {
+                            if (context.tick.value === 3.2) {
+                                return 'rgba(255, 0, 0, 0.3)';
+                            }
+                            return 'rgba(0, 0, 0, 0.05)';
+                        }
+                    }
+                },
+                x: {
+                    ticks: {
+                        autoSkip: false,
+                        maxRotation: 30,
+                        minRotation: 15,
+                        font: {
+                            size: 11
+                        }
+                    },
+                    grid: {
+                        display: false
+                    }
+                }
+            },
+            animation: {
+                duration: 1000,
+                easing: 'easeOutBounce'
+            }
+        }
+    });
+}
+
+function resetChart() {
+    if (!feedbackChart) return;
+
+    feedbackChart.data.labels = [];
+    feedbackChart.data.datasets[0].data = [];
+
+    // Pastikan warna tetap statis saat reset, jangan dikosongkan
+    feedbackChart.data.datasets[0].backgroundColor = 'rgba(54, 162, 235, 0.8)';
+    feedbackChart.data.datasets[0].borderColor = 'rgba(54, 162, 235, 1)';
+
+    feedbackChart.update();
+}
+
+function loadFeedback() {
+    const apiUrl = window.FEEDBACK_API_URL || '/getTotalFeedbackPertahun';
+    const tahun = $('#tahun').val() || new Date().getFullYear();
+
+    $.ajax({
+        url: apiUrl,
+        type: "GET",
+        data: {
+            tahun: tahun
+        },
+        beforeSend: function () {
+            $('#nilaiInstrukturEmpty').text('Memuat data...').removeClass('d-none');
+        },
+        success: function (res) {
+            if (!Array.isArray(res) || res.length === 0) {
+                $('#nilaiInstrukturEmpty').text('Tidak ada data feedback').removeClass('d-none');
+                resetChart();
+                return;
+            }
+
+            $('#nilaiInstrukturEmpty').addClass('d-none');
+
+            const labels = [];
+            const data = [];
+
+            res.forEach((item) => {
+                if (item && item.nama_instruktur && item.nilai_rata_rata !== undefined) {
+                    labels.push(item.nama_instruktur.trim() || 'Instruktur');
+                    data.push(parseFloat(item.nilai_rata_rata) || 0);
+                }
+            });
+
+            if (labels.length > 0 && data.length > 0) {
+                feedbackChart.data.labels = labels;
+                feedbackChart.data.datasets[0].data = data;
+
+                // Terapkan Warna Statis Langsung ke Dataset
+                feedbackChart.data.datasets[0].backgroundColor = 'rgba(54, 162, 235, 0.8)';
+                feedbackChart.data.datasets[0].borderColor = 'rgba(54, 162, 235, 1)';
+
+                feedbackChart.update();
+            } else {
+                resetChart();
+                $('#nilaiInstrukturEmpty').text('Data tidak valid').removeClass('d-none');
+            }
+        },
+        error: function (xhr) {
+            console.error('AJAX Error:', xhr.status, xhr.responseText);
+            let errorMsg = 'Gagal memuat data';
+            if (xhr.responseJSON?.message) {
+                errorMsg += ': ' + xhr.responseJSON.message;
+            } else if (xhr.status === 404) {
+                errorMsg = 'Endpoint tidak ditemukan. Periksa route.';
+            }
+            $('#nilaiInstrukturEmpty')
+                .text(errorMsg)
+                .removeClass('d-none');
+            resetChart();
+        }
+    });
+}
+
+$(document).ready(function () {
+    console.log('✅ Chart Hari Mengajar Instruktur loaded');
+    const $filterLocal = $('#tahun');
+    const $filterGlobal = $('#filterTahunGlobal');
+    const $tabBtn = $('#pills-hariMengajarInstrukturPerTahun-tab');
+    const $tabContent = $('#pills-hariMengajarInstrukturPerTahun');
+    const $canvas = $('#hariMengajarInstrukturPerTahunChart');
+    const $empty = $('#hariMengajarInstrukturPerTahunEmpty');
+
+    let chartInstance = null;
+
+    function showEmpty() {
+        $empty.removeClass('d-none');
+        if ($canvas.length) {
+            $canvas.closest('div').css('opacity', '0.3');
+        }
+    }
+
+    function hideEmpty() {
+        $empty.addClass('d-none');
+        if ($canvas.length) {
+            $canvas.closest('div').css('opacity', '1');
+        }
+    }
+
+    function resetChart() {
+        if (chartInstance) {
+            chartInstance.destroy();
+            chartInstance = null;
+        }
+        hideEmpty();
+    }
+
+    function renderChart(data) {
+        resetChart();
+
+        if (!data.has_data || !data.data || data.data.length === 0) {
+            console.log('⚠️ No data available');
+            showEmpty();
+            return;
+        }
+
+        hideEmpty();
+
+        if (!$canvas.length) {
+            console.error('❌ Canvas not found!');
+            return;
+        }
+
+        const ctx = $canvas[0].getContext('2d');
+
+        // ============================================
+        // 🎨 WARNA STATIS (Sesuai Permintaan)
+        // ============================================
+        const staticBackgroundColor = 'rgba(54, 162, 235, 0.8)';
+        const staticBorderColor = 'rgba(54, 162, 235, 1)';
+
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Hari Mengajar',
+                    data: data.data,
+                    backgroundColor: staticBackgroundColor,
+                    borderColor: staticBorderColor,
+                    borderWidth: 1,
+                    barPercentage: 1,
+                    hoverBackgroundColor: 'rgba(54, 162, 235, 1)',
+                    hoverBorderColor: 'rgba(54, 162, 235, 1)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: `Total Hari Mengajar Instruktur Tahun ${data.tahun}`,
+                        font: { size: 16, weight: 'bold' },
+                        padding: { top: 10, bottom: 15 }
+                    },
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                        titleFont: { size: 14 },
+                        bodyFont: { size: 13 },
+                        padding: 12,
+                        callbacks: {
+                            label: function (context) {
+                                return `Hari Mengajar: ${context.parsed.y} hari`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Nama Instruktur',
+                            font: { weight: 'bold' }
+                        },
+                        grid: { display: false },
+                        ticks: {
+                            autoSkip: false,
+                            maxRotation: 45,
+                            minRotation: 45,
+                            padding: 10
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        max: data.max_value,
+                        title: {
+                            display: true,
+                            text: 'Jumlah Hari',
+                            font: { weight: 'bold' }
+                        },
+                        ticks: {
+                            precision: 0,
+                            stepSize: Math.ceil(data.max_value / 10)
+                        },
+                        grid: { color: 'rgba(0, 0, 0, 0.08)' }
+                    }
+                },
+                animation: {
+                    duration: 1000,
+                    easing: 'easeOutQuart'
+                }
+            }
+        });
+
+        console.log('✅ Chart rendered successfully!');
+    }
+
+    // ========== LOAD DATA ==========
+    function loadChart() {
+        let tahun = $filterLocal.val()?.trim();
+
+        if (!tahun && $filterGlobal.length) {
+            tahun = $filterGlobal.val()?.trim();
+        }
+
+        if (!tahun || isNaN(tahun)) {
+            console.error('❌ Tahun tidak valid:', tahun);
+            showEmpty();
+            return;
+        }
+
+        console.log('📥 Loading chart data for tahun:', tahun);
+        hideEmpty();
+
+        $.ajax({
+            url: '/chart/hari-mengajar-instruktur-per-tahun',
+            method: 'GET',
+            data: { tahun: tahun },
+            dataType: 'json',
+            timeout: 15000,
+            beforeSend: function () {
+                if ($canvas.length) {
+                    $canvas.closest('div').css('opacity', '0.5');
+                }
+            },
+            success: function (response) {
+                console.log('✅ Data received:', response);
+                if ($canvas.length) {
+                    $canvas.closest('div').css('opacity', '1');
+                }
+                renderChart(response);
+            },
+            error: function (xhr, status, error) {
+                console.error('❌ AJAX Error:', status, error);
+                if (xhr.responseText) {
+                    console.error('Response:', xhr.responseText);
+                }
+                if (xhr.status === 404) {
+                    console.error('Route not found! Check web.php');
+                }
+                if (xhr.status === 500) {
+                    console.error('Server error! Check controller');
+                }
+                showEmpty();
+                resetChart();
+                if ($canvas.length) {
+                    $canvas.closest('div').css('opacity', '1');
+                }
+            }
+        });
+    }
+
+    // ========== EVENT HANDLERS ==========
+    $tabBtn.on('shown.bs.tab', function () {
+        console.log('탭 Tab "Hari Mengajar" ditampilkan');
+        setTimeout(loadChart, 300);
+    });
+
+    $filterLocal.on('change', function () {
+        const isActive = $tabContent.hasClass('show') || $tabContent.hasClass('active');
+        if (isActive) {
+            console.log('🔄 Filter lokal berubah, reload chart');
+            loadChart();
+        }
+    });
+
+    if ($filterGlobal.length) {
+        $filterGlobal.on('change', function () {
+            const isActive = $tabContent.hasClass('show') || $tabContent.hasClass('active');
+            if (isActive) {
+                console.log('🔄 Filter global berubah, reload chart');
+                loadChart();
+            }
+        });
+    }
+
+    setTimeout(function () {
+        const isActive = $tabBtn.hasClass('active') && $tabContent.hasClass('active');
+        const isShowing = $tabContent.hasClass('show');
+
+        console.log('Initial check - isActive:', isActive, 'isShowing:', isShowing);
+
+        if (isActive || isShowing) {
+            console.log('🚀 Auto-loading chart on page load');
+            loadChart();
+        }
+    }, 600);
+});
+
 function generateRandomColor() {
     // Fungsi untuk menghasilkan warna acak
     const letters = '0123456789ABCDEF';
@@ -1388,7 +2132,7 @@ function loadBulanFilter(dropdownId) {
         url: '/list-bulan',
         method: 'GET',
         dataType: 'json',
-        success: function(bulanList) {
+        success: function (bulanList) {
             const dropdown = $(dropdownId);
             if (dropdown.length === 0) {
                 console.error(`loadBulanFilter: Dropdown with ID "${dropdownId}" not found.`);
@@ -1396,11 +2140,11 @@ function loadBulanFilter(dropdownId) {
             }
             dropdown.empty();
             dropdown.append('<option value="all">Semua Bulan</option>');
-            bulanList.forEach(function(bulan) {
+            bulanList.forEach(function (bulan) {
                 dropdown.append(`<option value="${bulan}">${bulan}</option>`);
             });
         },
-        error: function() {
+        error: function () {
             console.error(`Gagal mengambil daftar bulan untuk ${dropdownId}.`);
         }
     });
@@ -1433,7 +2177,7 @@ function fetchJumlahTicketingData(filterValue = 'all') {
         dataType: 'json',
         cache: false,
         headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-        success: function(response) {
+        success: function (response) {
             console.log("fetchJumlahTicketingData: data diterima dari server =", response);
             if (response && Array.isArray(response.labels) && Array.isArray(response.values)) {
                 renderJumlahTicketingChart(response.labels, response.values);
@@ -1442,7 +2186,7 @@ function fetchJumlahTicketingData(filterValue = 'all') {
                 renderJumlahTicketingChart(['No Data'], [0]);
             }
         },
-        error: function(xhr, status, error) {
+        error: function (xhr, status, error) {
             console.error('fetchJumlahTicketingData: Gagal mendapatkan data:', error);
             renderJumlahTicketingChart(['Error'], [0]);
         }
@@ -1488,7 +2232,7 @@ function renderJumlahTicketingChart(labels, values) {
             plugins: {
                 tooltip: {
                     callbacks: {
-                        label: function(context) {
+                        label: function (context) {
                             let label = context.label || '';
                             let value = context.parsed || 0;
                             let dataSet = context.chart.data.datasets[context.datasetIndex];
@@ -1889,7 +2633,7 @@ function renderPermintaanSeringDiajukanChart(labels, values) {
     });
 }
 
-$(document).ready(function() {
+$(document).ready(function () {
 
     // =======================================================================
     // 1. INISIALISASI & TAB LAMA
@@ -1904,10 +2648,10 @@ $(document).ready(function() {
     }
 
     // Event Listeners Filter Dropdown
-    $('#filterBulan').on('change', function() { fetchJumlahTicketingData(this.value); });
-    $('#filterMonthPIC').on('change', function() { fetchJumlahPICData(this.value); });
-    $('#filterMonth').on('change', function() { fetchRerataDurasiData(this.value); });
-    $('#filterMonthKetepatan').on('change', function() { fetchRerataKetepatanResponseData(this.value); });
+    $('#filterBulan').on('change', function () { fetchJumlahTicketingData(this.value); });
+    $('#filterMonthPIC').on('change', function () { fetchJumlahPICData(this.value); });
+    $('#filterMonth').on('change', function () { fetchRerataDurasiData(this.value); });
+    $('#filterMonthKetepatan').on('change', function () { fetchRerataKetepatanResponseData(this.value); });
 
     // Event Listeners PILLS (Tab Lama)
     $('#pills-jumlah-ticketing-tab').on('shown.bs.tab', function () { fetchJumlahTicketingData($('#filterBulan').val() || 'all'); });
@@ -2098,12 +2842,23 @@ $(document).ready(function() {
             if (!details || Object.keys(details).length === 0) {
                 tableBody.html('<tr><td colspan="6" class="text-center p-4">Tidak ada data checklist ditemukan.</td></tr>');
             } else {
-                $.each(details, function(stage, items) {
-                    tableBody.append(`<tr class="table-secondary"><td colspan="6" class="fw-bold text-uppercase px-3 py-2"><i class="bi bi-bookmark-fill me-1"></i> ${stage}</td></tr>`);
+                $.each(details, function (stage, items) {
+                    // HEADER GROUP (colspan=6)
+                    tableBody.append(`
+                        <tr class="table-secondary">
+                            <td colspan="6" class="fw-bold text-uppercase px-3 py-2">
+                                <i class="bi bi-bookmark-fill me-1"></i> ${stage}
+                            </td>
+                        </tr>
+                    `);
+
+                    // ITEM ROWS
                     items.forEach(item => {
                         let badge = '';
                         let rowClass = '';
-                        switch(item.status) {
+
+                        // Logika Badge
+                        switch (item.status) {
                             case 'On Time': badge = '<span class="badge bg-success">On Time</span>'; break;
                             case 'Late': badge = '<span class="badge bg-warning text-dark">Terlambat</span>'; break;
                             case 'Overdue': badge = '<span class="badge bg-danger">Overdue</span>'; rowClass = 'bg-danger bg-opacity-10'; break;
@@ -2124,75 +2879,10 @@ $(document).ready(function() {
         }
     }
 
-    $('#eventSlaFilter').on('change', function() { loadSlaEvent($(this).val()); });
-
-
-    // =======================================================================
-    // 7. FUNGSI SLA DIGITAL KREATIF (BARU)
-    // =======================================================================
-    const slaDigitalUrl = "/dashboard-sla/digital";
-
-    async function loadSlaDigital() {
-        try {
-            const response = await fetch(slaDigitalUrl);
-            const data = await response.json();
-            const kpi = data.kpi;
-            const details = data.content_details;
-
-            // 1. Update Filter Display
-            updateFilterDisplay(kpi.filters, 'digital_sla_period');
-
-            // 2. Update KPI Konten
-            $('#digital-content-sla')
-                .text(formatPercent(kpi.content_sla_compliance))
-                .attr('class', `fs-1 fw-bold ${getSlaClass(kpi.content_sla_compliance)}`);
-
-            $('#digital-content-total').text(kpi.total_content_uploaded);
-            $('#digital-weeks-met').text(kpi.weeks_met);
-            $('#digital-weeks-total').text(kpi.total_weeks_evaluated);
-
-            // 3. Update KPI Ticketing
-            $('#digital-ticket-res-sla')
-                .text(formatPercent(kpi.ticket_resolution_compliance))
-                .attr('class', `fs-2 fw-bold ${getSlaClass(kpi.ticket_resolution_compliance)}`);
-
-            $('#digital-ticket-resp-sla')
-                .text(formatPercent(kpi.ticket_response_compliance))
-                .attr('class', `fs-2 fw-bold ${getSlaClass(kpi.ticket_response_compliance)}`);
-
-            $('#digital-ticket-avg').text(formatHours(kpi.avg_resolution_time));
-
-            // 4. Render Tabel Mingguan
-            const tableBody = $('#digital-weekly-table-body');
-            tableBody.empty();
-
-            if (details.length === 0) {
-                tableBody.html('<tr><td colspan="4" class="text-center py-3">Tidak ada data periode.</td></tr>');
-            } else {
-                details.forEach(item => {
-                    let badge = (item.status === 'Met')
-                        ? '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Tercapai</span>'
-                        : '<span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Gagal</span>';
-
-                    let rowClass = (item.status !== 'Met') ? 'table-danger' : '';
-
-                    tableBody.append(`
-                        <tr class="${rowClass}">
-                            <td class="align-middle fw-medium">${item.week_range}</td>
-                            <td class="text-center align-middle fs-5 fw-bold">${item.count}</td>
-                            <td class="text-center align-middle text-muted">${item.target}</td>
-                            <td class="text-center align-middle">${badge}</td>
-                        </tr>
-                    `);
-                });
-            }
-
-        } catch (error) {
-            console.error('Gagal Load SLA Digital:', error);
-            $('#digital_sla_period').html('<span class="text-danger">Gagal memuat data dashboard.</span>');
-        }
-    }
-
+    // Listener Dropdown Event SLA
+    $('#eventSlaFilter').on('change', function () {
+        loadSlaEvent($(this).val());
+    });
 
     // =======================================================================
     // 8. EVENT LISTENER UTAMA (UPDATED)
@@ -2220,7 +2910,7 @@ $(document).ready(function() {
             if (activePillId === 'pills-sla-event-tab') {
                 if (!isLoaded) {
                     const selectedEvent = $('#eventSlaFilter').val();
-                    if(selectedEvent) {
+                    if (selectedEvent) {
                         loadSlaEvent(selectedEvent);
                         activePill.data('loaded', true);
                     }

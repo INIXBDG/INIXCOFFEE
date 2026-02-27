@@ -892,8 +892,9 @@
         function getDeskripsi() {
             const penerima = document.getElementById('penerima').value || '';
             const deskripsi = document.getElementById('deskripsi').value || '';
+            const perusahaan = document.getElementById('perusahaan').options[document.getElementById('perusahaan').selectedIndex].getAttribute('data-nama') || '';
             const constantPart =
-                `<br><br>Kami mengundang Bapak/Ibu ${penerima}, untuk memperbarui pengetahuan dan keterampilan dalam bidang teknologi informasi, digitalisasi, serta pengembangan soft skill lainnya, melalui program-program pelatihan yang diselenggarakan oleh Inixindo Bandung. Kami menawarkan pelatihan sebagai berikut:`;
+                `<br><br>Kami mengundang Bapak/Ibu ${perusahaan}, untuk memperbarui pengetahuan dan keterampilan dalam bidang teknologi informasi, digitalisasi, serta pengembangan soft skill lainnya, melalui program-program pelatihan yang diselenggarakan oleh Inixindo Bandung. Kami menawarkan pelatihan sebagai berikut:`;
             return deskripsi + constantPart;
         }
 

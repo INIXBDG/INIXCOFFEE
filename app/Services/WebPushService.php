@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
+use App\Models\PushSubscription;
 use Minishlink\WebPush\WebPush;
 use Minishlink\WebPush\Subscription;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
 use Exception;
 
 class WebPushService
@@ -23,10 +23,10 @@ class WebPushService
                     'publicKey' => env('VAPID_PUBLIC_KEY'),
                     'privateKey' => env('VAPID_PRIVATE_KEY'),
                 ],
-                'timeout' => 30, // Timeout 30 detik
+                'timeout' => 30,
                 'connection_timeout' => 10,
             ]);
-            $this->webPush->setDefaultOptions(['TTL' => 2419200]); 
+            $this->webPush->setDefaultOptions(['TTL' => 2419200]);
             $this->webPush->setAutomaticPadding(false);
         } catch (Exception $e) {
             Log::error('WebPushService initialization error: ' . $e->getMessage());
@@ -34,15 +34,11 @@ class WebPushService
         }
     }
 
-    /**
-     * Subscribe user ke push notification
-     */
     public function subscribe($userId, $subscriptionData)
     {
         $startTime = microtime(true);
 
         try {
-            // Validasi subscription data
             if (empty($subscriptionData['endpoint'])) {
                 throw new Exception('Endpoint tidak boleh kosong');
             }
@@ -51,12 +47,10 @@ class WebPushService
                 throw new Exception('Keys tidak lengkap');
             }
 
-            // Validasi URL endpoint
             if (!filter_var($subscriptionData['endpoint'], FILTER_VALIDATE_URL)) {
                 throw new Exception('Endpoint URL tidak valid');
             }
 
-            // Simpan atau update subscription
             $subscription = \App\Models\PushSubscription::updateOrCreate(
                 ['endpoint' => $subscriptionData['endpoint']],
                 [
@@ -95,9 +89,6 @@ class WebPushService
         }
     }
 
-    /**
-     * Unsubscribe user dari push notification
-     */
     public function unsubscribe($endpoint)
     {
         try {
@@ -113,12 +104,12 @@ class WebPushService
                     'success' => true,
                     'message' => 'Unsubscribe berhasil',
                 ];
-            } else {
-                return [
-                    'success' => false,
-                    'message' => 'Subscription tidak ditemukan',
-                ];
             }
+
+            return [
+                'success' => false,
+                'message' => 'Subscription tidak ditemukan',
+            ];
         } catch (Exception $e) {
             Log::error('WebPush unsubscribe error: ' . $e->getMessage());
             return [
@@ -128,9 +119,6 @@ class WebPushService
         }
     }
 
-    /**
-     * Unsubscribe by user ID
-     */
     public function unsubscribeByUserId($userId)
     {
         try {
@@ -155,13 +143,9 @@ class WebPushService
         }
     }
 
-    /**
-     * Kirim notifikasi ke user tertentu
-     */
     public function sendNotificationToUser($userId, $title, $body, $options = [])
     {
         try {
-            // Validasi input
             if (empty($userId)) {
                 return [
                     'success' => false,
@@ -176,11 +160,11 @@ class WebPushService
                 ];
             }
 
-            // Cek apakah user punya subscription
-            $subscriptions = \App\Models\PushSubscription::where('user_id', $userId)->get();
+            $subscriptions = \App\Models\PushSubscription::where('user_id', $userId)
+                ->get();
 
             if ($subscriptions->isEmpty()) {
-                Log::warning('User tidak memiliki subscription', ['user_id' => $userId]);
+                Log::warning('User tidak memiliki subscription aktif', ['user_id' => $userId]);
                 return [
                     'success' => false,
                     'message' => 'User tidak memiliki subscription',
@@ -195,7 +179,6 @@ class WebPushService
                 'title' => $title,
             ]);
 
-            // Kirim notifikasi
             return $this->sendToSubscriptions($subscriptions, $title, $body, $options);
         } catch (Exception $e) {
             Log::error('WebPush send to user error', [
@@ -213,9 +196,6 @@ class WebPushService
         }
     }
 
-    /**
-     * Kirim notifikasi ke semua user
-     */
     public function sendNotificationToAll($title, $body, $options = [])
     {
         try {
@@ -242,7 +222,6 @@ class WebPushService
                 'title' => $title,
             ]);
 
-            // Proses dalam batch untuk performa
             $totalSent = 0;
             $totalFailed = 0;
             $totalResults = [];
@@ -256,9 +235,8 @@ class WebPushService
                     $totalResults = array_merge($totalResults, $result['results']);
                 }
 
-                // Delay antar batch untuk menghindari rate limiting
                 if ($batch->count() === $this->batchSize) {
-                    usleep(100000); // 100ms delay
+                    usleep(100000);
                 }
             }
 
@@ -281,9 +259,6 @@ class WebPushService
         }
     }
 
-    /**
-     * Kirim notifikasi ke multiple users
-     */
     public function sendNotificationToUsers(array $userIds, $title, $body, $options = [])
     {
         try {
@@ -301,7 +276,8 @@ class WebPushService
                 ];
             }
 
-            $subscriptions = \App\Models\PushSubscription::whereIn('user_id', $userIds)->get();
+            $subscriptions = \App\Models\PushSubscription::whereIn('user_id', $userIds)
+                ->get();
 
             if ($subscriptions->isEmpty()) {
                 return [
@@ -330,15 +306,12 @@ class WebPushService
         }
     }
 
-    /**
-     * Kirim notifikasi ke koleksi subscriptions
-     */
-    protected function sendToSubscriptions($subscriptions, $title, $body, $options = [])
+    protected function sendToSubscriptions($subscriptions, $payloadOrTitle, $bodyOrOptions = [], $options = [])
     {
         try {
-            $payload = $this->buildPayload($title, $body, $options);
+            $isJsonPayload = is_string($payloadOrTitle) && json_decode($payloadOrTitle) !== null && empty($bodyOrOptions);
+            $payload = $isJsonPayload ? $payloadOrTitle : $this->buildPayload($payloadOrTitle, $bodyOrOptions, $options);
 
-            // Validasi payload
             if (!$this->validatePayload($payload)) {
                 throw new Exception('Payload tidak valid');
             }
@@ -348,7 +321,6 @@ class WebPushService
             $sent = 0;
             $failed = 0;
 
-            // Queue semua notifikasi
             foreach ($subscriptions as $subscription) {
                 try {
                     $sub = Subscription::create([
@@ -375,11 +347,18 @@ class WebPushService
                 }
             }
 
-            // Flush dan proses hasil
             $reports = $this->webPush->flush();
 
             foreach ($reports as $report) {
                 $endpoint = (string) $report->getRequest()->getUri();
+                $shortEndpoint = substr($endpoint, 0, 50) . '...';
+
+                Log::info('WebPush report detail', [
+                    'endpoint' => $shortEndpoint,
+                    'success' => $report->isSuccess(),
+                    'reason' => $report->getReason(),
+                    'status_code' => $report->getResponse()?->getStatusCode(),
+                ]);
 
                 if ($report->isSuccess()) {
                     $results[] = [
@@ -389,14 +368,9 @@ class WebPushService
                         'user_id' => $queued[$endpoint]->user_id ?? null,
                     ];
                     $sent++;
-
-                    // Update last_active_at
-                    if (isset($queued[$endpoint])) {
-                        $queued[$endpoint]->update(['last_active_at' => now()]);
-                    }
                 } else {
                     $reason = $report->getReason();
-                    $statusCode = $report->getResponse() ? $report->getResponse()->getStatusCode() : null;
+                    $statusCode = $report->getResponse()?->getStatusCode();
 
                     $results[] = [
                         'success' => false,
@@ -408,17 +382,16 @@ class WebPushService
                     $failed++;
 
                     Log::error('WebPush delivery failed', [
-                        'endpoint' => substr($endpoint, 0, 50) . '...',
+                        'endpoint' => $shortEndpoint,
                         'reason' => $reason,
                         'status_code' => $statusCode,
                     ]);
 
-                    // Hapus subscription yang expired atau tidak valid
                     if ($this->shouldDeleteSubscription($report)) {
                         if (isset($queued[$endpoint])) {
                             $queued[$endpoint]->delete();
                             Log::info('Deleted expired/invalid subscription', [
-                                'endpoint' => substr($endpoint, 0, 50) . '...',
+                                'endpoint' => $shortEndpoint,
                                 'reason' => $reason,
                             ]);
                         }
@@ -454,12 +427,8 @@ class WebPushService
         }
     }
 
-    /**
-     * Build payload untuk notifikasi
-     */
     protected function buildPayload($title, $body, $options = [])
     {
-        // Sanitize input
         $title = $this->sanitizeText($title, 200);
         $body = $this->sanitizeText($body, 500);
 
@@ -475,39 +444,19 @@ class WebPushService
             'tag' => $options['tag'] ?? 'notification-' . time(),
             'timestamp' => now()->timestamp * 1000,
             'renotify' => true,
-            'badge' => $options['badge'] ?? '/icons/badge-96x96.png',
+            'vibrate' => $this->getVibratePattern($options),
+            'actions' => $this->getActions($options),
         ];
 
-        // Vibrate pattern
-        if (isset($options['vibrate']) && is_array($options['vibrate'])) {
-            $data['vibrate'] = array_map('intval', $options['vibrate']);
-        } elseif (!empty($options['vibrate'])) {
-            $data['vibrate'] = [200, 100, 200];
-        }
-
-        // Actions
-        if (isset($options['actions']) && is_array($options['actions'])) {
-            $data['actions'] = array_map(function ($action) {
-                return [
-                    'action' => $action['action'] ?? '',
-                    'title' => $action['title'] ?? '',
-                    'icon' => $action['icon'] ?? null,
-                ];
-            }, $options['actions']);
-        }
-
-        // Encode ke JSON dengan error handling
         $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
-            $error = json_last_error_msg();
             Log::error('JSON encode error', [
-                'error' => $error,
+                'error' => json_last_error_msg(),
                 'data' => $data,
             ]);
 
-            // Fallback ke format minimal
-            $json = json_encode(
+            return json_encode(
                 [
                     'title' => $title,
                     'body' => $body,
@@ -523,7 +472,8 @@ class WebPushService
 
     public function sendPayloadToUser($userId, string $payloadJson, array $options = [])
     {
-        $subscriptions = \App\Models\PushSubscription::where('user_id', $userId)->get();
+        $subscriptions = \App\Models\PushSubscription::where('user_id', $userId)
+            ->get();
 
         if ($subscriptions->isEmpty()) {
             return ['success' => false, 'message' => 'No subscriptions', 'sent' => 0, 'failed' => 0];
@@ -532,16 +482,12 @@ class WebPushService
         return $this->sendToSubscriptions($subscriptions, $payloadJson, $options);
     }
 
-    /**
-     * Validasi payload JSON
-     */
     protected function validatePayload($payload)
     {
         if (empty($payload)) {
             return false;
         }
 
-        // Cek ukuran payload (max 4KB untuk FCM)
         if (strlen($payload) > 4096) {
             Log::warning('Payload size exceeds limit', [
                 'size' => strlen($payload),
@@ -550,27 +496,19 @@ class WebPushService
             return false;
         }
 
-        // Cek apakah valid JSON
         json_decode($payload);
         return json_last_error() === JSON_ERROR_NONE;
     }
 
-    /**
-     * Sanitize text input
-     */
     protected function sanitizeText($text, $maxLength = 500)
     {
         if (!is_string($text)) {
             return '';
         }
 
-        // Remove HTML tags
         $text = strip_tags($text);
-
-        // Trim whitespace
         $text = trim($text);
 
-        // Limit length
         if (strlen($text) > $maxLength) {
             $text = substr($text, 0, $maxLength - 3) . '...';
         }
@@ -578,21 +516,16 @@ class WebPushService
         return $text;
     }
 
-    /**
-     * Validasi URL
-     */
     protected function validateUrl($url)
     {
         if (empty($url)) {
             return null;
         }
 
-        // Jika sudah URL lengkap, return langsung
         if (filter_var($url, FILTER_VALIDATE_URL)) {
             return $url;
         }
 
-        // Jika relative path, tambahkan base URL
         if (strpos($url, '/') === 0) {
             return url($url);
         }
@@ -600,30 +533,17 @@ class WebPushService
         return url('/' . ltrim($url, '/'));
     }
 
-    /**
-     * Cek apakah subscription harus dihapus
-     */
     protected function shouldDeleteSubscription($report)
     {
         if (!$report->isSubscriptionExpired()) {
             return false;
         }
 
-        $statusCode = $report->getResponse() ? $report->getResponse()->getStatusCode() : null;
+        $statusCode = $report->getResponse()?->getStatusCode();
 
-        // Hapus jika:
-        // - Status 404 (Not Found)
-        // - Status 410 (Gone)
-        // - Status 403 (Forbidden)
-        // - Status 400 (Bad Request)
-        $deleteStatusCodes = [404, 410, 403, 400, 401];
-
-        return in_array($statusCode, $deleteStatusCodes);
+        return in_array($statusCode, [404, 410, 403, 400, 401]);
     }
 
-    /**
-     * Get VAPID public key
-     */
     public function getVapidPublicKey()
     {
         $key = env('VAPID_PUBLIC_KEY');
@@ -636,9 +556,6 @@ class WebPushService
         return $key;
     }
 
-    /**
-     * Get subscription count by user
-     */
     public function getSubscriptionCount($userId = null)
     {
         try {
@@ -655,13 +572,10 @@ class WebPushService
         }
     }
 
-    /**
-     * Get all active subscriptions
-     */
     public function getActiveSubscriptions($userId = null)
     {
         try {
-            $query = \App\Models\PushSubscription::query()->where('created_at', '>=', now()->subMonths(6)); // Hanya subscription < 6 bulan
+            $query = \App\Models\PushSubscription::query()->where('created_at', '>=', now()->subMonths(6));
 
             if ($userId) {
                 $query->where('user_id', $userId);
@@ -674,15 +588,10 @@ class WebPushService
         }
     }
 
-    /**
-     * Cleanup expired subscriptions
-     */
     public function cleanupExpiredSubscriptions()
     {
         try {
-            $expired = \App\Models\PushSubscription::where('last_active_at', '<', now()->subMonths(6))
-                ->orWhereNull('last_active_at')
-                ->where('created_at', '<', now()->subMonths(6))
+            $expired = \App\Models\PushSubscription::where('created_at', '<', now()->subMonths(6))
                 ->delete();
 
             Log::info('Cleanup expired subscriptions', ['deleted' => $expired]);
@@ -700,5 +609,43 @@ class WebPushService
                 'deleted' => 0,
             ];
         }
+    }
+
+    private function getVibratePattern($options)
+    {
+        if (isset($options['vibrate']) && is_array($options['vibrate'])) {
+            return array_map('intval', $options['vibrate']);
+        }
+        if (!empty($options['vibrate'])) {
+            return [200, 100, 200];
+        }
+        return null;
+    }
+
+    private function getActions($options)
+    {
+        if (!isset($options['actions']) || !is_array($options['actions'])) {
+            return [];
+        }
+
+        return array_map(function ($action) {
+            return [
+                'action' => $action['action'] ?? '',
+                'title' => $action['title'] ?? '',
+                'icon' => $action['icon'] ?? null,
+            ];
+        }, $options['actions']);
+    }
+
+    public function userHasActiveSubscription($userId = null)
+    {
+        $userId = $userId ?? auth()->user()->id;
+
+        if (!$userId) {
+            return false;
+        }
+
+
+        return PushSubscription::where('user_id', $userId)->exists();
     }
 }

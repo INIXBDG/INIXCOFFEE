@@ -1,75 +1,64 @@
 <?php
 
-use App\Http\Controllers\Api\RKMController;
-use App\Http\Controllers\approvedNetSalesController;
-use App\Http\Controllers\CateringController;
-use App\Http\Controllers\Crm\CatatanSalesController;
-use App\Http\Controllers\Crm\ContactController;
-use App\Http\Controllers\Crm\CRMController;
-use App\Http\Controllers\Crm\PicController;
-use App\Http\Controllers\Crm\AktivitasController;
-use App\Http\Controllers\Crm\MapController;
-use App\Http\Controllers\Crm\PeluangController;
-use App\Http\Controllers\Crm\RegisFormController;
-use App\Http\Controllers\Crm\salesPribadiController;
-use App\Http\Controllers\Crm\TargetAktivitas;
-use App\Http\Controllers\Crm\LaporanPenjualanController;
-use App\Http\Controllers\Crm\ImportPerusahaanAndContactController;
-use App\Http\Controllers\TelegramController;
-use App\Http\Controllers\izinTigaJamController;
-use App\Http\Controllers\KelasAnalisisController;
-use App\Http\Controllers\RKMController as ControllersRKMController;
-use App\Http\Controllers\netSalesController;
-use App\Http\Controllers\pengajuanKlaimController;
-use App\Http\Controllers\DashboardItsmController;
-use App\Http\Controllers\examController;
-use App\Models\izinTigaJam;
-use App\Http\Controllers\InventarisController;
 use App\Models\Contact;
-use App\Http\Controllers\laporanInsidentController;
 use App\Models\Inventaris;
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Auth;
-use Rap2hpoutre\LaravelLogViewer\LogViewerController;
-use App\Http\Controllers\InvoiceRKMController;
-use App\Http\Controllers\KaryawanController;
-use App\Http\Controllers\MakananRkmController;
-use App\Http\Controllers\managementKelasController;
-use App\Http\Controllers\SouvenirController;
-use App\Http\Controllers\TicketController;
-use App\Http\Controllers\KanbanController;
-use App\Http\Controllers\DailyActivityController;
-use App\Http\Controllers\office\OfficeController;
-use App\Http\Controllers\DashboardSLAController;
-use App\Http\Controllers\Office\CertificateController;
-use App\Http\Controllers\office\ModulController;
-use App\Http\Controllers\OutstandingController;
+use App\Models\izinTigaJam;
 use App\Events\ServerTimeUpdate;
-use App\Http\Controllers\BroadcastAuthController;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\examController;
+use App\Http\Controllers\KanbanController;
+use App\Http\Controllers\MateriController;
+use App\Http\Controllers\TicketController;
+use App\Http\Controllers\Api\RKMController;
+use App\Http\Controllers\Crm\CRMController;
+use App\Http\Controllers\Crm\MapController;
+use App\Http\Controllers\Crm\PicController;
+use App\Http\Controllers\CateringController;
+use App\Http\Controllers\feedbackController;
+use App\Http\Controllers\KaryawanController;
+use App\Http\Controllers\netSalesController;
+use App\Http\Controllers\SouvenirController;
+use App\Http\Controllers\TelegramController;
+use App\Http\Controllers\Crm\TargetAktivitas;
+use App\Http\Controllers\InventarisController;
+use App\Http\Controllers\InvoiceRKMController;
+use App\Http\Controllers\MakananRkmController;
 use App\Http\Controllers\PusherAuthController;
-use App\Http\Controllers\office\vendorOfficeController;
+use App\Http\Controllers\Crm\ContactController;
+use App\Http\Controllers\Crm\PeluangController;
+use App\Http\Controllers\izinTigaJamController;
+use App\Http\Controllers\OutstandingController;
+use App\Http\Controllers\DashboardSLAController;
+use App\Http\Controllers\office\ModulController;
+use App\Http\Controllers\BroadcastAuthController;
+use App\Http\Controllers\Crm\AktivitasController;
+use App\Http\Controllers\Crm\RegisFormController;
+use App\Http\Controllers\DailyActivityController;
+use App\Http\Controllers\DashboardItsmController;
+use App\Http\Controllers\KelasAnalisisController;
+use App\Http\Controllers\office\OfficeController;
+use App\Http\Controllers\pengajuanKlaimController;
+use App\Http\Controllers\laporanInsidentController;
+use App\Http\Controllers\managementKelasController;
+use App\Http\Controllers\approvedNetSalesController;
+use App\Http\Controllers\Crm\CatatanSalesController;
+use App\Http\Controllers\Crm\salesPribadiController;
+use App\Http\Controllers\Webinar\CalendarController;
+use App\Http\Controllers\PenukaranSouvenirController;
+use App\Http\Controllers\Webinar\ChecklistController;
+use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 use App\Http\Controllers\ActivityInstrukturController;
+use App\Http\Controllers\Office\CertificateController;
+use App\Http\Controllers\office\vendorOfficeController;
+use App\Http\Controllers\RekomendasiLanjutanController;
+use App\Http\Controllers\Crm\LaporanPenjualanController;
+use App\Http\Controllers\Webinar\TimelineItemController;
+use App\Http\Controllers\office\DashboardSouvenirController;
+use App\Http\Controllers\Crm\ImportPerusahaanAndContactController;
+use App\Http\Controllers\RKMController as ControllersRKMController;
 use App\Http\Controllers\colaboratorController;
 use App\Http\Controllers\dbklienController;
-use App\Http\Controllers\PenukaranSouvenirController;
-use App\Http\Controllers\office\DashboardSouvenirController;
-use App\Http\Controllers\Webinar\CalendarController;
-use App\Http\Controllers\RekomendasiLanjutanController;
-use App\Http\Controllers\ForumSSOController;
-use App\Http\Controllers\KPI\DatabaseKPIController as KPIDatabaseKPIController;
-use App\Http\Controllers\KPI\TargetKPIController;
-use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\office\BiayaTransportasiController;
-use App\Http\Controllers\Office\pickupDriverController;
-use App\Http\Controllers\WebPushController;
-use App\Http\Controllers\KegiatanController;
-use App\Http\Controllers\KendaraanController;
-use App\Http\Controllers\Webinar\TimelineItemController;
-use App\Http\Controllers\Webinar\ChecklistController;
-use App\HTTP\Controllers\SentryWebhookController;
-use App\Http\Controllers\InstructorDevelopmentController;
-use App\Http\Controllers\KomplainPesertaController;
-
 
 
 /*
@@ -123,6 +112,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/webpush/unsubscribe', [WebPushController::class, 'unsubscribe'])->name('webpush.unsubscribe');
     Route::get('/webpush/vapid-key', [WebPushController::class, 'getVapidKey'])->name('webpush.vapid-key');
     Route::post('/webpush/test', [WebPushController::class, 'testNotification'])->name('webpush.test');
+    Route::get( '/webpush/status',      [WebPushController::class, 'subscriptionStatus']);
 });
 // test
 Route::get('/testdata', [App\Http\Controllers\TestController::class, 'index'])->name('testdata');
@@ -209,6 +199,8 @@ Route::get('/rkmEditInstruktur/{id}', [App\Http\Controllers\RKMController::class
 Route::put('/rkmUpdateInstruktur', [App\Http\Controllers\RKMController::class, 'updateInstruktur'])->name('updateInstruktur');
 Route::get('/rkmEdit', [App\Http\Controllers\RKMController::class, 'editRKM'])->name('rkmEdit');
 Route::put('/rkmUpdate', [App\Http\Controllers\RKMController::class, 'updateRKM'])->name('rkmUpdate');
+Route::get('/rkm/checklist/{id}', [App\Http\Controllers\RKMController::class, 'getChecklist'])->name('rkm.checklist.get');
+Route::post('/rkm/checklist/store', [App\Http\Controllers\RKMController::class, 'storeChecklist'])->name('rkm.checklist.store');
 
 Route::group(['middleware' => 'Admin'], function () {
     Route::get('/user/register', [App\Http\Controllers\UserController::class, 'create'])->name('user.register');
@@ -238,7 +230,9 @@ Route::get('getRegistrasiexamByIdExam/{id}', [App\Http\Controllers\registexamCon
 Route::get('getSouvenir', [App\Http\Controllers\SouvenirController::class, 'getSouvenir'])->name('getSouvenir');
 Route::get('getSouvenirPeserta', [App\Http\Controllers\SouvenirController::class, 'getSouvenirPeserta'])->name('getSouvenirPeserta');
 Route::get('getFeedbacksByMonth/{year}/{month}', [App\Http\Controllers\feedbackController::class, 'getFeedbacksByMonth'])->name('getFeedbacksByMonth');
-Route::get('getPengajuanCuti', [App\Http\Controllers\PengajuancutiController::class, 'getPengajuanCuti'])->name('getPengajuanCuti');
+Route::get('/getTotalFeedbackPertahun', [App\Http\Controllers\feedbackController::class, 'getTotalFeedbackPertahun'])->name('office.feedback.get');
+Route::get('/chart/jumlah-update-materi-perbulan', [MateriController::class, 'chartJumlahUpdateMateriPerbulan'])->name('chart.jumlah-update-materi-perbulan')->middleware('auth');Route::get('/chart/silabus-per-instruktur-per-tahun', [App\Http\Controllers\MateriController::class, 'chartSilabusPerInstrukturPerTahun'])->middleware('auth');
+Route::get('/chart/hari-mengajar-instruktur-per-tahun', [App\Http\Controllers\RKMController::class, 'chartHariMengajarInstrukturPerTahun'])->name('chart.hari-mengajar-instruktur-per-tahun');Route::get('getPengajuanCuti', [App\Http\Controllers\PengajuancutiController::class, 'getPengajuanCuti'])->name('getPengajuanCuti');
 Route::get('getPengajuanIzin', [App\Http\Controllers\izinTigaJamController::class, 'getPengajuanIzin'])->name('getPengajuanIzin');
 Route::get('/pengajuan-izin-3-jam/excel-download', [izinTigaJamController::class, 'pengajuanJamExcel'])->name('pengajuanIzin.excelDownload');
 Route::get('/pengajuan-izin-3-jam/pdf-download', [izinTigaJamController::class, 'pengajuanJamPDF'])->name('pengajuanIzin.PDFDownload');
@@ -536,7 +530,7 @@ Route::get('/rkm/uploadSertifikat/{id}', [ControllersRKMController::class, 'uplo
 Route::post('/rkm/store/sertifikat', [ControllersRKMController::class, 'storeSertifikat'])->name('storeSertifikat');
 Route::post('/rkm/delete/sertifikat', [ControllersRKMController::class, 'deleteSertifikat'])->name('deleteSertifikat');
 // web.php
-Route::post('/rkm/update-makanan', [App\Http\Controllers\RkmController::class, 'updateMakanan'])
+Route::post('/rkm/update-makanan', [App\Http\Controllers\RKMController::class, 'updateMakanan'])
     ->name('rkm.updateMakanan');
 
 

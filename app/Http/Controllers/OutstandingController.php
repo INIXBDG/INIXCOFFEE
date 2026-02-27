@@ -246,6 +246,7 @@ class OutstandingController extends Controller
             ->whereHas('outstanding', function ($query) {
                 $query->where('status_pembayaran', '1');
             })
+            ->whereHas('perhitunganNetSales')
             ->get();
 
         return response()->json(['data' => $rkm]);
@@ -785,22 +786,6 @@ class OutstandingController extends Controller
 
         $filesToMerge = [];
 
-        // 0. Invoice
-        // if ($invoice) {
-        //     $fakturPath = storage_path('app/' . $outstanding->path_faktur_pajak);
-        //     if (file_exists($fakturPath)) {
-        //         $filesToMerge[] = $fakturPath;
-        //     }
-        // }
-
-        // 1. Faktur Pajak
-        if ($outstanding->path_faktur_pajak) {
-            $fakturPath = storage_path('app/' . $outstanding->path_faktur_pajak);
-            if (file_exists($fakturPath)) {
-                $filesToMerge[] = $fakturPath;
-            }
-        }
-
         // 1. Faktur Pajak
         if ($outstanding->path_faktur_pajak) {
             $fakturPath = storage_path('app/' . $outstanding->path_faktur_pajak);
@@ -861,19 +846,27 @@ class OutstandingController extends Controller
         }
 
         // 7. Invoice
-        $invoice = Invoice::where('id_rkm', $outstanding->id_rkm)->get();
+        $invoice = Invoice::where('id_rkm', $outstanding->id_rkm)->first();
 
-        if ($invoice->file_path) {
+        if ($invoice && $invoice->file_path) {
             $file = storage_path('app/' . $invoice->file_path);
-            $filesToMerge[] = $file;
+            if (file_exists($file)) {
+                $filesToMerge[] = $file;
+            } else {
+                Log::warning('Invoice PDF not found: ' . $file);
+            }
         }
 
         // 8. Kwitansi
-        $kwitansi = Kwitansi::where('id_rkm', $outstanding->id_rkm)->get();
+        $kwitansi = Kwitansi::where('id_rkm', $outstanding->id_rkm)->first();
 
-        if ($kwitansi->file_path) {
+        if ($kwitansi && $kwitansi->file_path) {
             $file = storage_path('app/' . $kwitansi->file_path);
-            $filesToMerge[] = $file;
+            if (file_exists($file)) {
+                $filesToMerge[] = $file;
+            } else {
+                Log::warning('Kwitansi PDF not found: ' . $file);
+            }
         }
 
         if (empty($filesToMerge)) {

@@ -28,7 +28,7 @@ class KoordinasiDriverNotifcation extends Notification
 
     public function via($notifiable): array
     {
-        return ['database', 'broadcast', 'App\Channels\WebPushChannel'];
+        return ['database', 'broadcast', 'webpush'];
     }
 
     public function broadcastOn(): PrivateChannel
@@ -44,9 +44,7 @@ class KoordinasiDriverNotifcation extends Notification
     public function toBroadcast($notifiable): BroadcastMessage
     {
         // Handle array tipe
-        $tipeKoordinasi = is_array($this->data['tipe'] ?? []) 
-            ? implode(', ', $this->data['tipe']) 
-            : ($this->data['tipe'] ?? 'Unknown');
+        $tipeKoordinasi = is_array($this->data['tipe'] ?? []) ? implode(', ', $this->data['tipe']) : $this->data['tipe'] ?? 'Unknown';
 
         return new BroadcastMessage([
             'user' => auth()->user()?->username ?? 'System',
@@ -66,44 +64,43 @@ class KoordinasiDriverNotifcation extends Notification
     {
         $pengaju = \App\Models\karyawan::find($this->data['id_karyawan'] ?? null);
         $namaPengaju = $pengaju ? $pengaju->nama_lengkap : 'Sistem';
-        
-        $tipeKoordinasi = is_array($this->data['tipe'] ?? []) 
-            ? implode(', ', $this->data['tipe']) 
-            : ($this->data['tipe'] ?? 'Barang');
-        
-        $tanggal = now()->format('d/m/Y'); 
+
+        $tipeKoordinasi = is_array($this->data['tipe'] ?? []) ? implode(', ', $this->data['tipe']) : $this->data['tipe'] ?? 'Barang';
+
+        $tanggal = now()->format('d/m/Y');
 
         $payload = [
             'title' => $this->type,
-            'body'  => "Dari: {$namaPengaju}\nTipe: {$tipeKoordinasi}\nTanggal: {$tanggal}",
-            'icon'  => '/icons/icon-512x512.png',
+            'body' => "Dari: {$namaPengaju}\nTipe: {$tipeKoordinasi}\nTanggal: {$tanggal}",
+            'icon' => '/icons/icon-512x512.png',
             'badge' => '/icons/badge-96x96.png',
-            
+
             'data' => [
                 'path' => $this->path ?? '/office/pickup-driver/index',
-                'id'   => $this->data['id_pengajuan'] ?? null,
+                'id' => $this->data['id_pengajuan'] ?? null,
             ],
-            
-            'actions' => [
-                ['action' => 'view', 'title' => 'Lihat Detail'],
-                ['action' => 'close', 'title' => 'Tutup'],
-            ],
-            
+
+            'actions' => [['action' => 'view', 'title' => 'Lihat Detail'], ['action' => 'close', 'title' => 'Tutup']],
+
             'requireInteraction' => false,
-            'silent'             => false,
-            'vibrate'            => [100, 50, 100],
-            'renotify'           => true,
-            'tag'                => 'koordinasi-' . ($this->data['id_pengajuan'] ?? time()),
+            'silent' => false,
+            'vibrate' => [100, 50, 100],
+            'renotify' => true,
+            'tag' => 'koordinasi-' . ($this->data['id_pengajuan'] ?? time()),
         ];
+
+        $json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new \Exception('JSON encode error: ' . json_last_error_msg());
+        }
+        return $json;
 
         return json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 
     public function toArray($notifiable): array
     {
-        $tipeKoordinasi = is_array($this->data['tipe'] ?? []) 
-            ? implode(', ', $this->data['tipe']) 
-            : ($this->data['tipe'] ?? 'Unknown');
+        $tipeKoordinasi = is_array($this->data['tipe'] ?? []) ? implode(', ', $this->data['tipe']) : $this->data['tipe'] ?? 'Unknown';
 
         return [
             'user' => auth()->user()?->username ?? 'System',

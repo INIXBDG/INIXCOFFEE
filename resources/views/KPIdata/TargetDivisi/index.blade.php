@@ -437,7 +437,7 @@
             dropdownParent: $('#modalBuatTarget')
         });
 
-        $(document).on('click', '#btnEditTarget, .buttonHapusTarget, .buttonForm', function(e) {
+        $(document).on('click', '.buttonHapusTarget, .buttonForm', function(e) {
             e.stopPropagation();
         });
 
@@ -886,7 +886,7 @@
 
 
                                 targetContainer.append(`
-                                    <div class="target-card rounded-4 border-1 shadow-md position-relative overflow-hidden" style="background: white; flex: 0 0 auto; border: 2px solid #f0f0f0; cursor: pointer;"  data-id="${item.id}" id="buttonDetailTarget"  data-bs-toggle="modal" data-bs-target="#detailTargetModal">
+                                    <div class="target-card rounded-4 border-1 shadow-md position-relative overflow-hidden" style="background: white; flex: 0 0 auto; border: 2px solid #f0f0f0; cursor: pointer;">
                                         <div class="position-absolute top-0 start-0 w-100" style="height: 4px; background: ${
                                             badgeClass === 'bg-success' ? '#28a745' :
                                             badgeClass === 'bg-danger' ? '#dc3545' : '#ffc107'
@@ -898,16 +898,14 @@
                                             ${buttonIsiForm}
 
                                             <div class="d-flex gap-2 position-absolute top-0 end-0 p-3">
-                                                <button class="btn btn-sm btn-warning rounded-circle d-flex align-items-center justify-content-center" id="btnEditTarget" data-bs-toggle="modal" data-bs-target="#modalEditTarget" data-id="${item.id}" title="Edit" style="width: 36px; height: 36px; font-size: 0.9rem;">
-                                                    <i class="fa-solid fa-pen-to-square"></i>
-                                                </button>
-
                                                 <button type="button" class="btn btn-sm btn-danger rounded-circle d-flex align-items-center justify-content-center buttonHapusTarget" data-id="${item.id}" title="Hapus" style="width: 36px; height: 36px; font-size: 0.9rem;">
                                                     <i class="fa-solid fa-trash-can"></i>
                                                 </button>
                                             </div>
 
                                         </div>
+
+                                        <div data-id="${item.id}" id="buttonDetailTarget"  data-bs-toggle="modal" data-bs-target="#detailTargetModal">
 
                                         <div class="p-3 pt-4 mt-4">
                                             <h5 class="fw-bold mb-2 fs-6 text-dark" style="min-height: 2.2em; line-height: 1.2;">
@@ -962,6 +960,7 @@
                                                     ${item.tenggat_waktu}
                                                 </small>
                                             </div>
+                                        </div>
                                         </div>
                                     </div>
                                 `);
@@ -1062,129 +1061,6 @@
                 error: function() {
                     Swal.fire('Error', 'Gagal memuat daftar karyawan.', 'error');
                     karyawanSelect.empty().trigger('change');
-                }
-            });
-        });
-
-        $(document).on('click', '#btnEditTarget', function() {
-            let id = $(this).data('id');
-
-            $.ajax({
-                url: "{{ route('kpi.edit') }}",
-                type: "GET",
-                data: {
-                    idTarget: id
-                },
-                dataType: "json",
-                success: function(response) {
-                    let item = response.data;
-                    const content = $('#ModalEdit');
-                    content.html('');
-
-                    content.append(`
-                        <form id="editTargetForm">
-                            @csrf
-                            <input type="hidden" name="id" id="target_id" value="${item.id}">
-
-                            <div class="modal-header bg-light">
-                                <h5 class="modal-title">
-                                    <i class="fas fa-edit me-2"></i> Edit Target
-                                </h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-
-                            <div class="modal-body" id="modal-content-form">
-                                <div class="row">
-                                    <input type="hidden" name="id_pembuat" value="{{ auth()->user()->id }}">
-
-                                    <div class="col-md-12 mb-3">
-                                        <label for="judul_kpi" class="form-label">Judul KPI <span class="text-danger">*</span></label>
-                                        <input type="text" name="judul_kpi" id="judul_kpi" value="${item.judul}" class="form-control" placeholder="Contoh: Peningkatan Penjualan Produk A" required>
-                                    </div>
-
-                                    <div class="col-md-12 mb-3">
-                                        <label for="deskripsi_kpi" class="form-label">Deskripsi KPI</label>
-                                        <textarea name="deskripsi_kpi" id="deskripsi_kpi" class="form-control" rows="2" placeholder="Jelaskan tujuan atau konteks dari target ini..."></textarea>
-                                    </div>
-
-                                    <div class="col-md-12 mb-3">
-                                        <label for="assistant_route" class="form-label">Pilih Assistant Route <span class="text-danger">*</span></label>
-                                        <input type="text" readonly id="asistant_route" value="${item.asistant_route}" class="form-control">
-                                    </div>
-
-                                    <div class="col-md-6 mb-3">
-                                        <label for="jabatan" class="form-label">Pilih Jabatan <span class="text-danger">*</span></label>
-                                        <select name="jabatan[]" id="jabatan" class="form-select select2" multiple></select>
-                                    </div>
-
-                                    <div class="col-md-6 mb-3">
-                                        <label for="karyawan" class="form-label">Pilih Karyawan <span class="text-danger">*</span></label>
-                                        <select name="karyawan[]" id="karyawan" class="form-select select2" multiple></select>
-                                    </div>
-
-                                    <div class="col-md-6 mb-3">
-                                        <label for="tipeTarget" class="form-label">Tipe Target <span class="text-danger">*</span></label>
-                                        <select name="tipe_target" id="tipeTarget" class="form-select" required>
-                                            <option disabled>-- Pilih Tipe --</option>
-                                            <option value="angka" ${tipeTarget === 'angka' ? 'selected' : ''}>Angka (Unit, Jumlah, dll)</option>
-                                            <option value="rupiah" ${tipeTarget === 'rupiah' ? 'selected' : ''}>Rupiah (Nilai Keuangan)</option>
-                                            <option value="persen" ${tipeTarget === 'persen' ? 'selected' : ''}>Persen (%)</option>
-                                        </select>
-                                    </div>
-
-                                    <div class="col-md-6 mb-3">
-                                        <label for="nilaiTarget" class="form-label">Nilai Target <span class="text-danger">*</span></label>
-                                        <input type="text" name="nilai_target" id="nilaiTarget" value="${item.nilai_target}" class="form-control" placeholder="Contoh: 1200" required>
-                                    </div>
-
-                                    <div class="col-md-12 mb-3">
-                                        <label for="jangkaTarget" class="form-label">Jangka Target <span class="text-danger">*</span></label>
-                                        <select name="jangka_target" id="jangkaTarget" class="form-select" required>
-                                            <option selected disabled>-- Pilih Jangka --</option>
-                                        </select>
-                                    </div>
-
-                                    <div class="col-md-12 mb-3" id="detailJangkaGroup" style="display: none;">
-                                        <label for="detailJangka" class="form-label" id="detailJangkaLabel">Detail Jangka <span class="text-danger">*</span></label>
-                                        <div id="detailJangkaField"></div>
-                                    </div>
-
-                                    <div class="col-md-12 mb-3" id="konversiGroup" style="display: none; background-color: #f8f9fa; padding: 15px; border-radius: 8px;">
-                                        <h6 class="mb-2"><i class="fas fa-calculator me-2"></i> Estimasi Distribusi Target Tahunan:</h6>
-                                        <div class="row text-center">
-                                            <div class="col-md-4">
-                                                <small class="text-muted">Per Bulan</small>
-                                                <p class="mb-0 fw-bold" id="hasilBulanan">-</p>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <small class="text-muted">Per Kuartal</small>
-                                                <p class="mb-0 fw-bold" id="hasilKuartal">-</p>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <small class="text-muted">Per Minggu</small>
-                                                <p class="mb-0 fw-bold" id="hasilMingguan">-</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Batal</button>
-                                <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
-                            </div>
-                        </form>
-                    `);
-
-                    $('#deskripsi_kpi').text(item.deskripsi);
-                    $('#tipeTarget').val(item.tipe_target);
-                    $('#jangkaTarget').val(item.jangka_target).trigger('change');
-                    $('#jabatan').val(item.jabatan.map(j => j.jabatan)).trigger('change');
-                    $('#karyawan').val(item.karyawan.map(k => k.id_karyawan)).trigger('change');
-                    $('#modalEditTarget').modal('show');
-                },
-                error: function() {
-                    alert('Gagal mengambil data target');
                 }
             });
         });
@@ -1815,33 +1691,6 @@
                                 text: 'Terjadi kesalahan saat menghapus data.'
                             });
                         }
-                    });
-                }
-            });
-        });
-
-        $(document).on('submit', '#editTargetForm', function() {
-            const formData = new FormData(this);
-            $.ajax({
-                url: "{{ route('kpi.update') }}",
-                type: 'post',
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function(response) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Berhasil!',
-                        text: response.message
-                    });
-                    loadContentForm();
-                },
-                error: function(xhr) {
-                    console.error(xhr.responseText);
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Gagal!',
-                        text: xhr.responseJSON?.message || 'Terjadi kesalahan pada server.'
                     });
                 }
             });
