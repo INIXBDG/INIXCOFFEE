@@ -46,22 +46,23 @@ class ModulController extends Controller
         $yearTwoDigit  = now()->format('y');
         $yearFull      = now()->year;
 
-        // Ambil nomor terakhir berdasarkan tahun
         $last = NomorModul::whereYear('created_at', $yearFull)
             ->orderBy('id', 'desc')
             ->first();
 
         if ($last) {
-            // Pecah string: M/BDG/000/XII/25 → Ambil index ke-2 (002)
-            $parts = explode('/', $last->no_modul);
-            $lastCode = intval($parts[2]); // 002 → 2
-            $newCode = str_pad($lastCode + 1, 3, '0', STR_PAD_LEFT);
+            $parts = explode('.', $last->no_modul);
+            if (count($parts) > 0 && is_numeric($parts[0])) {
+                $lastCode = intval($parts[0]);
+                $newCode = str_pad($lastCode + 1, 3, '0', STR_PAD_LEFT);
+            } else {
+                $newCode = "000";
+            }
         } else {
-            // Jika tahun baru → mulai dari 000
             $newCode = "000";
         }
 
-        $noModul = "M/BDG/$newCode/$romanMonth/$yearTwoDigit";
+        $noModul = "$newCode.M.BDG.$romanMonth.$yearTwoDigit";
 
         return view('office.nomorModul.index', compact('noModul', 'nomor'));
     }
