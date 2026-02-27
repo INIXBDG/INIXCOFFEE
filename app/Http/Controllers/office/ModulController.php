@@ -26,23 +26,7 @@ class ModulController extends Controller
     public function indexNomor()
     {
         $nomor = NomorModul::all();
-        $romanMonths = [
-            1 => 'I',
-            2 => 'II',
-            3 => 'III',
-            4 => 'IV',
-            5 => 'V',
-            6 => 'VI',
-            7 => 'VII',
-            8 => 'VIII',
-            9 => 'IX',
-            10 => 'X',
-            11 => 'XI',
-            12 => 'XII'
-        ];
-
-        $monthNumber   = now()->format('n');
-        $romanMonth    = $romanMonths[$monthNumber];
+        $monthNumber   = now()->format('m');
         $yearTwoDigit  = now()->format('y');
         $yearFull      = now()->year;
 
@@ -62,7 +46,7 @@ class ModulController extends Controller
             $newCode = "000";
         }
 
-        $noModul = "$newCode.M.BDG.$romanMonth.$yearTwoDigit";
+        $noModul = "$newCode.M.BDG.$monthNumber.$yearTwoDigit";
 
         return view('office.nomorModul.index', compact('noModul', 'nomor'));
     }
