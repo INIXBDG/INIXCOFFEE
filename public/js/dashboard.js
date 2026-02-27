@@ -1630,6 +1630,7 @@ function loadSilabusPerInstrukturPerTahunChart() {
                     scales: {
                         y: {
                             beginAtZero: true,
+                            grace: '20%',
                             ticks: {
                                 stepSize: 1,
                                 precision: 0
@@ -2086,38 +2087,6 @@ function secondsToHMS(seconds) {
         mins.toString().padStart(2, '0'),
         secs.toString().padStart(2, '0')
     ].join(':');
-}
-function dashboardEdu() {
-
-    // CSAT
-    fetch('/api/dashboard/csat-instruktur')
-        .then(res => res.json())
-        .then(res => {
-            if (res.success) {
-                document.getElementById('csatValue').innerText = res.rata_rata;
-                document.getElementById('csatBar').style.width = (res.rata_rata / 5 * 100) + '%';
-            }
-        });
-
-    // Rekomendasi Materi
-    fetch('/api/dashboard/rekomendasi-materi')
-        .then(res => res.json())
-        .then(res => {
-            if (res.success) {
-                document.getElementById('rekomendasiValue').innerText = res.persen + '%';
-                document.getElementById('rekomendasiBar').style.width = res.persen + '%';
-            }
-        });
-
-    // Sharing Knowledge
-    fetch('/api/dashboard/aktivitas-instruktur')
-        .then(res => res.json())
-        .then(res => {
-            if (res.success) {
-                document.getElementById('sharingValue').innerText = res.sharingKnowledge;
-                document.getElementById('materiValue').innerText = res.pembuatanMateri;
-            }
-        });
 }
 
 
