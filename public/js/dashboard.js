@@ -824,20 +824,10 @@ function dashboardEdu() {
                 document.getElementById('sharingValue').innerText = res.sharingKnowledge;
                 document.getElementById('materiValue').innerText = res.pembuatanMateri;
                 document.getElementById('silabusValue').innerText = res.pembuatanSilabus;
-
-                document.getElementById('sharingBar').style.width = Math.min((res.sharingKnowledge / 100) * 100, 100) + '%';
-                document.getElementById('materiBar').style.width = Math.min((res.pembuatanMateri / 100) * 100, 100) + '%';
-                document.getElementById('silabusBar').style.width = Math.min((res.pembuatanSilabus / 100) * 100, 100) + '%';
             }
         })
-        .catch(err => console.error('Aktivitas error:', err));
+    .catch(err => console.error('Aktivitas error:', err));
 }
-
-document.addEventListener('DOMContentLoaded', function () {
-    console.log('Dashboard Edu Dimulai');
-    dashboardEdu();
-});
-
 
 function fetchTabInix(year) {
     $.ajax({
