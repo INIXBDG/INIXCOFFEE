@@ -1362,8 +1362,18 @@ class TargetKPIController extends Controller
             $totalSkorError = 0;
 
             foreach ($ticketsError as $ticket) {
+                
                 $startAt = Carbon::parse($ticket->created_at, 'Asia/Jakarta');
-                $endAt = Carbon::parse($ticket->tanggal_selesai . ' ' . $ticket->jam_selesai, 'Asia/Jakarta');
+                if (strlen($ticket->tanggal_selesai) > 10) {
+                    // sudah datetime
+                    $endAt = Carbon::parse($ticket->tanggal_selesai, 'Asia/Jakarta');
+                } else {
+                    // hanya date
+                    $endAt = Carbon::parse(
+                        $ticket->tanggal_selesai . ' ' . $ticket->jam_selesai,
+                        'Asia/Jakarta'
+                    );
+                }
                 $durasiJam = $startAt->diffInHours($endAt);
 
                 $skorDurasi = match (true) {
@@ -3171,7 +3181,16 @@ class TargetKPIController extends Controller
 
             foreach ($ticketsError as $ticket) {
                 $startAt = Carbon::parse($ticket->created_at, 'Asia/Jakarta');
-                $endAt = Carbon::parse($ticket->tanggal_selesai . ' ' . $ticket->jam_selesai, 'Asia/Jakarta');
+                if (strlen($ticket->tanggal_selesai) > 10) {
+                    // sudah datetime
+                    $endAt = Carbon::parse($ticket->tanggal_selesai, 'Asia/Jakarta');
+                } else {
+                    // hanya date
+                    $endAt = Carbon::parse(
+                        $ticket->tanggal_selesai . ' ' . $ticket->jam_selesai,
+                        'Asia/Jakarta'
+                    );
+                }
                 $durasiJam = $startAt->diffInHours($endAt);
 
                 $skorDurasi = match (true) {

@@ -57,6 +57,8 @@ use App\Http\Controllers\Webinar\TimelineItemController;
 use App\Http\Controllers\office\DashboardSouvenirController;
 use App\Http\Controllers\Crm\ImportPerusahaanAndContactController;
 use App\Http\Controllers\RKMController as ControllersRKMController;
+use App\Http\Controllers\colaboratorController;
+use App\Http\Controllers\dbklienController;
 
 
 /*
@@ -181,6 +183,8 @@ Route::resource('roles', \App\Http\Controllers\RoleController::class);
 Route::resource('penambahansouvenir', \App\Http\Controllers\PenambahanSouvenirController::class);
 Route::resource('penukaransouvenir', PenukaranSouvenirController::class);
 Route::resource('content-schedules', \App\Http\Controllers\ContentScheduleController::class);
+Route::resource('colaborator', \App\Http\Controllers\colaboratorController::class)->except(['show']);
+
 
 Route::get('/komplain-peserta', [KomplainPesertaController::class, 'index'])->name('komplain-peserta');
 Route::get('/dataNilaiPenilaian/{id}', [KomplainPesertaController::class, 'dataNilaiPenilaian'])->name('dataNilaiPenilaian');
@@ -998,3 +1002,6 @@ Route::get('download-template-klien', [dbklienController::class, 'downloadTempla
 
 Route::post('/internal/update-tickets', [TicketController::class, 'handleInternalUpdate']);
 Route::get('/internal/open-tickets', [TicketController::class, 'getOpenTickets']);
+
+
+Route::get('/colaborator/data', [colaboratorController::class, 'getData'])->name('colaborator.data');
