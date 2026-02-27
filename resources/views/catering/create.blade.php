@@ -70,7 +70,7 @@
                                                 @if ($jumlah_pax)
                                                 value="{{ $jumlah_pax }}"
                                                 @endif
-                                                required readonly>
+                                                required>
                                         </div>
                                     </div>
                                     <div class="row">

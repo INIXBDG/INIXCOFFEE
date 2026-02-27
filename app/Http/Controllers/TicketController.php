@@ -358,7 +358,7 @@ class TicketController extends Controller
         $response = Http::withHeaders([
             'Authorization' => 'eGKWto6VRxd93cPSf9JZ',
         ])->post('https://api.fonnte.com/send', [
-            'target'  => '120363418574215044@g.us', // pakai Group ID
+            'target'  => '120363418574215044@g.us', 
             'message' => $message,
         ]);
         return redirect()->route('tickets.index')->with('success', 'Tiket ditandai sebagai terkendala.');

@@ -13,6 +13,7 @@ function initializeYearlySales() {
         fetchTotalMateri(year, 'All');
         fetchTotalMengajarPerMateri(year, 'All');
         fetchAbsenPerbulan(year, 'All');
+        dashboardEdu();
         // fetchNilaiFeedback(year, '1');
         // fetchJumlahPICData();
         // fetchJumlahTicketingData();
@@ -2072,7 +2073,6 @@ function generateRandomColor() {
     }
     return color;
 }
-
 function secondsToHMS(seconds) {
     // Handle null atau undefined seconds
     if (seconds === null || typeof seconds === 'undefined') {
@@ -2087,6 +2087,40 @@ function secondsToHMS(seconds) {
         secs.toString().padStart(2, '0')
     ].join(':');
 }
+function dashboardEdu() {
+
+    // CSAT
+    fetch('/api/dashboard/csat-instruktur')
+        .then(res => res.json())
+        .then(res => {
+            if (res.success) {
+                document.getElementById('csatValue').innerText = res.rata_rata;
+                document.getElementById('csatBar').style.width = (res.rata_rata / 5 * 100) + '%';
+            }
+        });
+
+    // Rekomendasi Materi
+    fetch('/api/dashboard/rekomendasi-materi')
+        .then(res => res.json())
+        .then(res => {
+            if (res.success) {
+                document.getElementById('rekomendasiValue').innerText = res.persen + '%';
+                document.getElementById('rekomendasiBar').style.width = res.persen + '%';
+            }
+        });
+
+    // Sharing Knowledge
+    fetch('/api/dashboard/aktivitas-instruktur')
+        .then(res => res.json())
+        .then(res => {
+            if (res.success) {
+                document.getElementById('sharingValue').innerText = res.sharingKnowledge;
+                document.getElementById('materiValue').innerText = res.pembuatanMateri;
+            }
+        });
+}
+
+
 
 /**
  * Mengambil daftar bulan dari server dan mengisi dropdown.
@@ -2606,10 +2640,12 @@ $(document).ready(function () {
     // =======================================================================
 
     // Inisialisasi dropdown filter bulan
-    loadBulanFilter('#filterBulan');
-    loadBulanFilter('#filterMonthPIC');
-    loadBulanFilter('#filterMonth');
-    loadBulanFilter('#filterMonthKetepatan');
+    if(typeof loadBulanFilter === 'function') {
+        loadBulanFilter('#filterBulan');
+        loadBulanFilter('#filterMonthPIC');
+        loadBulanFilter('#filterMonth');
+        loadBulanFilter('#filterMonthKetepatan');
+    }
 
     // Event Listeners Filter Dropdown
     $('#filterBulan').on('change', function () { fetchJumlahTicketingData(this.value); });
@@ -2771,21 +2807,18 @@ $(document).ready(function () {
 
 
     // =======================================================================
-    // 5. FUNGSI SLA EVENT (WEBINAR) - BARU!
+    // 5. FUNGSI SLA EVENT (WEBINAR)
     // =======================================================================
     async function loadSlaEvent(mappingId) {
-        // 1. Validasi Input
         if (!mappingId || mappingId == 0) {
             $('#event-sla-table-body').html('<tr><td colspan="6" class="text-center p-4 text-danger">Event belum dipilih.</td></tr>');
             return;
         }
 
-        // 2. Tampilkan Loading
         $('#event-sla-content').hide();
         $('#event-sla-empty').html('<div class="spinner-border text-primary" role="status"></div><p>Memuat data...</p>').show();
 
         try {
-            // 3. Fetch Data
             const response = await fetch(`/dashboard-sla/event/${mappingId}`);
             if (!response.ok) throw new Error('Network error');
 
@@ -2793,27 +2826,16 @@ $(document).ready(function () {
             const kpi = data.kpi;
             const details = data.details;
 
-            // --- 4. Update Header & KPI (MENGGUNAKAN JQUERY AGAR ANTI-ERROR) ---
-            // Helper Class
             const getKpiClass = (val) => val >= 100 ? 'text-success' : 'text-primary';
             const getSlaClass = (val) => val >= 90 ? 'text-success' : (val >= 80 ? 'text-warning' : 'text-danger');
 
-            // Update Text & Class dengan jQuery (Lebih aman dari document.getElementById)
             $('#event-title').text(kpi.event_title);
             $('#event-date').text(`D-Day: ${kpi.event_date}`);
-
-            $('#event-kpi-completion')
-                .text(formatPercent(kpi.completion_rate))
-                .attr('class', `fs-2 fw-bold ${getKpiClass(kpi.completion_rate)}`);
-
-            $('#event-kpi-compliance')
-                .text(formatPercent(kpi.sla_compliance))
-                .attr('class', `fs-2 fw-bold ${getSlaClass(kpi.sla_compliance)}`);
-
+            $('#event-kpi-completion').text(formatPercent(kpi.completion_rate)).attr('class', `fs-2 fw-bold ${getKpiClass(kpi.completion_rate)}`);
+            $('#event-kpi-compliance').text(formatPercent(kpi.sla_compliance)).attr('class', `fs-2 fw-bold ${getSlaClass(kpi.sla_compliance)}`);
             $('#event-kpi-late').text(kpi.total_late);
             $('#event-kpi-overdue').text(kpi.total_overdue);
 
-            // --- 5. Render Tabel Detail ---
             const tableBody = $('#event-sla-table-body');
             tableBody.empty();
 
@@ -2843,28 +2865,11 @@ $(document).ready(function () {
                             case 'On Progress': badge = '<span class="badge bg-info text-dark">On Progress</span>'; break;
                             default: badge = '<span class="badge bg-secondary">Pending</span>';
                         }
-
-                        const picBadge = item.pic !== '-'
-                            ? `<span class="badge bg-light text-dark border">${item.pic}</span>`
-                            : '<span class="text-muted">-</span>';
-
-                        // STRUKTUR BARIS (Pastikan 6 Kolom)
-                        const row = `
-                            <tr class="${rowClass}">
-                                <td class="fw-medium ps-4 align-middle">${item.activity}</td>
-                                <td class="align-middle">${picBadge}</td>
-                                <td class="text-center align-middle"><small class="text-muted fw-bold">${item.sla_label}</small></td>
-                                <td class="text-center font-monospace small align-middle">${item.target_date}</td>
-                                <td class="text-center font-monospace small fw-bold align-middle">${item.actual_date}</td>
-                                <td class="text-center align-middle">${badge}</td>
-                            </tr>
-                        `;
-                        tableBody.append(row);
+                        const picBadge = item.pic !== '-' ? `<span class="badge bg-light text-dark border">${item.pic}</span>` : '<span class="text-muted">-</span>';
+                        tableBody.append(`<tr class="${rowClass}"><td class="fw-medium ps-4 align-middle">${item.activity}</td><td class="align-middle">${picBadge}</td><td class="text-center align-middle"><small class="text-muted fw-bold">${item.sla_label}</small></td><td class="text-center font-monospace small align-middle">${item.target_date}</td><td class="text-center font-monospace small fw-bold align-middle">${item.actual_date}</td><td class="text-center align-middle">${badge}</td></tr>`);
                     });
                 });
             }
-
-            // Tampilkan Hasil
             $('#event-sla-empty').hide();
             $('#event-sla-content').fadeIn();
 
@@ -2880,7 +2885,7 @@ $(document).ready(function () {
     });
 
     // =======================================================================
-    // 6. EVENT LISTENER UTAMA (UPDATED)
+    // 8. EVENT LISTENER UTAMA (UPDATED)
     // =======================================================================
     $('#itsm-pills-tab').on('shown.bs.tab', 'button[data-bs-toggle="pill"], a[data-bs-toggle="pill"]', function (event) {
         const activePill = $(event.target);
@@ -2892,10 +2897,18 @@ $(document).ready(function () {
         // --- Logika Tab SLA ---
         if (activePill.hasClass('sla-tab-trigger')) {
 
-            // A. Logika Tab Event Webinar (BARU)
+            // A. Logika Tab Digital Kreatif (BARU)
+            if (activePillId === 'pills-sla-digital-tab') {
+                if (!isLoaded) {
+                    loadSlaDigital();
+                    activePill.data('loaded', true);
+                }
+                return;
+            }
+
+            // B. Logika Tab Event Webinar
             if (activePillId === 'pills-sla-event-tab') {
                 if (!isLoaded) {
-                    // Coba load otomatis jika dropdown punya nilai default
                     const selectedEvent = $('#eventSlaFilter').val();
                     if (selectedEvent) {
                         loadSlaEvent(selectedEvent);
@@ -2905,7 +2918,7 @@ $(document).ready(function () {
                 return;
             }
 
-            // B. Logika Tab Tim IT (Programmer & TS)
+            // C. Logika Tab Tim IT (Programmer & TS)
             const team = activePill.data('team');
             if (!isLoaded && team) {
                 if (team === 'programmer') {
@@ -2916,7 +2929,7 @@ $(document).ready(function () {
                 activePill.data('loaded', true);
             }
 
-            // --- Logika Tab Lama ---
+        // --- Logika Tab Lama (Legacy) ---
         } else {
             if (!isLoaded) {
                 switch (activePillId) {

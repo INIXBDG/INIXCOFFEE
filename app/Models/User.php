@@ -69,4 +69,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(SurveyKepuasan::class, 'id_user');
     }
+
+    public function kondisiKendaraan(){
+        return $this->hasMany(KondisiKendaraan::class, 'user_id', 'id');
+    }
+
+    public function historyNetSales(){
+        return $this->hasMany(HistoryNetSales::class, 'id_user');
+    }
 }

@@ -311,6 +311,30 @@
                                                         @endif
                                                     </div>
                                                     @endif
+                                                    <div class="col-md-4 col-sm-4 col-xs-4">
+                                                        <p>Rekomendasi Materi Lanjutan</p>
+                                                        <p id="titikdua"> :</p>
+                                                    </div>
+                                                    <div class="col-md-1 col-sm-1 col-xs-1">
+                                                        <p>:</p>
+                                                    </div>
+                                                    <div class="col-md-7 col-sm-7 col-xs-7">
+                                                        @php
+                                                            $hasRekomendasi = $rkm->filter(function ($item) {
+                                                                return $item->rekomendasilanjutan != null;
+                                                            })->isNotEmpty();
+                                                        // dd($hasRekomendasi);
+                                                        @endphp
+                                                        @if ($hasRekomendasi == true)
+                                                        <button type="button" class="btn btn-sm btn-primary click-primary" 
+                                                                data-bs-toggle="modal" 
+                                                                data-bs-target="#modalDetailRekomendasi-{{ $post->id }}">
+                                                            Lihat Rekomendasi
+                                                        </button>
+                                                        @else
+                                                        <p>-</p>
+                                                        @endif
+                                                    </div>
                                                     @if ( auth()->user()->jabatan == 'SPV Sales' || auth()->user()->jabatan == 'Admin Sales' || auth()->user()->jabatan == 'Education Manager' || auth()->user()->jabatan == 'Office Manager' || auth()->user()->jabatan == 'Koordinator Office' || auth()->user()->jabatan == 'GM' || auth()->user()->jabatan == 'Finance & Accounting' || auth()->user()->jabatan == 'Adm Sales' || $kode_karyawan == $post->sales_key)
                                                     <div class="col-md-4 col-sm-4 col-xs-4">
                                                         <p>Registrasi Form</p>
@@ -324,29 +348,6 @@
                                                         <a href="{{ asset('storage/' . $post->registrasi_form) }}" class="btn click-primary" target="_blank">Lihat Registrasi Form</a>
                                                         @else
                                                         <p>-</p>
-                                                        @endif
-                                                    </div>
-                                                    <div class="col-md-4 col-sm-4 col-xs-4">
-                                                        <p>Rekomendasi Materi Lanjutan</p>
-                                                        <p id="titikdua"> :</p>
-                                                    </div>
-                                                    <div class="col-md-1 col-sm-1 col-xs-1">
-                                                        <p>:</p>
-                                                    </div>
-                                                    <div class="col-md-7 col-sm-7 col-xs-7">
-                                                        @php
-                                                            $hasRekomendasi = $rkm->filter(function ($item) {
-                                                                return $item->rekomendasilanjutan != null;
-                                                            })->isNotEmpty();
-                                                        @endphp
-                                                        @if (isset($hasRekomendasi))
-                                                        <button type="button" class="btn btn-sm btn-primary click-primary" 
-                                                                data-bs-toggle="modal" 
-                                                                data-bs-target="#modalDetailRekomendasi-{{ $post->id }}">
-                                                            Lihat Rekomendasi
-                                                        </button>
-                                                        @else
-                                                        <p>{{ $rekomendasilanjutan }}</p>
                                                         @endif
                                                     </div>
                                                     @endif

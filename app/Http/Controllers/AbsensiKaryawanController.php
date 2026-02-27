@@ -154,7 +154,7 @@ class AbsensiKaryawanController extends Controller
         $id_karyawan = auth()->user()->karyawan_id;
 
         $izinHariIni = izinTigaJam::where('id_karyawan', $id_karyawan)
-            ->whereDate('tanggal_pengajuan', $waktu->toDateString())
+            ->whereDate('tanggal', $waktu->toDateString())
             ->where('approval', 2)
             ->first();
 

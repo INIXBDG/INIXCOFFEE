@@ -32,6 +32,14 @@ class UpdateLaporanPenjualan extends Notification implements ShouldQueue, Should
 
     public function broadcastOn()
     {
+        // Cek jika receiverId adalah array (banyak user)
+        if (is_array($this->receiverId)) {
+            return collect($this->receiverId)->map(function ($id) {
+                return new PrivateChannel('notifikasi.' . $id);
+            })->toArray();
+        }
+
+        // Jika single ID
         return new PrivateChannel('notifikasi.' . $this->receiverId);
     }
 

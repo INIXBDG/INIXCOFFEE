@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Crm;
 
 use App\Exports\LaporanPenjualanExport;
 use App\Http\Controllers\Controller;
+use App\Models\HistoryNetSales;
 use App\Models\karyawan;
 use App\Models\Materi;
 use Illuminate\Http\Request;
@@ -34,7 +35,7 @@ class LaporanPenjualanController extends Controller
     public function indexJson(Request $request)
     {
         $status = $request->query('status');
-        $query = RKM::with(['exam', 'perhitunganNetSales.peserta', 'materi', 'perusahaan', 'invoice'])
+        $query = RKM::with(['exam', 'perhitunganNetSales', 'materi', 'perusahaan', 'invoice', 'peluang.regis'])
             ->orderByDesc('tanggal_awal');
 
         if ($status !== null) {
@@ -105,35 +106,37 @@ class LaporanPenjualanController extends Controller
             if (is_null($netsales)) {
                 $sum = [
                     'transportasi' => 0.0,
-                    'penginapan' => 0.0,
+                    'akomodasi_peserta' => 0.0,
+                    'akomodasi_tim' => 0.0,
                     'fresh_money' => 0.0,
-                    'cashback' => 0.0,
-                    'diskon' => 0.0,
+                    // 'cashback' => 0.0,
                     'entertaint' => 0.0,
                     'souvenir' => 0.0,
+                    'sewa_laptop' => 0.0,
                     'pembayaran' => null,
-                    'grand_total' => 0.0
                 ];
                 $netsales = collect();
             } else {
                 $sum = [
                     'transportasi' => (float) $netsales->sum('transportasi'),
-                    'penginapan' => (float) $netsales->sum('penginapan'),
+                    'akomodasi_peserta' => (float) $netsales->sum('akomodasi_peserta'),
+                    'akomodasi_tim' => (float) $netsales->sum('akomodasi_tim'),
                     'fresh_money' => (float) $netsales->sum('fresh_money'),
                     'cashback' => (float) $netsales->sum('cashback'),
-                    'diskon' => (float) $netsales->sum('diskon'),
                     'entertaint' => (float) $netsales->sum('entertaint'),
                     'souvenir' => (float) $netsales->sum('souvenir'),
+                    'sewa_laptop' => (float) $netsales->sum('sewa_laptop'),
                     'pembayaran' => $netsales->pluck('tipe_pembayaran')->first(),
                 ];
 
                 $sum['grand_total'] =
                     $sum['transportasi'] +
-                    $sum['penginapan'] +
+                    $sum['akomodasi_peserta'] +
+                    $sum['akomodasi_tim'] +
                     $sum['fresh_money'] +
                     $sum['cashback'] +
-                    $sum['diskon'] +
                     $sum['entertaint'] +
+                    $sum['sewa_laptop'] +
                     $sum['souvenir'];
             }
 
@@ -167,10 +170,11 @@ class LaporanPenjualanController extends Controller
                 'nama_perusahaan' => $item->perusahaan?->nama_perusahaan ?? '-',
                 'perhitungannet' => $netsales,
                 'invoice' => $item->invoice,
+                'path_regis' => $item->peluang->regis->path ?? '-',
             ];
         });
 
-        return response()->json([
+        return response()->json([   
             'data' => $data,
             'summary' => [
                 'total_harga_jual' => $totalHargaJualKeseluruhan,
@@ -190,66 +194,85 @@ class LaporanPenjualanController extends Controller
     public function editPA($id)
     {
         $pa = perhitunganNetSales::with('peserta')->where('id_rkm', $id)->get();
-        $peserta = perhitunganNetSales::with('peserta')->where('id_rkm', $id)->count();
-        $netsales = perhitunganNetSales::with('trackingNetSales', 'approvedNetSales', 'peserta')
+        $netsales = perhitunganNetSales::with('trackingNetSales', 'approvedNetSales', 'peserta', 'rkm')
             ->where('id_rkm', $id)
-            ->get();
+            ->first();
+        $totalPA = $netsales->rkm->pax * $netsales->rkm->harga_jual - $netsales->transportasi - $netsales->akomodasi_peserta - $netsales->akomodasi_tim - $netsales->fresh_money - $netsales->entertaint - $netsales->souvenir - $netsales->cashback - $netsales->sewa_laptop;
+        $historyNet = HistoryNetSales::with('user.karyawan')->where('id_rkm', $pa[0]->id_rkm)->get();
 
-        return view('crm.LaporanPenjualan.editpa', compact('pa', 'netsales', 'peserta'));
+        return view('crm.LaporanPenjualan.editpa', compact('pa', 'netsales', 'totalPA', 'historyNet'));
     }
 
     public function updatePA(Request $request, $id)
     {
-        $fields = [
+        $numericFields = [
             'transportasi',
-            'penginapan',
+            'akomodasi_peserta',
+            'akomodasi_tim',
             'cashback',
             'fresh_money',
             'entertaint',
             'souvenir',
-            'harga_penawaran'
+            'sewa_laptop',
         ];
 
-        // Bersihkan angka dari format rupiah
-        foreach ($fields as $field) {
+        foreach ($numericFields as $field) {
             if ($request->has($field)) {
+                $rawValue = $request->input($field);
+
+                if (is_array($rawValue)) {
+                    $rawValue = reset($rawValue) ?? 0;
+                }
+
+                $cleanValue = preg_replace('/[^\d]/', '', (string)$rawValue);
+
+                $finalValue = ($cleanValue === '') ? 0 : $cleanValue;
+
                 $request->merge([
-                    $field => preg_replace('/[^\d]/', '', $request->input($field))
+                    $field => $finalValue
                 ]);
             }
         }
 
         $validated = $request->validate([
-            'transportasi'     => 'nullable|numeric|min:0',
-            'penginapan'       => 'nullable|numeric|min:0',
-            'cashback'         => 'nullable|numeric|min:0',
-            'fresh_money'      => 'nullable|numeric|min:0',
-            'entertaint'       => 'nullable|numeric|min:0',
-            'souvenir'         => 'nullable|numeric|min:0',
-            'desc'             => 'nullable|string|max:500',
-            'harga_penawaran'  => 'nullable|numeric|min:0',
-            'tgl_pa'           => 'nullable|date',
-            'tipe_pembayaran'  => 'nullable|string|in:cash,transfer,credit',
+            'transportasi'             => 'nullable|numeric|min:0',
+            'jenis_transportasi'       => 'nullable',
+            'akomodasi_peserta'        => 'nullable|numeric|min:0',
+            'akomodasi_tim'            => 'nullable|numeric|min:0',
+            'keterangan_akomodasi_tim' => 'nullable',
+            'cashback'                 => 'nullable|numeric|min:0',
+            'fresh_money'              => 'nullable|numeric|min:0',
+            'souvenir'                 => 'nullable|numeric|min:0',
+            'entertaint'               => 'nullable|numeric|min:0',
+            'keterangan_entertaint'    => 'nullable',
+            'sewa_laptop'              => 'nullable|numeric|min:0',
+            'deskripsi_tambahan'       => 'nullable|string|max:500',
+            'tgl_pa'                   => 'nullable|date',
+            'tipe_pembayaran'          => 'nullable|string|in:cash,transfer,credit',
         ]);
 
-        // Ambil data lama sebelum update
         $pa = perhitunganNetSales::findOrFail($id);
-        $oldData = $pa->only(array_keys($validated));
+        $oldData = $pa->getOriginal();
 
-        // Update data baru
         $pa->update($validated);
-        $newData = $pa->only(array_keys($validated));
 
-        // Deteksi perubahan
         $changed = [];
-        foreach ($newData as $key => $value) {
-            if ($oldData[$key] != $value) {
+        foreach ($validated as $key => $value) {
+            $oldValue = $oldData[$key] ?? null;
+
+            if ($oldValue != $value) {
                 $changed[$key] = [
-                    'before' => $oldData[$key],
+                    'before' => $oldValue,
                     'after' => $value,
                 ];
             }
         }
+
+        $historyNet = new HistoryNetSales();
+        $historyNet->id_user = Auth::user()->id;
+        $historyNet->id_rkm = $pa->id_rkm;
+        $historyNet->data = $changed;
+        $historyNet->save();
 
         // Ambil user penerima notifikasi
         $users = User::whereIn('jabatan', ['GM', 'Adm Sales', 'Finance & Accounting'])->get();
@@ -422,7 +445,7 @@ class LaporanPenjualanController extends Controller
 
     private function fetchDataForReport(Request $request, $status)
     {
-        $status = $status; 
+        $status = $status;
         $query = RKM::with(['exam', 'perhitunganNetSales.peserta', 'materi', 'perusahaan', 'invoice'])
             ->orderByDesc('tanggal_awal')
             ->where('status', $status);

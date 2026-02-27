@@ -149,6 +149,7 @@ class KelasAnalisisController extends Controller
             'konsumsi'     => 'nullable',
             'souvenir_satu'     => 'nullable',
             'souvenir'     => 'nullable',
+            'transportasi'     => 'nullable',
             'pc_pax'     => 'nullable',
             'pc_instruktur'     => 'nullable',
             'konsumsi_instruktur'     => 'nullable',
@@ -185,6 +186,7 @@ class KelasAnalisisController extends Controller
         $post->konsumsi = (float) $post->konsumsi;
         $post->souvenir_satu = (float) $post->souvenir_satu;
         $post->souvenir = (float) $post->souvenir;
+        $post->transportasi = (float) $post->transportasi;
         $post->pa_hotel = (float) $post->pa_hotel;
         $post->exam = (float) $post->exam;
         $post->pc_pax = (float) $post->pc_pax;
@@ -212,6 +214,7 @@ class KelasAnalisisController extends Controller
             'konsumsi'     => 'nullable',
             'souvenir_satu'     => 'nullable',
             'souvenir'     => 'nullable',
+            'transportasi'     => 'nullable',
             'pc_pax'     => 'nullable',
             'pc_instruktur'     => 'nullable',
             'pc'     => 'nullable',

@@ -18,7 +18,8 @@ class Invoice extends Model
         'amount',
         'catatan_pembayaran',
         'bank_name',
-        'account_number'
+        'account_number',
+        'file_path'
     ];
 
     /**

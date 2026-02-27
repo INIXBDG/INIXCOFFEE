@@ -16,6 +16,13 @@ class PengajuanLabSubs extends Model
         'id_rkm',
         'id_tracking',
         'invoice',
+        'lab_snapshot',
+        'subs_snapshot',
+    ];
+
+    protected $casts = [
+        'lab_snapshot' => 'array',
+        'subs_snapshot' => 'array',
     ];
 
     public function tracking()

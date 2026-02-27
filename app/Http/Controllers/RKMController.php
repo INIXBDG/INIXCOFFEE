@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\RKMExcelAdmsales;
 use App\Models\AbsensiPDF;
 use App\Models\comment;
 use App\Models\eksam;
@@ -28,6 +29,7 @@ use Illuminate\Support\Facades\Notification as NotificationFacade;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\RKMExport;
 use App\Models\Peluang;
+use App\Models\ChecklistKeperluan;
 // use Carbon\CarbonImmutable;
 use Carbon\Carbon;
 
@@ -49,6 +51,7 @@ class RKMController extends Controller
     }
 
 
+
     public function excelDownload(Request $request)
     {
         $tahun = $request->input('tahun');
@@ -59,9 +62,62 @@ class RKMController extends Controller
         return Excel::download(new RKMExport($tahun, $bulan), $filename);
     }
 
+    public function excelDownloadAdmSales(Request $request)
+    {
+        $tahun = $request->input('tahun');
+        $bulan = $request->input('bulan');
+
+        $month = (int) $bulan;
+        $year  = (int) $tahun;
+
+        $startDate = Carbon::create($year, $month, 1)->startOfMonth();
+        $endDate   = $startDate->copy()->endOfMonth();
+
+        $data = DB::table('r_k_m_s as rkm')
+            ->leftJoin('materis', 'rkm.materi_key', '=', 'materis.id')
+            ->leftJoin('karyawans as sales', 'rkm.sales_key', '=', 'sales.kode_karyawan')
+            ->leftJoin('karyawans as instruktur', 'rkm.instruktur_key', '=', 'instruktur.kode_karyawan')
+            ->leftJoin('karyawans as instruktur2', 'rkm.instruktur_key2', '=', 'instruktur2.kode_karyawan')
+            ->leftJoin('karyawans as asisten', 'rkm.asisten_key', '=', 'asisten.kode_karyawan')
+            ->leftJoin('perusahaans', 'rkm.perusahaan_key', '=', 'perusahaans.id')
+            ->whereBetween('rkm.tanggal_awal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->selectRaw("GROUP_CONCAT(DISTINCT rkm.id SEPARATOR ', ') AS id_all")
+            ->selectRaw('materis.nama_materi')
+            ->selectRaw('MIN(rkm.tanggal_awal) AS tanggal_awal')
+            ->selectRaw('MAX(rkm.tanggal_akhir) AS tanggal_akhir')
+            ->selectRaw('rkm.metode_kelas')
+            ->selectRaw('rkm.event')
+            ->selectRaw('rkm.ruang')
+            ->selectRaw('SUM(rkm.pax) AS pax')
+            ->selectRaw('rkm.exam')
+            ->selectRaw('rkm.makanan')
+            ->selectRaw('MIN(rkm.status) AS status')
+            ->selectRaw('GROUP_CONCAT(DISTINCT perusahaans.nama_perusahaan ORDER BY perusahaans.nama_perusahaan SEPARATOR ", ") AS perusahaan_all')
+            ->selectRaw('GROUP_CONCAT(DISTINCT sales.nama_lengkap ORDER BY sales.nama_lengkap SEPARATOR ", ") AS sales_all')
+            // Instruktur, Instruktur 2, dan Asisten diambil dengan MAX() agar aman di GROUP BY
+            ->selectRaw('MAX(instruktur.nama_lengkap) AS instruktur_nama')
+            ->selectRaw('MAX(instruktur2.nama_lengkap) AS instruktur2_nama')
+            ->selectRaw('MAX(asisten.nama_lengkap) AS asisten_nama')
+            ->groupBy([
+                'materis.nama_materi',
+                'rkm.metode_kelas',
+                'rkm.event',
+                'rkm.ruang',
+                'rkm.exam',
+                'rkm.makanan'
+            ])
+            ->orderBy('tanggal_awal')
+            ->get()
+            ->map(fn($item) => (array) $item)
+            ->toArray();
+
+        $bulanFormatted = str_pad($bulan, 2, '0', STR_PAD_LEFT);
+        $filename = "rkm-adm-sales-{$bulanFormatted}-{$tahun}.xlsx";
+
+        return Excel::download(new RKMExcelAdmsales($data), $filename);
+    }
     public function create(): View
     {
-        // $sales = karyawan::where('jabatan', 'sales')->get();
         $sales = Karyawan::whereIn('jabatan', ['Sales', 'SPV Sales', 'Adm Sales', 'Tim Digital'])
             ->where('status_aktif', '1')
             ->get();
@@ -72,10 +128,8 @@ class RKMController extends Controller
 
         $materi = Materi::where('status', 'Aktif')->get();
         $perusahaan = Perusahaan::get();
-        $date = Carbon::now(); // atau bisa menggunakan Carbon::parse('2024-10-17')
-        // $quarter = 'Q' . $date->quarter;
+        $date = Carbon::now();
         $year = $date->year;
-        // dd($materi);
         return view('rkm.tambahrkm', compact('sales', 'materi', 'perusahaan', 'instruktur', 'year'));
     }
 
@@ -774,6 +828,10 @@ class RKMController extends Controller
 
         // Storage::delete('public/npwp/'. $post->foto_npwp);
 
+
+        $post->deleted_by = auth()->user()->karyawan->kode_karyawan;
+        $post->save();
+
         $peluang->delete();
         $post->delete();
         $registrasi->delete();
@@ -1315,6 +1373,47 @@ class RKMController extends Controller
             'max_value' => $maxValue,
             'tahun' => $tahun,
             'has_data' => !empty($instrukturData)
+    }
+          
+    public function getChecklist($id)
+    {
+        $singleId = explode(',', $id)[0];
+        $singleId = trim($singleId);
+
+        $checklist = ChecklistKeperluan::where('id_rkm', $singleId)->first();
+
+        return response()->json([
+            'status' => true,
+            'data' => $checklist
+        ]);
+    }
+
+    public function storeChecklist(Request $request)
+    {
+        $request->validate([
+            'id_rkm' => 'required',
+            'checklist' => 'nullable|array'
+        ]);
+
+        $singleId = explode(',', $request->id_rkm)[0];
+        $singleId = trim($singleId);
+
+        $checklists = $request->input('checklist', []);
+
+        $checklistKeperluan = ChecklistKeperluan::updateOrCreate(
+            ['id_rkm' => $singleId],
+            [
+                'materi' => in_array('Materi', $checklists),
+                'kelas' => in_array('Kelas', $checklists),
+                'cb' => in_array('Cb', $checklists),
+                'maksi' => in_array('Maksi', $checklists),
+                'keperluan_kelas' => in_array('Keperluan Kelas', $checklists),
+            ]
+        );
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Checklist Keperluan berhasil disimpan.'
         ]);
     }
 }

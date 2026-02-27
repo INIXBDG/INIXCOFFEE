@@ -31,4 +31,13 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'forumium' => [
+        'url' => env('FORUMIUM_URL'),
+        'secret' => env('FORUMIUM_SSO_SECRET'),
+    ],
+
+// config/services.php
+'vapid' => [
+    'public_key' => env('VAPID_PUBLIC_KEY'),
+],
 ];

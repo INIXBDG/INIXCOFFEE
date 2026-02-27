@@ -20,6 +20,9 @@ class Aktivitas extends Model
         'harga',
         'total',
         'pax',
+        'foto_lokasi',
+        'longitude',
+        'latitude',
     ];
 
     public function peluang()

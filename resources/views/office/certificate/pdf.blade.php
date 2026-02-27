@@ -72,27 +72,26 @@
             transform: translateX(-50%);
             width: 85%;
             text-align: center;
-            font-size: 36px;
+            font-size: 30px;
             font-weight: bold;
             color: black;
         }
 
         .period-section {
-            position: absolute;
-            top: 470px;
-            left: 120px;
-            font-size: 25px;
-            color: #333;
-            font-style: italic;
+              position: absolute;
+              top: 440px;
+              left: 120px;
+              font-size: 25px;
+              color: #333;
+              font-style: italic;
         }
 
-        /* Tanda Tangan – kiri bawah */
-        .signature-section {
-            margin-top: 25px;
-            position: absolute;
-            bottom: 68px;
-            left: 135px;
-            text-align: center;
+           .signature-section {
+              margin-top: 25px;
+              position: absolute;
+              bottom: 28px;
+              left: 135px;
+              text-align: center;
         }
 
         .signature-image {
@@ -137,7 +136,7 @@
             {{ $certificate->nama_materi }}
         </div>
 
-        <div class="period-section">
+        <div class="period-section" style="margin-top: 6%">
             Period :
             @php
                 $dates = explode(' - ', $certificate->tanggal_pelatihan ?? '');

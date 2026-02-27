@@ -10,8 +10,6 @@ class TargetController extends Controller
 {
     public function index()
     {
-
-        // return $post;
         return view('target.index');
     }
 
@@ -27,10 +25,9 @@ class TargetController extends Controller
     }
     public function create()
     {
-        // Fetch users with a non-null id_sales and load the 'karyawan' relationship
         $user = User::with('karyawan')
                     ->where('jabatan', 'Sales')
-                    ->whereNotNull('id_sales') // Filter to only include records with a non-null id_sales
+                    ->whereNotNull('id_sales')
                     ->get();
 
         return view('target.create', compact('user'));
