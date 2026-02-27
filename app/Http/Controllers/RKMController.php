@@ -1373,6 +1373,7 @@ class RKMController extends Controller
             'max_value' => $maxValue,
             'tahun' => $tahun,
             'has_data' => !empty($instrukturData)
+        ]);
     }
           
     public function getChecklist($id)
