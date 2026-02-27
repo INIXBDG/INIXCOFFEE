@@ -1,11 +1,13 @@
 <?php
 
-use App\Http\Controllers\TicketController;
 use App\Http\Controllers\AktivitasController;
 use App\Http\Controllers\Api\apiController;
 use App\Http\Controllers\CatatanSalesController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\PeluangController;
+use App\Http\Controllers\TelegramController;
+use App\Http\Controllers\TicketController;
+use App\Http\Controllers\WebhookController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WebhookController;
@@ -70,3 +72,6 @@ Route::match(['get', 'post'], '/webhook/fonnte', [WebhookController::class, 'han
 
 Route::get('/telegram/setwebhook', [TelegramController::class, 'setWebhook'])->name('telegram.setwebhook');
 Route::post('/telegram/webhook', [TelegramController::class, 'webhook'])->name('telegram.webhook');
+Route::get('/dashboard/csat-instruktur', [apiController::class, 'CSATinstruktur'])->name('CSATinstruktur');
+Route::get('/dashboard/aktivitas-instruktur', [apiController::class, 'AktivitasInstruktur'])->name('AktivitasInstruktur');
+Route::get('/dashboard/rekomendasi-materi', [apiController::class, 'RekomendasiMateri'])->name('RekomendasiMateri');

@@ -7,9 +7,8 @@ use App\Models\ActivityInstruktur;
 use App\Models\dbklien;
 use App\Models\Inventaris;
 use App\Models\jabatan;
-use Illuminate\Http\Request;
-use App\Models\Nilaifeedback;
 use App\Models\Materi;
+use App\Models\Nilaifeedback;
 use App\Models\Perusahaan;
 use App\Models\Peserta;
 use App\Models\Registrasi;
@@ -19,6 +18,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use DB;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class apiController extends Controller
@@ -29,11 +29,11 @@ class apiController extends Controller
 
         // $groupedFeedbacks = $feedbacks->groupBy('id_rkm');
         $groupedFeedbacks = $feedbacks->groupBy(function ($feedback) {
-			return
-				$feedback->rkm->materi->nama_materi . '/' .
-				$feedback->rkm->tanggal_awal . '/' .
-				$feedback->rkm->instruktur_key;
-		});
+            return
+                $feedback->rkm->materi->nama_materi . '/' .
+                $feedback->rkm->tanggal_awal . '/' .
+                $feedback->rkm->instruktur_key;
+        });
 
         // return $groupedFeedbacks;
         $averageFeedbacks = [];
@@ -153,12 +153,12 @@ class apiController extends Controller
         $sortedFeedbacks = collect($averageFeedbacks)->sortByDesc('created_at')->values()->all();
 
         // return response()->json(['feedbacks' => $sortedFeedbacks]);
-            return response()->json([
-                'success' => true,
-                'message' => 'List Feedbacks',
-                'data' => $sortedFeedbacks
-                // 'data' => $groupedFeedbacks
-            ]);
+        return response()->json([
+            'success' => true,
+            'message' => 'List Feedbacks',
+            'data' => $sortedFeedbacks
+            // 'data' => $groupedFeedbacks
+        ]);
 
     }
 
@@ -229,8 +229,9 @@ class apiController extends Controller
     }
 
 
-    public function getMateris(){
-        $perusahaans = Materi::where('nama_materi', 'LIKE', '%'.request('q').'%')->where('status', 'Aktif')->paginate(20);
+    public function getMateris()
+    {
+        $perusahaans = Materi::where('nama_materi', 'LIKE', '%' . request('q') . '%')->where('status', 'Aktif')->paginate(20);
         return response()->json($perusahaans);
     }
 
@@ -287,7 +288,7 @@ class apiController extends Controller
         $startDate = $today->copy()->startOfMonth()->toDateString();
         $endDate = $today->copy()->addMonths(4)->endOfMonth()->toDateString();
 
-       // Ambil data RKM beserta relasi materi
+        // Ambil data RKM beserta relasi materi
         $rows = RKM::with('materi')
             ->whereBetween('tanggal_awal', [$startDate, $endDate])
             ->get();
@@ -403,15 +404,18 @@ class apiController extends Controller
         $pembuatanMateri = ActivityInstruktur::where('activity_type', 'Pembuatan Materi')
             ->whereYear('created_at', $tahun)
             ->count();
+
+        $pembuatanSilabus = ActivityInstruktur::where('activity_type', 'Pembuatan Silabus')
+            ->whereYear('created_at', $tahun)
+            ->count();
+
         return response()->json([
             'success' => true,
             'sharingKnowledge' => $sharingKnowledge,
             'pembuatanMateri' => $pembuatanMateri,
+            'pembuatanSilabus' => $pembuatanSilabus,
         ]);
     }
-
-
-    //  use Carbon\Carbon;
 
     public function RekomendasiMateri(Request $request)
     {

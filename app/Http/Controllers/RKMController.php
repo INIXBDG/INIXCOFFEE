@@ -374,21 +374,21 @@ class RKMController extends Controller
 
             // --- PROSES PEMANGGILAN MATERI REKOMENDASI ---
             if ($data->rekomendasilanjutan && $data->rekomendasilanjutan->id_materi) {
-            // 1. Pecah string menjadi array awal
-            $raw_ids = explode(',', $data->rekomendasilanjutan->id_materi);
-            $materi_ids = [];
+                // 1. Pecah string menjadi array awal
+                $raw_ids = explode(',', $data->rekomendasilanjutan->id_materi);
+                $materi_ids = [];
 
-            // 2. Loop (Foreach) untuk membersihkan ID (trim spasi)
-            foreach ($raw_ids as $id) {
-                $clean_id = trim($id); // Hapus spasi depan/belakang
-                if (!empty($clean_id)) {
-                    $materi_ids[] = $clean_id;
+                // 2. Loop (Foreach) untuk membersihkan ID (trim spasi)
+                foreach ($raw_ids as $id) {
+                    $clean_id = trim($id); // Hapus spasi depan/belakang
+                    if (!empty($clean_id)) {
+                        $materi_ids[] = $clean_id;
+                    }
                 }
-            }
 
-            // 3. Ambil data materi sekaligus (Query whereIn lebih efisien daripada query di dalam loop)
-            $data->rekomendasilanjutan->list_materi_lanjutan = Materi::whereIn('id', $materi_ids)->get();
-            // dd($materi_ids, $data->rekomendasilanjutan->list_materi_lanjutan);
+                // 3. Ambil data materi sekaligus (Query whereIn lebih efisien daripada query di dalam loop)
+                $data->rekomendasilanjutan->list_materi_lanjutan = Materi::whereIn('id', $materi_ids)->get();
+                // dd($materi_ids, $data->rekomendasilanjutan->list_materi_lanjutan);
             } else {
                 // Jika tidak ada data, set koleksi kosong
                 if ($data->rekomendasilanjutan) {
@@ -733,7 +733,8 @@ class RKMController extends Controller
 
         $perubahan = [];
         foreach ($changes as $field => $newValue) {
-            if ($field === 'updated_at') continue;
+            if ($field === 'updated_at')
+                continue;
             $perubahan[$field] = [
                 'old' => $oldData[$field] ?? null,
                 'new' => $newValue,
@@ -876,10 +877,10 @@ class RKMController extends Controller
                 return preg_replace('/[^\w\d\-_.]+/u', '_', trim($str));
             }
 
-            $nama_materi     = sanitizeFileName($post->materi->nama_materi ?? 'materi');
+            $nama_materi = sanitizeFileName($post->materi->nama_materi ?? 'materi');
             $nama_perusahaan = sanitizeFileName($post->perusahaan->nama_perusahaan ?? 'perusahaan');
-            $tanggal_awal    = sanitizeFileName($post->tanggal_awal ?? date('Y-m-d'));
-            $tanggal_akhir   = sanitizeFileName($post->tanggal_akhir ?? date('Y-m-d'));
+            $tanggal_awal = sanitizeFileName($post->tanggal_awal ?? date('Y-m-d'));
+            $tanggal_akhir = sanitizeFileName($post->tanggal_akhir ?? date('Y-m-d'));
 
             // Compose safe filename.
             $filename =
@@ -1282,6 +1283,98 @@ class RKMController extends Controller
         ]);
     }
 
+    public function chartHariMengajarInstrukturPerTahun(Request $request)
+    {
+        $validated = $request->validate([
+            'tahun' => ['required', 'integer', 'min:2000', 'max:' . (date('Y') + 1)]
+        ]);
+
+        $tahun = $validated['tahun'];
+
+        $rkms = RKM::with(['instruktur', 'instruktur2', 'asisten'])
+            ->whereYear('tanggal_awal', $tahun)
+            ->where('status', '!=', 'Cancel')
+            ->get();
+
+        if ($rkms->isEmpty()) {
+            return response()->json([
+                'labels' => [],
+                'data' => [],
+                'max_value' => 10,
+                'tahun' => $tahun,
+                'has_data' => false
+            ]);
+        }
+
+        $instrukturMap = [];
+
+        foreach ($rkms as $rkm) {
+            if ($rkm->instruktur_key && $rkm->instruktur) {
+                $key = $rkm->instruktur_key;
+                $nama = $rkm->instruktur->nama_lengkap
+                    ?? $rkm->instruktur->nama_karyawan
+                    ?? 'Instruktur ' . $key;
+
+                if (!isset($instrukturMap[$key])) {
+                    $instrukturMap[$key] = ['nama' => $nama, 'total_hari' => 0];
+                }
+
+                $tglAwal = Carbon::parse($rkm->tanggal_awal);
+                $tglAkhir = Carbon::parse($rkm->tanggal_akhir);
+                $instrukturMap[$key]['total_hari'] += $tglAwal->diffInDays($tglAkhir) + 1;
+            }
+
+            if ($rkm->instruktur_key2 && $rkm->instruktur2) {
+                $key = $rkm->instruktur_key2;
+                $nama = $rkm->instruktur2->nama_lengkap
+                    ?? $rkm->instruktur2->nama_karyawan
+                    ?? 'Instruktur ' . $key;
+
+                if (!isset($instrukturMap[$key])) {
+                    $instrukturMap[$key] = ['nama' => $nama, 'total_hari' => 0];
+                }
+
+                $tglAwal = Carbon::parse($rkm->tanggal_awal);
+                $tglAkhir = Carbon::parse($rkm->tanggal_akhir);
+                $instrukturMap[$key]['total_hari'] += $tglAwal->diffInDays($tglAkhir) + 1;
+            }
+
+            if ($rkm->asisten_key && $rkm->asisten) {
+                $key = $rkm->asisten_key;
+                $nama = $rkm->asisten->nama_lengkap
+                    ?? $rkm->asisten->nama_karyawan
+                    ?? 'Instruktur ' . $key;
+
+                if (!isset($instrukturMap[$key])) {
+                    $instrukturMap[$key] = ['nama' => $nama, 'total_hari' => 0];
+                }
+
+                $tglAwal = Carbon::parse($rkm->tanggal_awal);
+                $tglAkhir = Carbon::parse($rkm->tanggal_akhir);
+                $instrukturMap[$key]['total_hari'] += $tglAwal->diffInDays($tglAkhir) + 1;
+            }
+        }
+
+        $instrukturData = array_values($instrukturMap);
+        usort($instrukturData, function ($a, $b) {
+            return $b['total_hari'] <=> $a['total_hari'];
+        });
+
+        $instrukturData = array_slice($instrukturData, 0, 15);
+
+        $labels = array_column($instrukturData, 'nama');
+        $dataValues = array_column($instrukturData, 'total_hari');
+
+        $maxValue = !empty($dataValues) ? max($dataValues) + 10 : 10;
+
+        return response()->json([
+            'labels' => $labels,
+            'data' => $dataValues,
+            'max_value' => $maxValue,
+            'tahun' => $tahun,
+            'has_data' => !empty($instrukturData)
+    }
+          
     public function getChecklist($id)
     {
         $singleId = explode(',', $id)[0];
@@ -1324,3 +1417,4 @@ class RKMController extends Controller
         ]);
     }
 }
+

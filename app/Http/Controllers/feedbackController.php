@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Feedback;
-use App\Models\Nilaifeedback;
 use App\Models\RKM;
+use App\Models\Feedback;
 use App\Models\souvenir;
-use App\Models\souvenirpeserta;
-use App\Models\souvenirinhouse;
+use App\Models\Registrasi;
 use Illuminate\Http\Request;
+use App\Models\Nilaifeedback;
+use Illuminate\Support\Carbon;
+use App\Models\souvenirinhouse;
+use App\Models\souvenirpeserta;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Carbon;
@@ -59,12 +62,12 @@ class feedbackController extends Controller
             ], 200);
         }
     }
-	public function cekFeedbackRKM(Request $request)
+    public function cekFeedbackRKM(Request $request)
     {
         $startDate = Carbon::now()->startOfMonth()->toDateString();
-    
-		// Mengatur $endDate menjadi hari terakhir bulan ini (akhir bulan)
-		$endDate = Carbon::now()->endOfMonth()->toDateString();
+
+        // Mengatur $endDate menjadi hari terakhir bulan ini (akhir bulan)
+        $endDate = Carbon::now()->endOfMonth()->toDateString();
         $id = $request->input('id');
         $peserta = Registrasi::with('peserta', 'rkm', 'materi')
             ->where('id_peserta', $id)
@@ -108,10 +111,26 @@ class feedbackController extends Controller
             if (is_null($value)) {
                 if (in_array($key, ['U1', 'U2'])) {
                     $data[$key] = '-';
-                } else if (!in_array($key, [
-                    'I1b', 'I2b', 'I3b', 'I4b', 'I5b', 'I6b', 'I7b', 'I8b',
-                    'I1as', 'I2as', 'I3as', 'I4as', 'I5as', 'I6as', 'I7as', 'I8as',
-                ])) {
+                } else if (
+                    !in_array($key, [
+                        'I1b',
+                        'I2b',
+                        'I3b',
+                        'I4b',
+                        'I5b',
+                        'I6b',
+                        'I7b',
+                        'I8b',
+                        'I1as',
+                        'I2as',
+                        'I3as',
+                        'I4as',
+                        'I5as',
+                        'I6as',
+                        'I7as',
+                        'I8as',
+                    ])
+                ) {
                     $data[$key] = '4';
                 }
             }
@@ -123,15 +142,15 @@ class feedbackController extends Controller
             ->where('id_rkm', $data['id_rkm'])
             ->first();
 
-        if($nilaiFeedback){
+        if ($nilaiFeedback) {
             return response()->json([
                 'status' => 'error',
                 'title' => 'Mohon Maaf',
                 'text' => 'Anda sudah mengisi feedback!',
             ], 500);
         }
-            // Handle full feedback creation with all inputs
-            Nilaifeedback::create($data);
+        // Handle full feedback creation with all inputs
+        Nilaifeedback::create($data);
 
         return response()->json([
             'status' => 'success',
@@ -320,9 +339,9 @@ class feedbackController extends Controller
                     $souvenirs = souvenir::where('stok', '>', 0)
                         ->orderByDesc('stok')
                         ->get();
-                        // dd('all_item');
-                    } else {
-                        $souvenirs = souvenir::where(function ($query) use ($souvenirNames) {
+                    // dd('all_item');
+                } else {
+                    $souvenirs = souvenir::where(function ($query) use ($souvenirNames) {
                         foreach ($souvenirNames as $name) {
                             $query->orWhere('nama_souvenir', 'LIKE', "%{$name}%");
                         }
@@ -330,7 +349,7 @@ class feedbackController extends Controller
                         ->where('stok', '>', 0)
                         ->orderByDesc('stok')
                         ->get();
-                        // dd($souvenirs);
+                    // dd($souvenirs);
                 }
 
                 if ($souvenirs->isEmpty()) {
@@ -359,7 +378,7 @@ class feedbackController extends Controller
                     $souvenirs = souvenir::where('nama_souvenir', 'LIKE', "%{$sid}%")
                         ->where('stok', '>', 0)
                         ->get();
-						//dd($souvenirs);
+                    //dd($souvenirs);
                 }
 
                 if ($souvenirs->isEmpty()) {
@@ -701,3 +720,4 @@ class feedbackController extends Controller
         ]);
     }
 }
+
