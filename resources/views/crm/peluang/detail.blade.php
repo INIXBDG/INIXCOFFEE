@@ -21,7 +21,7 @@
                 <h4 class="fw-bold mb-0">Detail Lead</h4>
                 <div class="d-flex gap-2">
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#paymentAdvanceModal"
-                        @if ($peluang->tahap !== 'merah' || $regisuser->isEmpty()) disabled @endif>
+                        @if ($netsales) disabled @endif>
                         <i class="menu-icon bx bx-plus"></i> Payment Advance
                     </button>
                     @if ($isLost)
@@ -195,7 +195,7 @@
                             @endif
 
                             {{-- Detail Payment Advance --}}
-                            @if ($netsales->isNotEmpty())
+                            @if ($netsales)
                                 <div class="mt-4">
                                     <p class="fw-bold mb-2">Lihat detail Payment Advance :</p>
                                     <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal"
@@ -552,28 +552,6 @@
 
                             <input type="hidden" name="id_rkm" value='{{ $peluang->id_rkm }}'>
 
-                            <!-- PILIH PESERTA (tidak diubah) -->
-                            <div class="mb-3">
-                                <label for="id_peserta" class="form-label">Pilih Peserta</label>
-                                <select class="form-select" id="id_peserta" name="id_peserta">
-                                    <option selected disabled>Pilih Peserta</option>
-                                    @foreach ($regisuser as $registrasi)
-                                        @if (isset($registrasi->peserta->nama))
-                                            <option value="{{ $registrasi->peserta->id }}">
-                                                {{ $registrasi->peserta->nama }}
-                                            </option>
-                                        @endif
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <!-- HARGA PENAWARAN -->
-                            <div class="mb-3">
-                                <label class="form-label">Harga Penawaran</label>
-                                <input type="text" class="form-control rupiah" readonly name="harga_penawaran"
-                                    value="Rp {{ number_format($peluang->harga, 0, ',', '.') }}">
-                            </div>
-
                             <!-- TRANSPORTASI -->
                             <div class="mb-3">
                                 <label class="form-label">Transportasi</label>
@@ -592,28 +570,16 @@
                                 <input type="text" class="form-control rupiah" name="akomodasi_peserta">
                             </div>
 
-                            <!-- PENGINAPAN & MEETING ROOM -->
+                            <!-- AKOMODASI TIM -->
                             <div class="mb-3">
-                                <label class="form-label">Penginapan / Meeting Room</label>
-                                <input type="text" class="form-control rupiah" name="penginapan_meeting_room">
+                                <label class="form-label">Akomodasi Tim</label>
+                                <input type="text" class="form-control rupiah" name="akomodasi_tim">
                             </div>
 
-                            <!-- AKOMODASI SALES & INSTRUKTUR -->
+                            <!-- KETERANGAN AKOMODASI TIM -->
                             <div class="mb-3">
-                                <label class="form-label">Akomodasi Sales & Instruktur</label>
-                                <input type="text" class="form-control rupiah" name="akomodasi_sales_instruktur">
-                            </div>
-
-                            <!-- REIMBURSE TRANSPORT SALES & INSTRUKTUR -->
-                            <div class="mb-3">
-                                <label class="form-label">Reimburse Transportasi Sales & Instruktur</label>
-                                <input type="text" class="form-control rupiah" name="reimburse_transport_sales_instruktur">
-                            </div>
-
-                            <!-- SEWA LAPTOP -->
-                            <div class="mb-3">
-                                <label class="form-label">Sewa Laptop</label>
-                                <input type="text" class="form-control rupiah" name="sewa_laptop">
+                                <label class="form-label">Keterangan Akomodasi Tim</label>
+                                <textarea class="form-control" name="keterangan_akomodasi_tim" rows="3"></textarea>
                             </div>
 
                             <!-- FRESH MONEY -->
@@ -622,34 +588,47 @@
                                 <input type="text" class="form-control rupiah" name="fresh_money">
                             </div>
 
-                            <!-- DISKON -->
-                            <div class="mb-3">
-                                <label class="form-label">Diskon</label>
-                                <input type="text" class="form-control rupiah" name="diskon">
-                            </div>
-
                             <!-- ENTERTAINT -->
                             <div class="mb-3">
-                                <label class="form-label">Entertain (Souvenir, Oleh-oleh, Dinner)</label>
+                                <label class="form-label">Entertaint</label>
                                 <input type="text" class="form-control rupiah" name="entertaint">
                             </div>
-                            
-                            <!-- DESKRIPSI ENTERTAINT -->
+
+                            <!-- KETERANGAN ENTERTAINT -->
                             <div class="mb-3">
-                                <label class="form-label">Deskripsi Entertain</label>
-                                <textarea class="form-control" name="deskripsi_entertaint" rows="3"></textarea>
+                                <label class="form-label">Keterangan Entertain</label>
+                                <textarea class="form-control" name="keterangan_entertaint" rows="3"></textarea>
                             </div>
-                            
+
+                            <!-- SOUVENIR -->
+                            <div class="mb-3">
+                                <label class="form-label">Souvenir</label>
+                                <input type="text" class="form-control rupiah" name="Souvenir">
+                            </div>
+
+                            <!-- CASHBACK -->
+                            <div class="mb-3">
+                                <label class="form-label">Cashback</label>
+                                <input type="text" class="form-control rupiah" name="cashback">
+                            </div>
+
+                            <!-- SEWA LAPTOP -->
+                            <div class="mb-3">
+                                <label class="form-label">Sewa Laptop (Opsional)</label>
+                                <input type="text" class="form-control rupiah" name="sewa_laptop"
+                                    placeholder="Opsional">
+                            </div>
+
                             {{-- Tanggal Payment --}}
                             <div class="mb-3">
                                 <label class="form-label">Tanggal Payment</label>
-                                <input type="date" class="form-control" name="tanggalPayment">
+                                <input type="date" class="form-control" name="tgl_pa">
                             </div>
 
                             <!-- DESKRIPSI TAMBAHAN -->
                             <div class="mb-3">
                                 <label class="form-label">Deskripsi Tambahan</label>
-                                <textarea class="form-control" name="desc" rows="3"></textarea>
+                                <textarea class="form-control" name="deskripsi_tambahan" rows="3"></textarea>
                             </div>
 
                             <!-- PEMBAYARAN -->
@@ -687,70 +666,61 @@
 
                     <div class="modal-body">
 
-                        @if ($netsales->isNotEmpty())
+                        @if ($netsales)
 
                             <div class="table-responsive mb-4">
                                 <table class="table table-bordered table-striped">
                                     <thead>
                                         <tr>
-                                            <th>Nama</th>
-                                            <th>Harga Penawaran</th>
                                             <th>Transportasi</th>
                                             <th>Jenis Transportasi</th>
                                             <th>Akomodasi Peserta</th>
-                                            <th>Meeting Room / Penginapan</th>
-                                            <th>Akomodasi Sales & Instruktur</th>
-                                            <th>Reimburse Transport SI</th>
-                                            <th>Sewa Laptop</th>
+                                            <th>Akomodasi Tim</th>
+                                            <th>Keterangan Akomodasi Tim</th>
                                             <th>Fresh Money</th>
                                             <th>Entertaint</th>
-                                            <th>Deskripsi Entertaint</th>
+                                            <th>Keterangan Entertaint</th>
                                             <th>Souvenir</th>
                                             <th>Cashback</th>
+                                            <th>Sewa Laptop</th>
+                                            <th>Deskripsi Tambahan</th>
                                             <th>Tanggal PA</th>
                                             <th>Tipe Pembayaran</th>
-                                            <th>Deskripsi Tambahan</th>
                                         </tr>
                                     </thead>
 
                                     <tbody>
-                                        @foreach ($netsales as $item)
-                                            <tr>
+                                        <tr>
+                                            <td>Rp {{ number_format($netsales->transportasi, 0, ',', '.') }}</td>
+                                            <td>{{ $netsales->jenis_transportasi ?? '-' }}</td>
 
-                                                <td>{{ $item->peserta->nama }}</td>
+                                            <td>Rp {{ number_format($netsales->akomodasi_peserta, 0, ',', '.') }}</td>
+                                            <td>Rp {{ number_format($netsales->akomodasi_tim, 0, ',', '.') }}</td>
+                                            <td>{{ $netsales->keterangan_akomodasi_tim ?? '-' }}</td>
 
-                                                <td>Rp {{ number_format($item->harga_penawaran, 0, ',', '.') }}</td>
+                                            <td>{{ $netsales->fresh_money ? 'Rp ' . number_format($netsales->fresh_money, 0, ',', '.') : '-' }}
+                                            </td>
 
-                                                <td>Rp {{ number_format($item->transportasi, 0, ',', '.') }}</td>
-                                                <td>{{ $item->jenis_transportasi ?? '-' }}</td>
+                                            <td>{{ $netsales->entertaint ? 'Rp ' . number_format($netsales->entertaint, 0, ',', '.') : '-' }}
+                                            </td>
+                                            <td>{{ $netsales->keterangan_entertaint ?? '-' }}</td>
 
-                                                <td>Rp {{ number_format($item->akomodasi_peserta, 0, ',', '.') }}</td>
+                                            <td>{{ $netsales->souvenir ? 'Rp ' . number_format($netsales->souvenir, 0, ',', '.') : '-' }}
+                                            </td>
 
-                                                <td>Rp {{ number_format($item->penginapan_meeting_room, 0, ',', '.') }}</td>
+                                            <td>{{ $netsales->cashback ? 'Rp ' . number_format($netsales->cashback, 0, ',', '.') : '-' }}
+                                            </td>
 
-                                                <td>Rp {{ number_format($item->akomodasi_sales_instruktur, 0, ',', '.') }}</td>
+                                            <td>{{ $netsales->sewa_laptop ? 'Rp ' . number_format($netsales->sewa_laptop, 0, ',', '.') : '-' }}
+                                            </td>
 
-                                                <td>Rp {{ number_format($item->reimburse_transport_sales_instruktur, 0, ',', '.') }}</td>
+                                            <td>{{ $netsales->deskripsi_tambahan ?? '-' }}</td>
 
-                                                <td>{{ $item->sewa_laptop ? 'Rp ' . number_format($item->sewa_laptop, 0, ',', '.') : '-' }}</td>
+                                            <td>{{ \Carbon\Carbon::parse($netsales->tgl_pa)->translatedFormat('d F Y') }}
+                                            </td>
 
-                                                <td>{{ $item->fresh_money ? 'Rp ' . number_format($item->fresh_money, 0, ',', '.') : '-' }}</td>
-
-                                                <td>{{ $item->entertaint ? 'Rp ' . number_format($item->entertaint, 0, ',', '.') : '-' }}</td>
-                                                <td>{{ $item->deskripsi_entertaint ?? '-' }}</td>
-
-                                                <td>{{ $item->souvenir ? 'Rp ' . number_format($item->souvenir, 0, ',', '.') : '-' }}</td>
-
-                                                <td>{{ $item->cashback ? 'Rp ' . number_format($item->cashback, 0, ',', '.') : '-' }}</td>
-
-                                                <td>{{ \Carbon\Carbon::parse($item->tgl_pa)->translatedFormat('d F Y') }}</td>
-
-                                                <td>{{ ucfirst($item->tipe_pembayaran) }}</td>
-
-                                                <td>{{ $item->desc ?? '-' }}</td>
-
-                                            </tr>
-                                        @endforeach
+                                            <td>{{ ucfirst($netsales->tipe_pembayaran) }}</td>
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -770,7 +740,8 @@
                                         <tbody>
                                             <tr>
                                                 <td>{{ $netsales->first()->trackingNetSales->tracking ?? '-' }}</td>
-                                                <td>{{ $netsales->first()->trackingNetSales->created_at->translatedFormat('d F Y') }}</td>
+                                                <td>{{ $netsales->first()->trackingNetSales->created_at->translatedFormat('d F Y') }}
+                                                </td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -797,17 +768,20 @@
                                             @foreach ($netsales->first()->approvedNetSales as $approval)
                                                 @php
                                                     $status = match (true) {
-                                                        $approval->status === 1 && $approval->level_status === '3' && $approval->keterangan !== 'Selesai' => 'Diproses',
+                                                        $approval->status === 1 &&
+                                                            $approval->level_status === '3' &&
+                                                            $approval->keterangan !== 'Selesai'
+                                                            => 'Diproses',
                                                         $approval->status === 1 => 'Disetujui',
                                                         $approval->status === 0 => 'Ditolak',
-                                                        default => 'Belum diketahui'
+                                                        default => 'Belum diketahui',
                                                     };
 
                                                     $approver = match ($approval->level_status) {
                                                         '1' => 'SPV Sales',
                                                         '2' => 'GM',
                                                         '3' => 'Finance & Accounting',
-                                                        default => '-'
+                                                        default => '-',
                                                     };
                                                 @endphp
 
@@ -824,7 +798,6 @@
                             @else
                                 <p class="text-muted">Belum ada data approval.</p>
                             @endif
-
                         @else
                             <p class="text-muted">Belum ada data Payment Advance untuk peluang ini.</p>
                         @endif

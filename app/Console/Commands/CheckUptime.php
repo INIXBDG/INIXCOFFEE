@@ -3,9 +3,11 @@
 namespace App\Console\Commands;
 
 use App\Models\ActivityLog;
+use App\Models\karyawan;
 use App\Models\UptimeCheck;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
+use Jenssegers\Agent\Agent;
 
 class CheckUptime extends Command
 {
@@ -22,6 +24,8 @@ class CheckUptime extends Command
 
         $urls = array_filter(array_map('trim', explode(',', $rawUrls)));
 
+        $koorITSM = karyawan::where('jabatan', 'Koordinator ITSM')->first();
+
         foreach ($urls as $url) {
             if (!filter_var($url, FILTER_VALIDATE_URL)) {
                 $this->warn("Invalid URL skipped: {$url}");
@@ -29,8 +33,9 @@ class CheckUptime extends Command
             }
 
             $start = microtime(true);
-            $responseTime = 0; // Default value if down
+            $responseTime = 0;
             $isUp = false;
+            $httpStatus = null;
 
             try {
                 $response = Http::withOptions(['verify' => false])
@@ -38,28 +43,31 @@ class CheckUptime extends Command
                     ->get($url);
 
                 $isUp = $response->successful();
-                $responseTime = (microtime(true) - $start) * 1000; // in ms
+                $httpStatus = $response->status();
+                $responseTime = (microtime(true) - $start) * 1000;
             } catch (\Exception $e) {
-                // Jika gagal, set responseTime sebagai 10000 ms (timeout 10 detik)
-                $responseTime = 10000; // atau bisa juga 0, tapi 10000 lebih baik untuk indikasi timeout
-                // Tidak perlu set $isUp = false karena sudah default
+                $responseTime = 10000;
+                $httpStatus = 0;
             }
 
-            // Pastikan response_time tidak null, gunakan default jika down
-            $responseTime = $responseTime ?? 0;
-
             ActivityLog::create([
-                'status' => 'uptime',
+                'user_id' => (string) $koorITSM->id,
+                'status' => (string) $httpStatus,
                 'url' => $url,
-                'status' => 'UpTime',
+                'ip' => gethostbyname(gethostname()),
+                'user_agent' => 'Laravel Scheduler',
+                'platform' => PHP_OS,
+                'browser' => 'SYSTEM',
+                'device' => 'SERVER',
+                'method' => 'GET',
+                'detail' => $isUp ? 'Uptime OK' : 'Uptime DOWN',
                 'is_up' => $isUp,
-                'response_time_ms' => $responseTime,
+                'response_time_ms' => (int) $responseTime,
                 'checked_at' => now(),
             ]);
 
-            $status = $isUp ? 'UP' : 'DOWN';
-            $time = sprintf(' (%.2f ms)', $responseTime);
-            $this->info("Checked {$url}: {$status}{$time}");
+            $statusText = $isUp ? 'UP' : 'DOWN';
+            $this->info("Checked {$url}: {$statusText} ({$responseTime} ms)");
         }
     }
 }

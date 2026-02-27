@@ -16,7 +16,7 @@
                                 <select class="form-select @error('id_rkm') is-invalid @enderror" name="id_rkm" id="id_rkm" value="{{ old('id_rkm' ) }}" required autocomplete="id_rkm">
                                     <option selected>Pilih RKM</option>
                                     @foreach ( $post as $rkm )
-                                    <option value="{{ $rkm->id }}">{{ $rkm->materi->nama_materi }} - {{ $rkm->perusahaan->nama_perusahaan }} ({{ \Carbon\Carbon::parse($rkm->tanggal_awal)->translatedFormat('l, d F Y') }} - {{ \Carbon\Carbon::parse($rkm->tanggal_akhir)->translatedFormat('l, d F Y') }})</option>
+                                    <option value="{{ $rkm->id }}">{{ $rkm->materi->nama_materi ?? '-' }} - {{ $rkm->perusahaan->nama_perusahaan }} ({{ \Carbon\Carbon::parse($rkm->tanggal_awal)->translatedFormat('l, d F Y') }} - {{ \Carbon\Carbon::parse($rkm->tanggal_akhir)->translatedFormat('l, d F Y') }}) - {{$rkm->metode_kelas }}</option>
                                     @endforeach
                                 </select>
                                 @error('id_rkm')
@@ -44,12 +44,11 @@
                             <div class="row">
                                 <h4>{{ $materi[0]->kategori_feedback }}</h4>
                                 @foreach ($materi as $data)
-                                <div class="col-lg-6">
-                                    <h2 class="h5">{{ $data->pertanyaan }}
-                                    </h2>
+                                <div class="col-lg-6 pertanyaan-materi" data-key="{{ $data->pertanyaan }}">
+                                    <h2 class="h5">{{ $data->pertanyaan }}</h2>
                                     <p class="small">Pilih salah satu jawaban yang dikehendaki.</p>
                                 </div>
-                                <div class="col-lg-6 ">
+                                <div class="col-lg-6 point-materi" data-key="{{ $data->pertanyaan }}">
                                     <div class=" d-flex justify-content-between mb-2">
                                         <div class="form-check">
                                             <input type="radio" class="form-check-input" value="1" id="{{ $data->key }}{{ $loop->iteration }}-1" name="{{ $data->key }}{{ $loop->iteration }}">
@@ -76,12 +75,12 @@
                             <div class="row">
                                 <h4>{{ $pelayanan[0]->kategori_feedback }}</h4>
                                 @foreach ($pelayanan as $data)
-                                <div class="col-lg-6">
+                                <div class="col-lg-6 pertanyaan-pelayanan" data-key="{{ $data->pertanyaan }}">
                                     <h2 class="h5">{{ $data->pertanyaan }}
                                     </h2>
                                     <p class="small">Pilih salah satu jawaban yang dikehendaki.</p>
                                 </div>
-                                <div class="col-lg-6 ">
+                                <div class="col-lg-6 point-pelayanan" data-key="{{ $data->pertanyaan }}">
                                     <div class=" d-flex justify-content-between mb-2">
                                         <div class="form-check">
                                             <input type="radio" class="form-check-input" value="1" id="{{ $data->key }}{{ $loop->iteration }}-1" name="{{ $data->key }}{{ $loop->iteration }}">
@@ -177,7 +176,7 @@
                                     <h2 class="h5">{{ $data->pertanyaan }}</h2>
                                     <p class="small">Pilih salah satu jawaban yang dikehendaki.</p>
                                 </div>
-                                <div class="col-lg-6 ">
+                                <div class="col-lg-6">
                                     <div class=" d-flex justify-content-between mb-2">
                                         <div class="form-check">
                                             <input type="radio" class="form-check-input" value="1" id="{{ $data->key }}{{ $loop->iteration }}b-1" name="{{ $data->key }}{{ $loop->iteration }}b">
@@ -275,6 +274,43 @@
 
 <script>
     $(document).ready(function(){
+        // Set pertanyaan yang ingin di hide
+        const controlledQuestions = [
+            {
+                materiSelector: '.pertanyaan-materi',
+                pointSelector: '.point-materi',
+                dataKey: 'Hasil cetakan materi',
+                inputName: 'M4'
+            },
+            {
+                materiSelector: '.pertanyaan-pelayanan',
+                pointSelector: '.point-pelayanan',
+                dataKey: 'Kualitas makanan dan minuman',
+                inputName: 'P7'
+            }
+        ];
+
+        // Function untuk hide pertanyaan dan set default value
+        function toggleQuestions(isOffline) {
+            controlledQuestions.forEach(q => {
+
+                const materi = $(`${q.materiSelector}[data-key="${q.dataKey}"]`);
+                const point = $(`${q.pointSelector}[data-key="${q.dataKey}"]`);
+                const input = $(`input[name="${q.inputName}"]`);
+
+                if (isOffline) {
+                    materi.show();
+                    point.show();
+                    input.prop('checked', false);
+                } else {
+                    materi.hide();
+                    point.hide();
+                    input.prop('checked', true);
+                }
+
+            });
+        }
+        
         $('#id_rkm').select2({
             placeholder: 'Pilih RKM',
             allowClear: true
@@ -327,6 +363,13 @@
                             $('#asisten').css('display', 'none');
                         } else {
                             $('#asisten').css('display', 'block');
+                        }
+
+                        // Panggil function hide pertanyaan
+                        if (data.rkm.metode_kelas === "Offline") {
+                            toggleQuestions(true);
+                        } else {
+                            toggleQuestions(false);
                         }
                     }
                 });

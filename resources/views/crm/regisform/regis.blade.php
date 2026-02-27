@@ -497,7 +497,7 @@
         <input type="text" id="nama-perusahaan" class="readonly" value="{{ $lead->perusahaan->nama_perusahaan ?? '-' }}"
             readonly>
         <label>Alamat:</label>
-        <input type="text" id="alamat" class="readonly" value="{{ $lead->perusahaan->alamat ?? '-' }}" readonly>
+        <input type="text" id="alamat" value="{{ $lead->perusahaan->alamat ?? '-' }}">
         <label>PIC Penagihan:</label>
         <input type="text" id="pic">
         <label>Telepon:</label>
@@ -505,7 +505,7 @@
         <label>Email:</label>
         <input type="text" id="email">
         <label>NPWP:</label>
-        <input type="text" id="npwp" class="readonly" value="{{ $lead->perusahaan->npwp ?? '-' }}" readonly>
+        <input type="text" id="npwp" value="{{ $lead->perusahaan->npwp ?? '-' }}">
 
         <label>Materi dan Tanggal Pelatihan:</label>
         <input type="text" class="readonly" id="materi"
@@ -518,12 +518,17 @@
 
         <h3>Syarat & Ketentuan</h3>
         <label>Pilih Syarat (bisa lebih dari satu):</label>
-        <select id="syarat-select" multiple required>
+        <div id="syarat-checkbox-list"
+            style="border: 1px solid #ccc; padding: 10px; max-height: 200px; overflow-y: auto;">
             @foreach ($ketentuan as $ket)
-                <option value="{{ $ket->id }}" data-content="{{ $ket->ketentuan }}">{{ $ket->ketentuan }}
-                </option>
+                <div style="display: flex; align-items: flex-start; gap: 8px; margin-bottom: 5px;">
+                    <input type="checkbox" class="syarat-checkbox" id="syarat-{{ $ket->id }}"
+                        data-content="{{ $ket->ketentuan }}" style="width: auto; margin-top: 4px;">
+                    <label for="syarat-{{ $ket->id }}"
+                        style="cursor: pointer; font-size: 13px;">{{ $ket->ketentuan }}</label>
+                </div>
             @endforeach
-        </select>
+        </div>
 
         @php
             use App\Models\Karyawan;
@@ -553,7 +558,7 @@
                     value="Aryani Meitasari">
                 <label>Jabatan Penandatangan 3:</label>
                 <input type="text" placeholder="Jabatan Penandatangan 3" class="signature-position" required
-                    value="Chief Marketing Manager">
+                    value="SPV Marketing Manager">
             </div>
         </div>
 
@@ -565,6 +570,8 @@
         <textarea id="deskripsi-tambahan" placeholder="Masukkan deskripsi tambahan (opsional)"></textarea>
 
         <button type="button" id="preview-btn">Generate PDF</button>
+        <button type="button" id="download-word-btn">Download Word</button>
+
     </form>
 
     <div id="pdf-container"></div>
@@ -643,14 +650,18 @@
             }
 
             // Proses syarat dan ketentuan
-            const select = document.getElementById('syarat-select');
-            const selectedOptions = Array.from(select.selectedOptions);
+            const selectedCheckboxes = document.querySelectorAll('.syarat-checkbox:checked');
             let syaratList = '';
-            if (selectedOptions.length === 0) {
-                syaratList = '<li>Tidak ada syarat yang dipilih.</li>';
+
+            if (selectedCheckboxes.length === 0) {
+                syaratList = `
+                    <li>Harga penawaran di atas sudah termasuk PPN ${ppnRate}%.</li>
+                    <li>Form pendaftaran harus dikirim paling lambat 14 hari sebelum pelaksanaan pelatihan.</li>
+                    <li>Pelatihan berlangsung pukul 09.00 hingga selesai.</li>
+                    <li>Pelatihan diselenggarakan di Kantor Inixindo Bandung, Jalan Cipaganti No 95, Bandung.</li>`;
             } else {
-                selectedOptions.forEach(option => {
-                    const content = option.dataset.content || '';
+                selectedCheckboxes.forEach(cb => {
+                    const content = cb.getAttribute('data-content') || '';
                     syaratList += `<li>${content}</li>`;
                 });
             }
@@ -681,7 +692,7 @@
                         img.onload = function() {
                             const height = img.height;
                             const adjustedPadding = Math.max(20.4 - (height / 10),
-                            5); // Convert px to mm, ensure minimum padding
+                                5); // Convert px to mm, ensure minimum padding
                             const signatureDiv = document.querySelector(
                                 `#pdf-container .signature:nth-child(${index + 1}) div`);
                             if (signatureDiv) {
@@ -845,6 +856,366 @@
                 console.error('Error generating PDF:', error);
                 alert('Gagal menghasilkan PDF. Silakan coba lagi.');
             });
+        });
+    </script>
+
+    <script type="module">
+        import * as docx from 'https://cdn.jsdelivr.net/npm/docx@9.5.1/+esm';
+
+        const {
+            Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
+            WidthType, BorderStyle, AlignmentType, HeadingLevel, VerticalAlign,
+            ImageRun, Header, Footer
+        } = docx;
+
+        // helper buat gambarnya
+        async function fetchToBase64(url) {
+            try {
+                const response = await fetch(url, { mode: 'cors' });
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const blob = await response.blob();
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        const base64String = reader.result;
+                        resolve(base64String.includes(',') ? base64String.split(',')[1] : base64String);
+                    };
+                    reader.readAsDataURL(blob);
+                });
+            } catch (err) {
+                console.warn('Gagal load gambar:', url);
+                return null;
+            }
+        }
+
+        document.getElementById('download-word-btn').addEventListener('click', async () => {
+            try {
+                // 1. Ambil Data Input
+                const namaPerusahaan = document.getElementById('nama-perusahaan')?.value || '';
+                const alamat = document.getElementById('alamat')?.value || '';
+                const pic = document.getElementById('pic')?.value || '';
+                const telepon = document.getElementById('telepon')?.value || '';
+                const email = document.getElementById('email')?.value || '';
+                const npwp = document.getElementById('npwp')?.value || '';
+                const materi = document.getElementById('materi')?.value || '';
+                const deskripsiTambahan = document.getElementById('deskripsi-tambahan')?.value || '';
+                
+                // 2. Ambil Logika PPN
+                const includePPN = document.getElementById('include-ppn').checked;
+                const ppnPercentage = parseFloat(document.getElementById('ppn-percentage').value) || 0;
+
+                // 3. Persiapkan Gambar
+                const logoBase64 = await fetchToBase64("{{ asset('assets/img/inix.png') }}");
+                const signatureUrl = "{{ asset('storage/ttd/' . ($sales->ttd ?? '')) }}"; 
+                const ttdBase64 = (signatureUrl && signatureUrl.length > 20) ? await fetchToBase64(signatureUrl) : null;
+
+                // 4. Buat Tabel Header
+                const headerTable = new Table({
+                    width: { size: 100, type: WidthType.PERCENTAGE },
+                    borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE }, insideVertical: { style: BorderStyle.NONE }, insideHorizontal: { style: BorderStyle.NONE } },
+                    rows: [
+                        new TableRow({
+                            children: [
+                                new TableCell({
+                                    width: { size: 50, type: WidthType.PERCENTAGE },
+                                    children: [
+                                        logoBase64 ? new Paragraph({
+                                            children: [new ImageRun({
+                                                data: Uint8Array.from(atob(logoBase64), c => c.charCodeAt(0)),
+                                                transformation: { width: 170, height: 60 }
+                                            })]
+                                        }) : new Paragraph("LOGO")
+                                    ]
+                                }),
+                                new TableCell({
+                                    width: { size: 50, type: WidthType.PERCENTAGE },
+                                    verticalAlign: VerticalAlign.TOP,
+                                    children: [
+                                        new Paragraph({ text: "Jl. Cipaganti No.95, Bandung", alignment: AlignmentType.RIGHT, style: "NormalFont" }),
+                                        new Paragraph({ text: "Tel: 022-2032831", alignment: AlignmentType.RIGHT, style: "NormalFont" }),
+                                        new Paragraph({ text: "Web: www.inixindobdg.co.id", alignment: AlignmentType.RIGHT, style: "NormalFont" })
+                                    ]
+                                })
+                            ]
+                        })
+                    ]
+                });
+
+                // 5. Konfigurasi Tabel Peserta
+                const pesertaRowsElement = document.querySelectorAll('.peserta-row');
+                let totalHarga = 0;
+                const tableRows = [];
+
+                if (materi) {
+                    tableRows.push(
+                        new TableRow({
+                            children: [
+                                new TableCell({
+                                    columnSpan: 4,
+                                    shading: { fill: "E0E0E0" },
+                                    children: [
+                                        new Paragraph({
+                                            text: materi,
+                                            bold: true,
+                                            alignment: AlignmentType.LEFT
+                                        })
+                                    ]
+                                })
+                            ]
+                        })
+                    );
+                }
+
+                // Header Kolom Peserta
+                tableRows.push(
+                    new TableRow({
+                        tableHeader: true,
+                        children: [
+                            new TableCell({ children: [new Paragraph({ text: "No", bold: true, alignment: AlignmentType.CENTER })], shading: { fill: "F2F2F2" } }),
+                            new TableCell({ children: [new Paragraph({ text: "Nama Peserta", bold: true })], shading: { fill: "F2F2F2" } }),
+                            new TableCell({ children: [new Paragraph({ text: "Kontak Handphone & Email & Divisi", bold: true })], shading: { fill: "F2F2F2" } }),
+                            new TableCell({ children: [new Paragraph({ text: "Harga", bold: true, alignment: AlignmentType.CENTER })], shading: { fill: "F2F2F2" } })
+                        ]
+                    })
+                );
+
+                // Isi Peserta
+                pesertaRowsElement.forEach((row, index) => {
+                    const nama = row.querySelector('.nama-peserta')?.value || '';
+                    const kontak = row.querySelector('.kontak-peserta')?.value || '';
+                    const harga = parseInt(row.querySelector('.harga-peserta')?.value || '0') || 0;
+                    totalHarga += harga;
+
+                    tableRows.push(new TableRow({
+                        children: [
+                            new TableCell({ children: [new Paragraph({ text: String(index + 1), alignment: AlignmentType.CENTER })] }),
+                            new TableCell({ children: [new Paragraph(nama)] }),
+                            new TableCell({ children: [new Paragraph(kontak)] }),
+                            new TableCell({ children: [new Paragraph({ text: `Rp ${harga.toLocaleString('id-ID')},00`, alignment: AlignmentType.RIGHT })] })
+                        ]
+                    }));
+                });
+
+                // Baris Total
+                tableRows.push(new TableRow({
+                    children: [
+                        new TableCell({ columnSpan: 3, children: [new Paragraph({ text: "Total", bold: true })] }),
+                        new TableCell({ children: [new Paragraph({ text: `Rp ${totalHarga.toLocaleString('id-ID')},00`, bold: true, alignment: AlignmentType.RIGHT })] })
+                    ]
+                }));
+
+                // Baris PPN
+                if (includePPN && ppnPercentage > 0 && totalHarga > 0) {
+                    const ppnMultiplier = 1 + (ppnPercentage / 100);
+                    const totalPPN = totalHarga * ppnMultiplier;
+                    tableRows.push(new TableRow({
+                        children: [
+                            new TableCell({ columnSpan: 3, children: [new Paragraph({ text: `Total Keseluruhan + PPN ${ppnPercentage}%`, bold: true })] }),
+                            new TableCell({ children: [new Paragraph({ text: `Rp ${totalPPN.toLocaleString('id-ID')},00`, bold: true, alignment: AlignmentType.RIGHT })] })
+                        ]
+                    }));
+                }
+
+                const pesertaTable = new Table({
+                    width: { size: 100, type: WidthType.PERCENTAGE },
+                    rows: tableRows
+                });
+
+                // 6. Buat Bagian Tanda Tangan (REVISI: ALIGNMENT & BORDER)
+                const sigRows = document.querySelectorAll('.signature-row');
+                
+                const name1 = sigRows[0]?.querySelector('.signature-name')?.value || '';
+                const post1 = sigRows[0]?.querySelector('.signature-position')?.value || '';
+
+                const name2 = sigRows[1]?.querySelector('.signature-name')?.value || '';
+                const post2 = sigRows[1]?.querySelector('.signature-position')?.value || '';
+
+                const name3 = sigRows[2]?.querySelector('.signature-name')?.value || '';
+                const post3 = sigRows[2]?.querySelector('.signature-position')?.value || '';
+
+                const signatureTable = new Table({
+                    width: { size: 100, type: WidthType.PERCENTAGE },
+                    borders: { 
+                        top: { style: BorderStyle.NONE }, 
+                        bottom: { style: BorderStyle.NONE }, 
+                        left: { style: BorderStyle.NONE }, 
+                        right: { style: BorderStyle.NONE }, 
+                        insideVertical: { style: BorderStyle.NONE }, 
+                        insideHorizontal: { style: BorderStyle.NONE } 
+                    },
+                    rows: [
+                        new TableRow({
+                            children: [
+                                // KOLOM 1 (KIRI): Manual
+                                new TableCell({
+                                    width: { size: 33, type: WidthType.PERCENTAGE },
+                                    verticalAlign: VerticalAlign.BOTTOM, // Align ke bawah agar sejajar
+                                    children: [
+                                        new Paragraph({ text: " ", spacing: { before: 1400 } }), 
+                                        new Paragraph({ 
+                                            children: [new TextRun({ text: name1, bold: true })], 
+                                            alignment: AlignmentType.CENTER, 
+                                            border: { top: { style: BorderStyle.SINGLE, size: 6 } },
+                                            indent: { left: 720, right: 720 } // Perpendek garis (1 inch total indent)
+                                        }),
+                                        new Paragraph({ text: post1, alignment: AlignmentType.CENTER })
+                                    ]
+                                }),
+
+                                // KOLOM 2 (TENGAH): TTD Database (Gambar)
+                                new TableCell({
+                                    width: { size: 33, type: WidthType.PERCENTAGE },
+                                    verticalAlign: VerticalAlign.BOTTOM, // Align ke bawah agar sejajar
+                                    children: [
+                                        new Paragraph({ 
+                                            alignment: AlignmentType.CENTER,
+                                            children: ttdBase64 ? [
+                                                new ImageRun({
+                                                    data: Uint8Array.from(atob(ttdBase64), c => c.charCodeAt(0)),
+                                                    transformation: { width: 100, height: 50 },
+                                                })
+                                            ] : [new TextRun({ text: "", size: 20 })],
+                                            spacing: { before: 200, after: 100 }
+                                        }),
+                                        new Paragraph({ 
+                                            children: [new TextRun({ text: name2, bold: true })], 
+                                            alignment: AlignmentType.CENTER, 
+                                            border: { top: { style: BorderStyle.SINGLE, size: 6 } },
+                                            indent: { left: 720, right: 720 } // Perpendek garis
+                                        }),
+                                        new Paragraph({ text: post2, alignment: AlignmentType.CENTER })
+                                    ]
+                                }),
+
+                                // KOLOM 3 (KANAN): Mengetahui
+                                new TableCell({
+                                    width: { size: 33, type: WidthType.PERCENTAGE },
+                                    verticalAlign: VerticalAlign.BOTTOM, // Align ke bawah agar sejajar
+                                    children: [
+                                        new Paragraph({ 
+                                            children: [new TextRun({ text: "Mengetahui", bold: true })], 
+                                            alignment: AlignmentType.CENTER,
+                                            spacing: { after: 1400 } // Spasi ditaruh dibawah "Mengetahui"
+                                        }),
+                                        new Paragraph({ 
+                                            children: [new TextRun({ text: name3, bold: true })], 
+                                            alignment: AlignmentType.CENTER, 
+                                            border: { top: { style: BorderStyle.SINGLE, size: 6 } },
+                                            indent: { left: 720, right: 720 } // Perpendek garis
+                                        }),
+                                        new Paragraph({ text: post3, alignment: AlignmentType.CENTER })
+                                    ]
+                                })
+                            ]
+                        })
+                    ]
+                });
+
+                // 7. Styles Document
+                const doc = new Document({
+                    styles: {
+                        default: {
+                            document: {
+                                run: { font: "Arial", size: 20 },
+                                paragraph: { spacing: { line: 276 } }
+                            }
+                        },
+                        paragraphStyles: [
+                            { id: "NormalFont", name: "Normal Font", run: { font: "Arial", size: 20 } }
+                        ]
+                    },
+                    sections: [{
+                        properties: {
+                            page: { margin: { top: 567, bottom: 567, left: 567, right: 567 } }
+                        },
+                        children: [
+                            headerTable,
+                            
+                            new Paragraph({
+                                text: "REGISTRATION FORM",
+                                heading: HeadingLevel.HEADING_1,
+                                alignment: AlignmentType.CENTER,
+                                spacing: { before: 200, after: 200 },
+                                color: "000000",
+                            }),
+
+                            // Data Pelanggan Table
+                            new Table({
+                                width: { size: 100, type: WidthType.PERCENTAGE },
+                                rows: [
+                                    new TableRow({ children: [new TableCell({ columnSpan: 2, shading: { fill: "F2F2F2" }, children: [new Paragraph({ text: "DATA PELANGGAN", bold: true, alignment: AlignmentType.CENTER })] })] }),
+                                    new TableRow({ children: [new TableCell({ children: [new Paragraph({ text: "Nama Perusahaan", bold: true })] }), new TableCell({ children: [new Paragraph(namaPerusahaan)] })] }),
+                                    new TableRow({ children: [new TableCell({ children: [new Paragraph({ text: "Alamat", bold: true })] }), new TableCell({ children: [new Paragraph(alamat)] })] }),
+                                    new TableRow({ children: [new TableCell({ children: [new Paragraph({ text: "PIC Penagihan Pelatihan", bold: true })] }), new TableCell({ children: [new Paragraph(pic)] })] }),
+                                    new TableRow({ children: [new TableCell({ children: [new Paragraph({ text: "Telepon", bold: true })] }), new TableCell({ children: [new Paragraph(telepon)] })] }),
+                                    new TableRow({ children: [new TableCell({ children: [new Paragraph({ text: "Email", bold: true })] }), new TableCell({ children: [new Paragraph(email)] })] }),
+                                    new TableRow({ children: [new TableCell({ children: [new Paragraph({ text: "*NPWP", bold: true })] }), new TableCell({ children: [new Paragraph(npwp)] })] }),
+                                ]
+                            }),
+
+                            new Paragraph({
+                                children: [
+                                    new TextRun({
+                                        text: "*Wajib dilengkapi untuk pembuatan faktur pajak",
+                                        color: "C3110C", 
+                                        size: 16,
+                                        italics: true
+                                    })
+                                ],
+                                spacing: { after: 200 }
+                            }),
+
+                            // Materi sudah tidak di sini (karena masuk tabel)
+
+                            pesertaTable,
+
+                            new Paragraph({
+                                text: "Syarat dan Ketentuan",
+                                bold: true,
+                                spacing: { before: 400, after: 100 }
+                            }),
+
+                            ...Array.from(document.getElementById('syarat-select').selectedOptions).map((opt, i) => 
+                                new Paragraph({
+                                    text: `${i+1}. ${opt.dataset.content}`,
+                                    spacing: { after: 50 }
+                                })
+                            ),
+
+                            new Paragraph({
+                                text: `Dengan ini kami menyatakan untuk mengikuti pelatihan sesuai dengan kesepakatan.\n\nBandung, ${new Date().toLocaleDateString('id-ID')}`,
+                                spacing: { before: 400, after: 400 }
+                            }),
+
+                            signatureTable,
+
+                            ...(deskripsiTambahan ? [
+                                new Paragraph({ text: "", spacing: { before: 200 } }),
+                                new Table({
+                                    width: { size: 100, type: WidthType.PERCENTAGE },
+                                    rows: [ new TableRow({ children: [new TableCell({ children: [new Paragraph(deskripsiTambahan)] })] }) ]
+                                })
+                            ] : [])
+                        ]
+                    }]
+                });
+
+                // 8. Generate & Download
+                const blob = await Packer.toBlob(doc);
+                const wordBlob = new Blob([blob], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+                const url = URL.createObjectURL(wordBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Registration_Form_${namaPerusahaan.replace(/\s+/g, '_') || 'Download'}.docx`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+            } catch (error) {
+                console.error('Error DOCX:', error);
+                alert('Gagal generate Word: ' + error.message);
+            }
         });
     </script>
 </body>

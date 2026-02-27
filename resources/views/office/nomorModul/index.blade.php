@@ -17,7 +17,6 @@
             </div>
         @endif
 
-        {{-- Header + Tombol Tambah --}}
         <div
             class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
             <h4 class="mb-0 fw-bold text-dark">Data Nomor Modul</h4>
@@ -26,7 +25,6 @@
             </button>
         </div>
 
-        {{-- Card Table --}}
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -126,7 +124,7 @@
                 </div>
                 <div class="modal-footer border-0">
                     <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary px-4">Simpan>Simpan</button>
+                    <button type="submit" class="btn btn-primary px-4">Simpan</button>
                 </div>
             </form>
         </div>

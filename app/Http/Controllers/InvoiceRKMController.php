@@ -6,19 +6,20 @@ use App\Models\Invoice;
 use App\Models\karyawan;
 use App\Models\Kwitansi;
 use App\Models\outstanding;
-use App\Models\RKM;
 use App\Models\Perusahaan;
+use App\Models\RKM;
 use App\Models\trackingOutstanding;
-use Illuminate\Http\Request;
-use Illuminate\View\View;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\View\View;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
-use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
-use Barryvdh\DomPDF\Facade\Pdf;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 
 // Tambahkan fungsi ini di sini, di luar class atau di dalam class sebagai protected/private
@@ -120,6 +121,10 @@ public function index(): View
         $rkm = RKM::with('perusahaan', 'materi')->findOrFail($id);
         return view('invoice.create', compact('rkm'));
     }
+
+    // public function downloadPDF($id){
+
+    // }
 // app/Http/Controllers/InvoiceRKMController.php
 
 public function createKwitansi($invoiceId)
@@ -139,7 +144,7 @@ public function createKwitansi($invoiceId)
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\RedirectResponse
      */
-public function store(Request $request): RedirectResponse
+public function store(Request $request)
 {
     $request->validate([
         'invoice_number' => 'required|string|max:255|unique:invoices',
@@ -155,7 +160,7 @@ public function store(Request $request): RedirectResponse
         'terbilang' => 'nullable|string',
     ]);
 
-    Invoice::create([
+    $invoice = Invoice::create([
         'invoice_number' => $request->input('invoice_number'),
         'tanggal_invoice' => $request->input('tanggal_invoice'),
         'due_date' => $request->input('due_date'), 
@@ -180,7 +185,9 @@ public function store(Request $request): RedirectResponse
         $outstanding->update();
     }
 
-    return redirect()->route('invoice.index')->with(['success' => 'Invoice berhasil dibuat!']);
+    return $this->downloadPdf($invoice->id);
+
+    // return redirect()->route('invoice.index')->with(['success' => 'Invoice berhasil dibuat!']);
 }
 
 public function storeKwitansi(Request $request)
@@ -457,21 +464,86 @@ public function exportExcel($id)
 
 public function downloadPdf($id)
 {
-    $invoice = Invoice::with(['rkm.perusahaan', 'rkm.materi'])->findOrFail($id);
-    $terbilang = $this->formatTerbilang($invoice->amount);
-    $karyawan = Karyawan::where('jabatan', 'like', '%Instruktur%')->first() ?? Karyawan::find(1); // Sesuaikan
+    $invoice = Invoice::with(['rkm.perusahaan', 'rkm.materi'])
+        ->findOrFail($id);
 
-    $pdf = Pdf::loadView('invoice.show', compact('invoice', 'terbilang', 'karyawan'))
+    $terbilang = $this->formatTerbilang($invoice->amount);
+    $karyawan = Karyawan::find(22);
+
+    $fileName = preg_replace('/[\/\\\\]/', '-', $invoice->invoice_number) . '.pdf';
+    $filePath = 'invoice/' . $fileName;
+
+    if (!empty($invoice->file_path) &&
+        Storage::disk('local')->exists($invoice->file_path)) {
+
+        return response()->download(
+            storage_path('app/' . $invoice->file_path)
+        );
+    }
+    
+
+    $pdf = Pdf::loadView('invoice.pdf', compact('invoice', 'terbilang', 'karyawan'))
         ->setPaper('a4', 'portrait')
         ->setOptions([
-            'isHtml5ParserEnabled' => true,
             'isRemoteEnabled' => true,
+            'isHtml5ParserEnabled' => true,
             'enable_css_float' => true,
             'enable_html5' => true,    
             'debugCss' => false,    
+            'debugLayout' => false,
+            'chroot' => public_path(),
+            'dpi' => 96,
         ]);
 
-    return $pdf->download('invoice_' . $invoice->invoice_number . '.pdf');
+    Storage::disk('local')->put($filePath, $pdf->output());
+
+    $invoice->file_path = $filePath;
+    $invoice->save();
+
+    return response()->download(
+        storage_path('app/' . $filePath)
+    );
+}
+
+public function downloadPdfKwitansi($id)
+{
+    $kwitansi = Kwitansi::with('invoice.rkm.perusahaan', 'invoice.rkm.materi', 'karyawan')->findOrFail($id);
+    $terbilang = format_terbilang($kwitansi->invoice->amount);
+    $karyawan = karyawan::find(22); 
+
+    $fileName = preg_replace('/[\/\\\\]/', '-', $kwitansi->invoice->invoice_number) . '.pdf';
+    $filePath = 'kwitansi/' . $fileName;
+
+    if (!empty($kwitansi->file_path) &&
+        Storage::disk('local')->exists($kwitansi->file_path)) {
+
+        return response()->download(
+            storage_path('app/' . $kwitansi->file_path)
+        );   
+    }
+    
+
+    $pdf = Pdf::loadView('kwitansi.pdf', compact('kwitansi', 'terbilang', 'karyawan'))
+        ->setPaper('a4', 'portrait')
+        ->setOptions([
+            'isRemoteEnabled' => true,
+            'isHtml5ParserEnabled' => true,
+            'enable_css_float' => true,
+            'enable_html5' => true,    
+            'debugCss' => false,
+            'debugLayout' => false,
+            'chroot' => public_path(),
+            'dpi' => 96,
+        ]);
+
+    Storage::disk('local')->put($filePath, $pdf->output());
+
+    $kwitansi->file_path = $filePath;
+    $kwitansi->save();
+
+    return response()->download(
+        storage_path('app/' . $filePath)
+    );
 }
 
 private function formatTerbilang($amount)
@@ -498,8 +570,8 @@ private function formatTerbilang($amount)
                 $partWords = $bilangan[$part - 10] . ' belas';
             } elseif ($part < 100) {
                 $puluhan = floor($part / 10);
-                $satuan = $part % 10;
-                $partWords = $bilangan[$puluhan] . ' puluh ' . ($satuan > 0 ? $bilangan[$satuan] : '');
+                $sisaSatuan  = $part % 10;
+                $partWords = $bilangan[$puluhan] . ' puluh ' . ($sisaSatuan  > 0 ? $bilangan[$sisaSatuan ] : '');
             } else {
                 $ratusan = floor($part / 100);
                 $sisa = $part % 100;

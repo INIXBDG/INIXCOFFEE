@@ -738,6 +738,7 @@
                     html += '<th colspan="4" style="text-align:center;">Harga Modul</th>';
                     html += '<th rowspan="2" style="text-align:center;">Konsumsi (Rp.)</th>';
                     html += '<th rowspan="2" style="text-align:center;">Souvenir (Rp.)</th>';
+                    html += '<th rowspan="2" style="text-align:center;">Transportasi</th>';
                     html += '<th rowspan="2" style="text-align:center;">PA/Hotel (Rp.)</th>';
                     html += '<th rowspan="2" style="text-align:center;">Exam (Rp.)</th>';
                     html += '<th rowspan="2" style="text-align:center;">PC (Rp.)</th>';
@@ -799,6 +800,7 @@
                                 html += `<td>${formatWithoutDecimals(a.biaya_modul_regular || 0)}</td>`;
                                 html += `<td>${formatWithoutDecimals(a.konsumsi || 0)}</td>`;
                                 html += `<td>${formatWithoutDecimals(a.souvenir || 0)}</td>`;
+                                html += `<td>${formatWithoutDecimals(a.transportasi * a.pax * a.durasi || 0)}</td>`;
                                 html += `<td>${formatWithoutDecimals(a.pa_hotel || 0)}</td>`;
                                 html += `<td>${formatWithoutDecimals(a.exam || 0)}</td>`;
                                 html += `<td>${formatWithoutDecimals(a.pc || 0)}</td>`;

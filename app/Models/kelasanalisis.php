@@ -24,6 +24,7 @@ class kelasanalisis extends Model
         'konsumsi',
         'souvenir_satu',
         'souvenir',
+        'transportasi',
         'pa_hotel_akomodasi',
         'pa_hotel',
         'total_pa_hotel',
