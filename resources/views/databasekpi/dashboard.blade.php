@@ -169,11 +169,7 @@
                     <h6 class="font-weight-normal mb-3">Jumlah Karyawan Aktif</h6>
                     <h3 class="mb-5">
                         <span id="content_JK">
-                            <div class="loader">
-                                <div class="bubble"></div>
-                                <div class="bubble"></div>
-                                <div class="bubble"></div>
-                                <div class="bubble"></div>
+                            <div class="spinner-border text-light mb-3" role="status" style="width:2rem;height:2rem;">
                             </div>
                         </span>
                     </h3>
@@ -197,12 +193,9 @@
                     </h6>
                     <h3 class="mb-5">
                         <span id="content_KS">
-                            <div class="loader">
-                                <div class="bubble"></div>
-                                <div class="bubble"></div>
-                                <div class="bubble"></div>
-                                <div class="bubble"></div>
+                            <div class="spinner-border text-light mb-3" role="status" style="width:2rem;height:2rem;">
                             </div>
+
                         </span>
                     </h3>
                 </div>
@@ -225,12 +218,9 @@
                     </h6>
                     <h3 class="mb-5">
                         <span id="content_KI">
-                            <div class="loader">
-                                <div class="bubble"></div>
-                                <div class="bubble"></div>
-                                <div class="bubble"></div>
-                                <div class="bubble"></div>
+                            <div class="spinner-border text-light mb-3" role="status" style="width:2rem;height:2rem;">
                             </div>
+
                         </span>
                     </h3>
                 </div>
@@ -253,12 +243,9 @@
                     </h6>
                     <h3 class="mb-5">
                         <span id="content_KC">
-                            <div class="loader">
-                                <div class="bubble"></div>
-                                <div class="bubble"></div>
-                                <div class="bubble"></div>
-                                <div class="bubble"></div>
+                            <div class="spinner-border text-light mb-3" role="status" style="width:2rem;height:2rem;">
                             </div>
+
                         </span>
                     </h3>
                 </div>
@@ -458,111 +445,20 @@
                                     <h4 class="fw-bold mb-1">Progress Divisi</h4>
                                     <p class="text-muted mb-0 small">Ringkasan performa tahun berjalan</p>
                                 </div>
-                                <span class="badge bg-light text-dark fw-semibold px-3 py-2 mt-3 mt-md-0">
-                                    Tahun 2026
-                                </span>
                             </div>
 
-                            <div class="row g-4">
+                            <div class="row g-4" id="contentKPIDivisi">
+                                <div
+                                    class="d-flex flex-column justify-content-center align-items-center h-100 text-center py-5">
 
-                                <div class="col-12 col-md-6">
-                                    <div class="border rounded-4 p-4 h-100 bg-light">
-
-                                        <div class="d-flex justify-content-between align-items-start mb-3">
-                                            <div>
-                                                <h6 class="fw-semibold mb-1">Marketing</h6>
-                                                <small class="text-muted">Meningkat bulan ini</small>
-                                            </div>
-                                            <div class="text-end">
-                                                <h2 class="fw-bold mb-0 counter" data-value="78">0%</h2>
-                                                <small class="text-success fw-semibold">
-                                                    ↑ +8%
-                                                </small>
-                                            </div>
-                                        </div>
-
-                                        <div class="progress" style="height:6px;">
-                                            <div class="progress-bar bg-success progress-animated" data-value="78"
-                                                style="width:0%">
-                                            </div>
-                                        </div>
-
+                                    <div class="spinner-border text-secondary mb-3" role="status"
+                                        style="width:2rem;height:2rem;">
                                     </div>
-                                </div>
 
-                                <div class="col-12 col-md-6">
-                                    <div class="border rounded-4 p-4 h-100 bg-light">
-
-                                        <div class="d-flex justify-content-between align-items-start mb-3">
-                                            <div>
-                                                <h6 class="fw-semibold mb-1">Operasional</h6>
-                                                <small class="text-muted">Sedikit penurunan</small>
-                                            </div>
-                                            <div class="text-end">
-                                                <h2 class="fw-bold mb-0 counter" data-value="52">0%</h2>
-                                                <small class="text-danger fw-semibold">
-                                                    ↓ -5%
-                                                </small>
-                                            </div>
-                                        </div>
-
-                                        <div class="progress" style="height:6px;">
-                                            <div class="progress-bar bg-danger progress-animated" data-value="52"
-                                                style="width:0%">
-                                            </div>
-                                        </div>
-
+                                    <div class="small text-muted">
+                                        Memuat data KPI...
                                     </div>
-                                </div>
 
-                                <div class="col-12 col-md-6">
-                                    <div class="border rounded-4 p-4 h-100 bg-light">
-
-                                        <div class="d-flex justify-content-between align-items-start mb-3">
-                                            <div>
-                                                <h6 class="fw-semibold mb-1">Keuangan</h6>
-                                                <small class="text-muted">Stagnan</small>
-                                            </div>
-                                            <div class="text-end">
-                                                <h2 class="fw-bold mb-0 counter" data-value="65">0%</h2>
-                                                <small class="text-warning fw-semibold">
-                                                    → 0%
-                                                </small>
-                                            </div>
-                                        </div>
-
-                                        <div class="progress" style="height:6px;">
-                                            <div class="progress-bar bg-warning progress-animated" data-value="65"
-                                                style="width:0%">
-                                            </div>
-                                        </div>
-
-                                    </div>
-                                </div>
-
-                                <div class="col-12 col-md-6">
-                                    <div class="border rounded-4 p-4 h-100 bg-light">
-
-                                        <div class="d-flex justify-content-between align-items-start mb-3">
-                                            <div>
-                                                <h6 class="fw-semibold mb-1">HRD</h6>
-                                                <small class="text-muted">Performa sangat baik</small>
-                                            </div>
-                                            <div class="text-end">
-                                                <h2 class="fw-bold mb-0 counter" data-value="90">0%</h2>
-                                                <small class="text-primary fw-semibold">
-                                                    ↑ +12%
-                                                </small>
-                                            </div>
-                                        </div>
-
-                                        <div class="progress" style="height:6px;">
-                                            <div class="progress-bar bg-primary progress-animated" data-value="90"
-                                                style="width:0%">
-                                            </div>
-                                        </div>
-
-                                    </div>
                                 </div>
 
                             </div>
@@ -571,7 +467,7 @@
                     </div>
                 @else
                     <div class="col-md-5 grid-margin d-flex flex-column">
-                        <div class=" card border-0 card-rounded bg-light shadow-sm text-dark w-100 mb-4 h-100">
+                        <div class=" card border-0 card-rounded bg-light shadow-sm text-dark-100 mb-4 h-100">
                             <div class="card-body">
                                 <h4 class="card-title">Chart Penilaian 360°</h4>
                                 <p id="title_chartPenilaian" class="text-center">
@@ -588,9 +484,29 @@
                             </div>
                         </div>
                     </div>
+                    <div class="col-md-7 grid-margin d-flex flex-column">
+                        <div class="card border-0 shadow-sm h-90">
+                            <div class="card-body d-flex flex-column p-4" id="contentKPIPersonal">
+
+                                <div
+                                    class="d-flex flex-column justify-content-center align-items-center h-100 text-center py-5">
+
+                                    <div class="spinner-border text-secondary mb-3" role="status"
+                                        style="width:2rem;height:2rem;">
+                                    </div>
+
+                                    <div class="small text-muted">
+                                        Memuat data KPI...
+                                    </div>
+
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
             @endif
         </div>
-        <div class="row mb-4">
+        <div class="row d-flex align-items-stretch mb-4">
             @if (auth()->user()->jabatan === 'HRD' ||
                     auth()->user()->jabatan === 'GM' ||
                     auth()->user()->jabatan === 'Direktur Utama')
@@ -618,89 +534,19 @@
                         </div>
                     </div>
                 </div>
-                <div class="col d-flex">
-                    <div class="card border-0 shadow-sm w-100 h-100">
-                        <div class="card-body d-flex flex-column">
+                <div class="col-lg-6 d-flex flex-column">
+                    <div class="card border-0 shadow-sm bg-light flex-fil">
+                        <div class="card-body d-flex flex-column p-4" id="contentKPIPersonal">
 
-                            <!-- Header -->
-                            <div class="d-flex justify-content-between align-items-center mb-4">
-                                <div>
-                                    <h5 class="fw-bold mb-1">Target Karyawan</h5>
-                                    <small class="text-muted">Monitoring performa individu</small>
+                            <div
+                                class="d-flex flex-column justify-content-center align-items-center h-100 text-center py-5">
+
+                                <div class="spinner-border text-secondary mb-3" role="status"
+                                    style="width:2rem;height:2rem;">
                                 </div>
-                                <small class="text-muted">Updated: Juli 2026</small>
-                            </div>
 
-                            <!-- Scrollable Area -->
-                            <div class="flex-grow-1 overflow-auto" style="max-height: 420px;">
-
-                                <div class="d-flex flex-column gap-4">
-
-                                    <!-- Item -->
-                                    <div>
-                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                            <div>
-                                                <h6 class="mb-0 fw-semibold">Xepi</h6>
-                                                <small class="text-muted">Finance & Accounting</small>
-                                            </div>
-                                            <div class="text-end">
-                                                <h6 class="mb-0 fw-bold">78%</h6>
-                                                <small class="text-success">+8% bulan ini</small>
-                                            </div>
-                                        </div>
-                                        <div class="progress" style="height:5px;">
-                                            <div class="progress-bar bg-dark" style="width:78%"></div>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                            <div>
-                                                <h6 class="mb-0 fw-semibold">Riffa</h6>
-                                                <small class="text-muted">Finance & Accounting</small>
-                                            </div>
-                                            <div class="text-end">
-                                                <h6 class="mb-0 fw-bold">62%</h6>
-                                                <small class="text-danger">-3% bulan ini</small>
-                                            </div>
-                                        </div>
-                                        <div class="progress" style="height:5px;">
-                                            <div class="progress-bar bg-dark" style="width:62%"></div>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                            <div>
-                                                <h6 class="mb-0 fw-semibold">Amanda</h6>
-                                                <small class="text-muted">HRD</small>
-                                            </div>
-                                            <div class="text-end">
-                                                <h6 class="mb-0 fw-bold">60%</h6>
-                                                <small class="text-muted">0% perubahan</small>
-                                            </div>
-                                        </div>
-                                        <div class="progress" style="height:5px;">
-                                            <div class="progress-bar bg-dark" style="width:60%"></div>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                            <div>
-                                                <h6 class="mb-0 fw-semibold">Security</h6>
-                                                <small class="text-muted">Security Division</small>
-                                            </div>
-                                            <div class="text-end">
-                                                <h6 class="mb-0 fw-bold">56%</h6>
-                                                <small class="text-danger">-5% bulan ini</small>
-                                            </div>
-                                        </div>
-                                        <div class="progress" style="height:5px;">
-                                            <div class="progress-bar bg-dark" style="width:56%"></div>
-                                        </div>
-                                    </div>
-
+                                <div class="small text-muted">
+                                    Memuat data KPI...
                                 </div>
 
                             </div>
@@ -708,56 +554,37 @@
                         </div>
                     </div>
                 </div>
-            @else
+            @elseif (auth()->user()->jabatan === 'Koordinator ITSM')
                 <div class="col-lg-6 d-flex flex-column">
-                    <div class="container-fluid">
-                        <div class="card border-0 shadow-sm bg-light rounded" style="padding: 24px;">
-                            <div class="text-center mb-3">
-                                <div style="font-size: 3rem; font-weight: 700; color: #333;">85%</div>
-                                <div class="text-success" style="font-size: 0.9rem; font-weight: 500;">
-                                    <i class="fas fa-arrow-up"></i> +2.5% dari bulan lalu
-                                </div>
-                                <div class="mt-2" style="font-size: 0.85rem; color: #666;">
-                                    Pencapaian Anda meningkat secara konsisten.
-                                </div>
-                            </div>
+                    <div class="card border-0 shadow-sm w-100 h-100">
+                        <div class="card-body d-flex flex-column">
 
-                            <div class="mt-4 mb-4"
-                                style="border: 2px solid #3498db; border-radius: 8px; padding: 16px; background-color: #f8fafc;">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
                                 <div>
-                                    <span style="font-weight: 600; color: #2c3e50;">Deadline:</span>
-                                    <span style="font-size: 0.9rem; color: #555;">31 Oktober 2025</span>
+                                    <h5 class="fw-bold mb-1">Target Karyawan</h5>
+                                    <small class="text-muted">Monitoring performa individu</small>
                                 </div>
                             </div>
-                            <div class="nt-4">
-                                <div class="row">
-                                    <div class="col-lg-4">
-                                        <span>Progress KPI anda </span>
 
-                                    </div>
-                                    <div class="col-lg-8">
-                                        <div class="progress">
-                                            <div class="progress-bar bg-gradient-success" role="progressbar"
-                                                style="width: 85%" aria-valuenow="50" aria-valuemin="0"
-                                                aria-valuemax="100"></div>
+                            <div class="flex-grow-1 overflow-auto" style="max-height: 420px;">
+
+                                <div class="d-flex flex-column gap-4" id="contentKPITim">
+                                    <div
+                                        class="d-flex flex-column justify-content-center align-items-center h-100 text-center py-5">
+
+                                        <div class="spinner-border text-secondary mb-3" role="status"
+                                            style="width:2rem;height:2rem;">
                                         </div>
+
+                                        <div class="small text-muted">
+                                            Memuat data KPI...
+                                        </div>
+
                                     </div>
                                 </div>
+
                             </div>
 
-                            <div class="mt-4">
-                                <div class="text-secondary" style="font-size: 0.85rem; margin-bottom: 10px;">Riwayat
-                                    Bulanan</div>
-                                <div>
-                                    <span style="display: inline-block; margin-right: 30px; font-size: 0.9rem;">Jul:
-                                        78%</span>
-                                    <span style="display: inline-block; margin-right: 30px; font-size: 0.9rem;">Agt:
-                                        80%</span>
-                                    <span style="display: inline-block; margin-right: 30px; font-size: 0.9rem;">Sep:
-                                        82%</span>
-                                    <span style="display: inline-block; font-size: 0.9rem;">Okt: 85%</span>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -786,129 +613,56 @@
                     </div>
                 </div>
             @endif
-            <div class="col-lg-6 d-flex">
-                <div class="card border-0 shadow-sm w-100 h-100">
-                    <div class="card-body d-flex flex-column p-4">
 
-                        <!-- TOP SECTION -->
-                        <div class="d-flex justify-content-between align-items-center mb-4">
+        </div>
+        @if (auth()->user()->jabatan === 'HRD' ||
+                auth()->user()->jabatan === 'GM' ||
+                auth()->user()->jabatan === 'Direktur Utama')
+            <div class="row mb-4 row border d-flex align-items-stretch">
+                <div class="col d-flex flex-column">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body d-flex flex-column">
 
-                            <!-- KPI VALUE -->
-                            <div>
-                                <h1 class="fw-bold mb-1 counter" data-value="85">0%</h1>
-                                <div class="small text-success fw-semibold">
-                                    <i class="fas fa-arrow-up me-1"></i> +2.5% dari bulan lalu
-                                </div>
-                            </div>
-
-                            <!-- STATUS BADGE -->
-                            <div class="text-end">
-                                <span class="badge bg-success-subtle text-success fw-semibold px-3 py-2">
-                                    On Track
-                                </span>
-                                <div class="small text-muted mt-2">
-                                    Performa stabil & meningkat
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- PROGRESS SECTION -->
-                        <div class="mb-4">
-                            <div class="d-flex justify-content-between small text-muted mb-2">
-                                <span>Progress KPI</span>
-                                <span class="fw-semibold">85%</span>
-                            </div>
-                            <div class="progress" style="height:8px;">
-                                <div class="progress-bar bg-dark progress-animated" data-value="85" style="width:0%">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- DEADLINE SECTION -->
-                        <div class="border-top pt-3 mb-4">
-                            <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
                                 <div>
-                                    <div class="small text-muted">Deadline</div>
-                                    <div class="fw-semibold">31 Oktober 2025</div>
+                                    <h5 class="fw-bold mb-1">Target Karyawan</h5>
+                                    <small class="text-muted">Monitoring performa individu</small>
                                 </div>
-                                <span class="badge bg-light text-dark">
-                                    32 Hari Lagi
-                                </span>
                             </div>
-                        </div>
 
-                        <!-- MONTHLY HISTORY -->
-                        <div class="mt-auto">
-                            <div class="small text-muted mb-3">Riwayat Bulanan</div>
+                            <div class="flex-grow-1 overflow-auto" style="max-height: 420px;">
 
-                            <div class="row text-center g-3">
+                                <div class="d-flex flex-column gap-4" id="contentKPITim">
+                                    <div
+                                        class="d-flex flex-column justify-content-center align-items-center h-100 text-center py-5">
 
-                                <div class="col">
-                                    <div class="fw-semibold">78%</div>
-                                    <div class="small text-muted">Jul</div>
-                                </div>
+                                        <div class="spinner-border text-secondary mb-3" role="status"
+                                            style="width:2rem;height:2rem;">
+                                        </div>
 
-                                <div class="col">
-                                    <div class="fw-semibold">80%</div>
-                                    <div class="small text-muted">Agt</div>
-                                </div>
+                                        <div class="small text-muted">
+                                            Memuat data KPI...
+                                        </div>
 
-                                <div class="col">
-                                    <div class="fw-semibold">82%</div>
-                                    <div class="small text-muted">Sep</div>
-                                </div>
-
-                                <div class="col">
-                                    <div class="fw-bold text-success">85%</div>
-                                    <div class="small text-muted">Okt</div>
+                                    </div>
                                 </div>
 
                             </div>
-                        </div>
 
+                        </div>
                     </div>
                 </div>
             </div>
-
-
-        </div>
+        @endif
     @endsection
 
     @section('script')
         <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script>
-            document.addEventListener("DOMContentLoaded", function() {
-
-                document.querySelectorAll(".progress-animated").forEach(bar => {
-                    const value = bar.getAttribute("data-value");
-                    setTimeout(() => {
-                        bar.style.width = value + "%";
-                    }, 300);
-                });
-
-                document.querySelectorAll(".counter").forEach(counter => {
-                    const target = +counter.getAttribute("data-value");
-                    let count = 0;
-
-                    const update = () => {
-                        if (count < target) {
-                            count++;
-                            counter.innerText = count + "%";
-                            setTimeout(update, 12);
-                        } else {
-                            counter.innerText = target + "%";
-                        }
-                    };
-
-                    update();
-                });
-
-            });
-
             let chart1, chart2;
 
-            $(document).ready(function() {
+            $(document).ready(function () {
                 loadData();
                 loadProgressData();
             });
@@ -916,468 +670,280 @@
             function loadData() {
                 $.ajax({
                     url: "{{ route('databaseKPI.dashboardContent') }}",
-                    type: 'GET',
-                    success: function(response) {
-                        const dataChart = response.dataChartPenilaian ?? {};
+                    type: "GET",
+                    success: function (response) {
+
+                        const dataCardFirst = response.dataCard_first || {};
+
+                        const sakit = dataCardFirst.dataSakit?.totalAbsenSakit ?? 0;
+                        const cuti = dataCardFirst.dataCuti?.totalAbsenCuti ?? 0;
+                        const izin = dataCardFirst.dataIzin?.totalAbsenIzin ?? 0;
+                        const aktif = dataCardFirst.karyawan_aktif ?? 0;
+
+                        const role = "{{ auth()->user()->jabatan }}";
+
+                        const labelType =
+                            role === "HRD" ||
+                            role === "GM" ||
+                            role === "Direktur Utama"
+                                ? "Karyawan"
+                                : "Data";
+
+                        $("#content_JK").text(`${aktif} Karyawan`);
+                        $("#content_KS").text(`${sakit} ${labelType}`);
+                        $("#content_KC").text(`${cuti} ${labelType}`);
+                        $("#content_KI").text(`${izin} ${labelType}`);
+
+                        const dataChart = response.dataChartPenilaian || {};
                         const totalSemua = dataChart.totalSemua ?? 0;
                         const totalDilaksanakan = dataChart.totalDilaksanakan ?? 0;
                         const totalBelumDilaksanakan = dataChart.totalBelumDilaksanakan ?? 0;
 
-                        const DataFormulir = response.dataFormulir ?? {};
+                        $("#title_chartPenilaian").empty().append(
+                            totalSemua
+                                ? `Penilaian Yang Diadakan : ${totalSemua} Penilaian`
+                                : ""
+                        );
+
+                        const chartEl1 = document.getElementById("myChart");
+
+                        if (chartEl1) {
+                            const ctx1 = chartEl1.getContext("2d");
+
+                            const gradientBlue = ctx1.createLinearGradient(0, 0, 0, 300);
+                            gradientBlue.addColorStop(0, "#8F87F1");
+                            gradientBlue.addColorStop(1, "#FED2E2");
+
+                            const gradientWarning = ctx1.createLinearGradient(0, 0, 0, 300);
+                            gradientWarning.addColorStop(0, "#EA907A");
+                            gradientWarning.addColorStop(1, "#AACDBE");
+
+                            if (chart1) chart1.destroy();
+
+                            chart1 = new Chart(ctx1, {
+                                type: "doughnut",
+                                data: {
+                                    labels: ["Dilaksanakan", "Belum Dilaksanakan"],
+                                    datasets: [{
+                                        data: [
+                                            Number(totalDilaksanakan),
+                                            Number(totalBelumDilaksanakan)
+                                        ],
+                                        backgroundColor: [
+                                            gradientBlue,
+                                            gradientWarning
+                                        ]
+                                    }]
+                                }
+                            });
+                        }
+
+                        const DataFormulir = response.dataFormulir || {};
                         const TotalFormulir = DataFormulir.totalFormulir ?? 0;
                         const totalRutin = DataFormulir.totalRutin ?? 0;
                         const totalProbation = DataFormulir.totalProbation ?? 0;
                         const totalKontrak = DataFormulir.totalKontrak ?? 0;
 
-                        const title_chartPenilaian = $('#title_chartPenilaian');
-                        title_chartPenilaian.empty();
-                        if (totalSemua) {
-                            title_chartPenilaian.append(`Penilaian Yang Diadakan : ${totalSemua} Penilaian`);
-                        }
+                        const chartEl2 = document.getElementById("doughnutCharthr");
 
-                        const ctx1 = document.getElementById('myChart').getContext('2d');
-                        const gradientBlue = ctx1.createLinearGradient(0, 0, 0, 300);
-                        gradientBlue.addColorStop(0, '#8F87F1');
-                        gradientBlue.addColorStop(0.33, '#C68EFD');
-                        gradientBlue.addColorStop(0.66, '#E9A5F1');
-                        gradientBlue.addColorStop(1, '#FED2E2');
+                        if (chartEl2) {
+                            const ctx2 = chartEl2.getContext("2d");
 
-                        const gradientWarning = ctx1.createLinearGradient(0, 0, 0, 300);
-                        gradientWarning.addColorStop(0, '#EA907A');
-                        gradientWarning.addColorStop(0.33, '#FBC687');
-                        gradientWarning.addColorStop(0.66, '#F4F7C5');
-                        gradientWarning.addColorStop(1, '#AACDBE');
+                            const gradientPrimary = ctx2.createLinearGradient(0, 0, 0, 200);
+                            gradientPrimary.addColorStop(0, "#da8cff");
+                            gradientPrimary.addColorStop(1, "#9a55ff");
 
-                        const data1 = {
-                            labels: ['Dilaksanakan', 'Belum Dilaksanakan'],
-                            datasets: [{
-                                label: 'Total Data',
-                                data: [totalDilaksanakan, totalBelumDilaksanakan],
-                                backgroundColor: [gradientBlue, gradientWarning],
-                                hoverOffset: 4
-                            }]
-                        };
+                            const gradientInfo = ctx2.createLinearGradient(0, 0, 0, 200);
+                            gradientInfo.addColorStop(0, "#90caf9");
+                            gradientInfo.addColorStop(1, "#047edf");
 
-                        const config1 = {
-                            type: 'doughnut',
-                            data: data1
-                        };
-                        if (chart1) chart1.destroy();
-                        chart1 = new Chart(ctx1, config1);
+                            const gradientDanger = ctx2.createLinearGradient(0, 0, 0, 200);
+                            gradientDanger.addColorStop(0, "#ffbf96");
+                            gradientDanger.addColorStop(1, "#fe7096");
 
-                        const ctx2 = document.getElementById('doughnutCharthr').getContext('2d');
-                        const gradientPrimary = ctx2.createLinearGradient(0, 0, 0, 200);
-                        gradientPrimary.addColorStop(0, '#da8cff');
-                        gradientPrimary.addColorStop(1, '#9a55ff');
+                            const gradientSuccess = ctx2.createLinearGradient(0, 0, 0, 200);
+                            gradientSuccess.addColorStop(0, "#84d9d2");
+                            gradientSuccess.addColorStop(1, "#07cdae");
 
-                        const gradientInfo = ctx2.createLinearGradient(0, 0, 0, 200);
-                        gradientInfo.addColorStop(0, '#90caf9');
-                        gradientInfo.addColorStop(1, '#047edf');
+                            if (chart2) chart2.destroy();
 
-                        const gradientDanger = ctx2.createLinearGradient(0, 0, 0, 200);
-                        gradientDanger.addColorStop(0, '#ffbf96');
-                        gradientDanger.addColorStop(1, '#fe7096');
-
-                        const gradientSuccess = ctx2.createLinearGradient(0, 0, 0, 200);
-                        gradientSuccess.addColorStop(0, '#84d9d2');
-                        gradientSuccess.addColorStop(1, '#07cdae');
-
-                        if (chart2) chart2.destroy();
-                        chart2 = new Chart(ctx2, {
-                            type: 'doughnut',
-                            data: {
-                                labels: ['Total', 'Rutin', 'Probation', 'Kontrak'],
-                                datasets: [{
-                                    data: [TotalFormulir, totalRutin, totalProbation, totalKontrak],
-                                    backgroundColor: [gradientPrimary, gradientInfo, gradientDanger,
-                                        gradientSuccess
-                                    ],
-                                    borderWidth: 0
-                                }]
-                            },
-                            options: {
-                                plugins: {
-                                    legend: {
-                                        display: false
-                                    }
+                            chart2 = new Chart(ctx2, {
+                                type: "doughnut",
+                                data: {
+                                    labels: ["Total", "Rutin", "Probation", "Kontrak"],
+                                    datasets: [{
+                                        data: [
+                                            Number(TotalFormulir),
+                                            Number(totalRutin),
+                                            Number(totalProbation),
+                                            Number(totalKontrak)
+                                        ],
+                                        backgroundColor: [
+                                            gradientPrimary,
+                                            gradientInfo,
+                                            gradientDanger,
+                                            gradientSuccess
+                                        ],
+                                        borderWidth: 0
+                                    }]
                                 },
-                                responsive: true,
-                                maintainAspectRatio: false,
-                            }
-                        });
-
-                        const divTotalFormulir = $('#totalFormulir');
-                        const divTotalRutin = $('#totalRutin');
-                        const divTotalProbation = $('#totalProbation');
-                        const divTotalKontrak = $('#totalKontrak');
-
-                        divTotalFormulir.append(`
-                    <p class="legend-value">${TotalFormulir}</p>
-                        <p class="legend-label align-items-center d-flex">
-                        <span class="bg-gradient-primary me-2 legend-box"></span> Total
-                    </p>                
-                `);
-                        divTotalRutin.append(`
-                    <p class="legend-value">${totalRutin}</p>
-                        <p class="legend-label align-items-center d-flex">
-                        <span class="bg-gradient-info me-2 legend-box"></span> Rutin
-                    </p>                
-                `);
-                        divTotalProbation.append(`
-                    <p class="legend-value">${totalProbation}</p>
-                        <p class="legend-label align-items-center d-flex">
-                        <span class="bg-gradient-danger me-2 legend-box"></span> Probation
-                    </p>                
-                `);
-                        divTotalKontrak.append(`
-                    <p class="legend-value">${totalKontrak}</p>
-                        <p class="legend-label align-items-center d-flex">
-                        <span class="bg-gradient-success me-2 legend-box"></span> Kontrak
-                    </p>                
-                `);
-
-                        const content_JK = $('#content_JK');
-                        const content_KS = $('#content_KS');
-                        const content_KC = $('#content_KC');
-                        const content_KI = $('#content_KI');
-                        const title_peringkat = $('#title_peringkat');
-                        const bodyContentPeringkat = $('#bodyContentPeringkat');
-                        const select_peringkatPenilaian = $('#select_peringkatPenilaian');
-                        const contentModalBodyKC = $('#bodyContentModalCuti');
-                        const contentModalBodyKI = $('#bodyContentModalIzin');
-                        const contentModalBodyKS = $('#bodyContentModalSakit');
-
-                        const dataCuti = response.dataCard_first?.dataCuti?.dataCuti ?? [];
-                        const dataIzin = response.dataCard_first?.dataIzin?.dataIzin ?? [];
-                        const dataSakit = response.dataCard_first?.dataSakit?.dataSakit ?? [];
-                        const dataCardFirst = response.dataCard_first ?? {};
-
-                        content_JK.text(`${dataCardFirst.karyawan_aktif ?? 0} Karyawan`);
-                        const idUserLogin = "{{ auth()->user()->jabatan }}";
-
-                        if (idUserLogin === 'HRD' || idUserLogin === 'GM' || idUserLogin === 'Direktur Utama') {
-                            content_KS.text(`${dataCardFirst.dataSakit?.totalAbsenSakit ?? 0} Karyawan`);
-                            content_KC.text(`${dataCardFirst.dataCuti?.totalAbsenCuti ?? 0} Karyawan`);
-                            content_KI.text(`${dataCardFirst.dataIzin?.totalAbsenIzin ?? 0} Karyawan`);
-                        } else {
-                            content_KS.text(`${dataCardFirst.dataSakit?.totalAbsenSakit ?? 0} Data`);
-                            content_KC.text(`${dataCardFirst.dataCuti?.totalAbsenCuti ?? 0} Data`);
-                            content_KI.text(`${dataCardFirst.dataIzin?.totalAbsenIzin ?? 0} Data`);
-                        }
-
-                        const bgClasses = ["cl-yellow", "cl-red", "cl-green", "cl-blue", "cl-grey"];
-
-                        contentModalBodyKC.empty();
-                        if (dataCuti.length === 0) {
-                            const idUserLogin = "{{ auth()->user()->jabatan }}";
-                            let textUser = '';
-
-                            if (idUserLogin === 'HRD' || idUserLogin === 'GM' || idUserLogin === 'Direktur Utama') {
-                                textUser = 'Tidak ada karyawan yang cuti di quartal ini.';
-                            } else {
-                                textUser = 'Tidak ada data cuti anda di quartal ini.';
-                            }
-
-                            contentModalBodyKC.append(`
-                        <div class="list-group-item border-0 d-flex align-items-center rounded-3 shadow-sm mb-3 p-3">
-                            ${textUser}
-                        </div>
-                    `);
-
-                        } else {
-                            let accordionHtml = `<div class="accordion" id="accordionCuti">`;
-                            const groupedCuti = {};
-                            dataCuti.forEach(item => {
-                                if (!groupedCuti[item.namaKaryawan]) {
-                                    groupedCuti[item.namaKaryawan] = {
-                                        divisi: item.divisi,
-                                        records: []
-                                    };
+                                options: {
+                                    plugins: { legend: { display: false } },
+                                    responsive: true,
+                                    maintainAspectRatio: false
                                 }
-                                groupedCuti[item.namaKaryawan].records.push({
-                                    alasan: item.alasan,
-                                    tanggalAwal: item.tanggalAwal,
-                                    tanggalAkhir: item.tanggalAkhir
-                                });
                             });
-                            let index = 0;
-                            for (const [nama, detail] of Object.entries(groupedCuti)) {
-                                let words = nama.split(" ");
-                                let initials = words[0].charAt(0).toUpperCase() + (words[1] ? words[1].charAt(0)
-                                    .toUpperCase() : "");
-                                let randomBg = bgClasses[Math.floor(Math.random() * bgClasses.length)];
-                                let alasanList = detail.records.map((rec, idx) =>
-                                    `<li><strong>Cuti ${idx+1} (${rec.tanggalAwal} - ${rec.tanggalAkhir}):</strong> ${rec.alasan}</li>`
-                                ).join("");
-                                accordionHtml += `
-                        <div class="accordion-item">
-                            <h2 class="accordion-header" id="headingCuti${index}">
-                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCuti${index}" aria-expanded="false" aria-controls="collapseCuti${index}">
-                                    ${nama} - ${detail.divisi}
-                                </button>
-                            </h2>
-                            <div id="collapseCuti${index}" class="accordion-collapse collapse" aria-labelledby="headingCuti${index}" data-bs-parent="#accordionCuti">
-                                <div class="accordion-body">
-                                    <div class="d-flex align-items-start">
-                                        <div class="avatar ${randomBg} text-white rounded-circle d-flex justify-content-center align-items-center me-3" style="width:40px; height:40px; font-weight:bold;">${initials}</div>
-                                        <div>
-                                            <h6 class="mb-0 fw-semibold">${nama}</h6>
-                                            <small class="text-muted">${detail.divisi}</small>
-                                            <ul class="mt-2 mb-0">${alasanList}</ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>`;
-                                index++;
-                            }
-                            accordionHtml += `</div>`;
-                            contentModalBodyKC.append(accordionHtml);
                         }
 
-                        contentModalBodyKS.empty();
-                        if (dataSakit.length === 0) {
-                            const idUserLogin = "{{ auth()->user()->jabatan }}";
-                            let textUser = '';
+                        $("#totalFormulir").html(`
+                            <p class="legend-value">${TotalFormulir}</p>
+                            <p class="legend-label d-flex align-items-center">
+                                <span class="bg-gradient-primary me-2 legend-box"></span> Total
+                            </p>
+                        `);
 
-                            if (idUserLogin === 'HRD' || idUserLogin === 'GM' || idUserLogin === 'Direktur Utama') {
-                                textUser = 'Tidak ada karyawan yang sakit di quartal ini.';
-                            } else {
-                                textUser = 'Tidak ada data sakit anda di quartal ini.';
-                            }
+                        $("#totalRutin").html(`
+                            <p class="legend-value">${totalRutin}</p>
+                            <p class="legend-label d-flex align-items-center">
+                                <span class="bg-gradient-info me-2 legend-box"></span> Rutin
+                            </p>
+                        `);
 
-                            contentModalBodyKS.append(
-                                `<div class="list-group-item border-0 d-flex align-items-center rounded-3 shadow-sm mb-3 p-3">${textUser}</div>`
-                            );
-                        } else {
-                            let accordionHtml = `<div class="accordion" id="accordionSakit">`;
-                            const groupedSakit = {};
-                            dataSakit.forEach(item => {
-                                if (!groupedSakit[item.namaKaryawan]) {
-                                    groupedSakit[item.namaKaryawan] = {
-                                        divisi: item.divisi,
-                                        records: []
-                                    };
-                                }
-                                groupedSakit[item.namaKaryawan].records.push({
-                                    alasan: item.alasan,
-                                    tanggalAwal: item.tanggalAwal,
-                                    tanggalAkhir: item.tanggalAkhir
-                                });
-                            });
-                            let index = 0;
-                            for (const [nama, detail] of Object.entries(groupedSakit)) {
-                                let words = nama.split(" ");
-                                let initials = words[0].charAt(0).toUpperCase() + (words[1] ? words[1].charAt(0)
-                                    .toUpperCase() : "");
-                                let randomBg = bgClasses[Math.floor(Math.random() * bgClasses.length)];
-                                let alasanList = detail.records.map((rec, idx) =>
-                                    `<li><strong>Sakit ${idx+1} (${rec.tanggalAwal} - ${rec.tanggalAkhir}):</strong> ${rec.alasan}</li>`
-                                ).join("");
-                                accordionHtml += `
-                        <div class="accordion-item">
-                            <h2 class="accordion-header" id="headingSakit${index}">
-                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSakit${index}" aria-expanded="false" aria-controls="collapseSakit${index}">
-                                    ${nama} - ${detail.divisi}
-                                </button>
-                            </h2>
-                            <div id="collapseSakit${index}" class="accordion-collapse collapse" aria-labelledby="headingSakit${index}" data-bs-parent="#accordionSakit">
-                                <div class="accordion-body">
-                                    <div class="d-flex align-items-start">
-                                        <div class="avatar ${randomBg} text-white rounded-circle d-flex justify-content-center align-items-center me-3" style="width:40px; height:40px; font-weight:bold;">${initials}</div>
-                                        <div>
-                                            <h6 class="mb-0 fw-semibold">${nama}</h6>
-                                            <small class="text-muted">${detail.divisi}</small>
-                                            <ul class="mt-2 mb-0">${alasanList}</ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>`;
-                                index++;
-                            }
-                            accordionHtml += `</div>`;
-                            contentModalBodyKS.append(accordionHtml);
-                        }
+                        $("#totalProbation").html(`
+                            <p class="legend-value">${totalProbation}</p>
+                            <p class="legend-label d-flex align-items-center">
+                                <span class="bg-gradient-danger me-2 legend-box"></span> Probation
+                            </p>
+                        `);
 
-                        contentModalBodyKI.empty();
-                        if (dataIzin.length === 0) {
-                            const idUserLogin = "{{ auth()->user()->jabatan }}";
-                            let textUser = '';
+                        $("#totalKontrak").html(`
+                            <p class="legend-value">${totalKontrak}</p>
+                            <p class="legend-label d-flex align-items-center">
+                                <span class="bg-gradient-success me-2 legend-box"></span> Kontrak
+                            </p>
+                        `);
 
-                            if (idUserLogin === 'HRD' || idUserLogin === 'GM' || idUserLogin === 'Direktur Utama') {
-                                textUser = 'Tidak ada karyawan yang izin di quartal ini.';
-                            } else {
-                                textUser = 'Tidak ada data izin anda di quartal ini.';
-                            }
+                        const select = $("#select_peringkatPenilaian");
+                        select.off("change").empty();
 
-                            contentModalBodyKI.append(
-                                `<div class="list-group-item border-0 d-flex align-items-center rounded-3 shadow-sm mb-3 p-3">${textUser}</div>`
-                            );
-                        } else {
-                            let accordionHtml = `<div class="accordion" id="accordionIzin">`;
-                            const groupedIzin = {};
-                            dataIzin.forEach(item => {
-                                if (!groupedIzin[item.namaKaryawan]) {
-                                    groupedIzin[item.namaKaryawan] = {
-                                        divisi: item.divisi,
-                                        records: []
-                                    };
-                                }
-                                groupedIzin[item.namaKaryawan].records.push({
-                                    alasan: item.alasan,
-                                    tanggalPengajuan: item.tanggalPengajuan
-                                });
-                            });
-                            let index = 0;
-                            for (const [nama, detail] of Object.entries(groupedIzin)) {
-                                let words = nama.split(" ");
-                                let initials = words[0].charAt(0).toUpperCase() + (words[1] ? words[1].charAt(0)
-                                    .toUpperCase() : "");
-                                let randomBg = bgClasses[Math.floor(Math.random() * bgClasses.length)];
-                                let alasanList = detail.records.map((rec, idx) =>
-                                    `<li><strong>Izin ${idx+1} (${rec.tanggalPengajuan}):</strong> ${rec.alasan}</li>`
-                                ).join("");
-                                accordionHtml += `
-                        <div class="accordion-item">
-                            <h2 class="accordion-header" id="headingIzin${index}">
-                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseIzin${index}" aria-expanded="false" aria-controls="collapseIzin${index}">
-                                    ${nama} - ${detail.divisi}
-                                </button>
-                            </h2>
-                            <div id="collapseIzin${index}" class="accordion-collapse collapse" aria-labelledby="headingIzin${index}" data-bs-parent="#accordionIzin">
-                                <div class="accordion-body">
-                                    <div class="d-flex align-items-start">
-                                        <div class="avatar ${randomBg} text-white rounded-circle d-flex justify-content-center align-items-center me-3" style="width:40px; height:40px; font-weight:bold;">${initials}</div>
-                                        <div>
-                                            <h6 class="mb-0 fw-semibold">${nama}</h6>
-                                            <small class="text-muted">${detail.divisi}</small>
-                                            <ul class="mt-2 mb-0">${alasanList}</ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>`;
-                                index++;
-                            }
-                            accordionHtml += `</div>`;
-                            contentModalBodyKI.append(accordionHtml);
-                        }
+                        const Divisi = response.dataDivisi || [];
 
-                        select_peringkatPenilaian.empty();
-                        const Divisi = response.dataDivisi ?? [];
-                        if (Divisi.length === 0) {
-                            select_peringkatPenilaian.append(`<option>Gagal mengambil</option>`);
-                        } else {
-                            Divisi.forEach(function(data) {
-                                select_peringkatPenilaian.append(
-                                    `<option value="${data.divisi}">${data.divisi}</option>`);
-                            });
-                            const defaultDivisi = Divisi[0].divisi;
-                            select_peringkatPenilaian.val(defaultDivisi);
-                            renderPeringkat(defaultDivisi);
-                        }
+                        if (!Divisi.length) return;
 
-                        select_peringkatPenilaian.on('change', function() {
-                            const divisiDipilih = $(this).val();
-                            renderPeringkat(divisiDipilih);
+                        Divisi.forEach(d =>
+                            select.append(
+                                `<option value="${d.divisi}">${d.divisi}</option>`
+                            )
+                        );
+
+                        const defaultDivisi = Divisi[0].divisi;
+                        select.val(defaultDivisi);
+
+                        renderPeringkat(defaultDivisi);
+
+                        select.on("change", function () {
+                            renderPeringkat($(this).val());
                         });
 
                         function renderPeringkat(divisi) {
-                            let allData = response.dataRangking.filter(item => item.divisi === divisi);
-                            allData.sort((a, b) => b.total_nilai - a.total_nilai);
-                            let dataFiltered = allData.filter(item => item.total_nilai > 0);
-                            let cardContainer = $('.row-ranking');
+
+                            let allData = (response.dataRangking || [])
+                                .filter(i => i.divisi === divisi)
+                                .sort((a, b) => b.total_nilai - a.total_nilai);
+
+                            const dataFiltered = allData.filter(
+                                i => Number(i.total_nilai) > 0
+                            );
+
+                            const cardContainer = $(".row-ranking");
+                            const bodyContentPeringkat = $("#bodyContentPeringkat");
+
                             cardContainer.empty();
                             bodyContentPeringkat.empty();
-                            title_peringkat.text(`Terbaik Divisi ${divisi}`);
 
-                            if (dataFiltered.length === 0) {
+                            $("#title_peringkat").text(
+                                `Terbaik Divisi ${divisi}`
+                            );
+
+                            if (!dataFiltered.length) {
                                 cardContainer.append(`
-                        <div class="col-12">
-                            <div class="p-4 text-center rounded-3 bg-light">
-                                <img src="{{ asset('template_KPI/dist/assets/images/screenshots/gambar_pencarian.png') }}" class="mb-3" width="80%" height="250px" alt="" style="opacity: 0.5;">
-                                <h6 class="mb-0 text-muted">Belum ada karyawan yang memiliki peringkat di divisi ini</h6>
-                            </div>
-                        </div>
-                    `);
-                            } else {
-                                const top3 = dataFiltered.slice(0, 3);
-                                top3.forEach((item, index) => {
-                                    let posisi = index + 1;
-                                    let colClass = "col-12";
-                                    if (top3.length === 2) {
-                                        colClass = "col-12 col-sm-6";
-                                    } else if (top3.length === 3) {
-                                        colClass = "col-12 col-sm-6 col-lg-4";
-                                    }
-                                    let gradient;
-                                    if (posisi === 1) gradient =
-                                        "linear-gradient(135deg, #f6d365, #fda085)";
-                                    if (posisi === 2) gradient =
-                                        "linear-gradient(135deg, #cfd9df, #e2ebf0)";
-                                    if (posisi === 3) gradient =
-                                        "linear-gradient(135deg, #d1913c, #ffd194)";
-                                    const baseUrl = "{{ asset('storage') }}";
-                                    const defaultFoto =
-                                        "{{ asset('template_KPI/dist/assets/images/screenshots/user-profile.jpg') }}";
-                                    const foto = item.foto ? `${baseUrl}/${item.foto}` : defaultFoto;
-
-                                    cardContainer.append(`
-                            <div class="${colClass} text-center mb-4">
-                                <div class="ranking-card p-4 rounded-4 text-white position-relative overflow-hidden h-100" style="background:${gradient}; transition: transform 0.3s ease, box-shadow 0.3s ease;">
-                                    <div class="position-absolute top-0 end-0 opacity-25" style="width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,0.2);"></div>
-                                    <div class="position-absolute bottom-0 start-0 opacity-25" style="width:80px; height:80px; border-radius:50%; background:rgba(255,255,255,0.15);"></div>
-                                    <div class="position-relative">
-                                        ${posisi === 1 ? `<img src="{{ asset('css/doodle-crown.png') }}" class="position-absolute top-0 start-50 translate-middle-x" style="width:70px; margin-top:-55px; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.4));">` : ""}
-                                        <img src="${foto}" class="rounded-circle border border-4 border-white my-3" style="width: 110px; height: 110px; object-fit:cover;">
+                                    <div class="col-12">
+                                        <div class="p-4 text-center rounded-3 bg-light">
+                                            <img src="{{ asset('template_KPI/dist/assets/images/screenshots/gambar_pencarian.png') }}" width="80%" height="250" style="opacity:.5">
+                                            <h6 class="text-muted">Belum ada karyawan yang memiliki peringkat di divisi ini</h6>
+                                        </div>
                                     </div>
-                                    <h6 class="fw-bold mb-1" style="font-size:1rem;">${item.nama_karyawan}</h6>
-                                    <small class="text-light opacity-75 d-block mb-2">${item.divisi}</small>
-                                </div>
-                                <h5 class="mt-3 fw-bold text-dark">${posisi}</h5>
-                            </div>
-                        `);
-                                });
+                                `);
+                                return;
                             }
+
+                            const top3 = dataFiltered.slice(0, 3);
+
+                            top3.forEach((item, index) => {
+
+                                const posisi = index + 1;
+
+                                let gradient =
+                                    posisi === 1
+                                        ? "linear-gradient(135deg,#f6d365,#fda085)"
+                                        : posisi === 2
+                                        ? "linear-gradient(135deg,#cfd9df,#e2ebf0)"
+                                        : "linear-gradient(135deg,#d1913c,#ffd194)";
+
+                                const baseUrl = "{{ asset('storage') }}";
+                                const defaultFoto =
+                                    "{{ asset('template_KPI/dist/assets/images/screenshots/user-profile.jpg') }}";
+
+                                const foto = item.foto
+                                    ? `${baseUrl}/${item.foto}`
+                                    : defaultFoto;
+
+                                cardContainer.append(`
+                                    <div class="col-12 col-sm-6 col-lg-4 text-center mb-4">
+                                        <div class="ranking-card p-4 rounded-4 text-white" style="background:${gradient}">
+                                            <img src="${foto}" class="rounded-circle border border-4 border-white my-3" style="width:110px;height:110px;object-fit:cover;">
+                                            <h6 class="fw-bold">${item.nama_karyawan}</h6>
+                                            <small class="opacity-75">${item.divisi}</small>
+                                        </div>
+                                        <h5 class="mt-3 fw-bold">${posisi}</h5>
+                                    </div>
+                                `);
+                            });
 
                             let lastScore = null;
-                            let currentRank = 0;
-                            let shownRank = 0;
-                            allData.forEach((item, idx) => {
+                            let rank = 0;
+                            let shown = 0;
+
+                            allData.forEach(item => {
+
                                 if (item.total_nilai !== lastScore) {
-                                    currentRank = shownRank + 1;
+                                    rank = shown + 1;
                                 }
+
                                 lastScore = item.total_nilai;
-                                shownRank++;
-                                const baseUrl = "{{ asset('storage') }}";
+                                shown++;
+
                                 bodyContentPeringkat.append(`
-                        <div class="d-flex align-items-center mb-3 p-2 rounded-3 shadow-sm bg-light">
-                            <span class="me-3 fw-bold text-dark" style="min-width:25px;">${currentRank}.</span>
-                            ${
-                                item.foto 
-                                ? `<img src="${baseUrl}/${item.foto}" class="rounded-circle border border-2 border-white shadow me-3" style="width:45px; height:45px; object-fit:cover;">`
-                                : (() => {
-                                    const namaSplit = item.nama_karyawan.split(" ");
-                                    const inisial = namaSplit[0].charAt(0).toUpperCase() + (namaSplit[1] ? namaSplit[1].charAt(0).toUpperCase() : "");
-                                    return `<div class="rounded-circle bg-primary text-white d-flex justify-content-center align-items-center me-3 shadow" style="width:45px; height:45px; font-weight:bold; font-size:14px;">${inisial}</div>`;
-                                })()
-                            }
-                            <div class="flex-grow-1">
-                                <div class="fw-bold">${item.nama_karyawan}</div>
-                                <small class="text-muted">${item.divisi}</small>
-                            </div>
-                            <div class="fw-bold text-dark me-3">${item.total_nilai}</div>
-                            <div class="progress flex-grow-1" style="max-width: 250px; height: 12px;">
-                                <div class="progress-bar bg-gradient-info" role="progressbar" style="width: ${item.total_nilai}%;" aria-valuenow="${item.total_nilai}" aria-valuemin="0" aria-valuemax="100"></div>
-                            </div>
-                        </div>
-                    `);
+                                    <div class="d-flex align-items-center mb-3 p-2 rounded-3 shadow-sm bg-light">
+                                        <span class="me-3 fw-bold">${rank}.</span>
+                                        <div class="flex-grow-1">
+                                            <div class="fw-bold">${item.nama_karyawan}</div>
+                                            <small class="text-muted">${item.divisi}</small>
+                                        </div>
+                                        <div class="fw-bold me-3">${item.total_nilai}</div>
+                                        <div class="progress flex-grow-1" style="max-width:250px;height:12px;">
+                                            <div class="progress-bar bg-gradient-info" style="width:${item.total_nilai}%"></div>
+                                        </div>
+                                    </div>
+                                `);
                             });
                         }
                     },
-                    error: function(err) {
-                        console.error('Gagal load data:', err);
+                    error: function () {
+                        $("#content_JK").text("0 Karyawan");
+                        $("#content_KS").text("0");
+                        $("#content_KC").text("0");
+                        $("#content_KI").text("0");
                     }
                 });
             }
@@ -1387,6 +953,263 @@
                     url: "{{ route('kpi.getProgressDasboard') }}",
                     type: 'get',
                     success: function(response) {
+                        let dataKPIPersonal = response.output_1
+
+                        const contentKPIPersonal = $('#contentKPIPersonal');
+                        contentKPIPersonal.empty();
+
+                        const data = dataKPIPersonal.output_1 ?? null;
+
+                        if (!data || data.titleGet_data === "Tidak ada data") {
+
+                            contentKPIPersonal.append(`
+                                <div class="d-flex flex-column justify-content-center align-items-center text-center h-100 py-5">
+                                    <div style="font-size:60px;">≈</div>
+
+                                    <h5 class="fw-semibold mt-3 mb-2">
+                                        Belum Ada Data KPI
+                                    </h5>
+
+                                    <p class="text-muted small mb-4" style="max-width:320px;">
+                                        Data performa personal belum tersedia.
+                                        KPI akan muncul setelah target dan penilaian dibuat.
+                                    </p>
+
+                                    <span class="badge bg-light text-muted px-3 py-2">
+                                        Menunggu Data
+                                    </span>
+                                </div>
+                            `);
+
+                        } else {
+                            let performanceColor = "warning";
+                            let performanceIcon = "∿";
+
+                            if (data.performance_title === "Naik") {
+                                performanceColor = "success";
+                                performanceIcon = "↑";
+                            } else if (data.performance_title === "Turun") {
+                                performanceColor = "danger";
+                                performanceIcon = "↓";
+                            }
+
+                            let monthlyHTML = "";
+
+                            data.progress_kpi_perbulan.forEach((item, index) => {
+
+                                const bulanShort = item.bulan.split(" ")[0].substring(0, 3);
+
+                                monthlyHTML += `
+                                    <div class="col">
+                                        <div class="fw-semibold ${index === data.progress_kpi_perbulan.length - 1 ? 'text-success fw-bold' : ''}">
+                                            ${item.nilai}%
+                                        </div>
+                                        <div class="small text-muted">${bulanShort}</div>
+                                    </div>
+                                `;
+                            });
+
+                            contentKPIPersonal.append(`
+                                <div class="d-flex justify-content-between align-items-center mb-4">
+
+                                    <div>
+                                        <h1 class="fw-bold mb-1 counter"
+                                            data-value="${data.nilai_kpi_anda}">
+                                            ${data.nilai_kpi_anda}%
+                                        </h1>
+
+                                        <div class="small fw-semibold text-${performanceColor}">
+                                            <i class="fas fa-arrow-up me-1"></i>
+                                            ${performanceIcon} ${data.performance}% dari bulan lalu
+                                        </div>
+                                    </div>
+
+                                    <div class="text-end">
+                                        <div class="small text-muted mt-2">
+                                            Performa ${data.performance_title}
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                                <div class="mb-4">
+                                    <div class="d-flex justify-content-between small text-muted mb-2">
+                                        <span>Progress KPI</span>
+                                        <span class="fw-semibold">${data.nilai_kpi_anda}%</span>
+                                    </div>
+
+                                    <div class="progress" style="height:8px;">
+                                        <div 
+                                            class="progress-bar progress-animated bg-${performanceColor}"
+                                            data-value="${data.nilai_kpi_anda}"
+                                            style="width:0%">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="border-top pt-3 mb-4">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="small text-muted">Deadline</div>
+                                            <div class="fw-semibold">
+                                                ${new Date(data.deadline).toLocaleDateString('id-ID',{
+                                                    day:'numeric',
+                                                    month:'long',
+                                                    year:'numeric'
+                                                })}
+                                            </div>
+                                        </div>
+
+                                        <span class="badge bg-light text-dark">
+                                            ${data.countdown}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="mt-auto">
+                                    <div class="small text-muted mb-3">
+                                        Riwayat Bulanan
+                                    </div>
+
+                                    <div class="row text-center g-3">
+                                        ${monthlyHTML}
+                                    </div>
+                                </div>
+                            `);
+
+                            setTimeout(() => {
+                                $('.progress-animated').each(function() {
+                                    let value = $(this).data('value');
+                                    $(this).css('width', value + '%');
+                                });
+                            }, 200);
+                        }
+
+                        let dataContentKPITim = response.output_2 ?? [];
+
+                        const contentKPITim = $('#contentKPITim');
+                        contentKPITim.empty();
+
+                        dataContentKPITim.forEach(function(item) {
+
+                            let performanceColorTim = "warning";
+                            let performanceIconTim = "∿";
+
+                            if (item.performance === "Naik") {
+                                performanceColorTim = "success";
+                                performanceIconTim = "↑";
+                            } else if (item.performance === "Turun") {
+                                performanceColorTim = "danger";
+                                performanceIconTim = "↓";
+                            }
+
+                            let progressColor = "bg-warning";
+
+                            if (item.nilaitargetkpi >= 80) {
+                                progressColor = "bg-success";
+                            } else if (item.nilaitargetkpi < 50) {
+                                progressColor = "bg-danger";
+                            }
+
+                            contentKPITim.append(`
+                                <div class="mb-4">
+
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+
+                                        <div>
+                                            <h6 class="mb-0 fw-semibold">
+                                                ${item.nama_karyawan}
+                                            </h6>
+                                            <small class="text-muted">
+                                                ${item.jabatan}
+                                            </small>
+                                        </div>
+
+                                        <div class="text-end">
+                                            <h6 class="mb-0 fw-bold">
+                                                ${item.nilaitargetkpi}%
+                                            </h6>
+
+                                            <small class="text-${performanceColorTim}">
+                                                ${performanceIconTim}
+                                                ${item.nilai_performance}% bulan ini
+                                            </small>
+                                        </div>
+
+                                    </div>
+
+                                    <div class="progress" style="height:6px;">
+                                        <div 
+                                            class="progress-bar ${progressColor}"
+                                            style="width:${item.nilaitargetkpi}%">
+                                        </div>
+                                    </div>
+
+                                </div>
+                            `);
+                        });
+
+
+                        let datacontentKPIDivisi = response.output_3;
+
+                        const contentKPIDivisi = $('#contentKPIDivisi');
+                        contentKPIDivisi.empty();
+
+                        datacontentKPIDivisi.forEach(item => {
+
+                            let nilai = parseFloat(item.nilai_kpi ?? 0).toFixed(0);
+                            let performance = parseFloat(item.performance ?? 0).toFixed(0);
+
+                            let colorClass = 'secondary';
+                            let icon = '→';
+
+                            if (performance > 0) {
+                                colorClass = 'success';
+                                icon = '↑';
+                            } else if (performance < 0) {
+                                colorClass = 'danger';
+                                icon = '↓';
+                            } else {
+                                colorClass = 'warning';
+                                icon = '→';
+                            }
+
+                            const html = `
+                                <div class="col-12 col-md-6">
+                                    <div class="border rounded-4 p-4 h-100 bg-light">
+
+                                        <div class="d-flex justify-content-between align-items-start mb-3">
+                                            <div>
+                                                <h6 class="fw-semibold mb-1">
+                                                    ${item.divisi ?? '-'}
+                                                </h6>
+                                                <small class="text-muted">
+                                                    ${item.performance_title ?? '-'}
+                                                </small>
+                                            </div>
+
+                                            <div class="text-end">
+                                                <h2 class="fw-bold mb-0 counter" data-value="${nilai}">
+                                                ${item.nilai_kpi}%
+                                                </h2>
+                                            </div>
+                                        </div>
+
+                                        <div class="progress" style="height:6px;">
+                                            <div 
+                                                class="progress-bar bg-${colorClass} progress-animated"
+                                                data-value="${nilai}"
+                                                style="width:${item.nilai_kpi}%">
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            `;
+
+                            contentKPIDivisi.append(html);
+                        });
+
 
                     }
                 });

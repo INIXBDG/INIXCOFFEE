@@ -166,7 +166,12 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
+    <script>
+        window.authUser = {
+            nama: "{{ auth()->user()->karyawan->nama_lengkap }}",
+            jabatan: "{{ auth()->user()->jabatan }}"
+        };
+    </script>
     <script>
         let performanceChart = null;
         let statusPieChart = null;
@@ -383,45 +388,58 @@
                 let yearBadgeColor = 'bg-primary';
 
                 html += `
-                    <div class="col-12 col-md-6 col-lg-4 mb-4">
-                        <button style="background: none; border: none; padding: 0; margin: 0; text-align: left; display: block; width: 100%;" id="buttonDetailTarget" data-id="${target.id}" data-bs-toggle="modal" data-bs-target="#detailTargetModal">
-                            <div class="card border-0 rounded-4 h-100 ${cardBorderColor} shadow-lg overflow-hidden">
-                                <div class="card-body p-4">
-                                    <div class="d-flex justify-content-between align-items-start mb-3">
-                                        <p class="${yearBadgeColor} fs-6 py-1 px-3">${target.periode}</p>
-                                        <p class="${statusBadgeColor} fs-6 py-1 px-3">${target.status}</p>
+                    <div class="col-12 col-sm-6 col-lg-4 mb-4">
+                        <button type="button" 
+                                class="btn btn-link p-0 text-start w-100 h-100 text-decoration-none" 
+                                id="buttonDetailTarget" 
+                                data-id="${target.id}" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#detailTargetModal"
+                                style="outline: none;">
+                            
+                            <div class="card border-0 rounded-4 h-100 ${cardBorderColor} shadow-sm hover-shadow transition-all overflow-hidden bg-white">
+                                <div class="card-body p-3 p-md-4 d-flex flex-column">
+                                    
+                                    <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+                                        <span class="${yearBadgeColor} badge fs-7 py-2 px-3 rounded-pill">${target.periode}</span>
+                                        <span class="${statusBadgeColor} badge fs-7 py-2 px-3 rounded-pill">${target.status}</span>
                                     </div>
 
-                                    <h5 class="card-title fw-bold mb-2 text-dark">
-                                        <span class="d-inline-block bg-gradient-to-r from-purple-500 to-blue-600 text-black px-2 py-1 rounded-2">
+                                    <h5 class="card-title fw-bold mb-2 text-dark lh-base">
+                                        <span class="d-inline-block bg-light text-dark px-2 py-1 rounded-2 ">
                                             ${target.judul}
                                         </span>
                                     </h5>
-                                    <p class="text-muted small mb-3">${target.deskripsi || '-'}</p>
+                                    
+                                    <p class="text-muted small mb-3 text-truncate-2" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                        ${target.deskripsi || 'Tidak ada deskripsi'}
+                                    </p>
 
-                                    <div class="mb-4">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <small class="text-muted fw-semibold">Progress</small>
-                                            <small class="fw-bold ${progressTextColor}">${target.progress_display}</small>
+                                    <div class="mt-auto">
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <small class="text-muted fw-semibold" style="font-size: 0.8rem;">Progress</small>
+                                                <small class="fw-bold ${progressTextColor}" style="font-size: 0.8rem;">${target.progress_display}</small>
+                                            </div>
+                                            <div class="progress ${progressBarBg} rounded-pill" style="height: 8px;">
+                                                <div class="progress-bar ${progressBarColor} rounded-pill" 
+                                                    role="progressbar" 
+                                                    style="width: ${target.progress}%" 
+                                                    aria-valuenow="${target.progress}" 
+                                                    aria-valuemin="0" 
+                                                    aria-valuemax="100"></div>
+                                            </div>
                                         </div>
-                                        <div class="progress ${progressBarBg} rounded-3" style="height: 12px;">
-                                            <div class="progress-bar ${progressBarColor} rounded-3" 
-                                                role="progressbar" 
-                                                style="width: ${target.progress}%" 
-                                                aria-valuenow="${target.progress}" 
-                                                aria-valuemin="0" 
-                                                aria-valuemax="100"></div>
-                                        </div>
-                                    </div>
 
-                                    <div class="row g-3 mb-4">
-                                        <div class="col-6">
-                                            <small class="text-muted d-block fw-semibold">Target</small>
-                                            <strong class="${targetTextColor} fs-5">${target.target}</strong>
-                                        </div>
-                                        <div class="col-6">
-                                            <small class="text-muted d-block fw-semibold">Progress</small>
-                                            <strong class="${progressTextColor} fs-5">${target.progress}%</strong>
+                                        <div class="row g-2 pt-3">
+                                            <div class="col-6 border-end">
+                                                <small class="text-muted d-block" style="font-size: 0.75rem;">Target</small>
+                                                <strong class="${targetTextColor}">${target.target}</strong>
+                                            </div>
+                                            <div class="col-6 ps-3">
+                                                <small class="text-muted d-block" style="font-size: 0.75rem;">Realisasi</small>
+                                                <strong class="${progressTextColor}">${target.progress}%</strong>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -497,12 +515,14 @@
 
         $(document).on('click', '#buttonDetailTarget', function() {
             let id = $(this).data('id');
+            let idUser = {{ auth()->user()->id }};
 
             $.ajax({
                 url: "{{ route('kpi.detail') }}",
                 method: 'GET',
                 data: {
-                    id
+                    id,
+                    idUser
                 },
                 dataType: 'json',
                 success: function(response) {
@@ -726,7 +746,13 @@
                                                                     <h6 class="mb-0 fw-semibold text-secondary">KARYAWAN</h6>
                                                                 </div>
                                                                 <div class="participant-list" style="overflow-y: scroll; max-height: 140px;">
-                                                                    ${karyawanHtml}
+                                                                    <div class="d-flex align-items-center py-2 participant-item">
+                                                                        <div class="avatar me-3">1</div>
+                                                                        <div class="flex-grow-1">
+                                                                            <div class="fw-semibold text-dark small">${window.authUser.nama}</div>
+                                                                            <div class="text-muted small">${window.authUser.jabatan}</div>
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </div>
