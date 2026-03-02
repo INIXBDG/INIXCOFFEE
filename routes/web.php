@@ -59,7 +59,14 @@ use App\Http\Controllers\Crm\ImportPerusahaanAndContactController;
 use App\Http\Controllers\RKMController as ControllersRKMController;
 use App\Http\Controllers\colaboratorController;
 use App\Http\Controllers\dbklienController;
+use App\Http\Controllers\KPI\DatabaseKPIController as KPIDatabaseKPIController;
+use App\Http\Controllers\KPI\TargetKPIController;
+use App\Http\Controllers\WebPushController;
+use App\Http\Controllers\office\BiayaTransportasiController;
+use App\Http\Controllers\Office\pickupDriverController;
 use App\Http\Controllers\KegiatanController;
+use App\Http\Controllers\KendaraanController;
+
 
 /*
 |--------------------------------------------------------------------------
