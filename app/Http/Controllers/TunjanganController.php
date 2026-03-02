@@ -111,7 +111,7 @@ class TunjanganController extends Controller
         $tunjangan = TunjanganKaryawan::where('id_karyawan', $id)
             ->where('bulan', $bulan)
             ->where('tahun', $tahun)
-            ->approved() // Gunakan scope approved
+          //  ->approved() // Gunakan scope approved
             ->with('karyawan', 'jenistunjangan')
             ->get();
 

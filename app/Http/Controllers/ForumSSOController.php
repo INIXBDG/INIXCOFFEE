@@ -5,7 +5,14 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 class ForumSSOController extends Controller
-{
+{    
+    protected $AbsensiKaryawanController;
+
+    public function __construct(AbsensiKaryawanController $AbsensiKaryawanController)
+    {
+        $this->middleware('auth');
+        $this->AbsensiKaryawanController = $AbsensiKaryawanController;
+    }
     public function redirect()
     {
         $user = Auth::user();
@@ -28,12 +35,29 @@ class ForumSSOController extends Controller
         ), '=');
         $signature = hash_hmac('sha256', $payload, config('services.forumium.secret'));
 
-        return redirect(
-            config('services.forumium.url')
-            . '/sso/login?payload=' . urlencode($payload)
-            . '&signature=' . $signature
-        );
-
+        $response = $this->AbsensiKaryawanController->cekip();
+		// Mengambil data asli dari objek JsonResponse
+		$cekipData = $response->getData(); 
+		$cekip = $cekipData->success; // Mengambil value dari key 'success'
+		//dd($cekip);
+		 //dd([
+         //    'payload_received' => $payload,
+         //    'signature_received' => $signature,
+         //    'secret' => config('services.forumium.url'),
+         //]);     
+        if ($cekip == 'Absen Normal') {
+            return redirect(
+                config('services.forumium.url')
+                . '/sso/login?payload=' . urlencode($payload)
+                . '&signature=' . $signature
+            );
+        }else{
+            return redirect(
+                config('services.forumium.url_luar')
+                . '/sso/login?payload=' . urlencode($payload)
+                . '&signature=' . $signature
+            );
+        }
 
     }
 

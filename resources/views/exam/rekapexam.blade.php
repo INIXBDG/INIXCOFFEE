@@ -46,7 +46,7 @@
                         </div>
                         <div class="col-md-4 mx-1">
                             <button type="button" onclick="getDataFeedbacks()" class="btn click-primary" style="margin-top: 37px">Cari Data</button>
-                            <a href="{{ route('rekapExamExportExcel', [$tahun_sekarang, $bulan_sekarang]) }}" id="export-link" target="_blank" class="btn click-primary" style="margin-top: 37px">Export to Excel</a>
+                            <a href="{{ route('exam.rekapExamExportExcel', [$tahun_sekarang, $bulan_sekarang]) }}" id="export-link" target="_blank" class="btn click-primary" style="margin-top: 37px">Export to Excel</a>
                         </div>
                     </div>
                 </div>

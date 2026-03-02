@@ -124,10 +124,7 @@ class izinTigaJamController extends Controller
             }
 
             // Validasi jam mulai tidak boleh kurang dari waktu sekarang
-            if ($jamMulai->lt($sekarang)) {
-                return redirect()->route('pengajuanizin.index')
-                    ->with(['error' => 'Jam mulai tidak boleh kurang dari waktu saat ini.']);
-            }
+            
         }
 
         // Untuk izin kemarin atau besok: TIDAK perlu validasi absensi dan jam

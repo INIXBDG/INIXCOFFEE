@@ -25,7 +25,7 @@ class apiController extends Controller
 {
     public function getFeedbacks()
     {
-        $feedbacks = Nilaifeedback::with('rkm')->whereYear('created_at', '2025')->get();
+        $feedbacks = Nilaifeedback::with('rkm')->whereYear('created_at', '2026')->get();
 
         // $groupedFeedbacks = $feedbacks->groupBy('id_rkm');
         $groupedFeedbacks = $feedbacks->groupBy(function ($feedback) {

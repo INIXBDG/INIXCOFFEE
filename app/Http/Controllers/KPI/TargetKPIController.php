@@ -1507,7 +1507,16 @@ class TargetKPIController extends Controller
             }
 
             $startAt = Carbon::parse($ticket->created_at, 'Asia/Jakarta');
-            $endAt = Carbon::parse($ticket->tanggal_selesai . ' ' . $ticket->jam_selesai, 'Asia/Jakarta');
+            if (strlen($ticket->tanggal_selesai) > 10) {
+				// sudah datetime
+				$endAt = Carbon::parse($ticket->tanggal_selesai, 'Asia/Jakarta');
+			} else {
+				// hanya date
+				$endAt = Carbon::parse(
+					$ticket->tanggal_selesai . ' ' . $ticket->jam_selesai,
+					'Asia/Jakarta'
+				);
+			}
             $actualHours = $startAt->diffInHours($endAt);
 
             $slaMet = false;
@@ -3422,7 +3431,16 @@ class TargetKPIController extends Controller
             }
 
             $startAt = Carbon::parse($ticket->created_at, 'Asia/Jakarta');
-            $endAt = Carbon::parse($ticket->tanggal_selesai . ' ' . $ticket->jam_selesai, 'Asia/Jakarta');
+            if (strlen($ticket->tanggal_selesai) > 10) {
+				// sudah datetime
+				$endAt = Carbon::parse($ticket->tanggal_selesai, 'Asia/Jakarta');
+			} else {
+				// hanya date
+				$endAt = Carbon::parse(
+					$ticket->tanggal_selesai . ' ' . $ticket->jam_selesai,
+					'Asia/Jakarta'
+				);
+			}
             $actualHours = $startAt->diffInHours($endAt);
 
             $slaMet = false;
