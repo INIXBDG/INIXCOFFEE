@@ -2,18 +2,20 @@
 
 namespace App\Http\Controllers\office;
 
-use Carbon\Carbon;
-use App\Models\RKM;
-use App\Models\Tickets;
-use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use App\Models\AbsensiKaryawan;
+use App\Models\ChecklistKeperluan;
 use App\Models\Feedback;
+use App\Models\karyawan;
 use App\Models\Nilaifeedback;
 use App\Models\pengajuancuti;
-use App\Models\AbsensiKaryawan;
+use App\Models\Perusahaan;
+use App\Models\RKM;
+use App\Models\Tickets;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Http\Controllers\Controller;
-use App\Models\karyawan;
 use Illuminate\Support\Facades\Http;
 
 use function PHPUnit\Framework\matches;
@@ -141,6 +143,81 @@ class OfficeController extends Controller
             );
 
 
+        // detail rkm
+        $now = Carbon::now();
+        $startOfThisWeek = $now->copy()->startOfWeek();
+        $endOfThisWeek = $now->copy()->endOfWeek();
+        $startOfLastWeek = $now->copy()->subWeek()->startOfWeek();
+        $endOfLastWeek = $now->copy()->subWeek()->endOfWeek();
+        
+        $startDate = $startOfLastWeek;
+        $endDate = $endOfThisWeek;
+
+        $rkms = RKM::with(['materi', 'peluang', 'rekomendasilanjutan'])
+            ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
+            ->whereBetween('r_k_m_s.tanggal_awal', [$startDate, $endDate])
+            ->whereDoesntHave('peluang', function ($query) {
+                $query->where('tentatif', 1); // Exclude RKM records where peluang.tentatif = 1
+            })
+            ->select(
+                DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'), // Gabungkan semua id
+                DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id_all'), // Gabungkan semua id
+                'r_k_m_s.materi_key',
+                'r_k_m_s.ruang',
+                'r_k_m_s.metode_kelas',
+                'r_k_m_s.event',
+                DB::raw('GROUP_CONCAT(r_k_m_s.exam SEPARATOR ", ") AS exam'), // Gabungkan semua exam
+                DB::raw('GROUP_CONCAT(r_k_m_s.makanan SEPARATOR ", ") AS makanan'), // Gabungkan semua makanan
+                DB::raw('GROUP_CONCAT(r_k_m_s.instruktur_key SEPARATOR ", ") AS instruktur_all'),
+                DB::raw('GROUP_CONCAT(r_k_m_s.perusahaan_key SEPARATOR ", ") AS perusahaan_all'),
+                DB::raw('GROUP_CONCAT(r_k_m_s.sales_key SEPARATOR ", ") AS sales_all'),
+                DB::raw('CASE WHEN SUM(r_k_m_s.status = 0) > 0 THEN 0 ELSE MIN(r_k_m_s.status) END AS status_all'),
+                DB::raw('SUM(r_k_m_s.pax) AS total_pax'),
+                'r_k_m_s.tanggal_awal',
+                DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir')
+            )
+            ->groupBy(
+                'r_k_m_s.materi_key',
+                'r_k_m_s.ruang',
+                'r_k_m_s.metode_kelas',
+                'r_k_m_s.event',
+                'r_k_m_s.tanggal_awal'
+            )
+            ->orderBy('status_all', 'asc')
+            ->orderBy('r_k_m_s.tanggal_awal', 'asc')
+            ->get();
+        $rkms->each(function ($row) {
+            if ($row->perusahaan_all) {
+                $perusahaan_ids = explode(', ', $row->perusahaan_all);
+
+                $row->perusahaan = Perusahaan::whereIn('id', $perusahaan_ids)->get();
+            } else {
+                $row->perusahaan = collect();
+            }
+        });
+
+        foreach ($rkms as $detail_rkm) {
+            $singleId = explode(',', $detail_rkm->id)[0];
+            $singleId = trim($singleId);
+            
+            $checklist = ChecklistKeperluan::where('id_rkm', $singleId)->first();
+            $detail_rkm->checklist = $checklist;
+
+            if ($checklist) {
+                $totalItem = 5;
+
+                $checked = 
+                    ($checklist->materi ? 1 : 0) +
+                    ($checklist->kelas ? 1 : 0) +
+                    ($checklist->cb ? 1 : 0) +
+                    ($checklist->maksi ? 1 : 0) +
+                    ($checklist->keperluan_kelas ? 1 : 0);
+
+                $detail_rkm->checklist_status = round(($checked / $totalItem) * 100);
+            } else {
+                $detail_rkm->checklist_status = 0;
+            }
+        }
 
         return view('office.dashboard', compact(
             'total_karyawan',
@@ -151,6 +228,7 @@ class OfficeController extends Controller
             'rkm',
             'jumlahPeserta',
             'jumlahInstruktur',
+            'rkms'
         ));
     }
 

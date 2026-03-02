@@ -214,63 +214,63 @@ class MateriController extends Controller
         ], 200);
     }
     // MateriController.php
-public function chartJumlahUpdateMateriPerbulan(Request $request)
-{
-    try {
-        $validated = $request->validate([
-            'bulan' => ['nullable', 'string', Rule::in(['All', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'])],
-            'tahun' => ['required', 'integer', 'min:2000', 'max:' . (date('Y') + 1)]
-        ]);
+    public function chartJumlahUpdateMateriPerbulan(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'bulan' => ['nullable', 'string', Rule::in(['All', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'])],
+                'tahun' => ['required', 'integer', 'min:2000', 'max:' . (date('Y') + 1)]
+            ]);
 
-        $bulan = $validated['bulan'] ?? 'All';
-        $tahun = $validated['tahun'];
+            $bulan = $validated['bulan'] ?? 'All';
+            $tahun = $validated['tahun'];
 
-        $query = ActivityInstruktur::query()
-            ->selectRaw('
-                users.id as user_id,
-                COALESCE(karyawans.nama_lengkap, users.username, "Instruktur Tidak Dikenal") as nama_instruktur,
-                COUNT(*) as total
-            ')
-            ->join('users', 'activity_instrukturs.user_id', '=', 'users.id')
-            ->leftJoin('karyawans', 'users.karyawan_id', '=', 'karyawans.id')
-            ->where('activity_instrukturs.activity_type', 'Pembuatan Materi')
-            ->whereYear('activity_instrukturs.activity_date', $tahun)
-            ->groupBy('users.id', 'karyawans.nama_lengkap', 'users.username')
-            ->orderBy('total', 'desc');
+            $query = ActivityInstruktur::query()
+                ->selectRaw('
+                    users.id as user_id,
+                    COALESCE(karyawans.nama_lengkap, users.username, "Instruktur Tidak Dikenal") as nama_instruktur,
+                    COUNT(*) as total
+                ')
+                ->join('users', 'activity_instrukturs.user_id', '=', 'users.id')
+                ->leftJoin('karyawans', 'users.karyawan_id', '=', 'karyawans.id')
+                ->where('activity_instrukturs.activity_type', 'Pembuatan Materi')
+                ->whereYear('activity_instrukturs.activity_date', $tahun)
+                ->groupBy('users.id', 'karyawans.nama_lengkap', 'users.username')
+                ->orderBy('total', 'desc');
 
-        if ($bulan !== 'All') {
-            $query->whereMonth('activity_instrukturs.activity_date', (int) $bulan);
+            if ($bulan !== 'All') {
+                $query->whereMonth('activity_instrukturs.activity_date', (int) $bulan);
+            }
+
+            $data = $query->get();
+
+            $labels = $data->pluck('nama_instruktur')->map(function($nama) {
+                return strlen($nama) > 25 ? substr($nama, 0, 23) . '...' : $nama;
+            })->toArray();
+            
+            $values = $data->pluck('total')->map(fn($v) => (int) $v)->toArray();
+
+            return response()->json([
+                'labels' => $labels,
+                'data' => $values,
+                'tahun' => $tahun,
+                'bulan_terpilih' => $bulan,
+                'has_data' => $data->isNotEmpty()
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Chart Jumlah Update Materi Perbulan error', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+
+            return response()->json([
+                'error' => 'Terjadi kesalahan saat memuat data',
+                'message' => $e->getMessage()
+            ], 500);
         }
-
-        $data = $query->get();
-
-        $labels = $data->pluck('nama_instruktur')->map(function($nama) {
-            return strlen($nama) > 25 ? substr($nama, 0, 23) . '...' : $nama;
-        })->toArray();
-        
-        $values = $data->pluck('total')->map(fn($v) => (int) $v)->toArray();
-
-        return response()->json([
-            'labels' => $labels,
-            'data' => $values,
-            'tahun' => $tahun,
-            'bulan_terpilih' => $bulan,
-            'has_data' => $data->isNotEmpty()
-        ]);
-
-    } catch (\Exception $e) {
-        \Log::error('Chart Jumlah Update Materi Perbulan error', [
-            'message' => $e->getMessage(),
-            'file' => $e->getFile(),
-            'line' => $e->getLine()
-        ]);
-
-        return response()->json([
-            'error' => 'Terjadi kesalahan saat memuat data',
-            'message' => $e->getMessage()
-        ], 500);
     }
-}
     public function chartSilabusPerInstrukturPerTahun(Request $request)
     {
         $tahun = $request->input('tahun', date('Y'));

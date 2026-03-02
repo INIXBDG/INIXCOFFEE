@@ -162,6 +162,7 @@
         .chart-container {
             position: relative;
             width: 100%;
+            height: 300px;
             flex-grow: 1;
         }
 

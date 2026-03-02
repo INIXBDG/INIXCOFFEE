@@ -190,7 +190,7 @@
 
                         <div class="col-12">
                             <label class="form-label">Talent (Pilih Multiple)</label>
-                            <select name="talents[]" class="form-select" multiple required style="height: 100px;">
+                            <select name="talents[]" class="form-select" multiple style="height: 100px;">
                                 <option value="Hera">Hera</option>
                                 <option value="Savanna">Savanna</option>
                                 <option value="Reni">Reni</option>
