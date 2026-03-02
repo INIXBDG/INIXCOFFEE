@@ -429,27 +429,6 @@ class AktivitasController extends Controller
         }
     }
 
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'id_contact' => 'required|integer',
-            'id_peluang' => 'required|integer',
-            'aktivitas' => 'required|in:Call,Email,Visit,Meet,Incharge,PA,PI,DB,Telemarketing,Form_Masuk,Form_Keluar',
-            'deskripsi' => 'required|string',
-            'waktu_aktivitas' => 'required|date',
-        ]);
-
-        $validated['id_sales'] = $request->input('id_sales', auth()->user()->id_sales ?? null);
-        $aktivitas = Aktivitas::create($validated);
-
-        return back()->with([
-            'message' => 'Aktivitas berhasil direcord.',
-            'data' => $aktivitas,
-        ]);
-    }
-
-
-
     public function storeNew(Request $request)
     {
         $rules = [
@@ -477,16 +456,17 @@ class AktivitasController extends Controller
         }
 
         $aktivitasData = $validated;
+        $folderPath = "uploads/aktivitas/visit/";
 
         if ($request->aktivitas === 'Visit' && $request->filled('foto_lokasi')) {
             $img = $request->foto_lokasi;
             $folderPath = "uploads/aktivitas/visit/";
-            
+
             $image_parts = explode(";base64,", $img);
             $image_type_aux = explode("image/", $image_parts[0]);
             $image_type = $image_type_aux[1];
             $image_base64 = base64_decode($image_parts[1]);
-            
+
             $fileName = 'visit_' . time() . '_' . uniqid() . '.' . $image_type;
             $file = public_path($folderPath) . $fileName;
 
@@ -498,7 +478,27 @@ class AktivitasController extends Controller
             $aktivitasData['foto_lokasi'] = $folderPath . $fileName;
             $aktivitasData['latitude'] = $request->latitude;
             $aktivitasData['longitude'] = $request->longitude;
+        } elseif ($request->hasFile('file_foto')) {
+            $file = $request->file('file_foto');
+            $path = $file->getRealPath();
+
+            $exif = @exif_read_data($path);
+            $lat = null;
+            $lng = null;
+
+            if ($exif && isset($exif['GPSLatitude'], $exif['GPSLatitudeRef'], $exif['GPSLongitude'], $exif['GPSLongitudeRef'])) {
+                $lat = $this->gpsToDecimal($exif['GPSLatitude'], $exif['GPSLatitudeRef']);
+                $lng = $this->gpsToDecimal($exif['GPSLongitude'], $exif['GPSLongitudeRef']);
+            }
+
+            $fileName = 'visit_up_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $file->move(public_path($folderPath), $fileName);
+
+            $aktivitasData['foto_lokasi'] = $folderPath . $fileName;
+            $aktivitasData['latitude'] = $lat;
+            $aktivitasData['longitude'] = $lng;
         }
+
 
         if ($request->id_contact === 'new') {
             $contact = Contact::create([
@@ -511,6 +511,14 @@ class AktivitasController extends Controller
                 'status'        => '1'
             ]);
             $aktivitasData['id_contact'] = $contact->id;
+
+            $newAktivitas = new Aktivitas();
+            $newAktivitas->id_sales = $aktivitasData['id_sales'];
+            $newAktivitas->id_contact = $contact->id;
+            $newAktivitas->aktivitas = 'Contact';
+            $newAktivitas->deskripsi = 'Contact baru"' . $contact->nama . '" berhasil ditambahkan';
+            $newAktivitas->waktu_aktivitas = $aktivitasData['waktu_aktivitas'];
+            $newAktivitas->save();
         } elseif ($request->filled('id_contact') && $request->id_contact !== 'new') {
             if ($request->contact_type === 'peserta') {
                 $aktivitasData['id_peserta'] = $request->id_contact;
@@ -534,6 +542,22 @@ class AktivitasController extends Controller
             Log::error('Gagal simpan aktivitas', ['error' => $e->getMessage()]);
             return back()->withErrors(['db' => 'Gagal menyimpan data ke database.']);
         }
+    }
+
+    private function gps2Num($coordPart)
+    {
+        $parts = explode('/', $coordPart);
+        if (count($parts) == 1) return (float)$parts[0];
+        return (float)$parts[0] / (float)$parts[1];
+    }
+
+    private function gpsToDecimal($coordinates, $hemisphere)
+    {
+        $degrees = $this->gps2Num($coordinates[0]);
+        $minutes = $this->gps2Num($coordinates[1]);
+        $seconds = $this->gps2Num($coordinates[2]);
+        $flip = ($hemisphere == 'W' || $hemisphere == 'S') ? -1 : 1;
+        return $flip * ($degrees + ($minutes / 60) + ($seconds / 3600));
     }
 
     public function delete($id)

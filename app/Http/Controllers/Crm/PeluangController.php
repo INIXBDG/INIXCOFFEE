@@ -401,6 +401,7 @@ class PeluangController extends Controller
                 'materi' => 'required|string|max:255',
                 'catatan' => 'nullable|string|max:255',
                 'harga' => 'required|numeric|min:0',
+                'final' => 'required|numeric|min:0',
                 'pax' => 'required|integer|min:1',
                 'periode_mulai' => 'required|date',
                 'periode_selesai' => 'required|date|after_or_equal:periode_mulai',
@@ -429,12 +430,16 @@ class PeluangController extends Controller
             $rkm->pax = $request->pax;
             $rkm->isi_pax = $request->pax;
             $rkm->save();
+            
+            $final = $validated['final'] - ($validated['final'] * 11 / 100);
 
             // Update Peluang
             $peluang->update([
                 'materi' => $validated['materi'],
                 'catatan' => $validated['catatan'],
                 'harga' => $validated['harga'],
+                'final' => $final,
+                'netsales' => $final,
                 'pax' => $validated['pax'],
                 'periode_mulai' => $validated['periode_mulai'],
                 'periode_selesai' => $validated['periode_selesai'],
@@ -511,11 +516,11 @@ class PeluangController extends Controller
                 $peluang->tahap = 'merah';
 
                 $inputFinal = $request->input('final');
-                $pax = $peluang->pax ?? 1;
+                $final = $inputFinal - ($inputFinal * 11 / 100);
 
-                $peluang->final = $inputFinal;
+                $peluang->final = $final;
 
-                $peluang->netsales = $inputFinal;
+                $peluang->netsales = $final;
 
                 $peluang->merah = $now;
                 $peluang->desc_lost = null;

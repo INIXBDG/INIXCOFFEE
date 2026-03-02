@@ -127,7 +127,7 @@
                                 aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            <form id="activityForm" action="{{ route('store.aktivitas.new') }}" method="POST">
+                            <form id="activityForm" action="{{ route('store.aktivitas.new') }}" method="POST" enctype="multipart/form-data">
                                 @csrf
                                 <input type="hidden" id="contact_type" name="contact_type" value="contact">
 
@@ -239,17 +239,41 @@
                                         name="waktu_aktivitas" required>
                                 </div>
 
+                                <div id="camera_wrapper" style="display: none; margin-bottom: 15px;">
+                                    <label class="form-label">Dokumentasi Visit</label>
+
+                                    <div class="mb-3">
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="upload_method"
+                                                id="method_camera" value="camera" checked>
+                                            <label class="form-check-label" for="method_camera">Ambil Foto
+                                                (Kamera)</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="upload_method"
+                                                id="method_upload" value="upload">
+                                            <label class="form-check-label" for="method_upload">Upload File</label>
+                                        </div>
+                                    </div>
+
+                                    <div id="live_camera_container">
+                                        <div id="camera"
+                                            style="width: 320px; height: 240px; border: 2px solid #ddd; border-radius: 5px; background: #eee;">
+                                        </div>
+                                        <small class="text-muted d-block mt-1">Pastikan izin kamera dan GPS aktif.</small>
+                                    </div>
+
+                                    <div id="file_upload_container" style="display: none;">
+                                        <input type="file" class="form-control" id="file_foto" name="file_foto"
+                                            accept="image/*">
+                                        <small class="text-muted">Pilih foto dari galeri (Koordinat tidak akan
+                                            direkam).</small>
+                                    </div>
+                                </div>
+
                                 <input type="hidden" name="foto_lokasi" id="foto_lokasi">
                                 <input type="hidden" name="latitude" id="latitude">
                                 <input type="hidden" name="longitude" id="longitude">
-
-                                <div id="camera_wrapper" style="display: none; margin-bottom: 15px;">
-                                    <label class="form-label">Foto Lokasi Visit</label>
-                                    <div id="camera"
-                                        style="width: 320px; height: 240px; border: 2px solid #ddd; border-radius: 5px;">
-                                    </div>
-                                    <small class="text-muted">Pastikan kamera aktif untuk aktivitas Visit</small>
-                                </div>
 
                                 <button type="submit" class="btn btn-primary" id="btnSubmitAktivitas">Simpan</button>
                             </form>
@@ -385,7 +409,7 @@
                         data.address.subdistrict || '',
                         data.address.state || ''
                     ].filter(Boolean).join(', ');
-                    
+
                     targetElement.innerHTML = `
                         <span title="${address}"><strong>${shortAddress}</strong></span><br>
                             <a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" class="ms-1 text-primary">
@@ -818,9 +842,8 @@
             $('#id_perusahaan').on('change', function() {
                 const perusahaanId = $(this).val();
                 contactSelect.innerHTML = `
-            <option value="" disabled selected>Pilih Kontak</option>
-            <option value="new" data-type="contact">+ Tambahkan Kontak Baru</option>
-        `;
+                <option value="" disabled selected>Pilih Kontak</option>
+                <option value="new" data-type="contact">+ Tambahkan Kontak Baru</option>`;
 
                 if (!perusahaanId) return;
 
@@ -896,10 +919,68 @@
                     $(cameraWrapper).hide();
                     Webcam.reset();
                 }
+
+                // Toggle hidden-container untuk PA, Form_Masuk, Form_Keluar
+                if (["PA", "Form_Masuk", "Form_Keluar"].includes(this.value)) {
+                    hiddenContainer.style.display = "block";
+                } else {
+                    hiddenContainer.style.display = "none";
+                    if (paxInput) paxInput.value = "";
+                    if (hargaInput) hargaInput.value = "";
+                }
+            });
+
+            $('input[name="upload_method"]').on('change', function() {
+                if (this.value === 'camera') {
+                    $('#live_camera_container').show();
+                    $('#file_upload_container').hide();
+                    $('#file_foto').val('');
+
+                    Webcam.attach('#camera');
+
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(function(position) {
+                            document.getElementById('latitude').value = position.coords.latitude;
+                            document.getElementById('longitude').value = position.coords.longitude;
+                        });
+                    }
+                } else {
+                    $('#live_camera_container').hide();
+                    $('#file_upload_container').show();
+
+                    Webcam.reset();
+
+                    document.getElementById('latitude').value = '';
+                    document.getElementById('longitude').value = '';
+                    document.getElementById('foto_lokasi').value = '';
+                }
             });
 
             $('#activityForm').on('submit', function(e) {
+                const activityType = $('#aktivitas').val();
+                const uploadMethod = $('input[name="upload_method"]:checked').val();
 
+                if (activityType === 'Visit') {
+                    if (uploadMethod === 'camera') {
+                        e.preventDefault();
+                        const form = this;
+
+                        Webcam.snap(function(data_uri) {
+                            document.getElementById('foto_lokasi').value = data_uri;
+
+                            if (!document.getElementById('latitude').value) {
+                                alert(
+                                    "Lokasi belum terdeteksi. Gunakan metode Upload jika GPS bermasalah.");
+                                return;
+                            }
+                            form.submit();
+                        });
+                    }
+                }
+            });
+
+            $('#activityForm').on('submit', function(e) {
+                // 1. Format Harga
                 const hargaEl = document.getElementById('harga');
                 if (hargaEl) {
                     const raw = unformatNumber(hargaEl.value);
@@ -907,23 +988,37 @@
                 }
 
                 const activityType = $('#aktivitas').val();
+                const uploadMethod = $('input[name="upload_method"]:checked').val();
 
                 if (activityType === 'Visit') {
-                    e.preventDefault();
-                    const form = this;
+                    if (uploadMethod === 'camera') {
+                        // Jika pilih kamera, pastikan snap diambil
+                        e.preventDefault();
+                        const form = this;
+                        Webcam.snap(function(data_uri) {
+                            document.getElementById('foto_lokasi').value = data_uri;
 
-                    Webcam.snap(function(data_uri) {
-                        document.getElementById('foto_lokasi').value = data_uri;
+                            if (!data_uri || data_uri.length < 100) {
+                                alert("Gagal mengambil foto dari kamera.");
+                                return;
+                            }
 
-                        if (!document.getElementById('latitude').value) {
-                            alert(
-                                "Lokasi belum terdeteksi. Silakan tunggu sebentar atau muat ulang halaman."
-                            );
-                            return;
+                            if (!document.getElementById('latitude').value) {
+                                alert(
+                                    "Lokasi belum terdeteksi. Silakan tunggu atau gunakan metode Upload.");
+                                return;
+                            }
+                            form.off('submit').submit(); // Gunakan off agar tidak looping event
+                        });
+                    } else {
+                        // Jika pilih upload, pastikan file dipilih
+                        const fileInput = document.getElementById('file_foto');
+                        if (fileInput.files.length === 0) {
+                            e.preventDefault();
+                            alert("Silakan pilih file foto terlebih dahulu.");
                         }
-
-                        form.submit();
-                    });
+                        // Biarkan submit normal untuk upload file
+                    }
                 }
             });
 
