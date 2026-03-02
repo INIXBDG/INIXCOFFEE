@@ -95,13 +95,7 @@
                                     <th>Client</th>
                                     <th>Sales</th>
                                     <th style="text-align: center;">Jenis Aktivitas</th>
-                                    <th>Deskripsi</th>
                                     <th style="text-align: center;">Waktu Aktivitas</th>
-                                    <th style="text-align: center;">Pax</th>
-                                    <th style="text-align: center;">Harga</th>
-                                    <th style="text-align: center;">Total</th>
-                                    <th style="text-align: center;">Foto</th>
-                                    <th style="text-align: center;">Lokasi</th>
                                     <th style="text-align: center;">Aksi</th>
                                 </tr>
                             </thead>
@@ -123,11 +117,11 @@
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title" id="activityModalLabel">Tambah Aktivitas</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                aria-label="Close"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            <form id="activityForm" action="{{ route('store.aktivitas.new') }}" method="POST" enctype="multipart/form-data">
+                            <form id="activityForm" action="{{ route('store.aktivitas.new') }}" method="POST"
+                                enctype="multipart/form-data">
                                 @csrf
                                 <input type="hidden" id="contact_type" name="contact_type" value="contact">
 
@@ -368,6 +362,94 @@
                     </form>
                 </div>
             </div>
+
+            <div class="modal fade" id="detailActivityModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Detail Aktivitas</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <strong>Client:</strong>
+                                    <div id="detail_client"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Sales:</strong>
+                                    <div id="detail_sales"></div>
+                                </div>
+                            </div>
+
+                            <hr>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <strong>Email:</strong>
+                                    <div id="detail_email"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>No Telepon:</strong>
+                                    <div id="detail_phone"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <strong>Perusahaan:</strong>
+                                <div id="detail_perusahaan"></div>
+                            </div>
+
+                            <hr>
+
+                            <div class="mb-3">
+                                <strong>Jenis Aktivitas:</strong>
+                                <div id="detail_aktivitas"></div>
+                            </div>
+
+                            <div class="mb-3">
+                                <strong>Deskripsi:</strong>
+                                <div id="detail_deskripsi"></div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <strong>Pax:</strong>
+                                    <div id="detail_pax"></div>
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Harga:</strong>
+                                    <div id="detail_harga"></div>
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Total:</strong>
+                                    <div id="detail_total"></div>
+                                </div>
+                            </div>
+
+                            <hr>
+
+                            <div class="mb-3">
+                                <strong>Lokasi:</strong>
+                                <div id="detail_lokasi"></div>
+                            </div>
+
+                            <div class="mb-3">
+                                <strong>Foto Lokasi:</strong><br>
+                                <img id="detail_foto_lokasi" src="" class="img-fluid rounded shadow-sm"
+                                    style="max-height:300px; display:none;">
+                            </div>
+
+                            <div class="mt-3">
+                                <strong>Waktu Aktivitas:</strong>
+                                <div id="detail_waktu"></div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -476,63 +558,27 @@
                         data: 'aktivitas'
                     },
                     {
-                        data: 'deskripsi'
-                    },
-                    {
                         data: 'waktu_aktivitas'
                     },
-                    {
-                        data: 'pax',
-                        render: d => d ? d : '-'
-                    },
-                    {
-                        data: 'harga',
-                        render: d => d ? formatNumber(d) : '-'
-                    },
-                    {
-                        data: 'total',
-                        render: d => d ? formatNumber(d) : '-'
-                    },
-                    {
-                        data: 'foto_lokasi',
-                        render: function(data) {
-                            if (data) {
-                                return `<img src="/${data}" alt="Foto" style="width: 80px; height: auto; border-radius: 5px; cursor: pointer;" 
-                    onclick="window.open(this.src)" class="img-thumbnail">`;
-                            }
-                            return '<span class="text-muted">-</span>';
-                        },
-                        className: "text-center"
-                    },
-                    {
-                        data: null,
-                        render: function(data, type, row) {
-                            const lat = row.latitude;
-                            const lng = row.longitude;
 
-                            if (!lat || !lng)
-                                return '<span class="text-muted">Koordinat tidak ada</span>';
-
-                            const cellId = `loc-${row.id}`;
-
-                            updateAddressText(lat, lng, cellId);
-
-                            return `<div id="${cellId}" class="small"><i class="fa fa-spinner fa-spin"></i> Mencari alamat...</div>`;
-                        },
-                        className: "text-start"
-                    },
                     {
                         data: 'id',
                         render: function(id, type, row) {
                             const isDisabled = row.aktivitas === 'DB';
                             return `
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-sm btn-warning"
-                            ${isDisabled ? 'disabled' : ''}
-                            onclick='editAktivitas(${JSON.stringify(row)})'>Edit</button>
-                        <button class="btn btn-sm btn-danger"
-                            onclick="hapusAktivitas(${id})">Hapus</button>
-                    </div>`;
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-info"
+                                    onclick='showDetail(${JSON.stringify(row)})'>
+                                    Detail
+                                </button>
+
+                                <button class="btn btn-sm btn-warning"
+                                    ${isDisabled ? 'disabled' : ''}
+                                    onclick='editAktivitas(${JSON.stringify(row)})'>Edit</button>
+
+                                <button class="btn btn-sm btn-danger"
+                                    onclick="hapusAktivitas(${id})">Hapus</button>
+                            </div>`;
                         }
                     }
                 ]
@@ -743,37 +789,27 @@
             }
         }
 
-        // ===============================
-        // 🔹 Fungsi Edit Aktivitas
-        // ===============================
         function editAktivitas(row) {
             console.log('🔍 Data row:', row);
 
             $('#edit_id').val(row.id);
 
-            // Simpan tipe contact (dari backend harus mengirim field 'contact_type')
-            const contactType = row.contact_type || 'contact'; // default 'contact'
+            const contactType = row.contact_type || 'contact';
             $('#edit_contact_type').val(contactType);
 
-            // Toggle tampilan berdasarkan tipe
             if (contactType === 'contact') {
-                // Tampilkan Select2, sembunyikan readonly
                 $('#edit_contact_select_wrapper').show();
                 $('#edit_contact_readonly_wrapper').hide();
 
-                // Set value select2 dan trigger change untuk memilih option
                 $('#edit_id_contact').val(row.id_contact).trigger('change');
             } else {
-                // Tampilkan readonly, sembunyikan Select2
                 $('#edit_contact_select_wrapper').hide();
                 $('#edit_contact_readonly_wrapper').show();
 
-                // Set value untuk readonly dan hidden input
                 $('#edit_contact_display').val(row.kontak || '-');
                 $('#edit_id_contact_hidden').val(row.id_contact);
             }
 
-            // Set aktivitas
             let aktivitasValue = row.aktivitas;
             const map = {
                 'Form Masuk': 'Form_Masuk',
@@ -783,7 +819,6 @@
             aktivitasValue = map[aktivitasValue] || aktivitasValue;
             $('#edit_aktivitas').val(aktivitasValue);
 
-            // Set fields lainnya
             $('#edit_deskripsi').val(row.deskripsi);
             $('#edit_pax').val(row.pax || '');
             $('#edit_harga').val(row.harga ? formatNumber(row.harga) : '');
@@ -792,7 +827,6 @@
             $('#edit_waktu_aktivitas').val(parts.length === 3 ?
                 `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}` : '');
 
-            // Toggle hidden container untuk pax & harga
             const editHiddenContainer = document.getElementById('edit-hidden-container');
             if (['PA', 'Form_Masuk', 'Form_Keluar'].includes(aktivitasValue)) {
                 editHiddenContainer.style.display = 'block';
@@ -805,9 +839,54 @@
             new bootstrap.Modal(document.getElementById('editActivityModal')).show();
         }
 
-        // ===============================
-        // 🔹 Fungsi Hapus Aktivitas
-        // ===============================
+        function showDetail(row) {
+
+            $('#detail_client').text(row.kontak || '-');
+            $('#detail_sales').text(row.sales_detail?.nama || row.id_sales || '-');
+
+            $('#detail_email').text(row.contact_detail?.email || '-');
+            $('#detail_phone').text(row.contact_detail?.no_telepon || '-');
+            $('#detail_perusahaan').text(row.contact_detail?.perusahaan?.nama_perusahaan || '-');
+
+            $('#detail_aktivitas').text(row.aktivitas || '-');
+            $('#detail_deskripsi').text(row.deskripsi || '-');
+
+            $('#detail_pax').text(row.pax || '-');
+            $('#detail_harga').text(row.harga ? formatNumber(row.harga) : '-');
+            $('#detail_total').text(row.total ? formatNumber(row.total) : '-');
+
+            $('#detail_waktu').text(row.waktu_aktivitas || '-');
+
+            if (row.latitude && row.longitude) {
+                    const lat = row.latitude;
+                    const lng = row.longitude;
+                    if (!lat || !lng) {
+                        $('#detail_lokasi').html('<span class="text-muted">Koordinat tidak valid</span>');
+                    } else {
+                        $('#detail_lokasi').html(`
+                            <div id="modal_loc_text" class="small">
+                                Mencari alamat...
+                            </div>
+                        `);
+                        updateAddressText(lat, lng, 'modal_loc_text');
+                    }
+                } else {
+                    $('#detail_lokasi').html('<span class="text-muted">Tidak ada lokasi</span>');
+                }
+
+                if (row.foto_lokasi) {
+                    $('#detail_foto_lokasi')
+                        .attr('src', '/' + row.foto_lokasi) 
+                        .show();
+                } else {
+                    $('#detail_foto_lokasi')
+                        .hide()
+                        .attr('src', '');
+                }
+
+            new bootstrap.Modal(document.getElementById('detailActivityModal')).show();
+        }
+
         function hapusAktivitas(id) {
             if (!confirm("Yakin ingin menghapus aktivitas ini?")) return;
             fetch(`{{ url('crm/aktivitas/delete') }}/${id}`, {
@@ -838,7 +917,6 @@
             const isAllowedUser = window.isAllowedUser || false;
             loadSemuaTargetAktivitas(isAllowedUser);
 
-            // Ambil kontak saat perusahaan dipilih
             $('#id_perusahaan').on('change', function() {
                 const perusahaanId = $(this).val();
                 contactSelect.innerHTML = `
@@ -884,7 +962,6 @@
                     });
             });
 
-            // Tampilkan form kontak baru jika pilih "new"
             $('#id_contact').on('change', function() {
                 const selectedOption = this.options[this.selectedIndex];
                 const type = selectedOption ? (selectedOption.dataset.type || "contact") : "contact";
@@ -970,7 +1047,8 @@
 
                             if (!document.getElementById('latitude').value) {
                                 alert(
-                                    "Lokasi belum terdeteksi. Gunakan metode Upload jika GPS bermasalah.");
+                                    "Lokasi belum terdeteksi. Gunakan metode Upload jika GPS bermasalah."
+                                );
                                 return;
                             }
                             form.submit();
@@ -1005,7 +1083,8 @@
 
                             if (!document.getElementById('latitude').value) {
                                 alert(
-                                    "Lokasi belum terdeteksi. Silakan tunggu atau gunakan metode Upload.");
+                                    "Lokasi belum terdeteksi. Silakan tunggu atau gunakan metode Upload."
+                                );
                                 return;
                             }
                             form.off('submit').submit(); // Gunakan off agar tidak looping event

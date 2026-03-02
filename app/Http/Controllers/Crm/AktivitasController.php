@@ -165,6 +165,10 @@ class AktivitasController extends Controller
                     $namaKontak = null;
                     $namaPerusahaan = null;
                     $idContact = null;
+                    $relasi = $item->id_peserta
+                        ? $item->peserta
+                        : $item->contact;
+                    $perusahaan = $relasi?->perusahaan;
 
                     if (!empty($item->id_peserta)) {
                         $namaKontak = $item->peserta?->nama;
@@ -214,6 +218,16 @@ class AktivitasController extends Controller
                         'deskripsi' => $deskripsi,
                         'waktu_aktivitas' => \Carbon\Carbon::parse($item->waktu_aktivitas)->format('d/m/Y'),
                         'id_contact' => $idContact,
+                        'contact_detail' => [
+                            'id' => $relasi?->id,
+                            'nama' => $relasi?->nama,
+                            'email' => $relasi?->email ?? null,
+                            'no_telepon' => $relasi?->no_telepon ?? null,
+                            'perusahaan' => [
+                                'id' => $perusahaan?->id,
+                                'nama_perusahaan' => $perusahaan?->nama_perusahaan,
+                            ]
+                        ],
                         'foto_lokasi' => $item->foto_lokasi,
                         'longitude' => $item->longitude,
                         'latitude' => $item->latitude,
