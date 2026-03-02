@@ -417,6 +417,16 @@
                             </div>
 
                             <div class="mb-3">
+                                <label for="final" class="form-label">Harga Final</label>
+                                <input type="text" class="form-control editLead" id="final" name="final"
+                                    value="{{ old('final', 'Rp ' . number_format($peluang->final, 0, ',', '.')) }}"
+                                    required>
+                                @error('final')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="mb-3">
                                 <label for="pax" class="form-label">Jumlah Peserta (Pax)</label>
                                 <input type="number" class="form-control" id="pax" name="pax" min="1"
                                     value="{{ old('pax', $peluang->pax) }}" required>

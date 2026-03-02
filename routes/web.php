@@ -594,7 +594,6 @@ Route::prefix('crm')->group(function () {
     Route::get('/aktivitas', [AktivitasController::class, 'index'])->name('index.aktivitas');
     Route::get('/index/aktivitas', [AktivitasController::class, 'indexJson'])->name('index.aktivitas.json');
     Route::post('/aktivitas/store/new', [AktivitasController::class, 'storeNew'])->name('store.aktivitas.new');
-    Route::post('/aktivitas/store', [AktivitasController::class, 'store'])->name('store.aktivitas');
     Route::delete('/aktivitas/delete/{id}', [AktivitasController::class, 'delete'])->name('delete.aktivitas');
     Route::put('/aktivitas/update/{id}', [AktivitasController::class, 'update'])->name('update.aktivitas');
     Route::get('/get-contacts-peserta/{id}', [AktivitasController::class, 'getContactsAndPeserta'])->name('get.contacts');

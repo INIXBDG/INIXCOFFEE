@@ -447,10 +447,12 @@
                     </option>
                 @endforeach
             @endif
-        </select>
+        </select><br><br>
 
         <label>Nama Pimpinan/Perusahaan:</label>
-        <input type="text" id="penerima">
+        <input type="text" id="penerima"><br><br>
+        <label>Divisi:</label>
+        <input type="text" id="divisi">
 
         <h3>Deskripsi</h3>
         <label>Deskripsi Penawaran:</label>
@@ -903,6 +905,8 @@
             const hal = document.getElementById('hal').value || '';
             const lampiran = document.getElementById('lampiran').value || '';
             const penerima = document.getElementById('penerima').value || '';
+            const divisi = document.getElementById('divisi').value || '';
+            const perusahaan = document.getElementById('perusahaan').options[document.getElementById('perusahaan').selectedIndex].getAttribute('data-nama') || '';
             const namaSales = document.getElementById('nama-sales').value || '';
             const jabatanSales = document.getElementById('jabatan-sales').value || '';
             const waSales = document.getElementById('wa-sales').value || '';
@@ -1050,6 +1054,48 @@
             `;
 
             // --- firstPageContent ---
+            let showExamColumn = false;
+            try {
+                const parser = new DOMParser();
+                const pelatihanDoc = parser.parseFromString(`<table><tbody>${pelatihanHTML}</tbody></table>`, 'text/html');
+                const rows = pelatihanDoc.querySelectorAll('tr');
+                for (const row of rows) {
+                    const tds = row.querySelectorAll('td');
+                    if (tds.length >= 3) {
+                        const examVal = tds[2].textContent.trim();
+                        if (examVal && examVal !== '-') {
+                            showExamColumn = true;
+                            break;
+                        }
+                    }
+                }
+            } catch (e) { showExamColumn = true; }
+
+            let tableHeader = `
+                <th style="width: 27%;">Materi Pelatihan</th>
+                <th style="width: 10%;">Metode</th>
+                ${showExamColumn ? '<th style="width: 20%;">Exam</th>' : ''}
+                <th style="width: 15%;">Durasi</th>
+                <th style="width: 15%;">Tanggal</th>
+                <th style="width: 13%;">Harga ${includePPN ? `(PPN ${ppnRate}%)` : ''}</th>
+            `;
+
+            let pelatihanHTMLMod = pelatihanHTML;
+            if (!showExamColumn) {
+                try {
+                    const parser = new DOMParser();
+                    const pelatihanDoc = parser.parseFromString(`<table><tbody>${pelatihanHTML}</tbody></table>`, 'text/html');
+                    const rows = pelatihanDoc.querySelectorAll('tr');
+                    rows.forEach(row => {
+                        const tds = row.querySelectorAll('td');
+                        if (tds.length >= 3) {
+                            tds[2].remove();
+                        }
+                    });
+                    pelatihanHTMLMod = Array.from(rows).map(r => r.outerHTML).join('');
+                } catch (e) {}
+            }
+
             let firstPageContent = `
                 <div class="container">
                     <img src="${backgroundUrl}" class="background-image" alt="Background">
@@ -1075,6 +1121,8 @@
                         <div class="penerima text-sm text-gray-700">
                             <p>Kepada Yth.</p>
                             <p>${penerima}</p>
+                            <p>${divisi}</p>
+                            <p>${perusahaan}</p>
                             <p>Di Tempat</p>
                         </div>
                         <div class="deskripsi text-sm text-gray-800">
@@ -1083,16 +1131,11 @@
                             <table class="training-table">
                                 <thead>
                                     <tr>
-                                        <th style="width: 27%;">Materi Pelatihan</th>
-                                        <th style="width: 10%;">Metode</th>
-                                        <th style="width: 20%;">Exam</th>
-                                        <th style="width: 15%;">Durasi</th>
-                                        <th style="width: 15%;">Tanggal</th>
-                                        <th style="width: 13%;">Harga ${includePPN ? `(PPN ${ppnRate}%)` : ''}</th>
+                                        ${tableHeader}
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    ${pelatihanHTML}
+                                    ${pelatihanHTMLMod}
                                 </tbody>
                             </table>
                         </div>
@@ -1104,86 +1147,11 @@
                         </div>
             `;
 
-            // Tambahkan keuntungan jika ada Online
-            // if (hasOnline) {
-            //     firstPageContent += `
-            //                         <div class="terms text-sm text-gray-800">
-            //                             ${keuntunganSection}
-            //                         </div>
-            //                 `;
-            // }
-
-            // firstPageContent += `
-            //                     </div>
-            //                 </div>
-            //             `;
-
-            // // --- secondPageContent (hanya jika TIDAK ada Online) ---
-            // let secondPageContent = '';
-
-            // if (!hasOnline) {
-            //     secondPageContent = `
-            //         <div class="container">
-            //             <div class="content-container">
-            //                 <img src="${backgroundUrl}" class="background-image" alt="Background">
-            //                 <div class="keuntungan-closing-container">
-            //                     <div class="terms text-sm text-gray-800">
-            //                         ${keuntunganSection}
-            //                     </div>
-            //                     <div class="closing text-sm text-gray-700">
-            //                         <p>Demikian surat penawaran ini kami sampaikan. Besar harapan kami dapat bekerja sama dengan Bapak/Ibu.</p>
-            //                         <p style="margin-bottom:9mm;"><strong>Untuk informasi lebih lanjut dan penyesuaian harga maupun fasilitas, mohon hubungi:</strong></p>
-            //                         <p class="contact-info"><span class="label">Whatsapp</span><span class="value">: ${waSales}</span></p>
-            //                         <p class="contact-info"><span class="label">Telepon</span><span class="value">: ${telpSales}</span></p>
-            //                         <p class="contact-info"><span class="label">Email</span><span class="value"><a href="mailto:${emailSales}" style="text-decoration:none; color: black;">: ${emailSales}</a></span></p>
-            //                         <br />
-            //                         <p class="mt-2">Hormat kami,</p>
-            //                         <p class="font-bold">INIXINDO BANDUNG</p>
-            //                         <div class="signature">
-            //                             ${signatureHTML}
-            //                             <p><strong>${namaSales}</strong></p>
-            //                             <p>${jabatanSales},</p>
-            //                             <p>Inixindo Bandung</p>
-            //                         </div>
-            //                         ${vendorImagesHTML}
-            //                     </div>
-            //                 </div>
-            //             </div>
-            //         </div>
-            //     `;
-            // } else {
-            //     secondPageContent = `
-            //         <div class="container">
-            //             <div class="content-container">
-            //                 <img src="${backgroundUrl}" class="background-image" alt="Background">
-            //                 <div class="closing text-sm text-gray-700" style="margin-top: 10mm;">
-            //                     <p>Demikian surat penawaran ini kami sampaikan. Besar harapan kami dapat bekerja sama dengan Bapak/Ibu.</p>
-            //                     <p style="margin-bottom:9mm;"><strong>Untuk informasi lebih lanjut dan penyesuaian harga maupun fasilitas, mohon hubungi:</strong></p>
-            //                     <p class="contact-info"><span class="label">Whatsapp</span><span class="value">: ${waSales}</span></p>
-            //                     <p class="contact-info"><span class="label">Telepon</span><span class="value">: ${telpSales}</span></p>
-            //                     <p class="contact-info"><span class="label">Email</span><span class="value"><a href="mailto:${emailSales}" style="text-decoration:none; color: black;">: ${emailSales}</a></span></p>
-            //                     <br />
-            //                     <p class="mt-2">Hormat kami,</p>
-            //                     <p class="font-bold">INIXINDO BANDUNG</p>
-            //                     <div class="signature">
-            //                         ${signatureHTML}
-            //                         <p><strong>${namaSales}</strong></p>
-            //                         <p>${jabatanSales},</p>
-            //                         <p>Inixindo Bandung</p>
-            //                     </div>
-            //                     ${vendorImagesHTML}
-            //                 </div>
-            //             </div>
-            //         </div>
-            //     `;
-            // }
-
             firstPageContent += `
                                 </div>
                             </div>
                         `;
 
-            // --- secondPageContent ---
             let secondPageContent = `
                 <div class="container">
                     <div class="content-container">
@@ -1214,7 +1182,6 @@
                 </div>
             `;
 
-            // Generate PDF
             await generatePDF(firstPageContent, secondPageContent);
         });
 
@@ -1225,7 +1192,6 @@
                 format: 'a4'
             });
 
-            // CSS styles for PDF rendering
             const styles = `
                 <style>
                     body {
@@ -1300,7 +1266,6 @@
                 </style>
             `;
 
-            // Create temporary containers for rendering
             const tempContainer = document.createElement('div');
             tempContainer.style.position = 'absolute';
             tempContainer.style.top = '-9999px';
@@ -1308,7 +1273,6 @@
             tempContainer.style.height = '297mm';
             document.body.appendChild(tempContainer);
 
-            // Render first page
             tempContainer.innerHTML = `<html><head>${styles}</head><body>${firstPageContent}</body></html>`;
             let canvas = await html2canvas(tempContainer, {
                 scale: 2,
@@ -1321,10 +1285,8 @@
             const imgData = canvas.toDataURL('image/png');
             doc.addImage(imgData, 'PNG', 0, 0, 210, 297);
 
-            // Add new page for keuntungan and closing
             doc.addPage();
 
-            // Render second page
             tempContainer.innerHTML = `<html><head>${styles}</head><body>${secondPageContent}</body></html>`;
             canvas = await html2canvas(tempContainer, {
                 scale: 2,
@@ -1337,10 +1299,8 @@
             const imgData2 = canvas.toDataURL('image/png');
             doc.addImage(imgData2, 'PNG', 0, 0, 210, 297);
 
-            // Clean up
             document.body.removeChild(tempContainer);
 
-            // Download PDF
             doc.save('Surat_Penawaran.pdf');
         }
 
