@@ -303,7 +303,7 @@
                         $auth = Auth()->user()->jabatan;
                     @endphp
 
-                    @if ($auth === 'Koordinator ITSM')
+                    @if ($auth === 'Koordinator ITSM' || $auth === 'GM' || $auth === 'HRD' || $auth === 'Direktur Utama' || $auth === 'Direktur')
                         <li class="nav-item">
                             <a class="nav-link" style="margin-left: -10px;">
                                 <span class="menu-title">KPI</span>
@@ -331,7 +331,7 @@
                         </li>
                     @endif
 
-                    @if ($auth === 'Technical Support' || $auth === 'Tim Digital' || $auth === 'Programmer')
+                    @if ($auth === 'Technical Support' || $auth === 'Tim Digital' || $auth === 'Programmer' || $auth === 'Customer Care')
                         <li class="nav-item {{ Request::routeIs('kpi.overview.indexPersonal') ? 'active' : '' }}">
                             <a class="nav-link" href="{{ route('kpi.overview.indexPersonal') }}">
                                 <span class="menu-title">Overview Personal</span>

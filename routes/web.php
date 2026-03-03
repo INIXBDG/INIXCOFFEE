@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\KPI\DatabaseKPIController;
+use App\Http\Controllers\KPI\TargetKPIController;
 use App\Models\Contact;
 use App\Models\Inventaris;
 use App\Models\izinTigaJam;
@@ -163,7 +165,7 @@ Route::resource('/suratperjalanan', \App\Http\Controllers\SuratPerjalananControl
 Route::resource('/rekapitulasiabsen', \App\Http\Controllers\RekapitulasiAbsenController::class);
 Route::resource('/kelasanalisis', \App\Http\Controllers\KelasAnalisisController::class);
 Route::resource('/paymantAdvance', \App\Http\Controllers\netSalesController::class)->except(['show']);
-Route::resource('/databasekpi', KPIDatabaseKPIController::class);
+Route::resource('/databasekpi', DatabaseKPIController::class);
 
 Route::resource('/target', \App\Http\Controllers\targetController::class);
 Route::resource('/outstanding', OutstandingController::class);
@@ -212,8 +214,8 @@ Route::put('/userRolePermissions/{id}/update', [App\Http\Controllers\UserControl
 Route::get('inixcoffeeloglarapelixb95', [LogViewerController::class, 'index'])
     ->middleware('logviewer.access');
 
-Route::get('GetDatabasekpi', [KPIDatabaseKPIController::class, 'getData'])->name('GetDatabaseKPI');
-Route::get('GetDatabasekpi/profile', [KPIDatabaseKPIController::class, 'getDataProfile'])->name('GetDataProfile.kpi');
+Route::get('GetDatabasekpi', [DatabaseKPIController::class, 'getData'])->name('GetDatabaseKPI');
+Route::get('GetDatabasekpi/profile', [DatabaseKPIController::class, 'getDataProfile'])->name('GetDataProfile.kpi');
 Route::get('getPerusahaanById', [App\Http\Controllers\PerusahaanController::class, 'getPerusahaanById'])->name('getPerusahaanById');
 Route::get('getRegistrasiall', [App\Http\Controllers\RegistrasiController::class, 'getRegistrasiall'])->name('getRegistrasiall');
 Route::get('getPesertaall', [App\Http\Controllers\PesertaController::class, 'getPesertaall'])->name('getPesertaall');
@@ -400,38 +402,38 @@ Route::prefix('kpi-data/')->name('kpi.')->middleware(['auth'])->group(function (
 });
 
 //Project KPI
-route::get('project/table-data', [KPIDatabaseKPIController::class, 'indexProject'])->name('project.index');
-route::get('project/control-project', [KPIDatabaseKPIController::class, 'controlProject'])->name('project.control');
+route::get('project/table-data', [DatabaseKPIController::class, 'indexProject'])->name('project.index');
+route::get('project/control-project', [DatabaseKPIController::class, 'controlProject'])->name('project.control');
 
 //Penilaian
-route::get('penilaian/data-form/edit/{kode_form}', [KPIDatabaseKPIController::class, 'formPenilaianEdit']);
-route::post('penilaian/data-form/update', [KPIDatabaseKPIController::class, 'formPenilaianUpdate'])->name('penilaian.form.update');
-Route::get('/penilaian/form', [KPIDatabaseKPIController::class, 'formPenilaianData'])->name('penilaian.form.data');
-Route::get('/penilaian/form/get', [KPIDatabaseKPIController::class, 'getFormPenilaianData'])->name('penilaian.form.get');
-Route::post('/penilaian/clean', [KPIDatabaseKPIController::class, 'clean']);
-Route::post('/penilaian/hapus', [KPIDatabaseKPIController::class, 'hapus']);
-Route::post('/penilaian/hapus-evaluator/{kodeJenis}/{id_evaluator}/{kodeFormGlobal}', [KPIDatabaseKPIController::class, 'hapusEvaluator']);
-Route::get('/penilaian/content/dahsboardKPI/get', [KPIDatabaseKPIController::class, 'contentDashboard'])->name('databaseKPI.dashboardContent');
-Route::post('/penilaian/content/dahsboardKPI/download-penilaian-perDivisi', [KPIDatabaseKPIController::class, 'downloadDivisi'])->name('databaseKPI.downloadDivisi');
-Route::post('/penilaian/detail/send/catatan', [KPIDatabaseKPIController::class, 'sendCatatan'])->name('penilaian.sendCatatan');
-Route::post('/download-pdf/penilaian-360', [KPIDatabaseKPIController::class, 'downloadPDF'])->name('penilaian.download.pdf');
-Route::post('/kirimPenilaian', [KPIDatabaseKPIController::class, 'kirimEmailData'])->name('penilaian.email');
-Route::get('/penilaian/detail/data-penilaian/{kodeForm}/{id_karyawan}/{tipe}', [KPIDatabaseKPIController::class, 'detailPenilaian'])->name('penilaian.detail');
-Route::post('/penilaian/get/detail/data-penilaian', [KPIDatabaseKPIController::class, 'GetDetailPenilaian'])->name('penilaian.detail.get');
-Route::post('/penilaian/get/detail/data-chart-penilaian', [KPIDatabaseKPIController::class, 'getDetailChartPenilaian'])->name('penilaian.detailChart.get');
-Route::post('penilaian/reviewPenilaian', [KPIDatabaseKPIController::class, 'penilaianReview'])->name('penilaianReview');
-Route::get('reviewPenilaian/{kodeForm}/{evaluatorId}/{jenis_penilaian}/{idKaryawan}', [KPIDatabaseKPIController::class, 'reviewPenilaian']);
-Route::post('penilaianEvaluator/kirim', [KPIDatabaseKPIController::class, 'penilaianEvaluator'])->name('penilaianEvaluator');
-Route::get('/getFormPenilaian/{kode_form}/{id_karyawan}', [KPIDatabaseKPIController::class, 'getFromPenilaian'])->name('penilaian.share');
-Route::get('/getFormPenilaianUser/{id_evaluator}', [KPIDatabaseKPIController::class, 'getFromPenilaianUser'])->name('penilaian.shareUser');
-Route::post('/shareFormPenilaian', [KPIDatabaseKPIController::class, 'shareForm'])->name('penilaian.shareForm');
-Route::get('/getDataPenilaian', [KPIDatabaseKPIController::class, 'getDataPenilaian'])->name('penilaian.get.data');
-Route::get('/getKategorikpi', [KPIDatabaseKPIController::class, 'indexKategori'])->name('ketegoriKPI.get');
-Route::get('/beranda-KPI', [KPIDatabaseKPIController::class, 'indexBerandaKpi'])->name('berandaKPI.get');
-Route::get('/createKategorikpi', [KPIDatabaseKPIController::class, 'createKategori'])->name('ketegori.kpi.create');
-Route::post('/storeKategorikpi', [KPIDatabaseKPIController::class, 'kategoriStore'])->name('ketegori.kpi.store');
-Route::get('/penilaian360/index/{id_karyawan}', [KPIDatabaseKPIController::class, 'index360'])->name('penilaian360');
-Route::get('/penilaian360/get/{id_karyawan}', [KPIDatabaseKPIController::class, 'get360'])->name('get360');
+route::get('penilaian/data-form/edit/{kode_form}', [DatabaseKPIController::class, 'formPenilaianEdit']);
+route::post('penilaian/data-form/update', [DatabaseKPIController::class, 'formPenilaianUpdate'])->name('penilaian.form.update');
+Route::get('/penilaian/form', [DatabaseKPIController::class, 'formPenilaianData'])->name('penilaian.form.data');
+Route::get('/penilaian/form/get', [DatabaseKPIController::class, 'getFormPenilaianData'])->name('penilaian.form.get');
+Route::post('/penilaian/clean', [DatabaseKPIController::class, 'clean']);
+Route::post('/penilaian/hapus', [DatabaseKPIController::class, 'hapus']);
+Route::post('/penilaian/hapus-evaluator/{kodeJenis}/{id_evaluator}/{kodeFormGlobal}', [DatabaseKPIController::class, 'hapusEvaluator']);
+Route::get('/penilaian/content/dahsboardKPI/get', [DatabaseKPIController::class, 'contentDashboard'])->name('databaseKPI.dashboardContent');
+Route::post('/penilaian/content/dahsboardKPI/download-penilaian-perDivisi', [DatabaseKPIController::class, 'downloadDivisi'])->name('databaseKPI.downloadDivisi');
+Route::post('/penilaian/detail/send/catatan', [DatabaseKPIController::class, 'sendCatatan'])->name('penilaian.sendCatatan');
+Route::post('/download-pdf/penilaian-360', [DatabaseKPIController::class, 'downloadPDF'])->name('penilaian.download.pdf');
+Route::post('/kirimPenilaian', [DatabaseKPIController::class, 'kirimEmailData'])->name('penilaian.email');
+Route::get('/penilaian/detail/data-penilaian/{kodeForm}/{id_karyawan}/{tipe}', [DatabaseKPIController::class, 'detailPenilaian'])->name('penilaian.detail');
+Route::post('/penilaian/get/detail/data-penilaian', [DatabaseKPIController::class, 'GetDetailPenilaian'])->name('penilaian.detail.get');
+Route::post('/penilaian/get/detail/data-chart-penilaian', [DatabaseKPIController::class, 'getDetailChartPenilaian'])->name('penilaian.detailChart.get');
+Route::post('penilaian/reviewPenilaian', [DatabaseKPIController::class, 'penilaianReview'])->name('penilaianReview');
+Route::get('reviewPenilaian/{kodeForm}/{evaluatorId}/{jenis_penilaian}/{idKaryawan}', [DatabaseKPIController::class, 'reviewPenilaian']);
+Route::post('penilaianEvaluator/kirim', [DatabaseKPIController::class, 'penilaianEvaluator'])->name('penilaianEvaluator');
+Route::get('/getFormPenilaian/{kode_form}/{id_karyawan}', [DatabaseKPIController::class, 'getFromPenilaian'])->name('penilaian.share');
+Route::get('/getFormPenilaianUser/{id_evaluator}', [DatabaseKPIController::class, 'getFromPenilaianUser'])->name('penilaian.shareUser');
+Route::post('/shareFormPenilaian', [DatabaseKPIController::class, 'shareForm'])->name('penilaian.shareForm');
+Route::get('/getDataPenilaian', [DatabaseKPIController::class, 'getDataPenilaian'])->name('penilaian.get.data');
+Route::get('/getKategorikpi', [DatabaseKPIController::class, 'indexKategori'])->name('ketegoriKPI.get');
+Route::get('/beranda-KPI', [DatabaseKPIController::class, 'indexBerandaKpi'])->name('berandaKPI.get');
+Route::get('/createKategorikpi', [DatabaseKPIController::class, 'createKategori'])->name('ketegori.kpi.create');
+Route::post('/storeKategorikpi', [DatabaseKPIController::class, 'kategoriStore'])->name('ketegori.kpi.store');
+Route::get('/penilaian360/index/{id_karyawan}', [DatabaseKPIController::class, 'index360'])->name('penilaian360');
+Route::get('/penilaian360/get/{id_karyawan}', [DatabaseKPIController::class, 'get360'])->name('get360');
 
 Route::post('/pengajuan-klaim/excel-download', [pengajuanKlaimController::class, 'pengajuanKlaimExcel'])->name('pengajuanklaim.excel');
 Route::post('/pengajuan-klaim/pdf-download', [pengajuanKlaimController::class, 'pengajuanKlaimPDF'])->name('pengajuanklaim.PDF');
@@ -770,8 +772,8 @@ Route::patch('/registry/{tugas}/start', [App\Http\Controllers\RegistryFeatureCon
 Route::patch('/registry/{tugas}/finish', [App\Http\Controllers\RegistryFeatureController::class, 'finishTask'])
     ->name('registry.finish');
 
-route::get('activity-log', [KPIDatabaseKPIController::class, 'activityLog'])->name('activity.log');
-route::get('activity-log/data', [KPIDatabaseKPIController::class, 'getActivityChart'])->name('activity.log.chart');
+route::get('activity-log', [DatabaseKPIController::class, 'activityLog'])->name('activity.log');
+route::get('activity-log/data', [DatabaseKPIController::class, 'getActivityChart'])->name('activity.log.chart');
 
 // survey kepuasan
 Route::get('/survey/kepuasan', [App\Http\Controllers\SurveyKepuasanController::class, 'index'])->name('surveykepuasan.index');

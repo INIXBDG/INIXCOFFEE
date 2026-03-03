@@ -1971,6 +1971,7 @@
                     options += `
                         <option value="peserta puas dengan pelayanan dan fasilitas training">Peserta Puas Dengan Pelayanan & Fasilitas Training</option>
                         <option value="dorong inovasi pelayanan">Dorong Inovasi Pelayanan</option>
+                        <option value="report persiapan kelas">Report Persiapan Kelas</option>
                     `;
                 }
                 //Finanace
