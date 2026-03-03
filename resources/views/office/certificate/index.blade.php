@@ -219,7 +219,7 @@
                         <td>
                             <div class="d-flex flex-column small text-center">
                                 <span class="text-muted mb-1">
-                                    ${item.tanggal_akhir} <i class="bx bx-right-arrow-alt me-1"></i>${item.tanggal_awal}
+                                    ${item.tanggal_awal} <i class="bx bx-right-arrow-alt me-1"></i> ${item.tanggal_akhir} 
                                 </span>
                             </div>
                         </td>
