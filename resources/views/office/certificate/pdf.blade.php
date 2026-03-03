@@ -78,20 +78,20 @@
         }
 
         .period-section {
-              position: absolute;
-              top: 440px;
-              left: 120px;
-              font-size: 25px;
-              color: #333;
-              font-style: italic;
+            position: absolute;
+            top: 440px;
+            left: 120px;
+            font-size: 25px;
+            color: #333;
+            font-style: italic;
         }
 
-           .signature-section {
-              margin-top: 25px;
-              position: absolute;
-              bottom: 28px;
-              left: 135px;
-              text-align: center;
+        .signature-section {
+            margin-top: 25px;
+            position: absolute;
+            bottom: 28px;
+            left: 135px;
+            text-align: center;
         }
 
         .signature-image {
@@ -142,12 +142,24 @@
                 $dates = explode(' - ', $certificate->tanggal_pelatihan ?? '');
                 $awal = $dates[0] ?? null;
                 $akhir = $dates[1] ?? null;
+
+                $dates2 = explode(' - ', $certificate->tanggal_pelatihan2 ?? '');
+                $awal2 = $dates2[0] ?? null;
+                $akhir2 = $dates2[1] ?? null;
             @endphp
-            {{ $awal ? \Carbon\Carbon::parse($awal)->format('F d, Y') : '' }}
             @if ($awal && $akhir)
+                {{ $awal ? \Carbon\Carbon::parse($awal)->format('F d, Y') : '' }}
                 -
+                {{ $akhir ? \Carbon\Carbon::parse($akhir)->format('F d, Y') : '' }}
             @endif
-            {{ $akhir ? \Carbon\Carbon::parse($akhir)->format('F d, Y') : '' }}
+            @if ($awal2 && $akhir2)
+                <br>
+                <span style="display:inline-block; margin-left: 90px;">
+                    {{ \Carbon\Carbon::parse($awal2)->format('F d, Y') }}
+                    -
+                    {{ \Carbon\Carbon::parse($akhir2)->format('F d, Y') }}
+                </span>
+            @endif
         </div>
 
         <div class="signature-section">

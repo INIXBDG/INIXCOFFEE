@@ -6,26 +6,84 @@ use App\Http\Controllers\Controller;
 use App\Models\Certificate;
 use App\Models\RKM;
 use App\Models\Karyawan;
+use App\Models\Materi;
 use App\Models\Peserta;
 use App\Models\Registrasi;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 
 class CertificateController extends Controller
 {
-    // Halaman list RKM untuk generate sertifikat
     public function index()
     {
-        $rkm = RKM::with(['materi', 'perusahaan', 'peluang'])
-            ->select('r_k_m_s.*')
+        $materis = Materi::select('id', 'nama_materi', 'kode_materi')
+            ->orderBy('nama_materi')
+            ->get();
+
+        return view('office.certificate.index', compact('materis'));
+    }
+
+    public function getData(Request $request)
+    {
+        $query = RKM::with(['materi:id,nama_materi,kode_materi', 'perusahaan:id,nama_perusahaan'])
             ->whereNotNull('tanggal_awal')
             ->whereNotNull('tanggal_akhir')
-            ->where('status', '0')
-            ->orderBy('tanggal_awal', 'desc')
-            ->paginate(10);
+            ->where('status', '0');
 
-        return view('office.certificate.index', compact('rkm'));
+        if ($search = $request->search) {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas(
+                    'materi',
+                    fn($m) =>
+                    $m->where('nama_materi', 'LIKE', "%{$search}%")
+                        ->orWhere('kode_materi', 'LIKE', "%{$search}%")
+                )
+                    ->orWhereHas(
+                        'perusahaan',
+                        fn($p) =>
+                        $p->where('nama_perusahaan', 'LIKE', "%{$search}%")
+                    );
+            });
+        }
+
+        if ($materi_id = $request->materi_id) {
+            $query->where('materi_id', $materi_id);
+        }
+
+        if ($start = $request->start_date) {
+            $query->whereDate('tanggal_awal', '>=', $start);
+        }
+        if ($end = $request->end_date) {
+            $query->whereDate('tanggal_akhir', '<=', $end);
+        }
+
+        $rkm = $query->orderBy('tanggal_awal', 'desc')
+            ->paginate($request->per_page ?? 15);
+
+        $data = $rkm->through(function ($item) {
+            return [
+                'id'                => $item->id,
+                'materi_nama'       => $item->materi?->nama_materi ?? '-',
+                'materi_kode'       => $item->materi?->kode_materi ?? '',
+                'perusahaan_nama'   => $item->perusahaan?->nama_perusahaan ?? '-',
+                'tanggal_awal'      => \Carbon\Carbon::parse($item->tanggal_awal)->format('d M Y'),
+                'tanggal_akhir'     => \Carbon\Carbon::parse($item->tanggal_akhir)->format('d M Y'),
+            ];
+        })->items();
+
+        return response()->json([
+            'data'       => $data,
+            'pagination' => [
+                'total'        => $rkm->total(),
+                'from'         => $rkm->firstItem(),
+                'to'           => $rkm->lastItem(),
+                'current_page' => $rkm->currentPage(),
+                'last_page'    => $rkm->lastPage(),
+                'per_page'     => $rkm->perPage(),
+            ]
+        ]);
     }
 
     // Detail RKM - List Peserta
@@ -74,13 +132,6 @@ class CertificateController extends Controller
             ->where('id_peserta', $peserta_id)
             ->first();
 
-        // if ($existingCert) {
-        //     return redirect()
-        //         ->route('office.certificate.show', $existingCert->id)
-        //         ->with('info', 'Sertifikat sudah ada.');
-        // }
-
-
         $initialNumber = 26082;
 
         $lastCert = Certificate::orderBy('nomor_sertifikat', 'desc')->first();
@@ -107,6 +158,8 @@ class CertificateController extends Controller
             'nama_materi' => 'required|string|max:255',
             'tanggal_awal' => 'required|date',
             'tanggal_akhir' => 'required|date|after_or_equal:tanggal_awal',
+            'tanggal_awal2' => 'nullable|date',
+            'tanggal_akhir2' => 'nullable|date|after_or_equal:tanggal_awal2',
         ]);
 
 
@@ -117,27 +170,24 @@ class CertificateController extends Controller
             'nama_peserta' => $request->nama_peserta,
             'nama_materi' => $request->nama_materi,
             'tanggal_pelatihan' => $request->tanggal_awal . ' - ' . $request->tanggal_akhir,
+            'tanggal_pelatihan2' => $request->filled('tanggal_awal2') && $request->filled('tanggal_akhir2') ? $request->tanggal_awal2 . ' - ' . $request->tanggal_akhir2 : null,
         ]);
 
-        $penandatangan = Karyawan::find(4); 
+        $penandatangan = Karyawan::find(4);
 
         // Generate PDF
         $pdf = Pdf::loadView('office.certificate.pdf', compact('certificate', 'penandatangan'))
             ->setPaper('a4', 'landscape');
 
-        // Pastikan folder certificates ada
         if (!Storage::exists('public/certificates')) {
             Storage::makeDirectory('public/certificates');
         }
 
-        // Ganti "/" dengan "-" untuk nama file yang aman
         $safeFilename = str_replace('/', '-', $request->nomor_sertifikat) . '.pdf';
 
-        // Simpan file dengan path yang benar
         $filename = 'certificates/' . $safeFilename;
         Storage::put('public/' . $filename, $pdf->output());
 
-        // Update database dengan path relatif (tanpa 'public/')
         $certificate->update(['pdf_path' => $filename]);
 
         return redirect()

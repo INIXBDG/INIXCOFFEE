@@ -852,6 +852,7 @@ Route::prefix('office')->name('office.')->middleware(['auth'])->group(function (
     // Certificate Routes
     Route::prefix('certificate')->name('certificate.')->group(function () {
         Route::get('/', [CertificateController::class, 'index'])->name('index');
+        Route::get('/data', [CertificateController::class, 'getData'])->name('getData');
         Route::get('/detail/{rkm_id}', [CertificateController::class, 'detail'])->name('detail');
         Route::get('/create/{rkm_id}/{peserta_id}', [CertificateController::class, 'create'])->name('create');
         Route::post('/store', [CertificateController::class, 'store'])->name('store');
