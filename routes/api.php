@@ -61,6 +61,7 @@ Route::get('/dashboard/csat-instruktur', [apiController::class, 'CSATinstruktur'
 Route::get('/dashboard/aktivitas-instruktur', [apiController::class, 'AktivitasInstruktur'])->name('AktivitasInstruktur');
 Route::get('/dashboard/rekomendasi-materi', [apiController::class, 'RekomendasiMateri'])->name('RekomendasiMateri');
 Route::get('getDBKlien', [App\Http\Controllers\Api\apiController::class, 'getDBKlien'])->name('getDBKlien');
+Route::get('getDBKlienperusahaan', [App\Http\Controllers\Api\apiController::class, 'getPerusahaanTanpaRelasi'])->name('getDBKlienPerusahaan');
 
 
 
@@ -70,3 +71,4 @@ Route::match(['get', 'post'], '/webhook/fonnte', [WebhookController::class, 'han
 
 Route::get('/telegram/setwebhook', [TelegramController::class, 'setWebhook'])->name('telegram.setwebhook');
 Route::post('/telegram/webhook', [TelegramController::class, 'webhook'])->name('telegram.webhook');
+

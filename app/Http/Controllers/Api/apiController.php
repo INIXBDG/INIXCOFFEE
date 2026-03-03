@@ -7,9 +7,8 @@ use App\Models\ActivityInstruktur;
 use App\Models\dbklien;
 use App\Models\Inventaris;
 use App\Models\jabatan;
-use Illuminate\Http\Request;
-use App\Models\Nilaifeedback;
 use App\Models\Materi;
+use App\Models\Nilaifeedback;
 use App\Models\Perusahaan;
 use App\Models\Peserta;
 use App\Models\Registrasi;
@@ -19,21 +18,22 @@ use App\Models\User;
 use Carbon\Carbon;
 use DB;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class apiController extends Controller
 {
     public function getFeedbacks()
     {
-        $feedbacks = Nilaifeedback::with('rkm')->whereYear('created_at', '2025')->get();
+        $feedbacks = Nilaifeedback::with('rkm')->whereYear('created_at', '2026')->get();
 
         // $groupedFeedbacks = $feedbacks->groupBy('id_rkm');
         $groupedFeedbacks = $feedbacks->groupBy(function ($feedback) {
-			return
-				$feedback->rkm->materi->nama_materi . '/' .
-				$feedback->rkm->tanggal_awal . '/' .
-				$feedback->rkm->instruktur_key;
-		});
+            return
+                $feedback->rkm->materi->nama_materi . '/' .
+                $feedback->rkm->tanggal_awal . '/' .
+                $feedback->rkm->instruktur_key;
+        });
 
         // return $groupedFeedbacks;
         $averageFeedbacks = [];
@@ -153,12 +153,12 @@ class apiController extends Controller
         $sortedFeedbacks = collect($averageFeedbacks)->sortByDesc('created_at')->values()->all();
 
         // return response()->json(['feedbacks' => $sortedFeedbacks]);
-            return response()->json([
-                'success' => true,
-                'message' => 'List Feedbacks',
-                'data' => $sortedFeedbacks
-                // 'data' => $groupedFeedbacks
-            ]);
+        return response()->json([
+            'success' => true,
+            'message' => 'List Feedbacks',
+            'data' => $sortedFeedbacks
+            // 'data' => $groupedFeedbacks
+        ]);
 
     }
 
@@ -229,8 +229,9 @@ class apiController extends Controller
     }
 
 
-    public function getMateris(){
-        $perusahaans = Materi::where('nama_materi', 'LIKE', '%'.request('q').'%')->where('status', 'Aktif')->paginate(20);
+    public function getMateris()
+    {
+        $perusahaans = Materi::where('nama_materi', 'LIKE', '%' . request('q') . '%')->where('status', 'Aktif')->paginate(20);
         return response()->json($perusahaans);
     }
 
@@ -287,7 +288,7 @@ class apiController extends Controller
         $startDate = $today->copy()->startOfMonth()->toDateString();
         $endDate = $today->copy()->addMonths(4)->endOfMonth()->toDateString();
 
-       // Ambil data RKM beserta relasi materi
+        // Ambil data RKM beserta relasi materi
         $rows = RKM::with('materi')
             ->whereBetween('tanggal_awal', [$startDate, $endDate])
             ->get();
@@ -403,15 +404,18 @@ class apiController extends Controller
         $pembuatanMateri = ActivityInstruktur::where('activity_type', 'Pembuatan Materi')
             ->whereYear('created_at', $tahun)
             ->count();
+
+        $pembuatanSilabus = ActivityInstruktur::where('activity_type', 'Pembuatan Silabus')
+            ->whereYear('created_at', $tahun)
+            ->count();
+
         return response()->json([
             'success' => true,
             'sharingKnowledge' => $sharingKnowledge,
             'pembuatanMateri' => $pembuatanMateri,
+            'pembuatanSilabus' => $pembuatanSilabus,
         ]);
     }
-
-
-    //  use Carbon\Carbon;
 
     public function RekomendasiMateri(Request $request)
     {
@@ -441,105 +445,119 @@ class apiController extends Controller
     }
 
     public function getDBKlien()
-{
-    // ================= DATA 1
-    $data1 = DB::table('dbkliens')
-        ->leftJoin(
-            'perusahaans',
-            'dbkliens.nama_perusahaan',
-            '=',
-            'perusahaans.id'
-        )
-        ->select(
-            'dbkliens.nama',
-            'dbkliens.jenis_kelamin',
-            'dbkliens.email',
-            'dbkliens.no_hp',
-            'dbkliens.tanggal_lahir',
-            'dbkliens.nama_perusahaan',
-            'perusahaans.lokasi',
-            'dbkliens.sales_key',
-            'dbkliens.nama_materi',
-            'dbkliens.created_at'
-        );
+	{
+		// ================= DATA 1
+		$data1 = DB::table('dbkliens')
+			->leftJoin(
+				'perusahaans',
+				'dbkliens.nama_perusahaan',
+				'=',
+				'perusahaans.nama_perusahaan'
+			)
+			->select(
+				'dbkliens.nama',
+				'dbkliens.jenis_kelamin',
+				'dbkliens.email',
+				'dbkliens.no_hp',
+				'dbkliens.tanggal_lahir',
+				'dbkliens.nama_perusahaan',
+				'perusahaans.lokasi',
+				'dbkliens.sales_key',
+				'dbkliens.nama_materi',
+				'dbkliens.created_at'
+			);
 
-    // ================= DATA 2
-    $data2 = DB::table('registrasis')
-        ->join('pesertas','registrasis.id_peserta','=','pesertas.id')
-        ->join('materis','registrasis.id_materi','=','materis.id')
-        ->leftJoin('perusahaans','pesertas.perusahaan_key','=','perusahaans.id')
-        ->select(
-            'pesertas.nama',
-            'pesertas.jenis_kelamin',
-            'pesertas.email',
-            'pesertas.no_hp',
-            'pesertas.tanggal_lahir',
-            'perusahaans.nama_perusahaan',
-            'perusahaans.lokasi',
-            'perusahaans.sales_key',
-            'materis.nama_materi',
-            'registrasis.created_at'
-        );
+		// ================= DATA 2
+		$data2 = DB::table('registrasis')
+			->join('pesertas','registrasis.id_peserta','=','pesertas.id')
+			->join('materis','registrasis.id_materi','=','materis.id')
+			->leftJoin('perusahaans','pesertas.perusahaan_key','=','perusahaans.id')
+			->select(
+				'pesertas.nama',
+				'pesertas.jenis_kelamin',
+				'pesertas.email',
+				'pesertas.no_hp',
+				'pesertas.tanggal_lahir',
+				'perusahaans.nama_perusahaan',
+				'perusahaans.lokasi',
+				'perusahaans.sales_key',
+				'materis.nama_materi',
+				'registrasis.created_at'
+			);
 
-    // ================= UNION
-    $union = $data1->unionAll($data2);
+		// ================= UNION
+		$union = $data1->unionAll($data2);
 
-    // ================= GROUP PESERTA
-    $data = DB::query()
-        ->fromSub($union, 'x')
-        ->get()
-        ->groupBy(function($item){
-            return
-                strtolower($item->nama).'|'.
-                strtolower($item->email).'|'.
-                strtolower($item->jenis_kelamin);
-        })
-        ->map(function($rows){
+		// ================= GROUP PESERTA
+		$data = DB::query()
+			->fromSub($union, 'x')
+			->get()
+			->groupBy(function($item){
+				return
+					strtolower($item->nama).'|'.
+					strtolower($item->email).'|'.
+					strtolower($item->jenis_kelamin);
+			})
+			->map(function($rows){
 
-            $first = $rows->first();
+				$first = $rows->first();
 
-            // FORMAT NAMA
-            $first->nama_formatted =
-                \App\Models\Peserta::formatNama(
-                    $first->nama
-                );
+				// ================= FORMAT
+				$first->nama_formatted =
+					\App\Models\Peserta::formatNama($first->nama);
 
-            // USIA
-            $first->usia =
-                $first->tanggal_lahir
-                ? Carbon::parse(
-                    $first->tanggal_lahir
-                  )->age
-                : '';
+				$first->usia =
+					$first->tanggal_lahir
+					? Carbon::parse($first->tanggal_lahir)->age
+					: '';
 
-            // LIST MATERI
-            $first->materi_list =
-                $rows->pluck('nama_materi')
-                    ->map(function($m){
-                        return $m ?? '-'; // ganti null jadi "-"
-                    })
-                    ->unique()
-                    ->values();
+				// ================= LIST MATERI
+				$first->materi_list =
+					$rows->pluck('nama_materi')
+						->map(fn($m) => $m ?? '-')
+						->unique()
+						->values();
 
+				// ================= PERUSAHAAN (1 saja)
+				$first->nama_perusahaan =
+					$rows->pluck('nama_perusahaan')
+						->filter()
+						->first() ?? '-';
 
-            return $first;
-        })
-        ->values();
+				// ================= LOKASI (1 saja)
+				$first->lokasi =
+				$rows->whereNotNull('lokasi')
+					 ->unique('lokasi')
+					 ->pluck('lokasi')
+					 ->first() ?? '-';
 
-    return response()->json([
-        'data' => $data
-    ]);
-}
+				return $first;
+			})
+			->values();
 
+		return response()->json([
+			'data' => $data
+		]);
+	}
 
+    public function getPerusahaanTanpaRelasi()
+    {
+        $data = DB::table('dbkliens')
+            ->leftJoin(
+                'perusahaans',
+                'dbkliens.nama_perusahaan','=','perusahaans.nama_perusahaan'
+            )
+           ->whereNull('perusahaans.nama_perusahaan')
+            ->select(
+                'dbkliens.nama_perusahaan'
+            )
+            ->distinct()
+            ->orderBy('dbkliens.nama_perusahaan')
+            ->get();
 
-
-
-
-
-
-
-
-
-
+        return response()->json([
+            'data' => $data
+        ]);
+    }
+    
 }

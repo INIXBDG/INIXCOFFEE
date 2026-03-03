@@ -89,6 +89,7 @@
                         <button class="nav-link" id="nav-lokasi-tab" data-bs-toggle="tab" data-bs-target="#nav-lokasi" type="button" role="tab" aria-controls="nav-lokasi" aria-selected="false">Lokasi</button>
                         <button class="nav-link" id="nav-materi-tab" data-bs-toggle="tab" data-bs-target="#nav-materi" type="button" role="tab" aria-controls="nav-materi" aria-selected="false">Materi Terbanyak</button>
                         <button class="nav-link" id="nav-standing-tab" data-bs-toggle="tab" data-bs-target="#nav-standing" type="button"> Standing Kelas</button>
+                        <button class="nav-link" id="nav-unmatch-tab" data-bs-toggle="tab" data-bs-target="#nav-unmatch" type="button"> Perusahaan Tanpa Relasi</button>
                     </div>
                 </nav>
                 <div class="tab-content" id="nav-tabContent">
@@ -126,7 +127,24 @@
                             <tbody></tbody>
                         </table>
                     </div>
+                    <div class="tab-pane fade"
+                        id="nav-unmatch">
 
+                        <table id="unmatchTable"
+                            class="table table-bordered table-striped">
+
+                            <thead>
+                                <tr>
+                                    <th>No</th>
+                                    <th>Nama Perusahaan</th>
+                                    <th>Jumlah Peserta</th>
+                                </tr>
+                            </thead>
+
+                            <tbody></tbody>
+                        </table>
+
+                    </div>
                 </div>
                
             </div>
@@ -356,7 +374,7 @@
         fetchDashboard();
         let usiaRendered = false;
         let lokasiRendered = false;
-
+        // let globalUnmatchPerusahaan  = '';
         $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
             const target = $(e.target).data('bs-target');
             if (target === '#nav-usia' && !usiaRendered) {
@@ -372,6 +390,9 @@
             }
             if (target === '#nav-standing') {
                 prepareStandingKelas();
+            }
+            if (target === '#nav-unmatch') {
+                preparePerusahaanTanpaRelasi();
             }
         });
 
@@ -475,7 +496,6 @@
         );
     }
 
-
     function prepareStandingKelas() {
 
         let map = {};
@@ -540,6 +560,43 @@
         });
 
         renderCardPesertaTahun(kelompok);
+    }
+
+    function preparePerusahaanTanpaRelasi() {
+        $.ajax({
+            url: "{{ route('getDBKlienPerusahaan') }}",
+            type: 'GET',
+            success: function(res) {
+
+                let map = {};
+
+                res.data.forEach(p => {
+
+                    let nama = p.nama_perusahaan ?? '-';
+
+                    if (!map[nama]) {
+                        map[nama] = {
+                            nama_perusahaan: nama,
+                            jumlah: 0
+                        };
+                    }
+
+                    map[nama].jumlah += 1;
+                });
+
+                let data = Object.values(map).map(p => ({
+                    nama_perusahaan: p.nama_perusahaan,
+                    jumlah: p.jumlah
+                }));
+
+                data.sort((a,b) => b.jumlah - a.jumlah);
+
+                renderPerusahaanTanpaRelasi(data);
+            },
+            error: function(err) {
+                console.error(err);
+            }
+        });
     }
 
     function renderUsiaChart(labels, data) {
@@ -744,7 +801,6 @@
         });
     }
 
-
     function renderCardPesertaTahun(data) {
 
         let html = '';
@@ -776,6 +832,40 @@
         $('#cardPesertaTahun').html(html);
     }
 
+    function renderPerusahaanTanpaRelasi(data) {
+
+        if ($.fn.DataTable.isDataTable('#unmatchTable')) {
+            $('#unmatchTable')
+                .DataTable()
+                .clear()
+                .destroy();
+        }
+
+        let html = '';
+
+        data.forEach((p, i) => {
+
+            html += `
+                <tr>
+                    <td>${i+1}</td>
+                    <td>${p.nama_perusahaan ?? '-'}</td>
+                    <td>${p.jumlah}</td>
+                </tr>
+            `;
+        });
+
+        $('#unmatchTable tbody').html(html);
+
+        $('#unmatchTable').DataTable({
+            pageLength: 10,
+            order: [[2, 'desc']],
+            responsive: true,
+            language: {
+                search: "Cari Perusahaan:",
+                zeroRecords: "Tidak ada data"
+            }
+        });
+    }
 
     function drilldownUsia(label) {
         let filtered = globalPeserta.filter(p => {
