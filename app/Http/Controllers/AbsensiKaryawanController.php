@@ -73,7 +73,7 @@ class AbsensiKaryawanController extends Controller
         $jabatan = $request->input('jabatan') ?? auth()->user()->jabatan;
 
         // Validasi duplikasi absen
-        if ($jabatan !== 'Office Boy' && $this->checkDuplicateAbsen($request->id_karyawan, $sekarang->toDateString())) {
+        if ($this->checkDuplicateAbsen($request->id_karyawan, $sekarang->toDateString())) {
             return response()->json(['error' => 'Anda sudah melakukan absen masuk hari ini'], 400);
         }
 
