@@ -136,7 +136,7 @@
             {{ $certificate->nama_materi }}
         </div>
 
-        <div class="period-section" style="margin-top: 6%">
+        <div class="period-section" style="margin-top: 4%">
             Period :
             @php
                 $dates = explode(' - ', $certificate->tanggal_pelatihan ?? '');
