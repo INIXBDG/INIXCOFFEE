@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\KPI;
 
+use App\Http\Controllers\Controller;
 use App\Models\activityLog;
 use App\Models\formPenilaian;
 use App\Models\karyawan;
@@ -630,7 +631,7 @@ class DatabaseKPIController extends Controller
 
             return response()->json(['success' => true]);
         } catch (\Exception $e) {
-            \Log::error('Gagal mengirim email penilaian', [
+            Log::error('Gagal mengirim email penilaian', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);

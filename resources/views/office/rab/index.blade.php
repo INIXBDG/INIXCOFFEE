@@ -66,7 +66,7 @@
                                         <div class="fw-semibold text-dark text-uppercase">{{ $item->tipe }}</div>
                                     </td>
                                     <td>
-                                        @if ($item->tipe === 'pembelian')
+                                        @if ($item->tipe === 'pembelian' || $item->tipe === 'rekrutmen')
                                             <div class="text-dark fw-medium">-</div>
                                         @else
                                             <div class="text-dark fw-medium">
@@ -79,7 +79,7 @@
                                     </td>
 
                                     <td>
-                                        @if ($item->tipe === 'pembelian')
+                                        @if ($item->tipe === 'pembelian' || $item->tipe === 'rekrutmen')
                                             <span class="badge bg-light text-dark border">-</span>
                                         @else
                                             <span class="badge bg-light text-dark border">
@@ -188,6 +188,7 @@
                                 <option value="" selected disabled>Pilih tipe RAB</option>
                                 <option value="kegiatan">Kegiatan</option>
                                 <option value="pembelian">Pembelian</option>
+                                <option value="rekrutmen">Rekrutmen</option>
                             </select>
                         </div>
 
@@ -395,7 +396,7 @@
             function toggleCreateFields() {
                 if (!tipeSelect || !createFields) return;
 
-                if (tipeSelect.value === 'pembelian') {
+                if (tipeSelect.value === 'pembelian' || tipeSelect.value === 'rekrutmen') {
                     // Sembunyikan field
                     createFields.style.display = 'none';
                     // Hapus required
@@ -449,7 +450,7 @@
                     if (editFields) {
                         const inputs = editFields.querySelectorAll('input');
 
-                        if (tipe === 'pembelian') {
+                        if (tipe === 'pembelian' || tipe === 'rekrutmen') {
                             // Jika tipe pembelian: sembunyikan kolom waktu & durasi
                             editFields.style.display = 'none';
                             inputs.forEach(input => {

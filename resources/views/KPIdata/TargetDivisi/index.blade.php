@@ -27,7 +27,7 @@
         }
 
         .gradient-bg-pink {
-                ground: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+            ground: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
         }
 
         .gradient-bg-blue {
@@ -388,13 +388,32 @@
                                 <option value="rupiah">Rupiah (Rp)</option>
                             </select>
                         </div>
+                        <div id="doubleInputArea" style="display:none;">
 
-                        <div class="form-group">
+                            <div class="form-group">
+                                <label>Biaya Gaji Tahunan</label>
+                                <input type="text" class="form-control" id="biaya_gaji_display">
+                                <input type="hidden" name="biaya_gaji_tahunan" id="biaya_gaji_tahunan" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Biaya BPJS Tahunan</label>
+                                <input type="text" class="form-control" id="biaya_bpjs_display">
+                                <input type="hidden" name="biaya_bpjs_tahunan" id="biaya_bpjs_tahunan" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Biaya Rekrutmen Tahunan</label>
+                                <input type="text" class="form-control" id="biaya_rekrutmen_display">
+                                <input type="hidden" name="biaya_rekrutmen_tahunan" id="biaya_rekrutmen_tahunan" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group" id="singleInputArea">
                             <label>Masukan Nilai</label>
                             <input type="text" class="form-control" id="manual_value_display">
                             <input type="hidden" name="manual_value" id="manual_value">
                         </div>
-
 
                         <div class="form-group">
                             <label>Masukan Document</label>
@@ -441,18 +460,209 @@
             e.stopPropagation();
         });
 
+        const allowedAssistantRoutes = [
+            'dorong inovasi pelayanan',
+            'pemasukan bersih',
+            'inisiatif efisiensi keuangan',
+            'rasio biaya operasional terhadap revenue',
+            'mengurangi Manual Work Dan Error',
+            'laporan analisis keuangan',
+            'pengeluaran biaya karyawan'
+
+        ];
+
+        const allowedDoubleManualRoutes = [
+            'pengeluaran biaya karyawan'
+        ];
+
+
+        function formatNumber(value) {
+            if (!value && value !== '0') return '';
+            const raw = String(value).replace(/[^0-9]/g, '');
+            if (!raw) return '';
+            return new Intl.NumberFormat('id-ID').format(raw);
+        }
+
+        function getRawNumber(value) {
+            if (!value) return '';
+            return String(value).replace(/[^0-9]/g, '');
+        }
+
+        function initInputFormatting() {
+            // Single Input
+            $('#manual_value_display').off('input.formatting');
+            $('#manual_value_display').on('input.formatting', function() {
+                const raw = getRawNumber($(this).val());
+                $('#manual_value').val(raw);
+                
+                const format = $('#manual_format').val();
+                let formatted = formatNumber(raw);
+                
+                if (format === 'rupiah' && raw) {
+                    formatted = 'Rp ' + formatted;
+                } else if (format === 'persen' && raw) {
+                    formatted = formatted + '%';
+                }
+                
+                $(this).val(formatted);
+            });
+            
+            // Double Input - Biaya Gaji
+            $('#biaya_gaji_display').off('input.formatting');
+            $('#biaya_gaji_display').on('input.formatting', function() {
+                const raw = getRawNumber($(this).val());
+                $('#biaya_gaji_tahunan').val(raw);
+                $(this).val(raw ? 'Rp ' + formatNumber(raw) : '');
+            });
+            
+            // Double Input - Biaya BPJS
+            $('#biaya_bpjs_display').off('input.formatting');
+            $('#biaya_bpjs_display').on('input.formatting', function() {
+                const raw = getRawNumber($(this).val());
+                $('#biaya_bpjs_tahunan').val(raw);
+                $(this).val(raw ? 'Rp ' + formatNumber(raw) : '');
+            });
+            
+            // ✅ Double Input - Biaya Rekrutmen (BARU)
+            $('#biaya_rekrutmen_display').off('input.formatting');
+            $('#biaya_rekrutmen_display').on('input.formatting', function() {
+                const raw = getRawNumber($(this).val());
+                $('#biaya_rekrutmen_tahunan').val(raw);
+                $(this).val(raw ? 'Rp ' + formatNumber(raw) : '');
+            });
+        }
+
+        $(document).ready(function() {
+            initInputFormatting();
+
+            $('#modalFormManual').on('show.bs.modal', function() {
+                resetFormManual();
+            });
+
+            $('#modalFormManual').on('hidden.bs.modal', function() {
+                resetFormManual();
+            });
+        });
+
+        function resetFormManual() {
+            $('#formManualValue')[0].reset();
+            $('#documentPreview').html('');
+            $('#singleInputArea').show();
+            $('#doubleInputArea').hide();
+            
+            $('#manual_value_display').val('').trigger('input');
+            $('#manual_value').val('');
+            $('#biaya_gaji_display').val('').trigger('input');
+            $('#biaya_gaji_tahunan').val('');
+            $('#biaya_bpjs_display').val('').trigger('input');
+            $('#biaya_bpjs_tahunan').val('');
+            
+            $('#biaya_rekrutmen_display').val('').trigger('input');
+            $('#biaya_rekrutmen_tahunan').val('');
+            
+            $('#manualValueId').val('');
+        }
+
         $(document).on('click', '.buttonForm', function() {
-            let id = $(this).data('id');
-            let value = $(this).data('value');
+            const route = $(this).data('route');
+            const value = $(this).data('value') || '';
+            const id = $(this).data('id');
+            
             $('#manualValueId').val(id);
-            $('#manual_value').val(value);
+            
+            if (allowedDoubleManualRoutes.includes(route)) {
+                $('#singleInputArea').hide();
+                $('#doubleInputArea').show();
+                
+                let gaji = '';
+                let bpjs = '';
+                let rekrutmen = '';  
+                
+                if (value && value.includes(',')) {
+                    const parts = value.split(',');
+                    gaji = parts[0] || '';
+                    bpjs = parts[1] || '';
+                    rekrutmen = parts[2] || ''; 
+                } else {
+                    gaji = value;
+                    bpjs = '';
+                    rekrutmen = '';
+                }
+                
+                const gajiRaw = getRawNumber(gaji);
+                const bpjsRaw = getRawNumber(bpjs);
+                const rekrutmenRaw = getRawNumber(rekrutmen);  
+                
+                $('#biaya_gaji_display').val(gajiRaw ? 'Rp ' + formatNumber(gajiRaw) : '');
+                $('#biaya_gaji_tahunan').val(gajiRaw);
+                $('#biaya_bpjs_display').val(bpjsRaw ? 'Rp ' + formatNumber(bpjsRaw) : '');
+                $('#biaya_bpjs_tahunan').val(bpjsRaw);
+                
+                $('#biaya_rekrutmen_display').val(rekrutmenRaw ? 'Rp ' + formatNumber(rekrutmenRaw) : '');
+                $('#biaya_rekrutmen_tahunan').val(rekrutmenRaw);
+                
+            } else {
+                $('#singleInputArea').show();
+                $('#doubleInputArea').hide();
+                
+                const format = $('#manual_format').val();
+                const rawValue = getRawNumber(value);
+                let displayValue = formatNumber(rawValue);
+                
+                if (format === 'rupiah' && rawValue) {
+                    displayValue = 'Rp ' + displayValue;
+                } else if (format === 'persen' && rawValue) {
+                    displayValue = displayValue + '%';
+                }
+                
+                $('#manual_value_display').val(displayValue);
+                $('#manual_value').val(rawValue);
+            }
+        });
+
+        $(document).on('change', '#manual_format', function() {
+            if ($('#doubleInputArea').is(':visible')) {
+                return;
+            }
+
+            const format = $(this).val();
+            const rawValue = getRawNumber($('#manual_value').val());
+            let displayValue = formatNumber(rawValue);
+
+            if (format === 'rupiah' && rawValue) {
+                displayValue = 'Rp ' + displayValue;
+            } else if (format === 'persen' && rawValue) {
+                displayValue = displayValue + '%';
+            }
+
+            $('#manual_value_display').val(displayValue);
+
+            console.log('Format changed:', {
+                format,
+                rawValue,
+                displayValue
+            });
         });
 
         $('#formManualValue').on('submit', function(e) {
             e.preventDefault();
-
-            let formData = new FormData(this);
-
+            
+            const $submitBtn = $(this).find('button[type="submit"]');
+            const originalText = $submitBtn.html();
+            
+            $submitBtn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin me-2"></i>Menyimpan...');
+            
+            const formData = new FormData(this);
+            
+            if ($('#doubleInputArea').is(':visible')) {
+                formData.set('biaya_gaji_tahunan', $('#biaya_gaji_tahunan').val());
+                formData.set('biaya_bpjs_tahunan', $('#biaya_bpjs_tahunan').val());
+                formData.set('biaya_rekrutmen_tahunan', $('#biaya_rekrutmen_tahunan').val()); 
+            } else {
+                formData.set('manual_value', $('#manual_value').val());
+                formData.set('manual_format', $('#manual_format').val());
+            }
+            
             $.ajax({
                 url: "{{ route('kpi.manualValue') }}",
                 type: "POST",
@@ -461,57 +671,26 @@
                 processData: false,
                 success: function(res) {
                     $('#modalFormManual').modal('hide');
-
-                    $('#formManualValue')[0].reset();
-                    $('#documentPreview').html('');
-
-                    loadContentForm();
-
+                    resetFormManual();
+                    $submitBtn.prop('disabled', false).html(originalText);
+                    
+                    if (typeof loadContentForm === 'function') {
+                        loadContentForm();
+                    }                    
                 },
                 error: function(xhr) {
+                    $submitBtn.prop('disabled', false).html(originalText);
+                    
                     if (xhr.status === 422) {
-                        let errors = xhr.responseJSON.errors;
-                        let msg = Object.values(errors).map(e => e[0]).join('\n');
+                        const errors = xhr.responseJSON?.errors || {};
+                        const msg = Object.values(errors).map(e => e[0]).join('\n');
                         alert(msg);
                     } else {
-                        alert('Terjadi kesalahan sistem');
+                        alert('Terjadi kesalahan sistem: ' + (xhr.statusText || 'Unknown error'));
                     }
                 }
             });
         });
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const formatSelect = document.getElementById('manual_format');
-            const displayInput = document.getElementById('manual_value_display');
-            const hiddenInput = document.getElementById('manual_value');
-
-            function formatNumber(value) {
-                return new Intl.NumberFormat('id-ID').format(value);
-            }
-
-            function updateValue() {
-                let raw = displayInput.value.replace(/[^0-9]/g, '');
-                hiddenInput.value = raw;
-                if (!raw) {
-                    displayInput.value = '';
-                    return;
-                }
-
-                let format = formatSelect.value;
-
-                if (format === 'rupiah') {
-                    displayInput.value = 'Rp ' + formatNumber(raw);
-                } else if (format === 'persen') {
-                    displayInput.value = formatNumber(raw) + '%';
-                } else {
-                    displayInput.value = formatNumber(raw);
-                }
-            }
-
-            displayInput.addEventListener('input', updateValue);
-            formatSelect.addEventListener('change', updateValue);
-        });
-
 
         $(document).ready(function() {
             loadContentForm();
@@ -858,13 +1037,6 @@
                                     badgeClass = 'bg-warning text-dark';
                                 }
 
-                                const allowedAssistantRoutes = [
-                                    'dorong inovasi pelayanan',
-                                    'pemasukan bersih',
-                                    'inisiatif efisiensi keuangan',
-                                    'rasio biaya operasional terhadap revenue'
-                                ];
-
                                 let buttonIsiForm = '';
 
                                 if (allowedAssistantRoutes.includes(item.asistant_route)) {
@@ -874,6 +1046,7 @@
                                                 class="btn btn-sm btn-info rounded-circle d-flex align-items-center justify-content-center buttonForm"
                                                 data-id="${item.id}"
                                                 data-value="${item.manual_value}"
+                                                data-route="${item.asistant_route}"
                                                 title="isi data" 
                                                 data-bs-toggle="modal"
                                                 data-bs-target="#modalFormManual"
@@ -986,14 +1159,19 @@
                     });
 
                     jabatanTersedia.forEach(jab => {
+                        if (jabatanSelect.find(`option[value="${jab}"]`).length > 0) {
+                            return;
+                        }
+
                         const count = jabatanCount[jab] || 0;
                         const isDisabled = false;
                         let label = jab;
+
                         jabatanSelect.append(`
-                    <option value="${jab}">
-                        ${label}
-                    </option>
-                `);
+                            <option value="${jab}">
+                                ${label}
+                            </option>
+                        `);
                     });
 
                     jangkaSelect.append(`<option value="Tahunan">Tahunan</option>`);
@@ -1256,7 +1434,7 @@
                         const karyawanList = Array.isArray(data.karyawan) ? data.karyawan : [data
                             .karyawan
                         ];
-                        
+
                         let no = 1;
                         const karyawanHtml = karyawanList.map(item => `
                             <div class="d-flex align-items-center py-2 participant-item">
@@ -1272,7 +1450,10 @@
                             'dorong inovasi pelayanan',
                             'pemasukan bersih',
                             'rasio biaya operasional terhadap revenue',
-                            'inisiatif efisiensi keuangan'
+                            'inisiatif efisiensi keuangan',
+                            'mengurangi Manual Work Dan Error',
+                            'laporan analisis keuangan',
+                            'pengeluaran biaya karyawan'
                         ];
 
                         const allowedAssistantRoutesForRupiah = [
@@ -1377,11 +1558,11 @@
                                     <div class="text-muted small mb-2">Top Hari Tertinggi</div>
 
                                     ${top3HariTertinggi.map(([tanggal, nilai], index) => `
-                                            <div class="d-flex justify-content-between mb-1 ${index > 0 ? 'text-muted' : ''}">
-                                                <span>${formatTanggalSingkat(tanggal)}</span>
-                                                <span class="fw-semibold">${formatRupiah(nilai)}</span>
-                                            </div>
-                                        `).join('')}
+                                                    <div class="d-flex justify-content-between mb-1 ${index > 0 ? 'text-muted' : ''}">
+                                                        <span>${formatTanggalSingkat(tanggal)}</span>
+                                                        <span class="fw-semibold">${formatRupiah(nilai)}</span>
+                                                    </div>
+                                                `).join('')}
                                 </div>
 
                                 <hr class="my-3">
@@ -1940,6 +2121,10 @@
             const hasCC = selectedJabatan.includes('Customer Care');
             const hasFinance = selectedJabatan.includes('Finance & Accounting');
             const hasHRD = selectedJabatan.includes('HRD');
+            const hasDriver = selectedJabatan.includes('Driver');
+            const hasOB = selectedJabatan.includes('Office Boy');
+            const hasInstruktur = selectedJabatan.includes('Instruktur');
+            const hasManagerEdu = selectedJabatan.includes('Education Manager');
 
             let options = '<option selected disabled>-- Pilih Assistant Route --</option>';
 
@@ -1964,7 +2149,7 @@
                         <option value="pemasukan bersih">Laba Bersih</option>
                         <option value="Kepuasan Pelanggan">Feedback Peserta</option>
                         <option value="rasio biaya operasional terhadap revenue">Rasio Biaya Operasional Terhadap Revenue</option>
-                        <option value="Rata Rata Pencapaian Per Departement">Rata Rata Pencapaian Per Departement</option>
+                        <option value="performa KPI departemen">Performa KPI Departemen</option>
                     `;
                 }
                 //CS
@@ -1972,6 +2157,7 @@
                     options += `
                         <option value="peserta puas dengan pelayanan dan fasilitas training">Peserta Puas Dengan Pelayanan & Fasilitas Training</option>
                         <option value="dorong inovasi pelayanan">Dorong Inovasi Pelayanan</option>
+                        <option value="penanganan komplain perseta">Penanganan Komplain Peserta</option>
                     `;
                 }
                 //Finanace
@@ -1979,6 +2165,9 @@
                     options += `
                         <option value="outstanding">Banyak Tagihan Client Yang Belum Lunas</option>
                         <option value="inisiatif efisiensi keuangan">Inisiatif Efisiensi keuangan</option>
+                        <option value="mengurangi manual work dan error">Mengurangi Manual Work Dan Error</option>
+                        <option value="laporan analisis keuangan">Laporan Analisis Keuangan</option>
+                        <option value="pencairan biaya operasional">Pencairan Biaya Operasional Kantor</option>
                     `;
                 }
 
@@ -1986,9 +2175,26 @@
                 else if (hasHRD) {
                     options += `
                         <option value="pelaksanaan kegiatan karyawan">Pelaksanaan Kegiatan Karyawan</option>
+                        <option value="pengeluaran biaya karyawan">Pengeluaran Biaya Karyawan</option>
                     `;
                 }
-                
+
+                //Driver
+                else if (hasDriver) {
+                    options += `
+                        <option value="perbaikan kendaraan">Perbaikan kendaraan</option>
+                        <option value="report kondisi kendaraan">Report Kondisi Kendaraan</option>
+                        <option value="kontrol pengeluaran transportasi">Kontrol Pengeluaran Transportasi</option>
+                    `;
+                }
+
+                //OB
+                else if (hasOB) {
+                    options += `
+                        <option value="feedback kebersihan dan kenyamanan">Feedback Kebersihan Dan Kenyamanan Peserta</option>
+                    `;
+                }
+
                 //ITSM
                 //Koordinator ITSM
                 else if (hasKoorITSM) {
@@ -2008,14 +2214,35 @@
                 else if (hasDigital) {
                     options += `
                         <option value="konsistensi campaign digital">Konsistensi Campaign Digital</option>
+                        <option value="efektifitas diital marketing">Database Client Baru</option>
                     `;
                 }
                 //TS
                 else if (hasTS) {
                     options += `
                         <option value="keberhasilan support memenuhi sla">Tingkat Keberhasilan Support Memenuhi SLA</option>
+                        <option value="kualitas layanan exam">Kualitas Layanan Exam</option>
                     `;
                 }
+                //Education
+                //Instruktur
+                else if (hasInstruktur) {
+                    options += `
+                        <option value="kepuasan peserta pelatihan">Kepuasan Peserta Pelatihan</option>
+                        <option value="upseling lanjutan materi">Upseling Lanjutan Materi</option>
+                        <option value="sertifikasi kompetensi internal">Peningkatan Kompetensi Instruktur - Sertifikasi Internal</option>
+                        <option value="pelatihan kompetensi eksternal">Peningkatan Kompetensi Instruktur - Pelatihan Eksternal</option>
+                    `;
+                }
+
+                //Education Manager
+                else if (hasManagerEdu) {
+                    options += `
+                        <option value="pengembangan kurikulum pelatihan">Pengembangan Kurikulum & Modul Pelatihan</option>
+                        <option value="peningkatan knowledge sharing">Peningkatan Knowledge Sharing</option>
+                    `;
+                }
+
                 //end/selesai
                 else {
                     options +=
