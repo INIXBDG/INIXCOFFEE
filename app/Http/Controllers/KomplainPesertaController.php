@@ -67,8 +67,8 @@ class KomplainPesertaController extends Controller
             ->leftJoin('r_k_m_s', 'nilaifeedbacks.id_rkm', '=', 'r_k_m_s.id')
             ->leftJoin('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
             ->leftJoin('perusahaans', 'r_k_m_s.perusahaan_key', '=', 'perusahaans.id')
-            ->whereDate('r_k_m_s.tanggal_akhir', '>=', $satuMingguLalu)
-            ->whereDate('r_k_m_s.tanggal_akhir', '<=', $tanggalSekarang)
+            // ->whereDate('r_k_m_s.tanggal_akhir', '>=', $satuMingguLalu)
+            // ->whereDate('r_k_m_s.tanggal_akhir', '<=', $tanggalSekarang)
             ->orderBy('perusahaans.nama_perusahaan', 'asc')
             ->select(
                 'nilaifeedbacks.id as nilaifeedback_id',
