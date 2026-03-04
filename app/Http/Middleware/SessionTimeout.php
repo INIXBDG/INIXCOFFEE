@@ -17,42 +17,40 @@ class SessionTimeout
      */
     public function handle($request, Closure $next)
     {
-        $timeout = 1800; // 30 minutes
+        $timeout = 1800;
+        $now = time();
 
-        if (Auth::check() && (time() - session('last_activity') > $timeout)) {
-            $agent = new Agent();
-
-            $user = auth()->user(); // simpan dulu user sebelum logout
-            $userId = $user->id;
-            $jabatan = $user->jabatan;
-
-            $userAgent = $request->header('User-Agent');
-            $ip = $request->ip();
-
-            $agent->setUserAgent($userAgent);
-
-            $platform = $agent->platform();
-            $browser = $agent->browser();
-            $device = $agent->device();
-            $currentUrl = $request->fullUrl();
-
-            $activityLog = new \App\Models\activityLog();
-            $activityLog->user_id = $userId; 
-            $activityLog->status = 'logout';
-            $activityLog->url = $currentUrl;
-            $activityLog->ip = $ip;
-            $activityLog->user_agent = $userAgent;
-            $activityLog->platform = $platform;
-            $activityLog->browser = $browser;
-            $activityLog->device = $device;
-            $activityLog->method = $request->method(); 
-            $activityLog->save();
-
-            Auth::logout(); // logout setelah dicatat
-            return redirect('/login')->withErrors(['Your session has expired due to inactivity.']);
+        if (!session()->has('last_activity')) {
+            session(['last_activity' => $now]);
+            return $next($request);
         }
 
-        session(['last_activity' => time()]);
+        if (Auth::check() && $now - session('last_activity') > $timeout) {
+            $agent = new Agent();
+            $user = Auth::user();
+
+            $agent->setUserAgent($request->header('User-Agent'));
+
+            \App\Models\activityLog::create([
+                'user_id' => $user->id,
+                'status' => 'logout',
+                'url' => $request->fullUrl(),
+                'ip' => $request->ip(),
+                'user_agent' => $request->header('User-Agent'),
+                'platform' => $agent->platform(),
+                'browser' => $agent->browser(),
+                'device' => $agent->device(),
+                'method' => $request->method(),
+            ]);
+
+            Auth::logout();
+            session()->invalidate();
+            session()->regenerateToken();
+
+            return redirect('/login')->withErrors(['Session habis karena tidak ada aktivitas']);
+        }
+
+        session(['last_activity' => $now]);
 
         return $next($request);
     }

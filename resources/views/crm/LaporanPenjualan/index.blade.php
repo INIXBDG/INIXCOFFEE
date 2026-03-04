@@ -14,7 +14,8 @@
                                 <select id="sales_key" class="form-select select2-sales" name="sales_key">
                                     <option value="" selected>Pilih Sales Key</option>
                                     @foreach ($sales as $salesItem)
-                                        <option value="{{ $salesItem->kode_karyawan }}">{{ $salesItem->kode_karyawan }}</option>
+                                        <option value="{{ $salesItem->kode_karyawan }}">{{ $salesItem->kode_karyawan }}
+                                        </option>
                                     @endforeach
                                 </select>
                             </div>
@@ -86,11 +87,13 @@
                         <div class="row g-4 mt-1">
                             <div class="col-md-6 col-lg-3">
                                 <label for="tanggal_awal_mulai" class="form-label fw-semibold">Tanggal Awal Mulai</label>
-                                <input type="date" id="tanggal_awal_mulai" name="tanggal_awal_mulai" class="form-control">
+                                <input type="date" id="tanggal_awal_mulai" name="tanggal_awal_mulai"
+                                    class="form-control">
                             </div>
                             <div class="col-md-6 col-lg-3">
                                 <label for="tanggal_awal_akhir" class="form-label fw-semibold">Tanggal Awal Akhir</label>
-                                <input type="date" id="tanggal_awal_akhir" name="tanggal_awal_akhir" class="form-control">
+                                <input type="date" id="tanggal_awal_akhir" name="tanggal_awal_akhir"
+                                    class="form-control">
                             </div>
                         </div>
 
@@ -108,7 +111,18 @@
             <!-- TABEL WIN -->
             <div class="card mb-4 shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title text-success mb-4">Laporan Win</h5>
+                    <h5 class="card-title text-success mb-4">
+                        Laporan Win
+                        <div class="float-end">
+                            <a href="#" id="pdfWinBtn" class="btn btn-danger btn-sm">
+                                <i class="bx bxs-file-pdf me-1"></i> PDF
+                            </a>
+
+                            <a href="#" id="excelWinBtn" class="btn btn-success btn-sm">
+                                <i class="bx bxs-file-excel me-1"></i> Excel
+                            </a>
+                        </div>
+                    </h5>
                     <div class="table-responsive">
                         <table id="tableStatus0" class="table table-bordered table-hover">
                             <thead class="table-success">
@@ -158,7 +172,17 @@
             <!-- TABEL LOST -->
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title text-danger mb-4">Laporan Lost</h5>
+                    <h5 class="card-title text-danger mb-4">
+                        Laporan Lost
+                        <div class="float-end">
+                            <a href="#" id="pdfLostBtn" class="btn btn-danger btn-sm">
+                                <i class="bx bxs-file-pdf me-1"></i> PDF
+                            </a>
+                            <a href="#" id="excelLostBtn" class="btn btn-success btn-sm">
+                                <i class="bx bxs-file-excel me-1"></i> Excel
+                            </a>
+                        </div>
+                    </h5>
                     <div class="table-responsive">
                         <table id="tableStatus2" class="table table-bordered table-hover">
                             <thead class="table-danger">
@@ -231,8 +255,10 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/locale/id.min.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
-    <link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link
+        href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
+        rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <link href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css" rel="stylesheet">
     <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
@@ -240,150 +266,220 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-    $(document).ready(function() {
-        moment.locale('id');
+        $(document).ready(function() {
+            moment.locale('id');
 
 
-        // Format Rupiah
-        function formatRupiah(angka) {
-            return 'Rp ' + (parseFloat(angka) || 0).toLocaleString('id-ID');
-        }
+            // Format Rupiah
+            function formatRupiah(angka) {
+                return 'Rp ' + (parseFloat(angka) || 0).toLocaleString('id-ID');
+            }
 
-        // Select2
-        $('.select2-materi, .select2-sales').each(function() {
-            $(this).select2({
-                placeholder: $(this).attr('id') === 'materi_key' ? "Cari Materi..." : "Cari Sales Key...",
-                allowClear: true,
-                theme: "bootstrap-5",
-                width: '100%'
+            // Select2
+            $('.select2-materi, .select2-sales').each(function() {
+                $(this).select2({
+                    placeholder: $(this).attr('id') === 'materi_key' ? "Cari Materi..." :
+                        "Cari Sales Key...",
+                    allowClear: true,
+                    theme: "bootstrap-5",
+                    width: '100%'
+                });
             });
-        });
 
-        // Toggle Triwulan & Bulan
-        function toggleTriwulanBulan() {
-            const tahun = $('#tahun').val();
-            if (!tahun) {
-                $('#triwulan, #bulan').prop('disabled', true).val('');
-                $('#triwulan option:first').text('Pilih Tahun Dulu');
-                $('#bulan option:first').text('Pilih Tahun Dulu');
-                $('#minggu').empty().append('<option value="" selected>Pilih Bulan & Tahun Dulu</option>').prop('disabled', true);
-            } else {
-                $('#triwulan, #bulan').prop('disabled', false);
-                $('#triwulan option:first').text('Pilih Triwulan');
-                $('#bulan option:first').text('Pilih Bulan');
-            }
-        }
-
-        // Populate Minggu
-        function populateWeeksDropdown() {
-            const month = $('#bulan').val();
-            const year = $('#tahun').val();
-            const $minggu = $('#minggu');
-
-            if (!month || !year) {
-                $minggu.empty().append('<option value="" selected>Pilih Bulan & Tahun Dulu</option>').prop('disabled', true);
-                return;
+            // Toggle Triwulan & Bulan
+            function toggleTriwulanBulan() {
+                const tahun = $('#tahun').val();
+                if (!tahun) {
+                    $('#triwulan, #bulan').prop('disabled', true).val('');
+                    $('#triwulan option:first').text('Pilih Tahun Dulu');
+                    $('#bulan option:first').text('Pilih Tahun Dulu');
+                    $('#minggu').empty().append('<option value="" selected>Pilih Bulan & Tahun Dulu</option>').prop(
+                        'disabled', true);
+                } else {
+                    $('#triwulan, #bulan').prop('disabled', false);
+                    $('#triwulan option:first').text('Pilih Triwulan');
+                    $('#bulan option:first').text('Pilih Bulan');
+                }
             }
 
-            $minggu.empty().prop('disabled', false).append('<option value="" selected>Pilih Minggu</option>');
-            const start = moment([year, month - 1, 1]);
-            const end = start.clone().endOf('month');
-            let week = 1;
-            let date = start.clone();
+            // Populate Minggu
+            function populateWeeksDropdown() {
+                const month = $('#bulan').val();
+                const year = $('#tahun').val();
+                const $minggu = $('#minggu');
 
-            while (date.isSameOrBefore(end)) {
-                let weekStart = date.clone().startOf('isoWeek');
-                let weekEnd = date.clone().endOf('isoWeek');
-                let from = weekStart.isBefore(start) ? start.clone() : weekStart;
-                let to = weekEnd.isAfter(end) ? end.clone() : weekEnd;
-                const label = `Minggu ${week} (${from.format('DD MMM')} - ${to.format('DD MMM')})`;
-                const value = `${from.format('YYYY-MM-DD')}_${to.format('YYYY-MM-DD')}`;
-                $minggu.append(`<option value="${value}">${label}</option>`);
-                date.add(1, 'week').startOf('isoWeek');
-                week++;
+                if (!month || !year) {
+                    $minggu.empty().append('<option value="" selected>Pilih Bulan & Tahun Dulu</option>').prop(
+                        'disabled', true);
+                    return;
+                }
+
+                $minggu.empty().prop('disabled', false).append('<option value="" selected>Pilih Minggu</option>');
+                const start = moment([year, month - 1, 1]);
+                const end = start.clone().endOf('month');
+                let week = 1;
+                let date = start.clone();
+
+                while (date.isSameOrBefore(end)) {
+                    let weekStart = date.clone().startOf('isoWeek');
+                    let weekEnd = date.clone().endOf('isoWeek');
+                    let from = weekStart.isBefore(start) ? start.clone() : weekStart;
+                    let to = weekEnd.isAfter(end) ? end.clone() : weekEnd;
+                    const label = `Minggu ${week} (${from.format('DD MMM')} - ${to.format('DD MMM')})`;
+                    const value = `${from.format('YYYY-MM-DD')}_${to.format('YYYY-MM-DD')}`;
+                    $minggu.append(`<option value="${value}">${label}</option>`);
+                    date.add(1, 'week').startOf('isoWeek');
+                    week++;
+                }
             }
-        }
 
-        // Toggle Filter Button
-        function toggleFilterButton() {
-            const hasValue = $('[name]:not(#tahun):not(#triwulan):not(#bulan):not(#minggu)').filter(function() {
-                return this.value;
-            }).length > 0 || $('#tahun').val();
-            $('#filterBtn').prop('disabled', !hasValue);
-        }
+            // Toggle Filter Button
+            function toggleFilterButton() {
+                const hasValue = $('[name]:not(#tahun):not(#triwulan):not(#bulan):not(#minggu)').filter(function() {
+                    return this.value;
+                }).length > 0 || $('#tahun').val();
+                $('#filterBtn').prop('disabled', !hasValue);
+            }
 
-        // Debounce
-        const debounce = (func, wait) => {
-            let timeout;
-            return (...args) => {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => func.apply(this, args), wait);
-            };
-        };
-
-        // Load Table
-        function loadTable(status, tableId, summaryId) {
-            if ($.fn.DataTable.isDataTable(tableId)) $(tableId).DataTable().destroy();
-
-            const params = {
-                status,
-                sales_key: $('#sales_key').val(),
-                materi_key: $('#materi_key').val(),
-                tahun: $('#tahun').val(),
-                bulan: $('#bulan').val(),
-                triwulan: $('#triwulan').val(),
-                tanggal_awal_mulai: $('#tanggal_awal_mulai').val(),
-                tanggal_awal_akhir: $('#tanggal_awal_akhir').val()
+            // Debounce
+            const debounce = (func, wait) => {
+                let timeout;
+                return (...args) => {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(this, args), wait);
+                };
             };
 
-            const url = "{{ route('jsonLaporan') }}?" + $.param(params);
+            // Load Table
+            function loadTable(status, tableId, summaryId) {
+                if ($.fn.DataTable.isDataTable(tableId)) $(tableId).DataTable().destroy();
 
-            $.ajax({
-                url, method: 'GET', dataType: 'json',
-                beforeSend: () => {
-                    $('#filterBtn, #resetBtn').prop('disabled', true);
-                    $('#filterText').addClass('d-none');
-                    $('#loadingText').removeClass('d-none');
-                },
-                success: (response) => {
-                    const { data, summary } = response;
+                const params = {
+                    status,
+                    sales_key: $('#sales_key').val(),
+                    materi_key: $('#materi_key').val(),
+                    tahun: $('#tahun').val(),
+                    bulan: $('#bulan').val(),
+                    triwulan: $('#triwulan').val(),
+                    tanggal_awal_mulai: $('#tanggal_awal_mulai').val(),
+                    tanggal_awal_akhir: $('#tanggal_awal_akhir').val()
+                };
 
-                    const prefix = status === 0 ? 'win' : 'lost';
+                const url = "{{ route('jsonLaporan') }}?" + $.param(params);
 
-                    $(tableId).DataTable({
-                        data: data,
-                        columns: [
-                            { data: 'id', className: 'text-center' },
-                            { data: 'sales_key', className: 'text-center' },
-                            { data: 'nama_materi', className: 'text-center' },
-                            { data: 'nama_perusahaan', className: 'text-center' },
-                            { data: 'pax', className: 'text-center' },
-                            { data: 'harga', render: d => formatRupiah(d), className: 'text-end' },
-                            { data: 'total_exam', render: d => formatRupiah(d), className: 'text-end' },
-                            { data: 'netsales', render: d => formatRupiah(d), className: 'text-end' },
-                            { data: 'grandtotal', render: d => formatRupiah(d), className: 'text-end fw-bold' },
-                            { data: 'tanggal_awal', render: d => d ? moment(d).format('DD-MM-YYYY') : '-', className: 'text-center' },
-                            { data: 'tanggal_akhir', render: d => d ? moment(d).format('DD-MM-YYYY') : '-', className: 'text-center' }
-                        ],
-                        pageLength: 10,
-                        responsive: true,
-                        language: { url: '//cdn.datatables.net/plug-ins/1.13.8/i18n/id.json' },
-                        drawCallback: () => {
-                            // Update Summary
-                            $(`#${prefix}HargaJual`).text(formatRupiah(summary.total_harga_jual || 0));
-                            $(`#${prefix}NetSales`).text(formatRupiah(summary.total_netsales || 0));
-                            $(`#${prefix}Exam`).text(formatRupiah(summary.total_exam || 0));
-                            $(`#${prefix}GrandTotal`).text(formatRupiah(summary.total_grand || 0));
-                            $(summaryId).removeClass('d-none');
+                $.ajax({
+                    url,
+                    method: 'GET',
+                    dataType: 'json',
+                    beforeSend: () => {
+                        $('#filterBtn, #resetBtn').prop('disabled', true);
+                        $('#filterText').addClass('d-none');
+                        $('#loadingText').removeClass('d-none');
+                    },
+                    success: (response) => {
+                        const {
+                            data,
+                            summary
+                        } = response;
 
-                            // Row Click
-                            $(tableId + ' tbody').off('click', 'tr').on('click', 'tr', function() {
-                                const rowData = $(tableId).DataTable().row(this).data();
+                        const prefix = status === 0 ? 'win' : 'lost';
 
-                                console.log(rowData.invoice);
-                                if (!rowData) return;
+                        $(tableId).DataTable({
+                            data: data,
+                            columns: [{
+                                    data: 'id',
+                                    className: 'text-center'
+                                },
+                                {
+                                    data: 'sales_key',
+                                    className: 'text-center'
+                                },
+                                {
+                                    data: 'nama_materi',
+                                    className: 'text-center'
+                                },
+                                {
+                                    data: 'nama_perusahaan',
+                                    className: 'text-center'
+                                },
+                                {
+                                    data: 'pax',
+                                    className: 'text-center'
+                                },
+                                {
+                                    data: 'harga',
+                                    render: d => formatRupiah(d),
+                                    className: 'text-end'
+                                },
+                                {
+                                    data: 'total_exam',
+                                    render: d => formatRupiah(d),
+                                    className: 'text-end'
+                                },
+                                {
+                                    data: 'netsales',
+                                    render: d => formatRupiah(d),
+                                    className: 'text-end'
+                                },
+                                {
+                                    data: 'grandtotal',
+                                    render: d => formatRupiah(d),
+                                    className: 'text-end fw-bold'
+                                },
+                                {
+                                    data: 'tanggal_awal',
+                                    render: d => d ? moment(d).format('DD-MM-YYYY') : '-',
+                                    className: 'text-center'
+                                },
+                                {
+                                    data: 'tanggal_akhir',
+                                    render: d => d ? moment(d).format('DD-MM-YYYY') : '-',
+                                    className: 'text-center'
+                                }
+                            ],
+                            pageLength: 10,
+                            responsive: true,
+                            language: {
+                                url: '//cdn.datatables.net/plug-ins/1.13.8/i18n/id.json'
+                            },
+                            drawCallback: () => {
+                                // Update Summary
+                                $(`#${prefix}HargaJual`).text(formatRupiah(summary
+                                    .total_harga_jual || 0));
+                                $(`#${prefix}NetSales`).text(formatRupiah(summary
+                                    .total_netsales || 0));
+                                $(`#${prefix}Exam`).text(formatRupiah(summary.total_exam ||
+                                    0));
+                                $(`#${prefix}GrandTotal`).text(formatRupiah(summary
+                                    .total_grand || 0));
+                                $(summaryId).removeClass('d-none');
 
-                                let html = `
+                                // Row Click
+                                $(tableId + ' tbody').off('click', 'tr').on('click', 'tr',
+                                    function() {
+                                        const rowData = $(tableId).DataTable().row(this)
+                                            .data();
+
+                                        console.log(rowData.invoice);
+                                        if (!rowData) return;
+
+                                        const tanggalAwal = new Date(rowData
+                                            .tanggal_awal).toLocaleDateString(
+                                            'id-ID', {
+                                                day: '2-digit',
+                                                month: 'long',
+                                                year: 'numeric'
+                                            });
+
+                                        const tanggalAkhir = new Date(rowData
+                                            .tanggal_akhir).toLocaleDateString(
+                                            'id-ID', {
+                                                day: '2-digit',
+                                                month: 'long',
+                                                year: 'numeric'
+                                            });
+
+                                        let html = `
                                     <div class="row">
                                         <div class="col-md-6">
                                             <p><strong>ID:</strong> ${rowData.id}</p>
@@ -391,6 +487,7 @@
                                             <p><strong>Materi:</strong> ${rowData.nama_materi}</p>
                                             <p><strong>Perusahaan:</strong> ${rowData.nama_perusahaan}</p>
                                             <p><strong>Pax:</strong> ${rowData.pax}</p>
+                                            <p><strong>Periode:</strong> ${tanggalAwal} s/d ${tanggalAkhir}</p>
                                         </div>
                                         <div class="col-md-6">
                                             <p><strong>Harga:</strong> ${formatRupiah(rowData.harga)}</p>
@@ -399,14 +496,16 @@
                                             <p><strong>NetSales:</strong> ${formatRupiah(rowData.netsales)}</p>
                                             <p><strong>Grand Total:</strong> ${formatRupiah(rowData.grandtotal)}</p>
                                         </div>
-</div>
+
+                                        <a href="/storage/${rowData.path_regis}" target="_blank">PDF E-regis</a>
+                                    </div>
 
                                     <hr class="my-3">
                                     <h6 class="mb-3">Informasi Invoice</h6>
                                     `;
-                                    
-                                    if (rowData.invoice) {
-                                        html += `
+
+                                        if (rowData.invoice) {
+                                            html += `
                                         <div class="row">
                                             <div class="col-md-6">
                                                 <p><strong>Nomor Invoice:</strong> ${rowData.invoice.invoice_number}</p>
@@ -418,132 +517,291 @@
                                                 <p><strong>Rekening Tujuan:</strong> ${rowData.invoice.account_number}</p>
                                             </div>
                                         </div>`;
-                                    } else {
-                                        html += `
+                                        } else {
+                                            html += `
                                         <p><strong>Status Invoice:</strong> <span class="badge bg-warning text-dark">Belum ada invoice</span></p>
-                                        @if(auth()->user()->jabatan === 'Finance & Accounting')
+                                        @if (auth()->user()->jabatan === 'Finance & Accounting')
                                         <a class="btn btn-primary btn-sm mt-2" href="/invoice/create/${rowData.id}" target="_blank">
                                             <i class="bi bi-file-earmark-plus"></i> Generate Invoice
                                         </a>
                                         @endif
                                         `;
-                                    }
-                                    
+                                        }
 
-                                if (rowData.perhitungannet && rowData.perhitungannet.length > 0) {
-                                    html += `<h6 class="mt-3">Detail NetSales</h6>
-                                        <div class="table-responsive">
-                                            <table class="table table-sm table-bordered">
-                                                <thead><tr>
-                                                    <th>Peserta</th><th>Trans</th><th>Penginapan</th><th>Fresh</th><th>Cashback</th><th>Diskon</th><th>Entertaint</th><th>Souvenir</th><th>Pembayaran</th>
-                                                </tr></thead><tbody>`;
-                                    rowData.perhitungannet.forEach(n => {
-                                        const peserta = n.peserta?.nama || '-';
-                                        html += `<tr>
-                                            <td>${peserta}</td>
-                                            <td>${formatRupiah(n.transportasi)}</td>
-                                            <td>${formatRupiah(n.penginapan)}</td>
-                                            <td>${formatRupiah(n.fresh_money)}</td>
-                                            <td>${formatRupiah(n.cashback)}</td>
-                                            <td>${formatRupiah(n.diskon)}</td>
-                                            <td>${formatRupiah(n.entertaint)}</td>
-                                            <td>${formatRupiah(n.souvenir)}</td>
-                                            <td>${(n.tipe_pembayaran || '-').toUpperCase()}</td>
+
+                                        if (rowData.perhitungannet && rowData
+                                            .perhitungannet.length > 0) {
+
+                                            html += `
+                                    <h6 class="mt-3 mb-2 fw-bold">Detail Payment Advance</h6>
+
+                                    <div class="table-responsive mb-4">
+                                        <table class="table table-bordered table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>Transportasi</th>
+                                                    <th>Jenis Transportasi</th>
+                                                    <th>Akomodasi Peserta</th>
+                                                    <th>Akomodasi Tim</th>
+                                                    <th>Keterangan Akomodasi Tim</th>
+                                                    <th>Fresh Money</th>
+                                                    <th>Entertaint</th>
+                                                    <th>Keterangan Entertaint</th>
+                                                    <th>Souvenir</th>
+                                                    <th>Cashback</th>
+                                                    <th>Sewa Laptop</th>
+                                                    <th>Deskripsi Tambahan</th>
+                                                    <th>Tanggal PA</th>
+                                                    <th>Tipe Pembayaran</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                    `;
+
+                                            rowData.perhitungannet.forEach(item => {
+                                                html += `
+                                        <tr>
+                                            <td>${formatRupiah(item.transportasi)}</td>
+                                            <td>${item.jenis_transportasi ?? '-'}</td>
+                                            <td>${formatRupiah(item.akomodasi_peserta)}</td>
+                                            <td>${formatRupiah(item.akomodasi_tim)}</td>
+                                            <td>${item.keterangan_akomodasi_tim ?? '-'}</td>
+                                            <td>${item.fresh_money ? formatRupiah(item.fresh_money) : '-'}</td>
+                                            <td>${item.entertaint ? formatRupiah(item.entertaint) : '-'}</td>
+                                            <td>${item.keterangan_entertaint ?? '-'}</td>
+                                            <td>${item.souvenir ? formatRupiah(item.souvenir) : '-'}</td>
+                                            <td>${item.cashback ? formatRupiah(item.cashback) : '-'}</td>
+                                            <td>${item.sewa_laptop ? formatRupiah(item.sewa_laptop) : '-'}</td>
+                                            <td>${item.deskripsi_tambahan ?? '-'}</td>
+                                            <td>${item.tgl_pa ? moment(item.tgl_pa).format('DD MMMM YYYY') : '-'}</td>
+                                            <td>${item.tipe_pembayaran ? item.tipe_pembayaran.toUpperCase() : '-'}</td>
                                         </tr>`;
+                                            });
+
+                                            html += `
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    `
+                                            html +=
+                                                `</tbody></table></div>
+                                        <a href="/crm/edit/${rowData.id}/pa" class="btn btn-primary btn-sm mt-2" target="_blank">Edit PA</a>`;;
+
+                                            // Tracking
+                                            if (rowData.tracking) {
+                                                html += `
+                                        <h6 class="mt-4 mb-3 fw-bold">Tracking Information</h6>
+                                        <table class="table table-striped">
+                                            <tr>
+                                                <th>Tracking</th>
+                                                <td>${rowData.tracking.tracking ?? '-'}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Dibuat</th>
+                                                <td>${moment(rowData.tracking.created_at).format('DD MMMM YYYY')}</td>
+                                            </tr>
+                                        </table>
+                                        `;
+                                            } else {
+                                                html +=
+                                                    `<p class="text-muted">Belum ada tracking</p>`;
+                                            }
+
+                                            // Approval
+                                            html +=
+                                                `<h6 class="mt-4 mb-3 fw-bold">Approval Information</h6>`;
+
+                                            if (rowData.approval && rowData.approval
+                                                .length > 0) {
+                                                html += `
+                                        <div class="table-responsive">
+                                            <table class="table table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Status</th>
+                                                        <th>Approver</th>
+                                                        <th>Keterangan</th>
+                                                        <th>Tanggal</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                        `;
+
+                                                rowData.approval.forEach(a => {
+                                                    const status = a.status ==
+                                                        1 ?
+                                                        (a.level_status == 3 &&
+                                                            a.keterangan !==
+                                                            'Selesai' ?
+                                                            'Diproses' :
+                                                            'Disetujui') :
+                                                        (a.status == 0 ?
+                                                            'Ditolak' :
+                                                            'Belum diketahui');
+
+                                                    const approver = {
+                                                            1: "SPV Sales",
+                                                            2: "GM",
+                                                            3: "Finance & Accounting"
+                                                        } [a.level_status] ??
+                                                        "-";
+
+                                                    html += `
+                                                <tr>
+                                                    <td>${status}</td>
+                                                    <td>${approver}</td>
+                                                    <td>${a.keterangan ?? '-'}</td>
+                                                    <td>${moment(a.created_at).format('DD MMMM YYYY HH:mm')}</td>
+                                                </tr>
+                                            `;
+                                                });
+
+                                                html += `</tbody></table></div>
+                                        <div class="d-flex justify-content-end mt-3">
+                                            <a href="/crm/edit/${rowData.id}/pa" class="btn btn-success btn-sm" target="_blank">
+                                                Edit PA
+                                            </a>
+                                        </div>`;
+                                            } else {
+                                                html +=
+                                                    `<p class="text-muted">Belum ada approval.</p>`;
+                                            }
+                                        }
+
+
+                                        $('#detailContent').html(html);
+                                        $('#detailModalLabel').text(
+                                            `Detail ${status === 0 ? 'Win' : 'Lost'}`
+                                        );
+                                        new bootstrap.Modal('#detailModal').show();
                                     });
-                                    html += `</tbody></table></div>
-                                        <a href="/crm/edit/${rowData.id}/pa" class="btn btn-primary btn-sm mt-2" target="_blank">Edit PA</a>`;
-                                } else {
-                                    html += `<p class="text-muted mt-3">Tidak ada detail NetSales.</p>`;
-                                }
+                            }
+                        });
+                    },
+                    error: () => {
+                        alert('Gagal memuat data.');
+                    },
+                    complete: () => {
+                        $('#filterBtn, #resetBtn').prop('disabled', false);
+                        $('#filterText').removeClass('d-none');
+                        $('#loadingText').addClass('d-none');
+                        toggleFilterButton();
+                    }
+                });
+            }
 
-                                $('#detailContent').html(html);
-                                $('#detailModalLabel').text(`Detail ${status === 0 ? 'Win' : 'Lost'}`);
-                                new bootstrap.Modal('#detailModal').show();
-                            });
-                        }
-                    });
-                },
-                error: () => {
-                    alert('Gagal memuat data.');
-                },
-                complete: () => {
-                    $('#filterBtn, #resetBtn').prop('disabled', false);
-                    $('#filterText').removeClass('d-none');
-                    $('#loadingText').addClass('d-none');
-                    toggleFilterButton();
+            const loadBoth = debounce(() => {
+                loadTable(0, '#tableStatus0', '#summaryWin');
+                loadTable(2, '#tableStatus2', '#summaryLost');
+            }, 300);
+
+            function resetFilters() {
+                $('#filterForm')[0].reset();
+                $('.select2-materi, .select2-sales').val(null).trigger('change');
+                toggleTriwulanBulan();
+                $('#minggu').empty().append('<option value="" selected>Pilih Bulan & Tahun Dulu</option>').prop(
+                    'disabled', true);
+
+                // Reset Summary
+                ['win', 'lost'].forEach(prefix => {
+                    $(`#${prefix}HargaJual, #${prefix}NetSales, #${prefix}Exam, #${prefix}GrandTotal`).text(
+                        'Rp 0');
+                    $(`#summary${prefix === 'win' ? 'Win' : 'Lost'}`).addClass('d-none');
+                });
+
+                toggleFilterButton();
+                loadBoth();
+            }
+
+            function getFilterParams(extra = {}) {
+                return {
+                    sales_key: $('#sales_key').val(),
+                    materi_key: $('#materi_key').val(),
+                    tahun: $('#tahun').val(),
+                    bulan: $('#bulan').val(),
+                    triwulan: $('#triwulan').val(),
+                    tanggal_awal_mulai: $('#tanggal_awal_mulai').val(),
+                    tanggal_awal_akhir: $('#tanggal_awal_akhir').val(),
+                };
+            }
+
+            $('#pdfWinBtn').on('click', function(e) {
+                e.preventDefault();
+                const params = getFilterParams();
+                const url = "{{ route('laporan.win.pdf') }}?" + $.param(params);
+                window.open(url, '_blank');
+            });
+
+            $('#pdfLostBtn').on('click', function(e) {
+                e.preventDefault();
+                const params = getFilterParams();
+                const url = "{{ route('laporan.lost.pdf') }}?" + $.param(params);
+                window.open(url, '_blank');
+            });
+
+            $('#excelWinBtn').on('click', function(e) {
+                e.preventDefault();
+                const params = getFilterParams();
+                const url = "{{ route('laporan.win.excel') }}?" + $.param(params);
+                window.open(url, '_blank');
+            });
+
+            $('#excelLostBtn').on('click', function(e) {
+                e.preventDefault();
+                const params = getFilterParams();
+                const url = "{{ route('laporan.lost.excel') }}?" + $.param(params);
+                window.open(url, '_blank');
+            });
+
+            // Events
+            $('#tahun').on('change', function() {
+                toggleTriwulanBulan();
+                populateWeeksDropdown();
+                toggleFilterButton();
+            });
+
+            $('#bulan').on('change', function() {
+                if ($(this).val()) $('#triwulan').val('');
+                populateWeeksDropdown();
+                toggleFilterButton();
+            });
+
+            $('#triwulan').on('change', function() {
+                if ($(this).val()) {
+                    $('#bulan').val('');
+                    $('#minggu').empty().append(
+                        '<option value="" selected>Pilih Bulan & Tahun Dulu</option>').prop('disabled',
+                        true);
                 }
+                toggleFilterButton();
             });
-        }
 
-        const loadBoth = debounce(() => {
-            loadTable(0, '#tableStatus0', '#summaryWin');
-            loadTable(2, '#tableStatus2', '#summaryLost');
-        }, 300);
+            $('#minggu').on('change', function() {
+                const val = $(this).val();
+                if (val) {
+                    const [start, end] = val.split('_');
+                    $('#tanggal_awal_mulai').val(start);
+                    $('#tanggal_awal_akhir').val(end);
+                    $('#triwulan').val('');
+                } else {
+                    $('#tanggal_awal_mulai, #tanggal_awal_akhir').val('');
+                }
+                toggleFilterButton();
+            });
 
-        function resetFilters() {
-            $('#filterForm')[0].reset();
-            $('.select2-materi, .select2-sales').val(null).trigger('change');
+            $('#tanggal_awal_mulai, #tanggal_awal_akhir').on('input', function() {
+                if ($(this).val()) $('#minggu').val('');
+                toggleFilterButton();
+            });
+
+            $('#filterForm').on('change', 'select, input', toggleFilterButton);
+            $('#filterBtn').on('click', loadBoth);
+            $('#resetBtn').on('click', resetFilters);
+
+            // Initial Load
             toggleTriwulanBulan();
-            $('#minggu').empty().append('<option value="" selected>Pilih Bulan & Tahun Dulu</option>').prop('disabled', true);
-
-            // Reset Summary
-            ['win', 'lost'].forEach(prefix => {
-                $(`#${prefix}HargaJual, #${prefix}NetSales, #${prefix}Exam, #${prefix}GrandTotal`).text('Rp 0');
-                $(`#summary${prefix === 'win' ? 'Win' : 'Lost'}`).addClass('d-none');
-            });
-
             toggleFilterButton();
             loadBoth();
-        }
-
-        // Events
-        $('#tahun').on('change', function() {
-            toggleTriwulanBulan();
-            populateWeeksDropdown();
-            toggleFilterButton();
         });
-
-        $('#bulan').on('change', function() {
-            if ($(this).val()) $('#triwulan').val('');
-            populateWeeksDropdown();
-            toggleFilterButton();
-        });
-
-        $('#triwulan').on('change', function() {
-            if ($(this).val()) {
-                $('#bulan').val('');
-                $('#minggu').empty().append('<option value="" selected>Pilih Bulan & Tahun Dulu</option>').prop('disabled', true);
-            }
-            toggleFilterButton();
-        });
-
-        $('#minggu').on('change', function() {
-            const val = $(this).val();
-            if (val) {
-                const [start, end] = val.split('_');
-                $('#tanggal_awal_mulai').val(start);
-                $('#tanggal_awal_akhir').val(end);
-                $('#triwulan').val('');
-            } else {
-                $('#tanggal_awal_mulai, #tanggal_awal_akhir').val('');
-            }
-            toggleFilterButton();
-        });
-
-        $('#tanggal_awal_mulai, #tanggal_awal_akhir').on('input', function() {
-            if ($(this).val()) $('#minggu').val('');
-            toggleFilterButton();
-        });
-
-        $('#filterForm').on('change', 'select, input', toggleFilterButton);
-        $('#filterBtn').on('click', loadBoth);
-        $('#resetBtn').on('click', resetFilters);
-
-        // Initial Load
-        toggleTriwulanBulan();
-        toggleFilterButton();
-        loadBoth();
-    });
     </script>
 @endsection

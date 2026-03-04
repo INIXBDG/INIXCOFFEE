@@ -6,25 +6,84 @@ use App\Http\Controllers\Controller;
 use App\Models\Certificate;
 use App\Models\RKM;
 use App\Models\Karyawan;
+use App\Models\Materi;
 use App\Models\Peserta;
 use App\Models\Registrasi;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 
 class CertificateController extends Controller
 {
-    // Halaman list RKM untuk generate sertifikat
     public function index()
     {
-        $rkm = RKM::with(['materi', 'perusahaan', 'peluang'])
-            ->select('r_k_m_s.*')
+        $materis = Materi::select('id', 'nama_materi', 'kode_materi')
+            ->orderBy('nama_materi')
+            ->get();
+
+        return view('office.certificate.index', compact('materis'));
+    }
+
+    public function getData(Request $request)
+    {
+        $query = RKM::with(['materi:id,nama_materi,kode_materi', 'perusahaan:id,nama_perusahaan'])
             ->whereNotNull('tanggal_awal')
             ->whereNotNull('tanggal_akhir')
-            ->orderBy('tanggal_awal', 'desc')
-            ->paginate(10);
+            ->where('status', '0');
 
-        return view('office.certificate.index', compact('rkm'));
+        if ($search = $request->search) {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas(
+                    'materi',
+                    fn($m) =>
+                    $m->where('nama_materi', 'LIKE', "%{$search}%")
+                        ->orWhere('kode_materi', 'LIKE', "%{$search}%")
+                )
+                    ->orWhereHas(
+                        'perusahaan',
+                        fn($p) =>
+                        $p->where('nama_perusahaan', 'LIKE', "%{$search}%")
+                    );
+            });
+        }
+
+        if ($materi_id = $request->materi_id) {
+            $query->where('materi_id', $materi_id);
+        }
+
+        if ($start = $request->start_date) {
+            $query->whereDate('tanggal_awal', '>=', $start);
+        }
+        if ($end = $request->end_date) {
+            $query->whereDate('tanggal_akhir', '<=', $end);
+        }
+
+        $rkm = $query->orderBy('tanggal_awal', 'desc')
+            ->paginate($request->per_page ?? 15);
+
+        $data = $rkm->through(function ($item) {
+            return [
+                'id'                => $item->id,
+                'materi_nama'       => $item->materi?->nama_materi ?? '-',
+                'materi_kode'       => $item->materi?->kode_materi ?? '',
+                'perusahaan_nama'   => $item->perusahaan?->nama_perusahaan ?? '-',
+                'tanggal_awal'      => \Carbon\Carbon::parse($item->tanggal_awal)->format('d M Y'),
+                'tanggal_akhir'     => \Carbon\Carbon::parse($item->tanggal_akhir)->format('d M Y'),
+            ];
+        })->items();
+
+        return response()->json([
+            'data'       => $data,
+            'pagination' => [
+                'total'        => $rkm->total(),
+                'from'         => $rkm->firstItem(),
+                'to'           => $rkm->lastItem(),
+                'current_page' => $rkm->currentPage(),
+                'last_page'    => $rkm->lastPage(),
+                'per_page'     => $rkm->perPage(),
+            ]
+        ]);
     }
 
     // Detail RKM - List Peserta
@@ -73,13 +132,20 @@ class CertificateController extends Controller
             ->where('id_peserta', $peserta_id)
             ->first();
 
-        if ($existingCert) {
-            return redirect()
-                ->route('office.certificate.show', $existingCert->id)
-                ->with('info', 'Sertifikat sudah ada.');
+        $initialNumber = 26082;
+
+        $lastCert = Certificate::orderBy('nomor_sertifikat', 'desc')->first();
+
+        if ($lastCert && !empty($lastCert->nomor_sertifikat)) {
+            $lastNumber = (int) substr($lastCert->nomor_sertifikat, -6);
+            $number = $lastNumber + 1;
+        } else {
+            $number = $initialNumber + 1;
         }
 
-        return view('office.certificate.create', compact('rkm', 'peserta'));
+        $nomorSertifikatBaru = sprintf('%06d', $number);
+
+        return view('office.certificate.create', compact('rkm', 'peserta', 'nomorSertifikatBaru'));
     }
 
     // Proses generate sertifikat dan simpan ke database
@@ -92,17 +158,19 @@ class CertificateController extends Controller
             'nama_materi' => 'required|string|max:255',
             'tanggal_awal' => 'required|date',
             'tanggal_akhir' => 'required|date|after_or_equal:tanggal_awal',
+            'tanggal_awal2' => 'nullable|date',
+            'tanggal_akhir2' => 'nullable|date|after_or_equal:tanggal_awal2',
         ]);
 
-        $nomorSertifikat = Certificate::generateNomorSertifikat();
 
         $certificate = Certificate::create([
-            'nomor_sertifikat' => $nomorSertifikat,
+            'nomor_sertifikat' => $request->nomor_sertifikat,
             'rkm_id' => $request->rkm_id,
             'id_peserta' => $request->id_peserta,
             'nama_peserta' => $request->nama_peserta,
             'nama_materi' => $request->nama_materi,
             'tanggal_pelatihan' => $request->tanggal_awal . ' - ' . $request->tanggal_akhir,
+            'tanggal_pelatihan2' => $request->filled('tanggal_awal2') && $request->filled('tanggal_akhir2') ? $request->tanggal_awal2 . ' - ' . $request->tanggal_akhir2 : null,
         ]);
 
         $penandatangan = Karyawan::find(4);
@@ -111,19 +179,15 @@ class CertificateController extends Controller
         $pdf = Pdf::loadView('office.certificate.pdf', compact('certificate', 'penandatangan'))
             ->setPaper('a4', 'landscape');
 
-        // Pastikan folder certificates ada
         if (!Storage::exists('public/certificates')) {
             Storage::makeDirectory('public/certificates');
         }
 
-        // Ganti "/" dengan "-" untuk nama file yang aman
-        $safeFilename = str_replace('/', '-', $nomorSertifikat) . '.pdf';
-        
-        // Simpan file dengan path yang benar
+        $safeFilename = str_replace('/', '-', $request->nomor_sertifikat) . '.pdf';
+
         $filename = 'certificates/' . $safeFilename;
         Storage::put('public/' . $filename, $pdf->output());
-        
-        // Update database dengan path relatif (tanpa 'public/')
+
         $certificate->update(['pdf_path' => $filename]);
 
         return redirect()
@@ -136,6 +200,7 @@ class CertificateController extends Controller
     {
         $certificate = Certificate::with(['rkm.materi', 'peserta'])->findOrFail($id);
         $penandatangan = Karyawan::find(4);
+        // dd($certificate);
 
         return view('office.certificate.show', compact('certificate', 'penandatangan'));
     }
@@ -157,17 +222,54 @@ class CertificateController extends Controller
     // Download PDF by RKM & Peserta
     public function downloadByPeserta($rkm_id, $peserta_id)
     {
-        $certificate = Certificate::where('rkm_id', $rkm_id)
+        $certificates = Certificate::where('rkm_id', $rkm_id)
             ->where('id_peserta', $peserta_id)
-            ->firstOrFail();
+            ->get();
 
-        if ($certificate->pdf_path && Storage::exists('public/' . $certificate->pdf_path)) {
-            // Ganti "/" dengan "-" untuk nama file download yang aman
-            $downloadName = str_replace('/', '-', $certificate->nomor_sertifikat) . '.pdf';
-            return Storage::download('public/' . $certificate->pdf_path, $downloadName);
+        if ($certificates->count() === 0) {
+            return back()->with('error', 'File PDF tidak ditemukan');
         }
 
-        return back()->with('error', 'File PDF tidak ditemukan');
+        // Jika hanya satu sertifikat, download langsung
+        if ($certificates->count() === 1) {
+            $certificate = $certificates->first();
+            if ($certificate->pdf_path && Storage::exists('public/' . $certificate->pdf_path)) {
+                $downloadName = str_replace('/', '-', $certificate->nomor_sertifikat) . '.pdf';
+                return Storage::download('public/' . $certificate->pdf_path, $downloadName);
+            }
+            return back()->with('error', 'File PDF tidak ditemukan');
+        }
+
+        // Jika lebih dari satu, buat ZIP
+        $zipFilename = 'sertifikat_' . $rkm_id . '_' . $peserta_id . '_' . date('YmdHis') . '.zip';
+        $zipPath = storage_path('app/public/' . $zipFilename);
+
+        $zip = new \ZipArchive();
+        if ($zip->open($zipPath, \ZipArchive::CREATE) !== TRUE) {
+            return back()->with('error', 'Gagal membuat file ZIP');
+        }
+
+        $added = false;
+        foreach ($certificates as $certificate) {
+            if ($certificate->pdf_path && Storage::exists('public/' . $certificate->pdf_path)) {
+                $pdfFullPath = storage_path('app/public/' . $certificate->pdf_path);
+                $downloadName = str_replace('/', '-', $certificate->nomor_sertifikat) . '.pdf';
+                $zip->addFile($pdfFullPath, $downloadName);
+                $added = true;
+            }
+        }
+        $zip->close();
+
+        if (!$added) {
+            // Hapus file ZIP jika tidak ada file yang ditambahkan
+            if (file_exists($zipPath)) {
+                unlink($zipPath);
+            }
+            return back()->with('error', 'Tidak ada file PDF yang ditemukan');
+        }
+
+        // Download ZIP
+        return response()->download($zipPath)->deleteFileAfterSend(true);
     }
 
     // Preview PDF di browser

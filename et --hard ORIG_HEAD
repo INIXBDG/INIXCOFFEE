@@ -1,0 +1,135 @@
+[33m285d960[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{0}: pull origin main: Fast-forward
+[33mbe4b559[m[33m ([m[1;32mKPI[m[33m)[m HEAD@{1}: checkout: moving from PerbaikanKendaraan to main
+[33m08e878c[m[33m ([m[1;32mPerbaikanKendaraan[m[33m)[m HEAD@{2}: reset: moving to HEAD
+[33m08e878c[m[33m ([m[1;32mPerbaikanKendaraan[m[33m)[m HEAD@{3}: pull origin main: Fast-forward
+[33m3e33d5d[m[33m ([m[1;31morigin/PerbaikanKendaraan[m[33m)[m HEAD@{4}: commit: penambahan Perbaikan Kendaraan dan Penyesuaian report kondisi
+[33m7e57e46[m[33m ([m[1;31morigin/repairDetailPenilaian360[m[33m, [m[1;32mrepairDetailPenilaian360[m[33m, [m[1;32mperbaikanDetailPenilaian[m[33m)[m HEAD@{5}: checkout: moving from perbaikanDetailPenilaian to PerbaikanKendaraan
+[33m7e57e46[m[33m ([m[1;31morigin/repairDetailPenilaian360[m[33m, [m[1;32mrepairDetailPenilaian360[m[33m, [m[1;32mperbaikanDetailPenilaian[m[33m)[m HEAD@{6}: checkout: moving from KPI to perbaikanDetailPenilaian
+[33mbe4b559[m[33m ([m[1;32mKPI[m[33m)[m HEAD@{7}: reset: moving to HEAD
+[33mbe4b559[m[33m ([m[1;32mKPI[m[33m)[m HEAD@{8}: reset: moving to HEAD
+[33mbe4b559[m[33m ([m[1;32mKPI[m[33m)[m HEAD@{9}: checkout: moving from main to KPI
+[33mbe4b559[m[33m ([m[1;32mKPI[m[33m)[m HEAD@{10}: checkout: moving from perbaikanDetailPenilaian to main
+[33m565356e[m[33m ([m[1;32mperbaikanPresentaseUptime[m[33m)[m HEAD@{11}: reset: moving to HEAD~4
+[33m18b0459[m HEAD@{12}: checkout: moving from repairDetailPenilaian360 to perbaikanDetailPenilaian
+[33m7e57e46[m[33m ([m[1;31morigin/repairDetailPenilaian360[m[33m, [m[1;32mrepairDetailPenilaian360[m[33m, [m[1;32mperbaikanDetailPenilaian[m[33m)[m HEAD@{13}: commit: perbaikan detail beserta notification
+[33m18b0459[m HEAD@{14}: checkout: moving from perbaikanDetailPenilaian to repairDetailPenilaian360
+[33m18b0459[m HEAD@{15}: commit: perbaikan notifikasi, perubahan alur get data di controller dan penyesuaian eksekusi data di penilaian 360
+[33mfadfd31[m[33m ([m[1;31morigin/updatePenilaian360[m[33m, [m[1;32mupdatePenilaian360[m[33m)[m HEAD@{16}: checkout: moving from updatePenilaian360 to perbaikanDetailPenilaian
+[33mfadfd31[m[33m ([m[1;31morigin/updatePenilaian360[m[33m, [m[1;32mupdatePenilaian360[m[33m)[m HEAD@{17}: commit: perbaikan fungsi detail penilaian 360
+[33m252e7e5[m[33m ([m[1;31morigin/updatePerbaikanPenilaian[m[33m, [m[1;32mupdatePerbaikanPenilaian[m[33m)[m HEAD@{18}: checkout: moving from updatePerbaikanPenilaian to updatePenilaian360
+[33m252e7e5[m[33m ([m[1;31morigin/updatePerbaikanPenilaian[m[33m, [m[1;32mupdatePerbaikanPenilaian[m[33m)[m HEAD@{19}: commit: perbaikan notfication chare form to evaluator
+[33m957cf2e[m[33m ([m[1;31morigin/UpdateTargetKPI[m[33m, [m[1;32mUpdateTargetKPI[m[33m)[m HEAD@{20}: checkout: moving from UpdateTargetKPI to updatePerbaikanPenilaian
+[33m957cf2e[m[33m ([m[1;31morigin/UpdateTargetKPI[m[33m, [m[1;32mUpdateTargetKPI[m[33m)[m HEAD@{21}: commit: Update target KPI dan perbaikan notifikasi pickup driver
+[33m565356e[m[33m ([m[1;32mperbaikanPresentaseUptime[m[33m)[m HEAD@{22}: checkout: moving from perbaikanPresentaseUptime to UpdateTargetKPI
+[33m565356e[m[33m ([m[1;32mperbaikanPresentaseUptime[m[33m)[m HEAD@{23}: pull origin main: Fast-forward
+[33m873effa[m[33m ([m[1;31morigin/perbaikanPresentaseUptime[m[33m)[m HEAD@{24}: commit: penyesuaian layout
+[33mafb6d2c[m[33m ([m[1;31morigin/vicky-perbaikan[m[33m, [m[1;32mvicky-perbaikan[m[33m)[m HEAD@{25}: checkout: moving from vicky-perbaikan to perbaikanPresentaseUptime
+[33mafb6d2c[m[33m ([m[1;31morigin/vicky-perbaikan[m[33m, [m[1;32mvicky-perbaikan[m[33m)[m HEAD@{26}: commit: penambahan presentase uptime
+[33mbe4b559[m[33m ([m[1;32mKPI[m[33m)[m HEAD@{27}: checkout: moving from main to vicky-perbaikan
+[33mbe4b559[m[33m ([m[1;32mKPI[m[33m)[m HEAD@{28}: pull: Fast-forward
+[33m7f3225f[m HEAD@{29}: checkout: moving from downalodExcelAdminSales to main
+[33m1bbd978[m[33m ([m[1;31morigin/downalodExcelAdminSales[m[33m, [m[1;32mdownalodExcelAdminSales[m[33m)[m HEAD@{30}: commit (merge): Penambahan tombol downlad excel untuk edmin sales
+[33m312ebd0[m HEAD@{31}: checkout: moving from main to downalodExcelAdminSales
+[33m7f3225f[m HEAD@{32}: checkout: moving from downalodExcelAdminSales to main
+[33m312ebd0[m HEAD@{33}: commit: pembuatan fungsi download excel khusus admin sales
+[33mf69d89b[m[33m ([m[1;32mperbaikanNotificationLembur[m[33m)[m HEAD@{34}: checkout: moving from perbaikanNotificationLembur to downalodExcelAdminSales
+[33mf69d89b[m[33m ([m[1;32mperbaikanNotificationLembur[m[33m)[m HEAD@{35}: pull origin main: Fast-forward
+[33mb584bd8[m[33m ([m[1;31morigin/perbaikanNotificationLembur[m[33m)[m HEAD@{36}: commit: perbaikan ['id_karyawan']
+[33m4c2368b[m[33m ([m[1;31morigin/rekomendasiLanjutan[m[33m, [m[1;32mrekomendasiLanjutan[m[33m)[m HEAD@{37}: checkout: moving from rekomendasiLanjutan to perbaikanNotificationLembur
+[33m4c2368b[m[33m ([m[1;31morigin/rekomendasiLanjutan[m[33m, [m[1;32mrekomendasiLanjutan[m[33m)[m HEAD@{38}: commit: pembuatan fitur rekomendasi lanjutan
+[33m56d65b8[m[33m ([m[1;32mperbaikanPengajuanCatering[m[33m)[m HEAD@{39}: checkout: moving from perbaikanPengajuanCatering to rekomendasiLanjutan
+[33m56d65b8[m[33m ([m[1;32mperbaikanPengajuanCatering[m[33m)[m HEAD@{40}: pull origin main: Fast-forward
+[33mb9a46cc[m HEAD@{41}: commit: perbaikan qty mengikuti rkm dan notifikasi perubahan/update
+[33m950f88b[m[33m ([m[1;31morigin/scheduleAutoJobInstruktur[m[33m, [m[1;32mscheduleAutoJobInstruktur[m[33m)[m HEAD@{42}: checkout: moving from scheduleAutoJobInstruktur to perbaikanPengajuanCatering
+[33m950f88b[m[33m ([m[1;31morigin/scheduleAutoJobInstruktur[m[33m, [m[1;32mscheduleAutoJobInstruktur[m[33m)[m HEAD@{43}: commit: membuat command schedule untuk auto job instruktur di rkm
+[33m555aadf[m[33m ([m[1;32mpusher-realtime-notification[m[33m)[m HEAD@{44}: checkout: moving from pusher-realtime-notification to scheduleAutoJobInstruktur
+[33m555aadf[m[33m ([m[1;32mpusher-realtime-notification[m[33m)[m HEAD@{45}: commit: pembuatan realtime notification
+[33mc23b209[m[33m ([m[1;31morigin/perbaikanDownloadPenilaian[m[33m, [m[1;32mperbaikanDownloadPenilaian[m[33m)[m HEAD@{46}: checkout: moving from perbaikanDownloadPenilaian to pusher-realtime-notification
+[33mc23b209[m[33m ([m[1;31morigin/perbaikanDownloadPenilaian[m[33m, [m[1;32mperbaikanDownloadPenilaian[m[33m)[m HEAD@{47}: commit: perbaikan download pdf penilaian 360
+[33m1c47250[m[33m ([m[1;31morigin/UpdateCRM[m[33m, [m[1;32mUpdateCRM[m[33m)[m HEAD@{48}: checkout: moving from UpdateCRM to perbaikanDownloadPenilaian
+[33m1c47250[m[33m ([m[1;31morigin/UpdateCRM[m[33m, [m[1;32mUpdateCRM[m[33m)[m HEAD@{49}: commit: penambahan export excel-pdf untuk laporan penjualan dan penambahan periode laporan penjualan-detail
+[33m9b0602b[m[33m ([m[1;31morigin/PerbaikanAbsensiRKM[m[33m, [m[1;32mPerbaikanAbsensiRKM[m[33m)[m HEAD@{50}: checkout: moving from PerbaikanAbsensiRKM to UpdateCRM
+[33m9b0602b[m[33m ([m[1;31morigin/PerbaikanAbsensiRKM[m[33m, [m[1;32mPerbaikanAbsensiRKM[m[33m)[m HEAD@{51}: commit: perbaikan di file rkm.absensi
+[33ma758568[m[33m ([m[1;32mperbaikanDetailKPI[m[33m)[m HEAD@{52}: checkout: moving from perbaikanDetailKPI to PerbaikanAbsensiRKM
+[33ma758568[m[33m ([m[1;32mperbaikanDetailKPI[m[33m)[m HEAD@{53}: commit: penyesuaian detail KPI
+[33ma360890[m[33m ([m[1;31morigin/expenseHubUpdate[m[33m, [m[1;32mexpenseHubUpdate[m[33m)[m HEAD@{54}: checkout: moving from expenseHubUpdate to perbaikanDetailKPI
+[33ma360890[m[33m ([m[1;31morigin/expenseHubUpdate[m[33m, [m[1;32mexpenseHubUpdate[m[33m)[m HEAD@{55}: commit: perbaikan expense hub
+[33mae3ff9c[m[33m ([m[1;31morigin/pengajuanCatering[m[33m, [m[1;32mpengajuanCatering[m[33m)[m HEAD@{56}: checkout: moving from pengajuanCatering to expenseHubUpdate
+[33mae3ff9c[m[33m ([m[1;31morigin/pengajuanCatering[m[33m, [m[1;32mpengajuanCatering[m[33m)[m HEAD@{57}: checkout: moving from ExpenseHub to pengajuanCatering
+[33mf461e48[m[33m ([m[1;32mexpenseHub[m[33m)[m HEAD@{58}: checkout: moving from pengajuanCatering to ExpenseHub
+[33mae3ff9c[m[33m ([m[1;31morigin/pengajuanCatering[m[33m, [m[1;32mpengajuanCatering[m[33m)[m HEAD@{59}: commit: pembuatan pengajuan catering
+[33m8f68088[m[33m ([m[1;31morigin/catering_vicky[m[33m, [m[1;32mcatering_vicky[m[33m)[m HEAD@{60}: checkout: moving from catering_vicky to pengajuanCatering
+[33m8f68088[m[33m ([m[1;31morigin/catering_vicky[m[33m, [m[1;32mcatering_vicky[m[33m)[m HEAD@{61}: commit: backup sementara catering
+[33mf461e48[m[33m ([m[1;32mexpenseHub[m[33m)[m HEAD@{62}: checkout: moving from expenseHub to catering_vicky
+[33mf461e48[m[33m ([m[1;32mexpenseHub[m[33m)[m HEAD@{63}: pull origin main: Fast-forward
+[33m873a253[m HEAD@{64}: commit: pembuatan pengajuan diluar pa
+[33med79082[m[33m ([m[1;32msurveyKepuasanITSM[m[33m)[m HEAD@{65}: checkout: moving from surveyKepuasanITSM to expenseHub
+[33med79082[m[33m ([m[1;32msurveyKepuasanITSM[m[33m)[m HEAD@{66}: commit: pembuatan survey kepuasan ITSM
+[33md9ab575[m[33m ([m[1;31morigin/feedbackPelayanan[m[33m, [m[1;32mfeedbackPelayanan[m[33m)[m HEAD@{67}: checkout: moving from feedbackPelayanan to surveyKepuasanITSM
+[33md9ab575[m[33m ([m[1;31morigin/feedbackPelayanan[m[33m, [m[1;32mfeedbackPelayanan[m[33m)[m HEAD@{68}: commit: pembuatan function button detail feedback pelayanan
+[33m7f3225f[m HEAD@{69}: checkout: moving from main to feedbackPelayanan
+[33m7f3225f[m HEAD@{70}: pull: Fast-forward
+[33m5ebd34f[m HEAD@{71}: checkout: moving from perbaikanEditFormulirKPI to main
+[33m65bfcac[m[33m ([m[1;31morigin/perbaikanEditFormulirKPI[m[33m, [m[1;32mperbaikanEditFormulirKPI[m[33m)[m HEAD@{72}: commit: Perbaikan balbala
+[33m490a85c[m HEAD@{73}: commit: perbaikan edit formulir di databasekpiKPI
+[33ma8e0d7d[m HEAD@{74}: commit: perbaikan edit formulir di databasekpi
+[33mdc01e5c[m HEAD@{75}: pull origin main: Fast-forward
+[33m7e6f6d0[m[33m ([m[1;31morigin/perbaikanKPI[m[33m, [m[1;32mperbaikanKPI[m[33m, [m[1;32mperbaikanEditFormKPI[m[33m)[m HEAD@{76}: checkout: moving from perbaikanKPI to perbaikanEditFormulirKPI
+[33m7e6f6d0[m[33m ([m[1;31morigin/perbaikanKPI[m[33m, [m[1;32mperbaikanKPI[m[33m, [m[1;32mperbaikanEditFormKPI[m[33m)[m HEAD@{77}: checkout: moving from perbaikanEditFormKPI to perbaikanKPI
+[33m7e6f6d0[m[33m ([m[1;31morigin/perbaikanKPI[m[33m, [m[1;32mperbaikanKPI[m[33m, [m[1;32mperbaikanEditFormKPI[m[33m)[m HEAD@{78}: commit: perbaikan edit form penilaian yang error
+[33mebaab0e[m[33m ([m[1;31morigin/perbaikanPengajuanBranag[m[33m, [m[1;32muptimeMonitoring[m[33m, [m[1;32mperbaikanPengajuanBranag[m[33m)[m HEAD@{79}: checkout: moving from uptimeMonitoring to perbaikanEditFormKPI
+[33mebaab0e[m[33m ([m[1;31morigin/perbaikanPengajuanBranag[m[33m, [m[1;32muptimeMonitoring[m[33m, [m[1;32mperbaikanPengajuanBranag[m[33m)[m HEAD@{80}: checkout: moving from perbaikanPengajuanBranag to uptimeMonitoring
+[33mebaab0e[m[33m ([m[1;31morigin/perbaikanPengajuanBranag[m[33m, [m[1;32muptimeMonitoring[m[33m, [m[1;32mperbaikanPengajuanBranag[m[33m)[m HEAD@{81}: commit: penambahan uptime di SuperAdmin
+[33m67e7c1a[m HEAD@{82}: commit: penambahan uptime untuk inixcoffee dan inixlatte
+[33m093e6fa[m HEAD@{83}: commit: penambahan uptime inixcoffee dan inixlatte
+[33mfbcdd10[m HEAD@{84}: pull origin main: Fast-forward
+[33m71f5840[m HEAD@{85}: reset: moving to HEAD
+[33m71f5840[m HEAD@{86}: commit: perbaikan render after approve
+[33m57581bd[m[33m ([m[1;31morigin/izinPerform[m[33m, [m[1;32mizinPerform[m[33m, [m[1;32mPerform[m[33m)[m HEAD@{87}: checkout: moving from izinPerform to perbaikanPengajuanBranag
+[33m57581bd[m[33m ([m[1;31morigin/izinPerform[m[33m, [m[1;32mizinPerform[m[33m, [m[1;32mPerform[m[33m)[m HEAD@{88}: checkout: moving from Perform to izinPerform
+[33m57581bd[m[33m ([m[1;31morigin/izinPerform[m[33m, [m[1;32mizinPerform[m[33m, [m[1;32mPerform[m[33m)[m HEAD@{89}: commit: penambahan izin
+[33mb6ff197[m[33m ([m[1;32mPerformanceAppresial[m[33m)[m HEAD@{90}: checkout: moving from PerformanceAppresial to Perform
+[33mb6ff197[m[33m ([m[1;32mPerformanceAppresial[m[33m)[m HEAD@{91}: commit: perubahan format tanggal
+[33m9d5b586[m HEAD@{92}: commit: perubahan kpi
+[33m42b9b39[m[33m ([m[1;32mperbaikanOutstanding[m[33m, [m[1;32mbranchVicky[m[33m)[m HEAD@{93}: checkout: moving from perbaikanOutstanding to PerformanceAppresial
+[33m42b9b39[m[33m ([m[1;32mperbaikanOutstanding[m[33m, [m[1;32mbranchVicky[m[33m)[m HEAD@{94}: checkout: moving from branchVicky to perbaikanOutstanding
+[33m42b9b39[m[33m ([m[1;32mperbaikanOutstanding[m[33m, [m[1;32mbranchVicky[m[33m)[m HEAD@{95}: commit: outstanding
+[33ma2c4308[m HEAD@{96}: commit: perubahan hanya di file notification('tambahin briadcast di via nya'), dan di blade(app.blade & menus.blade) hanya penambahan tag audio dan criptnya lalu file audionya yang dipakai hanya bell.mp3
+[33m1b16b09[m HEAD@{97}: checkout: moving from main to branchVicky
+[33m5ebd34f[m HEAD@{98}: pull origin main: Fast-forward
+[33mee7a39a[m HEAD@{99}: pull origin main: Fast-forward
+[33mff7e5e6[m HEAD@{100}: checkout: moving from branchVicky to main
+[33m1b16b09[m HEAD@{101}: reset: moving to HEAD
+[33m1b16b09[m HEAD@{102}: commit: manajemen ruangan - modal detail in RKM
+[33m16798c9[m HEAD@{103}: checkout: moving from main to branchVicky
+[33m00450d3[m HEAD@{104}: checkout: moving from branchVicky to main
+[33m16798c9[m HEAD@{105}: commit: push
+[33m07b62d4[m HEAD@{106}: checkout: moving from WA to branchVicky
+[33md24293c[m HEAD@{107}: checkout: moving from main to WA
+[33m00450d3[m HEAD@{108}: checkout: moving from WA to main
+[33md24293c[m HEAD@{109}: checkout: moving from WA to WA
+[33md24293c[m HEAD@{110}: checkout: moving from databaseKPI to WA
+[33ma96e44f[m[33m ([m[1;31morigin/databaseKPI[m[33m, [m[1;32mdatabaseKPI[m[33m)[m HEAD@{111}: commit (merge): Merge branch 'databaseKPI' of https://github.com/inixbdgitsm/INIXCOFFEE into databaseKPI
+[33m37bd007[m HEAD@{112}: commit: tambahan notifikasi buat rkm update
+[33m8496492[m HEAD@{113}: commit: perbaikan notification
+[33mb63776d[m HEAD@{114}: commit: penambahan laporan insiden dan penyesuaian penilaian 360 - batasi selain ITSM
+[33m76fdead[m HEAD@{115}: commit: penambahan laporan insiden dan penyesuaian penilaian 360
+[33mb0da82e[m HEAD@{116}: commit: finishing try edit form
+[33m23c3ac3[m HEAD@{117}: commit: fungsi edit form
+[33m63af6ae[m HEAD@{118}: commit: menghapus model dan migration tabel baru
+[33mf8a9386[m HEAD@{119}: commit: penambahan text notif limit text untuk form penilaian
+[33m28af980[m HEAD@{120}: commit: update dashboard dan tombol hapus
+[33mb9eb0b4[m HEAD@{121}: commit: penambahan dekorasi seperti mode
+[33m07c210b[m HEAD@{122}: commit: penyesuaian layout dikit
+[33m24de86e[m HEAD@{123}: commit: penilaian 360 finish + outstanding
+[33mb2170ed[m HEAD@{124}: checkout: moving from databaseKPI to databaseKPI
+[33mb2170ed[m HEAD@{125}: pull --ff --recurse-submodules --progress origin: Fast-forward
+[33m3d45228[m HEAD@{126}: checkout: moving from branchVicky to databaseKPI
+[33m07b62d4[m HEAD@{127}: reset: moving to HEAD
+[33m07b62d4[m HEAD@{128}: checkout: moving from branchVicky to branchVicky
+[33m07b62d4[m HEAD@{129}: pull origin main: updating HEAD
+[33m07b62d4[m HEAD@{130}: checkout: moving from databaseKPI to branchVicky
+[33m3d45228[m HEAD@{131}: reset: moving to HEAD
+[33m3d45228[m HEAD@{132}: commit (merge): Merge branch 'main' of https://github.com/inixbdgitsm/INIXCOFFEE into databaseKPI
+[33m0c62a20[m HEAD@{133}: commit: perhitungan lembur
+[33m97fcea2[m HEAD@{134}: commit: outstanding

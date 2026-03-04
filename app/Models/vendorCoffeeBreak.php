@@ -10,6 +10,8 @@ class vendorCoffeeBreak extends Model
     use HasFactory;
     protected $fillable = [
         'nama',
-        'is_active'
+        'is_active',
+        'foto',
+        'keterangan'
     ];
 }

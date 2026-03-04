@@ -212,7 +212,10 @@ class PengajuancutiController extends Controller
         $path = '/pengajuancuti';
 
         foreach ($users as $user) {
-            NotificationFacade::send($user, new PengajuanCutiNotification($data, $path, $type));
+            NotificationFacade::send(
+                $user,
+                new PengajuanCutiNotification($data, $path, $type, $user->id) 
+            );
         }
 
         $people = [];
@@ -236,7 +239,8 @@ class PengajuancutiController extends Controller
         $path = '/pengajuancuti';
 
         foreach ($users as $user) {
-            NotificationFacade::send($user, new CutiExchangeNotification($data, $path, $type));
+            $receiverId = $user->id;
+            NotificationFacade::send($user, new CutiExchangeNotification($data, $path, $type, $receiverId));
         }
 
 
@@ -279,70 +283,71 @@ class PengajuancutiController extends Controller
      * @param  mixed $id
      * @return RedirectResponse
      */
-public function update(Request $request, $id)
-{
-    $this->validate($request, [
-        'approval' => 'nullable',
-        'alasan' => 'nullable',
-    ]);
+    public function update(Request $request, $id)
+    {
+        $this->validate($request, [
+            'approval' => 'nullable',
+            'alasan' => 'nullable',
+        ]);
 
-    $post = pengajuancuti::findOrFail($id);
-    $jabatan = auth()->user()->jabatan;
+        $post = pengajuancuti::findOrFail($id);
+        $jabatan = auth()->user()->jabatan;
 
-    $bolehApprove = false;
+        $bolehApprove = false;
 
-    if (in_array($jabatan, ['Office Manager', 'Koordinator Office', 'Education Manager', 'SPV Sales', 'Koordinator ITSM'])) {
-        $bolehApprove = true;
-    } elseif ($jabatan == 'GM') {
-        $karyawanYangMengajukan = karyawan::findOrFail($post->id_karyawan);
-        // - divisi = Office, atau
-        // - termasuk dalam list ID khusus
-        if (
-            $karyawanYangMengajukan->divisi === 'Office' ||
-            in_array($karyawanYangMengajukan->id, $this->pengajuanCutiGM)
-        ) {
+        if (in_array($jabatan, ['Office Manager', 'Koordinator Office', 'Education Manager', 'SPV Sales', 'Koordinator ITSM'])) {
             $bolehApprove = true;
+        } elseif ($jabatan == 'GM') {
+            $karyawanYangMengajukan = karyawan::findOrFail($post->id_karyawan);
+            // - divisi = Office, atau
+            // - termasuk dalam list ID khusus
+            if (
+                $karyawanYangMengajukan->divisi === 'Office' ||
+                in_array($karyawanYangMengajukan->id, $this->pengajuanCutiGM)
+            ) {
+                $bolehApprove = true;
+            }
         }
+
+        if (!$bolehApprove) {
+            return redirect()->route('pengajuancuti.index')->with(['error' => 'Tidak Bisa mengubah Approval!']);
+        }
+
+        // Lanjut update approval
+        $post->update([
+            'approval_manager' => $request->approval,
+            'alasan_manager' => $request->alasan,
+        ]);
+
+        // 🔁 Notifikasi seperti biasa
+        $karyawan = karyawan::findOrFail($post->id_karyawan);
+        $HRD = karyawan::where('jabatan', 'HRD')->first();
+
+        if ($post->tipe === 'Cuti' && $post->approval_manager === '1') {
+            $durasi = $post->durasi;
+            $karyawan->decrement('cuti', $durasi);
+        }
+
+        $users = User::whereHas('karyawan', function ($query) use ($karyawan, $HRD) {
+            $query->whereIn('kode_karyawan', [$karyawan->kode_karyawan, $HRD->kode_karyawan]);
+        })->get();
+
+        $data = $post;
+        $to = $karyawan->nama_lengkap;
+        $path = '/pengajuancuti';
+
+        foreach ($users as $user) {
+            $receiverId = $user->id;
+            NotificationFacade::send($user, new ApprovalCutiNotification($data, $path, $to, $receiverId));
+        }
+
+        // return redirect()->route('pengajuancuti.index')->with(['success' => 'Data Berhasil Diubah!']);
+        $lastPage = $request->input('last_page', 0); // default ke 0 jika kosong
+        return redirect()->route('pengajuancuti.index') . '?page=' . ($lastPage + 1); // karena DataTables 0-based
+
+
+
     }
-
-    if (!$bolehApprove) {
-        return redirect()->route('pengajuancuti.index')->with(['error' => 'Tidak Bisa mengubah Approval!']);
-    }
-
-    // Lanjut update approval
-    $post->update([
-        'approval_manager' => $request->approval,
-        'alasan_manager' => $request->alasan,
-    ]);
-
-    // 🔁 Notifikasi seperti biasa
-    $karyawan = karyawan::findOrFail($post->id_karyawan);
-    $HRD = karyawan::where('jabatan', 'HRD')->first();
-
-    if ($post->tipe === 'Cuti' && $post->approval_manager === '1') {
-        $durasi = $post->durasi;
-        $karyawan->decrement('cuti', $durasi);
-    }
-
-    $users = User::whereHas('karyawan', function ($query) use ($karyawan, $HRD) {
-        $query->whereIn('kode_karyawan', [$karyawan->kode_karyawan, $HRD->kode_karyawan]);
-    })->get();
-
-    $data = $post;
-    $to = $karyawan->nama_lengkap;
-    $path = '/pengajuancuti';
-
-    foreach ($users as $user) {
-        NotificationFacade::send($user, new ApprovalCutiNotification($data, $path, $to));
-    }
-
-    // return redirect()->route('pengajuancuti.index')->with(['success' => 'Data Berhasil Diubah!']);
-      $lastPage = $request->input('last_page', 0); // default ke 0 jika kosong
-    return redirect()->route('pengajuancuti.index') . '?page=' . ($lastPage + 1); // karena DataTables 0-based
-
-
-
-}
 
 
     /**

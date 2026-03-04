@@ -134,6 +134,7 @@ public function get(Request $request)
             "jam_selesai" => $first->jam_selesai,
             "kebutuhan"   => $first->kebutuhan,
             "keterangan"  => $first->keterangan ?? "-",
+            "id"          => $first->id, // BARU: Kirim ID untuk tombol batalkan
         ];
     })->toArray();
 
@@ -222,4 +223,33 @@ public function get(Request $request)
     }
     
     public function update(Request $request, $id) {}
+    
+    // BARU: Method untuk pembatalan jadwal manajemen ruangan
+    public function batalkan(Request $request, $id)
+    {
+        try {
+            $jadwal = manajemenRuangan::findOrFail($id);
+            
+            // Validasi: hanya boleh batalkan jadwal masa depan/hari ini
+            $jadwalDate = \Carbon\Carbon::parse($jadwal->tanggal)->startOfDay();
+            if ($jadwalDate < now()->startOfDay()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak dapat membatalkan jadwal yang sudah lewat.'
+                ], 400);
+            }
+
+            $jadwal->delete(); // Soft delete jika model pakai SoftDeletes, else hard delete
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Jadwal berhasil dibatalkan.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal membatalkan: ' + $e->getMessage()
+            ], 500);
+        }
+    }
 }

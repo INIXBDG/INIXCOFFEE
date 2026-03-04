@@ -46,7 +46,7 @@ class AbsensiKaryawanController extends Controller
         return view('absensi.create', compact('user'));
     }
 
-    public function storeMasuk(Request $request)
+    public function storeAbsensi(Request $request)
     {
         // Validasi input
         $validator = Validator::make($request->all(), [
@@ -95,15 +95,28 @@ class AbsensiKaryawanController extends Controller
             return response()->json(['error' => $validationResult['message']], 400);
         }
         $kemarin = Carbon::yesterday();
-        $kemarintea = $kemarin->toDateString();
-        if($jabatan == 'Office Boy'){
-            $data = AbsensiKaryawan::where('tanggal', $kemarintea)->where('id_karyawan', $request->id_karyawan)->first();
-            // dd($data->jam_keluar);
-            if($data->jam_keluar == null){
-                $data->jam_keluar = $sekarang->toTimeString();
-                $data->save();
-            }
-        }
+		$kemarintea = $kemarin->toDateString();
+
+		// Tambahkan variabel untuk tanggal hari ini
+		$hari_ini = Carbon::today();
+		$hari_ini_tea = $hari_ini->toDateString();
+
+		if($jabatan == 'Office Boy'){
+			// Cari data absensi untuk KEMARIN ATAU HARI INI
+			$data = AbsensiKaryawan::where('id_karyawan', $request->id_karyawan)
+								   ->where(function($query) use ($kemarintea, $hari_ini_tea) {
+									   $query->where('tanggal', $kemarintea)
+											 ->orWhere('tanggal', $hari_ini_tea);
+								   })
+								   ->orderBy('tanggal', 'desc') // Ambil yang paling baru
+								   ->first();
+			
+			// Pastikan data ditemukan sebelum mengakses propertinya
+			if($data && $data->jam_keluar == null){
+				$data->jam_keluar = $sekarang->toTimeString();
+				$data->save();
+			}
+		}
 
         // Simpan data
         $absensi = AbsensiKaryawan::create([
@@ -581,7 +594,6 @@ private function validateShiftWaktu($waktu, $shift, $jabatan, $keterangan = null
         // Mengambil data absensi karyawan berdasarkan bulan dan tahun  
         $absensiKaryawan = AbsensiKaryawan::whereMonth('tanggal', $bulan)
             ->whereYear('tanggal', $tahun)
-            ->Where('jam_keluar', '!=', '')
             ->where('id_karyawan', $karyawanId)
             ->get();
         $absen_pulang = AbsensiKaryawan::whereMonth('tanggal', $bulan)
@@ -957,7 +969,8 @@ private function validateShiftWaktu($waktu, $shift, $jabatan, $keterangan = null
         $path = '/absensi/karyawan?page=scheme_work';
 
         foreach ($users as $user) {
-            NotificationFacade::send($user, new schemeWorkExchangeNotification($notificationData, $path));
+            $receiverId = $user->id;
+            NotificationFacade::send($user, new schemeWorkExchangeNotification($notificationData, $path, $receiverId));
         }
 
         return redirect('/absensi/karyawan?page=scheme_work')->with('success', 'Berhasil mengajukan');
@@ -1035,7 +1048,8 @@ private function validateShiftWaktu($waktu, $shift, $jabatan, $keterangan = null
         $path = '/absensi/karyawan?page=scheme_work';
 
         foreach ($users as $user) {
-            NotificationFacade::send($user, new schemeWorkExchangeNotification($notificationData, $path));
+            $receiverId = $user->id;
+            NotificationFacade::send($user, new schemeWorkExchangeNotification($notificationData, $path, $receiverId));
         }
 
         return redirect('/absensi/karyawan?page=scheme_work')->with('success', 'Berhasil memproses data absensi.');
@@ -1133,7 +1147,8 @@ private function validateShiftWaktu($waktu, $shift, $jabatan, $keterangan = null
         $path = '/absensi/karyawan?page=cancel_leave';
 
         foreach ($users as $user) {
-            NotificationFacade::send($user, new cancelLeaveExchangeNotification($notificationData, $path));
+            $receiverId = $user->id;
+            NotificationFacade::send($user, new cancelLeaveExchangeNotification($notificationData, $path,$receiverId));
         }
 
         return redirect('/absensi/karyawan?page=cancel_leave')->with('success', 'Berhasil mengajukan');
@@ -1207,7 +1222,8 @@ private function validateShiftWaktu($waktu, $shift, $jabatan, $keterangan = null
         $path = '/absensi/karyawan?page=cancel_leave';
 
         foreach ($users as $user) {
-            NotificationFacade::send($user, new cancelLeaveExchangeNotification($notificationData, $path));
+            $receiverId = $user->id;
+            NotificationFacade::send($user, new cancelLeaveExchangeNotification($notificationData, $path,$receiverId));
         }
 
         return redirect('/absensi/karyawan?page=cancel_leave')->with('success', 'Berhasil memproses data absensi.');

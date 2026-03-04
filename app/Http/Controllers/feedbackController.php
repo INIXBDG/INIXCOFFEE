@@ -2,28 +2,35 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Feedback;
-use App\Models\Nilaifeedback;
 use App\Models\RKM;
+use App\Models\Feedback;
 use App\Models\souvenir;
-use App\Models\souvenirpeserta;
-use App\Models\souvenirinhouse;
+use App\Models\Registrasi;
 use Illuminate\Http\Request;
+use App\Models\Nilaifeedback;
+use Illuminate\Support\Carbon;
+use App\Models\souvenirinhouse;
+use App\Models\souvenirpeserta;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Carbon;
-use App\Models\Registrasi;
 use App\Exports\FeedbackSalesExport;
 use App\Exports\NilaifeedbackExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\CarbonImmutable;
 
-
 class feedbackController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+    
     public function index()
     {
+        $sales = Feedback::where('kategori_feedback', 'Sales')->get();
         $materi = Feedback::where('kategori_feedback', 'Materi')->get();
         $pelayanan = Feedback::where('kategori_feedback', 'Pelayanan')->get();
         $fasilitas = Feedback::where('kategori_feedback', 'Fasilitas Laboratium')->get();
@@ -31,7 +38,7 @@ class feedbackController extends Controller
         $jmlInstruktur = RKM::with('instruktur');
         $umum = Feedback::where('kategori_feedback', 'Umum')->get();
         $souvenir = souvenir::get();
-        return view('feedback.index', compact('materi', 'pelayanan', 'fasilitas', 'instruktur', 'umum', 'souvenir'));
+        return view('feedback.index', compact('materi', 'pelayanan', 'fasilitas', 'instruktur', 'umum', 'souvenir', 'sales'));
     }
 
     public function cekFeedback(Request $request)
@@ -53,11 +60,12 @@ class feedbackController extends Controller
             ], 200);
         }
     }
-
     public function cekFeedbackRKM(Request $request)
     {
-        $startDate = Carbon::now()->startOfWeek()->toDateString();
-        $endDate = Carbon::now()->endOfWeek()->toDateString(); // Tambahkan 1 minggu ke endDate
+        $startDate = Carbon::now()->startOfMonth()->toDateString();
+
+        // Mengatur $endDate menjadi hari terakhir bulan ini (akhir bulan)
+        $endDate = Carbon::now()->endOfMonth()->toDateString();
         $id = $request->input('id');
         $peserta = Registrasi::with('peserta', 'rkm', 'materi')
             ->where('id_peserta', $id)
@@ -66,115 +74,6 @@ class feedbackController extends Controller
             })
             ->get();
         return response()->json(['rkm' => $peserta]);
-    }
-
-    public function show(string $id)
-    {
-        // Split the incoming ID to extract the necessary parts
-        $array = explode('ixb', $id);
-        $materiKey = $array[0];
-        $bulan = $array[1];
-        $tahun = $array[2];
-        $hari = $array[3];
-        $tanggal_awal = $tahun . '-' . $bulan . '-' . $hari;
-
-        // Query the feedbacks with the given criteria and eager load relationships
-        $feedbacks = Nilaifeedback::with('rkm', 'regist')
-            ->whereHas('rkm', function ($query) use ($materiKey, $tanggal_awal) {
-                $query->where('materi_key', $materiKey)
-                    ->where('tanggal_awal', $tanggal_awal);
-            })
-            ->get();
-
-        $transformedFeedbacks = $feedbacks->map(function ($feedback) {
-            return [
-                'id_regist' => $feedback->id_regist,
-                'id_rkm' => $feedback->id_rkm,
-                'nama_materi' => $feedback->rkm->materi->nama_materi,
-                'sales_key' => $feedback->rkm->sales_key,
-                'instruktur_key' => $feedback->rkm->instruktur_key,
-                'instruktur_key2' => $feedback->rkm->instruktur_key2,
-                'asisten_key' => $feedback->rkm->asisten_key,
-                'tanggal_awal' => $feedback->rkm->tanggal_awal,
-                'tanggal_akhir' => $feedback->rkm->tanggal_akhir,
-                'email' => $feedback->email,
-                'nama_perusahaan' => $feedback->rkm->perusahaan->nama_perusahaan,
-                'materi' => round(($feedback->M1 + $feedback->M2 + $feedback->M3 + $feedback->M4) / 4, 1),
-                'pelayanan' => round(($feedback->P1 + $feedback->P2 + $feedback->P3 + $feedback->P4 + $feedback->P5 + $feedback->P6 + $feedback->P7) / 7, 1),
-                'fasilitas' => round(($feedback->F1 + $feedback->F2 + $feedback->F3 + $feedback->F4 + $feedback->F5) / 5, 1),
-                'instruktur' => round(($feedback->I1 + $feedback->I2 + $feedback->I3 + $feedback->I4 + $feedback->I5 + $feedback->I6 + $feedback->I7 + $feedback->I8) / 8, 1),
-                'instruktur2' => round(($feedback->I1b + $feedback->I2b + $feedback->I3b + $feedback->I4b + $feedback->I5b + $feedback->I6b + $feedback->I7b + $feedback->I8b) / 8, 1),
-                'asisten' => round(($feedback->I1as + $feedback->I2as + $feedback->I3as + $feedback->I4as + $feedback->I5as + $feedback->I6as + $feedback->I7as + $feedback->I8as) / 8, 1),
-                'umum1' => $feedback->U1,
-                'umum2' => $feedback->U2,
-                'datafeedbacks' => $feedback,
-            ];
-        });
-
-        $groupedFeedbacks = $transformedFeedbacks->groupBy('nama_perusahaan')->map(function ($groupedFeedbacks, $nama_perusahaan) {
-            return [
-                'nama_perusahaan' => $nama_perusahaan,
-                'data' => $groupedFeedbacks,
-                // 'feedbacks' => $groupedFeedbacks->pluck('datafeedbacks')
-            ];
-        });
-
-        $post = $groupedFeedbacks->values();
-
-        return view('feedback.show', compact('post', 'id'));
-    }
-
-    public function pelayananFeedbackShow(Request $request)
-    {
-        $materiKey = $request->input('materi_key');
-        $bulan = $request->input('bulan');
-        $tahun = $request->input('tahun');
-        $hari = $request->input('hari');
-        $tanggal_awal = $tahun . '-' . $bulan . '-' . $hari;
-
-        $feedbacks = Nilaifeedback::with('rkm', 'regist')
-            ->whereHas('rkm', function ($query) use ($materiKey, $tanggal_awal) {
-                $query->where('materi_key', $materiKey)
-                    ->where('tanggal_awal', $tanggal_awal);
-            })
-            ->get();
-
-        $transformedFeedbacks = $feedbacks->map(function ($feedback) {
-            return [
-                'id_regist' => $feedback->id_regist,
-                'id_rkm' => $feedback->id_rkm,
-                'nama_materi' => $feedback->rkm->materi->nama_materi,
-                'sales_key' => $feedback->rkm->sales_key,
-                'instruktur_key' => $feedback->rkm->instruktur_key,
-                'instruktur_key2' => $feedback->rkm->instruktur_key2,
-                'asisten_key' => $feedback->rkm->asisten_key,
-                'tanggal_awal' => $feedback->rkm->tanggal_awal,
-                'tanggal_akhir' => $feedback->rkm->tanggal_akhir,
-                'email' => $feedback->email,
-                'nama_perusahaan' => $feedback->rkm->perusahaan->nama_perusahaan,
-                'materi' => round(($feedback->M1 + $feedback->M2 + $feedback->M3 + $feedback->M4) / 4, 1),
-                'pelayanan' => round(($feedback->P1 + $feedback->P2 + $feedback->P3 + $feedback->P4 + $feedback->P5 + $feedback->P6 + $feedback->P7) / 7, 1),
-                'fasilitas' => round(($feedback->F1 + $feedback->F2 + $feedback->F3 + $feedback->F4 + $feedback->F5) / 5, 1),
-                'instruktur' => round(($feedback->I1 + $feedback->I2 + $feedback->I3 + $feedback->I4 + $feedback->I5 + $feedback->I6 + $feedback->I7 + $feedback->I8) / 8, 1),
-                'instruktur2' => round(($feedback->I1b + $feedback->I2b + $feedback->I3b + $feedback->I4b + $feedback->I5b + $feedback->I6b + $feedback->I7b + $feedback->I8b) / 8, 1),
-                'asisten' => round(($feedback->I1as + $feedback->I2as + $feedback->I3as + $feedback->I4as + $feedback->I5as + $feedback->I6as + $feedback->I7as + $feedback->I8as) / 8, 1),
-                'umum1' => $feedback->U1,
-                'umum2' => $feedback->U2,
-                'datafeedbacks' => $feedback,
-            ];
-        });
-
-        $groupedFeedbacks = $transformedFeedbacks->groupBy('nama_perusahaan')->map(function ($groupedFeedbacks, $nama_perusahaan) {
-            return [
-                'nama_perusahaan' => $nama_perusahaan,
-                'data' => $groupedFeedbacks,
-                // 'feedbacks' => $groupedFeedbacks->pluck('datafeedbacks')
-            ];
-        });
-
-        $post = $groupedFeedbacks->values();
-
-        return response()->json($post);
     }
 
     public function store(Request $request)
@@ -210,24 +109,26 @@ class feedbackController extends Controller
             if (is_null($value)) {
                 if (in_array($key, ['U1', 'U2'])) {
                     $data[$key] = '-';
-                } else if (!in_array($key, [
-                    'I1b',
-                    'I2b',
-                    'I3b',
-                    'I4b',
-                    'I5b',
-                    'I6b',
-                    'I7b',
-                    'I8b',
-                    'I1as',
-                    'I2as',
-                    'I3as',
-                    'I4as',
-                    'I5as',
-                    'I6as',
-                    'I7as',
-                    'I8as',
-                ])) {
+                } else if (
+                    !in_array($key, [
+                        'I1b',
+                        'I2b',
+                        'I3b',
+                        'I4b',
+                        'I5b',
+                        'I6b',
+                        'I7b',
+                        'I8b',
+                        'I1as',
+                        'I2as',
+                        'I3as',
+                        'I4as',
+                        'I5as',
+                        'I6as',
+                        'I7as',
+                        'I8as',
+                    ])
+                ) {
                     $data[$key] = '4';
                 }
             }
@@ -256,10 +157,122 @@ class feedbackController extends Controller
         ], 200);
     }
 
+    public function show(string $id)
+    {
+        // Split the incoming ID to extract the necessary parts
+        $array = explode('ixb', $id);
+        $materiKey = $array[0];
+        $bulan = $array[1];
+        $tahun = $array[2];
+        $hari = $array[3];
+        $tanggal_awal = $tahun . '-' . $bulan . '-' . $hari;
+
+        // Query the feedbacks with the given criteria and eager load relationships
+        $feedbacks = Nilaifeedback::with('rkm', 'regist')
+            ->whereHas('rkm', function ($query) use ($materiKey, $tanggal_awal) {
+                $query->where('materi_key', $materiKey)
+                    ->where('tanggal_awal', $tanggal_awal);
+            })
+            ->get();
+
+
+        // Transform the feedback data
+        $transformedFeedbacks = $feedbacks->map(function ($feedback) {
+            $materi = isset($feedback->M) ? intval($feedback->M) : round(($feedback->M1 + $feedback->M2 + $feedback->M3 + $feedback->M4) / 4, 1);
+            $pelayanan = isset($feedback->P) ? intval($feedback->P) : round(($feedback->P1 + $feedback->P2 + $feedback->P3 + $feedback->P4 + $feedback->P5 + $feedback->P6 + $feedback->P7) / 7, 1);
+            $fasilitas = isset($feedback->F) ? intval($feedback->F) : round(($feedback->F1 + $feedback->F2 + $feedback->F3 + $feedback->F4 + $feedback->F5) / 5, 1);
+            $instruktur = isset($feedback->I) ? intval($feedback->I) : round(($feedback->I1 + $feedback->I2 + $feedback->I3 + $feedback->I4 + $feedback->I5 + $feedback->I6 + $feedback->I7 + $feedback->I8) / 8, 1);
+            $instruktur2 = isset($feedback->IB) ? intval($feedback->IB) : round(($feedback->I1b + $feedback->I2b + $feedback->I3b + $feedback->I4b + $feedback->I5b + $feedback->I6b + $feedback->I7b + $feedback->I8b) / 8, 1);
+            $asisten = isset($feedback->IAS) ? intval($feedback->IAS) : round(($feedback->I1as + $feedback->I2as + $feedback->I3as + $feedback->I4as + $feedback->I5as + $feedback->I6as + $feedback->I7as + $feedback->I8as) / 8, 1);
+            $sales = isset($feedback->S) ? intval($feedback->S) : round(($feedback->S1 + $feedback->S2 + $feedback->S3 + $feedback->S4 + $feedback->S5 + $feedback->S6 + $feedback->S7) / 7, 1);
+            if($sales == '0' || $sales == 0){
+                $total_feedback = round(($materi + $pelayanan + $fasilitas + $instruktur) / 4, 2);
+            }else{
+                $total_feedback = round(($materi + $pelayanan + $fasilitas + $instruktur + $sales) / 5, 2);
+            }
+            return [
+                'id_regist' => $feedback->id_regist,
+                'id_rkm' => $feedback->id_rkm,
+                'nama_materi' => $feedback->rkm->materi->nama_materi,
+                'sales_key' => $feedback->rkm->sales_key,
+                'instruktur_key' => $feedback->rkm->instruktur_key,
+                'instruktur_key2' => $feedback->rkm->instruktur_key2,
+                'asisten_key' => $feedback->rkm->asisten_key,
+                'tanggal_awal' => $feedback->rkm->tanggal_awal,
+                'tanggal_akhir' => $feedback->rkm->tanggal_akhir,
+                'email' => $feedback->email,
+                'nama_perusahaan' => $feedback->rkm->perusahaan->nama_perusahaan,
+                'materi' => $materi,
+                'pelayanan' => $pelayanan,
+                'fasilitas' => $fasilitas,
+                'instruktur' => $instruktur,
+                'instruktur2' => $instruktur2,
+                'asisten' => $asisten,
+                'sales' => $sales,
+                'umum1' => $feedback->U1,
+                'umum2' => $feedback->U2,
+                'textM' => $feedback->TextM,
+                'textP' => $feedback->TextP,
+                'textF' => $feedback->TextF,
+                'textI' => $feedback->TextI,
+                'textIB' => $feedback->TextIB,
+                'textIAS' => $feedback->TextIAS,
+                'total_feedback' => $total_feedback,
+                'datafeedbacks' => $feedback,
+            ];
+        });
+        $instruktur =  $transformedFeedbacks->avg('instruktur');
+        $instruktur2 = $transformedFeedbacks->avg('instruktur2');
+        $asisten = $transformedFeedbacks->avg('asisten');
+        if($instruktur2 == '0' || $instruktur == 0 && $asisten == '0' || $asisten == 0){
+            $instrukturfix =  $transformedFeedbacks->avg('instruktur');
+        }elseif($asisten == '0' || $asisten == 0){
+            $instrukturfix =  round(($transformedFeedbacks->avg('instruktur') + $transformedFeedbacks->avg('instruktur2')) / 2, 2);
+        }else{
+            $instrukturfix =  round(($transformedFeedbacks->avg('instruktur') + $transformedFeedbacks->avg('instruktur2') + $transformedFeedbacks->avg('asisten')) / 3, 2);
+        }
+        $sales = $transformedFeedbacks->avg('sales');
+        if($sales == '0' || $sales == 0){
+            $all_avg_feedback = round((
+                    $transformedFeedbacks->avg('materi') +
+                    $transformedFeedbacks->avg('pelayanan') +
+                    $transformedFeedbacks->avg('fasilitas') +
+                    $instrukturfix) / 4, 2);
+        }else{
+            $all_avg_feedback = 
+            round((
+                    $transformedFeedbacks->avg('materi') +
+                    $transformedFeedbacks->avg('pelayanan') +
+                    $transformedFeedbacks->avg('fasilitas') +
+                    $instrukturfix +
+                    $transformedFeedbacks->avg('sales')
+                ) / 5, 2);
+        }
+        
+        // return $instruktur2;
+        $post = [
+                'materi' => round($transformedFeedbacks->avg('materi'), 2),
+                'pelayanan' => round($transformedFeedbacks->avg('pelayanan'), 2),
+                'fasilitas' => round($transformedFeedbacks->avg('fasilitas'), 2),
+                'instruktur' => round($transformedFeedbacks->avg('instruktur'), 2),
+                'instruktur2' => round($transformedFeedbacks->avg('instruktur2'), 2),
+                'asisten' => round($transformedFeedbacks->avg('asisten'), 2),
+                'sales' => round($transformedFeedbacks->avg('sales'), 2),
+                'all_avg_feedback' => $all_avg_feedback,
+                'data' => $transformedFeedbacks,
+            ];
+
+
+// return response()->json($post);
+
+        $pertanyaan = Feedback::get();
+
+        return view('feedback.show', compact('post', 'id', 'pertanyaan', 'feedbacks'));
+
+    }
+
     public function storeSouvenir(Request $request)
     {
-        // return $request->all();
-
         $id_regist = $request->input('id_regist');
         $id_rkm = $request->input('id_rkm');
         $souveniran = $request->input('souvenir');
@@ -271,7 +284,6 @@ class feedbackController extends Controller
             ], 200);
         }
         $souvenir = Souvenir::where('nama_souvenir', $souveniran)->first();
-        // dd($souvenir);
         $souvenir->decrement('stok');
 
         souvenirpeserta::create([
@@ -285,6 +297,7 @@ class feedbackController extends Controller
             'text' => 'Terimakasih sudah mengisi Feedback ini, Silahkan ke halaman utama!',
         ], 200);
     }
+
     public function cekSouvenir($id, $ids)
     {
         $sopenir = souvenirpeserta::where('id_rkm', $id)->where('id_regist', $ids)->first();
@@ -296,89 +309,107 @@ class feedbackController extends Controller
                 'text' => 'Anda sudah mengisi feedback/souvenir ini, silahkan ke halaman utama!',
             ], 500);
         } else {
-            // Mendapatkan nilai harga_jual dari model RKM
             $rkm = RKM::findOrFail($id);
             $harga_jual = intval($rkm->harga_jual);
-            // return $rkm->metode_kelas;
 
+            // =======================================================
+            // CASE: Inhouse Bandung / Luar Bandung
+            // =======================================================
             if ($rkm->metode_kelas == "Inhouse Bandung" || $rkm->metode_kelas == "Inhouse Luar Bandung") {
-                // dd('INHOUSE KESINI');
-                $s = souvenirinhouse::where('id_rkm', $rkm->id)->first();
-                if (!$s) {
-                    // return response()->json([
-                    //     'status' => 'error',
-                    //     'title' => 'Mohon Maaf!',
-                    //     'text' => 'Souvenir belum ditentukan, silahkan hubungi Customer Care!',
-                    // ], 404);
+
+                $s = souvenirinhouse::where('id_rkm', $rkm->id)->get();
+
+                // Jika tidak ada souvenir inhouse
+                if ($s->isEmpty()) {
                     return response()->json([
                         'status' => 'skipped',
                         'title' => 'Selamat!',
                         'text' => 'Terimakasih sudah mengisi Feedback ini, Silahkan ke halaman utama!',
                     ], 200);
-                } else {
-                    $sid = $s->nama_souvenir;
-                    if ($sid === 'All Item') {
-                        $souvenirs = Souvenir::where('stok', '>', 0)
-                            ->orderByDesc('stok')
-                            ->get();
-                    } else {
-                        $souvenirs = Souvenir::where('nama_souvenir', 'LIKE', "%{$sid}%")
-                            ->where('stok', '>', 0)
-                            ->get();
-                    }
-                    if ($souvenirs->isEmpty()) {
-                        return response()->json([
-                            'status' => 'error',
-                            'title' => 'Mohon Maaf',
-                            'text' => 'Data tidak sesuai atau tidak ada. Silahkan Hubungi Administrator!',
-                        ], 500);
-                    }
                 }
-            } elseif ($rkm->metode_kelas == "Virtual") {
-                // dd('ONLOINE KESINI');
+
+                // Ambil semua nama souvenir dari hasil query
+                $souvenirNames = $s->pluck('nama_souvenir')->toArray();
+
+
+                // Jika salah satu bernama "All Item"
+                if (in_array('All Item', $souvenirNames)) {
+                    $souvenirs = souvenir::where('stok', '>', 0)
+                        ->orderByDesc('stok')
+                        ->get();
+                    // dd('all_item');
+                } else {
+                    $souvenirs = souvenir::where(function ($query) use ($souvenirNames) {
+                        foreach ($souvenirNames as $name) {
+                            $query->orWhere('nama_souvenir', 'LIKE', "%{$name}%");
+                        }
+                    })
+                        ->where('stok', '>', 0)
+                        ->orderByDesc('stok')
+                        ->get();
+                    // dd($souvenirs);
+                }
+
+                if ($souvenirs->isEmpty()) {
+                    return response()->json([
+                        'status' => 'error',
+                        'title' => 'Mohon Maaf',
+                        'text' => 'Data tidak sesuai atau tidak ada. Silahkan Hubungi Administrator!',
+                    ], 500);
+                }
+            }
+
+            // =======================================================
+            // CASE: Virtual
+            // =======================================================
+            elseif ($rkm->metode_kelas == "Virtual") {
                 $s = souvenirinhouse::where('id_rkm', $rkm->id)->first();
+
                 if (!$s) {
-                    $souvenirs = Souvenir::where('min_harga_pelatihan', '<=', $harga_jual)
+                    $souvenirs = souvenir::where('min_harga_pelatihan', '<=', $harga_jual)
                         ->where('max_harga_pelatihan', '>=', $harga_jual)
-                        ->where('stok', '>', 0) // Filter to exclude souvenirs with stock of 0
+                        ->where('stok', '>', 0)
                         ->orderBy('min_harga_pelatihan', 'asc')
                         ->get();
-
-                    if ($souvenirs->isEmpty()) {
-                        return response()->json([
-                            'status' => 'error',
-                            'title' => 'Mohon Maaf',
-                            'text' => 'Data tidak sesuai atau tidak ada. Silahkan Hubungi Administrator!',
-                        ], 500);
-                    }
                 } else {
                     $sid = $s->nama_souvenir;
-                    $souvenirs = Souvenir::where('nama_souvenir', 'LIKE', '%' . $sid . '%')
-                        ->where('stok', '>', 0) // Filter to exclude souvenirs with stock of 0
+                    $souvenirs = souvenir::where('nama_souvenir', 'LIKE', "%{$sid}%")
+                        ->where('stok', '>', 0)
                         ->get();
-                    if ($souvenirs->isEmpty()) {
-                        return response()->json([
-                            'status' => 'error',
-                            'title' => 'Mohon Maaf',
-                            'text' => 'Data tidak sesuai atau tidak ada. Silahkan Hubungi Administrator!',
-                        ], 500);
-                    }
+                    //dd($souvenirs);
                 }
-            } elseif ($rkm->metode_kelas == "Offline") {
-                $souvenirs = Souvenir::where('min_harga_pelatihan', '<=', $harga_jual)
+
+                if ($souvenirs->isEmpty()) {
+                    return response()->json([
+                        'status' => 'error',
+                        'title' => 'Mohon Maaf',
+                        'text' => 'Data tidak sesuai atau tidak ada. Silahkan Hubungi Administrator!',
+                    ], 500);
+                }
+            }
+
+            // =======================================================
+            // CASE: Offline
+            // =======================================================
+            elseif ($rkm->metode_kelas == "Offline") {
+                $souvenirs = souvenir::where('min_harga_pelatihan', '<=', $harga_jual)
                     ->where('max_harga_pelatihan', '>=', $harga_jual)
                     ->where('stok', '>', 0)
                     ->orderBy('min_harga_pelatihan', 'asc')
                     ->get();
+
                 if ($souvenirs->isEmpty()) {
-                    $souvenirs = Souvenir::where('min_harga_pelatihan', '<=', '6000000')
-                        ->where('max_harga_pelatihan', '>=', '15000000')
+                    $souvenirs = souvenir::whereBetween('min_harga_pelatihan', [6000000, 15000000])
                         ->where('stok', '>', 0)
                         ->orderBy('min_harga_pelatihan', 'asc')
                         ->get();
                 }
-                // dd($souvenirs);
-            } else {
+            }
+
+            // =======================================================
+            // CASE: Tidak Sesuai
+            // =======================================================
+            else {
                 return response()->json([
                     'status' => 'error',
                     'title' => 'Mohon Maaf',
@@ -386,12 +417,16 @@ class feedbackController extends Controller
                 ], 500);
             }
 
+            // =======================================================
+            // Grouping souvenir berdasarkan nama + size
+            // =======================================================
             $groupedSouvenirs = [];
 
             foreach ($souvenirs as $souvenir) {
                 $namaBase = explode(' - ', $souvenir->nama_souvenir);
                 $baseName = $namaBase[0];
                 $size = isset($namaBase[1]) ? trim($namaBase[1]) : null;
+
                 if (!isset($groupedSouvenirs[$baseName])) {
                     $groupedSouvenirs[$baseName] = [
                         'nama_souvenir' => $baseName,
@@ -405,12 +440,10 @@ class feedbackController extends Controller
                 }
 
                 if ($size) {
-                    // Tambahkan size ke array sizes
-                    // Bisa juga tambahkan stok per size jika perlu
-                    array_push($groupedSouvenirs[$baseName]['sizes'], [
-                        'size' =>  $size,
-                        'stok' =>  (int)$souvenir->stok
-                    ]);
+                    $groupedSouvenirs[$baseName]['sizes'][] = [
+                        'size' => $size,
+                        'stok' => (int) $souvenir->stok
+                    ];
                 }
             }
 
@@ -685,3 +718,4 @@ class feedbackController extends Controller
         ]);
     }
 }
+

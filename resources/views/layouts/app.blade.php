@@ -34,7 +34,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
-
     <style>
         /* From Uiverse.io by jamik-dev */
         .cube {
@@ -488,11 +487,23 @@
                 font-size: 12px;
             }
         }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
     </style>
 </head>
 
 <body>
-@if(session('success'))
+    @if(session('success'))
     <div class="alert alert-success alert-dismissible fade show m-0 alert-custom" role="alert" id="success-alert">
         <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -540,7 +551,7 @@
             if (alert) {
                 alert.remove();
             }
-        }, 5000); // 5000ms = 5 detik
+        }, 5000);
     </script>
     @endif
     @if($errors->any())
@@ -596,11 +607,10 @@
                             <img src="{{ asset('icon/whitebell.svg') }}" class="img-responsive" width="30px">
 
                             <!-- 🔔 Badge jumlah notifikasi -->
-                           <span id="notifBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            <span id="notifBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
                                 {{ auth()->user()->unreadNotifications->count() }}
                                 <span class="visually-hidden">unread notifications</span>
                             </span>
-
                         </a>
                     </li>
 
@@ -638,7 +648,6 @@
         </div>
     </nav>
 
-    <!-- 🔊 Suara notifikasi -->
     <audio id="notifSound" src="{{ asset('bell.mp3') }}" preload="auto"></audio>
 
 
@@ -656,9 +665,87 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+    <script src="https://js.pusher.com/8.2/pusher.min.js"></script>
     <script>
-        // === Script Logout (tidak perlu diubah) ===
-        document.getElementById('logout-link').addEventListener('click', function (e) {
+        Pusher.logToConsole = true;
+
+        const pusher = new Pusher("{{ env('PUSHER_APP_KEY') }}", {
+            cluster: "{{ env('PUSHER_APP_CLUSTER') }}",
+            forceTLS: true,
+            authEndpoint: '/pusher/auth',
+            auth: {
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                }
+            }
+        });
+
+        const channel = pusher.subscribe('private-notifikasi.{{ auth()->id() }}');
+
+        channel.bind('pusher:subscription_succeeded', () => {
+            console.log('PUSHER AKTIF');
+        });
+
+        channel.bind('notifikasi-event', (data) => {
+            console.log('REAL-TIME MASUK!', data);
+
+            const toast = document.createElement('div');
+            toast.innerHTML = `
+            <div class="rt-toast" style="
+                position:fixed;
+                top:90px;
+                left:20px;
+                z-index:99999;
+                background:#10b981;
+                color:white;
+                padding:18px 32px;
+                border-radius:12px;
+                box-shadow:0 10px 30px rgba(0,0,0,0.3);
+                font-family:system-ui;
+                min-width:320px;
+                animation:slideIn 0.5s ease;
+            ">
+                <div style="font-weight:700;font-size:16px;">Notifikasi Baru!</div>
+                <div style="margin-top:6px;font-size:14px;opacity:0.9;">
+                    ${data.message?.message?.tipe || 'Ada pemberitahuan baru'}
+                </div>
+            </div>`;
+
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.transition = "opacity 0.5s ease";
+                toast.style.opacity = "0";
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
+
+            document.getElementById('notifSound')?.play();
+
+            const badge = document.getElementById('notifBadge');
+            if (badge) {
+                let current = parseInt(badge.textContent) || 0;
+                badge.textContent = current + 1;
+                badge.classList.add('animate__animated', 'animate__bounceIn');
+                setTimeout(() => badge.classList.remove('animate__bounceIn'), 1000);
+            }
+
+            const modalBody = document.querySelector('#notificationModal .modal-body');
+            if (modalBody) {
+                const newNotif = `
+            <div class="notification p-3 border-bottom animate__animated animate__fadeIn">
+                <p class="mb-1 fw-bold text-danger">Baru!</p>
+                <p class="mb-1"><strong>${data.message?.user || 'System'}</strong></p>
+                <p class="mb-1">${data.message?.message?.tipe || 'Notifikasi'}</p>
+                <small class="text-muted">Baru saja</small>
+            </div>`;
+                modalBody.insertAdjacentHTML('afterbegin', newNotif);
+            }
+        });
+    </script>
+
+
+    <script>
+        document.getElementById('logout-link').addEventListener('click', function(e) {
             e.preventDefault();
             Swal.fire({
                 title: 'Apakah Anda yakin?',
@@ -669,8 +756,12 @@
                 cancelButtonColor: '#d33',
                 confirmButtonText: 'Ya, keluar',
                 cancelButtonText: 'Batal',
-                showClass: { popup: 'animate__animated animate__fadeInDown animate__faster' },
-                hideClass: { popup: 'animate__animated animate__fadeOutUp animate__faster' }
+                showClass: {
+                    popup: 'animate__animated animate__fadeInDown animate__faster'
+                },
+                hideClass: {
+                    popup: 'animate__animated animate__fadeOutUp animate__faster'
+                }
             }).then((result) => {
                 if (result.isConfirmed) {
                     document.getElementById('logout-form').submit();
@@ -678,20 +769,6 @@
             });
         });
     </script>
-
-    <script src="https://js.pusher.com/8.2/pusher.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/laravel-echo/1.15.0/echo.iife.js"></script>
-
-<script>
-    window.USER_ID = "{{ auth()->id() }}";
-    window.PUSHER_KEY = "{{ config('broadcasting.connections.pusher.key') }}";
-    window.PUSHER_CLUSTER = "{{ config('broadcasting.connections.pusher.options.cluster') }}";
-</script>
-
-<script src="{{ asset('js/echo.js') }}"></script>
-
-
-
 </body>
 
 </html>

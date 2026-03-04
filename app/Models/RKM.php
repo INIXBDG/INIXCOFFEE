@@ -4,9 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class RKM extends Model
 {
+    use SoftDeletes;
     use HasFactory;
     protected $primaryKey = 'id';
     protected $fillable = [
@@ -25,13 +27,14 @@ class RKM extends Model
         'asisten_key',
         'status',
         'exam',
-        'authorize',    
+        'authorize',
         'registrasi_form',
         'quartal',
         'bulan',
         'tahun',
         'isi_pax',
-        'makanan'
+        'makanan',
+        'pdf_peserta'
     ];
     protected $dates = ['tanggal_awal', 'tanggal_akhir'];
 
@@ -39,6 +42,12 @@ class RKM extends Model
     {
         return $this->hasMany(perhitunganNetSales::class, 'id_rkm', 'id');
     }
+
+    public function outstanding()
+    {
+        return $this->hasOne(outstanding::class, 'id_rkm', 'id');
+    }
+
 
     public function sales()
     {
@@ -75,6 +84,11 @@ class RKM extends Model
         return $this->hasMany(comment::class, 'rkm_key', 'id');
     }
 
+    public function rekomendasilanjutan()
+    {
+        return $this->hasOne(RekomendasiLanjutan::class, 'id_rkm', 'id');
+    }
+
     public function exam()
     {
         return $this->hasOne(eksam::class, 'id_rkm');
@@ -100,19 +114,21 @@ class RKM extends Model
         return $this->hasMany(nilaifeedback::class, 'id_rkm', 'id');
     }
 
-    public function sertifikatPDF(){
+    public function sertifikatPDF()
+    {
         return $this->hasMany(SertifikatPDF::class, 'id_rkm', 'id');
     }
 
-    public function absensiPDF(){
+    public function absensiPDF()
+    {
         return $this->hasOne(absensiPDF::class, 'id_rkm', 'id');
     }
 
     public function peluang()
     {
-        return $this->hasOne(Peluang::class, 'id_rkm', 'id'); // Relasi dengan Peluang
+        return $this->hasOne(Peluang::class, 'id_rkm', 'id');
     }
-  
+
     public function invoice()
     {
         return $this->hasOne(Invoice::class, 'id_rkm');
@@ -121,7 +137,19 @@ class RKM extends Model
     {
         return $this->hasMany(Kwitansi::class, 'id_rkm');
     }
-    
 
+    public function checklistKeperluan()
+    {
+        return $this->hasOne(ChecklistKeperluan::class, 'id_rkm', 'id');
+    }
 
+    public function penilaianExam()
+    {
+        return $this->hasMany(PenilaianExam::class, 'id_rkm', 'id');
+    }
+
+        public function dataExam()
+    {
+        return $this->hasOne(eksam::class, 'id_rkm', 'id');
+    }
 }

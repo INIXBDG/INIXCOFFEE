@@ -12,6 +12,7 @@ use App\Models\jabatan;
 use App\Models\TunjanganKaryawan;
 use Vinkla\Hashids\Facades\Hashids;
 use Carbon\Carbon;
+use App\Models\EducationalBackground;
 
 class KaryawanController extends Controller
 {
@@ -31,7 +32,7 @@ class KaryawanController extends Controller
         if (empty($decoded)) abort(404);
 
         $realId = $decoded[0];
-        $users = Karyawan::findOrFail($realId);
+        $users = Karyawan::with('educations')->findOrFail($realId);
         $user = User::where('karyawan_id', $users->id)->firstOrFail();
 
         // Batasi akses ke user sendiri atau admin
@@ -43,71 +44,109 @@ class KaryawanController extends Controller
         return view('user.edit', compact('users', 'jabatan'));
     }
 
+    public function updateData(Request $request, $id)
+    {
+        $decoded = Hashids::decode($id);
+        if (empty($decoded[0])) abort(404);
 
-public function updateData(Request $request, $id)
-{
-    $decoded = Hashids::decode($id);
-    if (empty($decoded[0])) abort(404);
+        $realId = $decoded[0];
 
-    $realId = $decoded[0];
+        // Load Karyawan
+        $karyawan = Karyawan::findOrFail($realId);
+        $user = User::where('karyawan_id', $karyawan->id)->firstOrFail();
 
-    $karyawan = Karyawan::findOrFail($realId);
-    $user = User::where('karyawan_id', $karyawan->id)->firstOrFail();
+        // Cek Otorisasi
+        if (auth()->id() !== $user->id && auth()->user()->role !== 'Admin' && auth()->user()->jabatan !== 'HRD') {
+            abort(403);
+        }
 
-    // Batasi akses ke user sendiri atau admin
-    if (auth()->id() !== $user->id && auth()->user()->role !== 'Admin' && auth()->user()->jabatan !== 'HRD') {
-        abort(403);
+        // 1. Validasi Input
+        $data = $request->validate([
+            // --- Data Existing ---
+            'nama_lengkap'      => ['required'],
+            'nip'               => ['nullable', 'numeric'],
+            'kode_karyawan'     => ['nullable'],
+            'jabatan'           => ['nullable'],
+            'divisi'            => ['nullable'],
+            'status_aktif'      => ['required'],
+            'rekening_maybank'  => ['nullable'],
+            'rekening_bca'      => ['nullable'],
+            'telepon'           => ['nullable'],
+            'whatsapp'          => ['nullable'],
+            'email'             => ['nullable', 'email'],
+            'awal_probation'    => ['nullable', 'date'],
+            'akhir_probation'   => ['nullable', 'date'],
+            'awal_kontrak'      => ['nullable', 'date'],
+            'akhir_kontrak'     => ['nullable', 'date'],
+            'awal_tetap'        => ['nullable', 'date'],
+            'akhir_tetap'       => ['nullable', 'date'],
+            'keterangan'        => ['nullable'],
+            'cuti'              => ['nullable', 'numeric'],
+
+            // --- Data Baru (Profil Tambahan) ---
+            'alamat_lengkap'    => ['nullable', 'string'],
+            'gender'            => ['nullable', 'in:Laki-laki,Perempuan'], // Sesuaikan opsi jika perlu
+            'tempat_lahir'      => ['nullable', 'string'],
+            'tanggal_lahir'     => ['nullable', 'date'],
+            'religion'          => ['nullable', 'string'],
+            'provinsi'          => ['nullable', 'string'],
+            'kota'              => ['nullable', 'string'],
+
+            // --- Data Educational Background (Array) ---
+            'educations'        => ['nullable', 'array'],
+            'educations.*.name' => ['required', 'string'], // Validasi nama sekolah per baris
+        ]);
+
+        // 2. Update Data Karyawan (Exclude educations dari array update)
+        $karyawanData = collect($data)->except(['educations'])->toArray();
+        $karyawan->update($karyawanData);
+
+        // 3. Proses Educational Background
+        // Menggunakan kode_karyawan dari object $karyawan yang baru saja diupdate (Target User)
+        $targetKodeKaryawan = $karyawan->kode_karyawan;
+
+        if ($targetKodeKaryawan) {
+            // A. Hapus data pendidikan lama milik karyawan ini (Reset)
+            EducationalBackground::where('kode_karyawan', $targetKodeKaryawan)->delete();
+
+            // B. Insert data pendidikan baru dari input array
+            if ($request->has('educations') && is_array($request->educations)) {
+                foreach ($request->educations as $edu) {
+                    // Pastikan nama sekolah tidak kosong
+                    if (!empty($edu['name'])) {
+                        EducationalBackground::create([
+                            'kode_karyawan' => $targetKodeKaryawan, // Ambil otomatis dari user yang diedit
+                            'name'          => $edu['name'],
+                        ]);
+                    }
+                }
+            }
+        }
+
+        // 4. Update Data User (Login Info)
+        $id_instruktur = null;
+        $id_sales = null;
+
+        if (in_array($request->jabatan, ['Instruktur', 'Technical Support'])) {
+            $id_instruktur = $request->kode_karyawan;
+        }
+
+        if (in_array($request->jabatan, ['SPV Sales', 'Sales', 'Adm Sales'])) {
+            $id_sales = $request->kode_karyawan;
+        }
+
+        $user->jabatan = $data['jabatan'] ?? $user->jabatan;
+        $user->status_akun = $data['status_aktif'];
+        $user->id_instruktur = $id_instruktur;
+        $user->id_sales = $id_sales;
+        $user->save();
+
+        if (auth()->user()->jabatan == "HRD") {
+            return redirect('/user')->with('success', 'Data Berhasil Diubah');
+        }
+
+        return back()->with('success', 'Data Berhasil Diubah');
     }
-
-    $data = $request->validate([
-        'nama_lengkap' => ['required'],
-        'nip' => ['nullable', 'numeric'],
-        'kode_karyawan' => ['nullable'],
-        'jabatan' => ['nullable'],
-        'divisi' => ['nullable'],
-        'status_aktif' => ['required'],
-        'rekening_maybank' => ['nullable'],
-        'rekening_bca' => ['nullable'],
-        'telepon' => ['nullable'],           // ✅ Tambahkan validasi
-        'whatsapp' => ['nullable'],       // ✅ Tambahkan validasi
-        'email' => ['nullable', 'email'],   // ✅ Tambahkan validasi
-        'awal_probation' => ['nullable', 'date'],
-        'akhir_probation' => ['nullable', 'date'],
-        'awal_kontrak' => ['nullable', 'date'],
-        'akhir_kontrak' => ['nullable', 'date'],
-        'awal_tetap' => ['nullable', 'date'],
-        'akhir_tetap' => ['nullable', 'date'],
-        'keterangan' => ['nullable'],
-        'cuti' => ['nullable', 'numeric'],
-    ]);
-
-    // ✅ Update karyawan dengan semua data yang divalidasi
-    $karyawan->update($data);
-
-    $id_instruktur = null;
-    $id_sales = null;
-
-    if (in_array($request->jabatan, ['Instruktur', 'Technical Support'])) {
-        $id_instruktur = $request->kode_karyawan;
-    }
-
-
-    if (in_array($request->jabatan, ['SPV Sales', 'Sales', 'Adm Sales'])) {
-        $id_sales = $request->kode_karyawan;
-    }
-
-    $user->jabatan = $data['jabatan'];
-    $user->status_akun = $data['status_aktif'];
-    $user->id_instruktur = $id_instruktur;
-    $user->id_sales = $id_sales;
-    $user->save();
-
-    if (auth()->user()->jabatan == "HRD") {
-        return redirect('/user')->with('success', 'Data Berhasil Diubah');
-    }
-
-    return back()->with('success', 'Data Berhasil Diubah');
-}
 
     public function updateFoto(Request $request, $id): RedirectResponse
     {

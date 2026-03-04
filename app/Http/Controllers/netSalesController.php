@@ -12,6 +12,7 @@ use App\Models\analisisrkmmingguan;
 use App\Models\approvedNetSales;
 use App\Models\detailPengajuanBarang;
 use App\Models\eksam;
+use App\Models\HistoryNetSales;
 use App\Models\karyawan;
 use App\Models\Materi;
 use App\Models\PengajuanBarang;
@@ -21,6 +22,9 @@ use App\Models\tracking_pengajuan_barang;
 use App\Models\trackingNetSales;
 use App\Models\User;
 use App\Notifications\CommentNotification;
+use App\Notifications\UpdateLaporanPenjualan;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
 
 class netSalesController extends Controller
@@ -38,35 +42,41 @@ class netSalesController extends Controller
     public function store(Request $request)
     {
         $request->merge([
-            'harga_penawaran' => $request->harga_penawaran ? str_replace('.', '', $request->harga_penawaran) : null,
             'transportasi' => $request->transportasi ? str_replace('.', '', $request->transportasi) : null,
-            'penginapan' => $request->penginapan ? str_replace('.', '', $request->penginapan) : null,
+            'akomodasi_peserta' => $request->akomodasi_peserta ? str_replace('.', '', $request->akomodasi_peserta) : null,
+            'akomodasi_tim' => $request->akomodasi_tim ? str_replace('.', '', $request->akomodasi_tim) : null,
             'fresh_money' => $request->fresh_money ? str_replace('.', '', $request->fresh_money) : null,
             'souvenir' => $request->souvenir ? str_replace('.', '', $request->souvenir) : null,
+            'cashback' => $request->cashback ? str_replace('.', '', $request->cashback) : null,
             'entertaint' => $request->entertaint ? str_replace('.', '', $request->entertaint) : null,
+            'sewa_laptop' => $request->sewa_laptop ? str_replace('.', '', $request->sewa_laptop) : null,
         ]);
 
         $data = $request->validate([
-            'harga_penawaran' => 'required',
             'id_rkm' => 'required',
             'transportasi' => 'nullable|numeric',
-            'penginapan' => 'nullable|numeric',
+            'jenis_transportasi' => 'nullable',
+            'akomodasi_peserta' => 'nullable|numeric',
+            'akomodasi_tim' => 'nullable|numeric',
+            'keterangan_akomodasi_tim' => 'nullable',
             'fresh_money' => 'nullable|numeric',
             'entertaint' => 'nullable|numeric',
+            'keterangan_entertaint' => 'nullable',
             'souvenir' => 'nullable|numeric',
+            'cashback' => 'nullable|numeric',
+            'sewa_laptop' => 'nullable|numeric',
             'tgl_pa' => 'required',
-            'tipe_pembayaran' => 'required',
+            'tipe_pembayaran' => 'required|in:Cash,Transfer',
+            'deskripsi_tambahan' => 'nullable',
         ]);
+
+        $tracking = trackingNetSales::create([
+            'id_rkm' => $data['id_rkm'],
+        ]);
+
+        $data['id_tracking'] = $tracking->id;
 
         $netSales = perhitunganNetSales::create($data);
-
-        $dataTracking = trackingNetSales::create([
-            'id_rkm' => $netSales->id_rkm,
-        ]);
-
-        $netSales->update([
-            'id_tracking' => $dataTracking->id,
-        ]);
 
         $spv = karyawan::where('jabatan', 'SPV Sales')->first();
 
@@ -86,8 +96,8 @@ class netSalesController extends Controller
                 $url = url('paymentAdvance.index');
 
                 $path = request()->path();
-
-                Notification::send($user, new CommentNotification($dummyComment, $url, $path));
+                $receiverId = $user->id;
+                Notification::send($user, new CommentNotification($dummyComment, $url, $path, $receiverId));
             }
         }
 
@@ -162,7 +172,7 @@ class netSalesController extends Controller
                 $start = $startOfWeek->format('Y-m-d');
                 $end = $endOfWeek->format('Y-m-d');
 
-                $rkm = RKM::with(['materi', 'analisisrkm', 'perhitunganNetSales.approvedNetSales', 'analisisrkm.analisisrkmmingguan'])
+                $rkm = RKM::with(['materi', 'analisisrkm', 'perhitunganNetSales.approvedNetSales', 'analisisrkm.analisisrkmmingguan', 'perusahaan'])
                     ->where('status', '0')
                     ->whereYear('tanggal_awal', $year)
                     ->whereBetween('tanggal_awal', [$start, $end])
@@ -176,20 +186,22 @@ class netSalesController extends Controller
 
                     $netSalesList = $item->perhitunganNetSales;
 
-                    $harga_penawaran = $netSalesList->sum('harga_penawaran');
                     $transportasi = $netSalesList->sum('transportasi');
+                    $akomodasi_peserta = $netSalesList->sum('akomodasi_peserta');
+                    $akomodasi_tim = $netSalesList->sum('akomodasi_tim');
                     $fresh_money = $netSalesList->sum('fresh_money');
                     $entertaint = $netSalesList->sum('entertaint');
                     $souvenir = $netSalesList->sum('souvenir');
-                    $penginapan = $netSalesList->sum('penginapan');
                     $cashback = $netSalesList->sum('cashback');
-                    $diskon = $netSalesList->sum('diskon');
+                    $sewa_laptop = $netSalesList->sum('sewa_laptop');
+                    $totalPenawaran = $item->pax * $item->harga_jual;
 
-                    $totalPerhitunganNetSales = floatval($harga_penawaran - $transportasi - $fresh_money - $souvenir - $entertaint - $penginapan - $diskon - $cashback);
+                    $totalPerhitunganNetSales = floatval($totalPenawaran - $transportasi - $fresh_money - $souvenir - $entertaint - $akomodasi_peserta - $akomodasi_tim - $cashback - $sewa_laptop);
 
                     $latestApproved = $netSalesList->flatMap->approvedNetSales->sortByDesc('created_at')->first();
 
                     return [
+                        'netsales' => $netSalesList,
                         'id' => $item->id,
                         'nama_materi' => $item->materi->nama_materi,
                         'pax' => $item->pax,
@@ -201,17 +213,18 @@ class netSalesController extends Controller
                         'durasi' => $tanggalAwal->diffInDays($tanggalAkhir) + 1,
                         'status' => $status,
                         'analisisRkm' => $netSalesList->toArray(),
-                        'harga_penawaran' => $harga_penawaran,
                         'transportasi' => $transportasi,
+                        'akomodasi_peserta' => $akomodasi_peserta,
+                        'akomodasi_tim' => $akomodasi_tim,
                         'fresh_money' => $fresh_money,
                         'entertaint' => $entertaint,
                         'souvenir' => $souvenir,
-                        'penginapan' => $penginapan,
                         'cashback' => $cashback,
-                        'diskon' => $diskon,
+                        'sewa_laptop' => $sewa_laptop,
                         'total' => $totalPerhitunganNetSales,
                         'level_status' => optional($latestApproved)->level_status ?? 'Belum Disetujui',
                         'keterangan' => optional($latestApproved)->keterangan ?? '-',
+                        'perusahaan' => $item->perusahaan,
                     ];
                 });
 
@@ -247,7 +260,8 @@ class netSalesController extends Controller
 
     public function detail($id)
     {
-        return view('netSales.detail', compact('id'));
+        $historyNet = HistoryNetSales::with('user')->where('id_rkm', $id)->get();
+        return view('netSales.detail', compact('id', 'historyNet'));
     }
 
     public function dataDetail(Request $request)
@@ -258,7 +272,7 @@ class netSalesController extends Controller
         $dataPerusahaan = Perusahaan::where('id', $dataRKM->perusahaan_key)->first();
         $dataSales = karyawan::where('kode_karyawan', $dataRKM->sales_key)->first();
         $dataMateri = Materi::where('id', $dataRKM->materi_key)->first();
-        $dataNetSales = perhitunganNetSales::with('peserta')->where('id_rkm', $dataRKM->id)->get();
+        $dataNetSales = perhitunganNetSales::with('peserta', 'rkm')->where('id_rkm', $dataRKM->id)->get();
         $dataTracking = trackingNetSales::where('id', $dataNetSales->first()->id_tracking)->first();
 
         $mulai = Carbon::parse($dataRKM->tanggal_awal)->timezone('Asia/Jakarta');
@@ -277,28 +291,29 @@ class netSalesController extends Controller
 
         $arrayNetSales = [];
         $grandtotal = 0;
-        $diskon = 0;
-        $cashback = 0;
         foreach ($dataNetSales as $netSale) {
             $dataApproved = approvedNetSales::where('id_rkm', $dataNetSales->first()->id_rkm)->get();
-            $total = $netSale->harga_penawaran - $netSale->transportasi - $netSale->penginapan - $netSale->fresh_money - $netSale->entertaint - $netSale->cashback - $netSale->diskon - $netSale->souvenir;
+            $total = $netSale->rkm->pax * $netSale->rkm->harga_jual - $netSale->transportasi - $netSale->akomodasi_tim - $netSale->akomodasi_peserta - $netSale->fresh_money - $netSale->entertaint - $netSale->cashback - $netSale->sewa_laptop - $netSale->souvenir;
 
-            $totalPA = $netSale->transportasi + $netSale->penginapan + $netSale->fresh_money + $netSale->entertaint + $netSale->souvenir;
+            $totalPA = $netSale->transportasi + $netSale->akomodasi_tim + $netSale->akomodasi_peserta + $netSale->fresh_money + $netSale->entertaint + $netSale->souvenir + $netSale->sewa_laptop;
 
             $netSaleData = [
                 'id_netSales' => $netSale->id,
-                'diskon' => $netSale->diskon,
                 'transportasi' => $netSale->transportasi,
-                'penginapan' => $netSale->penginapan,
+                'jenis_transportasi' => $netSale->jenis_transportasi,
+                'akomodasi_peserta' => $netSale->akomodasi_peserta,
+                'akomodasi_tim' => $netSale->akomodasi_tim,
+                'keterangan_akomodasi_tim' => $netSale->keterangan_akomodasi_tim,
                 'fresh_money' => $netSale->fresh_money,
                 'entertaint' => $netSale->entertaint,
+                'keterangan_entertaint' => $netSale->keterangan_entertaint,
                 'cashback' => $netSale->cashback,
                 'souvenir' => $netSale->souvenir,
-                'harga_penawaran' => $netSale->harga_penawaran,
+                'sewa_laptop' => $netSale->sewa_laptop,
                 'tgl_pa' => $netSale->tgl_pa,
                 'tipe_pembayaran' => $netSale->tipe_pembayaran,
-                'desc' => $netSale->desc,
-                'peserta' => $netSale->peserta->nama,
+                // 'peserta' => $netSale->peserta->nama,
+                'deskripsi_tambahan' => $netSale->deskripsi_tambahan,
                 'total' => $total,
                 'totalPa' => $totalPA,
                 'approved' => $dataApproved
@@ -331,9 +346,9 @@ class netSalesController extends Controller
 
     public function edit($id)
     {
-        $rkm = RKM::with('perusahaan', 'materi')->findOrFail($id);
+        $dataNetSales = perhitunganNetSales::findOrFail($id);
+        $rkm = RKM::with('perusahaan', 'materi')->findOrFail($dataNetSales->id_rkm);
         $exam = eksam::where('id_rkm', $rkm->id)->first();
-        $dataNetSales = perhitunganNetSales::where('id_rkm', $rkm->id)->first();
         if (!$exam) {
             $exam = null;
         } else {
@@ -349,21 +364,267 @@ class netSalesController extends Controller
     public function updateNetSales(Request $request)
     {
         $id = $request->input('id_netsales');
+        $dataNetSales = perhitunganNetSales::findOrFail($id);
 
-        $dataNetSales = perhitunganNetSales::where('id', $id)->first();
+        $oldData = $dataNetSales->getOriginal();
 
         $dataNetSales->transportasi = str_replace(['.', ','], '', $request->input('transportasi'));
-        $dataNetSales->penginapan = str_replace(['.', ','], '', $request->input('penginapan'));
+        $dataNetSales->jenis_transportasi = $request->input('jenis_transportasi');
+        $dataNetSales->akomodasi_peserta = str_replace(['.', ','], '', $request->input('akomodasi_peserta'));
+        $dataNetSales->akomodasi_tim = str_replace(['.', ','], '', $request->input('akomodasi_tim'));
+        $dataNetSales->keterangan_akomodasi_tim = $request->input('keterangan_akomodasi_tim');
         $dataNetSales->fresh_money = str_replace(['.', ','], '', $request->input('fresh_money'));
         $dataNetSales->entertaint = str_replace(['.', ','], '', $request->input('entertaint'));
+        $dataNetSales->keterangan_entertaint = $request->input('keterangan_entertaint');
         $dataNetSales->souvenir = str_replace(['.', ','], '', $request->input('souvenir'));
-        $dataNetSales->harga_penawaran = str_replace(['.', ','], '', $request->input('harga_penawaran'));
-
+        $dataNetSales->cashback = str_replace(['.', ','], '', $request->input('cashback'));
+        $dataNetSales->sewa_laptop = str_replace(['.', ','], '', $request->input('sewa_laptop'));
         $dataNetSales->tgl_pa = $request->input('tgl_pa');
         $dataNetSales->tipe_pembayaran = $request->input('tipe_pembayaran');
+        $dataNetSales->deskripsi_tambahan = $request->input('deskripsi_tambahan');
 
         $dataNetSales->save();
 
-        return redirect()->back()->with('success', 'berhasil');
+        $changed = [];
+        $newData = $dataNetSales->getAttributes(); //Ambil yg udah ke save
+
+        $fieldsToWatch = [
+            'transportasi',
+            'jenis_transportasi',
+            'akomodasi_peserta',
+            'akomodasi_tim',
+            'keterangan_akomodasi_tim',
+            'fresh_money',
+            'entertaint',
+            'souvenir',
+            'cashback',
+            'sewa_laptop',
+            'tgl_pa',
+            'tipe_pembayaran',
+            'deskripsi_tambahan'
+        ];
+
+        foreach ($fieldsToWatch as $field) {
+            $oldValue = $oldData[$field] ?? null;
+            $newValue = $newData[$field] ?? null;
+
+            if ($oldValue != $newValue) {
+                $changed[$field] = [
+                    'before' => $oldValue,
+                    'after' => $newValue,
+                ];
+            }
+        }
+
+        if (!empty($changed)) {
+            $historyNet = new HistoryNetSales();
+            $historyNet->id_user = Auth::id();
+            $historyNet->id_rkm = $dataNetSales->id_rkm;
+            $historyNet->data = $changed;
+            $historyNet->save();
+        }
+
+        $users = User::whereIn('jabatan', ['GM', 'Adm Sales', 'Finance & Accounting'])->get();
+        $rkm = RKM::with('materi')->where('id', $dataNetSales->id_rkm)->first();
+
+        Carbon::setLocale('id');
+        date_default_timezone_set('Asia/Jakarta');
+
+        $data = [
+            'karyawan' => Auth::user()->karyawan->nama_lengkap ?? Auth::user()->username,
+            'id_rkm' => $rkm->id ?? null,
+            'rkm' => $rkm->materi?->nama_materi ?? 'Tidak diketahui',
+            'waktu' => ($rkm->tanggal_awal && $rkm->tanggal_akhir)
+                ? Carbon::parse($rkm->tanggal_awal)->translatedFormat('d F Y') . ' - ' . Carbon::parse($rkm->tanggal_akhir)->translatedFormat('d F Y')
+                : 'Tanggal belum ditentukan',
+            'milik' => $rkm->sales_key ?? 'Tidak diketahui',
+            'waktu_perubahan' => Carbon::now()->format('Y-m-d H:i:s'),
+            'perubahan' => $changed,
+        ];
+
+        $path = "/crm/edit/{$dataNetSales->id_rkm}/pa";
+        $receiverId = $users->pluck('id')->toArray();
+        Notification::send($users, new UpdateLaporanPenjualan($data, $path, $receiverId));
+
+        return redirect()->back()->with('success', 'Data Net Sales berhasil diperbarui.');
+    }
+
+    public function DownloadPDF($year, $month)
+    {
+        if (!is_numeric($year) || !is_numeric($month)) {
+            abort(400, 'Parameter tahun dan bulan harus berupa angka');
+        }
+
+        Carbon::setLocale('id');
+
+        try {
+            $startDate = CarbonImmutable::create($year, $month, 1);
+        } catch (\Exception $e) {
+            abort(400, 'Format bulan atau tahun tidak valid');
+        }
+
+        $endDate = $startDate->endOfMonth();
+
+        $monthRanges = [];
+        $date = $startDate;
+
+        while ($date->month <= $endDate->month && $date->year <= $endDate->year) {
+            $startOfMonth = $date->startOfMonth();
+            $endOfMonth   = $date->endOfMonth();
+            $monthName    = $startOfMonth->translatedFormat('F');
+
+            $weekRanges  = [];
+            $startOfWeek = $startOfMonth->startOfWeek();
+            $weekNumber  = 1;
+
+            while ($startOfWeek->lte($endOfMonth)) {
+                $endOfWeek = $startOfWeek->copy()->endOfWeek();
+
+                if ($startOfWeek->month != $date->month) {
+                    $startOfWeek = $startOfWeek->addWeek();
+                    $weekNumber++;
+                    continue;
+                }
+
+                $start = $startOfWeek->format('Y-m-d');
+                $end   = $endOfWeek->format('Y-m-d');
+
+                $rkm = RKM::with([
+                    'materi',
+                    'analisisrkm',
+                    'perhitunganNetSales.approvedNetSales',
+                    'analisisrkm.analisisrkmmingguan',
+                    'perusahaan'
+                ])
+                    ->where('status', '0')
+                    ->whereYear('tanggal_awal', $year)
+                    ->whereBetween('tanggal_awal', [$start, $end])
+                    ->get();
+
+                $formattedItems = $rkm->map(function ($item) {
+                    $status = $item->perhitunganNetSales->isNotEmpty() ? 'Hijau' : 'Merah';
+
+                    $tanggalAwal  = Carbon::parse($item->tanggal_awal);
+                    $tanggalAkhir = Carbon::parse($item->tanggal_akhir);
+
+                    $netSalesList = $item->perhitunganNetSales;
+
+                    $transportasi       = $netSalesList->sum('transportasi');
+                    $akomodasi_peserta  = $netSalesList->sum('akomodasi_peserta');
+                    $akomodasi_tim      = $netSalesList->sum('akomodasi_tim');
+                    $fresh_money        = $netSalesList->sum('fresh_money');
+                    $entertaint         = $netSalesList->sum('entertaint');
+                    $souvenir           = $netSalesList->sum('souvenir');
+                    $cashback           = $netSalesList->sum('cashback');
+                    $sewa_laptop        = $netSalesList->sum('sewa_laptop');
+                    $deskripsi = $netSalesList->first()->deskripsi_tambahan ?? '-';
+
+                    $totalPenawaran = $item->pax * $item->harga_jual;
+
+                    $totalNetSales = $totalPenawaran;
+                    // - $transportasi
+                    // - $akomodasi_peserta
+                    // - $akomodasi_tim
+                    // - $fresh_money
+                    // - $entertaint
+                    // - $souvenir
+                    // - $cashback
+                    // - $sewa_laptop;
+
+                    $latestApproved = $netSalesList
+                        ->flatMap->approvedNetSales
+                        ->sortByDesc('created_at')
+                        ->first();
+
+                    return [
+                        'id' => $item->id,
+                        'nama_materi' => $item->materi->nama_materi,
+                        'pax' => $item->pax,
+                        'sales_key' => $item->sales_key,
+                        'harga_jual' => $item->harga_jual,
+                        'total_harga_jual' => $item->pax * $item->harga_jual,
+                        'tanggal_awal' => $tanggalAwal->translatedFormat('d F Y'),
+                        'tanggal_akhir' => $tanggalAkhir->translatedFormat('d F Y'),
+                        'durasi' => $tanggalAwal->diffInDays($tanggalAkhir) + 1,
+                        'status' => $status,
+                        'transportasi' => $transportasi,
+                        'akomodasi_peserta' => $akomodasi_peserta,
+                        'akomodasi_tim' => $akomodasi_tim,
+                        'fresh_money' => $fresh_money,
+                        'entertaint' => $entertaint,
+                        'souvenir' => $souvenir,
+                        'cashback' => $cashback,
+                        'sewa_laptop' => $sewa_laptop,
+                        'deskripsi' => $deskripsi ?? '-',
+                        'total' => $totalNetSales,
+                        'level_status' => optional($latestApproved)->level_status ?? 'Belum Disetujui',
+                        'keterangan' => optional($latestApproved)->keterangan ?? '-',
+                        'perusahaan' => $item->perusahaan,
+                    ];
+                });
+
+                $rkmfull = 'no data';
+                if ($formattedItems->isNotEmpty()) {
+                    $rkmfull = $formattedItems->every(fn($item) => $item['status'] === 'Hijau')
+                        ? 'ok'
+                        : 'pending';
+                }
+
+                $weekRanges[] = [
+                    'rkmfull' => $rkmfull,
+                    'minggu' => $weekNumber,
+                    'tanggal_awal_minggu' => $startOfWeek->translatedFormat('d F Y'),
+                    'tanggal_akhir_minggu' => $endOfWeek->translatedFormat('d F Y'),
+                    'data' => $formattedItems,
+                ];
+
+                $startOfWeek = $startOfWeek->addWeek();
+                $weekNumber++;
+            }
+
+            $monthRanges[] = [
+                'tahun' => $year,
+                'bulan' => $monthName,
+                'weeksData' => $weekRanges,
+            ];
+
+            $date = $date->addMonth();
+        }
+
+        $pdf = Pdf::loadView('netSales.pdf', compact(
+            'monthRanges',
+            'year',
+            'month'
+        ));
+
+        $pdf->setPaper('a4', 'portrait');
+
+
+        return $pdf->download("RKM_{$month}_{$year}.pdf");
+    }
+
+    public function pdfSendiri($id)
+    {
+
+        $rkm = RKM::with(
+            'materi',
+            'analisisrkm',
+            'perhitunganNetSales.approvedNetSales',
+            'analisisrkm.analisisrkmmingguan',
+            'perusahaan'
+        )->where('id', $id)->first();
+
+        // dd($rkm);
+
+        // return response()->json($rkm);
+
+        $pdf = Pdf::loadView('netSales.pdfSendiri', compact(
+            'rkm',
+        ));
+
+        $pdf->setPaper('a4', 'portrait');
+
+
+        return $pdf->download("RKM_{$id}.pdf");
     }
 }

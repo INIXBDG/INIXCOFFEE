@@ -18,13 +18,16 @@ class Certificate extends Model
         'tanggal_awal',
         'tanggal_akhir',
         'tanggal_pelatihan',
+        'tanggal_pelatihan2',
         'ttd_id',
         'pdf_path'
     ];
 
     protected $casts = [
         'tanggal_awal' => 'date',
-        'tanggal_akhir' => 'date'
+        'tanggal_akhir' => 'date',
+        'tanggal_awal2' => 'date',
+        'tanggal_akhir2' => 'date'
     ];
 
     // Relasi ke RKM
@@ -45,22 +48,22 @@ class Certificate extends Model
         return $this->belongsTo(Karyawan::class, 'ttd_id');
     }
 
-    // Generate nomor sertifikat otomatis
-    public static function generateNomorSertifikat()
-    {
-        $year = date('Y');
-        $month = date('m');
+    // // Generate nomor sertifikat otomatis
+    // public static function generateNomorSertifikat()
+    // {
+    //     $year = date('Y');
+    //     $month = date('m');
         
-        // Format: CERT/2025/01/0001
-        $lastCert = self::whereYear('created_at', $year)
-            ->whereMonth('created_at', $month)
-            ->orderBy('id', 'desc')
-            ->first();
+    //     // Format: CERT/2025/01/0001
+    //     $lastCert = self::whereYear('created_at', $year)
+    //         ->whereMonth('created_at', $month)
+    //         ->orderBy('id', 'desc')
+    //         ->first();
         
-        $number = $lastCert ? ((int) substr($lastCert->nomor_sertifikat, -4)) + 1 : 1;
+    //     $number = $lastCert ? ((int) substr($lastCert->nomor_sertifikat, -4)) + 1 : 1;
         
-        return sprintf('CERT/%s/%s/%04d', $year, $month, $number);
-    }
+    //     return sprintf('CERT/%s/%s/%04d', $year, $month, $number);
+    // }
 //     public static function generateNomorSertifikat()
 // {
 //     $year = date('Y');
@@ -69,11 +72,11 @@ class Certificate extends Model
 //     return "CERT-{$year}-{$number}";
 // }
 
-    // Format nomor sertifikat untuk tampilan (6 digit)
-    public function getFormattedNomorAttribute()
-    {
-        // Ambil 4 digit terakhir dan format jadi 6 digit
-        $number = (int) substr($this->nomor_sertifikat, -4);
-        return sprintf('%06d', $number);
-    }
+    // // Format nomor sertifikat untuk tampilan (6 digit)
+    // public function getFormattedNomorAttribute()
+    // {
+    //     // Ambil 4 digit terakhir dan format jadi 6 digit
+    //     $number = (int) substr($this->nomor_sertifikat, -4);
+    //     return sprintf('%06d', $number);
+    // }
 }

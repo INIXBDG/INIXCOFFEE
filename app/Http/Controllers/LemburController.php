@@ -68,7 +68,7 @@ class LemburController extends Controller
 			// GM hanya melihat semua lembur dari divisi Office (tanpa peduli jabatannya)
 			$lembur = Lembur::with('karyawan')
 				->whereHas('karyawan', function ($query) {
-					$query->whereIn('jabatan', ['Office Boy', 'Driver', 'HRD']);
+					$query->where('divisi', 'Office');
 				})
 				->latest()
 				->get();
@@ -96,12 +96,25 @@ class LemburController extends Controller
      * @return View
      */
     public function create()
-    {
-        $user = auth()->user()->karyawan_id;
-        $karyawan = karyawan::findOrFail($user);
-        $karyawanall = karyawan::where('divisi', '!=', 'Direksi')->where('divisi', $karyawan->divisi)->get();
-        return view('lembur.create', compact('karyawanall', 'karyawan'));
-    }
+	{
+		$userId = auth()->user()->karyawan_id;
+		$karyawan = Karyawan::findOrFail($userId);
+
+		//if ($karyawan->jabatan === 'HRD') {
+			// HRD hanya boleh mengajukan Office Boy & Driver
+		//	$karyawanall = Karyawan::whereIn('jabatan', ['Office Boy', 'Driver'])
+
+		//		->where('divisi', '!=', 'Direksi')
+		//		->get();
+		//} else {
+			// Selain HRD (default sebelumnya)
+			$karyawanall = Karyawan::where('divisi', '!=', 'Direksi')
+				->where('divisi', $karyawan->divisi)
+				->get();
+		//}
+
+		return view('lembur.create', compact('karyawanall', 'karyawan'));
+	}
 
     /**
      * store
@@ -147,8 +160,10 @@ class LemburController extends Controller
         $path = '/lembur';
 
         foreach ($users as $user) {
-            NotificationFacade::send($user, new LemburNotification($data, $path, $type));
+            $receiverId = $request->id_karyawan;
+            NotificationFacade::send($user, new LemburNotification($data, $path, $type, $receiverId));
         }
+
 
 
         return redirect()->route('lembur.index')->with(['success' => 'Data Berhasil Disimpan!']);
@@ -358,7 +373,8 @@ class LemburController extends Controller
         $path = '/lembur';
 
         foreach ($users as $user) {
-            NotificationFacade::send($user, new LemburNotification($data, $path, $type));
+			$receiverId = $user->id;
+            NotificationFacade::send($user, new LemburNotification($data, $path, $type, $receiverId));
         }
 
         return redirect()->route('lembur.index')->with(['success' => 'Data Berhasil Diubah!']);
@@ -446,7 +462,10 @@ class LemburController extends Controller
     public function approvalLemburKaryawan(Request $request, $id)
     {
         // return $request->all();
-        $this->validate($request, [
+        if(auth()->user()->jabatan == 'HRD'){
+            return 500;
+        }
+		$this->validate($request, [
             'approval'     => 'required',
         ]);
         $post = lembur::with('karyawan')->findOrFail($id);
@@ -479,7 +498,8 @@ class LemburController extends Controller
         $path = '/lembur';
 
         foreach ($users as $user) {
-            NotificationFacade::send($user, new LemburNotification($data, $path, $type));
+            $receiverId = $user->id;
+            NotificationFacade::send($user, new LemburNotification($data, $path, $type, $receiverId));
         }
         return redirect()->route('lembur.index')->with(['success' => 'Data Berhasil Diubah!']);
     }

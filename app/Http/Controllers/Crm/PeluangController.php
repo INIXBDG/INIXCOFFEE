@@ -138,16 +138,9 @@ class PeluangController extends Controller
 
         $netsales = perhitunganNetSales::with('trackingNetSales', 'approvedNetSales', 'peserta')
             ->where('id_rkm', $peluang->id_rkm)
-            ->get();
+            ->first();
 
         $regis = Regisform::where('id_peluang', $id)->first();
-
-        $ids_peserta_yang_sudah_ada = perhitunganNetSales::where('id_rkm', $peluang->rkm->id)->pluck('id_peserta');
-
-        $regisuser = Registrasi::with('peserta')
-            ->where('id_rkm', $peluang->rkm->id)
-            ->whereNotIn('id_peserta', $ids_peserta_yang_sudah_ada)
-            ->get();
 
         // 🔹 Ambil semua aktivitas seperti $aktivitass
         $perusahaan = $peluang->perusahaan;
@@ -192,7 +185,6 @@ class PeluangController extends Controller
             'netsales',
             'regis',
             'items',
-            'regisuser',
             'aktivitasTambahan'
         ));
     }
@@ -409,6 +401,7 @@ class PeluangController extends Controller
                 'materi' => 'required|string|max:255',
                 'catatan' => 'nullable|string|max:255',
                 'harga' => 'required|numeric|min:0',
+                'final' => 'required|numeric|min:0',
                 'pax' => 'required|integer|min:1',
                 'periode_mulai' => 'required|date',
                 'periode_selesai' => 'required|date|after_or_equal:periode_mulai',
@@ -437,12 +430,16 @@ class PeluangController extends Controller
             $rkm->pax = $request->pax;
             $rkm->isi_pax = $request->pax;
             $rkm->save();
+            
+            $final = $validated['final'] - ($validated['final'] * 11 / 100);
 
             // Update Peluang
             $peluang->update([
                 'materi' => $validated['materi'],
                 'catatan' => $validated['catatan'],
                 'harga' => $validated['harga'],
+                'final' => $final,
+                'netsales' => $final,
                 'pax' => $validated['pax'],
                 'periode_mulai' => $validated['periode_mulai'],
                 'periode_selesai' => $validated['periode_selesai'],
@@ -519,11 +516,11 @@ class PeluangController extends Controller
                 $peluang->tahap = 'merah';
 
                 $inputFinal = $request->input('final');
-                $pax = $peluang->pax ?? 1;
+                $final = $inputFinal - ($inputFinal * 11 / 100);
 
-                $peluang->final = $inputFinal;
+                $peluang->final = $final;
 
-                $peluang->netsales = $inputFinal;
+                $peluang->netsales = $final;
 
                 $peluang->merah = $now;
                 $peluang->desc_lost = null;
@@ -555,7 +552,7 @@ class PeluangController extends Controller
                 WHEN MONTH(merah) BETWEEN 4 AND 6 THEN "TR2"
                 WHEN MONTH(merah) BETWEEN 7 AND 9 THEN "TR3"
                 WHEN MONTH(merah) BETWEEN 10 AND 12 THEN "TR4"
-            END as triwulan'),
+                END as triwulan'),
                 DB::raw('SUM(netsales * pax) as total_jumlah'),
             )
             ->groupBy('id_sales', 'triwulan')
@@ -630,81 +627,123 @@ class PeluangController extends Controller
 
     public function storePaymentAdvance(Request $request)
     {
+        Log::info("[PA] Start storePaymentAdvance", ['request' => $request->all()]);
+
         $request->validate([
             'id_rkm' => 'required|numeric',
-            'id_peserta' => 'required|numeric',
-            'hargaPenawaran' => 'required|numeric',
+
             'transportasi' => 'nullable|numeric',
-            'penginapan' => 'nullable|numeric',
-            'freshMoney' => 'nullable|numeric',
-            'cashback' => 'nullable|numeric',
-            // 'diskon' => 'nullable|numeric',
+            'jenis_transportasi' => 'nullable|string',
+
+            'akomodasi_peserta' => 'nullable|numeric',
+            'akomodasi_tim' => 'nullable|numeric',
+            'keterangan_akomodasi_tim' => 'nullable|string',
+            
+            'fresh_money' => 'nullable|numeric',
             'entertaint' => 'nullable|numeric',
+            'keterangan_entertaint' => 'nullable|string',
             'souvenir' => 'nullable|numeric',
-            'desc' => 'nullable',
-            'tanggalPayment' => 'required|date',
-            'tipePembayaran' => 'required|string',
+            'cashback' => 'nullable|numeric',
+            
+            'sewa_laptop' => 'nullable|numeric',
+            'tgl_pa' => 'required|date',
+            'tipe_pembayaran' => 'required|string',
+            'deskripsi_tambahan' => 'nullable|string',
         ]);
 
+        Log::info("[PA] Validation passed");
+
+        // Check existing netsales
         $existingNetSales = perhitunganNetSales::where('id_rkm', $request->id_rkm)->first();
+        Log::info("[PA] Existing Net Sales", ['exists' => $existingNetSales ? true : false]);
 
         $idTracking = null;
 
         if (!$existingNetSales) {
-            // Jika BELUM ada, buat tracking baru
+            Log::info("[PA] No existing netsales, creating new tracking");
+
             $tracking = new trackingNetSales();
             $tracking->id_rkm = $request->id_rkm;
             $tracking->save();
 
             $idTracking = $tracking->id;
+
+            Log::info("[PA] Tracking created", ['tracking_id' => $idTracking]);
+
         } else {
+            Log::info("[PA] Netsales exists, fetching existing tracking");
+
             $tracking = trackingNetSales::where('id_rkm', $existingNetSales->id_rkm)->first();
             $idTracking = $tracking->id;
+
+            Log::info("[PA] Using existing tracking", ['tracking_id' => $idTracking]);
         }
 
-        // Simpan data payment advance baru
+        // Save payment advance
+        Log::info("[PA] Saving new Net Sales record");
+
         $netSales = new perhitunganNetSales();
         $netSales->id_rkm = $request->id_rkm;
-        $netSales->id_peserta = $request->id_peserta;
-        $netSales->harga_penawaran = $request->hargaPenawaran;
+        
         $netSales->transportasi = $request->transportasi;
-        $netSales->penginapan = $request->penginapan;
-        $netSales->fresh_money = $request->freshMoney;
-        $netSales->cashback = $request->cashback;
-        // $netSales->diskon = $request->diskon;
+        $netSales->jenis_transportasi = $request->jenis_transportasi;
+
+        $netSales->akomodasi_peserta = $request->akomodasi_peserta;
+        $netSales->akomodasi_tim = $request->akomodasi_tim;
+        $netSales->keterangan_akomodasi_tim = $request->keterangan_akomodasi_tim;
+        
+        $netSales->fresh_money = $request->fresh_money;
         $netSales->entertaint = $request->entertaint;
+        $netSales->keterangan_entertaint = $request->keterangan_entertaint;
         $netSales->souvenir = $request->souvenir;
-        $netSales->desc = $request->desc;
-        $netSales->tgl_pa = $request->tanggalPayment;
-        $netSales->tipe_pembayaran = $request->tipePembayaran;
+        $netSales->cashback = $request->cashback;
+        
+        $netSales->sewa_laptop = $request->sewa_laptop;
+        $netSales->tipe_pembayaran = $request->tipe_pembayaran;
+        $netSales->tgl_pa = $request->tgl_pa;
+        $netSales->deskripsi_tambahan = $request->deskripsi_tambahan;
+
         $netSales->id_tracking = $idTracking;
         $netSales->save();
 
-        // Peluang::updateNetSalesFromRkm($request->id_rkm);
+        Log::info("[PA] Net Sales saved", ['net_sales_id' => $netSales->id]);
 
-        // Kirim notifikasi ke SPV Sales
+        // Notify SPV
+        Log::info("[PA] Looking for SPV Sales");
+
         $spv = karyawan::where('jabatan', 'SPV Sales')->first();
 
         if ($spv) {
+            Log::info("[PA] SPV found", ['spv' => $spv->kode_karyawan]);
+
             $user = User::whereHas('karyawan', function ($q) use ($spv) {
                 $q->where('kode_karyawan', $spv->kode_karyawan);
             })->first();
 
             if ($user) {
-                $dummyComment = (object) [
+                Log::info("[PA] User found for SPV", ['user_id' => $user->id]);
+
+                $dummyComment = (object)[
                     'karyawan_key' => auth()->user()->karyawan->id ?? null,
                     'content' => 'Pengajuan Payment Advance baru oleh Sales, anda dimohon untuk melakukan persetujuan.',
                     'materi_key' => null,
                     'rkm_key' => $request->id_rkm,
                 ];
 
+                Log::info("[PA] Sending notification");
+
                 $url = url('paymentAdvance.index');
                 $path = request()->path();
-
-                Notification::send($user, new CommentNotification($dummyComment, $url, $path));
+                $receiverUsers = $user->id;
+                Notification::send($user, new CommentNotification($dummyComment, $url, $path, $receiverUsers));
             }
+        } else {
+            Log::warning("[PA] No SPV Sales found");
         }
+
+        Log::info("[PA] Completed successfully");
 
         return redirect()->back()->with('success', 'Data payment advance berhasil disimpan.');
     }
+
 }

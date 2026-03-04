@@ -95,11 +95,7 @@
                                     <th>Client</th>
                                     <th>Sales</th>
                                     <th style="text-align: center;">Jenis Aktivitas</th>
-                                    <th>Deskripsi</th>
                                     <th style="text-align: center;">Waktu Aktivitas</th>
-                                    <th style="text-align: center;">Pax</th>
-                                    <th style="text-align: center;">Harga</th>
-                                    <th style="text-align: center;">Total</th>
                                     <th style="text-align: center;">Aksi</th>
                                 </tr>
                             </thead>
@@ -124,7 +120,8 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            <form id="activityForm" action="{{ route('store.aktivitas.new') }}" method="POST">
+                            <form id="activityForm" action="{{ route('store.aktivitas.new') }}" method="POST"
+                                enctype="multipart/form-data">
                                 @csrf
                                 <input type="hidden" id="contact_type" name="contact_type" value="contact">
 
@@ -236,7 +233,43 @@
                                         name="waktu_aktivitas" required>
                                 </div>
 
-                                <button type="submit" class="btn btn-primary">Simpan</button>
+                                <div id="camera_wrapper" style="display: none; margin-bottom: 15px;">
+                                    <label class="form-label">Dokumentasi Visit</label>
+
+                                    <div class="mb-3">
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="upload_method"
+                                                id="method_camera" value="camera" checked>
+                                            <label class="form-check-label" for="method_camera">Ambil Foto
+                                                (Kamera)</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="upload_method"
+                                                id="method_upload" value="upload">
+                                            <label class="form-check-label" for="method_upload">Upload File</label>
+                                        </div>
+                                    </div>
+
+                                    <div id="live_camera_container">
+                                        <div id="camera"
+                                            style="width: 320px; height: 240px; border: 2px solid #ddd; border-radius: 5px; background: #eee;">
+                                        </div>
+                                        <small class="text-muted d-block mt-1">Pastikan izin kamera dan GPS aktif.</small>
+                                    </div>
+
+                                    <div id="file_upload_container" style="display: none;">
+                                        <input type="file" class="form-control" id="file_foto" name="file_foto"
+                                            accept="image/*">
+                                        <small class="text-muted">Pilih foto dari galeri (Koordinat tidak akan
+                                            direkam).</small>
+                                    </div>
+                                </div>
+
+                                <input type="hidden" name="foto_lokasi" id="foto_lokasi">
+                                <input type="hidden" name="latitude" id="latitude">
+                                <input type="hidden" name="longitude" id="longitude">
+
+                                <button type="submit" class="btn btn-primary" id="btnSubmitAktivitas">Simpan</button>
                             </form>
                         </div>
                     </div>
@@ -329,6 +362,94 @@
                     </form>
                 </div>
             </div>
+
+            <div class="modal fade" id="detailActivityModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Detail Aktivitas</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <strong>Client:</strong>
+                                    <div id="detail_client"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Sales:</strong>
+                                    <div id="detail_sales"></div>
+                                </div>
+                            </div>
+
+                            <hr>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <strong>Email:</strong>
+                                    <div id="detail_email"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>No Telepon:</strong>
+                                    <div id="detail_phone"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <strong>Perusahaan:</strong>
+                                <div id="detail_perusahaan"></div>
+                            </div>
+
+                            <hr>
+
+                            <div class="mb-3">
+                                <strong>Jenis Aktivitas:</strong>
+                                <div id="detail_aktivitas"></div>
+                            </div>
+
+                            <div class="mb-3">
+                                <strong>Deskripsi:</strong>
+                                <div id="detail_deskripsi"></div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <strong>Pax:</strong>
+                                    <div id="detail_pax"></div>
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Harga:</strong>
+                                    <div id="detail_harga"></div>
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Total:</strong>
+                                    <div id="detail_total"></div>
+                                </div>
+                            </div>
+
+                            <hr>
+
+                            <div class="mb-3">
+                                <strong>Lokasi:</strong>
+                                <div id="detail_lokasi"></div>
+                            </div>
+
+                            <div class="mb-3">
+                                <strong>Foto Lokasi:</strong><br>
+                                <img id="detail_foto_lokasi" src="" class="img-fluid rounded shadow-sm"
+                                    style="max-height:300px; display:none;">
+                            </div>
+
+                            <div class="mt-3">
+                                <strong>Waktu Aktivitas:</strong>
+                                <div id="detail_waktu"></div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -340,6 +461,7 @@
     <!-- JS -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ asset('js/webcam.js') }}"></script>
     <script>
         // ===============================
         // 🔹 Fungsi Format Angka (IDR)
@@ -354,11 +476,40 @@
             return parseInt(value, 10).toLocaleString('id-ID');
         }
 
+        // Function untuk reverse koordinat
+        async function updateAddressText(lat, lng, elementId) {
+            try {
+                const response = await fetch(
+                    `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18`);
+                const data = await response.json();
+
+                const targetElement = document.getElementById(elementId);
+                if (targetElement) {
+                    const address = data.display_name || "Alamat tidak ditemukan";
+                    const shortAddress = [
+                        data.address.village || '',
+                        data.address.subdistrict || '',
+                        data.address.state || ''
+                    ].filter(Boolean).join(', ');
+
+                    targetElement.innerHTML = `
+                        <span title="${address}"><strong>${shortAddress}</strong></span><br>
+                            <a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" class="ms-1 text-primary">
+                            <small class="text-muted">${data.address.city || data.address.town || data.address.village || ''}</small>
+                        </a>
+                    `;
+                }
+            } catch (error) {
+                console.error("Geocode Error:", error);
+                const targetElement = document.getElementById(elementId);
+                if (targetElement) targetElement.innerHTML = "Gagal memuat alamat";
+            }
+        }
+
         // ===============================
         // 🔹 DataTable & Form Events
         // ===============================
         $(document).ready(function() {
-            // === DataTable ===
             $('#aktivitasTable').DataTable({
                 processing: true,
                 serverSide: true,
@@ -374,7 +525,6 @@
                         d.filter_created_end = $('#filter_created_end').val();
                     },
                     dataSrc: function(json) {
-                        // tampilkan total di bawah tabel
                         if (json.total !== undefined) {
                             $('#totalContainer').html(
                                 `Total Keseluruhan: <span class="text-success">Rp ${formatNumber(json.total)}</span>`
@@ -408,35 +558,27 @@
                         data: 'aktivitas'
                     },
                     {
-                        data: 'deskripsi'
-                    },
-                    {
                         data: 'waktu_aktivitas'
                     },
-                    {
-                        data: 'pax',
-                        render: d => d ? d : '-'
-                    },
-                    {
-                        data: 'harga',
-                        render: d => d ? formatNumber(d) : '-'
-                    },
-                    {
-                        data: 'total',
-                        render: d => d ? formatNumber(d) : '-'
-                    },
+
                     {
                         data: 'id',
                         render: function(id, type, row) {
                             const isDisabled = row.aktivitas === 'DB';
                             return `
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-sm btn-warning"
-                            ${isDisabled ? 'disabled' : ''}
-                            onclick='editAktivitas(${JSON.stringify(row)})'>Edit</button>
-                        <button class="btn btn-sm btn-danger"
-                            onclick="hapusAktivitas(${id})">Hapus</button>
-                    </div>`;
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-info"
+                                    onclick='showDetail(${JSON.stringify(row)})'>
+                                    Detail
+                                </button>
+
+                                <button class="btn btn-sm btn-warning"
+                                    ${isDisabled ? 'disabled' : ''}
+                                    onclick='editAktivitas(${JSON.stringify(row)})'>Edit</button>
+
+                                <button class="btn btn-sm btn-danger"
+                                    onclick="hapusAktivitas(${id})">Hapus</button>
+                            </div>`;
                         }
                     }
                 ]
@@ -466,15 +608,6 @@
                 const formatted = parseInt(raw, 10).toLocaleString('id-ID');
                 input.value = formatted;
                 input.setSelectionRange(formatted.length, formatted.length);
-            });
-
-            // === Form Submit (Create) ===
-            $('#activityForm').on('submit', function(e) {
-                const hargaEl = document.getElementById('harga');
-                if (hargaEl) {
-                    const raw = unformatNumber(hargaEl.value);
-                    hargaEl.value = isNaN(raw) ? '' : raw;
-                }
             });
 
             // === Form Submit (Edit) ===
@@ -656,37 +789,27 @@
             }
         }
 
-        // ===============================
-        // 🔹 Fungsi Edit Aktivitas
-        // ===============================
         function editAktivitas(row) {
             console.log('🔍 Data row:', row);
 
             $('#edit_id').val(row.id);
 
-            // Simpan tipe contact (dari backend harus mengirim field 'contact_type')
-            const contactType = row.contact_type || 'contact'; // default 'contact'
+            const contactType = row.contact_type || 'contact';
             $('#edit_contact_type').val(contactType);
 
-            // Toggle tampilan berdasarkan tipe
             if (contactType === 'contact') {
-                // Tampilkan Select2, sembunyikan readonly
                 $('#edit_contact_select_wrapper').show();
                 $('#edit_contact_readonly_wrapper').hide();
 
-                // Set value select2 dan trigger change untuk memilih option
                 $('#edit_id_contact').val(row.id_contact).trigger('change');
             } else {
-                // Tampilkan readonly, sembunyikan Select2
                 $('#edit_contact_select_wrapper').hide();
                 $('#edit_contact_readonly_wrapper').show();
 
-                // Set value untuk readonly dan hidden input
                 $('#edit_contact_display').val(row.kontak || '-');
                 $('#edit_id_contact_hidden').val(row.id_contact);
             }
 
-            // Set aktivitas
             let aktivitasValue = row.aktivitas;
             const map = {
                 'Form Masuk': 'Form_Masuk',
@@ -696,7 +819,6 @@
             aktivitasValue = map[aktivitasValue] || aktivitasValue;
             $('#edit_aktivitas').val(aktivitasValue);
 
-            // Set fields lainnya
             $('#edit_deskripsi').val(row.deskripsi);
             $('#edit_pax').val(row.pax || '');
             $('#edit_harga').val(row.harga ? formatNumber(row.harga) : '');
@@ -705,7 +827,6 @@
             $('#edit_waktu_aktivitas').val(parts.length === 3 ?
                 `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}` : '');
 
-            // Toggle hidden container untuk pax & harga
             const editHiddenContainer = document.getElementById('edit-hidden-container');
             if (['PA', 'Form_Masuk', 'Form_Keluar'].includes(aktivitasValue)) {
                 editHiddenContainer.style.display = 'block';
@@ -718,9 +839,54 @@
             new bootstrap.Modal(document.getElementById('editActivityModal')).show();
         }
 
-        // ===============================
-        // 🔹 Fungsi Hapus Aktivitas
-        // ===============================
+        function showDetail(row) {
+
+            $('#detail_client').text(row.kontak || '-');
+            $('#detail_sales').text(row.sales_detail?.nama || row.id_sales || '-');
+
+            $('#detail_email').text(row.contact_detail?.email || '-');
+            $('#detail_phone').text(row.contact_detail?.no_telepon || '-');
+            $('#detail_perusahaan').text(row.contact_detail?.perusahaan?.nama_perusahaan || '-');
+
+            $('#detail_aktivitas').text(row.aktivitas || '-');
+            $('#detail_deskripsi').text(row.deskripsi || '-');
+
+            $('#detail_pax').text(row.pax || '-');
+            $('#detail_harga').text(row.harga ? formatNumber(row.harga) : '-');
+            $('#detail_total').text(row.total ? formatNumber(row.total) : '-');
+
+            $('#detail_waktu').text(row.waktu_aktivitas || '-');
+
+            if (row.latitude && row.longitude) {
+                    const lat = row.latitude;
+                    const lng = row.longitude;
+                    if (!lat || !lng) {
+                        $('#detail_lokasi').html('<span class="text-muted">Koordinat tidak valid</span>');
+                    } else {
+                        $('#detail_lokasi').html(`
+                            <div id="modal_loc_text" class="small">
+                                Mencari alamat...
+                            </div>
+                        `);
+                        updateAddressText(lat, lng, 'modal_loc_text');
+                    }
+                } else {
+                    $('#detail_lokasi').html('<span class="text-muted">Tidak ada lokasi</span>');
+                }
+
+                if (row.foto_lokasi) {
+                    $('#detail_foto_lokasi')
+                        .attr('src', '/' + row.foto_lokasi) 
+                        .show();
+                } else {
+                    $('#detail_foto_lokasi')
+                        .hide()
+                        .attr('src', '');
+                }
+
+            new bootstrap.Modal(document.getElementById('detailActivityModal')).show();
+        }
+
         function hapusAktivitas(id) {
             if (!confirm("Yakin ingin menghapus aktivitas ini?")) return;
             fetch(`{{ url('crm/aktivitas/delete') }}/${id}`, {
@@ -742,6 +908,7 @@
             const contactTypeInput = document.getElementById("contact_type");
             const newContactFields = document.getElementById("newContactFields");
             const aktivitasOption = document.getElementById("aktivitas");
+            const cameraWrapper = document.getElementById("camera_wrapper");
             const hiddenContainer = document.getElementById("hidden-container");
             const paxInput = document.getElementById("pax");
             const hargaInput = document.getElementById("harga");
@@ -750,13 +917,11 @@
             const isAllowedUser = window.isAllowedUser || false;
             loadSemuaTargetAktivitas(isAllowedUser);
 
-            // Ambil kontak saat perusahaan dipilih
             $('#id_perusahaan').on('change', function() {
                 const perusahaanId = $(this).val();
                 contactSelect.innerHTML = `
-            <option value="" disabled selected>Pilih Kontak</option>
-            <option value="new" data-type="contact">+ Tambahkan Kontak Baru</option>
-        `;
+                <option value="" disabled selected>Pilih Kontak</option>
+                <option value="new" data-type="contact">+ Tambahkan Kontak Baru</option>`;
 
                 if (!perusahaanId) return;
 
@@ -797,7 +962,6 @@
                     });
             });
 
-            // Tampilkan form kontak baru jika pilih "new"
             $('#id_contact').on('change', function() {
                 const selectedOption = this.options[this.selectedIndex];
                 const type = selectedOption ? (selectedOption.dataset.type || "contact") : "contact";
@@ -809,15 +973,131 @@
                 }
             });
 
-            // Show/hide hidden container berdasarkan jenis aktivitas (create)
             aktivitasOption.addEventListener('change', function() {
-                const selected = this.value;
-                if (['PA', 'Form_Masuk', 'Form_Keluar'].includes(selected)) {
-                    hiddenContainer.style.display = 'block';
+                if (this.value === 'Visit') {
+                    $(cameraWrapper).show();
+                    Webcam.set({
+                        width: 320,
+                        height: 240,
+                        image_format: 'jpeg',
+                        jpeg_quality: 90
+                    });
+                    Webcam.attach('#camera');
+
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(function(position) {
+                            document.getElementById('latitude').value = position.coords.latitude;
+                            document.getElementById('longitude').value = position.coords.longitude;
+                        }, function(error) {
+                            alert("Gagal mengambil lokasi. Pastikan GPS aktif dan izin diberikan.");
+                        });
+                    }
                 } else {
-                    hiddenContainer.style.display = 'none';
-                    if (paxInput) paxInput.value = '';
-                    if (hargaInput) hargaInput.value = '';
+                    $(cameraWrapper).hide();
+                    Webcam.reset();
+                }
+
+                // Toggle hidden-container untuk PA, Form_Masuk, Form_Keluar
+                if (["PA", "Form_Masuk", "Form_Keluar"].includes(this.value)) {
+                    hiddenContainer.style.display = "block";
+                } else {
+                    hiddenContainer.style.display = "none";
+                    if (paxInput) paxInput.value = "";
+                    if (hargaInput) hargaInput.value = "";
+                }
+            });
+
+            $('input[name="upload_method"]').on('change', function() {
+                if (this.value === 'camera') {
+                    $('#live_camera_container').show();
+                    $('#file_upload_container').hide();
+                    $('#file_foto').val('');
+
+                    Webcam.attach('#camera');
+
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(function(position) {
+                            document.getElementById('latitude').value = position.coords.latitude;
+                            document.getElementById('longitude').value = position.coords.longitude;
+                        });
+                    }
+                } else {
+                    $('#live_camera_container').hide();
+                    $('#file_upload_container').show();
+
+                    Webcam.reset();
+
+                    document.getElementById('latitude').value = '';
+                    document.getElementById('longitude').value = '';
+                    document.getElementById('foto_lokasi').value = '';
+                }
+            });
+
+            $('#activityForm').on('submit', function(e) {
+                const activityType = $('#aktivitas').val();
+                const uploadMethod = $('input[name="upload_method"]:checked').val();
+
+                if (activityType === 'Visit') {
+                    if (uploadMethod === 'camera') {
+                        e.preventDefault();
+                        const form = this;
+
+                        Webcam.snap(function(data_uri) {
+                            document.getElementById('foto_lokasi').value = data_uri;
+
+                            if (!document.getElementById('latitude').value) {
+                                alert(
+                                    "Lokasi belum terdeteksi. Gunakan metode Upload jika GPS bermasalah."
+                                );
+                                return;
+                            }
+                            form.submit();
+                        });
+                    }
+                }
+            });
+
+            $('#activityForm').on('submit', function(e) {
+                // 1. Format Harga
+                const hargaEl = document.getElementById('harga');
+                if (hargaEl) {
+                    const raw = unformatNumber(hargaEl.value);
+                    hargaEl.value = isNaN(raw) ? '' : raw;
+                }
+
+                const activityType = $('#aktivitas').val();
+                const uploadMethod = $('input[name="upload_method"]:checked').val();
+
+                if (activityType === 'Visit') {
+                    if (uploadMethod === 'camera') {
+                        // Jika pilih kamera, pastikan snap diambil
+                        e.preventDefault();
+                        const form = this;
+                        Webcam.snap(function(data_uri) {
+                            document.getElementById('foto_lokasi').value = data_uri;
+
+                            if (!data_uri || data_uri.length < 100) {
+                                alert("Gagal mengambil foto dari kamera.");
+                                return;
+                            }
+
+                            if (!document.getElementById('latitude').value) {
+                                alert(
+                                    "Lokasi belum terdeteksi. Silakan tunggu atau gunakan metode Upload."
+                                );
+                                return;
+                            }
+                            form.off('submit').submit(); // Gunakan off agar tidak looping event
+                        });
+                    } else {
+                        // Jika pilih upload, pastikan file dipilih
+                        const fileInput = document.getElementById('file_foto');
+                        if (fileInput.files.length === 0) {
+                            e.preventDefault();
+                            alert("Silakan pilih file foto terlebih dahulu.");
+                        }
+                        // Biarkan submit normal untuk upload file
+                    }
                 }
             });
 

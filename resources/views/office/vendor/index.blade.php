@@ -1,208 +1,323 @@
 @extends('layouts_office.app')
 
 @section('office_contents')
+    @php use Illuminate\Support\Str; @endphp
+
     <div class="container-fluid py-4">
-        <!-- Modal -->
-        <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
+
+        <!-- Modal Detail -->
+        <div class="modal fade" id="detailModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
                 <div class="modal-content">
-                <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="exampleModalLabel">Tambah Data Vendor</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form action="{{url('/office/vendor/' . $itemValue)}}" method="post">
-                        @csrf
-                        @method('POST')
-                         <div class="mb-3">
-                            <label for="nama" class="form-label">Nama</label>
-                            <input type="text" name="nama" id="nama" class="form-control">
-                         </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Save changes</button>
-                    </form>
-                </div>
+
+                    <div class="modal-header">
+                        <h5 class="modal-title">Detail Vendor</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+
+                        <div class="text-center mb-3">
+                            <img id="detailFoto" class="img-fluid rounded shadow-sm"
+                                style="max-height:250px; object-fit:cover;">
+                        </div>
+
+                        <h4 id="detailNama" class="fw-bold text-center mb-3"></h4>
+
+                        <div class="border rounded p-3"
+                            style="white-space: pre-line; overflow-wrap: break-word; max-height:250px; overflow-y:auto;">
+                            <p id="detailKeterangan"></p>
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+
                 </div>
             </div>
         </div>
+
+        <!-- Modal Tambah -->
+        <div class="modal fade" id="exampleModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5">Tambah Data Vendor</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <form action="{{ url('/office/vendor/' . $itemValue) }}" method="post"
+                            enctype="multipart/form-data">
+                            @csrf
+
+                            <div class="mb-3">
+                                <label class="form-label">Nama</label>
+                                <input type="text" name="nama" class="form-control">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Foto</label>
+                                <input type="file" name="foto" class="form-control">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Keterangan</label>
+                                <textarea name="keterangan" class="form-control" rows="3"></textarea>
+                            </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button class="btn btn-primary">Save</button>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Ajukan -->
+        <div class="modal fade" id="exampleModalAjukan" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5">Ajukan Data Vendor</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body" id="itemContainer">
+                        <form action="{{ route('pengajuanbarang.store') }}" method="post"
+                            enctype="multipart/form-data">
+                            @csrf
+
+                            <input type="hidden" name="id_karyawan" value="{{ $karyawan->id }}">
+
+                            <div class="mb-3">
+                                <label class="form-label">Tipe</label>      
+                                <select name="tipe" id="tipe" class="form-select form-select-lg">
+                                    <option value="Makan Siang" {{ $itemValue == 'makansiang' ? 'selected' : '' }}>Makan Siang</option>
+                                    <option value="Coffee Break" {{ $itemValue == 'coffeebreak' ? 'selected' : '' }}>Coffee Break</option>
+                                    <option value="Bengkel" {{ $itemValue == 'bengkel' ? 'selected' : '' }}>Bengkel</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Nama Barang</label>
+                                <input type="text" name="barang[nama_barang][]" class="form-control">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Jumlah</label>
+                                <input type="text" name="barang[qty][]" class="form-control">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Harga Barang (dalam Rp.)</label>
+                                <input type="number" name="barang[harga_barang][]" class="form-control">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Keterangan</label>
+                                <textarea name="barang[keterangan][]" class="form-control" rows="3"></textarea>
+                            </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button class="btn btn-primary">Save</button>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
         <!-- Page Header -->
         <div class="d-flex justify-content-between align-items-center mb-5">
-            <h4 class="mb-0 fw-bold text-dark">Data Vendor {{$itemValue}}</h4>
+            <h4 class="fw-bold text-dark">Data Vendor {{ $itemValue }}</h4>
             <small class="text-muted fw-medium">{{ now()->translatedFormat('l, d F Y') }}</small>
         </div>
 
-        <!-- Alert Success -->
-        @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show shadow-sm rounded-3 border-0" role="alert">
-            <div class="d-flex align-items-center">
-                <i class="bx bx-check-circle me-2" style="font-size: 1.5rem;"></i>
-                <div>{{ session('success') }}</div>
-            </div>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
+        @if (session('success'))
+            <div class="alert alert-success">{{ session('success') }}</div>
         @endif
 
-        <!-- Card List Vendor -->
-        <div class="row g-3">
-            <div class="col-12">
-                <div class="card h-100 shadow-lg border-0 rounded-4 overflow-hidden">
-                    <div class="card-header bg-white border-bottom py-3">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">Tambah Vendor {{$itemValue}}</button>
-                            <span class="badge bg-primary-subtle text-primary">0 Data</span>
-                        </div>
+        <!-- Card -->
+        <div class="card shadow-lg border-0 rounded-4">
+            <div class="card-header bg-white">
+                <div class="d-flex justify-content-between">
+                    <div class="d-flex gap-4">
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                            Tambah Vendor {{ $itemValue }}
+                        </button>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModalAjukan">
+                            Ajukan {{ $itemValue }}
+                        </button>
                     </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
-                            <table class="table table-hover align-middle mb-0">
-                                <thead class="table-light sticky-top">
-                                    <tr>
-                                        <th class="border-0 ps-4" style="min-width: 60px;">No</th>
-                                        <th class="border-0" style="min-width: 250px;">Nama Vendor</th>
-                                        <th class="border-0 text-center" style="min-width: 200px;">Status</th>
-                                        <th class="border-0 text-center pe-4" style="min-width: 180px;">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {{-- {{$data}} --}}
-                                    @forelse($data as $index => $item)
-                                    <tr class="border-bottom hover-bg">
-                                        <td class="ps-4">
-                                            <span class="fw-medium text-muted">{{ $index+1 }}</span>
-                                        </td>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="fw-semibold text-dark">{{ $item->nama ?? '-' }}</div>
-                                            </div>
-                                        </td>
-                                    
-                                        <td class="text-center">
-                                            @if($item->is_active == '0')
-                                            <span class="badge bg-warning-subtle text-warning px-3 py-2">
-                                                <i class="bx bx-time-five me-1">Tidak Aktif</i>
-                                            </span>
-                                            @else
-                                            <span class="badge bg-success-subtle text-success px-3 py-2">
-                                                <i class="bx bx-check-circle me-1"></i>Selesai
-                                            </span>
-                                            @endif
-                                        </td>
-                                        <td class="text-center pe-4">
-                                            <form onsubmit="return confirm('Apakah Anda Yakin ?')" action="{{ url('/office/vendor/' . $itemValue .'/'. $item->id) }}" method="POST">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                    @empty
-                                    <tr>
-                                        <td colspan="6" class="text-center py-5">
-                                            <div class="d-flex flex-column align-items-center">
-                                                <i class="bx bx-info-circle text-muted" style="font-size: 4rem; opacity: 0.5;"></i>
-                                                <p class="text-muted mt-3 mb-0 fw-medium">Tidak ada data Vendor untuk ditampilkan</p>
-                                                <small class="text-muted">Belum ada data Vendor yang tersedia</small>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Pagination -->
-                    @if($data->hasPages())
-                    <div class="card-footer bg-light border-top py-3">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="text-muted small">
-                                Menampilkan {{ $data->firstItem() }} - {{ $data->lastItem() }} dari {{ $data->total() }} data
-                            </div>
-                            <div>
-                                {{ $data->links() }}
-                            </div>
-                        </div>
-                    </div>
-                    @endif
+                    <span class="badge bg-primary-subtle text-primary">{{ $data->total() }} Data</span>
                 </div>
             </div>
+
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 600px;">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>No</th>
+                                <th>Nama Vendor</th>
+                                <th>Foto</th>
+                                <th>Keterangan</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-center pe-4">Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            @forelse($data as $index => $item)
+                                <tr class="vendor-row" data-nama="{{ $item->nama }}"
+                                    data-foto="{{ $item->foto ? asset('storage/' . $item->foto) : '' }}"
+                                    data-keterangan="{{ $item->keterangan }}">
+
+                                    <td>{{ $index + 1 }}</td>
+
+                                    <td>
+                                        <span class="truncate-text">{{ Str::limit($item->nama, 20) }}</span>
+                                    </td>
+
+                                    <td>
+                                        @if ($item->foto)
+                                            <img src="{{ asset('storage/' . $item->foto) }}"
+                                                style="width:50px; height:50px; object-fit:cover; border-radius:8px;">
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+
+                                    <td>
+                                        <span class="truncate-text">{{ Str::limit($item->keterangan, 25, '...') }}</span>
+                                    </td>
+
+                                    <td class="text-center">
+                                        @if ($item->is_active == '0')
+                                            <span class="badge bg-warning-subtle text-warning">Tidak Aktif</span>
+                                        @else
+                                            <span class="badge bg-success-subtle text-success">Aktif</span>
+                                        @endif
+                                    </td>
+
+                                    <td class="text-center pe-4">
+                                        <form action="{{ url('/office/vendor/' . $itemValue . '/' . $item->id) }}"
+                                            method="POST" onsubmit="return confirm('Apakah Anda yakin?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button class="btn btn-danger btn-sm">Hapus</button>
+                                        </form>
+                                    </td>
+
+                                </tr>
+                            @empty
+
+                                <tr>
+                                    <td colspan="6" class="text-center py-5">
+                                        <i class="bx bx-info-circle text-muted" style="font-size:4rem;"></i>
+                                        <p class="text-muted mt-3">Tidak ada data Vendor</p>
+                                    </td>
+                                </tr>
+                            @endforelse
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            @if ($data->hasPages())
+                <div class="card-footer bg-light">
+                    <div class="d-flex justify-content-between">
+                        <small>Menampilkan {{ $data->firstItem() }} - {{ $data->lastItem() }} dari {{ $data->total() }}
+                            data</small>
+                        {{ $data->links() }}
+                    </div>
+                </div>
+            @endif
+
         </div>
     </div>
 
+    <!-- TRUNCATE CSS -->
     <style>
-        .hover-bg:hover {
-            background-color: rgba(91, 115, 232, 0.05) !important;
-            transition: all 0.3s ease;
+        .truncate-text {
+            max-width: 160px;
+            display: inline-block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .hover-scale {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .hover-scale:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
-        }
-
-        .avatar {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-        }
-
-        .avatar-sm {
-            width: 38px;
-            height: 38px;
-            font-size: 1rem;
-        }
-
-        .table > :not(caption) > * > * {
-            padding: 1rem 0.75rem;
-        }
-
-        .badge {
-            font-size: 0.75rem;
-            padding: 0.35em 0.65em;
-            font-weight: 500;
-        }
-
-        /* Custom Scrollbar */
-        .table-responsive::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-
-        .table-responsive::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-
-        .table-responsive::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 10px;
-        }
-
-        .table-responsive::-webkit-scrollbar-thumb:hover {
-            background: #a8a8a8;
-        }
-
-        /* Sticky Header Shadow */
-        .sticky-top {
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        tr.vendor-row {
+            cursor: pointer;
         }
     </style>
 
-    <!-- Initialize Tooltips -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize Bootstrap Tooltips
-            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl);
+        document.querySelectorAll('.vendor-row').forEach(row => {
+            row.addEventListener('click', function(e) {
+
+                if (e.target.tagName === 'BUTTON' || e.target.tagName === 'FORM') return;
+
+                let nama = this.dataset.nama;
+                let foto = this.dataset.foto;
+                let keterangan = this.dataset.keterangan;
+
+                document.getElementById('detailNama').innerText = nama;
+
+                document.getElementById('detailFoto').src = foto ? foto :
+                    'https://via.placeholder.com/300x200?text=No+Image';
+
+                document.getElementById('detailKeterangan').innerText = keterangan;
+
+                var modal = new bootstrap.Modal(document.getElementById('detailModal'));
+                modal.show();
             });
+        });
+
+        $(document).ready(function () {
+            setupInputFormatter('#itemContainer input[name="barang[harga_barang][]"]'); 
+            $('form').on('submit', function (e) {  
+                e.preventDefault();  
+                $('#itemContainer input[name="barang[harga_barang][]"]').each(function() {  
+                    $(this).val($(this).val().replace(/\./g, ''));  
+                });   
+                this.submit();
+            });
+            function formatRupiah(angka, prefix) {
+                var number_string = angka.replace(/[^,\d]/g, '').toString(),
+                        split = number_string.split(','),
+                        sisa = split[0].length % 3,
+                        rupiah = split[0].substr(0, sisa),
+                        ribuan = split[0].substr(sisa).match(/\d{3}/gi);
+    
+                    if (ribuan) {
+                        separator = sisa ? '.' : '';
+                        rupiah += separator + ribuan.join('.');
+                    }
+    
+                    rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
+                    return prefix == undefined ? rupiah : (rupiah ? 'Rp. ' + rupiah : '');
+            }
+    
+            function setupInputFormatter(selector) {
+                    var $input = $(selector);
+                    $input.on('input', function() {
+                        $input.val(formatRupiah(this.value));
+                    });
+                }
         });
     </script>
 @endsection

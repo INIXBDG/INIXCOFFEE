@@ -27,7 +27,7 @@
                             <div class="mb-3">
                                 <label class="text-muted small text-uppercase mb-1">Materi</label>
                                 <div class="d-flex align-items-center">
-                                    <div class="avatar avatar-sm bg-primary bg-opacity-15 rounded-circle me-2">
+                                    <div class="avatar avatar-sm rounded-circle me-2">
                                         <i class="bx bx-book-open text-primary"></i>
                                     </div>
                                     <div>
@@ -41,7 +41,7 @@
                             <div class="mb-3">
                                 <label class="text-muted small text-uppercase mb-1">Perusahaan</label>
                                 <div class="d-flex align-items-center">
-                                    <div class="avatar avatar-sm bg-info bg-opacity-15 rounded-circle me-2">
+                                    <div class="avatar avatar-sm rounded-circle me-2">
                                         <i class="bx bx-buildings text-info"></i>
                                     </div>
                                     <p class="mb-0 fw-semibold text-dark">{{ $rkm->perusahaan->nama_perusahaan ?? '-' }}</p>
@@ -108,7 +108,7 @@
                 <div class="card-body p-0">
                     <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
                         <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light sticky-top">
+                            <thead class="sticky-top">
                                 <tr>
                                     <th class="border-0 ps-4" style="min-width: 60px;">No</th>
                                     <th class="border-0" style="min-width: 250px;">Nama Peserta</th>
@@ -127,7 +127,7 @@
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            <div class="avatar avatar-sm bg-primary bg-opacity-15 rounded-circle me-3">
+                                            <div class="avatar avatar-sm rounded-circle me-3">
                                                 <span class="text-primary fw-bold">
                                                     {{ strtoupper(substr($p->nama, 0, 1)) }}
                                                 </span>
@@ -156,6 +156,10 @@
                                            class="btn btn-sm btn-success shadow-sm hover-scale">
                                             <i class="bx bx-download me-1"></i>Download PDF
                                         </a>
+                                        <a href="{{ route('office.certificate.create', ['rkm_id' => $rkm->id, 'peserta_id' => $p->id_peserta]) }}" 
+                                           class="btn btn-sm btn-primary shadow-sm hover-scale">
+                                            <i class="bx bx-file-blank me-1"></i>Generate +
+                                        </a>
                                         @else
                                         <!-- Tombol Generate -->
                                         <a href="{{ route('office.certificate.create', ['rkm_id' => $rkm->id, 'peserta_id' => $p->id_peserta]) }}" 
@@ -181,7 +185,7 @@
                 </div>
 
                 <!-- Footer -->
-                <div class="card-footer bg-light border-top py-3">
+                <div class="card-footer border-top py-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <a href="{{ route('office.certificate.index') }}" class="btn btn-light shadow-sm">
                             <i class="bx bx-arrow-back me-1"></i>Kembali

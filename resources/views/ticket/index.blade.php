@@ -131,7 +131,7 @@
                                 <th scope="col">Penanganan</th>
                                 <th scope="col">Status</th>
                                 <th scope="col">Tanggal Selesai</th>
-                                <th scope="col">Keterangan</th> 
+                                <th scope="col">Keterangan</th>
                                 <th scope="col">Tingkat Kesulitan</th> --}}
                                 <th scope="col">Aksi</th>
                             </tr>
@@ -316,7 +316,7 @@
                                 actions += '<button type="submit" disabled class="dropdown-item"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Terima</button>';
                             }else if(divisi == 'IT Service Management'){
                                 actions += '<button type="button" class="dropdown-item" onclick="terimatiketModal(\'' + data.id + '\', \'' + pic + '\', \'' + data.row + '\')"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Terima</button>';
-                                
+
                                 // actions += '<form onsubmit="return confirm(\'Anda akan menerima tiket ini ?\');" action="{{ url('/tickets') }}/' + row.id + '/accept" method="POST">';
                                 // actions += '@csrf';
                                 // actions += '<input type="hidden" name="pic" value="'+pic+'">';
@@ -331,7 +331,7 @@
                             return actions;
 
                     }
-                    
+
                 }
             ],
             "order": [[0, 'desc']], // Ubah urutan menjadi descending untuk kolom ke-6

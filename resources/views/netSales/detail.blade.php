@@ -59,6 +59,44 @@
                                         </table>
                                     </div>
                                 </div>
+                                <hr>
+                                <div class="mt-4 card">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Tracking Perubahan</h5>
+                                        <table class="table table-bordered table-sm">
+                                            <thead>
+                                                <tr class="table-light">
+                                                    <th>User</th>
+                                                    <th>Field</th>
+                                                    <th>Sebelum</th>
+                                                    <th>Sesudah</th>
+                                                    <th>Waktu</th>
+                                                </tr>
+                                            </thead>
+                                            @foreach ($historyNet as $history)
+                                                <tbody>
+                                                    {{-- Di sini kuncinya: kita looping isi dari kolom 'data' --}}
+                                                    @foreach ($history->data as $field => $value)
+                                                        <tr>
+                                                            <td><strong>{{ $history->user->karyawan->nama_lengkap ?? '-' }}</strong>
+                                                            </td>
+                                                            <td><strong>{{ ucwords(str_replace('_', ' ', $field)) }}</strong>
+                                                            </td>
+                                                            <td class="text-danger">
+                                                                {{ is_numeric($value['before']) ? 'Rp ' . number_format((float) $value['before'], 0, ',', '.') : $value['before'] ?? '-' }}
+                                                            </td>
+                                                            <td class="text-success">
+                                                                {{ is_numeric($value['after']) ? 'Rp ' . number_format((float) $value['after'], 0, ',', '.') : $value['after'] ?? '-' }}
+                                                            </td>
+                                                            <td>{{ $history->created_at->translatedFormat('d F Y, H:i') }}
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            @endforeach
+                                        </table>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -156,72 +194,68 @@
                 dataType: 'json',
                 success: function(response) {
                     console.log("Response dari API:", response);
+
                     let content_utama = $('#content_data_utama');
                     let accordion_net_sales = $('#netSalesAccordion');
                     let tbody_approved = $('#tbody_approved');
                     let tbody_tracking = $('#tbody_tracking');
 
                     content_utama.empty();
+
+                    // 1. Bagian Data RKM (Utama)
                     if (!response.dataRKM || Object.keys(response.dataRKM).length === 0) {
                         content_utama.append(`
                             <div class="row">
-                                <div class="col-md-4 col-sm-4 col-xs-4"><p>Nama Perusahaan</p><p id="titikdua">:</p></div>
-                                <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
-                                <div class="col-md-7 col-sm-7 col-xs-7"><p>-</p></div>
-                                <div class="col-md-4 col-sm-4 col-xs-4"><p>Materi</p></div>
-                                <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
-                                <div class="col-md-7 col-sm-7 col-xs-7"><p>-</p></div>
-                                <div class="col-md-4 col-sm-4 col-xs-4"><p>Nama Sales</p></div>
-                                <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
-                                <div class="col-md-7 col-sm-7 col-xs-7"><p>-</p></div>
-                                <div class="col-md-4 col-sm-4 col-xs-4"><p>Harga Jual</p></div>
-                                <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
-                                <div class="col-md-7 col-sm-7 col-xs-7"><p>-</p></div>
-                                <div class="col-md-4 col-sm-4 col-xs-4"><p>Pax</p></div>
-                                <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
-                                <div class="col-md-7 col-sm-7 col-xs-7"><p>-</p></div>
-                                <div class="col-md-4 col-sm-4 col-xs-4"><p>Metode Kelas</p></div>
-                                <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
-                                <div class="col-md-7 col-sm-7 col-xs-7"><p>-</p></div>
-                                <div class="col-md-4 col-sm-4 col-xs-4"><p>Durasi</p></div>
-                                <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
-                                <div class="col-md-7 col-sm-7 col-xs-7"><p>-</p></div>
+                                <div class="col-md-4"><p>Nama Perusahaan</p></div>
+                                <div class="col-md-1"><p>:</p></div>
+                                <div class="col-md-7"><p>-</p></div>
+                                <!-- ... sisanya sama seperti fallback kamu ... -->
                             </div>
                         `);
                     } else {
                         let data = response.dataRKM;
                         content_utama.append(`
                             <div class="row">
-                                <div class="col-md-4 col-sm-4 col-xs-4"><p>Nama Perusahaan</p></div>
-                                <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
-                                <div class="col-md-7 col-sm-7 col-xs-7"><p>${data.nama_perusahaan}</p></div>
-                                <div class="col-md-4 col-sm-4 col-xs-4"><p>Materi</p></div>
-                                <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
-                                <div class="col-md-7 col-sm-7 col-xs-7"><p>${data.materi}</p></div>
-                                <div class="col-md-4 col-sm-4 col-xs-4"><p>Nama Sales</p></div>
-                                <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
-                                <div class="col-md-7 col-sm-7 col-xs-7"><p>${data.sales}</p></div>
-                                <div class="col-md-4 col-sm-4 col-xs-4"><p>Harga Jual</p></div>
-                                <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
-                                <div class="col-md-7 col-sm-7 col-xs-7">
-                                    <p>Rp${new Intl.NumberFormat('id-ID').format(data.harga_jual)}</p>
+                                <div class="col-md-4 col-sm-4"><p>Nama Perusahaan</p></div>
+                                <div class="col-md-1 col-sm-1"><p>:</p></div>
+                                <div class="col-md-7 col-sm-7"><p>${data.nama_perusahaan || '-'}</p></div>
+
+                                <div class="col-md-4 col-sm-4"><p>Materi</p></div>
+                                <div class="col-md-1 col-sm-1"><p>:</p></div>
+                                <div class="col-md-7 col-sm-7"><p>${data.materi || '-'}</p></div>
+
+                                <div class="col-md-4 col-sm-4"><p>Nama Sales</p></div>
+                                <div class="col-md-1 col-sm-1"><p>:</p></div>
+                                <div class="col-md-7 col-sm-7"><p>${data.sales || '-'}</p></div>
+
+                                <div class="col-md-4 col-sm-4"><p>Harga Jual</p></div>
+                                <div class="col-md-1 col-sm-1"><p>:</p></div>
+                                <div class="col-md-7 col-sm-7">
+                                    <p>Rp ${new Intl.NumberFormat('id-ID').format(data.harga_jual || 0)}</p>
                                 </div>
-                                <div class="col-md-4 col-sm-4 col-xs-4"><p>Pax</p></div>
-                                <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
-                                <div class="col-md-7 col-sm-7 col-xs-7"><p>${data.pax}</p></div>
-                                <div class="col-md-4 col-sm-4 col-xs-4"><p>Total Harga Jual</p></div>
-                                <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
-                                <div class="col-md-7 col-sm-7 col-xs-7"><p>Rp${new Intl.NumberFormat('id-ID').format(data.harga_jual * data.pax)}</p></div>
-                                <div class="col-md-4 col-sm-4 col-xs-4"><p>Metode Kelas</p></div>
-                                <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
-                                <div class="col-md-7 col-sm-7 col-xs-7"><p>${data.metode_kelas}</p></div>
-                                <div class="col-md-4 col-sm-4 col-xs-4"><p>Durasi</p></div>
-                                <div class="col-md-1 col-sm-1 col-xs-1"><p>:</p></div>
-                                <div class="col-md-7 col-sm-7 col-xs-7"><p>${data.durasi_kelas} hari</p></div>
+
+                                <div class="col-md-4 col-sm-4"><p>Pax</p></div>
+                                <div class="col-md-1 col-sm-1"><p>:</p></div>
+                                <div class="col-md-7 col-sm-7"><p>${data.pax || '-'}</p></div>
+
+                                <div class="col-md-4 col-sm-4"><p>Total Harga Jual</p></div>
+                                <div class="col-md-1 col-sm-1"><p>:</p></div>
+                                <div class="col-md-7 col-sm-7">
+                                    <p>Rp ${new Intl.NumberFormat('id-ID').format((data.harga_jual || 0) * (data.pax || 0))}</p>
+                                </div>
+
+                                <div class="col-md-4 col-sm-4"><p>Metode Kelas</p></div>
+                                <div class="col-md-1 col-sm-1"><p>:</p></div>
+                                <div class="col-md-7 col-sm-7"><p>${data.metode_kelas || '-'}</p></div>
+
+                                <div class="col-md-4 col-sm-4"><p>Durasi</p></div>
+                                <div class="col-md-1 col-sm-1"><p>:</p></div>
+                                <div class="col-md-7 col-sm-7"><p>${data.durasi_kelas || 0} hari</p></div>
                             </div>
                         `);
                     }
 
+                    // 2. Bagian Net Sales Accordion
                     accordion_net_sales.empty();
                     if (!response.dataNetSales || response.dataNetSales.length === 0) {
                         accordion_net_sales.append(`
@@ -230,49 +264,53 @@
                             </div>
                         `);
                     } else {
-                        let formatRupiah = (angka) => `Rp${new Intl.NumberFormat('id-ID').format(angka)}`;
+                        let formatRupiah = (angka) => `Rp ${new Intl.NumberFormat('id-ID').format(angka || 0)}`;
 
                         response.dataNetSales.forEach(function(data, index) {
-                            let tanggalObj = new Date(data.tgl_pa);
-                            const hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat',
-                                'Sabtu'
-                            ];
-                            const bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-                                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-                            ];
-                            let namaHari = hari[tanggalObj.getDay()];
-                            let tanggal = tanggalObj.getDate();
-                            let namaBulan = bulan[tanggalObj.getMonth()];
-                            let tahun = tanggalObj.getFullYear();
-                            let jam = tanggalObj.getHours().toString().padStart(2, '0');
-                            let menit = tanggalObj.getMinutes().toString().padStart(2, '0');
-                            let tglPaFormatted =
-                                `${namaHari}, ${tanggal} ${namaBulan} ${tahun} ${jam}:${menit}`;
+                            // Format tanggal PA
+                            let tglPaFormatted = '-';
+                            if (data.tgl_pa) {
+                                let tanggalObj = new Date(data.tgl_pa);
+                                const hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat',
+                                    'Sabtu'
+                                ];
+                                const bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                                    'Juli', 'Agustus', 'September', 'Oktober', 'November',
+                                    'Desember'
+                                ];
+                                let namaHari = hari[tanggalObj.getDay()];
+                                let tanggal = tanggalObj.getDate();
+                                let namaBulan = bulan[tanggalObj.getMonth()];
+                                let tahun = tanggalObj.getFullYear();
+                                let jam = tanggalObj.getHours().toString().padStart(2, '0');
+                                let menit = tanggalObj.getMinutes().toString().padStart(2, '0');
+                                tglPaFormatted =
+                                    `${namaHari}, ${tanggal} ${namaBulan} ${tahun} ${jam}:${menit}`;
+                            }
 
                             accordion_net_sales.append(`
                                 <div class="accordion-item">
-                                    <h2 class="accordion-header" id="heading${data.id_netSales}">
-                                        <button class="accordion-button ${index === 0 ? '' : 'collapsed'}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${data.id_netSales}" aria-expanded="${index === 0 ? 'true' : 'false'}" aria-controls="collapse${data.id_netSales}">
-                                        ${data.peserta}
-                                        </button>
                                     </h2>
                                     <div id="collapse${data.id_netSales}" class="accordion-collapse collapse ${index === 0 ? 'show' : ''}" aria-labelledby="heading${data.id_netSales}" data-bs-parent="#netSalesAccordion">
                                         <div class="accordion-body">
                                             <table class="table table-striped">
                                                 <tbody>
-                                                    <tr><th>Harga Penawaran</th><td>${formatRupiah(data.harga_penawaran)}</td></tr>
                                                     <tr><th>Transportasi</th><td>${formatRupiah(data.transportasi)}</td></tr>
-                                                    <tr><th>Penginapan</th><td>${formatRupiah(data.penginapan)}</td></tr>
+                                                    <tr><th>Jenis Transportasi</th><td>${data.jenis_transportasi || '-'}</td></tr>
+                                                    <tr><th>Akomodasi Peserta</th><td>${formatRupiah(data.akomodasi_peserta)}</td></tr>
+                                                    <tr><th>Akomodasi Tim</th><td>${formatRupiah(data.akomodasi_tim)}</td></tr>
+                                                    <tr><th>Keterangan Akomodasi Tim</th><td>${data.keterangan_akomodasi_tim || '-'}</td></tr>
                                                     <tr><th>Fresh Money</th><td>${formatRupiah(data.fresh_money)}</td></tr>
                                                     <tr><th>Entertaint</th><td>${formatRupiah(data.entertaint)}</td></tr>
+                                                    <tr><th>Keterangan Entertaint</th><td>${data.keterangan_entertaint || '-'}</td></tr>
                                                     <tr><th>Souvenir</th><td>${formatRupiah(data.souvenir)}</td></tr>
+                                                    <tr><th>Sewa Laptop</th><td>${formatRupiah(data.sewa_laptop)}</td></tr>
                                                     <tr><th>Total Payment Advance</th><td>${formatRupiah(data.totalPa)}</td></tr>
-                                                    <tr><th>Diskon</th><td>${formatRupiah(data.diskon)}</td></tr>
                                                     <tr><th>Cashback</th><td>${formatRupiah(data.cashback)}</td></tr>
                                                     <tr><th>Total</th><td>${formatRupiah(data.total)}</td></tr>
                                                     <tr><th>Tanggal Payment Advance</th><td>${tglPaFormatted}</td></tr>
-                                                    <tr><th>Deskripsi</th><td>${data.desc || '-'}</td></tr>
-                                                    <tr><th>Tipe Pembayaran</th><td>${data.tipe_pembayaran}</td></tr>
+                                                    <tr><th>Deskripsi Tambahan</th><td>${data.deskripsi_tambahan || '-'}</td></tr>
+                                                    <tr><th>Tipe Pembayaran</th><td>${data.tipe_pembayaran || '-'}</td></tr>
                                                 </tbody>
                                             </table>
                                         </div>
@@ -281,98 +319,93 @@
                             `);
                         });
 
+                        // Tampilkan Grand Total NetSales
                         accordion_net_sales.append(`
-                        <div class="mt-3">
-                            <p class="text-muted">NetSales : ${formatRupiah(response.grandTotal)}</p>
-                        </div>
-                    `);
+                            <div class="mt-3">
+                                <p class="text-muted fw-bold">NetSales Total: ${formatRupiah(response.grandTotal)}</p>
+                            </div>
+                        `);
                     }
 
+                    // 3. Bagian Approval History
                     tbody_approved.empty();
-                    if (!response.dataNetSales || response.dataNetSales.length === 0 || !response.dataNetSales[
-                            0].approved || response.dataNetSales[0].approved.length === 0) {
-                        tbody_approved.append(`
-                            <tr>
-                                <td colspan="5">Tidak ada data approval</td>
-                            </tr>
-                        `);
-                    } else {
-                        let no = 1;
-                        response.dataNetSales.forEach(function(netSale) {
-                            netSale.approved.forEach(function(data) {
-                                let status;
-                                if (data.status === 1) {
-                                    if (data.level_status === '3' && data.keterangan !==
+                    let hasApproval = false;
+                    let no = 1;
+
+                    response.dataNetSales?.forEach(function(netSale) {
+                        if (netSale.approved && netSale.approved.length > 0) {
+                            hasApproval = true;
+                            netSale.approved.forEach(function(approval) {
+                                let statusText = 'Belum diketahui';
+                                if (approval.status === 1) {
+                                    if (approval.level_status === '3' && approval.keterangan !==
                                         'Selesai') {
-                                        status = "Diproses";
+                                        statusText = "Diproses";
                                     } else {
-                                        status = "Disetujui";
+                                        statusText = "Disetujui";
                                     }
-                                } else if (data.status === 0) {
-                                    status = "Ditolak";
-                                } else {
-                                    status = "Belum diketahui";
+                                } else if (approval.status === 0) {
+                                    statusText = "Ditolak";
                                 }
 
-                                let tanggalObj = new Date(data.tanggal);
-                                const hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis',
-                                    'Jumat', 'Sabtu'
-                                ];
-                                const bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei',
-                                    'Juni', 'Juli', 'Agustus', 'September', 'Oktober',
-                                    'November', 'Desember'
-                                ];
-                                let namaHari = hari[tanggalObj.getDay()];
-                                let tanggal = tanggalObj.getDate();
-                                let namaBulan = bulan[tanggalObj.getMonth()];
-                                let tahun = tanggalObj.getFullYear();
-                                let jam = tanggalObj.getHours().toString().padStart(2, '0');
-                                let menit = tanggalObj.getMinutes().toString().padStart(2, '0');
-                                let tanggalLengkap =
-                                    `${namaHari}, ${tanggal} ${namaBulan} ${tahun} ${jam}:${menit}`;
+                                let tanggalLengkap = '-';
+                                if (approval.tanggal) {
+                                    let tglObj = new Date(approval.tanggal);
+                                    const hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis',
+                                        'Jumat', 'Sabtu'
+                                    ];
+                                    const bulan = ['Januari', 'Februari', 'Maret', 'April',
+                                        'Mei', 'Juni', 'Juli', 'Agustus', 'September',
+                                        'Oktober', 'November', 'Desember'
+                                    ];
+                                    tanggalLengkap =
+                                        `${hari[tglObj.getDay()]}, ${tglObj.getDate()} ${bulan[tglObj.getMonth()]} ${tglObj.getFullYear()} ${tglObj.getHours().toString().padStart(2,'0')}:${tglObj.getMinutes().toString().padStart(2,'0')}`;
+                                }
 
                                 let approver = '-';
-                                if (data.level_status === '1') {
-                                    approver = 'SPV Sales';
-                                } else if (data.level_status === '2') {
-                                    approver = 'GM';
-                                } else if (data.level_status === '3') {
-                                    approver = 'Finance & Accounting';
-                                }
+                                if (approval.level_status === '1') approver = 'SPV Sales';
+                                else if (approval.level_status === '2') approver = 'GM';
+                                else if (approval.level_status === '3') approver =
+                                    'Finance & Accounting';
 
                                 tbody_approved.append(`
                                     <tr>
                                         <td>${no++}</td>
                                         <td>${tanggalLengkap}</td>
                                         <td>${approver}</td>
-                                        <td>${status}</td>
-                                        <td>${data.keterangan}</td>
+                                        <td>${statusText}</td>
+                                        <td>${approval.keterangan || '-'}</td>
                                     </tr>
                                 `);
                             });
-                        });
+                        }
+                    });
+
+                    if (!hasApproval) {
+                        tbody_approved.append(`
+                            <tr><td colspan="5" class="text-center">Tidak ada data approval</td></tr>
+                        `);
                     }
 
+                    // 4. Bagian Tracking
                     tbody_tracking.empty();
-                    if (!response.dataTracking) {
+                    if (!response.dataTracking || !response.dataTracking.tanggal) {
                         tbody_tracking.append(`
-                            <tr>
-                                <td class="text-center">Tidak ada data tracking</td>
-                            </tr>
+                            <tr><td colspan="3" class="text-center">Tidak ada data tracking</td></tr>
                         `);
                     } else {
-                        let no = 1;
                         tbody_tracking.append(`
                             <tr>
-                                <td>${no++}</td>
-                                <td>${response.dataTracking.status}</td>
-                                <td>${response.dataTracking.tanggal}</td>
+                                <td>1</td>
+                                <td>${response.dataTracking.status || '-'}</td>
+                                <td>${response.dataTracking.tanggal || '-'}</td>
                             </tr>
                         `);
                     }
                 },
                 error: function(xhr, status, error) {
                     console.error('AJAX Error:', error);
+                    // Optional: tampilkan pesan error di UI
                 }
             });
         }

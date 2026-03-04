@@ -25,7 +25,7 @@ class izinTigaJamController extends Controller
         return view('pengajuanizin.index');
     }
 
-   public function getPengajuanIzin()
+    public function getPengajuanIzin()
     {
         $user = auth()->user()->karyawan_id;
         $karyawan = karyawan::findOrFail($user);
@@ -84,25 +84,25 @@ class izinTigaJamController extends Controller
 
         $karyawan = karyawan::findOrFail($request->id_karyawan);
 
-        $tanggal = $request->input('tanggal'); 
+        $tanggal = $request->input('tanggal');
         $tanggalPengajuan = $request->input('tanggal_pengajuan');
         $hariIni = now()->toDateString();
 
         // // Cek apakah tanggal izin adalah hari ini
         $isToday = $tanggal === $hariIni;
-        
+
         // // Validasi rentang tanggal izin: hanya kemarin, hari ini, atau besok
         // $tanggalIzin = \Carbon\Carbon::parse($tanggal)->startOfDay();
         // $today = \Carbon\Carbon::parse($hariIni)->startOfDay();
         // $kemarin = $today->copy()->subDay();
         // $besok = $today->copy()->addDay();
-        
+
         // // Cek apakah tanggal izin di luar rentang (kemarin s/d besok)
         // if ($tanggalIzin->lt($kemarin) || $tanggalIzin->gt($besok)) {
         //     return redirect()->route('pengajuanizin.index')
         //         ->with(['error' => 'Izin hanya dapat diajukan untuk kemarin, hari ini, atau besok.']);
         // }
-        
+
         // Hanya lakukan validasi ketat jika mengajukan izin untuk HARI INI
         if ($isToday) {
             $jamMulai = \Carbon\Carbon::createFromFormat('H:i', $request->jam_mulai);
@@ -124,10 +124,7 @@ class izinTigaJamController extends Controller
             }
 
             // Validasi jam mulai tidak boleh kurang dari waktu sekarang
-            if ($jamMulai->lt($sekarang)) {
-                return redirect()->route('pengajuanizin.index')
-                    ->with(['error' => 'Jam mulai tidak boleh kurang dari waktu saat ini.']);
-            }
+            
         }
 
         // Untuk izin kemarin atau besok: TIDAK perlu validasi absensi dan jam
@@ -186,7 +183,6 @@ class izinTigaJamController extends Controller
                 break;
         }
 
-        // Ambil user dari karyawan yang sesuai
         $users = User::whereHas('karyawan', function ($query) use ($kodePenerima) {
             $query->whereIn('kode_karyawan', $kodePenerima);
         })->get();
@@ -205,10 +201,21 @@ class izinTigaJamController extends Controller
         $path = '/pengajuanizin';
         $to = $karyawan->nama_lengkap;
 
-        // Kirim notifikasi ke semua user atasan
         foreach ($users as $user) {
-            NotificationFacade::send($user, new IzinExchangeNotification($notificationData, $path, $to, $type));
+            $receiverId = $user->id;
+
+            NotificationFacade::send(
+                $user,
+                new IzinExchangeNotification(
+                    $notificationData,
+                    $path,
+                    $to,
+                    $type,
+                    $receiverId  
+                )
+            );
         }
+
 
         return redirect()->route('pengajuanizin.index')->with(['success' => 'Data Berhasil Disimpan!']);
     }
@@ -217,7 +224,7 @@ class izinTigaJamController extends Controller
         $suratperjalanan = izinTigaJam::with('karyawan')->findOrFail($id);
         $divisi = $suratperjalanan->karyawan->divisi;
         $jabatan = $suratperjalanan->karyawan->jabatan;
-        if ($jabatan === 'SPV Sales' || $jabatan === 'Office Manager' || $jabatan === 'Education Manager' || $jabatan === 'Koordinator Office' ) {
+        if ($jabatan === 'SPV Sales' || $jabatan === 'Office Manager' || $jabatan === 'Education Manager' || $jabatan === 'Koordinator Office') {
             $manager = karyawan::where('jabatan', 'GM')->first();
         } elseif ($divisi == 'Office') {
             $manager = karyawan::where('jabatan', 'Koordinator Office')->first();
@@ -240,86 +247,88 @@ class izinTigaJamController extends Controller
      * @param  mixed $id
      * @return RedirectResponse
      */
-public function update(Request $request, $id)
-{
-    $this->validate($request, [
-        'approval' => 'nullable',
-        'alasan_approval' => 'nullable',
-    ]);
-
-    $post = izinTigaJam::findOrFail($id);
-    $jabatan = auth()->user()->jabatan;
-    $currentApproval = $post->approval;
-    
-    // Ambil data karyawan yang mengajukan
-    $karyawan = karyawan::findOrFail($post->id_karyawan);
-    $jabatanPemohon = $karyawan->jabatan;
-
-    // Logika penolakan: jika isi alasan_approval dan approval == 2, ubah jadi 4
-    if ($request->approval == 2 && $request->filled('alasan_approval')) {
-        $request->merge([
-            'approval' => 4,
-            'alasan_approval' => $request->alasan_approval,
+    public function update(Request $request, $id)
+    {
+        $this->validate($request, [
+            'approval' => 'nullable',
+            'alasan_approval' => 'nullable',
         ]);
-    }
 
-    $allowedApproval = false;
+        $post = izinTigaJam::findOrFail($id);
+        $jabatan = auth()->user()->jabatan;
+        $currentApproval = $post->approval;
 
-    // ===== APPROVAL UNTUK YANG BISA DIAPPROVE GM =====
-    $jabatanTinggi = ['SPV Sales', 'Koordinator ITSM'];
-    $jabatansepesial = ['HRD', 'Finance & Accounting', 'Office Boy', 'Driver'];
-    $divisiPemohon = $karyawan->divisi;
-    
-    if (in_array($jabatanPemohon, $jabatanTinggi) || 
-        ($divisiPemohon === 'Office' && in_array($jabatanPemohon, $jabatansepesial))) {
-        // Untuk kategori ini: GM bisa langsung approve dari status 0 ke 1
-        if ($jabatan === 'GM' && $currentApproval == 0 && $request->approval == 1) {
-            $allowedApproval = true;
+        // Ambil data karyawan yang mengajukan
+        $karyawan = karyawan::findOrFail($post->id_karyawan);
+        $jabatanPemohon = $karyawan->jabatan;
+
+        // Logika penolakan: jika isi alasan_approval dan approval == 2, ubah jadi 4
+        if ($request->approval == 2 && $request->filled('alasan_approval')) {
+            $request->merge([
+                'approval' => 4,
+                'alasan_approval' => $request->alasan_approval,
+            ]);
         }
-        // HRD tetap bisa approve final dari 1 ke 2
-        elseif ($jabatan === 'HRD' && $currentApproval == 1 && $request->approval == 2) {
-            $allowedApproval = true;
-        }
-    }
-    // ===== APPROVAL UNTUK KARYAWAN BIASA (FLOW NORMAL) =====
-    else {
+
+        $allowedApproval = false;
+
+        // ===== APPROVAL UNTUK YANG BISA DIAPPROVE GM =====
+        $jabatanTinggi = ['SPV Sales', 'Koordinator ITSM'];
+        $jabatansepesial = ['HRD', 'Finance & Accounting', 'Office Boy', 'Driver'];
+        $divisiPemohon = $karyawan->divisi;
+
         if (
-            in_array($jabatan, ['Koordinator Office', 'Office Manager', 'Education Manager', 'SPV Sales', 'Koordinator ITSM']) &&
-            $currentApproval == 0 && $request->approval == 1
+            in_array($jabatanPemohon, $jabatanTinggi) ||
+            ($divisiPemohon === 'Office' && in_array($jabatanPemohon, $jabatansepesial))
         ) {
-            $allowedApproval = true;
-        } 
-        // Approval final oleh HRD
-        elseif (
-            $jabatan === 'HRD' && $currentApproval == 1 && $request->approval == 2
+            // Untuk kategori ini: GM bisa langsung approve dari status 0 ke 1
+            if ($jabatan === 'GM' && $currentApproval == 0 && $request->approval == 1) {
+                $allowedApproval = true;
+            }
+            // HRD tetap bisa approve final dari 1 ke 2
+            elseif ($jabatan === 'HRD' && $currentApproval == 1 && $request->approval == 2) {
+                $allowedApproval = true;
+            }
+        }
+        // ===== APPROVAL UNTUK KARYAWAN BIASA (FLOW NORMAL) =====
+        else {
+            if (
+                in_array($jabatan, ['Koordinator Office', 'Office Manager', 'Education Manager', 'SPV Sales', 'Koordinator ITSM']) &&
+                $currentApproval == 0 && $request->approval == 1
+            ) {
+                $allowedApproval = true;
+            }
+            // Approval final oleh HRD
+            elseif (
+                $jabatan === 'HRD' && $currentApproval == 1 && $request->approval == 2
+            ) {
+                $allowedApproval = true;
+            }
+        }
+
+        // ===== PENOLAKAN (BISA DILAKUKAN SIAPA SAJA) =====
+        if (
+            in_array($jabatan, ['Koordinator Office', 'Office Manager', 'Education Manager', 'SPV Sales', 'Koordinator ITSM', 'HRD', 'GM']) &&
+            $request->approval == 4
         ) {
             $allowedApproval = true;
         }
+
+        if ($allowedApproval) {
+            $post->update([
+                'approval' => $request->approval,
+                'alasan_approval' => $request->alasan_approval,
+                'date_approval' => now(),
+            ]);
+        } else {
+            return redirect()->route('pengajuanizin.index')->with(['error' => 'Anda tidak berhak melakukan approval pada tahap ini.']);
+        }
+
+        // Rest of the notification logic remains the same...
+        // (notification code here)
+
+        return redirect()->route('pengajuanizin.index')->with(['success' => 'Data Berhasil Diubah!']);
     }
-
-    // ===== PENOLAKAN (BISA DILAKUKAN SIAPA SAJA) =====
-    if (
-        in_array($jabatan, ['Koordinator Office', 'Office Manager', 'Education Manager', 'SPV Sales', 'Koordinator ITSM', 'HRD', 'GM']) &&
-        $request->approval == 4
-    ) {
-        $allowedApproval = true;
-    }
-
-    if ($allowedApproval) {
-        $post->update([
-            'approval' => $request->approval,
-            'alasan_approval' => $request->alasan_approval,
-            'date_approval' => now(),
-        ]);
-    } else {
-        return redirect()->route('pengajuanizin.index')->with(['error' => 'Anda tidak berhak melakukan approval pada tahap ini.']);
-    }
-
-    // Rest of the notification logic remains the same...
-    // (notification code here)
-
-    return redirect()->route('pengajuanizin.index')->with(['success' => 'Data Berhasil Diubah!']);
-}
 
     /**
      * destroy

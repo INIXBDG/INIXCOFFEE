@@ -51,20 +51,6 @@
             <div class="table-responsive">
                 <table class="invoice-table">
                     <tbody>
-                        <tr class="no-print">
-                            <td colspan="5" class="text-end border-0 pb-2">
-                                <button type="button" class="btn btn-success" onclick="exportToExcel()">
-                                    <i class="bi bi-file-earmark-spreadsheet"></i> Excel
-                                </button>
-                                <button type="button" class="btn btn-danger" onclick="exportToPdf()">
-                                    <i class="bi bi-filetype-pdf"></i> PDF
-                                </button>
-                                <button type="button" class="btn btn-dark" onclick="window.print()">
-                                    <i class="bi bi-printer"></i> Print
-                                </button>
-                            </td>
-                        </tr>
-
                         <tr>
                             <td colspan="3" class="fw-bold">Nomor Invoice:</td>
                             <td colspan="2">
@@ -95,7 +81,7 @@
 
                         <!-- ✅ Purchase Order Number -->
                         <tr>
-                            <td colspan="3" class="fw-bold">Purchase Order No.:</td>
+                            <td colspan="3" class="fw-bold">Purchase Order No:</td>
                             <td colspan="2">
                                 <input type="text" class="form-control" name="purchase_order" 
                                     placeholder="Masukkan nomor PO (opsional)"
@@ -430,22 +416,6 @@
 
         // ✅ Trigger saat halaman load
         document.getElementById('tanggal_invoice').dispatchEvent(new Event('change'));
-
-        function exportToExcel() {
-            alert('Fungsi Export Excel akan diimplementasikan di sini.');
-        }
-
-        function exportToPdf() {
-            const element = document.querySelector('.container');
-            const options = {
-                margin: [10, 10, 10, 10],
-                filename: 'invoice_' + document.querySelector('input[name="invoice_number"]').value + '.pdf',
-                image: {type: 'jpeg', quality: 0.98},
-                html2canvas: {scale: 2},
-                jsPDF: {unit: 'mm', format: 'a4', orientation: 'portrait'}
-            };
-            html2pdf().set(options).from(element).save();
-        }
 
         const bankAccounts = {
             "BANK MANDIRI KK BANDUNG CIHAMPELAS": "131-00-0734797-6",

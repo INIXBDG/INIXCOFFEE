@@ -2,6 +2,7 @@
 
 namespace App\Console;
 
+use App\Console\Commands\AutoJobRKMCommands;
 use App\Models\activityLog;
 
 use Illuminate\Console\Scheduling\Schedule;
@@ -15,6 +16,7 @@ use App\Notifications\SurveyReminderNotification;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use App\Models\ActivityInstruktur;
 
 class Kernel extends ConsoleKernel
 {
@@ -221,7 +223,22 @@ class Kernel extends ConsoleKernel
 
         $schedule->command('app:update-status')->dailyAt('23:00');
 
-        $schedule->command('uptime:check')->everySixHours();
+        $schedule->command('uptime:check')->everySecond();
+
+        // Di dalam method schedule(Schedule $schedule)
+        $schedule->call(function () {
+            // Tentukan tanggal akhir minggu yang harus dikunci (e.g., dua minggu yang lalu)
+            $lockEndDate = Carbon::now()->startOfWeek(Carbon::MONDAY)->subWeeks(2)->endOfWeek(Carbon::SUNDAY);
+
+            // Kunci semua activity_instrukturs hingga tanggal tersebut yang belum terkunci
+            ActivityInstruktur::where('activity_date', '<=', $lockEndDate)
+                ->where('is_locked', 0)
+                ->update(['is_locked' => 1]);
+        })->dailyAt('01:00'); // Jalankan setiap hari pukul 01:00
+        $schedule->command('RKM:auto-job')->mondays()->at('10:47');
+
+        // update jatah cuit
+        $schedule->command('app:update-cuti')->yearlyOn(2, 1, '00:01');
     }
     /**
      * Register the commands for the application.
