@@ -10,6 +10,7 @@ use App\Http\Controllers\examController;
 use App\Http\Controllers\KanbanController;
 use App\Http\Controllers\MateriController;
 use App\Http\Controllers\TicketController;
+use App\Http\Controllers\RekapPenilaianExamController;
 use App\Http\Controllers\Api\RKMController;
 use App\Http\Controllers\Crm\CRMController;
 use App\Http\Controllers\Crm\MapController;
@@ -31,7 +32,6 @@ use App\Http\Controllers\izinTigaJamController;
 use App\Http\Controllers\OutstandingController;
 use App\Http\Controllers\DashboardSLAController;
 use App\Http\Controllers\office\ModulController;
-use App\Http\Controllers\BroadcastAuthController;
 use App\Http\Controllers\Crm\AktivitasController;
 use App\Http\Controllers\Crm\RegisFormController;
 use App\Http\Controllers\DailyActivityController;
@@ -540,6 +540,9 @@ Route::post('/rkm/delete/sertifikat', [ControllersRKMController::class, 'deleteS
 Route::post('/rkm/update-makanan', [App\Http\Controllers\RKMController::class, 'updateMakanan'])
     ->name('rkm.updateMakanan');
 
+
+Route::get('/rekap-penilaian-exam', [RekapPenilaianExamController::class, 'indexRekap'])->name('exam.rekap-penilaian');
+Route::get('/rekap-penilaian-exam/data', [RekapPenilaianExamController::class, 'getRekapPenilaian'])->name('exam.rekap-penilaian.data');
 
 
 Route::get('/paymantAdvance/detail/{id}/view', [netSalesController::class, 'detail'])->name('netsales.detail');

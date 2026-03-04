@@ -142,4 +142,14 @@ class RKM extends Model
     {
         return $this->hasOne(ChecklistKeperluan::class, 'id_rkm', 'id');
     }
+
+    public function penilaianExam()
+    {
+        return $this->hasMany(PenilaianExam::class, 'id_rkm', 'id');
+    }
+
+        public function dataExam()
+    {
+        return $this->hasOne(eksam::class, 'id_rkm', 'id');
+    }
 }
