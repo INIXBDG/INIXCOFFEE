@@ -1986,6 +1986,7 @@
                 else if (hasHRD) {
                     options += `
                         <option value="pelaksanaan kegiatan karyawan">Pelaksanaan Kegiatan Karyawan</option>
+                        <option value="administrasi karyawan">Administrasi Karyawan</option>
                     `;
                 }
                 

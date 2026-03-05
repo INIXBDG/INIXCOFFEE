@@ -10,6 +10,7 @@ use App\Models\ContentSchedule;
 use App\Models\detailPersonKPI;
 use App\Models\DetailTargetKPI;
 use App\Models\formPenilaian;
+use App\Models\JenisTunjangan;
 use App\Models\karyawan;
 use App\Models\Kegiatan;
 use App\Models\Nilaifeedback;
@@ -19,6 +20,7 @@ use App\Models\RKM;
 use App\Models\SurveyKepuasan;
 use App\Models\targetKPI;
 use App\Models\Tickets;
+use App\Models\TunjanganKaryawan;
 use Carbon\Carbon;
 use Google\Service\CloudDeploy\Target;
 use Illuminate\Http\Request;
@@ -613,6 +615,7 @@ class TargetKPIController extends Controller
             'keberhasilan support memenuhi sla' => 'calculateTingkatKeberhasilanSupportMemenuhiSLA',
             'inisiatif efisiensi keuangan' => 'calculateInisiatifEfisiensiKeuangan',
             'pelaksanaan kegiatan karyawan' => 'calculatePelaksanaanKegiatanKaryawan',
+            'administrasi karyawan' => 'calculateAdministrasiKaryawan',
         ];
 
         if (isset($methods[$route]) && method_exists($this, $methods[$route])) {
@@ -723,6 +726,8 @@ class TargetKPIController extends Controller
                     //HRD
                     elseif ($item->asistant_route === 'pelaksanaan kegiatan karyawan') {
                         $progress = $this->calculatePelaksanaanKegiatanKaryawan($item, $personId);
+                    } elseif ($item->asistant_route === 'administrasi karyawan') {
+                        $progress = $this->calculateAdministrasiKaryawan($item, $personId);
                     }
 
                     //ITSM
@@ -1142,6 +1147,38 @@ class TargetKPIController extends Controller
         $progress = ($totalKehadiranValid / $totalKegiatan) * 100;
 
         return round($progress, 1);
+    }
+
+    private function calculateAdministrasiKaryawan($item, $personId)
+    {
+        $detail = $item->detailTargetKPI->first();
+        
+        if (is_null($detail)) {
+            return 0;
+        }
+        
+        $tahun = (int) $detail->detail_jangka;
+        
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            return 0;
+        }
+        
+        $bulanTuntas = 0;
+        
+        for ($bulan = 1; $bulan <= 12; $bulan++) {
+            $adaTunjangan = TunjanganKaryawan::where('tahun', $tahun)
+                ->where('bulan', $bulan)
+                ->whereDay('created_at', '<=', 10)
+                ->exists();
+            
+            if ($adaTunjangan) {
+                $bulanTuntas++;
+            }
+        }
+
+        $progressTunajangan = ($bulanTuntas / 12) * 100;
+        
+        return (round($progressTunajangan, 1));
     }
 
     //target ITSM
@@ -1899,6 +1936,12 @@ class TargetKPIController extends Controller
                     } elseif ($itemDetail->asistant_route === 'inisiatif efisiensi keuangan') {
                         $data = $this->calculateInisiatifEfisiensiKeuanganDetail($itemDetail);
                     }
+
+                    // HRD
+                    elseif ($itemDetail->asistant_route === 'administrasi karyawan') {
+                        $data = $this->calculateAdministrasiKaryawanDetail($itemDetail, $personId);
+                    }
+
                     // ITSM - all kecuali Koordinator ITSM
                     elseif ($itemDetail->asistant_route === 'kepuasan client ITSM') {
                         $data = $this->calculateProgressKepuasanClientITSMDetail($itemDetail);
@@ -2764,6 +2807,84 @@ class TargetKPIController extends Controller
             'pie_chart' => ['above' => 0, 'below' => 0],
             'monthly_data' => [],
             'daily_breakdown_per_month' => [],
+        ];
+    }
+
+    //HRD
+    private function calculateAdministrasiKaryawanDetail($itemDetail, $personId)
+    {
+        $detail = $itemDetail->detailTargetKPI->first();
+
+        if (is_null($detail)) {
+            Log::warning("detailTargetKPI tidak ditemukan untuk item ID: {$itemDetail->id}");
+            return [
+                'progress' => 0,
+                'gap' => 0,
+                'pie_chart' => ['above' => 0, 'below' => 0],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+            ];
+        }
+
+        $tahun = (int) $detail->detail_jangka;
+
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk item ID: {$itemDetail->id}");
+            return [
+                'progress' => 0,
+                'gap' => 0,
+                'pie_chart' => ['above' => 0, 'below' => 0],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+            ];
+        }
+
+        $bulanTuntas = 0;
+        $monthlyData = [];
+        $dailyBreakdownPerMonth = [];
+        
+        for ($bulan = 1; $bulan <= 12; $bulan++) {
+            $adaTunjangan = TunjanganKaryawan::where('tahun', $tahun)
+                ->where('bulan', $bulan)
+                ->whereDay('created_at', '<=', 10)
+                ->exists();
+
+            $monthKey = sprintf('%04d-%02d', $tahun, $bulan);
+            
+            $nilaiBulan = $adaTunjangan ? 100 : 0;
+
+            if ($adaTunjangan) {
+                $bulanTuntas++;
+            }
+
+            $monthlyData[$monthKey] = $nilaiBulan;
+
+            if (!isset($dailyBreakdownPerMonth[$monthKey])) {
+                $dailyBreakdownPerMonth[$monthKey] = [];
+            }
+            $dayKey = sprintf('%04d-%02d-10', $tahun, $bulan);
+            $dailyBreakdownPerMonth[$monthKey][$dayKey] = $nilaiBulan;
+        }
+
+        $progressTunjangan = ($bulanTuntas / 12) * 100;
+        $progress = round($progressTunjangan, 1);
+
+        $above = $bulanTuntas;
+        $below = 12 - $bulanTuntas;
+
+        $nilaiTarget = $itemDetail->detailTargetKPI->pluck('nilai_target')->first() ?? 0;
+        $gapRaw = $progress - $nilaiTarget;
+        $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
+
+        ksort($monthlyData);
+        ksort($dailyBreakdownPerMonth);
+
+        return [
+            'progress' => $progress,
+            'gap' => $gap,
+            'pie_chart' => ['above' => $above, 'below' => $below],
+            'monthly_data' => $monthlyData,
+            'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
         ];
     }
 
@@ -4239,6 +4360,9 @@ class TargetKPIController extends Controller
                 return $this->calculateInisiatifEfisiensiKeuangan($target, $personId);
             case 'outstanding':
                 return $this->calculateOutstanding($target, $personId);
+            //HRD
+            case 'administrasi karyawan':
+                return $this->calculateAdministrasiKaryawan($target, $personId);
 
             //Target ITSM
             //All kecuali Koordinator ITSM
