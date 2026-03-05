@@ -176,6 +176,7 @@
                                 <option value="Feed">Feed</option>
                                 <option value="Reels">Reels</option>
                                 <option value="Youtube">Youtube</option>
+                                <option value="Tiktok">Tiktod</option>
                             </select>
                         </div>
 
@@ -266,6 +267,7 @@
                                 <option value="Feed">Feed</option>
                                 <option value="Reels">Reels</option>
                                 <option value="Youtube">Youtube</option>
+                                <option value="Tiktok">Tiktod</option>
                             </select>
                         </div>
                         <div class="col-md-6">
