@@ -10,7 +10,7 @@ class ContentScheduleController extends Controller
 {
     public function index()
     {
-        $schedules = ContentSchedule::latest()->get();
+        $schedules = ContentSchedule::orderByRaw('upload_date IS NULL DESC, upload_date DESC')->get();
         return view('schedules.index', compact('schedules'));
     }
 
