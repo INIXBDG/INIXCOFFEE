@@ -71,14 +71,12 @@
                                     {{ $item->content_form }}
                                 </span>
                             </td>
-                            <td class="text-center">
+                            <td class="text-center" data-sort="{{ $item->upload_date ? $item->upload_date->format('Y-m-d') : '9999-12-31' }}">
                                 @if($item->upload_date)
-                                    {{-- Jika sudah ada tanggal, tampilkan tanggalnya --}}
                                     <span class="text-success fw-bold">
                                         {{ $item->upload_date->format('d M Y') }}
                                     </span>
                                 @else
-                                    {{-- Jika belum ada tanggal, tampilkan tombol --}}
                                     <form action="{{ route('content-schedules.mark-uploaded', $item->id) }}" method="POST">
                                         @csrf
                                         @method('PATCH')
@@ -281,7 +279,7 @@
                         </div>
                         <div class="col-12">
                             <label class="form-label">Talent</label>
-                            <select name="talents[]" id="edit_talents" class="form-select" multiple required style="height: 100px;">
+                            <select name="talents[]" id="edit_talents" class="form-select" multiple style="height: 100px;">
                                 <option value="Hera">Hera</option>
                                 <option value="Savanna">Savanna</option>
                                 <option value="Reni">Reni</option>
