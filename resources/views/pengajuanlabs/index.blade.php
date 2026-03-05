@@ -257,9 +257,9 @@
                                             <label class="col-sm-4 col-form-label">Status</label>
                                             <div class="col-sm-8">
                                                 <select class="form-select" name="status" id="edit_status">
-                                                    <option value="Active">Active</option>
-                                                    <option value="Pending">Pending</option>
-                                                    <option value="Expired">Expired</option>
+                                                    <option value="active">Active</option>
+                                                    <option value="pending">Pending</option>
+                                                    <option value="expired">Expired</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -776,7 +776,6 @@
                     data: 'materis',
                     render: function(data) {
                         if(!data || data.length === 0) return '<span class="text-muted" style="font-size:0.8rem">Belum terhubung</span>';
-                        // PERUBAHAN: Membungkus setiap nama materi ke dalam <div> agar tampilannya menurun
                         return data.map(m => `<div class="mb-1"><span class="badge bg-light text-dark border text-wrap text-start" style="line-height: 1.4;">${m.nama_materi}</span></div>`).join('');
                     }
                 },
@@ -807,8 +806,13 @@
         $('#edit_deskripsi').val(lab.desc);
         $('#edit_url_labs').val(lab.lab_url);
         $('#edit_kode_akses').val(lab.access_code);
-        $('#edit_tanggal_mulai').val(lab.start_date);
-        $('#edit_tanggal_berakhir').val(lab.end_date);
+        
+        let startDate = lab.start_date ? lab.start_date.split(' ')[0] : '';
+        let endDate = lab.end_date ? lab.end_date.split(' ')[0] : '';
+        
+        $('#edit_tanggal_mulai').val(startDate);
+        $('#edit_tanggal_berakhir').val(endDate);
+
         $('#edit_mata_uang').val(lab.mata_uang || 'Dollar');
         $('#edit_nominal_harga_asli').val(lab.harga);
         $('#edit_kurs').val(lab.kurs);
