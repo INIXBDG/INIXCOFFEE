@@ -778,7 +778,7 @@ Route::post('/tasks/update-state', [KanbanController::class, 'updateState'])->na
 Route::patch('/tasks/{id}', [KanbanController::class, 'update'])->name('tasks.update');
 Route::get('/tasks/{task}/activities', [KanbanController::class, 'getTaskActivities'])->name('tasks.activities');
 Route::delete('tasks/{task}', [KanbanController::class, 'destroy'])->name('tasks.destroy');
-Route::patch('/daily-activities/{daily_activity}/update-status', [DailyActivityController::class, 'updateStatus'])->name('daily-activities.updateStatus');
+Route::patch('/daily-activities/{dailyActivity}/quick-update', [DailyActivityController::class, 'quickUpdate'])->name('daily-activities.quick-update');
 
 // RegistryFeature
 Route::patch('/registry/{tugas}/start', [App\Http\Controllers\RegistryFeatureController::class, 'startTask'])

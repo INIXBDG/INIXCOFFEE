@@ -20,57 +20,66 @@ class DailyActivityController extends Controller
 
         $divisionName = 'Tidak Terdaftar';
         $activities = collect();
-
+        $tasks = collect();
         $userDivisionName = null;
-        $tasks = collect(); // Default: koleksi kosong
 
         if ($karyawan) {
             $userDivisionName = $karyawan->divisi;
-        }
-
-        if (!empty($userDivisionName)) {
-            $tasks = Task::whereHas('user.karyawan', function ($query) use ($userDivisionName) {
-                               $query->where('divisi', $userDivisionName);
-                           })
-                           ->orderBy('title')
-                           ->get();
-        }
-
-        if ($karyawan) {
-            $userDivisionName = $karyawan->divisi;
-            $userJobTitle = $karyawan->jabatan; // Mendapatkan data jabatan user saat ini
+            $userJobTitle = $karyawan->jabatan;
 
             if (!empty($userDivisionName)) {
                 $divisionName = $userDivisionName;
+                
+                $tasks = Task::whereHas('user.karyawan', function ($query) use ($userDivisionName) {
+                    $query->where('divisi', $userDivisionName);
+                })->orderBy('title')->get();
 
                 $activities = DailyActivity::with(['user.karyawan', 'task'])
                     ->whereHas('user.karyawan', function ($query) use ($userDivisionName, $userJobTitle) {
-
-                        // 1. Filter dasar: Kesamaan Divisi
                         $query->where('divisi', $userDivisionName);
-
-                        // 2. Logika Khusus untuk 'IT Service Management'
                         if ($userDivisionName === 'IT Service Management') {
-
-                            // Cek grup jabatan: Koordinator ITSM & Programmer
                             if (in_array($userJobTitle, ['Koordinator ITSM', 'Programmer'])) {
                                 $query->whereIn('jabatan', ['Koordinator ITSM', 'Programmer']);
                             } else {
-                                // Untuk jabatan lain di ITSM, filter per jabatan spesifik
                                 $query->where('jabatan', $userJobTitle);
                             }
                         }
                     })
+                    ->whereYear('start_date', '2026')
                     ->latest('start_date')
                     ->latest('created_at')
                     ->get();
-
-            } else {
-                $divisionName = 'Karyawan Tanpa Divisi';
             }
         }
 
-        return view('daily_activities.index', compact('activities', 'divisionName', 'tasks'));
+        $totalActivities = $activities->count();
+        $doneActivities = $activities->where('status', 'Selesai')->count();
+        $inProgressActivities = $activities->where('status', 'On Progres')->count();
+        $progressPercentage = $totalActivities > 0 ? round(($doneActivities / $totalActivities) * 100) : 0;
+
+        // Kalkulasi Metrik Dasbor (Baru: Ringkasan Tenggat Waktu)
+        $todayString = now()->format('Y-m-d');
+        
+        $dueTodayActivities = $activities->where('status', '!=', 'Selesai')
+                                        ->where('end_date', $todayString)
+                                        ->count();
+
+        $overdueActivities = $activities->where('status', '!=', 'Selesai')
+                                        ->filter(function ($activity) use ($todayString) {
+                                            return !empty($activity->end_date) && $activity->end_date < $todayString;
+                                        })->count();
+
+        return view('daily_activities.index', compact(
+            'activities', 
+            'divisionName', 
+            'tasks', 
+            'totalActivities', 
+            'doneActivities', 
+            'inProgressActivities', 
+            'progressPercentage',
+            'dueTodayActivities',
+            'overdueActivities'
+        ));
     }
 
     public function activitiesData()
@@ -137,41 +146,50 @@ class DailyActivityController extends Controller
 
     public function store(Request $request)
     {
+        // Validasi data array
         $validator = Validator::make($request->all(), [
-            'id_task' => 'nullable|exists:tasks,id',
-            'activity' => 'required|string',
-            'description' => 'nullable|string',
-            'doc' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png|max:2048',
-            'start_date' => 'required|date',
+            'id_task.*'     => 'nullable|exists:tasks,id',
+            'activity.*'    => 'required|string',
+            'description.*' => 'nullable|string',
+            'doc.*'         => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png|max:2048',
+            'start_date.*'  => 'required|date',
+            'end_date.*'    => 'nullable|date',
         ]);
 
         if ($validator->fails()) {
             return redirect()->back()
-                        ->withErrors($validator)
-                        ->withInput();
+                            ->withErrors($validator)
+                            ->withInput();
         }
 
-        $docPath = null;
-        if ($request->hasFile('doc')) {
-            $docPath = $request->file('doc')->store('activity_docs', 'public');
+        $activitiesInput = $request->input('activity');
+        
+        // Iterasi untuk menyimpan setiap aktivitas
+        foreach ($activitiesInput as $index => $activityText) {
+            
+            $docPath = null;
+            if ($request->hasFile("doc.{$index}")) {
+                $docPath = $request->file("doc.{$index}")->store('activity_docs', 'public');
+            }
+
+            $endDate = $request->input("end_date.{$index}");
+
+            $dataToStore = [
+                'user_id'     => Auth::id(),
+                'id_task'     => $request->input("id_task.{$index}"),
+                'activity'    => $activityText,
+                'status'      => !empty($endDate) ? 'Selesai' : 'On Progres',
+                'description' => $request->input("description.{$index}"),
+                'doc'         => $docPath,
+                'start_date'  => $request->input("start_date.{$index}"),
+                'end_date'    => $endDate,
+            ];
+
+            DailyActivity::create($dataToStore);
         }
-
-        $dataToStore = [
-            'user_id' => Auth::id(),
-            'id_task' => $request->input('id_task'),
-            'activity' => $request->input('activity'),
-            'status' => 'On Progres',
-            'description' => $request->input('description'),
-            'doc' => $docPath,
-            'start_date' => $request->input('start_date'),
-        ];
-
-        $activity = DailyActivity::create($dataToStore);
-
-        $activity->updateStatus('On Progres');
 
         return redirect()->route('daily-activities.index')
-                            ->with('success', 'Aktivitas harian berhasil ditambahkan.');
+                        ->with('success', 'Aktivitas harian berhasil ditambahkan.');
     }
 
     public function create()
@@ -196,31 +214,42 @@ class DailyActivityController extends Controller
         return view('daily_activities.create', compact('tasks'));
     }
 
-    public function updateStatus(Request $request, DailyActivity $dailyActivity) // Otomatis inject DailyActivity
+   public function quickUpdate(Request $request, DailyActivity $dailyActivity)
     {
-        // Validasi status baru
         $validator = Validator::make($request->all(), [
-            'status' => [
-                'required',
-                Rule::in(['On Progres', 'On Progres Dilanjutkan Besok', 'Gagal', 'Selesai']),
-            ],
+            'end_date' => 'required|date',
+            'doc'      => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png|max:2048',
         ]);
 
         if ($validator->fails()) {
             return redirect()->back()
-                        ->withErrors($validator)
-                        ->with('error', 'Gagal memperbarui status: '. $validator->errors()->first()); // Tampilkan pesan error
+                            ->withErrors($validator)
+                            ->with('error', 'Gagal memproses data. Periksa kembali input Anda.');
         }
 
-        try {
-            // Panggil method updateStatus dari Model
-            $dailyActivity->updateStatus($request->input('status'));
+        $docPath = $dailyActivity->doc;
+        
+        if ($request->hasFile('doc')) {
+            // Hapus dokumen lama jika ada
+            if ($docPath && Storage::disk('public')->exists($docPath)) {
+                Storage::disk('public')->delete($docPath);
+            }
+            $docPath = $request->file('doc')->store('activity_docs', 'public');
+        }
 
+        $dataToUpdate = [
+            'end_date' => $request->input('end_date'),
+            'status'   => 'Selesai', // Otomatis disetel selesai
+            'doc'      => $docPath,
+        ];
+
+        try {
+            $dailyActivity->update($dataToUpdate);
             return redirect()->route('daily-activities.index')
-                             ->with('success', 'Status aktivitas berhasil diperbarui.');
+                            ->with('success', 'Aktivitas berhasil diselesaikan dan dokumen diperbarui.');
         } catch (\Exception $e) {
             return redirect()->back()
-                             ->with('error', 'Terjadi kesalahan saat memperbarui status.');
+                            ->with('error', 'Terjadi kesalahan saat memperbarui aktivitas.');
         }
     }
 
@@ -300,6 +329,7 @@ class DailyActivityController extends Controller
             'doc'           => $docPath,
             'start_date' => $request->input('start_date'),
             'end_date' => $request->input('end_date'),
+            'status'        => $request->input('end_date') ? 'Selesai' : 'On Progres',
         ];
 
         try {
