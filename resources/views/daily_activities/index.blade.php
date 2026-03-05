@@ -7,333 +7,409 @@
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-bold mb-0">
-            <i class="fas fa-clipboard-list me-2 text-primary"></i> Aktivitas Harian {{ $divisionName ?? 'N/A' }}
+            <i class="fas fa-list-check me-2 text-primary"></i> Daftar Tugas & Aktivitas
         </h4>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#activityModal">
+            <i class="fas fa-plus me-1"></i> Tambah Aktivitas
+        </button>
     </div>
 
-    {{-- Tabel Aktivitas dengan style Bootstrap --}}
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <div id="calendar"></div>
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="fw-bold text-muted text-center mb-3">Status Tugas</h6>
+                    <div class="d-flex justify-content-around text-center">
+                        <div>
+                            <h3 class="mb-0 text-warning">{{ $inProgressActivities }}</h3>
+                            <small class="text-muted">On Progress</small>
+                        </div>
+                        <div>
+                            <h3 class="mb-0 text-success">{{ $doneActivities }}</h3>
+                            <small class="text-muted">Selesai</small>
+                        </div>
+                        <div>
+                            <h3 class="mb-0 text-primary">{{ $totalActivities }}</h3>
+                            <small class="text-muted">Total</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <div class="modal fade" id="activityModal" tabindex="-1" aria-labelledby="activityModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form id="activityFormDetail" method="POST" enctype="multipart/form-data">
-                    @csrf 
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="activityModalLabel">Aktivitas <span id="modalDate"></span></h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <h6 class="fw-bold text-muted mb-3">Progres Keseluruhan</h6>
+                    <div class="position-relative d-inline-block">
+                        <canvas id="progressChart" width="100" height="100"></canvas>
+                        <div class="position-absolute top-50 start-50 translate-middle">
+                            <h4 class="mb-0">{{ $progressPercentage }}%</h4>
+                        </div>
                     </div>
-                    <div class="modal-body">
-                        
-                        <input type="hidden" name="activity_date" id="formActivityDate">
-                        <input type="hidden" name="activity_id" id="formActivityId">
-                        <input type="hidden" value="manual" name="activity_subtype" id="activity_subtype">
-
-                        {{--  --}}
-                        <div class="mb-3">
-                            <label for="formActivityType" class="form-label fw-bold">
-                                Pilih Task Terkait <span class="text-danger">*</span>
-                            </label>
-                            <select name="id_task" id="formActivityType"
-                                class="form-select @error('formActivityType') is-invalid @enderror">
-                                @foreach ($tasks as $task)
-                                    <option value="{{ $task->id }}" {{ old('id_task') == $task->id ? 'selected' : '' }}>
-                                        {{ $task->title }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('formActivityType')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="formActivity" class="form-label fw-bold">
-                                Aktivitas yang Dilakukan <span class="text-danger">*</span>
-                            </label>
-                            <textarea name="activity" id="formActivity" rows="3"
-                                class="form-control @error('formActivity') is-invalid @enderror"
-                                placeholder="Jelaskan secara singkat apa yang Anda kerjakan..." required>{{ old('activity') }}</textarea>
-                            @error('formActivity')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="formDesc" class="form-label fw-bold">
-                                Deskripsi Tambahan (Opsional)
-                            </label>
-                            <textarea name="description" id="formDesc" rows="4"
-                                class="form-control @error('formDesc') is-invalid @enderror"
-                                placeholder="Berikan detail lebih lanjut jika diperlukan...">{{ old('description') }}</textarea>
-                            @error('formDesc')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="mb-3" id="uploadDocs">
-                            <label for="doc" class="form-label fw-bold">
-                                Unggah Dokumen (Opsional)
-                            </label>
-                            <input type="file" name="doc" id="doc"
-                                class="form-control @error('doc') is-invalid @enderror">
-                            <div class="form-text">
-                                Maksimal 2MB. Format: pdf, doc(x), xls(x), jpg, png.
-                            </div>
-                            @error('doc')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="mb-3" id="existDocs">
-                            <label class="form-label fw-bold">Dokumen</label>
-                            <div class="modal-activity-doc">-</div>
-                        </div>
-
-
-                        <div class="mb-3">
-                            <label for="start_date" class="form-label fw-bold">
-                                Tanggal Mulai Aktivitas <span class="text-danger">*</span>
-                            </label>
-                            <input type="date" name="start_date" id="start_date"
-                                value="{{ old('start_date', now()->format('Y-m-d')) }}"
-                                class="form-control @error('start_date') is-invalid @enderror"
-                                required>
-                            @error('start_date')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="mb-3" id="tanggalSelesai">
-                            <label for="end_date" class="form-label fw-bold">
-                                Tanggal Selesai Aktivitas
-                            </label>
-                            <input type="date" name="end_date" id="end_date"
-                                value="{{ old('end_date', now()->format('Y-m-d')) }}"
-                                class="form-control @error('end_date') is-invalid @enderror">
-                            @error('end_date')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="mb-3 d-none" id="statusAction">
-                            <label class="form-label fw-bold">Aksi Status</label>
-                            <div class="d-flex gap-2" id="statusButtons"></div>
-                        </div>
-                        {{--  --}}
-
+                    <div class="mt-2">
+                        <small class="text-muted">{{ $doneActivities }}/{{ $totalActivities }} Selesai</small>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="z-index: 200;">Tutup</button>
-                        <button type="submit" class="btn btn-primary" id="saveActivityDetailBtn" style="z-index: 200;">Simpan Detail</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="fw-bold text-muted text-center mb-3">Ringkasan Tenggat Waktu</h6>
+                    <div class="d-flex justify-content-around align-items-center text-center h-75">
+                        <div>
+                            <h3 class="mb-0 text-danger">{{ $overdueActivities }}</h3>
+                            <small class="text-muted">Terlambat</small>
+                        </div>
+                        <div class="vr"></div>
+                        <div>
+                            <h3 class="mb-0 text-info">{{ $dueTodayActivities }}</h3>
+                            <small class="text-muted">Jatuh Tempo Hari Ini</small>
+                        </div>
                     </div>
-                </form>
-                <div id="deleteButton" class="mb-4 ms-4" style="margin-top: -11%; z-index: 100">
-                    <form id="deleteActivityForm" method="POST" class="me-auto" onsubmit="return confirm('Apakah Anda yakin ingin menghapus aktivitas ini?');">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn btn-outline-danger btn">
-                            <i class="fas fa-trash-alt me-1"></i> Hapus
-                        </button>
-                    </form>
                 </div>
             </div>
         </div>
     </div>
 
-</div>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="activityTable" class="table table-hover table-bordered align-middle w-100">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Aktivitas</th>
+                            <th>Task Terkait</th>
+                            <th>Tanggal Mulai</th>
+                            <th>Tanggal Selesai</th>
+                            <th>Status</th>
+                            <th class="text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($activities as $activity)
+                        <tr data-id="{{ $activity->id }}" style="cursor: pointer;" class="activity-row-click">
+                            <td>{{ $activity->created_at }}</td>
+                            <td>{{ $activity->activity }}</td>
+                            <td>{{ $activity->task->title ?? '-' }}</td>
+                            <td>{{ \Carbon\Carbon::parse($activity->start_date)->format('d/m/Y') }}</td>
+                            <td>{{ $activity->end_date ? \Carbon\Carbon::parse($activity->end_date)->format('d/m/Y') : '-' }}</td>
+                            <td>
+                                @if($activity->status == 'Selesai')
+                                    <span class="badge bg-success">Selesai</span>
+                                @else
+                                    <span class="badge bg-warning text-dark">On Progres</span>
+                                @endif
+                            </td>
+                            <td class="text-center">
+                                @if($activity->status != 'Selesai')
+                                <button type="button" class="btn btn-sm btn-success btn-update-status" 
+                                    data-id="{{ $activity->id }}" 
+                                    data-activity="{{ $activity->activity }}">
+                                    <i class="fas fa-check me-1"></i> Selesaikan
+                                </button>
+                                @else
+                                <span class="text-muted"><i class="fas fa-check-double"></i> Selesai</span>
+                                @endif
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="activityModal" tabindex="-1" aria-labelledby="activityModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form id="activityFormDetail" method="POST" action="{{ route('daily-activities.store') }}" enctype="multipart/form-data">
+                    @csrf 
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="activityModalLabel">Tambah Aktivitas Baru</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="activityContainer">
+                            <div class="activity-row border rounded p-3 mb-3 relative">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="fw-bold mb-0">Detail Aktivitas</h6>
+                                    <button type="button" class="btn btn-sm btn-outline-danger remove-activity-btn d-none">
+                                        <i class="fas fa-times"></i> Hapus
+                                    </button>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Pilih Task Terkait <span class="text-danger">*</span></label>
+                                    <select name="id_task[]" class="form-select input-id-task">
+                                        <option value="">-- Pilih Task --</option>
+                                        @foreach ($tasks as $task)
+                                            <option value="{{ $task->id }}">{{ $task->title }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Aktivitas yang Dilakukan <span class="text-danger">*</span></label>
+                                    <textarea name="activity[]" rows="3" class="form-control input-activity" placeholder="Jelaskan secara singkat aktivitas..." required></textarea>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Deskripsi Tambahan (Opsional)</label>
+                                    <textarea name="description[]" rows="2" class="form-control input-description"></textarea>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Unggah Dokumen (Opsional)</label>
+                                    <input type="file" name="doc[]" class="form-control input-doc">
+                                    <div class="form-text">Maksimal 2MB. Format: pdf, doc(x), xls(x), jpg, png.</div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold">Tanggal Mulai <span class="text-danger">*</span></label>
+                                        <input type="date" name="start_date[]" class="form-control input-start-date" value="{{ now()->format('Y-m-d') }}" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold">Tanggal Selesai (Opsional)</label>
+                                        <input type="date" name="end_date[]" class="form-control input-end-date">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" id="addActivityBtn" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-plus me-1"></i> Tambah Aktivitas Lain
+                        </button>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                        <button type="submit" class="btn btn-primary">Simpan Aktivitas</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="updateStatusModal" tabindex="-1" aria-labelledby="updateStatusModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="updateStatusForm" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    @method('PATCH')
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="updateStatusModalLabel">Selesaikan Aktivitas</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Aktivitas</label>
+                            <input type="text" id="displayActivityName" class="form-control" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Tanggal Selesai <span class="text-danger">*</span></label>
+                            <input type="date" name="end_date" class="form-control" value="{{ now()->format('Y-m-d') }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Unggah Dokumen Bukti (Opsional)</label>
+                            <input type="file" name="doc" class="form-control">
+                            <div class="form-text">Maksimal 2MB. Format: pdf, doc(x), xls(x), jpg, png.</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-success">Selesaikan & Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="detailActivityModal" tabindex="-1" aria-labelledby="detailActivityModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="detailActivityModalLabel">Detail Aktivitas</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-borderless table-sm mb-0">
+                        <tbody>
+                            <tr>
+                                <th style="width: 35%;">Task Terkait</th>
+                                <td style="width: 5%;">:</td>
+                                <td id="detailTask"></td>
+                            </tr>
+                            <tr>
+                                <th>Aktivitas</th>
+                                <td>:</td>
+                                <td id="detailActivityName"></td>
+                            </tr>
+                            <tr>
+                                <th>Deskripsi</th>
+                                <td>:</td>
+                                <td id="detailDescription"></td>
+                            </tr>
+                            <tr>
+                                <th>Tanggal Mulai</th>
+                                <td>:</td>
+                                <td id="detailStartDate"></td>
+                            </tr>
+                            <tr>
+                                <th>Tanggal Selesai</th>
+                                <td>:</td>
+                                <td id="detailEndDate"></td>
+                            </tr>
+                            <tr>
+                                <th>Status</th>
+                                <td>:</td>
+                                <td id="detailStatus"></td>
+                            </tr>
+                            <tr>
+                                <th>Dokumen</th>
+                                <td>:</td>
+                                <td id="detailDoc"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </div>
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" />
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+<script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/2.0.8/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
     $(document).ready(function() {
-        var calendarEl = document.getElementById("calendar");
-
-        var calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'dayGridMonth',
-            headerToolbar: {
-                left: 'prev,next today',
-                center: 'title',
-                right: 'dayGridMonth,timeGridWeek'
+        // Inisialisasi DataTables
+        $('#activityTable').DataTable({
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/id.json'
             },
-            locale: 'id', // Opsional: Tampilkan kalender dalam bahasa Indonesia
-            firstDay: 1, // Minggu dimulai hari Senin
-            height: 'auto',
-            // Load data dari backend
-            events: function(fetchInfo, successCallback, failureCallback) {
-                $.ajax({
-                    url: "/daily-activities-data",
-                    method: 'GET',
-                    data: {
-                        start: fetchInfo.startStr,
-                        end: fetchInfo.endStr
-                    },
-                    success: function(data) {
-                        successCallback(data);
-                        console.log("nih data : ", data);
-                    },
-                    error: function() {
-                        failureCallback();
-                    }
-                });
-            },
+            "order": [[0, 'desc']], // Ubah urutan menjadi descending untuk kolom ke-6
+            "columnDefs" : [{"targets":[0], "type":"date"}],
+        });
 
-            dateClick: function(info) {
-                showActivityModal(
-                    'store',
-                    info.dateStr,
-                    null,
-                    null,
-                    ''
-                );
-            },
+        // Inisialisasi Chart.js untuk Donut Chart
+        var ctx = document.getElementById('progressChart').getContext('2d');
+        var progressPercentage = {{ $progressPercentage }};
+        var remainingPercentage = 100 - progressPercentage;
 
-            // Ketika mengklik event yang sudah ada
-            eventClick: function(info) {
-                console.log("p : ", info);
-                showActivityModal(
-                    'show',
-                    info.event.startStr, 
-                    info.event.id, 
-                    info.event.extendedProps, 
-                    info.event.title);
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Selesai', 'Belum Selesai'],
+                datasets: [{
+                    data: [progressPercentage, remainingPercentage],
+                    backgroundColor: ['#28a745', '#e9ecef'],
+                    borderWidth: 0,
+                    cutout: '80%'
+                }]
+            },
+            options: {
+                responsive: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { enabled: false }
+                }
             }
         });
-       
-        calendar.render();
+        // Logika Duplikasi Form Tambah Aktivitas
+        $('#addActivityBtn').on('click', function() {
+            let firstRow = $('.activity-row').first();
+            let newRow = firstRow.clone();
 
-        function resetActivityModal() {
+            newRow.find('input[type="text"], input[type="file"], textarea, select').val('');
+            newRow.find('input[type="date"]').val('');
+            newRow.find('.input-start-date').val(new Date().toISOString().split('T')[0]);
+            newRow.find('.remove-activity-btn').removeClass('d-none');
 
-            // reset form
-            $('#activityFormDetail')[0].reset();
-            $('#formActivityType').val('');
+            $('#activityContainer').append(newRow);
+        });
 
-            $('#tanggalSelesai').hide();
-            $('#statusAction').addClass('d-none');
-            $('#statusButtons').empty();
+        // Logika Hapus Form Aktivitas
+        $(document).on('click', '.remove-activity-btn', function() {
+            if ($('.activity-row').length > 1) {
+                $(this).closest('.activity-row').remove();
+            }
+        });
 
-            $('#deleteButton').hide();
+        // Logika Pemanggilan Modal Update Status
+        $(document).on('click', '.btn-update-status', function() {
+            let activityId = $(this).data('id');
+            let activityName = $(this).data('activity');
             
-            $('#existDocs').hide();
-            $('.modal-activity-doc').html('-');
+            // Setel rute action form
+            let actionUrl = `/daily-activities/${activityId}/quick-update`;
+            $('#updateStatusForm').attr('action', actionUrl);
+            
+            // Setel nama aktivitas pada input readonly
+            $('#displayActivityName').val(activityName);
+            
+            // Tampilkan modal
+            $('#updateStatusModal').modal('show');
+        });
 
-            $('#uploadDocs').show();
-
-            $('.form-control, .form-select, button').prop('disabled', false);
-            $('#activityFormDetail input[name="_method"]').remove();
-        }
-
-
-        function showActivityModal(tipe, date, activityId, activityData, title) 
-        {
-            resetActivityModal();
-
-            $('#modalDate').text(moment(date).format('DD MMMM YYYY'));
-            $('#formActivityId').val(activityId ?? '');
-
-            if (tipe === 'store') {
-                // Create Form
-                $('#tanggalSelesai').hide();
-
-                $('#activityFormDetail').attr('action', "{{ route('daily-activities.store') }}").find('input[name="_method"]').remove();
-
-                $('#start_date').val(date);
-                $('#end_date').val('');
-
-                $('#deleteButton').hide();
-                $('#deleteActivityForm').attr('action', '');
-            } else if (tipe === 'show' && activityData) {
-                // Update Form
-                $('#tanggalSelesai').show();
-
-                $('#activityFormDetail')
-                    .attr('action', `/daily-activities/${activityId}`);
-
-                if ($('#activityFormDetail input[name="_method"]').length === 0) {
-                    $('#activityFormDetail').append(
-                        '<input type="hidden" name="_method" value="PUT">'
-                    );
-                }
-
-                // hapus
-                $('#deleteButton').show();
-                let deleteUrl = "{{ route('daily-activities.destroy', ':id') }}";
-                deleteUrl = deleteUrl.replace(':id', activityId);
-                $('#deleteActivityForm').attr('action', deleteUrl);
-
-
-                $('#formActivityType').val(activityData.id_task);
-                $('#formActivity').val(activityData.activity);
-                $('#formDesc').val(activityData.description);
-                $('#start_date').val(activityData.start_date); 
-                $('#end_date').val(activityData.end_date);
-                renderStatusActions(activityId, activityData.status);
-
-                // Status aktivitas
-                if (activityData.status === 'Selesai') {
-                    $('#statusAction').hide();
-                } else {
-                    $('#statusAction').show();
-                }
-
-                // Dokumen
-                const docLinkElement = document.querySelector('.modal-activity-doc');
-                if (activityData.doc) {
-
-                    const fileUrl = `{{ asset('storage') }}/${activityData.doc}`;
-
-                    $('#existDocs').show();
-                    docLinkElement.innerHTML = `
-                        <a href="${fileUrl}" target="_blank" class="text-primary">
-                            <i class="fas fa-file-alt me-1"></i> Lihat Dokumen
-                        </a>
-                    `;
-                } else {
-                    $('#existDocs').hide();
-                    docLinkElement.textContent = '-';
-                }
+        // Logika Klik Baris Tabel untuk Menampilkan Detail
+        $('#activityTable tbody').on('click', 'tr.activity-row-click', function(e) {
+            // Abaikan interaksi jika area yang diklik adalah tombol, checkbox, atau area aksi
+            if ($(e.target).closest('button, input, a, td:last-child').length > 0) {
+                return;
             }
 
-            $('#activityModal').modal('show');
-        }
+            let activityId = $(this).data('id');
+            
+            if (!activityId) return;
 
-        function renderStatusActions(activityId, status) {
-            let container = $('#statusButtons');
-            container.empty();
+            // Lakukan pemanggilan AJAX untuk mengambil data detail aktivitas
+            $.ajax({
+                url: `/daily-activities/${activityId}`,
+                method: 'GET',
+                success: function(response) {
+                    // Pengisian Data Teks
+                    $('#detailTask').text(response.task ? response.task.title : '-');
+                    $('#detailActivityName').text(response.activity);
+                    $('#detailDescription').text(response.description ? response.description : '-');
+                    
+                    // Format Tanggal
+                    let startDate = new Date(response.start_date).toLocaleDateString('id-ID', {day: '2-digit', month: '2-digit', year: 'numeric'});
+                    let endDate = response.end_date ? new Date(response.end_date).toLocaleDateString('id-ID', {day: '2-digit', month: '2-digit', year: 'numeric'}) : '-';
+                    
+                    $('#detailStartDate').text(startDate);
+                    $('#detailEndDate').text(endDate);
+                    
+                    // Format Badge Status
+                    let statusHtml = response.status === 'Selesai' 
+                        ? '<span class="badge bg-success">Selesai</span>' 
+                        : '<span class="badge bg-warning text-dark">On Progres</span>';
+                    $('#detailStatus').html(statusHtml);
 
-            if (status !== 'Selesai') {
-                container.append(`
-                    <form method="POST" action="/daily-activities/${activityId}/update-status">
-                        <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                        <input type="hidden" name="_method" value="PATCH">
-                        <input type="hidden" name="status" value="Selesai">
-                        <button type="submit" class="btn btn-success btn-sm">
-                            <i class="fas fa-check-circle me-1"></i> Tandai Selesai
-                        </button>
-                    </form>
-                `);
-            }
+                    // Format Tautan Dokumen
+                    if (response.doc) {
+                        let fileUrl = `{{ asset('storage') }}/${response.doc}`;
+                        $('#detailDoc').html(`<a href="${fileUrl}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-file-alt me-1"></i> Lihat Dokumen</a>`);
+                    } else {
+                        $('#detailDoc').html('<span class="text-muted">Tidak ada dokumen</span>');
+                    }
 
-            if (status !== 'On Progres Dilanjutkan Besok' && status !== 'Selesai') {
-                container.append(`
-                    <form method="POST" action="/daily-activities/${activityId}/update-status">
-                        <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                        <input type="hidden" name="_method" value="PATCH">
-                        <input type="hidden" name="status" value="On Progres Dilanjutkan Besok">
-                        <button type="submit" class="btn btn-warning btn-sm">
-                            <i class="fas fa-history me-1"></i> Lanjutkan Besok
-                        </button>
-                    </form>
-                `);
-            }
-
-            $('#statusAction').removeClass('d-none');
-        }
+                    // Eksekusi Pemanggilan Modal
+                    $('#detailActivityModal').modal('show');
+                },
+                error: function() {
+                    alert('Terjadi kesalahan saat mengambil detail data aktivitas.');
+                }
+            });
+        });
     });
 </script>
 @endsection

@@ -10,7 +10,7 @@ class ContentScheduleController extends Controller
 {
     public function index()
     {
-        $schedules = ContentSchedule::latest()->get();
+        $schedules = ContentSchedule::orderByRaw('upload_date IS NULL DESC, upload_date DESC')->get();
         return view('schedules.index', compact('schedules'));
     }
 
@@ -18,7 +18,7 @@ class ContentScheduleController extends Controller
     {
         // 1. Validasi Input
         $validated = $request->validate([
-            'content_form' => 'required|in:Reels,Youtube,Feed,Story',
+            'content_form' => 'required|in:Reels,Youtube,Feed,Story,Tiktok',
             'talents'      => 'nullable|array',
             'talents.*'    => 'string',
             'description'  => 'nullable|string',
@@ -59,7 +59,7 @@ class ContentScheduleController extends Controller
     {
         // 1. Validasi Input Update
         $validated = $request->validate([
-            'content_form' => 'in:Reels,Youtube,Feed,Story',
+            'content_form' => 'in:Reels,Youtube,Feed,Story,Tiktok',
             'upload_date'  => 'date',
             'talents'      => 'array',
             'description'  => 'nullable|string',

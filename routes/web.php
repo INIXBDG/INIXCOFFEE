@@ -59,6 +59,8 @@ use App\Http\Controllers\Crm\ImportPerusahaanAndContactController;
 use App\Http\Controllers\RKMController as ControllersRKMController;
 use App\Http\Controllers\colaboratorController;
 use App\Http\Controllers\dbklienController;
+use App\Http\Controllers\ForumSSOController;
+use App\Http\Controllers\InstructorDevelopmentController;
 use App\Http\Controllers\KPI\DatabaseKPIController as KPIDatabaseKPIController;
 use App\Http\Controllers\KPI\TargetKPIController;
 use App\Http\Controllers\WebPushController;
@@ -67,7 +69,8 @@ use App\Http\Controllers\Office\pickupDriverController;
 use App\Http\Controllers\KegiatanController;
 use App\Http\Controllers\KendaraanController;
 use App\Http\Controllers\registexamController;
-use App\Models\registexam;
+use App\Http\Controllers\KomplainPesertaController;
+use App\Http\Controllers\WebhookController;
 
 /*
 |--------------------------------------------------------------------------
@@ -764,7 +767,7 @@ Route::middleware('auth')->get('/notifications/unread-count', function () {
     ]);
 })->name('notifications.unread-count');
 
-Route::post('/save-push-subscription', [NotificationController::class, 'saveSubscription']);
+Route::post('/save-push-subscription', [WebhookController::class, 'saveSubscription']);
 
 Route::get('laporan/penjualan', [LaporanPenjualanController::class, 'indexJson'])->name('jsonLaporan');
 Route::get('/laporan/penjualan/win/excel', [LaporanPenjualanController::class, 'downloadWinExcel'])->name('laporan.win.excel');
@@ -778,7 +781,7 @@ Route::post('/tasks/update-state', [KanbanController::class, 'updateState'])->na
 Route::patch('/tasks/{id}', [KanbanController::class, 'update'])->name('tasks.update');
 Route::get('/tasks/{task}/activities', [KanbanController::class, 'getTaskActivities'])->name('tasks.activities');
 Route::delete('tasks/{task}', [KanbanController::class, 'destroy'])->name('tasks.destroy');
-Route::patch('/daily-activities/{daily_activity}/update-status', [DailyActivityController::class, 'updateStatus'])->name('daily-activities.updateStatus');
+Route::patch('/daily-activities/{dailyActivity}/quick-update', [DailyActivityController::class, 'quickUpdate'])->name('daily-activities.quick-update');
 
 // RegistryFeature
 Route::patch('/registry/{tugas}/start', [App\Http\Controllers\RegistryFeatureController::class, 'startTask'])
