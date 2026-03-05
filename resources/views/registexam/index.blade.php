@@ -14,7 +14,6 @@
             </div>
         </div>
         
-        <!-- Modal -->
     <div class="modal fade" id="detailPesertaModal" tabindex="-1" role="dialog" aria-labelledby="detailPesertaModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
@@ -38,6 +37,58 @@
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="generateAbsensiModal" tabindex="-1" aria-labelledby="generateAbsensiModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <form id="generateAbsensiForm" method="POST" action="{{ route('absensi.exam') }}">
+                @csrf
+                @method('POST')
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="generateAbsensiModalLabel">Generate Absensi</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="id" id="rkm_id">
+                        <div class="mb-3">
+                            <label for="tgl_exam" class="form-label">Tanggal Exam</label>
+                            <input type="date" class="form-control" name="tgl_exam" id="tgl_exam" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary" id="submitGenerateAbsensi">Generate PDF</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade" id="uploadAbsensiModal" tabindex="-1" aria-labelledby="uploadAbsensiModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <form id="uploadAbsensiForm" method="POST" action="{{ route('upload.absensi.exam') }}" enctype="multipart/form-data">
+                @csrf
+                @method('POST')
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="uploadAbsensiModalLabel">Upload Absensi</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="id" id="id_exam">
+                        <div class="mb-3">
+                            <label for="absensi_file" class="form-label">Pilih File Absensi</label>
+                            <input type="file" class="form-control" name="absensi" id="absensi_file" accept=".pdf" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary" id="uploadAbsensi">Upload</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -97,7 +148,6 @@
                                         </div>
                                     </div>
                                 </div>
-                            {{-- </div> --}}
                         </div>
                     </div>
                 </div>
@@ -240,7 +290,20 @@
                     "data": null,
                     "render": function(data, type, row) {
                         var actions = '<div class="dropdown">';
-                        actions += '<button class="btn click-primary list_peserta" type="button" id="list_peserta">List Peserta</button>';
+                        actions += '<button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton' + data.id + '" data-bs-toggle="dropdown" aria-expanded="false">Actions</button>';
+                        actions += '<ul class="dropdown-menu" aria-labelledby="dropdownMenuButton' + data.id + '">';
+                        
+                        actions += '<li><a class="dropdown-item list_peserta" href="#" data-id="' + data.id + '">List Peserta</a></li>';
+                        
+                        if(data.rkm.materi.vendor === "EC-Council") {
+                            if(!data.path_absensi) {
+                                actions += '<li><a class="dropdown-item generate_absensi" href="#" data-id="' + data.id + '">Generate Absensi</a></li>';
+                                actions += '<li><a class="dropdown-item upload_absensi" href="#" data-id="' + data.id + '">Upload Absensi</a></li>';
+                            } else {
+                                actions += '<li><a class="dropdown-item" href="{{ url('/storage') }}/' + data.path_absensi + '" target="_blank">Lihat Absensi</a></li>';                            }
+                        }
+
+                        actions += '</ul></div>';
                         return actions;
                     }
                 }
@@ -337,10 +400,33 @@
             }
         });
 
-        $('#registrasitablepeserta tbody').on('click', 'button.list_peserta', function() {
+        $('#registrasitablepeserta tbody').on('click', 'a.list_peserta', function() {
             var data = registrasiTablePeserta.row($(this).parents('tr')).data();
             var id_exam = data.id;
             registrasiTable.ajax.url('getRegistrasiexamByIdExam/' + id_exam).load();
+        });
+
+        $(document).on('click', '.generate_absensi', function() {
+            var data = registrasiTablePeserta.row($(this).parents('tr')).data();
+
+            if(data.rkm.materi.vendor === "EC-Council") {
+                $('#rkm_id').val(data.id_rkm);
+                $('#tgl_exam').val("");
+                $('#generateAbsensiModal').modal('show');
+            } else {
+                alert('Generate Absensi hanya untuk vendor EC-Council.');
+            }
+        });
+
+        $(document).on('click', '.upload_absensi', function() {
+            var data = registrasiTablePeserta.row($(this).parents('tr')).data();
+
+            if(data.rkm.materi.vendor === "EC-Council") {
+                $('#id_exam').val(data.id);
+                $('#uploadAbsensiModal').modal('show');
+            } else {
+                alert('Generate Absensi hanya untuk vendor EC-Council.');
+            }
         });
 
         function showAlert() {

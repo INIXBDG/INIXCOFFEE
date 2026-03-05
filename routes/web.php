@@ -66,7 +66,8 @@ use App\Http\Controllers\office\BiayaTransportasiController;
 use App\Http\Controllers\Office\pickupDriverController;
 use App\Http\Controllers\KegiatanController;
 use App\Http\Controllers\KendaraanController;
-
+use App\Http\Controllers\registexamController;
+use App\Models\registexam;
 
 /*
 |--------------------------------------------------------------------------
@@ -233,7 +234,9 @@ Route::get('getHistoriExam', [App\Http\Controllers\examController::class, 'getHi
 Route::get('getListExam', [App\Http\Controllers\listexamController::class, 'getListExam'])->name('getListExam');
 Route::get('getCC', [App\Http\Controllers\creditcardController::class, 'getCC'])->name('getCC');
 Route::get('getRegistrasiexam', [App\Http\Controllers\registexamController::class, 'getRegistrasiexam'])->name('getRegistrasiexam');
-Route::get('getRegistrasiexamByIdExam/{id}', [App\Http\Controllers\registexamController::class, 'getRegistrasiexamByIdExam'])->name('getRegistrasiexamByIdExam');
+Route::get('getRegistrasiexamByIdExam/{id}', [App\Http\Controllers\registexamController::class, 'getRegistrasiexamByIdExam'])->name('getRegistrasiexamByIdExam');   
+Route::post('/generate/exam/absensi', [registexamController::class, 'generateAbsensi'])->name('absensi.exam');
+Route::post('/upload/exam/absensi', [registexamController::class, 'uploadAbsensi'])->name('upload.absensi.exam');
 Route::get('getSouvenir', [App\Http\Controllers\SouvenirController::class, 'getSouvenir'])->name('getSouvenir');
 Route::get('getSouvenirPeserta', [App\Http\Controllers\SouvenirController::class, 'getSouvenirPeserta'])->name('getSouvenirPeserta');
 Route::get('getFeedbacksByMonth/{year}/{month}', [App\Http\Controllers\feedbackController::class, 'getFeedbacksByMonth'])->name('getFeedbacksByMonth');
@@ -1014,3 +1017,4 @@ Route::post('/internal/update-tickets', [TicketController::class, 'handleInterna
 Route::get('/internal/open-tickets', [TicketController::class, 'getOpenTickets']);
 
 Route::get('/colaborator/data', [colaboratorController::class, 'getData'])->name('colaborator.data');
+
