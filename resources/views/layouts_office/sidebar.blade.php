@@ -58,6 +58,15 @@
             </a>
         </li>
 
+        @if (Auth::user()->jabatan === 'Finance & Accounting')
+        <li class="menu-item {{ request()->routeIs('office.tagihanPerusahaan.index') ? 'active open' : '' }}">
+            <a href="{{ route('office.tagihanPerusahaan.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-dollar-circle"></i>
+                <div class="text-truncate" data-i18n="contact">Tagihan Perusahaan</div>
+            </a>
+        </li>
+        @endif
+
         @if (Auth::user()->jabatan === 'HRD')
             <li class="menu-item {{ request()->routeIs('office.indexKegiatan') ? 'active open' : '' }}">
                 <a href="{{ route('office.indexKegiatan') }}" class="menu-link">
