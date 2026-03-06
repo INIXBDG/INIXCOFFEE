@@ -58,7 +58,7 @@ class apiController extends Controller
             // =========================
             $groups = [
                 'M'   => ['M1','M2','M3','M4'],
-                'P'   => ['P1','P2','P3','P4','P5','P6','P7','P8'], // <-- tinggal tambah sini kalau ada P9
+                'P'   => ['P1','P2','P3','P4','P5','P6','P7','P8'], 
                 'F'   => ['F1','F2','F3','F4','F5'],
                 'I'   => ['I1','I2','I3','I4','I5','I6','I7','I8'],
                 'Ib'  => ['I1b','I2b','I3b','I4b','I5b','I6b','I7b','I8b'],
@@ -405,7 +405,6 @@ class apiController extends Controller
 
     public function getDBKlien()
 {
-    // ================= DATA 1
     $data1 = DB::table('dbkliens')
         ->leftJoin(
             'perusahaans',

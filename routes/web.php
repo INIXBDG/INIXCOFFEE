@@ -58,6 +58,7 @@ use App\Http\Controllers\office\DashboardSouvenirController;
 use App\Http\Controllers\Crm\ImportPerusahaanAndContactController;
 use App\Http\Controllers\RKMController as ControllersRKMController;
 use App\Http\Controllers\colaboratorController;
+use App\Http\Controllers\DaftarTugasController;
 use App\Http\Controllers\dbklienController;
 use App\Http\Controllers\ForumSSOController;
 use App\Http\Controllers\InstructorDevelopmentController;
@@ -405,7 +406,8 @@ Route::prefix('kpi-data/')->name('kpi.')->middleware(['auth'])->group(function (
     route::post('/update-data-target', [TargetKPIController::class, 'updateTarget'])->name('update');
     route::get('/edit-data-target', [TargetKPIController::class, 'editTarget'])->name('edit');
     route::get('get-karyawan-by-jabatan', [TargetKPIController::class, 'getKaryawanByJabatan'])->name('getKaryawanByJabatan');
-    route::get('get-dashboard', [TargetKPIController::class, 'getProgressDasboard'])->name('getProgressDasboard');
+    route::get('get-dashboard', [TargetKPIController::class, 'getProgressDashboard'])->name('getProgressDasboard');
+    route::get('get-statistika', [TargetKPIController::class, 'getChartStatistics']);
 
     //manual value
     route::post('/update-manual-value', [TargetKPIController::class, 'manualValue'])->name('manualValue');
@@ -941,6 +943,22 @@ Route::prefix('office')->name('office.')->middleware(['auth'])->group(function (
         Route::put('/update/perbaikan/{id}', [KendaraanController::class, 'updatePerbaikan'])->name('updatePerbaikanKendaraan');
         Route::delete('/delete/perbaikan/{id}', [KendaraanController::class, 'deletePerbaikan'])->name('deletePerbaikanKendaraan');
         Route::post('/update/status/perbaikan', [KendaraanController::class, 'updateStatusPerbaikan'])->name('updateStatusPerbaikanKendaraan');
+    });
+
+    //To Do list OB
+    Route::prefix('daftar-tugas')->name('DaftarTugas.')->group(function () {
+        Route::get('Index', [DaftarTugasController::class, 'index'])->name('index');
+        Route::post('store', [DaftarTugasController::class, 'store'])->name('store');
+        Route::get('get', [DaftarTugasController::class, 'get'])->name('get');
+        Route::post('update-status', [DaftarTugasController::class, 'updateStatus'])->name('updateStatus');
+        Route::post('upload-bukti', [DaftarTugasController::class, 'uploadBukti'])->name('uploadBukti');
+        Route::delete('hapus/{id}', [DaftarTugasController::class, 'delete'])->name('delete');
+        Route::get('update-tugas-harian', [DaftarTugasController::class, 'UpdateTugasHarian'])->name('UpdateTugasHarian');
+        Route::get('update-tugas-mingguan', [DaftarTugasController::class, 'UpdateTugasMingguan'])->name('UpdateTugasMingguan');
+        Route::get('update-tugas-bulanan', [DaftarTugasController::class, 'UpdateTugasBulanan'])->name('UpdateTugasBulanan');
+        Route::get('update-tugas-quartal', [DaftarTugasController::class, 'UpdateTugasQuartal'])->name('UpdateTugasQuartal');
+        Route::get('update-tugas-semester', [DaftarTugasController::class, 'UpdateTugasSemester'])->name('UpdateTugasSemester');
+        Route::get('update-tugas-tahunan', [DaftarTugasController::class, 'UpdateTugasTahunan'])->name('UpdateTugasTahunan');
     });
 });
 
