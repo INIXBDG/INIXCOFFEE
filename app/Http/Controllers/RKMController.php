@@ -1072,7 +1072,8 @@ class RKMController extends Controller
 
     public function uploadPage()
     {
-        return view('rkm.uploadPage');
+        $materi = materi::where('vendor', 'EC-Council')->get();
+        return view('rkm.uploadPage', compact('materi'));
     }
 
     public function dataPage(string $id)

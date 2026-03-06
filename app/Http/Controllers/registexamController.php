@@ -14,6 +14,7 @@ use App\Models\RKM;
 use App\Models\eksam;
 use App\Models\hasilexam;
 use App\Models\karyawan;
+use App\Models\Materi;
 use App\Models\User;
 use App\Notifications\BayarCCNotification;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -536,45 +537,35 @@ class registexamController extends Controller
 
     public function generateAbsensi(Request $request)
     {
-        $rkm = RKM::with(['materi'])->findOrFail($request->id);
-
-        $pesertas = $rkm->exam()
-            ->with('registexam.peserta.perusahaan')
-            ->get();
-        // dd($pesertas);
-
-        $tgl_exam = $request->tgl_exam;
-
-        $pdf = Pdf::loadView('registexam.absensi', compact('pesertas', 'rkm', 'tgl_exam'))
-            ->setPaper('a4', 'landscape');
-
-        return $pdf->download('absensi-' . $rkm->materi->nama_materi . '.pdf');
-    }
-
-    public function uploadAbsensi(Request $request)
-    {
-        $this->validate($request, [
-            'id' => 'required',
-            'absensi' => 'required|mimes:pdf|max:2048',
+        $validated = $request->validate([
+            'materi_id'       => 'required',
+            'tgl_exam'        => 'required|date',
+            'peserta'         => 'required|array|min:1',
         ]);
 
-        $exam = eksam::with('materi')->findOrFail($request->id);
-        
-        $namaMateri = Str::slug($exam->materi->nama_materi ?? 'exam');
+        $materi = Materi::findOrFail($validated['materi_id']);
+        $tgl_exam = $validated['tgl_exam'];
 
-        $nama_file = "absensi-{$namaMateri}-" . now()->format('YmdHis') . ".pdf";
+        $pesertas = collect($validated['peserta'])->map(function ($item, $index) use ($materi, $tgl_exam) {
+            return [
+                'no'           => $index + 1,
+                'nama_lengkap' => $item['nama'] ?? 'N/A',
+                'email'        => $item['email'] ?? 'N/A',
+                'materi_nama'  => $materi->nama_materi,
+                'tgl_exam'     => $tgl_exam,
+            ];
+        });
 
-        $path = $request->file('absensi')->storeAs(
-            'absensi/exam',
-            $nama_file,
-            'public'
-        );
-        
-        $exam->update([
-            'path_absensi' => $path,
-            ]);
+        $pdf = Pdf::loadView('registexam.absensi', [
+            'pesertas' => $pesertas,
+            'materi'   => $materi,
+            'tgl_exam' => $tgl_exam
+        ])
+            ->setPaper('a4', 'portrait')
+            ->setWarnings(false);
 
-        return redirect()->route('registexam.index')
-            ->with('success', 'Absensi berhasil diupload!');
+        $filename = 'sertifikat-exam-' . Str::slug($materi->nama_materi) . '-' . now()->format('Ymd-His') . '.pdf';
+
+        return $pdf->download($filename);
     }
 }

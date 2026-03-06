@@ -122,9 +122,10 @@
 
         <div class="header">
             <p>Daftar Hadir Peserta Exam</p>
-            <p>Materi : {{ $exam->materi->nama_materi ?? 'N/A' }}</p>
+            <p>Materi : {{ $materi->nama_materi ?? 'N/A' }}</p>
             <p>Periode :
-                {{ $tgl_exam ? \Carbon\Carbon::parse($tgl_exam)->locale('id')->translatedFormat('d F Y') : 'N/A' }}</p>
+                {{ $tgl_exam ? \Carbon\Carbon::parse($tgl_exam)->locale('id')->translatedFormat('d F Y') : 'N/A' }}
+            </p>
         </div>
 
         <table>
@@ -132,25 +133,27 @@
                 <tr>
                     <th style="width: 6%">No</th>
                     <th style="width: 38%">Nama</th>
-                    <th style="width: 35%">Perusahaan</th>
-                    <th style="width: 21%">Tanda
-                        Tangan<br>{{ $tgl_exam ? \Carbon\Carbon::parse($tgl_exam)->format('M d, y') : 'N/A' }}</th>
+                    <th style="width: 35%">Email</th>
+                    <th style="width: 21%">
+                        Tanda Tangan<br>
+                        {{ $tgl_exam ? \Carbon\Carbon::parse($tgl_exam)->format('M d, y') : 'N/A' }}
+                    </th>
                 </tr>
             </thead>
             <tbody>
-                @foreach ($pesertas as $exam)
-                    @foreach ($exam->registexam as $reg)
-                        <tr>
-                            <td>{{ $loop->iteration }}</td>
-                            <td>{{ $reg->peserta?->nama ?? 'N/A' }}</td>
-                            <td>{{ $reg->peserta?->perusahaan?->nama_perusahaan ?? 'N/A' }}</td>
-                            <td class="signature"></td>
-                        </tr>
-                    @endforeach
+                @foreach ($pesertas as $peserta)
+                    <tr>
+                        <td>{{ $peserta['no'] }}</td>
+                        <td>{{ $peserta['nama_lengkap'] }}</td>
+                        <td>{{ $peserta['email'] }}</td>
+                        <td class="signature"></td>
+                    </tr>
                 @endforeach
+
                 <tr>
-                    <td colspan="3" style="text-align: center; padding-top: 25px; padding-bottom: 25px;">Proctor :
-                        Anggie Anggrainie</td>
+                    <td colspan="3" style="text-align: center; padding-top: 25px; padding-bottom: 25px;">
+                        Proctor : Anggie Anggrainie
+                    </td>
                     <td style="padding-top: 25px; padding-bottom: 25px;"></td>
                 </tr>
             </tbody>
