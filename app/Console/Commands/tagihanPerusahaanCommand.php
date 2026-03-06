@@ -15,7 +15,7 @@ class tagihanPerusahaanCommand extends Command
 
     public function handle()
     {
-        $now = Carbon::now();
+        $now = Carbon::now()->year(2027);
 
         $tagihans = tagihanPerusahaan::all();
 
@@ -27,7 +27,7 @@ class tagihanPerusahaanCommand extends Command
             if ($tagihan->tipe === 'bulanan')
             {
     
-                if ($tanggalMulai->month < $now->month)
+                if ($tanggalMulai->lte($now))
                 {
                     trackingTagihanPerusahaan::create([
                         'id_tagihan_perusahaan' => $tagihan->id,
