@@ -142,10 +142,19 @@
                 <div class="text-truncate" data-i18n="contact">Dashboard Souvenir</div>
             </a>
         </li>
+        @if (Auth::user()->jabatan === 'HRD' || Auth::user()->jabatan === 'Office Boy')
+            <li class="menu-header small text-uppercase">
+                <span class="menu-header-text">Office Boy</span>
+            </li>
 
-        <li class="menu-header small text-uppercase">
-            <span class="menu-header-text">DRIVER</span>
-        </li>
+            <li class="menu-item {{ request()->routeIs('office.DaftarTugas.index') ? 'active open' : '' }}">
+                <a href="{{ route('office.DaftarTugas.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-group"></i>
+                    <div class="text-truncate" data-i18n="contact">Daftar Tugas</div>
+                </a>
+            </li>
+        @endif
+
 
         <li class="menu-item {{ request()->routeIs('office.pickupDriver.index') ? 'active open' : '' }}">
             <a href="{{ route('office.pickupDriver.index') }}" class="menu-link">
