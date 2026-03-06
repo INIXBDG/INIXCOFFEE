@@ -71,6 +71,7 @@ use App\Http\Controllers\KendaraanController;
 use App\Http\Controllers\registexamController;
 use App\Http\Controllers\KomplainPesertaController;
 use App\Http\Controllers\WebhookController;
+use App\Http\Controllers\office\TagihanPerusahaanController;
 
 /*
 |--------------------------------------------------------------------------
@@ -814,6 +815,12 @@ Route::prefix('office')->group(function () {
     Route::get('/dashboard', [OfficeController::class, 'dashboard'])->name('office.dashboard');
     Route::get('/data-cuti', [OfficeController::class, 'dataCuti']);
     Route::get('/data-mengajar', [OfficeController::class, 'dataMengajar']);
+    Route::get('/data-tagihan/{id}', [TagihanPerusahaanController::class, 'dataTagihan']);
+    Route::post('/store-tagihan', [TagihanPerusahaanController::class, 'storeTagihanPerusahaan'])->name('storeTagihanPerusahaan');
+    Route::post('/update-tagihan/{id}', [TagihanPerusahaanController::class, 'updateTagihanPerusahaan'])->name('updateTagihanPerusahaan');
+    Route::get('/detail-tagihan/{id}', [TagihanPerusahaanController::class, 'detailTagihanPerusahaan'])->name('detailTagihanPerusahaan');
+    Route::post('/delete-tagihan/{id}', [TagihanPerusahaanController::class, 'hapusTagihanPerusahaan'])->name('hapusTagihanPerusahaan');
+    Route::get('/tagihan-perusahaan', [TagihanPerusahaanController::class, 'index'])->name('office.tagihanPerusahaan.index');
 });
 
 Route::prefix('dashboard-sla/{team}')->group(function () {
