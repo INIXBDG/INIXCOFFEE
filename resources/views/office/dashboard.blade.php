@@ -54,6 +54,307 @@
             @endforeach
         </div>
 
+        @if (Auth::user()->jabatan === 'Finance & Accounting')
+        <div class="row g-4 mb-5">
+            <div class="col-12">
+                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden">
+                    <div class="card-header bg-white border-bottom-0 pb-0 d-flex justify-content-between">
+                        <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
+                            <i class="bx bx-task text-primary me-2" style="font-size: 1.5rem;"></i>
+                            Tagihan Perusahaan 
+                        </h5>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahTagihan">
+                            Tambah Tagihan
+                        </button>
+                    </div>
+                    @if (session('success_tagihan'))
+                        <div class="alert alert-success">{{ session('success_tagihan') }}</div>
+                    @endif
+                    <div class="card-body p-4 mb-4 h-100 " style="height: 320px;">
+
+                        <!-- Modal Tambah -->
+                        <div class="modal fade" id="modalTambahTagihan" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+
+                                    <div class="modal-header">
+                                        <h1 class="modal-title fs-5">Tambah Tagihan Perusahaan</h1>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+
+                                    <div class="modal-body">
+                                        <form method="post" action="{{ route('storeTagihanPerusahaan') }}"
+                                            enctype="multipart/form-data">
+                                            @csrf
+
+                                            <div class="mb-3">
+                                                <label class="form-label col-form-label">Kegiatan <span class="text-danger">*</span></label>
+                                                <input type="text" name="kegiatan" class="form-control">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label col-form-label">Tipe <span class="text-danger">*</span></label>
+                                                <select name="tipe" id="tipe" class="form-select">
+                                                    <option value="tahunan">
+                                                        Tahunan
+                                                    </option>
+                                                    <option value="bulanan">
+                                                        Bulanan
+                                                    </option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label col-form-label">Perkiraan Tanggal <span class="text-danger">*</span></label>
+                                                <div class="row">
+                                                    <div class="col-md-5">
+                                                        <label for="tanggal_perkiraan_mulai">Mulai</label>
+                                                        <input type="date" name="tanggal_perkiraan_mulai" class="form-control col-md-6 mb-2">
+                                                    </div>
+                                                    <div class="col-md-5">
+                                                        <label for="tanggal_perkiraan_selesai">Selesai</label>
+                                                        <input type="date" name="tanggal_perkiraan_selesai" class="form-control col-md-6 mb-2">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label col-form-label">Nominal <span class="text-danger">*</span></label>
+                                                <div class="input-group mb-3">
+                                                    <span class="input-group-text">Rp.</span>
+                                                    <input type="text" name="nominal" id="nominal" class="form-control format-rupiah">
+                                                </div>
+                                            </div>
+
+                                            <div class="mb-3">  
+                                                <label for="keterangan" class="col-md-5 col-form-label">Keterangan (Optional)</label>  
+                                                <textarea class="form-control" name="keterangan"></textarea>  
+                                            </div>
+
+                                            <div class="modal-footer">
+                                                <button type="submit" class="btn btn-primary">Simpan</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        
+                        <!-- Modal Edit -->
+                        <div class="modal fade" id="modalEditTagihan" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+
+                                    <div class="modal-header">
+                                        <h1 class="modal-title fs-5">Edit Tagihan Perusahaan</h1>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+
+                                    <div class="modal-body">
+                                        <form method="post"
+                                            id="formEditTagihan"
+                                            enctype="multipart/form-data">
+                                            @csrf
+
+                                            <div class="mb-3 row">
+                                                {{-- Status --}}
+                                                <div class="col-md-4">
+                                                    <label class="form-label text-muted small text-uppercase">
+                                                        Status
+                                                    </label>
+
+                                                    <select name="status" id="status" class="form-select">
+                                                        <option value="pending">
+                                                            Pending
+                                                        </option>
+                                                        <option value="proses">
+                                                            Proses
+                                                        </option>
+                                                        <option value="selesai">
+                                                            Selesai
+                                                        </option>
+                                                        <option value="telat">
+                                                            Telat
+                                                        </option>
+                                                    </select>
+                                                </div>
+
+                                                <!-- Tanggal Perkiraan -->
+                                                <div class="col-md-4">
+                                                    <label class="form-label text-muted small text-uppercase">
+                                                        Tracking
+                                                    </label>
+
+                                                    <select name="tracking" id="tracking" class="form-select">
+                                                        <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager">Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager</option>
+                                                        <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi">Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi</option>
+                                                        <option value="Finance Menunggu Approve Direksi">Finance Menunggu Approve Direksi</option>
+                                                        <option value="Diajukan dan Sedang Ditinjau oleh Finance">Diajukan dan Sedang Ditinjau oleh Finance</option>
+                                                        <option value="Membuat Permintaan Ke Direktur Utama">Membuat Permintaan Ke Direktur Utama</option>
+                                                        <option value="Pengajuan sedang dalam proses Pencairan">Pengajuan sedang dalam proses Pencairan</option>
+                                                        <option value="Pencairan Sudah Selesai">Pencairan Sudah Selesai</option>
+                                                        <option value="Selesai">Selesai</option>
+                                                    </select>
+                                                </div>
+
+                                                <!-- Tanggal Selesai -->
+                                                <div class="col-md-4">
+                                                    <label class="form-label text-muted small text-uppercase">
+                                                        Tanggal Selesai
+                                                    </label>
+                                                    <div>
+                                                        <input type="date" name="tanggal_selesai" class="form-control col-md-6">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="modal-footer mt-4">
+                                                <button type="submit" class="btn btn-primary">Simpan</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Table Tagihan --}}
+                        <div class="table-responsive mb-4" style="max-height: 400px; overflow-y: auto;">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light sticky-top">
+                                    <tr>
+                                        <th class="border-0 ps-4"></th>
+                                        <th class="border-0" style="min-width: 160px;">Tanggal Perkiraan</th>
+                                        <th class="border-0" style="min-width: 180px;">Kegiatan</th>
+                                        <th class="border-0" style="min-width: 150px;">Nominal</th>
+                                        <th class="border-0" style="min-width: 120px;">Tracking</th>
+                                        <th class="border-0 text-center pe-4" style="min-width: 120px;">Status</th>
+                                        <th class="border-0 text-center pe-4" style="min-width: 120px;">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($trackingTagihanPerusahaans as $tagihan)
+                                        <tr class="border-bottom ">
+                                            @if ($tagihan->status === 'selesai')
+                                                <td class="text-center ps-4"><input class="custom-check" type="checkbox" checked disabled></td>
+                                            @else
+                                                <td class="text-center ps-4"><input class="check-blue" data-id="{{ $tagihan->id }}" type="checkbox" id="edit-tagihan"></td>
+                                            @endif
+                                            <td>
+                                                @if ($tagihan->tagihanPerusahaan->tanggal_perkiraan_mulai === $tagihan->tagihanPerusahaan->tanggal_perkiraan_selesai || $tagihan->tagihanPerusahaan->tanggal_perkiraan_selesai === null )
+                                                    <div class="small">
+                                                        {{ \Carbon\Carbon::parse($tagihan->tagihanPerusahaan->tanggal_perkiraan_mulai)->format('d F') }}
+                                                    </div>
+                                                @else
+                                                    <div class="small">
+                                                        {{ \Carbon\Carbon::parse($tagihan->tagihanPerusahaan->tanggal_perkiraan_mulai)->format('d M') }} - {{ \Carbon\Carbon::parse($tagihan->tagihanPerusahaan->tanggal_perkiraan_selesai)->format('d M') }}
+                                                    </div>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="text-truncate" style="max-width: 150px;">
+                                                        {{ $tagihan->tagihanPerusahaan->kegiatan }}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="">
+                                                    {{ $tagihan->nominal ? 'Rp. ' . number_format($tagihan->nominal, 0, ',', '.') : '-' }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="text-truncate" style="max-width: 300px;">
+                                                    {{ $tagihan->tracking ?? '-' }} 
+                                                </div>
+                                            </td>
+                                            <td class="text-center pe-4">
+                                                @php
+                                                    $statusConfig = [
+                                                        'pending' => [
+                                                            'color' => 'warning',
+                                                            'icon' => 'bx-time-five',
+                                                        ],
+                                                        'proses' => [
+                                                            'color' => 'primary',
+                                                            'icon' => 'bx-loader-circle',
+                                                        ],
+                                                        'selesai' => [
+                                                            'color' => 'success',
+                                                            'icon' => 'bx-check-circle',
+                                                        ],
+                                                        'telat' => [
+                                                            'color' => 'danger',
+                                                            'icon' => 'bx-info-circle',
+                                                        ],
+                                                    ];
+                                                    $config = $statusConfig[$tagihan->status] ?? [
+                                                        'color' => 'secondary',
+                                                        'icon' => 'bx-info-circle',
+                                                    ];
+                                                @endphp
+                                                <span
+                                                    class="badge bg-{{ $config['color'] }}-subtle text-{{ $config['color'] }} px-3 py-2 text-capitalize">
+                                                    <i class="bx {{ $config['icon'] }} me-1"></i>
+                                                    {{ $tagihan->status }}
+                                                </span>
+                                            </td>
+                                            <td class="text-center pe-4 position-relative">
+                                                <div class="dropdown">
+                                                    <button class="btn btn-sm btn-outline-primary dropdown-toggle"
+                                                            type="button"
+                                                            data-bs-toggle="dropdown"
+                                                            data-bs-boundary="viewport"
+                                                            aria-expanded="false">
+                                                        Aksi
+                                                    </button>
+
+                                                    <ul class="dropdown-menu dropdown-menu-end">
+                                                        <li>
+                                                            <button class="dropdown-item" data-id="{{ $tagihan->id }}" data-bs-toggle="modal" id="edit-tagihan" data-bs-target="#modalEditTagihan">
+                                                                Edit
+                                                            </button>
+                                                        </li>
+
+                                                        <li>
+                                                            <a class="dropdown-item"
+                                                            href="{{ route('detailTagihanPerusahaan', $tagihan->id) }}">
+                                                                Detail
+                                                            </a>
+                                                        </li>
+
+                                                        <li>
+                                                            <form action="{{ route('hapusTagihanPerusahaan', $tagihan->id) }}" method="POST"
+                                                                onsubmit="return confirm('Yakin ingin menghapus?')">
+                                                                @csrf
+                                                                <button type="submit" class="dropdown-item text-danger">
+                                                                    Hapus
+                                                                </button>
+                                                            </form>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="8" class="text-center py-5">
+                                                <div class="d-flex flex-column align-items-center">
+                                                    <i class="bx bx-message-square-x text-muted"
+                                                        style="font-size: 3rem;"></i>
+                                                    <p class="text-muted mt-3 mb-0">Tidak ada tagihan untuk
+                                                        ditampilkan
+                                                    </p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+
         <!-- Chart & Tidak Hadir -->
         <div class="row g-4">
             <!-- Chart Kehadiran -->
@@ -1138,6 +1439,13 @@
             border-radius: 5px;
             position: relative;
         }
+        .check-blue {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #5B73E8;
+            border-radius: 5px;
+            position: relative;
+        }
 
         .custom-check:checked {
             background-color: #71DD37;
@@ -1682,6 +1990,84 @@
                 window.open(url, '_blank');
             });
             // End Script Chart Feedback
+
+            // Format Rupiah
+            function formatRupiah(angka) {
+                if (!angka) return '';
+                let number = angka.toString().replace(/\D/g, '');
+                return number.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            }
+
+            function unformatRupiah(angka) {
+                return angka.toString().replace(/\D/g, '');
+            }
+
+            // Format saat ngetik
+            $(document).on('keyup', '.format-rupiah', function() {
+                this.value = formatRupiah(this.value);
+            });
+
+            // Hitung total (hidden)
+            function hitungTotal(jumlahEl, hargaEl, totalHidden) {
+                let jml = parseInt(unformatRupiah(jumlahEl.val())) || 0;
+                let hrg = parseInt(unformatRupiah(hargaEl.val())) || 0;
+                totalHidden.val(jml * hrg);
+            }
+
+            // Sebelum submit → bersihkan format titik
+            function bersihkanFormat(form) {
+                form.find('.format-rupiah').each(function() {
+                    this.value = unformatRupiah(this.value);
+                });
+            }
+
+            $('#modalTambahTagihan form').on('submit', function() {
+                bersihkanFormat($(this));
+            });
+
+            // reset semua form yang tertutup
+            $(document).on('hidden.bs.modal', '.modal', function () {
+                const form = $(this).find('form');
+
+                if (form.length) {
+                    form[0].reset();
+                    form.removeClass('was-validated');
+
+                    form.find('.is-invalid').removeClass('is-invalid');
+                    form.find('.is-valid').removeClass('is-valid');
+                    form.find('.invalid-feedback').remove();
+                }
+            });
+
+            // form edit tagihan
+            $(document).on('click', '#edit-tagihan', function () {
+                let id = $(this).data('id');
+
+                // jika yang diklik checkbox → buka modal manual
+                if ($(this).is(':checkbox')) {
+                    this.checked = false;
+                    $('#modalEditTagihan').modal('show');
+                }
+
+                $.ajax({
+                    url: '/office/data-tagihan/' + id,
+                    type: 'GET',
+                    success: function (res) {
+                        let nominal = formatRupiah(parseInt(res.data.nominal))
+                        // set action form
+                        $('#formEditTagihan').attr('action', '/office/update-tagihan/' + id);
+
+                        // set value input
+                        $('#modalEditTagihan select[name="status"]').val(res.data.status);
+                        $('#modalEditTagihan select[name="tracking"]').val(res.data.tracking);
+                        $('#modalEditTagihan input[name="tanggal_selesai"]').val(res.data.tanggal_selesai);
+
+                        // format rupiah jika ada function
+                        $('.format-rupiah').trigger('keyup');
+                    }
+                });
+            });
+
         });
     </script>
 @endsection

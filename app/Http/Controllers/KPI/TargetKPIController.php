@@ -596,7 +596,7 @@ class TargetKPIController extends Controller
             'output_3' => $divisionKpiData,
         ]);
     }
-
+    
     public function getDataTarget(Request $request)
     {
         $user = auth()->user();
@@ -3134,12 +3134,7 @@ class TargetKPIController extends Controller
                         $data = $this->calculatePelatihanKompetensiEksternalDetail($itemDetail, $personId);
                     }
 
-                    //Education Manager
-                    elseif ($itemDetail->asistant_route === 'pengembangan kurikulum pelatihan') {
-                        $data = $this->calculatePengembanganKurikulumPelatihanDetail($itemDetail);
-                    } elseif ($itemDetail->asistant_route === 'peningkatan knowledge sharing') {
-                        $data = $this->calculatePeningkatanKnowledgeSharingDetail($itemDetail);
-                    }
+                    $dataCalculation = $this->getCalculationByRoute($itemDetail, $personId);
 
                     $dataOutput = [
                         'pembuat' => $itemDetail->karyawan->nama_lengkap,
@@ -3149,8 +3144,8 @@ class TargetKPIController extends Controller
                         'jabatan_kpi' => $detail->jabatan,
                         'divisi_kpi' => $detail->divisi,
                         'karyawan' => $itemDetail->detailTargetKPI
-                            ->flatMap(function ($detail) {
-                                return $detail->detailPersonKPI->map(function ($person) {
+                            ->flatMap(function ($detailItem) {
+                                return $detailItem->detailPersonKPI->map(function ($person) {
                                     return [
                                         'nama_lengkap' => $person->karyawan->nama_lengkap ?? null,
                                         'jabatan' => $person->karyawan->jabatan ?? null,
@@ -3163,18 +3158,385 @@ class TargetKPIController extends Controller
                         'tipe_target' => $detail->tipe_target,
                         'nilai_target' => $detail->nilai_target,
                         'tenggat_waktu' => $tenggat_waktu,
-                        'data_detail' => $data,
+                        'data_detail' => $dataCalculation,
                     ];
 
-                    return [
-                        'data' => $dataOutput,
-                    ];
+                    return ['data' => $dataOutput];
                 })
                 ->filter()
                 ->values(),
         ];
 
         return response()->json($data);
+    }
+
+    private function getCalculationByRoute($itemDetail, $personId)
+    {
+        $route = $itemDetail->asistant_route;
+
+        // --- Target Detail Office - GM ---
+        if ($route === 'Kepuasan Pelanggan') {
+            return $this->calculateProgressKepuasanPelangganDetail($itemDetail);
+        } elseif ($route === 'Pemasukan Kotor') {
+            return $this->calculatePemasukanKotorDetail($itemDetail);
+        } elseif ($route === 'pemasukan bersih') {
+            return $this->calculatePemasukanBersihDetail($itemDetail);
+        } elseif ($route === 'rasio biaya operasional terhadap revenue') {
+            return $this->calculateRasioBiayaOperasionalTerhadapRevenueDetail($itemDetail);
+        } elseif ($route === 'performa KPI departemen') {
+            return $this->calculatePerformaKPIDepartemenDetail($itemDetail, $personId);
+        }
+
+        // --- CS ---
+        elseif ($route === 'peserta puas dengan pelayanan dan fasilitas training') {
+            return $this->calculatePesertaPuasDenganPelayananDanFasilitasTrainingDetail($itemDetail);
+        } elseif ($route === 'dorong inovasi pelayanan') {
+            return $this->calculateDorongInovasiPelayananDetail($itemDetail);
+        } elseif ($route === 'penanganan komplain perseta') {
+            return $this->calculatePenangananKomplainPersetaDetail($itemDetail);
+        }
+
+        // --- Finance ---
+        elseif ($route === 'outstanding') {
+            return $this->calculateOutstandingDetail($itemDetail);
+        } elseif ($route === 'inisiatif efisiensi keuangan') {
+            return $this->calculateInisiatifEfisiensiKeuanganDetail($itemDetail);
+        } elseif ($route === 'mengurangi manual work dan error') {
+            return $this->calculateMengurangiManualWorkDanErrorDetail($itemDetail);
+        } elseif ($route === 'laporan analisis keuangan') {
+            return $this->calculateLaporanAnalisisKeuanganDetail($itemDetail);
+        }
+
+        // --- HRD ---
+        elseif ($route === 'pelaksanaan kegiatan karyawan') {
+            return $this->calculatePelaksanaanKegiatanKaryawanDetail($itemDetail);
+        } elseif ($route === 'pengeluaran biaya karyawan') {
+            return $this->calculatePengeluaranBiayaKaryawanDetail($itemDetail);
+        }
+
+        // --- Driver ---
+        elseif ($route === 'perbaikan kendaraan') {
+            return $this->calculatePerbaikanKendaraanDetail($itemDetail, $personId);
+        } elseif ($route === 'kontrol pengeluaran transportasi') {
+            return $this->calculateKontrolPengeluaranTransportasiDetail($itemDetail, $personId);
+        } elseif ($route === 'report kondisi kendaraan') {
+            return $this->calculateReportKondisiKendaraanDetail($itemDetail, $personId);
+        }
+
+        // --- OB ---
+        elseif ($route === 'feedback kebersihan dan kenyamanan') {
+            return $this->calculateFeedbackKebersihanDanKenyamananDetail($itemDetail);
+        }
+
+        // --- ITSM ---
+        elseif ($route === 'kepuasan client ITSM') {
+            return $this->calculateProgressKepuasanClientITSMDetail($itemDetail);
+        } elseif ($route === 'availability sistem internal kritis') {
+            return $this->calculateAvailabilitySistemInternalKritisDetail($itemDetail);
+        } elseif ($route === 'meningkatkan kepuasan dan loyalitas peserta/client') {
+            return $this->calculateMeningkatkanKepuasanDanLoyalitasPesertaDetail($itemDetail);
+        }
+
+        // --- Programmer ---
+        elseif ($route === 'ketepatan waktu penyelesaian fitur') {
+            return $this->calculateProgressKetepatanWaktuPenyelesaianFiturDetail($itemDetail, $personId);
+        } elseif ($route === 'mengukur kualitas aplikasi agar minim bug') {
+            return $this->calculateMengukurKualitasAplikasiAgarMinimBugDetail($itemDetail, $personId);
+        }
+
+        // --- Tim Digital ---
+        elseif ($route === 'konsistensi campaign digital') {
+            return $this->calculateKonsistensiCampaignDigitalDetail($itemDetail);
+        } elseif ($route === 'efektifitas diital marketing') {
+            return $this->calculateEfektifitasDiitalMarketingDetail($itemDetail, $personId);
+        }
+
+        // --- TS ---
+        elseif ($route === 'keberhasilan support memenuhi sla') {
+            return $this->calculateTingkatKeberhasilanSupportMemenuhiSLADetail($itemDetail, $personId);
+        } elseif ($route === 'kualitas layanan exam') {
+            return $this->calculateKualitasLayananExamDetail($itemDetail, $personId);
+        }
+
+        // --- Education (Instruktur) ---
+        elseif ($route === 'kepuasan peserta pelatihan') {
+            return $this->calculateKepuasanPesertaPelatihanDetail($itemDetail, $personId);
+        } elseif ($route === 'upseling lanjutan materi') {
+            return $this->calculateUpselingLanjutanMateriDetail($itemDetail, $personId);
+        } elseif ($route === 'sertifikasi kompetensi internal') {
+            return $this->calculateSertifikasiKompetensiInternalDetail($itemDetail, $personId);
+        } elseif ($route === 'pelatihan kompetensi eksternal') {
+            return $this->calculatePelatihanKompetensiEksternalDetail($itemDetail, $personId);
+        }
+
+        // --- Education Manager ---
+        elseif ($route === 'pengembangan kurikulum pelatihan') {
+            return $this->calculatePengembanganKurikulumPelatihanDetail($itemDetail);
+        } elseif ($route === 'peningkatan knowledge sharing') {
+            return $this->calculatePeningkatanKnowledgeSharingDetail($itemDetail);
+        }
+
+        return null;
+    }
+
+    private function calculateTenggatWaktu($detail)
+    {
+        $tenggat_waktu = null;
+        switch (strtolower($detail->jangka_target)) {
+            case 'tahunan':
+                $year = (int) $detail->detail_jangka;
+                $tenggat_waktu = date('Y-m-d', strtotime("last day of December $year"));
+                break;
+            case 'bulanan':
+                [$bulan, $tahun] = explode('-', str_replace(' ', '', $detail->detail_jangka));
+                $tenggat_waktu = date('Y-m-d', strtotime("last day of $tahun-$bulan"));
+                break;
+            case 'kuartalan':
+                if (preg_match('/Q(\d)\s*-\s*(\d{4})/i', $detail->detail_jangka, $m)) {
+                    $bulan = $m[1] * 3;
+                    $tenggat_waktu = date('Y-m-t', strtotime("{$m[2]}-$bulan-01"));
+                }
+                break;
+            case 'mingguan':
+                $tenggat_waktu = $detail->detail_jangka;
+                break;
+        }
+        return $tenggat_waktu;
+    }
+
+    public function getChartStatistics(Request $request)
+    {
+        $user = auth()->user();
+        $userJabatan = $user ? trim($user->jabatan) : null;
+        
+        $allowedJabatans = null;
+        
+        if ($userJabatan) {
+            $jLower = strtolower($userJabatan);
+
+            if (in_array($jLower, ['gm', 'hrd', 'direktur utama', 'direktur'])) {
+                $allowedJabatans = null; 
+            } elseif ($jLower === 'koordinator itsm') {
+                $allowedJabatans = ['Programmer', 'Tim Digital', 'Technical Support', 'Koordinator ITSM'];
+            } elseif ($jLower === 'education manager') {
+                $allowedJabatans = ['Instruktur', 'Education Manager'];
+            } elseif ($jLower === 'spv sales') {
+                $allowedJabatans = ['SPV Sales', 'Sales'];
+            } else {
+                $allowedJabatans = [$userJabatan];
+            }
+        }
+
+        $requestJabatan = $request->jabatan ? trim($request->jabatan) : null;
+        $finalJabatanFilter = null;
+
+        if ($allowedJabatans === null) {
+            $finalJabatanFilter = $requestJabatan ? [$requestJabatan] : null;
+        } else {
+            if ($requestJabatan) {
+                $isPermitted = false;
+                foreach ($allowedJabatans as $allowed) {
+                    if (strtolower($allowed) === strtolower($requestJabatan)) {
+                        $isPermitted = true;
+                        break;
+                    }
+                }
+                
+                if ($isPermitted) {
+                    $finalJabatanFilter = [$requestJabatan];
+                } else {
+                    $finalJabatanFilter = $allowedJabatans;
+                }
+            } else {
+                $finalJabatanFilter = $allowedJabatans;
+            }
+        }
+
+        $tahunFilter = $request->tahun ?? date('Y');
+        $idTargetFilter = $request->id_target ?? null;
+
+        $query = targetKPI::with([
+            'karyawan',
+            'detailTargetKPI.detailPersonKPI.karyawan'
+        ]);
+
+        if ($idTargetFilter) {
+            $query->where('id', $idTargetFilter);
+        }
+
+        $query->whereYear('created_at', $tahunFilter);
+
+        if ($finalJabatanFilter !== null && !empty($finalJabatanFilter)) {
+            $query->whereHas('detailTargetKPI', function ($q) use ($finalJabatanFilter) {
+                if (count($finalJabatanFilter) > 1) {
+                    $q->whereIn('jabatan', $finalJabatanFilter);
+                } else {
+                    $q->where('jabatan', $finalJabatanFilter[0]);
+                }
+            });
+        }
+
+        $targets = $query->get();
+
+        $allTargetData = [];
+        $monthlyAggregates = [];
+        $jabatanAggregates = [];
+        $jabatanMonthlyAggregates = [];
+        
+        $stats = [
+            'total_targets' => 0,
+            'completed_targets' => 0,
+            'achieved_targets' => 0,
+            'in_progress_targets' => 0,
+        ];
+
+        foreach ($targets as $target) {
+            $detail = $target->detailTargetKPI->first();
+            
+            if (!$detail || !$detail->nilai_target || (float) $detail->nilai_target <= 0) {
+                continue;
+            }
+
+            if ($finalJabatanFilter !== null) {
+                $isDetailAllowed = false;
+                foreach ($finalJabatanFilter as $allowed) {
+                    if (strtolower($detail->jabatan) === strtolower($allowed)) {
+                        $isDetailAllowed = true;
+                        break;
+                    }
+                }
+                if (!$isDetailAllowed) {
+                    continue; 
+                }
+            }
+
+            $calculationData = $this->getCalculationByRoute($target, null);
+            if (!$calculationData || !isset($calculationData['progress'])) continue;
+
+            $progress = (float) $calculationData['progress'];
+            $nilaiTarget = (float) $detail->nilai_target;
+            $jabatan = $detail->jabatan ?? 'Unknown';
+            $monthlyData = $calculationData['monthly_data'] ?? [];
+
+            $stats['total_targets']++;
+            
+            if ($progress >= 100) {
+                $stats['completed_targets']++;
+            }
+            
+            if ($progress >= $nilaiTarget && $nilaiTarget > 0) {
+                $stats['achieved_targets']++;
+            } else {
+                $stats['in_progress_targets']++;
+            }
+
+            $allTargetData[] = [
+                'id' => $target->id,
+                'judul' => $target->judul,
+                'jabatan' => $jabatan,
+                'progress' => $progress,
+                'target' => $nilaiTarget,
+                'gap' => $calculationData['gap'] ?? 0,
+                'asistant_route' => $target->asistant_route,
+            ];
+
+            if (!isset($jabatanAggregates[$jabatan])) {
+                $jabatanAggregates[$jabatan] = [];
+            }
+            $jabatanAggregates[$jabatan][] = $progress;
+
+            foreach ($monthlyData as $monthKey => $avgScore) {
+                // Filter bulan jika ada request bulan
+                if ($request->bulan) {
+                    $monthPart = (int) explode('-', $monthKey)[1];
+                    if ($monthPart !== (int) $request->bulan) continue;
+                }
+
+                if (!isset($monthlyAggregates[$monthKey])) {
+                    $monthlyAggregates[$monthKey] = [];
+                }
+                $monthlyAggregates[$monthKey][] = $avgScore;
+
+                if (!isset($jabatanMonthlyAggregates[$jabatan])) {
+                    $jabatanMonthlyAggregates[$jabatan] = [];
+                }
+                if (!isset($jabatanMonthlyAggregates[$jabatan][$monthKey])) {
+                    $jabatanMonthlyAggregates[$jabatan][$monthKey] = [];
+                }
+                $jabatanMonthlyAggregates[$jabatan][$monthKey][] = $avgScore;
+            }
+        }
+
+        $monthlyChart = [];
+        foreach ($monthlyAggregates as $month => $scores) {
+            if (!empty($scores)) {
+                $monthlyChart[$month] = round(array_sum($scores) / count($scores), 1);
+            }
+        }
+        ksort($monthlyChart);
+
+        $jabatanChart = [];
+        foreach ($jabatanAggregates as $jabatan => $scores) {
+            if (!empty($scores)) {
+                $jabatanChart[$jabatan] = round(array_sum($scores) / count($scores), 1);
+            }
+        }
+
+        $jabatanMonthlyChart = [];
+        foreach ($jabatanMonthlyAggregates as $jabatan => $months) {
+            foreach ($months as $month => $scores) {
+                if (!empty($scores)) {
+                    if (!isset($jabatanMonthlyChart[$jabatan])) {
+                        $jabatanMonthlyChart[$jabatan] = [];
+                    }
+                    $jabatanMonthlyChart[$jabatan][$month] = round(array_sum($scores) / count($scores), 1);
+                }
+            }
+        }
+
+        $allProgressValues = [];
+        foreach ($jabatanAggregates as $scores) {
+            $allProgressValues = array_merge($allProgressValues, $scores);
+        }
+        $overallAverage = !empty($allProgressValues) 
+            ? round(array_sum($allProgressValues) / count($allProgressValues), 1) 
+            : 0;
+
+        $yearlyMonthlyAverage = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $monthKey = "{$tahunFilter}-" . str_pad($m, 2, '0', STR_PAD_LEFT);
+            $yearlyMonthlyAverage[$monthKey] = $monthlyChart[$monthKey] ?? 0;
+        }
+
+        $responseData = [
+            'filters' => [
+                'jabatan' => $requestJabatan, 
+                'bulan' => $request->bulan,
+                'tahun' => (int) $tahunFilter,
+                'user_scope' => $userJabatan 
+            ],
+            'summary' => [
+                'overall_average' => $overallAverage,
+                'total_targets' => $stats['total_targets'],
+                'completed_targets' => $stats['completed_targets'],
+                'achieved_targets' => $stats['achieved_targets'],
+                'in_progress_targets' => $stats['in_progress_targets'],
+                'completion_rate' => $stats['total_targets'] > 0 
+                    ? round(($stats['completed_targets'] / $stats['total_targets']) * 100, 1) 
+                    : 0,
+                'achievement_rate' => $stats['total_targets'] > 0 
+                    ? round(($stats['achieved_targets'] / $stats['total_targets']) * 100, 1) 
+                    : 0,
+            ],
+            'charts' => [
+                'monthly_trend' => $yearlyMonthlyAverage,
+                'by_jabatan' => $jabatanChart,
+                'jabatan_monthly' => $jabatanMonthlyChart,
+            ],
+            'targets_detail' => $allTargetData,
+        ];
+
+        return response()->json($responseData);
     }
 
     //Target Detail Office
