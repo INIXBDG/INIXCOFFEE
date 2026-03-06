@@ -239,7 +239,6 @@ Route::get('getCC', [App\Http\Controllers\creditcardController::class, 'getCC'])
 Route::get('getRegistrasiexam', [App\Http\Controllers\registexamController::class, 'getRegistrasiexam'])->name('getRegistrasiexam');
 Route::get('getRegistrasiexamByIdExam/{id}', [App\Http\Controllers\registexamController::class, 'getRegistrasiexamByIdExam'])->name('getRegistrasiexamByIdExam');   
 Route::post('/generate/exam/absensi', [registexamController::class, 'generateAbsensi'])->name('absensi.exam');
-Route::post('/upload/exam/absensi', [registexamController::class, 'uploadAbsensi'])->name('upload.absensi.exam');
 Route::get('getSouvenir', [App\Http\Controllers\SouvenirController::class, 'getSouvenir'])->name('getSouvenir');
 Route::get('getSouvenirPeserta', [App\Http\Controllers\SouvenirController::class, 'getSouvenirPeserta'])->name('getSouvenirPeserta');
 Route::get('getFeedbacksByMonth/{year}/{month}', [App\Http\Controllers\feedbackController::class, 'getFeedbacksByMonth'])->name('getFeedbacksByMonth');
