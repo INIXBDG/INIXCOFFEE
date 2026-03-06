@@ -62,6 +62,7 @@
                                 <option value="Aktivitas Internal Kantor">Aktivitas Internal Kantor</option>
                                 <option value="Meeting">Meeting</option>
                                 <option value="Research / Pendalaman Materi">Research / Pendalaman Materi</option>
+                                <option value="Exam">Exam</option>
                             </select>
                         </div>
                         
