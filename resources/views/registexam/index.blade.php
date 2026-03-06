@@ -14,7 +14,6 @@
             </div>
         </div>
         
-        <!-- Modal -->
     <div class="modal fade" id="detailPesertaModal" tabindex="-1" role="dialog" aria-labelledby="detailPesertaModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
@@ -40,8 +39,6 @@
             </div>
         </div>
     </div>
-
-
         <div class="col-md-12">
             <div class="card" style="height: auto;">
                 <div class="card-body">
@@ -97,7 +94,6 @@
                                         </div>
                                     </div>
                                 </div>
-                            {{-- </div> --}}
                         </div>
                     </div>
                 </div>
@@ -241,6 +237,7 @@
                     "render": function(data, type, row) {
                         var actions = '<div class="dropdown">';
                         actions += '<button class="btn click-primary list_peserta" type="button" id="list_peserta">List Peserta</button>';
+
                         return actions;
                     }
                 }

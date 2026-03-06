@@ -60,6 +60,19 @@ use App\Http\Controllers\RKMController as ControllersRKMController;
 use App\Http\Controllers\SouvenirController;
 use App\Http\Controllers\TelegramController;
 use App\Http\Controllers\TicketController;
+use App\Http\Controllers\colaboratorController;
+use App\Http\Controllers\dbklienController;
+use App\Http\Controllers\ForumSSOController;
+use App\Http\Controllers\InstructorDevelopmentController;
+use App\Http\Controllers\KPI\DatabaseKPIController as KPIDatabaseKPIController;
+use App\Http\Controllers\KPI\TargetKPIController;
+use App\Http\Controllers\WebPushController;
+use App\Http\Controllers\office\BiayaTransportasiController;
+use App\Http\Controllers\Office\pickupDriverController;
+use App\Http\Controllers\KegiatanController;
+use App\Http\Controllers\KendaraanController;
+use App\Http\Controllers\registexamController;
+use App\Http\Controllers\KomplainPesertaController;
 use App\Http\Controllers\WebhookController;
 use App\Http\Controllers\Webinar\CalendarController;
 use App\Http\Controllers\Webinar\ChecklistController;
@@ -237,7 +250,8 @@ Route::get('getHistoriExam', [App\Http\Controllers\examController::class, 'getHi
 Route::get('getListExam', [App\Http\Controllers\listexamController::class, 'getListExam'])->name('getListExam');
 Route::get('getCC', [App\Http\Controllers\creditcardController::class, 'getCC'])->name('getCC');
 Route::get('getRegistrasiexam', [App\Http\Controllers\registexamController::class, 'getRegistrasiexam'])->name('getRegistrasiexam');
-Route::get('getRegistrasiexamByIdExam/{id}', [App\Http\Controllers\registexamController::class, 'getRegistrasiexamByIdExam'])->name('getRegistrasiexamByIdExam');
+Route::get('getRegistrasiexamByIdExam/{id}', [App\Http\Controllers\registexamController::class, 'getRegistrasiexamByIdExam'])->name('getRegistrasiexamByIdExam');   
+Route::post('/generate/exam/absensi', [registexamController::class, 'generateAbsensi'])->name('absensi.exam');
 Route::get('getSouvenir', [App\Http\Controllers\SouvenirController::class, 'getSouvenir'])->name('getSouvenir');
 Route::get('getSouvenirPeserta', [App\Http\Controllers\SouvenirController::class, 'getSouvenirPeserta'])->name('getSouvenirPeserta');
 Route::get('getFeedbacksByMonth/{year}/{month}', [App\Http\Controllers\feedbackController::class, 'getFeedbacksByMonth'])->name('getFeedbacksByMonth');
@@ -1024,3 +1038,4 @@ Route::post('/internal/update-tickets', [TicketController::class, 'handleInterna
 Route::get('/internal/open-tickets', [TicketController::class, 'getOpenTickets']);
 
 Route::get('/colaborator/data', [colaboratorController::class, 'getData'])->name('colaborator.data');
+

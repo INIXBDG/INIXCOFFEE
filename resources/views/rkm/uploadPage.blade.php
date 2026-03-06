@@ -12,6 +12,82 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal Exam EC-Council -->
+        <div class="modal fade" id="examEcCouncilModal" tabindex="-1" aria-labelledby="examEcCouncilModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="examEcCouncilModalLabel">Generate Absensi Exam EC-Council</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form id="formExamEcCouncil" action="{{ route('absensi.exam') }}" method="POST"
+                        enctype="multipart/form-data">
+                        @csrf
+
+                        <div class="modal-body">
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="materi_id" class="form-label">Pilih Materi Exam</label>
+                                    <select name="materi_id" id="materi_id" class="form-select select2" required>
+                                        <option value="">-- Pilih Materi --</option>
+                                        @foreach ($materi as $item)
+                                            <option value="{{ $item->id }}">{{ $item->nama_materi }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="tgl_exam" class="form-label">Tanggal Exam</label>
+                                    <input type="date" name="tgl_exam" id="tgl_exam" class="form-control" required>
+                                </div>
+                            </div>
+
+                            <div class="card mt-4">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">Daftar Peserta Exam</h6>
+                                </div>
+                                <div class="card-body" id="peserta-container">
+                                    <div class="row peserta-row mb-3 align-items-end" data-index="0">
+                                        <div class="col-md-5">
+                                            <label class="form-label">Nama Lengkap</label>
+                                            <input type="text" name="peserta[0][nama]" class="form-control" required
+                                                placeholder="Nama lengkap peserta">
+                                        </div>
+                                        <div class="col-md-5">
+                                            <label class="form-label">Email</label>
+                                            <input type="email" name="peserta[0][email]" class="form-control" required
+                                                placeholder="email@contoh.com">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <button type="button" class="btn btn-danger btn-sm remove-peserta"
+                                                style="margin-top: 32px;">
+                                                <i class="bi bi-trash"></i> Hapus
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card-footer">
+                                    <button type="button" id="btn-tambah-peserta" class="btn btn-primary btn-sm">
+                                        <i class="bi bi-plus-lg"></i> Tambah Peserta
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                            <button type="submit" class="btn btn-primary">Generate Absensi Exam</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <div class="row justify-content-center">
             <div class="col-md-12 d-flex my-2 justify-content-end">
                 @can('Create RKM')
@@ -68,6 +144,9 @@
                         <div class="col-md-4 mx-1">
                             <button type="submit" onclick="getDataRKM()" class="btn click-primary"
                                 style="margin-top: 37px">Cari Data</button>
+
+                            <button type="button" class="btn click-primary btn-exam-ec-council"
+                                style="margin-top: 37px">Exam EC-Council</button>
                         </div>
                     </div>
                 </div>
@@ -130,15 +209,77 @@
                 }
             }
         }
+
+        .peserta-row {
+            border-bottom: 1px dashed #dee2e6;
+            padding-bottom: 1rem;
+        }
+
+        .select2-container--default .select2-selection--single {
+            height: 38px !important;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 38px !important;
+        }
     </style>
 
     @push('js')
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
         <script>
             $(document).ready(function() {
                 getDataRKM();
+
+                $('#examEcCouncilModal').on('shown.bs.modal', function() {
+                    $('#materi_id').select2({
+                        placeholder: "-- Pilih Materi --",
+                        allowClear: true,
+                        width: '100%',
+                        dropdownParent: $('#examEcCouncilModal')
+                    });
+                });
+
+                $('.btn-exam-ec-council').on('click', function(e) {
+                    e.preventDefault();
+                    $('#examEcCouncilModal').modal('show');
+                });
+
+                let pesertaIndex = 1;
+
+                $('#btn-tambah-peserta').on('click', function() {
+                    const newRow = `
+                    <div class="row peserta-row mb-3 align-items-end">
+                        <div class="col-md-5">
+                            <label class="form-label">Nama Lengkap</label>
+                            <input type="text" name="peserta[${pesertaIndex}][nama]" class="form-control" required placeholder="Nama lengkap peserta">
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="peserta[${pesertaIndex}][email]" class="form-control" required placeholder="email@contoh.com">
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-danger btn-sm remove-peserta" style="margin-top: 32px;">
+                                <i class="bi bi-trash"></i> Hapus
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                    $('#peserta-container').append(newRow);
+                    pesertaIndex++;
+                });
+
+                $(document).on('click', '.remove-peserta', function() {
+                    if ($('.peserta-row').length > 1) {
+                        $(this).closest('.peserta-row').remove();
+                    } else {
+                        alert('Minimal harus ada 1 peserta');
+                    }
+                });
             });
 
             function getDataRKM() {
