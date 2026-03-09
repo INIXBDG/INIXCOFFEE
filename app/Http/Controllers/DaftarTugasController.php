@@ -13,12 +13,7 @@ class DaftarTugasController extends Controller
 {
     public function index()
     {
-        if (Auth()->user()->jabatan === 'HRD') {
-            $dataKategori = KategoriDaftarTugas::all();
-        } else {
-            $dataKategori = KategoriDaftarTugas::where('id_karyawan')->get();
-        }
-
+        $dataKategori = KategoriDaftarTugas::all();
         return view('office.daftarTugas.index', compact('dataKategori'));
     }
 

@@ -155,6 +155,9 @@
             </li>
         @endif
 
+        <li class="menu-header small text-uppercase">
+            <span class="menu-header-text">Driver</span>
+        </li>
 
         <li class="menu-item {{ request()->routeIs('office.pickupDriver.index') ? 'active open' : '' }}">
             <a href="{{ route('office.pickupDriver.index') }}" class="menu-link">
