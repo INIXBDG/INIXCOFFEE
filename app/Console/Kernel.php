@@ -240,7 +240,7 @@ class Kernel extends ConsoleKernel
         // update jatah cuit
         $schedule->command('app:update-cuti')->yearlyOn(2, 1, '00:01');
 
-        // update jatah cuit
+        // update tagihan Perusahaan
         $schedule->command('app:tagihan-perusahaan-command')->daily();
     }
     /**
