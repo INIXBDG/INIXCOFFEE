@@ -43,13 +43,13 @@
                                                 <td class="text-center ps-4"><input class="custom-check" type="checkbox" disabled></td>
                                             @endif
                                             <td>
-                                                @if ($tagihan->tagihanPerusahaan->tanggal_perkiraan_mulai === $tagihan->tagihanPerusahaan->tanggal_perkiraan_selesai || $tagihan->tagihanPerusahaan->tanggal_perkiraan_selesai === null )
+                                                @if ($tagihan->tanggal_perkiraan_mulai === $tagihan->tanggal_perkiraan_selesai || $tagihan->tanggal_perkiraan_selesai === null )
                                                     <div class="small">
-                                                        {{ \Carbon\Carbon::parse($tagihan->tagihanPerusahaan->tanggal_perkiraan_mulai)->format('d F') }}
+                                                        {{ \Carbon\Carbon::parse($tagihan->tanggal_perkiraan_mulai)->format('d F') }}
                                                     </div>
                                                 @else
                                                     <div class="small">
-                                                        {{ \Carbon\Carbon::parse($tagihan->tagihanPerusahaan->tanggal_perkiraan_mulai)->format('d M') }} - {{ \Carbon\Carbon::parse($tagihan->tagihanPerusahaan->tanggal_perkiraan_selesai)->format('d M') }}
+                                                        {{ \Carbon\Carbon::parse($tagihan->tanggal_perkiraan_mulai)->format('d M') }} - {{ \Carbon\Carbon::parse($tagihan->tanggal_perkiraan_selesai)->format('d M') }}
                                                     </div>
                                                 @endif
                                             </td>

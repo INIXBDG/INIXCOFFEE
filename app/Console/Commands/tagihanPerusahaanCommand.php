@@ -15,60 +15,55 @@ class tagihanPerusahaanCommand extends Command
 
     public function handle()
     {
-        $now = Carbon::now()->year(2027);
+        $now = Carbon::now();
 
         $tagihans = tagihanPerusahaan::all();
 
         foreach ($tagihans as $tagihan)
         {
+            $lastGenerate = Carbon::parse($tagihan->last_generate);
             $tanggalMulai = Carbon::parse($tagihan->tanggal_perkiraan_mulai);
             $tanggalSelesai = $tagihan->tanggal_perkiraan_selesai  ? Carbon::parse($tagihan->tanggal_perkiraan_selesai) : null;
         
             if ($tagihan->tipe === 'bulanan')
             {
     
-                if ($tanggalMulai->lte($now))
+                if (!$lastGenerate->isSameMonth($now))
                 {
                     trackingTagihanPerusahaan::create([
                         'id_tagihan_perusahaan' => $tagihan->id,
                         'nominal' => $tagihan->nominal,
                         'tracking' => 'Diajukan dan Sedang Ditinjau oleh Finance',
+                        'tanggal_perkiraan_mulai' => $tanggalMulai->copy()->addMonth(),
+                        'tanggal_perkiraan_selesai' => $tanggalSelesai ? $tanggalSelesai->copy()->addMonth() : $tagihan->tanggal_perkiraan_selesai,
                     ]);
 
                     $tagihan->update([
-                        'diperbaharui' => 1,
                         'last_generate' => $now,
-                        'tanggal_perkiraan_mulai' => $tanggalMulai->addMonth(),
-                        'tanggal_perkiraan_selesai' => optional($tanggalSelesai)->addMonth(),
+                        'tanggal_perkiraan_mulai' => $tanggalMulai->copy()->addMonth(),
+                        'tanggal_perkiraan_selesai' => $tanggalSelesai ? $tanggalSelesai->copy()->addMonth() : $tagihan->tanggal_perkiraan_selesai,
                     ]);
 
                     $this->info('Tracking tagihan berhasil dibuat.');
                 }
 
-                if ($tanggalMulai->year != $now->year)
-                {
-                    $tagihan->update([
-                        'tanggal_perkiraan_mulai' => $tanggalMulai->addYear(),
-                        'tanggal_perkiraan_selesai' => optional($tanggalSelesai)->addYear(),
-                    ]);              
-                }
-
             } elseif ($tagihan->tipe === 'tahunan')
             {
 
-                if ($tanggalMulai->year < $now->year)
+                if ($lastGenerate->year < $now->year)
                 {
                     trackingTagihanPerusahaan::create([
                         'id_tagihan_perusahaan' => $tagihan->id,
                         'nominal' => $tagihan->nominal,
                         'tracking' => 'Diajukan dan Sedang Ditinjau oleh Finance',
+                        'tanggal_perkiraan_mulai' => $tanggalMulai->copy()->addYear(),
+                        'tanggal_perkiraan_selesai' => $tanggalSelesai ? $tanggalSelesai->copy()->addYear() : null,
                     ]);
 
                     $tagihan->update([
-                        'diperbaharui' => 1,
                         'last_generate' => $now,
-                        'tanggal_perkiraan_mulai' => $tanggalMulai->addYear(),
-                        'tanggal_perkiraan_selesai' => optional($tanggalSelesai)->addYear(),
+                        'tanggal_perkiraan_mulai' => $tanggalMulai->copy()->addYear(),
+                        'tanggal_perkiraan_selesai' => $tanggalSelesai ? $tanggalSelesai->copy()->addYear() : null,
                     ]);
 
                     $this->info('Tracking tagihan berhasil dibuat.');

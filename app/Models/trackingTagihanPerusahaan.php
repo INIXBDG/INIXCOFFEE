@@ -16,7 +16,9 @@ class trackingTagihanPerusahaan extends Model
         'tracking',
         'status',
         'tanggal_selesai',
-        'keterangan'
+        'keterangan',
+        'tanggal_perkiraan_mulai',
+        'tanggal_perkiraan_selesai'
     ];
 
     public function tagihanPerusahaan ()
