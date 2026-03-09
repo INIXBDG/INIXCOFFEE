@@ -452,6 +452,7 @@ class OutstandingController extends Controller
             'no_invoice'     => 'nullable',
             'tanggal_bayar'     => 'nullable',
             'status_pembayaran'     => 'required',
+            'jumlah_pembayaran'     => 'nullable',
             'due_date'     => 'required',
             'pic'     => 'required',
             'sales_key'     => 'required',
@@ -598,6 +599,7 @@ class OutstandingController extends Controller
             'id_rkm'     => $request->id_rkm,
             'net_sales'     => $request->net_sales,
             'status_pembayaran'     => $request->status_pembayaran,
+            'jumlah_pembayaran'     => $request->jumlah_pembayaran ?? null,
             'due_date'     => $request->due_date,
             'pic' => $request->pic,
             'sales_key' => $request->sales_key,
@@ -727,7 +729,7 @@ class OutstandingController extends Controller
 
         if ($request->status_pembayaran == '1') {
             $rkm = RKM::with('outstanding', 'perusahaan', 'materi')->where('id', $post->id_rkm)->first();
-            $penerima = User::where('jabatan', 'Finance & Accounting') // Cek apakah seharusnya 'Accounting'?
+            $penerima = User::where('jabatan', 'Finance & Accounting')
                 ->where('status_akun', '1')
                 ->get();
 

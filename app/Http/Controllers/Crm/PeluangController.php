@@ -370,11 +370,10 @@ class PeluangController extends Controller
     public function delete($id)
     {
         try {
-            $peluang = Peluang::findOrFail($id);
+            $peluang = Peluang::with('rkm')->findOrFail($id);
 
-            $rkm = RKM::where('id', $peluang->id_rkm)->first();
-            if ($rkm) {
-                $rkm->delete();
+            if ($peluang->rkm) {
+                $peluang->rkm->forceDelete();
             }
 
             $peluang->delete();
