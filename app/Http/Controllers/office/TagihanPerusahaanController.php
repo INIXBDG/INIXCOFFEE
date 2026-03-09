@@ -11,7 +11,7 @@ class TagihanPerusahaanController extends Controller
 {
     public function index()
     {
-        $trackingTagihanPerusahaans = trackingTagihanPerusahaan::orderBy('created_at', 'desc')->get();
+        $trackingTagihanPerusahaans = trackingTagihanPerusahaan::orderBy('tanggal_perkiraan_mulai', 'desc')->get();
 
         return view('office.tagihanPerusahaan.index', compact('trackingTagihanPerusahaans'));
     }
@@ -32,7 +32,7 @@ class TagihanPerusahaanController extends Controller
             'tipe' => $request->tipe,
             'nominal' => $request->nominal ?? null,
             'tanggal_perkiraan_mulai' => $request->tanggal_perkiraan_mulai,
-            'tanggal_perkiraan_selesai' => $request->tanggal_perkiraan_selesai ?? null,
+            'tanggal_perkiraan_selesai' => $request->tanggal_perkiraan_selesai ?? $request->tanggal_perkiraan_mulai,
             'last_generate' => now()
         ]);
 
@@ -40,7 +40,9 @@ class TagihanPerusahaanController extends Controller
             'id_tagihan_perusahaan' => $tagihan->id,
             'nominal' => $request->nominal ?? null,
             'keterangan' => $request->keterangan ?? null,
-            'tracking' => 'Diajukan dan Sedang Ditinjau oleh Finance' 
+            'tracking' => 'Diajukan dan Sedang Ditinjau oleh Finance',
+            'tanggal_perkiraan_mulai' => $request->tanggal_perkiraan_mulai,
+            'tanggal_perkiraan_selesai' => $request->tanggal_perkiraan_selesai ?? $request->tanggal_perkiraan_mulai,
         ]);
 
         return back()->with('success_tagihan', 'Tagihan perusahaan berhasil dibuat.');
@@ -65,20 +67,22 @@ class TagihanPerusahaanController extends Controller
         $tracking = trackingTagihanPerusahaan::findOrFail($id);
         $tagihan = tagihanPerusahaan::where('id', $tracking->id_tagihan_perusahaan)->first();
 
-        $tracking->update([
-            'nominal' => $request->nominal ?? $tracking->nominal,
-            'status' => $request->status ?? $tracking->status,
-            'keterangan' => $request->keterangan ?? $tracking->keterangan,
-            'tracking' => $request->tracking ?? $tracking->tracking,
-            'tanggal_selesai' => $request->tanggal_selesai ?? $tracking->tanggal_selesai,
-        ]);
-
         $tagihan->update([
             'kegiatan' => $request->kegiatan ?? $tagihan->kegiatan,
             'tipe' => $request->tipe ?? $tagihan->tipe,
             'nominal' => $request->nominal ?? $tagihan->nominal,
             'tanggal_perkiraan_mulai' => $request->tanggal_perkiraan_mulai ?? $tagihan->tanggal_perkiraan_mulai,
             'tanggal_perkiraan_selesai' => $request->tanggal_perkiraan_selesai ?? $tagihan->tanggal_perkiraan_selesai,
+        ]);
+
+        $tracking->update([
+            'nominal' => $request->nominal ?? $tracking->nominal,
+            'status' => $request->status ?? $tracking->status,
+            'keterangan' => $request->keterangan ?? $tracking->keterangan,
+            'tracking' => $request->tracking ?? $tracking->tracking,
+            'tanggal_selesai' => $request->tanggal_selesai ?? $tracking->tanggal_selesai,
+            'tanggal_perkiraan_mulai' => $tagihan->tanggal_perkiraan_mulai,
+            'tanggal_perkiraan_selesai' => $tagihan->tanggal_perkiraan_selesai ?? $tagihan->tanggal_perkiraan_selesai,
         ]);
 
         return back()->with('success_tagihan', 'Tagihan berhasil diperbaharui.');
@@ -98,8 +102,8 @@ class TagihanPerusahaanController extends Controller
                 'keterangan' => $tagihan->keterangan,
                 'tracking' => $tagihan->tracking,
                 'tanggal_selesai' => $tagihan->tanggal_selesai,
-                'tanggal_perkiraan_mulai' => $tagihan->tagihanPerusahaan->tanggal_perkiraan_mulai,
-                'tanggal_perkiraan_selesai' => $tagihan->tagihanPerusahaan->tanggal_perkiraan_selesai,
+                'tanggal_perkiraan_mulai' => $tagihan->tanggal_perkiraan_mulai,
+                'tanggal_perkiraan_selesai' => $tagihan->tanggal_perkiraan_selesai,
             ]
         ];
 

@@ -224,9 +224,7 @@ class OfficeController extends Controller
         $endOfNextWeek = $now->copy()->addWeek()->endOfWeek();
         // Tagihan Perusaaan
         $trackingTagihanPerusahaans = trackingTagihanPerusahaan::with('tagihanPerusahaan')
-            ->whereHas('tagihanPerusahaan', function ($q) use ($startOfThisWeek, $endOfNextWeek) {
-                $q->whereBetween('tanggal_perkiraan_selesai', [$startOfThisWeek, $endOfNextWeek]);
-            })
+            ->whereBetween('tanggal_perkiraan_selesai', [$startOfThisWeek, $endOfNextWeek])
             ->orderByDesc('created_at')
             ->get(); 
 
