@@ -12,6 +12,7 @@ class outstanding extends Model
         'id_rkm',
         'net_sales',
         'status_pembayaran',
+        'jumlah_pembayaran',
         'due_date',
         'pic',
         'sales_key',

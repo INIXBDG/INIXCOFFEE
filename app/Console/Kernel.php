@@ -239,6 +239,10 @@ class Kernel extends ConsoleKernel
 
         // update jatah cuit
         $schedule->command('app:update-cuti')->yearlyOn(2, 1, '00:01');
+
+        // update tahap peluang
+        $schedule->command('peluang:check')->dailyAt('12:00');
+
     }
     /**
      * Register the commands for the application.
