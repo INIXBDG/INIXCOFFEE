@@ -22,6 +22,7 @@ class Peluang extends Model
         'final',
         'biru',
         'merah',
+        'lost',
         'tahap',
         'tentatif',
     ];

@@ -189,6 +189,7 @@
                                     <th scope="col">Sales</th>
                                     <th scope="col">Tenggat Waktu</th>
                                     <th scope="col">Status Pembayaran</th>
+                                    <th scope="col">Jumlah Pembayaran</th>
                                     <th scope="col">Tanggal Bayar</th>
                                     <th scope="col">Status</th>
                                     <th scope="col">Tracking</th>
@@ -368,6 +369,16 @@
                                     return "Sudah";
                                 } else {
                                     return "Belum";
+                                }
+                            }
+                        },
+                        {
+                            "data": null,
+                            "render": function(data, type, row) {
+                                if (data.jumlah_pembayaran) {
+                                    return formatRupiah(data.jumlah_pembayaran, 'Rp. ');
+                                } else {
+                                    return "-";
                                 }
                             }
                         },

@@ -18,7 +18,7 @@ class penilaianExcangheNotifikasi extends Notification implements ShouldBroadcas
     protected $path;
     protected $receiverId;
 
-    public function __construct($comment, string $path, int $receiverId)
+    public function __construct($comment, $path, $receiverId)
     {
         $this->comment     = $comment;
         $this->path        = $path;

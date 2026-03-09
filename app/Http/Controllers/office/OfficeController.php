@@ -11,6 +11,8 @@ use App\Models\Nilaifeedback;
 use App\Models\pengajuancuti;
 use App\Models\Perusahaan;
 use App\Models\RKM;
+use App\Models\tagihanPerusahaan;
+use App\Models\trackingTagihanPerusahaan;
 use App\Models\Tickets;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -219,6 +221,13 @@ class OfficeController extends Controller
             }
         }
 
+        $endOfNextWeek = $now->copy()->addWeek()->endOfWeek();
+        // Tagihan Perusaaan
+        $trackingTagihanPerusahaans = trackingTagihanPerusahaan::with('tagihanPerusahaan')
+            ->whereBetween('tanggal_perkiraan_selesai', [$startOfThisWeek, $endOfNextWeek])
+            ->orderByDesc('created_at')
+            ->get(); 
+
         return view('office.dashboard', compact(
             'total_karyawan',
             'divisiStats',
@@ -228,7 +237,8 @@ class OfficeController extends Controller
             'rkm',
             'jumlahPeserta',
             'jumlahInstruktur',
-            'rkms'
+            'rkms',
+            'trackingTagihanPerusahaans'
         ));
     }
 
