@@ -1850,7 +1850,9 @@ class TargetKPIController extends Controller
         $allScores = [];
 
         $dataSurvey = SurveyKepuasan::whereBetween('created_at', [$start, $end])->get();
+
         foreach ($dataSurvey as $survey) {
+
             $nilaiQ1 = match ($survey->q1) {
                 1 => 10,
                 2 => 20,
@@ -1874,21 +1876,11 @@ class TargetKPIController extends Controller
             };
 
             $totalBaris = min(100, max(0, $nilaiQ1 + $nilaiQ2 + $nilaiQ4));
+
+            // Konversi ke skala 1 - 4
             $skor = 1 + ($totalBaris * 3) / 100;
+
             $allScores[] = $skor;
-        }
-
-        $feedbacks = Nilaifeedback::whereBetween('created_at', [$start, $end])->get();
-        foreach ($feedbacks as $fb) {
-            $f1 = is_numeric($fb->F1) ? (float) $fb->F1 : 0;
-            $f2 = is_numeric($fb->F2) ? (float) $fb->F2 : 0;
-            $f3 = is_numeric($fb->F3) ? (float) $fb->F3 : 0;
-            $f4 = is_numeric($fb->F4) ? (float) $fb->F4 : 0;
-            $f5 = is_numeric($fb->F5) ? (float) $fb->F5 : 0;
-
-            $avg = ($f1 + $f2 + $f3 + $f4 + $f5) / 5;
-            $avg = min(4, max(1, $avg));
-            $allScores[] = $avg;
         }
 
         if (empty($allScores)) {
@@ -1905,6 +1897,7 @@ class TargetKPIController extends Controller
         }
 
         $progress = ($respondenPuas / $totalResponden) * 100;
+
         return round($progress, 1);
     }
 
@@ -2534,36 +2527,8 @@ class TargetKPIController extends Controller
 
         $allScores = [];
 
-        $dataSurvey = SurveyKepuasan::whereBetween('created_at', [$start, $end])->get();
-        foreach ($dataSurvey as $survey) {
-            $nilaiQ1 = match ($survey->q1) {
-                1 => 10,
-                2 => 20,
-                3 => 30,
-                4 => 40,
-                default => 0,
-            };
-
-            $nilaiQ4 = match ($survey->q4) {
-                1 => 10,
-                2 => 20,
-                3 => 30,
-                4 => 40,
-                default => 0,
-            };
-
-            $nilaiQ2 = match ($survey->q2) {
-                'Ya' => 20,
-                'Tidak' => 10,
-                default => 0,
-            };
-
-            $totalBaris = min(100, max(0, $nilaiQ1 + $nilaiQ2 + $nilaiQ4));
-            $skor = 1 + ($totalBaris * 3) / 100;
-            $allScores[] = $skor;
-        }
-
         $feedbacks = Nilaifeedback::whereBetween('created_at', [$start, $end])->get();
+
         foreach ($feedbacks as $fb) {
             $f1 = is_numeric($fb->F1) ? (float) $fb->F1 : 0;
             $f2 = is_numeric($fb->F2) ? (float) $fb->F2 : 0;
@@ -2572,7 +2537,10 @@ class TargetKPIController extends Controller
             $f5 = is_numeric($fb->F5) ? (float) $fb->F5 : 0;
 
             $avg = ($f1 + $f2 + $f3 + $f4 + $f5) / 5;
+
+            // Pastikan tetap di skala 1 - 4
             $avg = min(4, max(1, $avg));
+
             $allScores[] = $avg;
         }
 
@@ -2590,6 +2558,7 @@ class TargetKPIController extends Controller
         }
 
         $progress = ($respondenPuas / $totalResponden) * 100;
+
         return round($progress, 1);
     }
 
@@ -5645,157 +5614,144 @@ class TargetKPIController extends Controller
     }
     //Target Detail itsm
     //Koordinator ITSM
-    private function calculateMeningkatkanKepuasanDanLoyalitasPesertaDetail($itemDetail)
-    {
-        $detail = $itemDetail->detailTargetKPI->first();
+private function calculateMeningkatkanKepuasanDanLoyalitasPesertaDetail($itemDetail)
+{
+    $detail = $itemDetail->detailTargetKPI->first();
 
-        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-            ];
-        }
-
-        $nilaiTarget = (float) $detail->nilai_target;
-        $tahun = (int) $detail->detail_jangka;
-
-        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-            ];
-        }
-
-        $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
-        $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
-
-        $allScores = []; // Hanya skor
-        $scoreDatePairs = []; // Simpan [skor, tanggal] untuk breakdown
-
-        // === SurveyKepuasan ===
-        $dataSurvey = SurveyKepuasan::whereBetween('created_at', [$start, $end])->get();
-        foreach ($dataSurvey as $survey) {
-            $nilaiQ1 = match ($survey->q1) {
-                1 => 10,
-                2 => 20,
-                3 => 30,
-                4 => 40,
-                default => 0,
-            };
-
-            $nilaiQ4 = match ($survey->q4) {
-                1 => 10,
-                2 => 20,
-                3 => 30,
-                4 => 40,
-                default => 0,
-            };
-
-            $nilaiQ2 = match ($survey->q2) {
-                'Ya' => 20,
-                'Tidak' => 10,
-                default => 0,
-            };
-
-            $totalBaris = min(100, max(0, $nilaiQ1 + $nilaiQ2 + $nilaiQ4));
-            $skor = 1 + ($totalBaris * 3) / 100;
-
-            $allScores[] = $skor;
-            $scoreDatePairs[] = [
-                'score' => $skor,
-                'date' => $survey->created_at->format('Y-m-d'),
-            ];
-        }
-
-        // === Nilaifeedback ===
-        $feedbacks = Nilaifeedback::whereBetween('created_at', [$start, $end])->get();
-        foreach ($feedbacks as $fb) {
-            $f1 = is_numeric($fb->F1) ? (float) $fb->F1 : 0;
-            $f2 = is_numeric($fb->F2) ? (float) $fb->F2 : 0;
-            $f3 = is_numeric($fb->F3) ? (float) $fb->F3 : 0;
-            $f4 = is_numeric($fb->F4) ? (float) $fb->F4 : 0;
-            $f5 = is_numeric($fb->F5) ? (float) $fb->F5 : 0;
-
-            $avg = ($f1 + $f2 + $f3 + $f4 + $f5) / 5;
-            $avg = min(4, max(1, $avg));
-
-            $allScores[] = $avg;
-            $scoreDatePairs[] = [
-                'score' => $avg,
-                'date' => $fb->created_at->format('Y-m-d'),
-            ];
-        }
-
-        if (empty($allScores)) {
-            return [
-                'progress' => 0,
-                'gap' => 0,
-                'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
-            ];
-        }
-
-        $totalResponden = count($allScores);
-        $respondenPuas = 0;
-
-        foreach ($allScores as $skor) {
-            if ($skor >= 3.5) {
-                $respondenPuas++;
-            }
-        }
-
-        $progress = ($respondenPuas / $totalResponden) * 100;
-        $progress = round($progress, 1);
-
-        $gapRaw = $progress - $nilaiTarget;
-        $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
-
-        $monthlyData = [];
-        $dailyBreakdownPerMonth = [];
-
-        foreach ($scoreDatePairs as $pair) {
-            $date = Carbon::parse($pair['date']);
-            $monthKey = $date->format('Y-m');
-            $dayKey = $pair['date'];
-            $score = $pair['score'];
-
-            if (!isset($monthlyData[$monthKey])) {
-                $monthlyData[$monthKey] = [];
-            }
-            $monthlyData[$monthKey][] = $score;
-
-            if (!isset($dailyBreakdownPerMonth[$monthKey])) {
-                $dailyBreakdownPerMonth[$monthKey] = [];
-            }
-            $dailyBreakdownPerMonth[$monthKey][$dayKey] = $score;
-        }
-
-        $monthlyAverages = [];
-        foreach ($monthlyData as $month => $dailyVals) {
-            $monthlyAverages[$month] = round(array_sum($dailyVals) / count($dailyVals), 1);
-        }
-
-        ksort($monthlyAverages);
-        ksort($dailyBreakdownPerMonth);
-
+    if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
         return [
-            'progress' => $progress,
-            'gap' => $gap,
-            'pie_chart' => [
-                'above' => $respondenPuas,
-                'below' => $totalResponden - $respondenPuas,
-            ],
-            'monthly_data' => $monthlyAverages,
-            'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
+            'progress' => 0,
+            'gap' => 0,
+            'pie_chart' => ['above' => 0, 'below' => 0],
+            'monthly_data' => [],
+            'daily_breakdown_per_month' => [],
         ];
     }
+
+    $nilaiTarget = (float) $detail->nilai_target;
+    $tahun = (int) $detail->detail_jangka;
+
+    if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
+        return [
+            'progress' => 0,
+            'gap' => 0,
+            'pie_chart' => ['above' => 0, 'below' => 0],
+            'monthly_data' => [],
+            'daily_breakdown_per_month' => [],
+        ];
+    }
+
+    $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
+    $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
+
+    $allScores = [];
+    $scoreDatePairs = [];
+
+    // === SurveyKepuasan saja ===
+    $dataSurvey = SurveyKepuasan::whereBetween('created_at', [$start, $end])->get();
+
+    foreach ($dataSurvey as $survey) {
+
+        $nilaiQ1 = match ($survey->q1) {
+            1 => 10,
+            2 => 20,
+            3 => 30,
+            4 => 40,
+            default => 0,
+        };
+
+        $nilaiQ4 = match ($survey->q4) {
+            1 => 10,
+            2 => 20,
+            3 => 30,
+            4 => 40,
+            default => 0,
+        };
+
+        $nilaiQ2 = match ($survey->q2) {
+            'Ya' => 20,
+            'Tidak' => 10,
+            default => 0,
+        };
+
+        $totalBaris = min(100, max(0, $nilaiQ1 + $nilaiQ2 + $nilaiQ4));
+        $skor = 1 + ($totalBaris * 3) / 100;
+
+        $allScores[] = $skor;
+
+        $scoreDatePairs[] = [
+            'score' => $skor,
+            'date' => $survey->created_at->format('Y-m-d'),
+        ];
+    }
+
+    if (empty($allScores)) {
+        return [
+            'progress' => 0,
+            'gap' => 0,
+            'pie_chart' => ['above' => 0, 'below' => 0],
+            'monthly_data' => [],
+            'daily_breakdown_per_month' => [],
+        ];
+    }
+
+    $totalResponden = count($allScores);
+    $respondenPuas = 0;
+
+    foreach ($allScores as $skor) {
+        if ($skor >= 3.5) {
+            $respondenPuas++;
+        }
+    }
+
+    $progress = ($respondenPuas / $totalResponden) * 100;
+    $progress = round($progress, 1);
+
+    $gapRaw = $progress - $nilaiTarget;
+    $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
+
+    $monthlyData = [];
+    $dailyBreakdownPerMonth = [];
+
+    foreach ($scoreDatePairs as $pair) {
+        $date = Carbon::parse($pair['date']);
+        $monthKey = $date->format('Y-m');
+        $dayKey = $pair['date'];
+        $score = $pair['score'];
+
+        if (!isset($monthlyData[$monthKey])) {
+            $monthlyData[$monthKey] = [];
+        }
+
+        $monthlyData[$monthKey][] = $score;
+
+        if (!isset($dailyBreakdownPerMonth[$monthKey])) {
+            $dailyBreakdownPerMonth[$monthKey] = [];
+        }
+
+        $dailyBreakdownPerMonth[$monthKey][$dayKey] = $score;
+    }
+
+    $monthlyAverages = [];
+
+    foreach ($monthlyData as $month => $dailyVals) {
+        $monthlyAverages[$month] = round(array_sum($dailyVals) / count($dailyVals), 1);
+    }
+
+    ksort($monthlyAverages);
+    ksort($dailyBreakdownPerMonth);
+
+    return [
+        'progress' => $progress,
+        'gap' => $gap,
+        'pie_chart' => [
+            'above' => $respondenPuas,
+            'below' => $totalResponden - $respondenPuas,
+        ],
+        'monthly_data' => $monthlyAverages,
+        'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
+    ];
+}
 
     private function calculateAvailabilitySistemInternalKritisDetail($itemDetail)
     {
@@ -6659,46 +6615,12 @@ class TargetKPIController extends Controller
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $allScores = []; // Hanya skor
-        $scoreDatePairs = []; // Simpan [skor, tanggal] untuk breakdown
-
-        // === SurveyKepuasan ===
-        $dataSurvey = SurveyKepuasan::whereBetween('created_at', [$start, $end])->get();
-        foreach ($dataSurvey as $survey) {
-            $nilaiQ1 = match ($survey->q1) {
-                1 => 10,
-                2 => 20,
-                3 => 30,
-                4 => 40,
-                default => 0,
-            };
-
-            $nilaiQ4 = match ($survey->q4) {
-                1 => 10,
-                2 => 20,
-                3 => 30,
-                4 => 40,
-                default => 0,
-            };
-
-            $nilaiQ2 = match ($survey->q2) {
-                'Ya' => 20,
-                'Tidak' => 10,
-                default => 0,
-            };
-
-            $totalBaris = min(100, max(0, $nilaiQ1 + $nilaiQ2 + $nilaiQ4));
-            $skor = 1 + ($totalBaris * 3) / 100;
-
-            $allScores[] = $skor;
-            $scoreDatePairs[] = [
-                'score' => $skor,
-                'date' => $survey->created_at->format('Y-m-d'),
-            ];
-        }
+        $allScores = [];
+        $scoreDatePairs = [];
 
         // === Nilaifeedback ===
         $feedbacks = Nilaifeedback::whereBetween('created_at', [$start, $end])->get();
+
         foreach ($feedbacks as $fb) {
             $f1 = is_numeric($fb->F1) ? (float) $fb->F1 : 0;
             $f2 = is_numeric($fb->F2) ? (float) $fb->F2 : 0;
@@ -6710,6 +6632,7 @@ class TargetKPIController extends Controller
             $avg = min(4, max(1, $avg));
 
             $allScores[] = $avg;
+
             $scoreDatePairs[] = [
                 'score' => $avg,
                 'date' => $fb->created_at->format('Y-m-d'),
@@ -6741,7 +6664,7 @@ class TargetKPIController extends Controller
         $gapRaw = $progress - $nilaiTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
-        // === Breakdown berdasarkan scoreDatePairs ===
+        // === Breakdown ===
         $monthlyData = [];
         $dailyBreakdownPerMonth = [];
 

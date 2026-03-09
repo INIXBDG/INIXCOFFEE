@@ -84,7 +84,7 @@
                                     data-route="{{ route('office.DaftarTugas.UpdateTugasBulanan') }}">
                                     Bulanan
                                 </button>
-                                <button type="button" class="btn btn-primary btn-update-tugas"
+                                {{-- <button type="button" class="btn btn-primary btn-update-tugas"
                                     data-route="{{ route('office.DaftarTugas.UpdateTugasQuartal') }}">
                                     Quartal
                                 </button>
@@ -95,7 +95,7 @@
                                 <button type="button" class="btn btn-primary btn-update-tugas"
                                     data-route="{{ route('office.DaftarTugas.UpdateTugasTahunan') }}">
                                     Tahunan
-                                </button>
+                                </button> --}}
                             </div>
                         </div>
                     </div>
