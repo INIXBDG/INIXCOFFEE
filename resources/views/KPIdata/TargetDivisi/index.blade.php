@@ -2158,6 +2158,7 @@
                         <option value="peserta puas dengan pelayanan dan fasilitas training">Peserta Puas Dengan Pelayanan & Fasilitas Training</option>
                         <option value="dorong inovasi pelayanan">Dorong Inovasi Pelayanan</option>
                         <option value="penanganan komplain perseta">Penanganan Komplain Peserta</option>
+                        <option value="report persiapan kelas">Report Persiapan Kelas</option>
                     `;
                 }
                 //Finanace
@@ -2176,6 +2177,7 @@
                     options += `
                         <option value="pelaksanaan kegiatan karyawan">Pelaksanaan Kegiatan Karyawan</option>
                         <option value="pengeluaran biaya karyawan">Pengeluaran Biaya Karyawan</option>
+                        <option value="administrasi karyawan">Administrasi Karyawan</option>
                     `;
                 }
 

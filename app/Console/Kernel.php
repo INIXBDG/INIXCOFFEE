@@ -243,6 +243,8 @@ class Kernel extends ConsoleKernel
         // update tahap peluang
         $schedule->command('peluang:check')->dailyAt('12:00');
 
+        // update tagihan Perusahaan
+        $schedule->command('app:tagihan-perusahaan-command')->daily();
     }
     /**
      * Register the commands for the application.
