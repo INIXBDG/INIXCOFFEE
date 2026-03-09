@@ -1077,7 +1077,7 @@
                             @php
                                 // Ambil data perubahan
                                 $perubahanData = $notification->data['message']['perubahan'];
-                                
+
                                 // Cek jika data berupa string (JSON), maka decode dulu
                                 if (is_string($perubahanData)) {
                                     $perubahanData = json_decode($perubahanData, true);
@@ -1087,7 +1087,7 @@
                             @foreach ($perubahanData as $field => $values)
                                 <li>
                                     <strong>{{ ucfirst(str_replace('_', ' ', $field)) }}</strong>:
-                                    
+
                                     {{-- TAMPILAN DATA SEBELUM (BEFORE) --}}
                                     <span class="text-danger">
                                         @if(isset($values['before']) && is_numeric($values['before']))
@@ -1173,7 +1173,7 @@
                 </div>
             </div>
         @endif
-        
+
         @if ($notification->data['message']['tipe'] == 'Pembayaran Outstanding Selesai')
             <div class="alert alert-success d-flex justify-content-between align-items-start shadow-sm p-3 mb-3 border-start border-4 border-success">
                 <div>
@@ -2080,6 +2080,49 @@
                 <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai
                     Dibaca</button>
             </form>
+        </div>
+    </div>
+@endif
+@if ($notification->data['message']['tipe'] == 'Ide Inovasi Baru')
+    <div class="notification mb-3 p-3 border rounded bg-light">
+        <div class="w-100">
+
+            <p class="mb-2 text-primary fw-bold">
+                <i class="bi bi-lightbulb text-warning me-1"></i> Ide Inovasi Baru
+            </p>
+
+            <div class="mb-3">
+                <span class="fw-bold" style="text-transform: capitalize;">
+                    {{ $notification->data['user'] ?? 'System' }}
+                </span>
+                <span class="text-muted">
+                    telah menambahkan ide inovasi baru berjudul
+                </span>
+                <span class="fw-bold text-dark">
+                    "{{ $notification->data['message']['judul'] ?? '-' }}"
+                </span>
+            </div>
+
+            <small class="text-muted d-block">
+                <i class="bi bi-clock"></i>
+                Dibuat pada:
+                {{ $notification->created_at->format('d M Y H:i:s') }}
+            </small>
+
+            <div class="d-flex gap-2 mt-3">
+                <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-eye me-1"></i>Lihat Data
+                </a>
+
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                        Tandai Dibaca
+                    </button>
+                </form>
+            </div>
+
         </div>
     </div>
 @endif
