@@ -22,8 +22,10 @@ use App\Models\Nilaifeedback;
 use App\Models\nilaiKPI;
 use App\Models\outstanding;
 use App\Models\Pelatihan;
+use App\Models\Peluang;
 use App\Models\PenilaianExam;
 use App\Models\PerbaikanKendaraan;
+use App\Models\perhitunganNetSales;
 use App\Models\pickupDriver;
 use App\Models\RekomendasiLanjutan;
 use App\Models\RKM;
@@ -40,7 +42,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class TargetKPIController extends Controller
-{
+{   
     public function kpiIndex()
     {
         $daftarKaryawan = karyawan::where('status_aktif', '1')->whereNot('divisi', 'Direksi')->get();
@@ -346,6 +348,12 @@ class TargetKPIController extends Controller
                 return method_exists($this, 'calculatePengembanganKurikulumPelatihan') ? $this->calculatePengembanganKurikulumPelatihan($item, $personId) : null;
             } elseif ($route === 'peningkatan knowledge sharing') {
                 return method_exists($this, 'calculatePeningkatanKnowledgeSharing') ? $this->calculatePeningkatanKnowledgeSharing($item, $personId) : null;
+            }
+
+            //Sales & Marketing
+            // SPV Sales
+            elseif($route === 'meningkatkan revenue perusahaan') {
+                return method_exists($this, 'calculateMeningkatkanRevenuePerusahaan') ? $this->calculateMeningkatkanRevenuePerusahaan($item, $personId) : null;
             }
 
             return null;
@@ -791,6 +799,12 @@ class TargetKPIController extends Controller
                         $progress = $this->calculatePeningkatanKnowledgeSharing($item, $personId);
                     }
 
+                    // Sales & Marketing
+                    //SPV Sales
+                    elseif ($item->asistant_route === 'meningkatkan revenue perusahaan') {
+                        $progress = $this->calculateMeningkatkanRevenuePerusahaan($item, $personId);
+                    }
+
                     return [
                         'id' => $item->id,
                         'pembuat' => $item->karyawan->nama_lengkap ?? null,
@@ -1101,6 +1115,13 @@ class TargetKPIController extends Controller
                 } elseif ($target->asistant_route === 'peningkatan knowledge sharing') {
                     $progress = $this->calculatePeningkatanKnowledgeSharing($target, $personId);
                 }
+
+                //Sales & Marketing
+                // SPV Sales
+                elseif($target->asistant_route === 'meningkatkan revenue perusahaan') {
+                    $data = $this->calculateMeningkatkanRevenuePerusahaan($target, $personId);
+                }
+
 
                 if ($progress !== null && is_numeric($progress)) {
                     $progresses[] = $progress;
@@ -2853,6 +2874,51 @@ class TargetKPIController extends Controller
         return round($progress, 1);
     }
 
+    private function calculateMeningkatkanRevenuePerusahaan($item, $personId)
+    {
+        $detail = $item->detailTargetKPI->first();
+
+        if (!$detail) {
+            return 0.0;
+        }
+
+        $tahun = (int) $detail->detail_jangka;
+
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            return 0.0;
+        }
+
+        $peluang = Peluang::with('rkm.perhitunganNetSales')->whereYear('created_at', $tahun)->get();
+
+        $progress = 0;
+
+        foreach ($peluang as $p) {
+            $kotor = $p->harga * $p->pax;
+
+            $perhitungan = $p->rkm->perhitunganNetSales;
+
+            $totalBiaya = 0;
+                if ($perhitungan) {
+                  foreach ($p->rkm->perhitunganNetSales as $perhitungan) {
+                    $totalBiaya += $perhitungan->transportasi
+                                + $perhitungan->akomodasi_peserta
+                                + $perhitungan->akomodasi_tim
+                                + $perhitungan->fresh_money
+                                + $perhitungan->entertaint
+                                + $perhitungan->souvenir
+                                + $perhitungan->cashback
+                                + $perhitungan->sewa_laptop;
+                    }
+                }
+
+            $bersih = $kotor - $totalBiaya;
+
+            $progress += $bersih;
+        }
+
+        return round($progress, 1);
+    }
+
     //detail_target
     public function detailData(Request $request)
     {
@@ -3003,6 +3069,12 @@ class TargetKPIController extends Controller
                         $data = $this->calculatePelatihanKompetensiEksternalDetail($itemDetail, $personId);
                     }
 
+                    //Sales & Marketing
+                    // SPV Sales
+                    elseif($itemDetail->asistant_route === 'meningkatkan revenue perusahaan') {
+                        $data = $this->calculateMeningkatkanRevenuePerusahaanDetail($itemDetail);
+                    }
+
                     $dataCalculation = $this->getCalculationByRoute($itemDetail, $personId);
 
                     $dataOutput = [
@@ -3143,6 +3215,12 @@ class TargetKPIController extends Controller
             return $this->calculatePengembanganKurikulumPelatihanDetail($itemDetail);
         } elseif ($route === 'peningkatan knowledge sharing') {
             return $this->calculatePeningkatanKnowledgeSharingDetail($itemDetail);
+        }
+
+        //Sales & Marketing
+        // SPV Sales
+        elseif($itemDetail->asistant_route === 'meningkatkan revenue perusahaan') {
+            return $this->calculateMeningkatkanRevenuePerusahaanDetail($itemDetail);
         }
 
         return null;
@@ -3892,6 +3970,13 @@ class TargetKPIController extends Controller
                 } elseif ($target->asistant_route === 'peningkatan knowledge sharing') {
                     $progress = $this->calculatePeningkatanKnowledgeSharing($target, $personId);
                 }
+
+                //Sales & Marketing
+                // SPV Sales
+                elseif($target->asistant_route === 'meningkatkan revenue perusahaan') {
+                    $data = $this->calculateMeningkatkanRevenuePerusahaan($target, $personId);
+                }
+
 
                 if ($progress !== null && is_numeric($progress)) {
                     $progresses[] = $progress;
@@ -7750,6 +7835,97 @@ class TargetKPIController extends Controller
         ];
     }
 
+    // SPV Sales
+    private function calculateMeningkatkanRevenuePerusahaanDetail($itemDetail)
+    {
+        $details = $itemDetail->detailTargetKPI;
+
+        $tahun = (int) optional($details->first())->detail_jangka;
+        $nilaiTarget = (float) optional($details->first())->nilai_target;
+
+        if ($details->isEmpty() || $nilaiTarget <= 0) {
+            return [
+                'progress' => 0,
+                'gap' => 0,
+                'pie_chart' => ['above' => 0, 'below' => 0],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+            ];
+        }
+
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            return [
+                'progress' => 0,
+                'gap' => 0,
+                'pie_chart' => ['above' => 0, 'below' => 0],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+            ];
+        }
+
+        $peluangs = Peluang::with('rkm.perhitunganNetSales')->whereYear('created_at', $tahun)->get();
+
+        $progress = 0;
+        $dailyBreakdownPerMonth = [];
+
+        foreach ($peluangs as $p) {
+            $kotor = $p->harga * $p->pax;
+
+            $totalBiaya = 0;
+            $perhitungan = $p->rkm ? $p->rkm->perhitunganNetSales : null;
+            if ($perhitungan) {
+                foreach ($p->rkm->perhitunganNetSales as $perhitungan) {
+                    $totalBiaya += $perhitungan->transportasi
+                                + $perhitungan->akomodasi_peserta
+                                + $perhitungan->akomodasi_tim
+                                + $perhitungan->fresh_money
+                                + $perhitungan->entertaint
+                                + $perhitungan->souvenir
+                                + $perhitungan->cashback
+                                + $perhitungan->sewa_laptop;
+                }
+            }
+
+            $bersih = $kotor - $totalBiaya;
+
+            $progress += $bersih;
+
+            $date = Carbon::parse($p->created_at);
+            $dateKey = $date->format('Y-m-d');
+            $monthKey = $date->format('Y-m');
+
+            if (!isset($dailyBreakdownPerMonth[$monthKey])) {
+                $dailyBreakdownPerMonth[$monthKey] = [];
+            }
+            if (!isset($dailyBreakdownPerMonth[$monthKey][$dateKey])) {
+                $dailyBreakdownPerMonth[$monthKey][$dateKey] = 0;
+            }
+            $dailyBreakdownPerMonth[$monthKey][$dateKey] += $bersih;
+        }
+
+        $monthlyData = [];
+        foreach ($dailyBreakdownPerMonth as $month => $days) {
+            $dailySums = array_values($days);
+            $monthlyData[$month] = count($dailySums) > 0 
+                ? round(array_sum($dailySums) / count($dailySums), 1) 
+                : 0;
+        }
+
+        ksort($monthlyData);
+        ksort($dailyBreakdownPerMonth);
+
+        $gapRaw = $progress - $nilaiTarget;
+        $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
+
+        return [
+            'progress' => $progress,
+            'gap' => $gap,
+            'pie_chart' => ['above' => 0, 'below' => 0],
+            'monthly_data' => $monthlyData,
+            'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
+        ];
+    }
+
     //Overview KPI
     public function personalIndex()
     {
@@ -7945,14 +8121,14 @@ class TargetKPIController extends Controller
                 return $this->calculateRasioBiayaOperasionalTerhadapRevenue($item, $personId);
             case 'performa KPI departemen':
                 return $this->calculatePerformaKPIDepartemen($item, $personId);
-            //CS
+                //CS
             case 'peserta puas dengan pelayanan dan fasilitas training':
                 return $this->calculatePesertaPuasDenganPelayananDanFasilitasTraining($item, $personId);
             case 'dorong inovasi pelayanan':
                 return $this->calculateDorongInovasiPelayanan($item, $personId);
             case 'penanganan komplain perseta':
                 return $this->calculatePenangananKomplainPerseta($item, $personId);
-            //Finance
+                //Finance
             case 'inisiatif efesiensi keuangan':
                 return $this->calculateInisiatifEfisiensiKeuangan($item, $personId);
             case 'outstanding':
@@ -7961,12 +8137,12 @@ class TargetKPIController extends Controller
                 return $this->calculateMengurangiManualWorkDanError($item, $personId);
             case 'laporan analisis keuangan':
                 return $this->calculateLaporanAnalisisKeuangan($item, $personId);
-            //HRD
+                //HRD
             case 'pelaksanaan kegiatan karyawan':
                 return $this->calculatePelaksanaanKegiatanKaryawan($item, $personId);
             case 'pengeluaran biaya karyawan':
                 return $this->calculatePengeluaranBiayaKaryawan($item, $personId);
-            //Driver
+                //Driver
             case 'perbaikan kendaraan':
                 return $this->calculatePerbaikanKendaraan($item, $personId);
             case 'kontrol pengeluaran transportasi':
@@ -7974,37 +8150,37 @@ class TargetKPIController extends Controller
             case 'report kondisi kendaraan':
                 return $this->calculateReportKondisiKendaraan($item, $personId);
 
-            //OB
+                //OB
             case 'feedback kebersihan dan kenyamanan':
                 return $this->calculateFeedbackKebersihanDanKenyamanan($item, $personId);
 
-            //Target ITSM
-            //All kecuali Koordinator ITSM
+                //Target ITSM
+                //All kecuali Koordinator ITSM
             case 'kepuasan client itsm':
                 return $this->calculateProgressKepuasanClientITSM($item, $personId);
-            //Koordinator ITSM
+                //Koordinator ITSM
             case 'availability sistem internal kritis':
                 return $this->calculateAvailabilitySistemInternalKritis($item, $personId);
             case 'meningkatkan kepuasan dan loyalitas peserta/client':
                 return $this->calculateMeningkatkanKepuasanDanLoyalitasPeserta($item, $personId);
-            //Programmer
+                //Programmer
             case 'ketepatan waktu penyelesaian fitur':
                 return $this->calculateProgressKetepatanWaktuPenyelesaianFitur($item, $personId);
             case 'mengukur kualitas aplikasi agar minim bug':
                 return $this->calculateMengukurKualitasAplikasiAgarMinimBug($item, $personId);
-            //Tim Digital
+                //Tim Digital
             case 'konsistensi campaign digital':
                 return $this->calculateKonsistensiCampaignDigital($item, $personId);
             case 'efektifitas diital marketing':
                 return $this->calculateEfektifitasDiitalMarketing($item, $personId);
-            //TS
+                //TS
             case 'keberhasilan support memenuhi sla':
                 return $this->calculateTingkatKeberhasilanSupportMemenuhiSLA($item, $personId);
             case 'kualitas layanan exam':
                 return $this->calculateKualitasLayananExam($item, $personId);
 
-            //Education
-            //Instruktur
+                //Education
+                //Instruktur
             case 'kepuasan peserta pelatihan':
                 return $this->calculateKepuasanPesertaPelatihan($item, $personId);
             case 'upseling lanjutan materi':
@@ -8014,11 +8190,14 @@ class TargetKPIController extends Controller
             case 'pelatihan kompetensi eksternal':
                 return $this->calculatePelatihanKompetensiEksternal($item, $personId);
 
-            //Education Manager
+                //Education Manager
             case 'pengembangan kurikulum pelatihan':
                 return $this->calculatePengembanganKurikulumPelatihan($item, $personId);
             case 'peningkatan knowledge sharing':
                 return $this->calculatePeningkatanKnowledgeSharing($item, $personId);
+
+            case 'meningkatkan revenue perusahaan':
+                return $this->calculateMeningkatkanRevenuePerusahaan($item, $personId);
 
             default:
                 return null;

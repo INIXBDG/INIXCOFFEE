@@ -1457,7 +1457,8 @@
                         ];
 
                         const allowedAssistantRoutesForRupiah = [
-                            'Pemasukan Kotor'
+                            'Pemasukan Kotor',
+                            'meningkatkan revenue perusahaan'
                         ];
 
                         let contentPieChart = '';
@@ -2125,6 +2126,7 @@
             const hasOB = selectedJabatan.includes('Office Boy');
             const hasInstruktur = selectedJabatan.includes('Instruktur');
             const hasManagerEdu = selectedJabatan.includes('Education Manager');
+            const hasSPVSales = selectedJabatan.includes('SPV Sales');
 
             let options = '<option selected disabled>-- Pilih Assistant Route --</option>';
 
@@ -2245,6 +2247,15 @@
                     `;
                 }
 
+                //sales & marketing
+                //SPV Sales
+                else if (hasSPVSales) {
+                    options += `
+                        <option value="meningkatkan revenue perusahaan">Meningkatkan Revenue Perusahaan</option></option>
+                    `;
+                }
+                
+
                 //end/selesai
                 else {
                     options +=
@@ -2285,7 +2296,8 @@
             const rupiahRoutes = [
                 'Pemasukan Kotor',
                 'Pemasukan Bersih',
-                'Rasio Biaya Operasional'
+                'Rasio Biaya Operasional',
+                'meningkatkan revenue perusahaan'
             ];
 
             const angka = [

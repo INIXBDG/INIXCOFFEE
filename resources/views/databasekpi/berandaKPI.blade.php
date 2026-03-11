@@ -303,7 +303,7 @@
                         $auth = Auth()->user()->jabatan;
                     @endphp
 
-                    @if ($auth === 'Koordinator ITSM' || $auth === 'HRD' || $auth === 'Education Manager' || $auth === 'GM')
+                    @if ($auth === 'Koordinator ITSM' || $auth === 'HRD' || $auth === 'Education Manager' || $auth === 'GM' || $auth === 'SPV Sales')
                         <li class="nav-item">
                             <a class="nav-link" style="margin-left: -10px;">
                                 <span class="menu-title">KPI</span>
