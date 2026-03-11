@@ -12,6 +12,7 @@ class SurveyKepuasan extends Model
 
     protected $fillable = [ 
         'id_user',
+        'ticket_id',
         'q1',
         'q2',
         'q3',

@@ -3,20 +3,28 @@
 namespace App\Http\Controllers;
 
 use App\Models\SurveyKepuasan;
+use App\Models\Tickets;
 use Illuminate\Http\Request;
 
 class SurveyKepuasanController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return view('surveykepuasan.create');
+        // Menangkap parameter query string ?ticket_id=...
+        $ticket_id = $request->query('ticket_id');
+
+        // Memastikan parameter tersedia dan tiket ditemukan
+        $ticket = Tickets::where('ticket_id', $ticket_id)->firstOrFail();
+
+        return view('surveykepuasan.create', compact('ticket'));
     }
 
     public function store(Request $request)
     {
         $id_user = auth()->user()->id;
 
-        $validatedData = $request->validate([
+        $request->validate([
+            'ticket_id' => 'required|exists:tickets,ticket_id',
             'q1' => 'required|integer',
             'q2' => 'required|string',
             'q3' => 'nullable|string',
@@ -26,6 +34,7 @@ class SurveyKepuasanController extends Controller
 
         $surveyKepuasan = new SurveyKepuasan();
         $surveyKepuasan->id_user = $id_user;
+        $surveyKepuasan->ticket_id = $request->ticket_id;
         $surveyKepuasan->q1 = $request->q1;
         $surveyKepuasan->q2 = $request->q2;
         $surveyKepuasan->q3 = $request->q3;
@@ -33,7 +42,12 @@ class SurveyKepuasanController extends Controller
         $surveyKepuasan->q5 = $request->q5;
         $surveyKepuasan->save();
 
-        return redirect()->back()->with('success', 'Survey berhasil dikirim! Terima kasih atas partisipasi Anda.');
+        // Pembaruan status tiket menjadi sudah disurvei
+        Tickets::where('ticket_id', $request->ticket_id)->update([
+            'is_surveyed' => true
+        ]);
+
+        return redirect()->route('tickets.index')->with('success', 'Survey berhasil dikirim! Terima kasih atas partisipasi Anda.');
     }
 
     public function indexTable()
