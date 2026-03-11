@@ -253,6 +253,13 @@
                                             </div>
                                         </div>
 
+                                        <div class="mb-3 row" id="row_edit_duration" style="display: none;">
+                                            <label class="col-sm-4 col-form-label">Durasi Akses (Menit)</label>
+                                            <div class="col-sm-8">
+                                                <input type="number" class="form-control" name="duration_minutes" id="edit_duration_minutes">
+                                            </div>
+                                        </div>
+
                                         <div class="mb-3 row">
                                             <label class="col-sm-4 col-form-label">Status</label>
                                             <div class="col-sm-8">
@@ -537,15 +544,20 @@
             <ul class="dropdown-menu shadow">
                 <li><button class="dropdown-item" onclick="viewDetail(${item.id})"><img src="{{ asset('icon/clipboard-primary.svg') }}" width="16" class="me-1"> Detail</button></li>`;
 
-        if (isOwner && status.includes('Diajukan') && !status.includes('Ditolak')) {
+        // Ubah string status ke huruf kecil untuk keamanan pencocokan (case-insensitive)
+        let statusLower = status.toLowerCase();
+
+        if (isOwner && statusLower.includes('diajukan') && !statusLower.includes('ditolak')) {
             btns += `<li><button class="dropdown-item text-danger" onclick="deletePengajuan(${item.id})"><img src="{{ asset('icon/trash-danger.svg') }}" width="16" class="me-1"> Hapus</button></li>`;
         }
 
         let canApprove = false;
-        if (userRole === 'Education Manager' && status.includes('Ditinjau oleh Education Manager')) {
+
+        // PERBAIKAN: Gunakan statusLower untuk mencocokkan teks
+        if (userRole === 'Education Manager' && statusLower.includes('ditinjau oleh education manager')) {
             canApprove = true;
         }
-        else if (userRole === 'Koordinator ITSM' && status.includes('Ditinjau oleh Koordinator ITSM')) {
+        else if (userRole === 'Koordinator ITSM' && statusLower.includes('ditinjau oleh koordinator itsm')) {
             canApprove = true;
         }
 
@@ -557,23 +569,24 @@
             `;
         }
 
-        if ((userRole === 'Technical Support' || userRole === 'Koordinator ITSM') && !status.includes('Selesai')) {
+        if ((userRole === 'Technical Support' || userRole === 'Koordinator ITSM') && !statusLower.includes('selesai')) {
              btns += `<li><button class="dropdown-item" onclick="editPengajuan(${item.id})"><img src="{{ asset('icon/edit-warning.svg') }}" width="16" class="me-1"> Edit Teknis</button></li>`;
         }
 
         if ((userRole === 'Finance & Accounting' || userRole === 'Finance &amp; Accounting') && item.jenis_transaksi === 'baru') {
              const financeStatuses = [
-                'diproses oleh Finance',
-                'Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager',
-                'Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi',
-                'Finance Menunggu Approve Direksi',
-                'Membuat Permintaan Ke Direktur Utama',
-                'Pengajuan sedang dalam proses Pencairan',
-                'Pencairan Sudah Selesai',
-                'Selesai'
+                'diproses oleh finance',
+                'sedang dikonfirmasi oleh bagian finance kepada general manager',
+                'sedang dikonfirmasi oleh bagian finance kepada direksi',
+                'finance menunggu approve direksi',
+                'membuat permintaan ke direktur utama',
+                'pengajuan sedang dalam proses pencairan',
+                'pencairan sudah selesai',
+                'selesai'
             ];
 
-            if (financeStatuses.some(finStatus => status.includes(finStatus))) {
+            // PERBAIKAN: Cek menggunakan statusLower
+            if (financeStatuses.some(finStatus => statusLower.includes(finStatus))) {
                  btns += `<li><button class="dropdown-item text-warning" onclick="openApproveRejectModal(${item.id}, 'finance-update')"><img src="{{ asset('icon/edit-warning.svg') }}" width="16" class="me-1"> Update Pencairan</button></li>`;
              }
         }
@@ -692,9 +705,6 @@
         }
     }
 
-    // ==========================================
-    // FUNGSI MASTER LAB (TAB BARU)
-    // ==========================================
     let masterLabTableInit = false;
 
     function loadMasterLabs() {
@@ -796,35 +806,32 @@
         masterLabTableInit = true;
     }
 
-    // Membuka Modal Edit Master Lab
     function openEditMasterLabModal(lab) {
         $('#edit_lab_id').val(lab.id);
         $('#edit_nama_labs').val(lab.nama_labs);
         $('#edit_merk').val(lab.merk);
-        $('#edit_tipe').val(lab.tipe);
+        $('#edit_tipe').val(lab.tipe).trigger('change');
+        $('#edit_duration_minutes').val(lab.duration_minutes);
         $('#edit_status').val(lab.status);
         $('#edit_deskripsi').val(lab.desc);
         $('#edit_url_labs').val(lab.lab_url);
         $('#edit_kode_akses').val(lab.access_code);
-        
+
         let startDate = lab.start_date ? lab.start_date.split(' ')[0] : '';
         let endDate = lab.end_date ? lab.end_date.split(' ')[0] : '';
-        
+
         $('#edit_tanggal_mulai').val(startDate);
         $('#edit_tanggal_berakhir').val(endDate);
-
         $('#edit_mata_uang').val(lab.mata_uang || 'Dollar');
         $('#edit_nominal_harga_asli').val(lab.harga);
         $('#edit_kurs').val(lab.kurs);
 
-        // Kalkulasi rupiah
         calculateEstimasiRupiah();
 
         let selectedMateriIds = [];
         if (lab.materis && lab.materis.length > 0) {
             selectedMateriIds = lab.materis.map(m => m.id);
         }
-
         $('#edit_materi').val(selectedMateriIds).trigger('change');
 
         new bootstrap.Modal(document.getElementById('editMasterLabModal')).show();

@@ -51,13 +51,25 @@
                             </div>
                         </div>
 
+                        {{-- TAMBAHAN: FIELD DURASI (Tersembunyi jika tipe != one-time) --}}
+                        <div class="row mb-3" id="row_duration" style="display: none;">
+                            <label for="duration_minutes" class="col-md-4 col-form-label text-md-start">{{ __('Durasi (Menit)') }}</label>
+                            <div class="col-md-6">
+                                <input type="number" class="form-control @error('duration_minutes') is-invalid @enderror"
+                                       name="duration_minutes" id="duration_minutes" value="{{ old('duration_minutes', $data->lab->duration_minutes) }}">
+                                @error('duration_minutes')
+                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                @enderror
+                            </div>
+                        </div>
+
                         <div class="row mb-3">
                             <label for="status" class="col-md-4 col-form-label text-md-start">{{ __('Status') }}</label>
                             <div class="col-md-6">
                                 <select name="status" id="status" class="form-select @error('status') is-invalid @enderror" required>
-                                    <option value="Pending" {{ $data->lab->status == 'Pending' ? 'selected' : '' }}>Pending</option>
-                                    <option value="Active" {{ $data->lab->status == 'Active' ? 'selected' : '' }}>Active</option>
-                                    <option value="Expired" {{ $data->lab->status == 'Expired' ? 'selected' : '' }}>Expired</option>
+                                    <option value="pending" {{ $data->lab->status == 'pending' ? 'selected' : '' }}>Pending</option>
+                                    <option value="active" {{ $data->lab->status == 'active' ? 'selected' : '' }}>Active</option>
+                                    <option value="expired" {{ $data->lab->status == 'expired' ? 'selected' : '' }}>Expired</option>
                                 </select>
                                 @error('status')
                                     <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
@@ -160,7 +172,6 @@
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-    // Fungsi Format Rupiah (Pemisah Titik)
     function formatRupiah(angka, prefix) {
         var number_string = angka.replace(/[^,\d]/g, '').toString(),
             split = number_string.split(','),
@@ -179,37 +190,40 @@
 
     $(document).ready(function () {
 
-        // Fungsi Kalkulasi Otomatis
         function calculateTotal() {
             var currency = $('#mata_uang').val();
-
-            // Ambil nilai harga dan kurs
             var harga = parseFloat($('#harga').val()) || 0;
             var kurs = parseFloat($('#kurs').val()) || 1;
 
-            // Logic Mata Uang
             if (currency === 'Rupiah') {
-                $('#kurs').val(1).prop('readonly', true); // Kurs otomatis 1
+                $('#kurs').val(1).prop('readonly', true);
                 kurs = 1;
             } else {
                 $('#kurs').prop('readonly', false);
             }
-
-            // Hitung Total
             var total = harga * kurs;
-
-            // Tampilkan dengan format Rupiah (tanpa desimal untuk tampilan)
             $('#harga_rupiah').val(formatRupiah(Math.floor(total).toString()));
         }
 
-        // Event Listener untuk inputan
+        // --- TAMBAHAN: FUNGSI TOGGLE DURASI ---
+        function toggleDuration() {
+            if ($('#tipe').val() === 'one-time') {
+                $('#row_duration').slideDown();
+            } else {
+                $('#row_duration').slideUp();
+                $('#duration_minutes').val(''); // Bersihkan nilai jika bukan one-time
+            }
+        }
+
+        // Listener
         $('#mata_uang').on('change', calculateTotal);
         $('#harga, #kurs').on('input', calculateTotal);
+        $('#tipe').on('change', toggleDuration); // Panggil saat tipe diubah
 
-        // Jalankan kalkulasi saat halaman dimuat (untuk data existing)
+        // Initialization on Load
         calculateTotal();
+        toggleDuration(); // Cek status tipe saat halaman dimuat
 
-        // Prepare data before form submission (Hapus titik format rupiah)
         $('#labForm').on('submit', function () {
             $('#harga_rupiah').val($('#harga_rupiah').val().replace(/\./g, ''));
         });

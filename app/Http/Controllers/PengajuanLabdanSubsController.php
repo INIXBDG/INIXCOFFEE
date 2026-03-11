@@ -212,7 +212,7 @@ class PengajuanLabdanSubsController extends Controller
                 'tipe'          => 'one-time', // Default, nanti diupdate Technical Support
                 'desc'          => 'Request Baru oleh Divisi Education',
                 'lab_url'       => null,
-                'status'        => 'Pending',
+                'status'        => 'pending',
                 'is_active'     => false,
             ]);
 
@@ -361,12 +361,16 @@ class PengajuanLabdanSubsController extends Controller
                 case 'GM':
                     $status = "Telah disetujui oleh {$jabatan} dan sedang ditinjau oleh Koordinator ITSM";
                     $nextUser = Karyawan::where('jabatan', 'Koordinator ITSM')->first();
+
+                    $e = TrackingPengajuanLabSubs::create([
+                        'id_pengajuan_lab_subs' => $id,
+                        'tracking' => $status,
+                        'tanggal'  => now()
+                    ]);
+                    $updatePayload['id_tracking'] = $e->id;
                     break;
 
                 case 'Koordinator ITSM':
-                    $status = "Telah disetujui oleh Koordinator ITSM dan sedang diproses oleh Finance";
-                    $nextUser = Karyawan::where('jabatan', 'Finance & Accounting')->first();
-
                     // Logic Snapshot Data
                     if ($data->id_labs) {
                         $labData = \App\Models\Lab::find($data->id_labs);
@@ -374,6 +378,39 @@ class PengajuanLabdanSubsController extends Controller
                     } elseif ($data->id_subs) {
                         $subsData = \App\Models\Subscription::find($data->id_subs);
                         if ($subsData) $updatePayload['subs_snapshot'] = $subsData->toArray();
+                    }
+
+                    // PERBAIKAN: Pisahkan jalur untuk Existing Asset dan Pengadaan Baru
+                    if ($data->jenis_transaksi === 'existing') {
+                        // Jalur Existing Asset -> Langsung Selesai tanpa ke Finance
+                        $status = "Telah disetujui oleh Koordinator ITSM dan lihat akses nya di Detail";
+                        $nextUser = null; // Tidak perlu dinotifikasi ke pihak lain, cukup pengaju
+
+                        $e = TrackingPengajuanLabSubs::create([
+                            'id_pengajuan_lab_subs' => $id,
+                            'tracking' => $status,
+                            'tanggal'  => now()
+                        ]);
+
+                        // Tambah tracking 'Selesai' agar otomatis pindah ke tabel Riwayat Selesai
+                        $final = TrackingPengajuanLabSubs::create([
+                            'id_pengajuan_lab_subs' => $id,
+                            'tracking' => 'Selesai',
+                            'tanggal'  => now()->addSeconds(1)
+                        ]);
+
+                        $updatePayload['id_tracking'] = $final->id;
+                    } else {
+                        // Jalur Pengadaan Baru -> Lanjut ke Finance
+                        $status = "Telah disetujui oleh Koordinator ITSM dan sedang diproses oleh Finance";
+                        $nextUser = Karyawan::where('jabatan', 'Finance & Accounting')->first();
+
+                        $e = TrackingPengajuanLabSubs::create([
+                            'id_pengajuan_lab_subs' => $id,
+                            'tracking' => $status,
+                            'tanggal'  => now()
+                        ]);
+                        $updatePayload['id_tracking'] = $e->id;
                     }
                     break;
 
@@ -487,7 +524,7 @@ class PengajuanLabdanSubsController extends Controller
             'harga_rupiah' => 'nullable|string',
             'start_date'   => 'nullable|date',
             'end_date'     => 'nullable|date',
-            'status'       => 'required|string|in:Active,Pending,Expired',
+            'status'       => 'required|string|in:active,pending,expired',
         ]);
 
         if (!empty($validated['harga_rupiah'])) {
