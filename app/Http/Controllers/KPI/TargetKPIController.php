@@ -348,6 +348,11 @@ class TargetKPIController extends Controller
                 return method_exists($this, 'calculatePeningkatanKnowledgeSharing') ? $this->calculatePeningkatanKnowledgeSharing($item, $personId) : null;
             }
 
+            //Sales & Marketing
+            else if ($route === 'target penjualan tahunan') {
+                return method_exists($this, 'calculateTargetPenjualanTahunan') ? $this->calculateTargetPenjualanTahunan($item, $personId) : null;
+            }
+
             return null;
         };
 
@@ -690,7 +695,6 @@ class TargetKPIController extends Controller
                     } elseif ($item->asistant_route === 'performa KPI departemen') {
                         $progress = $this->calculatePerformaKPIDepartemen($item, $personId);
                     }
-
                     //CS
                     elseif ($item->asistant_route === 'peserta puas dengan pelayanan dan fasilitas training') {
                         $progress = $this->calculatePesertaPuasDenganPelayananDanFasilitasTraining($item, $personId);
@@ -790,6 +794,12 @@ class TargetKPIController extends Controller
                     } elseif ($item->asistant_route === 'peningkatan knowledge sharing') {
                         $progress = $this->calculatePeningkatanKnowledgeSharing($item, $personId);
                     }
+
+                    //Sales & Marketing
+                    elseif ($item->asistant_route === 'target penjualan tahunan') {
+                        $progress = $this->calculateTargetPenjualanTahunan($item, $personId);
+                    }
+
 
                     return [
                         'id' => $item->id,
@@ -1100,6 +1110,10 @@ class TargetKPIController extends Controller
                     $progress = $this->calculatePengembanganKurikulumPelatihan($target, $personId);
                 } elseif ($target->asistant_route === 'peningkatan knowledge sharing') {
                     $progress = $this->calculatePeningkatanKnowledgeSharing($target, $personId);
+                }
+                // Sales & Marketing
+                elseif ($target->asistant_route === 'total penjualan setahun') {
+                    $progress = $this->calculateTotalPenjualanSetahun($target, $personId);
                 }
 
                 if ($progress !== null && is_numeric($progress)) {
@@ -2853,6 +2867,50 @@ class TargetKPIController extends Controller
         return round($progress, 1);
     }
 
+    //Sales & Marketing
+    //Sales
+    private function calculateTargetPenjualanTahunan($item, $personId)
+    {
+        $detail = $item->detailTargetKPI->first();
+        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
+            return 0;
+        }
+
+        $nilaiTarget = (float) $detail->nilai_target;
+        $tahun = (int) $detail->detail_jangka;
+
+        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
+            return 0;
+        }
+
+        $totalSales = RKM::where('status', '0')
+            ->whereYear('tanggal_awal', $tahun);
+
+        if ($personId !== null) {
+
+            $personId = detailPersonKPI::where('detailTargetKey', $detail->id)->first()?->id_karyawan;
+
+            $kodeKaryawan = Karyawan::where('id', $personId)->value('kode_karyawan');
+            if (!$kodeKaryawan) {
+                return 0;
+            }
+
+            $totalSales = $totalSales->where('sales_key', $kodeKaryawan)
+                ->select(DB::raw('SUM(CAST(harga_jual AS UNSIGNED) * CAST(pax AS UNSIGNED)) as total_sales'))
+                ->value('total_sales');
+
+        } else {
+
+            $totalSales = $totalSales
+                ->select(DB::raw('SUM(CAST(harga_jual AS UNSIGNED) * CAST(pax AS UNSIGNED)) as total_sales'))
+                ->value('total_sales');
+        }
+
+        $progress = (float) ($totalSales ?? 0);
+
+        return round($progress, 1);
+    }
+
     //detail_target
     public function detailData(Request $request)
     {
@@ -2915,6 +2973,8 @@ class TargetKPIController extends Controller
                         $data = $this->calculateRasioBiayaOperasionalTerhadapRevenueDetail($itemDetail);
                     } elseif ($itemDetail->asistant_route === 'performa KPI departemen') {
                         $data = $this->calculatePerformaKPIDepartemenDetail($itemDetail, $personId);
+                    } elseif ($itemDetail->asistant_route === 'target penjualan tahunan') {
+                        $data = $this->calculateTargetPenjualanTahunanDetail($itemDetail, $personId);
                     }
 
                     // CS
@@ -3001,6 +3061,11 @@ class TargetKPIController extends Controller
                         $data = $this->calculateSertifikasiKompetensiInternalDetail($itemDetail, $personId);
                     } elseif ($itemDetail->asistant_route === 'pelatihan kompetensi eksternal') {
                         $data = $this->calculatePelatihanKompetensiEksternalDetail($itemDetail, $personId);
+                    }
+
+                    //Sales & Marketing
+                    elseif ($itemDetail->asistant_route === 'total penjualan setahun') {
+                        $data = $this->calculateTotalPenjualanSetahunDetail($itemDetail, $personId);
                     }
 
                     $dataCalculation = $this->getCalculationByRoute($itemDetail, $personId);
@@ -3891,6 +3956,10 @@ class TargetKPIController extends Controller
                     $progress = $this->calculatePengembanganKurikulumPelatihan($target, $personId);
                 } elseif ($target->asistant_route === 'peningkatan knowledge sharing') {
                     $progress = $this->calculatePeningkatanKnowledgeSharing($target, $personId);
+                }
+                //Sales & Marketing
+                elseif ($target->asistant_route === 'target penjualan tahunan') {
+                    $progress = $this->calculateTargetPenjualanTahunan($target, $personId);
                 }
 
                 if ($progress !== null && is_numeric($progress)) {
@@ -7750,6 +7819,102 @@ class TargetKPIController extends Controller
         ];
     }
 
+    //Sales & Marketing
+    //Sales
+    private function calculateTargetPenjualanTahunanDetail($itemDetail, $personId)
+{
+    $detail = $itemDetail->detailTargetKPI->first();
+
+    if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
+        return [
+            'progress' => 0,
+            'gap' => 0,
+            'pie_chart' => ['above' => 0, 'below' => 0],
+            'monthly_data' => [],
+            'daily_breakdown_per_month' => [],
+        ];
+    }
+
+    $nilaiTarget = (float) $detail->nilai_target;
+    $tahun = (int) $detail->detail_jangka;
+
+    if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
+        return [
+            'progress' => 0,
+            'gap' => 0,
+            'pie_chart' => ['above' => 0, 'below' => 0],
+            'monthly_data' => [],
+            'daily_breakdown_per_month' => [],
+        ];
+    }
+
+    $kodeKaryawan = null;
+    if ($personId !== null) {
+        $kodeKaryawan = Karyawan::where('id', $personId)->value('kode_karyawan');
+    }
+
+    $query = RKM::where('status', '0')
+        ->whereYear('tanggal_awal', $tahun);
+
+    if ($kodeKaryawan) {
+        $query->where('sales_key', $kodeKaryawan);
+    }
+
+    $sales = $query->select(DB::raw('tanggal_awal, SUM(CAST(harga_jual AS UNSIGNED) * CAST(pax AS UNSIGNED)) as total'))
+        ->groupBy('tanggal_awal')
+        ->get();
+
+    $totalSales = 0;
+    $dailyBreakdownPerMonth = [];
+    $monthlyDataTemp = [];
+
+    foreach ($sales as $row) {
+        $date = Carbon::parse($row->tanggal_awal);
+        $dateKey = $date->format('Y-m-d');
+        $monthKey = $date->format('Y-m');
+
+        $total = (float) $row->total;
+        $totalSales += $total;
+
+        if (!isset($dailyBreakdownPerMonth[$monthKey])) {
+            $dailyBreakdownPerMonth[$monthKey] = [];
+        }
+        $dailyBreakdownPerMonth[$monthKey][$dateKey] = round($total, 1);
+
+        if (!isset($monthlyDataTemp[$monthKey])) {
+            $monthlyDataTemp[$monthKey] = 0;
+        }
+        $monthlyDataTemp[$monthKey] += $total;
+    }
+
+    $monthlyData = [];
+    foreach ($monthlyDataTemp as $month => $total) {
+        $monthlyData[$month] = round($total, 1);
+    }
+
+    ksort($monthlyData);
+    ksort($dailyBreakdownPerMonth);
+
+    $progress = round($totalSales, 1);
+    $gapRaw = $totalSales - $nilaiTarget;
+    $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
+
+    $above = $totalSales >= $nilaiTarget ? 1 : 0;
+    $below = 1 - $above;
+
+    return [
+        'progress' => $progress,
+        'gap' => $gap,
+        'dataManual' => [
+            'manual_document' => $detail->manual_document,
+        ],
+        'pie_chart' => ['above' => $above, 'below' => $below],
+        'monthly_data' => $monthlyData,
+        'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
+    ];
+}
+
+
     //Overview KPI
     public function personalIndex()
     {
@@ -8019,6 +8184,11 @@ class TargetKPIController extends Controller
                 return $this->calculatePengembanganKurikulumPelatihan($item, $personId);
             case 'peningkatan knowledge sharing':
                 return $this->calculatePeningkatanKnowledgeSharing($item, $personId);
+
+            //Sales & Marketing
+            //Sales
+            case 'target penjualan tahunan':
+                return $this->calculateTargetPenjualanTahunan($item, $personId);
 
             default:
                 return null;
