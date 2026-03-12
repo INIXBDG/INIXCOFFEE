@@ -4,19 +4,16 @@
     <div class="container-fluid py-4">
         <!-- Page Header -->
         <div class="d-flex justify-content-between align-items-center mb-5">
-            <h4 class="mb-0 fw-bold text-dark">Dashboard Office</h4>
+            <h4 class="mb-0 fw-semibold text-dark d-flex align-items-center">
+                <i class="bx bx-task text-primary me-2" style="font-size: 1.5rem;"></i>
+                Tagihan Perusahaan 
+            </h4>
             <small class="text-muted fw-medium">{{ now()->translatedFormat('l, d F Y') }}</small>
         </div>
 
         <div class="row g-4 mb-5">
             <div class="col-12">
                 <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden">
-                    <div class="card-header bg-white border-bottom-0 pb-0 d-flex justify-content-between">
-                        <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
-                            <i class="bx bx-task text-primary me-2" style="font-size: 1.5rem;"></i>
-                            Tagihan Perusahaan 
-                        </h5>
-                    </div>
                     <div class="card-body p-4 mb-4 h-100 " style="height: 320px;">
                         {{-- Table Tagihan --}}
                         <div class="table-responsive mb-4" style="max-height: 500px; overflow-y: auto;">
@@ -167,32 +164,51 @@
 
 <style>
     .custom-check {
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            border: 2px solid #71DD37;
-            border-radius: 5px;
-            position: relative;
-        }
-        .check-blue {
-            width: 20px;
-            height: 20px;
-            border: 2px solid #5B73E8;
-            border-radius: 5px;
-            position: relative;
-        }
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #71DD37;
+        border-radius: 5px;
+        position: relative;
+    }
+    .check-blue {
+        width: 20px;
+        height: 20px;
+        border: 2px solid #5B73E8;
+        border-radius: 5px;
+        position: relative;
+    }
 
-        .custom-check:checked {
-            background-color: #71DD37;
-        }
+    .custom-check:checked {
+        background-color: #71DD37;
+    }
 
-        .custom-check:checked::after {
-            content: '✓';
-            color: white;
-            font-weight: bold;
-            position: absolute;
-            left: 2px;
-            top: -2px;
-        }
+    .custom-check:checked::after {
+        content: '✓';
+        color: white;
+        font-weight: bold;
+        position: absolute;
+        left: 2px;
+        top: -2px;
+    }
+    .custom-fail:checked::after {
+        content: '✖';
+        color: white;
+        font-weight: bold;
+        position: absolute;
+        left: 2px;
+        top: -2px;
+    }
+    .custom-fail:checked {
+        background-color: #FF3E1D;
+    }
+    .custom-fail {
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #FF3E1D;
+        border-radius: 5px;
+        position: relative;
+    }
 </style>
 @endsection

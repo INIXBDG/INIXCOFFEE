@@ -49,6 +49,7 @@ use App\Http\Controllers\PenukaranSouvenirController;
 use App\Http\Controllers\Webinar\ChecklistController;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 use App\Http\Controllers\ActivityInstrukturController;
+use App\Http\Controllers\AdministrasiKaryawanController;
 use App\Http\Controllers\Office\CertificateController;
 use App\Http\Controllers\office\vendorOfficeController;
 use App\Http\Controllers\RekomendasiLanjutanController;
@@ -830,11 +831,21 @@ Route::prefix('office')->group(function () {
     Route::get('/data-cuti', [OfficeController::class, 'dataCuti']);
     Route::get('/data-mengajar', [OfficeController::class, 'dataMengajar']);
     Route::get('/data-tagihan/{id}', [TagihanPerusahaanController::class, 'dataTagihan']);
+
+    // tagihan perusahaan
     Route::post('/store-tagihan', [TagihanPerusahaanController::class, 'storeTagihanPerusahaan'])->name('storeTagihanPerusahaan');
     Route::post('/update-tagihan/{id}', [TagihanPerusahaanController::class, 'updateTagihanPerusahaan'])->name('updateTagihanPerusahaan');
     Route::get('/detail-tagihan/{id}', [TagihanPerusahaanController::class, 'detailTagihanPerusahaan'])->name('detailTagihanPerusahaan');
     Route::post('/delete-tagihan/{id}', [TagihanPerusahaanController::class, 'hapusTagihanPerusahaan'])->name('hapusTagihanPerusahaan');
     Route::get('/tagihan-perusahaan', [TagihanPerusahaanController::class, 'index'])->name('office.tagihanPerusahaan.index');
+
+    // administrasi karyawan
+    Route::get('data-administrasi/{id}', [AdministrasiKaryawanController::class, 'getData']);
+    Route::get('administrasi-karyawan', [AdministrasiKaryawanController::class, 'index'])->name('administrasi.karyawan');
+    Route::post('administrasi-karyawan/store', [AdministrasiKaryawanController::class, 'store'])->name('administrasi.karyawan.store');
+    Route::get('administrasi-karyawan/{id}', [AdministrasiKaryawanController::class, 'edit'])->name('administrasi.karyawan.edit');
+    Route::post('administrasi-karyawan/update/{id}', [AdministrasiKaryawanController::class, 'update'])->name('administrasi.karyawan.update');
+    Route::delete('administrasi-karyawan/destroy/{id}', [AdministrasiKaryawanController::class, 'destroy'])->name('administrasi.karyawan.destroy');
 });
 
 Route::prefix('dashboard-sla/{team}')->group(function () {
