@@ -465,7 +465,7 @@
             'pemasukan bersih',
             'inisiatif efisiensi keuangan',
             'rasio biaya operasional terhadap revenue',
-            'mengurangi Manual Work Dan Error',
+            'mengurangi manual work dan error',
             'laporan analisis keuangan',
             'pengeluaran biaya karyawan'
 
@@ -774,41 +774,6 @@
                 }
             }
 
-            $assistantRoute.off('change').on('change', function() {
-                const value = $(this).val();
-                const itsmRoutes = [
-                    'kepuasan client ITSM',
-                    'kualitas layanan support',
-                    'keberhasilan support',
-                    'ketepatan waktu penyelesaian fitur'
-                ];
-                if (value === 'Kepuasan Pelanggan' || itsmRoutes.includes(value)) {
-                    $tipeTarget.html(`<option value="persen" selected>Persen (%)</option>`);
-                    $tipeTarget.attr('disabled', true);
-                    $jangkaTarget.empty().append(`<option value="Tahunan" selected>Tahunan</option>`);
-                    $jangkaTarget.attr('disabled', true);
-                } else {
-                    $tipeTarget.html(`
-                <option selected disabled>-- Pilih Tipe --</option>
-                <option value="angka">Angka (Unit, Jumlah, dll)</option>
-                <option value="rupiah">Rupiah (Nilai Keuangan)</option>
-                <option value="persen">Persen (%)</option>
-            `);
-                    $tipeTarget.removeAttr('disabled');
-                    $jangkaTarget.empty().append(`
-                <option selected disabled>-- Pilih Jangka --</option>
-                <option value="Tahunan">Tahunan</option>
-                <option value="Quartal">Quartal</option>
-                <option value="Bulanan">Bulanan</option>
-                <option value="Mingguan">Mingguan</option>
-            `);
-                    $jangkaTarget.removeAttr('disabled');
-                }
-                $detailJangkaGroup.hide();
-                $konversiGroup.hide();
-                $nilaiTarget.val('');
-            });
-
             $nilaiTarget.off('input').on('input', function() {
                 const tipe = $tipeTarget.val();
                 let value = $(this).val().replace(/\D/g, '');
@@ -1016,15 +981,6 @@
                                 if (progressNumeric === 0) {
                                     statusText = 'Belum Dimulai';
                                     badgeClass = 'bg-warning text-dark';
-                                } else if (item.asistant_route ===
-                                    'rasio biaya operasional terhadap revenue') {
-                                    if (item.progress > item.nilai_target) {
-                                        statusText = 'Gagal';
-                                        badgeClass = 'bg-danger';
-                                    } else {
-                                        statusText = 'Selesai';
-                                        badgeClass = 'bg-success';
-                                    }
                                 } else if (nowTime > item.tenggat_waktu && progressNumeric <
                                     item.nilai_target) {
                                     statusText = 'Gagal';
@@ -1141,8 +1097,6 @@
                             content_target.append(cardWrapper);
                         });
                     }
-
-                    setupFormListeners('targetForm', false);
 
                     const $editJangka = $('#edit_jangka_target');
                     $editJangka.empty().append('<option selected disabled>-- Pilih Jangka --</option>');
@@ -1299,17 +1253,8 @@
                         if (isDateBefore(dateNow, startOfYear)) {
                             Tercapai = "Belum Dimulai";
                         } else if (isDateAfter(dateNow, tenggatWaktu) || dateNow === tenggatWaktu) {
-                            if (data.condition === 'rasio biaya operasional terhadap revenue') {
-                                if (data.data_detail.progress > data.nilai_target) {
-                                    Tercapai = 'Target Gagal';
-                                } else {
-                                    Tercapai = 'Mencapai Target';
-                                }
-                            } else {
-                                Tercapai = data.data_detail.progress >= data.nilai_target ?
-                                    "Mencapai Target" : "Target Gagal";
-                            }
-
+                            Tercapai = data.data_detail.progress >= data.nilai_target ?
+                                "Mencapai Target" : "Target Gagal";
                         } else {
                             Tercapai = data.data_detail.progress >= data.nilai_target ?
                                 "Mencapai Target" : "Sedang Berjalan";
@@ -1451,7 +1396,7 @@
                             'pemasukan bersih',
                             'rasio biaya operasional terhadap revenue',
                             'inisiatif efisiensi keuangan',
-                            'mengurangi Manual Work Dan Error',
+                            'mengurangi manual work dan error',
                             'laporan analisis keuangan',
                             'pengeluaran biaya karyawan'
                         ];
@@ -1909,28 +1854,6 @@
                 }
             }
 
-            $assistantRoute.off('change').on('change', function() {
-                const value = $(this).val();
-                const tipe = $tipeTarget.val();
-                if (value === 'Kepuasan Pelanggan') {
-                    $tipeTarget.html(`
-                <option selected disabled>-- Pilih Tipe --</option>
-                <option value="angka" disabled>Angka (Unit, Jumlah, dll)</option>
-                <option value="rupiah" disabled>Rupiah (Nilai Keuangan)</option>
-                <option value="persen">Persen (%)</option>
-            `);
-                    $tipeTarget.removeAttr('disabled');
-                } else {
-                    $tipeTarget.html(`
-                <option selected disabled>-- Pilih Tipe --</option>
-                <option value="angka">Angka (Unit, Jumlah, dll)</option>
-                <option value="rupiah">Rupiah (Nilai Keuangan)</option>
-                <option value="persen">Persen (%)</option>
-            `);
-                    $tipeTarget.removeAttr('disabled');
-                }
-            });
-
             $nilaiTarget.off('input').on('input', function() {
                 const tipe = $tipeTarget.val();
                 let value = $(this).val().replace(/\D/g, '');
@@ -2159,7 +2082,7 @@
                     options += `
                         <option value="peserta puas dengan pelayanan dan fasilitas training">Peserta Puas Dengan Pelayanan & Fasilitas Training</option>
                         <option value="dorong inovasi pelayanan">Dorong Inovasi Pelayanan</option>
-                        <option value="penanganan komplain perseta">Penanganan Komplain Peserta</option>
+                        <option value="penanganan komplain peserta">Penanganan Komplain Peserta</option>
                         <option value="report persiapan kelas">Report Persiapan Kelas</option>
                     `;
                 }
@@ -2170,7 +2093,6 @@
                         <option value="inisiatif efisiensi keuangan">Inisiatif Efisiensi keuangan</option>
                         <option value="mengurangi manual work dan error">Mengurangi Manual Work Dan Error</option>
                         <option value="laporan analisis keuangan">Laporan Analisis Keuangan</option>
-                        <option value="pencairan biaya operasional">Pencairan Biaya Operasional Kantor</option>
                     `;
                 }
 
@@ -2196,6 +2118,7 @@
                 else if (hasOB) {
                     options += `
                         <option value="feedback kebersihan dan kenyamanan">Feedback Kebersihan Dan Kenyamanan Peserta</option>
+                        <option value="penyelesaian tugas harian">Peyelesaian Tugas Harian</option>
                     `;
                 }
 
@@ -2228,6 +2151,7 @@
                         <option value="kualitas layanan exam">Kualitas Layanan Exam</option>
                     `;
                 }
+                
                 //Education
                 //Instruktur
                 else if (hasInstruktur) {
@@ -2275,59 +2199,109 @@
         $('#assistant_route').on('change', function() {
             const selectedRoute = $(this).val();
             const tipeTargetSelect = $('#tipeTarget');
+            const nilaiTarget = $('#nilaiTarget');
 
             if (!selectedRoute) {
                 tipeTargetSelect.prop('disabled', true).html(
                     '<option selected disabled>-- Pilih Assistant Route --</option>');
+                nilaiTarget.prop('disabled', true).val('');
                 return;
             }
 
             tipeTargetSelect.prop('disabled', false);
+            nilaiTarget.prop('disabled', false); 
 
             const persenRoutes = [
-                'Kepuasan Pelanggan',
-                'kepuasan client ITSM',
-                'keberhasilan support memenuhi sla',
-                'ketepatan waktu penyelesaian fitur',
-                'konsistensi campaign digital',
-                'mengukur kualitas aplikasi agar minim bug'
-            ];
+                'pemasukan bersih', 'kepuasan pelanggan', 'rasio biaya operasional terhadap revenue',
+                'performa kpi departemen', 'peserta puas dengan pelayanan dan fasilitas training',
+                'penanganan komplain peserta', 'report persiapan kelas', 'banyak tagihan client yang belum lunas',
+                'pelaksanaan kegiatan karyawan', 'pengeluaran biaya karyawan', 'administrasi karyawan',
+                'perbaikan kendaraan', 'report kondisi kendaraan', 'kontrol pengeluaran transportasi',
+                'feedback kebersihan dan kenyamanan', 'penyelesaian tugas harian',
+                'kepuasan client itsm', 'meningkatkan kepuasan dan loyalitas peserta/client',
+                'availability sistem internal kritis', 'ketepatan waktu penyelesaian fitur',
+                'mengukur kualitas aplikasi agar minim bug', 'konsistensi campaign digital',
+                'keberhasilan support memenuhi sla', 'kualitas layanan exam',
+                'kepuasan peserta pelatihan', 'upseling lanjutan materi', 'outstanding'
+            ].map(r => r.toLowerCase());
 
-            const rupiahRoutes = [
-                'Pemasukan Kotor',
-                'Pemasukan Bersih',
-                'Rasio Biaya Operasional',
-                'meningkatkan revenue perusahaan'
-            ];
+            const rupiahRoutes = ['pemasukan kotor'].map(r => r.toLowerCase());
+            
+            const angkaRoutes = [
+                'dorong inovasi pelayanan', 'inisiatif efisiensi keuangan', 
+                'mengurangi manual work dan error', 'laporan analisis keuangan',
+                'efektifitas digital marketing', 'sertifikasi kompetensi internal',
+                'pelatihan kompetensi eksternal', 'pengembangan kurikulum pelatihan',
+                'peningkatan knowledge sharing'
+            ].map(r => r.toLowerCase());
 
-            const angka = [
-                'Rata Rata Pencapaian Per Departement'
-            ];
+            const routeLower = selectedRoute.toLowerCase();
 
-            if (persenRoutes.includes(selectedRoute)) {
+            // --- Set opsi tipe target ---
+            if (persenRoutes.includes(routeLower)) {
                 tipeTargetSelect.html(`
-                    <option selected disabled>-- Pilih Tipe --</option>
+                    <option disabled>-- Pilih Tipe --</option>
                     <option disabled>Angka (Unit, Jumlah, dll)</option>
                     <option disabled>Rupiah (Nilai Keuangan)</option>
-                    <option value="persen">Persen (%)</option>
-                `).prop('disabled', true);
-
-            } else if (rupiahRoutes.includes(selectedRoute)) {
+                    <option selected value="persen">Persen (%)</option>
+                `);
+            } else if (rupiahRoutes.includes(routeLower)) {
                 tipeTargetSelect.html(`
-                    <option selected disabled>-- Pilih Tipe --</option>
+                    <option disabled>-- Pilih Tipe --</option>
                     <option disabled>Angka (Unit, Jumlah, dll)</option>
-                    <option value="rupiah">Rupiah (Nilai Keuangan)</option>
+                    <option selected value="rupiah">Rupiah (Nilai Keuangan)</option>
                     <option disabled>Persen (%)</option>
-                `).prop('disabled', false);
-
-            } else if (angka.includes(selectedRoute)) {
+                `);
+            } else if (angkaRoutes.includes(routeLower)) {
                 tipeTargetSelect.html(`
-                    <option selected disabled>-- Pilih Tipe --</option>
-                    <option value="angka">Angka (Unit, Jumlah, dll)</option>
+                    <option disabled>-- Pilih Tipe --</option>
+                    <option selected value="angka">Angka (Unit, Jumlah, dll)</option>
                     <option disabled>Rupiah (Nilai Keuangan)</option>
                     <option disabled>Persen (%)</option>
-                `).prop('disabled', false);
+                `);
             }
+
+            let isAutoFilled = false;
+
+            if (routeLower === 'sertifikasi kompetensi internal' || 
+                routeLower === 'pelatihan kompetensi eksternal') {
+                const selectedJabatan = $('#jabatan').val();
+                const count = Array.isArray(selectedJabatan) ? selectedJabatan.length : (selectedJabatan ? 1 : 0);
+                nilaiTarget.val(count).trigger('input');
+                isAutoFilled = true;
+            } 
+            else if (routeLower === 'efektifitas digital marketing') {
+                nilaiTarget.val('4').trigger('input');
+                isAutoFilled = true;
+            } 
+            else if (routeLower === 'laporan analisis keuangan') {
+                nilaiTarget.val('12').trigger('input');
+                isAutoFilled = true;
+            } 
+            else if (routeLower === 'dorong inovasi pelayanan') {
+                nilaiTarget.val('3').trigger('input');
+                isAutoFilled = true;
+            } 
+            else if (routeLower === 'mengurangi manual work dan error') {
+                nilaiTarget.val('2').trigger('input');
+                isAutoFilled = true;
+            } 
+            else if (routeLower === 'inisiatif efisiensi keuangan') {
+                nilaiTarget.val('2').trigger('input');
+                isAutoFilled = true;
+            } 
+            else if (routeLower === 'pengembangan kurikulum pelatihan') {
+                nilaiTarget.val('12').trigger('input');
+                isAutoFilled = true;
+            } 
+            else if (routeLower === 'peningkatan knowledge sharing') {
+                const currentYear = new Date().getFullYear();
+                const weeks = (new Date(currentYear, 0, 1).getDay() === 4 || new Date(currentYear, 11, 31).getDay() === 4) ? 53 : 52;
+                nilaiTarget.val(weeks).trigger('input');
+                isAutoFilled = true;
+            }
+
+            nilaiTarget.prop('disabled', isAutoFilled);
 
             tipeTargetSelect.trigger('change');
         });

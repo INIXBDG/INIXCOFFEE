@@ -100,6 +100,15 @@ class KegiatanController extends Controller
         return $pdf->download($filename);
     }
 
+    public function updateRealisasi(Request $request) {
+        $dataKegiatan = Kegiatan::findOrFail($request->id);
+
+        $dataKegiatan->realisasi = $request->input('realisasi');
+        $dataKegiatan->save();
+
+        return back();
+    }
+
     public function storePeserta(Request $request, $id)
     {
         $kegiatan = Kegiatan::findOrFail($id);

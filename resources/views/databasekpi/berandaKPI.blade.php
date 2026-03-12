@@ -299,16 +299,22 @@
                             <i class="mdi mdi-home menu-icon"></i>
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" style="margin-left: -10px;">
+                            <span class="menu-title">KPI</span>
+                        </a>
+                    </li>
                     @php
                         $auth = Auth()->user()->jabatan;
                     @endphp
 
-                    @if ($auth === 'Koordinator ITSM' || $auth === 'HRD' || $auth === 'Education Manager' || $auth === 'GM' || $auth === 'SPV Sales')
-                        <li class="nav-item">
-                            <a class="nav-link" style="margin-left: -10px;">
-                                <span class="menu-title">KPI</span>
-                            </a>
-                        </li>
+                    @if (
+                        $auth === 'Koordinator ITSM' ||
+                            $auth === 'HRD' ||
+                            $auth === 'Education Manager' ||
+                            $auth === 'GM' ||
+                            $auth === 'Finance & Accounting')
+
                         <li class="nav-item {{ Request::routeIs('kpi.index') ? 'active' : '' }}">
                             <a class="nav-link" href="{{ route('kpi.index') }}">
                                 <span class="menu-title">Target Divisi</span>
@@ -322,23 +328,14 @@
                                 <i class="fa-solid fa-users-viewfinder menu-icon"></i>
                             </a>
                         </li>
-
-                        <li class="nav-item {{ Request::routeIs('kpi.overview.indexPersonal') ? 'active' : '' }}">
-                            <a class="nav-link" href="{{ route('kpi.overview.indexPersonal') }}">
-                                <span class="menu-title">Overview Personal</span>
-                                <i class="fa-solid fa-users-viewfinder menu-icon"></i>
-                            </a>
-                        </li>
                     @endif
 
-                    @if ($auth === 'Technical Support' || $auth === 'Tim Digital' || $auth === 'Programmer')
-                        <li class="nav-item {{ Request::routeIs('kpi.overview.indexPersonal') ? 'active' : '' }}">
-                            <a class="nav-link" href="{{ route('kpi.overview.indexPersonal') }}">
-                                <span class="menu-title">Overview Personal</span>
-                                <i class="fa-solid fa-users-viewfinder menu-icon"></i>
-                            </a>
-                        </li>
-                    @endif
+                    <li class="nav-item {{ Request::routeIs('kpi.overview.indexPersonal') ? 'active' : '' }}">
+                        <a class="nav-link" href="{{ route('kpi.overview.indexPersonal') }}">
+                            <span class="menu-title">Overview Personal</span>
+                            <i class="fa-solid fa-users-viewfinder menu-icon"></i>
+                        </a>
+                    </li>
 
                     <li class="nav-item">
                         <a class="nav-link" style="margin-left: -10px;">

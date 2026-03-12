@@ -956,6 +956,8 @@ Route::prefix('office')->name('office.')->middleware(['auth'])->group(function (
 
         Route::put('/tambah/peserta/{id}', [KegiatanController::class, 'storePeserta'])->name('StorePesertaKegiatan');
         Route::get('/download/pdf/{id}', [KegiatanController::class, 'downloadPDF'])->name('downloadPdfRab');
+
+        Route::post('/update/realisasi', [KegiatanController::class, 'updateRealisasi'])->name('kegiatan.updateRealisasi');
     });
 
     Route::prefix('kendaraan')->group(function(){

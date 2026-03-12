@@ -28,7 +28,7 @@
                 <div class="row g-4">
 
                     @if ($kegiatan->tipe != 'pembelian')
-                        <div class="col-6 col-md-3 border-start-md">
+                        <div class="col border-start-md">
                             <div class="d-flex align-items-center mb-2">
                                 <small class="text-muted fw-bold text-uppercase"
                                     style="font-size: 0.75rem; letter-spacing: 0.5px;">Waktu</small>
@@ -43,7 +43,7 @@
                             </div>
                         </div>
 
-                        <div class="col-6 col-md-3 border-start-md">
+                        <div class="col border-start-md">
                             <div class="d-flex align-items-center mb-2">
                                 <small class="text-muted fw-bold text-uppercase"
                                     style="font-size: 0.75rem; letter-spacing: 0.5px;">Durasi</small>
@@ -52,7 +52,7 @@
                         </div>
                     @endif
 
-                    <div class="col-6 col-md-3 border-start-md">
+                    <div class="col border-start-md">
                         <div class="d-flex align-items-center mb-2">
                             <small class="text-muted fw-bold text-uppercase"
                                 style="font-size: 0.75rem; letter-spacing: 0.5px;">PIC</small>
@@ -61,7 +61,7 @@
                     </div>
 
                     @if ($kegiatan->tipe != 'pembelian')
-                        <div class="col-6 col-md-3 border-start-md">
+                        <div class="col border-start-md">
                             <div class="card h-100 shadow-sm cursor-pointer" role="button" data-bs-toggle="modal"
                                 data-bs-target="#pesertaModal">
 
@@ -78,6 +78,27 @@
                                         @endphp
 
                                         {{ $pakaiPeserta ? $peserta->count() : $absensi->count() }}
+                                    </h6>
+                                </div>
+
+                            </div>
+                        </div>
+                    @endif
+
+                    @if ($kegiatan)
+                        <div class="col border-start-md">
+                            <div class="card h-100 shadow-sm cursor-pointer" role="button" data-bs-toggle="modal"
+                                data-bs-target="#RealisasiKegiatan">
+
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <small class="text-muted fw-bold text-uppercase"
+                                            style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                                            Realisasi
+                                        </small>
+                                    </div>
+                                    <h6 class="mb-0 fw-bold text-dark mt-1">
+                                        Rp {{ number_format($kegiatan->realisasi ?? 0, 0, ',', '.') }}
                                     </h6>
                                 </div>
 
@@ -667,6 +688,39 @@
         </div>
     </div>
 
+    {{-- modal realisasi --}}
+    <div class="modal fade" id="RealisasiKegiatan" tabindex="-1" aria-labelledby="RealisasiKegiatanLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="{{ route('office.kegiatan.updateRealisasi') }}" method="POST">
+                    @csrf
+                    @method('post')
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="RealisasiKegiatanLabel">Realisasi Kegiatan</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            @if ($kegiatan)
+                                <input type="hidden" name="id" value="{{ $kegiatan->id }}">
+                                <label for="realisasi_display" class="form-label">Jumlah Realisasi</label>
+                                <input type="text" class="form-control" value="{{ $kegiatan->realisasi ?? '0' }}" id="realisasi_display">
+                                <input type="hidden" name="realisasi" value="{{ $kegiatan->realisasi ?? '0' }}" id="realisasi">
+                                <div id="realisasiHelp" class="form-text">masukan data realisasi kegiatan yang telah
+                                    dilakukan.</div>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
 
 
     <style>
@@ -685,6 +739,20 @@
     <script>
         $(document).ready(function() {
             loadPengajuanTable();
+
+            const display = document.getElementById('realisasi_display');
+            const real = document.getElementById('realisasi');
+
+            display.addEventListener('input', function() {
+                let value = this.value.replace(/[^0-9]/g, '');
+                real.value = value;
+
+                if (value) {
+                    this.value = 'Rp ' + new Intl.NumberFormat('id-ID').format(value);
+                } else {
+                    this.value = '';
+                }
+            });
         });
         document.addEventListener('DOMContentLoaded', function() {
             const container = document.getElementById('items-container');
