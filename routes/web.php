@@ -71,6 +71,7 @@ use App\Http\Controllers\KegiatanController;
 use App\Http\Controllers\KendaraanController;
 use App\Http\Controllers\registexamController;
 use App\Http\Controllers\KomplainPesertaController;
+use App\Http\Controllers\LaporanHarianSalesController;
 use App\Http\Controllers\WebhookController;
 use App\Http\Controllers\IdeInovasiController;
 use App\Http\Controllers\office\TagihanPerusahaanController;
@@ -607,7 +608,7 @@ Route::prefix('crm')->group(function () {
     Route::get('/index/peluang', [PeluangController::class, 'indexJson'])->name('index.peluang.json');
     Route::get('/peluang/detail/{id}', [PeluangController::class, 'detail'])->name('detail.peluang');
     Route::post('/peluang/store', [PeluangController::class, 'store'])->name('store.peluang');
-    Route::delete('/peluang/delete/{id}', [PeluangController::class, 'delete'])->name('delete.peluang');
+    Route::delete('/peluang/delete/{id}', [PeluangController::class, 'delete'])->name('delete.peluang');    
     Route::put('/peluang/edit/{id}', [PeluangController::class, 'update'])->name('edit.peluang');
     Route::put('/peluang/update/{id}', [PeluangController::class, 'updateTahap'])->name('update.tahap');
     Route::get('/ambil/aktivitas/{id}', [PeluangController::class, 'AmbilAktivitas']);
@@ -672,6 +673,15 @@ Route::prefix('crm')->group(function () {
     // Import Contact / Perusahaan
     Route::post('/perusahaan/import/perusahaan', [ImportPerusahaanAndContactController::class, 'importPerusahaan'])->name('perusahaan.import');
     Route::post('/perusahaan/import/contacts', [ImportPerusahaanAndContactController::class, 'importContacts'])->name('contact.import');
+
+    // laporan Harian Sales 
+    Route::get('laporan-harian', [LaporanHarianSalesController::class, 'index'])->name('laporan.harian');
+    Route::get('laporan-harian/create', [LaporanHarianSalesController::class, 'create'])->name('laporan.harian.create');
+    Route::get('laporan-harian/{id}/edit', [LaporanHarianSalesController::class, 'edit'])->name('laporan.harian.edit');
+    Route::post('laporan-harian/store', [LaporanHarianSalesController::class, 'store'])->name('laporan.harian.store');
+    Route::put('laporan-harian/{id}/update', [LaporanHarianSalesController::class, 'update'])->name('laporan.harian.update');
+    Route::delete('laporan-harian/delete/{id}', [LaporanHarianSalesController::class, 'delete'])->name('laporan.harian.delete');
+    Route::get('laporan-harian/export/{id}/{type}', [LaporanHarianSalesController::class, 'exportPdf'])->name('laporan.harian.pdf');
 });
 
 //INVOICE
