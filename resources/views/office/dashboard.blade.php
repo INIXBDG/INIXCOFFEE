@@ -357,7 +357,7 @@
         </div>
         @endif
 
-        {{-- @if (Auth::user()->jabatan === 'HRD') --}}
+        @if (Auth::user()->jabatan === 'HRD')
         <div class="row g-4 mb-5">
             <div class="col-12">
                 <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden">
@@ -610,7 +610,7 @@
                 </div>
             </div>
         </div>
-        {{-- @endif --}}
+        @endif
 
         <!-- Chart & Tidak Hadir -->
         <div class="row g-4">
