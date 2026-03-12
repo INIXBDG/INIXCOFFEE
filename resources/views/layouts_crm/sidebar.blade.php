@@ -142,6 +142,16 @@
                     </a>
                 </li>
             @endif
+            
+            {{-- Laporan MoM --}}
+            @if (in_array($user->jabatan, ['GM', 'SPV Sales', 'Adm Sales', 'HRD']))
+                <li class="menu-item {{ request()->routeIs('laporan.harian') ? 'active open' : '' }}">
+                    <a href="{{ route('laporan.harian') }}" class="menu-link">
+                        <i class='menu-icon tf-icons bx bx-task'></i>
+                        <div class="text-truncate" data-i18n="crmLaporanHarian">Laporan MoM</div>
+                    </a>
+                </li>
+            @endif
 
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Untuk &amp; Anda</span>

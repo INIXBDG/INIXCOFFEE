@@ -114,4 +114,13 @@ class karyawan extends Model
     {
         return $this->hasMany(EducationalBackground::class, 'kode_karyawan', 'kode_karyawan');
     }
+
+    public function laporanSales()
+    {
+        return $this->hasMany(LaporanHarianSales::class);
+    }
+    public function catatanMeetingSales()
+    {
+        return $this->hasMany(CatatanMeetingSales::class);
+    }
 }
