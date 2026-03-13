@@ -2173,6 +2173,7 @@
                         <option value="mengurangi manual work dan error">Mengurangi Manual Work Dan Error</option>
                         <option value="laporan analisis keuangan">Laporan Analisis Keuangan</option>
                         <option value="pencairan biaya operasional">Pencairan Biaya Operasional Kantor</option>
+                        <option value="penyelesaian tagihan perusahaan">Penyelesaian Tagihan Perusahaan</option>
                     `;
                 }
 
