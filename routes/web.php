@@ -911,6 +911,7 @@ Route::prefix('office')->name('office.')->middleware(['auth'])->group(function (
         Route::post('/', [ModulController::class, 'storeNomor'])->name('modul.store.nomor');
         Route::put('/update/nomor/{id}', [ModulController::class, 'updateNomor'])->name('modul.update.nomor');
         Route::delete('/delete/nomor/{id}', [ModulController::class, 'deleteNomor'])->name('modul.delete.nomor');
+        Route::put('/update/nomor/status/{id}', [ModulController::class, 'uploaded'])->name('modul.update.status.nomor');
 
         Route::get('/detail/{id}', [ModulController::class, 'indexModul'])->name('modul.detail');
         Route::post('/store', [ModulController::class, 'storeModul'])->name('modul.store');

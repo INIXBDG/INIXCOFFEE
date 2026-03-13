@@ -2127,6 +2127,8 @@
             const hasInstruktur = selectedJabatan.includes('Instruktur');
             const hasManagerEdu = selectedJabatan.includes('Education Manager');
             const hasSPVSales = selectedJabatan.includes('SPV Sales');
+            const hasAdmSales = selectedJabatan.includes('Adm Sales');
+            const hasAdmHolding = selectedJabatan.includes('Admin Holding');
 
             let options = '<option selected disabled>-- Pilih Assistant Route --</option>';
 
@@ -2252,6 +2254,20 @@
                 else if (hasSPVSales) {
                     options += `
                         <option value="meningkatkan revenue perusahaan">Meningkatkan Revenue Perusahaan</option></option>
+                    `;
+                }
+
+                // ADM Sales
+                else if (hasAdmSales) {
+                    options += `
+                        <option value="laporan mom">Laporan MOM</option></option>
+                    `;
+                }
+
+                // ADM Holding
+                else if (hasAdmHolding) {
+                    options += `
+                        <option value="ketepatan waktu po">Ketepatan Waktu PO</option></option>
                     `;
                 }
                 
