@@ -1991,7 +1991,7 @@ class TargetKPIController extends Controller
         $respondenPuas = 0;
 
         foreach ($allScores as $skor) {
-            if ($skor >= 3.5) {
+            if ($skor >= 3.0) {
                 $respondenPuas++;
             }
         }
@@ -2207,7 +2207,7 @@ class TargetKPIController extends Controller
                     // hanya date
                     $endAt = Carbon::parse($ticket->tanggal_selesai . ' ' . $ticket->jam_selesai, 'Asia/Jakarta');
                 }
-                $durasiJam = $startAt->diffInHours($endAt);
+                $durasiJam = $this->hitungJamKerja($startAt, $endAt);
 
                 $skorDurasi = match (true) {
                     $durasiJam <= 4 => 100,
@@ -2328,8 +2328,7 @@ class TargetKPIController extends Controller
                 // hanya date
                 $endAt = Carbon::parse($ticket->tanggal_selesai . ' ' . $ticket->jam_selesai, 'Asia/Jakarta');
             }
-            $actualHours = $startAt->diffInHours($endAt);
-
+            $actualHours = $this->hitungJamKerja($startAt, $endAt);
             $slaMet = false;
             if ($priority === 'High' && $actualHours <= 24) {
                 $slaMet = true;
@@ -2598,7 +2597,7 @@ class TargetKPIController extends Controller
         $respondenPuas = 0;
 
         foreach ($allScores as $skor) {
-            if ($skor >= 3.5) {
+            if ($skor >= 3.0) {
                 $respondenPuas++;
             }
         }
@@ -6020,7 +6019,7 @@ class TargetKPIController extends Controller
         $respondenPuas = 0;
 
         foreach ($allScores as $skor) {
-            if ($skor >= 3.5) {
+            if ($skor >= 3.0) {
                 $respondenPuas++;
             }
         }
@@ -6274,8 +6273,8 @@ class TargetKPIController extends Controller
                 'above' => $above,
                 'below' => $below
             ],
-            'weekly_data' => $weeklyCounts,
-            'daily_breakdown_per_week' => $dailyBreakdownPerWeek,
+            'monthly_data' => $weeklyCounts,
+            'daily_breakdown_per_month' => $dailyBreakdownPerWeek,
         ];
     }
 
@@ -6529,7 +6528,7 @@ class TargetKPIController extends Controller
                     // hanya date
                     $endAt = Carbon::parse($ticket->tanggal_selesai . ' ' . $ticket->jam_selesai, 'Asia/Jakarta');
                 }
-                $durasiJam = $startAt->diffInHours($endAt);
+                $durasiJam = $this->hitungJamKerja($startAt, $endAt);
 
                 $skorDurasi = match (true) {
                     $durasiJam <= 4 => 100,
@@ -6756,7 +6755,7 @@ class TargetKPIController extends Controller
                 // hanya date
                 $endAt = Carbon::parse($ticket->tanggal_selesai . ' ' . $ticket->jam_selesai, 'Asia/Jakarta');
             }
-            $actualHours = $startAt->diffInHours($endAt);
+            $actualHours = $this->hitungJamKerja($startAt, $endAt);
 
             $slaMet = false;
             if ($priority === 'High' && $actualHours <= 24) {
@@ -6895,7 +6894,7 @@ class TargetKPIController extends Controller
         $respondenPuas = 0;
 
         foreach ($allScores as $skor) {
-            if ($skor >= 3.5) {
+            if ($skor >= 3.0) {
                 $respondenPuas++;
             }
         }
@@ -9156,5 +9155,39 @@ class TargetKPIController extends Controller
         }
 
         return $workingDays;
+    }
+
+    private function hitungJamKerja($startAt, $endAt)
+    {
+        $start = $startAt->copy();
+        $end = $endAt->copy();
+
+        $workStart = 8;
+        $workEnd = 17;
+
+        $totalMinutes = 0;
+
+        while ($start->lt($end)) {
+
+            // jika weekend skip
+            if ($start->isWeekend()) {
+                $start->addDay()->startOfDay();
+                continue;
+            }
+
+            $dayWorkStart = $start->copy()->setHour($workStart)->setMinute(0)->setSecond(0);
+            $dayWorkEnd = $start->copy()->setHour($workEnd)->setMinute(0)->setSecond(0);
+
+            $rangeStart = $start->greaterThan($dayWorkStart) ? $start : $dayWorkStart;
+            $rangeEnd = $end->lessThan($dayWorkEnd) ? $end : $dayWorkEnd;
+
+            if ($rangeStart->lt($rangeEnd)) {
+                $totalMinutes += $rangeStart->diffInMinutes($rangeEnd);
+            }
+
+            $start->addDay()->startOfDay();
+        }
+
+        return $totalMinutes / 60;
     }
 }
