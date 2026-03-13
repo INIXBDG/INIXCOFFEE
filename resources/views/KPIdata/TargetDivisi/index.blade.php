@@ -2126,6 +2126,8 @@
             const hasManagerEdu = selectedJabatan.includes('Education Manager');
             const hasSales = selectedJabatan.includes('Sales');
             const hasSPVSales = selectedJabatan.includes('SPV Sales');
+            const hasAdmSales = selectedJabatan.includes('Adm Sales');
+            const hasAdmHolding = selectedJabatan.includes('Admin Holding');
 
             let options = '<option selected disabled>-- Pilih Assistant Route --</option>';
 
@@ -2165,12 +2167,13 @@
                 //Finanace
                 else if (hasFinance) {
                     options += `
-                            <option value="outstanding">Banyak Tagihan Client Yang Belum Lunas</option>
-                            <option value="inisiatif efisiensi keuangan">Inisiatif Efisiensi keuangan</option>
-                            <option value="mengurangi manual work dan error">Mengurangi Manual Work Dan Error</option>
-                            <option value="laporan analisis keuangan">Laporan Analisis Keuangan</option>
-                            <option value="pencairan biaya operasional">Pencairan Biaya Operasional Kantor</option>
-                        `;
+                        <option value="outstanding">Banyak Tagihan Client Yang Belum Lunas</option>
+                        <option value="inisiatif efisiensi keuangan">Inisiatif Efisiensi keuangan</option>
+                        <option value="mengurangi manual work dan error">Mengurangi Manual Work Dan Error</option>
+                        <option value="laporan analisis keuangan">Laporan Analisis Keuangan</option>
+                        <option value="pencairan biaya operasional">Pencairan Biaya Operasional Kantor</option>
+                        <option value="penyelesaian tagihan perusahaan">Penyelesaian Tagihan Perusahaan</option>
+                    `;
                 }
 
                 //HRD
@@ -2259,6 +2262,20 @@
                 else if (hasSPVSales) {
                     options += `
                         <option value="meningkatkan revenue perusahaan">Meningkatkan Revenue Perusahaan</option></option>
+                    `;
+                }
+
+                // ADM Sales
+                else if (hasAdmSales) {
+                    options += `
+                        <option value="laporan mom">Laporan MOM</option></option>
+                    `;
+                }
+
+                // ADM Holding
+                else if (hasAdmHolding) {
+                    options += `
+                        <option value="ketepatan waktu po">Ketepatan Waktu PO</option></option>
                     `;
                 }
                 
