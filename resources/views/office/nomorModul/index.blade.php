@@ -72,6 +72,16 @@
                                                 PDF
                                             </button>
 
+                                            @if ($item->status !== 'Uploaded')
+                                                <form action="{{ route('office.modul.update.status.nomor', $item->id)}}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    @method('PUT')
+                                                    <button type="submit" class="btn btn-outline-success btn-sm">
+                                                        Uploaded
+                                                    </button>
+                                                </form>
+                                            @endif
+
                                             <form action="{{ route('office.modul.delete.nomor', $item->id) }}"
                                                 method="POST" class="d-inline">
                                                 @csrf
