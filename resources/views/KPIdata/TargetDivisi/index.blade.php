@@ -456,7 +456,7 @@
             dropdownParent: $('#modalBuatTarget')
         });
 
-        $(document).on('click', '.buttonHapusTarget, .buttonForm', function(e) {
+        $(document).on('click', '.buttonHapusTarget, .buttonForm', function (e) {
             e.stopPropagation();
         });
 
@@ -491,55 +491,55 @@
         function initInputFormatting() {
             // Single Input
             $('#manual_value_display').off('input.formatting');
-            $('#manual_value_display').on('input.formatting', function() {
+            $('#manual_value_display').on('input.formatting', function () {
                 const raw = getRawNumber($(this).val());
                 $('#manual_value').val(raw);
-                
+
                 const format = $('#manual_format').val();
                 let formatted = formatNumber(raw);
-                
+
                 if (format === 'rupiah' && raw) {
                     formatted = 'Rp ' + formatted;
                 } else if (format === 'persen' && raw) {
                     formatted = formatted + '%';
                 }
-                
+
                 $(this).val(formatted);
             });
-            
+
             // Double Input - Biaya Gaji
             $('#biaya_gaji_display').off('input.formatting');
-            $('#biaya_gaji_display').on('input.formatting', function() {
+            $('#biaya_gaji_display').on('input.formatting', function () {
                 const raw = getRawNumber($(this).val());
                 $('#biaya_gaji_tahunan').val(raw);
                 $(this).val(raw ? 'Rp ' + formatNumber(raw) : '');
             });
-            
+
             // Double Input - Biaya BPJS
             $('#biaya_bpjs_display').off('input.formatting');
-            $('#biaya_bpjs_display').on('input.formatting', function() {
+            $('#biaya_bpjs_display').on('input.formatting', function () {
                 const raw = getRawNumber($(this).val());
                 $('#biaya_bpjs_tahunan').val(raw);
                 $(this).val(raw ? 'Rp ' + formatNumber(raw) : '');
             });
-            
+
             // ✅ Double Input - Biaya Rekrutmen (BARU)
             $('#biaya_rekrutmen_display').off('input.formatting');
-            $('#biaya_rekrutmen_display').on('input.formatting', function() {
+            $('#biaya_rekrutmen_display').on('input.formatting', function () {
                 const raw = getRawNumber($(this).val());
                 $('#biaya_rekrutmen_tahunan').val(raw);
                 $(this).val(raw ? 'Rp ' + formatNumber(raw) : '');
             });
         }
 
-        $(document).ready(function() {
+        $(document).ready(function () {
             initInputFormatting();
 
-            $('#modalFormManual').on('show.bs.modal', function() {
+            $('#modalFormManual').on('show.bs.modal', function () {
                 resetFormManual();
             });
 
-            $('#modalFormManual').on('hidden.bs.modal', function() {
+            $('#modalFormManual').on('hidden.bs.modal', function () {
                 resetFormManual();
             });
         });
@@ -549,78 +549,78 @@
             $('#documentPreview').html('');
             $('#singleInputArea').show();
             $('#doubleInputArea').hide();
-            
+
             $('#manual_value_display').val('').trigger('input');
             $('#manual_value').val('');
             $('#biaya_gaji_display').val('').trigger('input');
             $('#biaya_gaji_tahunan').val('');
             $('#biaya_bpjs_display').val('').trigger('input');
             $('#biaya_bpjs_tahunan').val('');
-            
+
             $('#biaya_rekrutmen_display').val('').trigger('input');
             $('#biaya_rekrutmen_tahunan').val('');
-            
+
             $('#manualValueId').val('');
         }
 
-        $(document).on('click', '.buttonForm', function() {
+        $(document).on('click', '.buttonForm', function () {
             const route = $(this).data('route');
             const value = $(this).data('value') || '';
             const id = $(this).data('id');
-            
+
             $('#manualValueId').val(id);
-            
+
             if (allowedDoubleManualRoutes.includes(route)) {
                 $('#singleInputArea').hide();
                 $('#doubleInputArea').show();
-                
+
                 let gaji = '';
                 let bpjs = '';
-                let rekrutmen = '';  
-                
+                let rekrutmen = '';
+
                 if (value && value.includes(',')) {
                     const parts = value.split(',');
                     gaji = parts[0] || '';
                     bpjs = parts[1] || '';
-                    rekrutmen = parts[2] || ''; 
+                    rekrutmen = parts[2] || '';
                 } else {
                     gaji = value;
                     bpjs = '';
                     rekrutmen = '';
                 }
-                
+
                 const gajiRaw = getRawNumber(gaji);
                 const bpjsRaw = getRawNumber(bpjs);
-                const rekrutmenRaw = getRawNumber(rekrutmen);  
-                
+                const rekrutmenRaw = getRawNumber(rekrutmen);
+
                 $('#biaya_gaji_display').val(gajiRaw ? 'Rp ' + formatNumber(gajiRaw) : '');
                 $('#biaya_gaji_tahunan').val(gajiRaw);
                 $('#biaya_bpjs_display').val(bpjsRaw ? 'Rp ' + formatNumber(bpjsRaw) : '');
                 $('#biaya_bpjs_tahunan').val(bpjsRaw);
-                
+
                 $('#biaya_rekrutmen_display').val(rekrutmenRaw ? 'Rp ' + formatNumber(rekrutmenRaw) : '');
                 $('#biaya_rekrutmen_tahunan').val(rekrutmenRaw);
-                
+
             } else {
                 $('#singleInputArea').show();
                 $('#doubleInputArea').hide();
-                
+
                 const format = $('#manual_format').val();
                 const rawValue = getRawNumber(value);
                 let displayValue = formatNumber(rawValue);
-                
+
                 if (format === 'rupiah' && rawValue) {
                     displayValue = 'Rp ' + displayValue;
                 } else if (format === 'persen' && rawValue) {
                     displayValue = displayValue + '%';
                 }
-                
+
                 $('#manual_value_display').val(displayValue);
                 $('#manual_value').val(rawValue);
             }
         });
 
-        $(document).on('change', '#manual_format', function() {
+        $(document).on('change', '#manual_format', function () {
             if ($('#doubleInputArea').is(':visible')) {
                 return;
             }
@@ -644,43 +644,43 @@
             });
         });
 
-        $('#formManualValue').on('submit', function(e) {
+        $('#formManualValue').on('submit', function (e) {
             e.preventDefault();
-            
+
             const $submitBtn = $(this).find('button[type="submit"]');
             const originalText = $submitBtn.html();
-            
+
             $submitBtn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin me-2"></i>Menyimpan...');
-            
+
             const formData = new FormData(this);
-            
+
             if ($('#doubleInputArea').is(':visible')) {
                 formData.set('biaya_gaji_tahunan', $('#biaya_gaji_tahunan').val());
                 formData.set('biaya_bpjs_tahunan', $('#biaya_bpjs_tahunan').val());
-                formData.set('biaya_rekrutmen_tahunan', $('#biaya_rekrutmen_tahunan').val()); 
+                formData.set('biaya_rekrutmen_tahunan', $('#biaya_rekrutmen_tahunan').val());
             } else {
                 formData.set('manual_value', $('#manual_value').val());
                 formData.set('manual_format', $('#manual_format').val());
             }
-            
+
             $.ajax({
                 url: "{{ route('kpi.manualValue') }}",
                 type: "POST",
                 data: formData,
                 contentType: false,
                 processData: false,
-                success: function(res) {
+                success: function (res) {
                     $('#modalFormManual').modal('hide');
                     resetFormManual();
                     $submitBtn.prop('disabled', false).html(originalText);
-                    
+
                     if (typeof loadContentForm === 'function') {
                         loadContentForm();
-                    }                    
+                    }
                 },
-                error: function(xhr) {
+                error: function (xhr) {
                     $submitBtn.prop('disabled', false).html(originalText);
-                    
+
                     if (xhr.status === 422) {
                         const errors = xhr.responseJSON?.errors || {};
                         const msg = Object.values(errors).map(e => e[0]).join('\n');
@@ -692,11 +692,11 @@
             });
         });
 
-        $(document).ready(function() {
+        $(document).ready(function () {
             loadContentForm();
         });
 
-        $('#targetForm').on('submit', function(e) {
+        $('#targetForm').on('submit', function (e) {
             e.preventDefault();
             const judul = $('#judul_kpi').val().trim();
             if (!judul) {
@@ -715,7 +715,7 @@
                 data: formData,
                 processData: false,
                 contentType: false,
-                success: function(response) {
+                success: function (response) {
                     Swal.fire({
                         icon: 'success',
                         title: 'Berhasil!',
@@ -727,7 +727,7 @@
                     });
                     loadContentForm();
                 },
-                error: function(xhr) {
+                error: function (xhr) {
                     let msg = 'Terjadi kesalahan. Silakan coba lagi.';
                     if (xhr.responseJSON?.errors) {
                         msg = Object.values(xhr.responseJSON.errors).flat().join('<br>');
@@ -774,7 +774,7 @@
                 }
             }
 
-            $assistantRoute.off('change').on('change', function() {
+            $assistantRoute.off('change').on('change', function () {
                 const value = $(this).val();
                 const itsmRoutes = [
                     'kepuasan client ITSM',
@@ -789,19 +789,19 @@
                     $jangkaTarget.attr('disabled', true);
                 } else {
                     $tipeTarget.html(`
-                <option selected disabled>-- Pilih Tipe --</option>
-                <option value="angka">Angka (Unit, Jumlah, dll)</option>
-                <option value="rupiah">Rupiah (Nilai Keuangan)</option>
-                <option value="persen">Persen (%)</option>
-            `);
+                    <option selected disabled>-- Pilih Tipe --</option>
+                    <option value="angka">Angka (Unit, Jumlah, dll)</option>
+                    <option value="rupiah">Rupiah (Nilai Keuangan)</option>
+                    <option value="persen">Persen (%)</option>
+                `);
                     $tipeTarget.removeAttr('disabled');
                     $jangkaTarget.empty().append(`
-                <option selected disabled>-- Pilih Jangka --</option>
-                <option value="Tahunan">Tahunan</option>
-                <option value="Quartal">Quartal</option>
-                <option value="Bulanan">Bulanan</option>
-                <option value="Mingguan">Mingguan</option>
-            `);
+                    <option selected disabled>-- Pilih Jangka --</option>
+                    <option value="Tahunan">Tahunan</option>
+                    <option value="Quartal">Quartal</option>
+                    <option value="Bulanan">Bulanan</option>
+                    <option value="Mingguan">Mingguan</option>
+                `);
                     $jangkaTarget.removeAttr('disabled');
                 }
                 $detailJangkaGroup.hide();
@@ -809,7 +809,7 @@
                 $nilaiTarget.val('');
             });
 
-            $nilaiTarget.off('input').on('input', function() {
+            $nilaiTarget.off('input').on('input', function () {
                 const tipe = $tipeTarget.val();
                 let value = $(this).val().replace(/\D/g, '');
                 if (!value) {
@@ -833,7 +833,7 @@
                 updateKonversiIfNeeded();
             });
 
-            $jangkaTarget.off('change').on('change', function() {
+            $jangkaTarget.off('change').on('change', function () {
                 const jangka = $(this).val();
                 $detailJangkaGroup.hide();
                 $detailJangkaField.empty();
@@ -861,7 +861,7 @@
             $.ajax({
                 url: '{{ route('kpi.getDataTarget') }}',
                 type: 'GET',
-                success: function(response) {
+                success: function (response) {
                     const data = response;
                     const content_target = $('#content_target');
                     const jabatanSelect = $('#jabatan');
@@ -872,7 +872,7 @@
 
                     content_target.empty();
 
-                    if (data.detail.length === 0) {} else {
+                    if (data.detail.length === 0) { } else {
                         const now = new Date();
                         const groupedByPembuat = {};
                         data.detail.forEach(item => {
@@ -902,17 +902,17 @@
                         Object.entries(groupedByPembuat).forEach(([idPembuat, group]) => {
                             const bgColor = getColor(idPembuat);
                             const cardWrapper = $(`
-                                <div class="rounded-3 p-3" style="background-color: white; border: 4px solid ${bgColor}40;">
-                                    <h6 class="mb-3 fw-bold" style="color: ${bgColor};">
-                                        <i class="fa-solid fa-user me-1"></i> Target oleh: ${group.nama_pembuat || '–'}
-                                    </h6>
-                                    <div class="d-flex flex-wrap gap-3 align-items-center justify-content-center">
+                                    <div class="rounded-3 p-3" style="background-color: white; border: 4px solid ${bgColor}40;">
+                                        <h6 class="mb-3 fw-bold" style="color: ${bgColor};">
+                                            <i class="fa-solid fa-user me-1"></i> Target oleh: ${group.nama_pembuat || '–'}
+                                        </h6>
+                                        <div class="d-flex flex-wrap gap-3 align-items-center justify-content-center">
+                                        </div>
                                     </div>
-                                </div>
-                            `);
+                                `);
                             const targetContainer = cardWrapper.find('div.d-flex');
 
-                            group.targets.forEach(function(item) {
+                            group.targets.forEach(function (item) {
                                 let formattedTarget = item.nilai_target;
                                 if (item.tipe_target === 'persen' || item.tipe_target ===
                                     'angka') {
@@ -1041,102 +1041,100 @@
 
                                 if (allowedAssistantRoutes.includes(item.asistant_route)) {
                                     buttonIsiForm = `
-                                        <div class="position-absolute top-0 p-3 start-0">
-                                            <button type="button"
-                                                class="btn btn-sm btn-info rounded-circle d-flex align-items-center justify-content-center buttonForm"
-                                                data-id="${item.id}"
-                                                data-value="${item.manual_value}"
-                                                data-route="${item.asistant_route}"
-                                                title="isi data" 
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#modalFormManual"
-                                                style="width: 36px; height: 36px; font-size: 0.9rem;">
-                                                <i class="fa-solid fa-file-pen"></i>
-                                            </button>
-                                        </div>
-                                    `;
+                                            <div class="position-absolute top-0 p-3 start-0">
+                                                <button type="button"
+                                                    class="btn btn-sm btn-info rounded-circle d-flex align-items-center justify-content-center buttonForm"
+                                                    data-id="${item.id}"
+                                                    data-value="${item.manual_value}"
+                                                    data-route="${item.asistant_route}"
+                                                    title="isi data" 
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#modalFormManual"
+                                                    style="width: 36px; height: 36px; font-size: 0.9rem;">
+                                                    <i class="fa-solid fa-file-pen"></i>
+                                                </button>
+                                            </div>
+                                        `;
                                 }
 
 
                                 targetContainer.append(`
-                                    <div class="target-card rounded-4 border-1 shadow-md position-relative overflow-hidden" style="background: white; flex: 0 0 auto; border: 2px solid #f0f0f0; cursor: pointer;">
-                                        <div class="position-absolute top-0 start-0 w-100" style="height: 4px; background: ${
-                                            badgeClass === 'bg-success' ? '#28a745' :
-                                            badgeClass === 'bg-danger' ? '#dc3545' : '#ffc107'
-                                        };"></div>
+                                        <div class="target-card rounded-4 border-1 shadow-md position-relative overflow-hidden" style="background: white; flex: 0 0 auto; border: 2px solid #f0f0f0; cursor: pointer;">
+                                            <div class="position-absolute top-0 start-0 w-100" style="height: 4px; background: ${badgeClass === 'bg-success' ? '#28a745' :
+                                        badgeClass === 'bg-danger' ? '#dc3545' : '#ffc107'
+                                    };"></div>
 
-                                        <div class="action-buttons position-absolute top-0 start-0 end-0 p-3 d-flex justify-content-between align-items-center"
-                                            style="z-index: 10;">
+                                            <div class="action-buttons position-absolute top-0 start-0 end-0 p-3 d-flex justify-content-between align-items-center"
+                                                style="z-index: 10;">
 
-                                            ${buttonIsiForm}
+                                                ${buttonIsiForm}
 
-                                            <div class="d-flex gap-2 position-absolute top-0 end-0 p-3">
-                                                <button type="button" class="btn btn-sm btn-danger rounded-circle d-flex align-items-center justify-content-center buttonHapusTarget" data-id="${item.id}" title="Hapus" style="width: 36px; height: 36px; font-size: 0.9rem;">
-                                                    <i class="fa-solid fa-trash-can"></i>
-                                                </button>
-                                            </div>
-
-                                        </div>
-
-                                        <div data-id="${item.id}" id="buttonDetailTarget"  data-bs-toggle="modal" data-bs-target="#detailTargetModal">
-
-                                        <div class="p-3 pt-4 mt-4">
-                                            <h5 class="fw-bold mb-2 fs-6 text-dark" style="min-height: 2.2em; line-height: 1.2;">
-                                                ${item.judul}
-                                            </h5>
-
-                                            <div class="d-flex align-items-center mb-2">
-                                                <span class="badge bg-light text-primary border border-primary me-2" style="font-size: 0.75rem;">
-                                                    ${item.jangka_target.charAt(0).toUpperCase() + item.jangka_target.slice(1)}
-                                                </span>
-                                                <span class="badge ${badgeClass}" style="font-size: 0.75rem;">${statusText}</span>
-                                            </div>
-
-                                            <div class="mb-2">
-                                                <p class="mb-1 text-muted small">
-                                                    <i class="fa-solid fa-bullseye me-1"></i>
-                                                    <strong>Target:</strong> ${formattedTarget}
-                                                </p>
-                                            </div>
-
-                                            <div class="small text-muted mb-2" style="font-size: 0.82rem;">
-                                                <div class="d-flex justify-content-between mb-1">
-                                                    <span>Jabatan</span>
-                                                    <span class="fw-medium">${jabatanDisplay}</span>
+                                                <div class="d-flex gap-2 position-absolute top-0 end-0 p-3">
+                                                    <button type="button" class="btn btn-sm btn-danger rounded-circle d-flex align-items-center justify-content-center buttonHapusTarget" data-id="${item.id}" title="Hapus" style="width: 36px; height: 36px; font-size: 0.9rem;">
+                                                        <i class="fa-solid fa-trash-can"></i>
+                                                    </button>
                                                 </div>
-                                                <div class="d-flex justify-content-between mb-1">
-                                                    <span>Divisi</span>
-                                                    <span class="fw-medium">${item.divisi || '-'}</span>
-                                                </div>
-                                                <div class="d-flex justify-content-between">
-                                                    <span>Dibuat oleh</span>
-                                                    <span class="fw-medium">${item.pembuat || '-'}</span>
-                                                </div>
+
                                             </div>
 
-                                            <div class="mt-2 mb-1">
-                                                <div class="progress rounded-pill" style="height: 12px; background-color: #e9ecef; position: relative;">
-                                                    <div class="progress-bar rounded-pill" 
-                                                        style="width: ${lengthProgress}%; background: ${
-                                                            badgeClass === 'bg-success' ? '#28a745' :
-                                                            badgeClass === 'bg-danger' ? '#dc3545' : '#ffc107'
-                                                        }"></div>
-                                                    <span class="position-absolute top-50 start-50 translate-middle" style="font-size: 0.7rem; color: black;">
-                                                        ${progressValueDisplay}
+                                            <div data-id="${item.id}" id="buttonDetailTarget"  data-bs-toggle="modal" data-bs-target="#detailTargetModal">
+
+                                            <div class="p-3 pt-4 mt-4">
+                                                <h5 class="fw-bold mb-2 fs-6 text-dark" style="min-height: 2.2em; line-height: 1.2;">
+                                                    ${item.judul}
+                                                </h5>
+
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <span class="badge bg-light text-primary border border-primary me-2" style="font-size: 0.75rem;">
+                                                        ${item.jangka_target.charAt(0).toUpperCase() + item.jangka_target.slice(1)}
                                                     </span>
+                                                    <span class="badge ${badgeClass}" style="font-size: 0.75rem;">${statusText}</span>
+                                                </div>
+
+                                                <div class="mb-2">
+                                                    <p class="mb-1 text-muted small">
+                                                        <i class="fa-solid fa-bullseye me-1"></i>
+                                                        <strong>Target:</strong> ${formattedTarget}
+                                                    </p>
+                                                </div>
+
+                                                <div class="small text-muted mb-2" style="font-size: 0.82rem;">
+                                                    <div class="d-flex justify-content-between mb-1">
+                                                        <span>Jabatan</span>
+                                                        <span class="fw-medium">${jabatanDisplay}</span>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between mb-1">
+                                                        <span>Divisi</span>
+                                                        <span class="fw-medium">${item.divisi || '-'}</span>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between">
+                                                        <span>Dibuat oleh</span>
+                                                        <span class="fw-medium">${item.pembuat || '-'}</span>
+                                                    </div>
+                                                </div>
+
+                                                <div class="mt-2 mb-1">
+                                                    <div class="progress rounded-pill" style="height: 12px; background-color: #e9ecef; position: relative;">
+                                                        <div class="progress-bar rounded-pill" 
+                                                            style="width: ${lengthProgress}%; background: ${badgeClass === 'bg-success' ? '#28a745' :
+                                        badgeClass === 'bg-danger' ? '#dc3545' : '#ffc107'
+                                    }"></div>
+                                                        <span class="position-absolute top-50 start-50 translate-middle" style="font-size: 0.7rem; color: black;">
+                                                            ${progressValueDisplay}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                <div class="d-flex align-items-center justify-content-between mt-1">
+                                                    <small class="text-muted">
+                                                        <i class="fa-solid fa-calendar-days me-1"></i>
+                                                        ${item.tenggat_waktu}
+                                                    </small>
                                                 </div>
                                             </div>
-
-                                            <div class="d-flex align-items-center justify-content-between mt-1">
-                                                <small class="text-muted">
-                                                    <i class="fa-solid fa-calendar-days me-1"></i>
-                                                    ${item.tenggat_waktu}
-                                                </small>
                                             </div>
                                         </div>
-                                        </div>
-                                    </div>
-                                `);
+                                    `);
                             });
                             content_target.append(cardWrapper);
                         });
@@ -1168,10 +1166,10 @@
                         let label = jab;
 
                         jabatanSelect.append(`
-                            <option value="${jab}">
-                                ${label}
-                            </option>
-                        `);
+                                <option value="${jab}">
+                                    ${label}
+                                </option>
+                            `);
                     });
 
                     jangkaSelect.append(`<option value="Tahunan">Tahunan</option>`);
@@ -1190,11 +1188,11 @@
                             const idValue = p.id ?? idx;
                             const checked = (pembuatList.length === 1) ? 'checked' : '';
                             pembuatContainer.append(`
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input pembuat-radio" type="radio" name="pembuat" id="pembuat_${idValue}" value="${idValue}" ${checked}>
-                            <label class="form-check-label" for="pembuat_${idValue}">${nama}</label>
-                        </div>
-                    `);
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input pembuat-radio" type="radio" name="pembuat" id="pembuat_${idValue}" value="${idValue}" ${checked}>
+                                <label class="form-check-label" for="pembuat_${idValue}">${nama}</label>
+                            </div>
+                        `);
                         });
                     } else {
                         pembuatGroup.hide();
@@ -1204,14 +1202,14 @@
                     $('#detailJangkaGroup').hide();
                     $('#konversiGroup').hide();
                 },
-                error: function(xhr) {
+                error: function (xhr) {
                     Swal.fire('Error', 'Gagal memuat data form: ' + (xhr.responseJSON?.message ||
                         'Silakan coba lagi.'), 'error');
                 }
             });
         }
 
-        $('#jabatan').on('change', function() {
+        $('#jabatan').on('change', function () {
             const selectedJabatan = $(this).val();
             const karyawanSelect = $('#karyawan');
 
@@ -1226,7 +1224,7 @@
                 data: {
                     jabatan: selectedJabatan
                 },
-                success: function(response) {
+                success: function (response) {
                     karyawanSelect.empty();
 
                     response.forEach(item => {
@@ -1236,7 +1234,7 @@
 
                     karyawanSelect.trigger('change');
                 },
-                error: function() {
+                error: function () {
                     Swal.fire('Error', 'Gagal memuat daftar karyawan.', 'error');
                     karyawanSelect.empty().trigger('change');
                 }
@@ -1244,7 +1242,7 @@
         });
 
 
-        $(document).on('click', '#buttonDetailTarget', function() {
+        $(document).on('click', '#buttonDetailTarget', function () {
             let id = $(this).data('id');
 
             $.ajax({
@@ -1254,7 +1252,7 @@
                     id
                 },
                 dataType: 'json',
-                success: function(response) {
+                success: function (response) {
                     const body = $('#bodyContentDetailTarget');
                     if (body.length === 0) {
                         console.error("Elemen #bodyContentDetailTarget tidak ditemukan!");
@@ -1268,17 +1266,17 @@
 
                     if (!data) {
                         body.append(`
-                    <div class="modal-header">
-                        <h5 class="modal-title">Detail Target</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body text-center">
-                        Belum ada data
-                    </div>
-                    <div class="modal-footer">
-                        <button class="btn btn-danger" data-bs-dismiss="modal">Tutup</button>
-                    </div>
-                `);
+                        <div class="modal-header">
+                            <h5 class="modal-title">Detail Target</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body text-center">
+                            Belum ada data
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-danger" data-bs-dismiss="modal">Tutup</button>
+                        </div>
+                    `);
                     } else {
                         const monthlyData = data.data_detail.monthly_data || {};
                         const dailyData = data.data_detail.daily_breakdown_per_month || {};
@@ -1437,14 +1435,14 @@
 
                         let no = 1;
                         const karyawanHtml = karyawanList.map(item => `
-                            <div class="d-flex align-items-center py-2 participant-item">
-                                <div class="avatar me-3">${no++}</div>
-                                <div class="flex-grow-1">
-                                    <div class="fw-semibold text-dark small">${item.nama_lengkap}</div>
-                                    <div class="text-muted small">${item.jabatan}</div>
+                                <div class="d-flex align-items-center py-2 participant-item">
+                                    <div class="avatar me-3">${no++}</div>
+                                    <div class="flex-grow-1">
+                                        <div class="fw-semibold text-dark small">${item.nama_lengkap}</div>
+                                        <div class="text-muted small">${item.jabatan}</div>
+                                    </div>
                                 </div>
-                            </div>
-                        `).join('');
+                            `).join('');
 
                         const allowedAssistantRoutes = [
                             'dorong inovasi pelayanan',
@@ -1482,109 +1480,109 @@
 
                             if (imageExtensions.includes(fileExtension)) {
                                 fileContent = `
-                                    <div class="w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
-                                        <div class="mb-3" style="max-width: 100%; max-height: 300px;">
-                                            <img src="${fullFileUrl}" alt="${fileName}" class="img-fluid rounded shadow-sm" style="max-width: 100%; max-height: 300px; object-fit: contain;">
+                                        <div class="w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                                            <div class="mb-3" style="max-width: 100%; max-height: 300px;">
+                                                <img src="${fullFileUrl}" alt="${fileName}" class="img-fluid rounded shadow-sm" style="max-width: 100%; max-height: 300px; object-fit: contain;">
+                                            </div>
+                                            <div class="mt-2 text-center">
+                                                <a href="${fullFileUrl}" download="${fileName}" class="btn btn-primary btn-sm">
+                                                    <i class="fa-solid fa-download me-1"></i>Download Gambar
+                                                </a>
+                                            </div>
+                                            <div class="mt-2 small text-muted">
+                                                <i class="fa-solid fa-file-image me-1"></i>${fileName}
+                                            </div>
                                         </div>
-                                        <div class="mt-2 text-center">
-                                            <a href="${fullFileUrl}" download="${fileName}" class="btn btn-primary btn-sm">
-                                                <i class="fa-solid fa-download me-1"></i>Download Gambar
-                                            </a>
-                                        </div>
-                                        <div class="mt-2 small text-muted">
-                                            <i class="fa-solid fa-file-image me-1"></i>${fileName}
-                                        </div>
-                                    </div>
-                                `;
+                                    `;
                             } else if (pdfExtensions.includes(fileExtension)) {
                                 fileContent = `
-                                    <div class="w-100 h-100 d-flex flex-column">
-                                        <div class="flex-grow-1 mb-3" style="min-height: 250px;">
-                                            <iframe src="${fullFileUrl}" class="w-100 h-100" style="border: 1px solid #dee2e6; border-radius: 8px;"></iframe>
+                                        <div class="w-100 h-100 d-flex flex-column">
+                                            <div class="flex-grow-1 mb-3" style="min-height: 250px;">
+                                                <iframe src="${fullFileUrl}" class="w-100 h-100" style="border: 1px solid #dee2e6; border-radius: 8px;"></iframe>
+                                            </div>
+                                            <div class="text-center">
+                                                <a href="${fullFileUrl}" download="${fileName}" class="btn btn-primary btn-sm">
+                                                    <i class="fa-solid fa-download me-1"></i>Download PDF
+                                                </a>
+                                            </div>
+                                            <div class="mt-2 small text-muted text-center">
+                                                <i class="fa-solid fa-file-pdf me-1"></i>${fileName}
+                                            </div>
                                         </div>
-                                        <div class="text-center">
-                                            <a href="${fullFileUrl}" download="${fileName}" class="btn btn-primary btn-sm">
-                                                <i class="fa-solid fa-download me-1"></i>Download PDF
-                                            </a>
-                                        </div>
-                                        <div class="mt-2 small text-muted text-center">
-                                            <i class="fa-solid fa-file-pdf me-1"></i>${fileName}
-                                        </div>
-                                    </div>
-                                `;
+                                    `;
                             } else {
                                 fileContent = `
-                                    <div class="text-center py-5">
-                                        <div class="mb-3">
-                                            <i class="fa-solid fa-file text-secondary" style="font-size: 4rem;"></i>
+                                        <div class="text-center py-5">
+                                            <div class="mb-3">
+                                                <i class="fa-solid fa-file text-secondary" style="font-size: 4rem;"></i>
+                                            </div>
+                                            <p class="text-muted mb-3">File tidak dapat ditampilkan</p>
+                                            <p class="text-muted small">Hanya gambar dan PDF yang dapat ditampilkan</p>
                                         </div>
-                                        <p class="text-muted mb-3">File tidak dapat ditampilkan</p>
-                                        <p class="text-muted small">Hanya gambar dan PDF yang dapat ditampilkan</p>
-                                    </div>
-                                `;
+                                    `;
                             }
 
                             contentPieChart = `
-                                <h6 class="fw-semibold mb-3 text-secondary">
-                                    <i class="fa-solid fa-file me-2"></i>Dokumen Manual
-                                </h6>
-                                                
-                                <div class="manual-document-container flex-grow-1 d-flex flex-column align-items-center justify-content-center p-3" style="background-color: #f8f9fa; border-radius: 8px;">
-                                    ${fileContent}
-                                </div>
-                                                
-                                <div class="mt-3 small text-muted text-center">
-                                    <i class="fa-solid fa-info-circle me-1"></i>
-                                    Klik tombol download untuk menyimpan file
-                                </div>
-                            `;
+                                    <h6 class="fw-semibold mb-3 text-secondary">
+                                        <i class="fa-solid fa-file me-2"></i>Dokumen Manual
+                                    </h6>
+
+                                    <div class="manual-document-container flex-grow-1 d-flex flex-column align-items-center justify-content-center p-3" style="background-color: #f8f9fa; border-radius: 8px;">
+                                        ${fileContent}
+                                    </div>
+
+                                    <div class="mt-3 small text-muted text-center">
+                                        <i class="fa-solid fa-info-circle me-1"></i>
+                                        Klik tombol download untuk menyimpan file
+                                    </div>
+                                `;
                         } else if (allowedAssistantRoutesForRupiah.includes(data.condition)) {
                             contentPieChart = `
-                                <div class="mb-4">
-                                    <h6 class="fw-semibold text-primary mb-1">
-                                        <i class="fa-solid fa-wallet me-2"></i>${data.judul}
-                                    </h6>
-                                    <small class="text-muted">Ringkasan performa</small>
-                                </div>
-
-                                <div class="mb-4 p-3 rounded bg-light">
-                                    <div class="text-muted small mb-1">Bulan Terakhir</div>
-                                    <div class="fw-semibold">${labelBulanTerakhir}</div>
-                                    <div class="fw-bold fs-6 text-dark">
-                                        ${formatRupiah(nilaiBulanTerakhirRupiah)}
+                                    <div class="mb-4">
+                                        <h6 class="fw-semibold text-primary mb-1">
+                                            <i class="fa-solid fa-wallet me-2"></i>${data.judul}
+                                        </h6>
+                                        <small class="text-muted">Ringkasan performa</small>
                                     </div>
-                                </div>
 
-                                <div class="mb-3">
-                                    <div class="text-muted small mb-2">Top Hari Tertinggi</div>
+                                    <div class="mb-4 p-3 rounded bg-light">
+                                        <div class="text-muted small mb-1">Bulan Terakhir</div>
+                                        <div class="fw-semibold">${labelBulanTerakhir}</div>
+                                        <div class="fw-bold fs-6 text-dark">
+                                            ${formatRupiah(nilaiBulanTerakhirRupiah)}
+                                        </div>
+                                    </div>
 
-                                    ${top3HariTertinggi.map(([tanggal, nilai], index) => `
-                                                    <div class="d-flex justify-content-between mb-1 ${index > 0 ? 'text-muted' : ''}">
-                                                        <span>${formatTanggalSingkat(tanggal)}</span>
-                                                        <span class="fw-semibold">${formatRupiah(nilai)}</span>
-                                                    </div>
-                                                `).join('')}
-                                </div>
+                                    <div class="mb-3">
+                                        <div class="text-muted small mb-2">Top Hari Tertinggi</div>
 
-                                <hr class="my-3">
+                                        ${top3HariTertinggi.map(([tanggal, nilai], index) => `
+                                                        <div class="d-flex justify-content-between mb-1 ${index > 0 ? 'text-muted' : ''}">
+                                                            <span>${formatTanggalSingkat(tanggal)}</span>
+                                                            <span class="fw-semibold">${formatRupiah(nilai)}</span>
+                                                        </div>
+                                                    `).join('')}
+                                    </div>
 
-                                <div class="d-flex align-items-center gap-2 text-muted small">
-                                    <i class="bi bi-person-circle fs-5"></i>
-                                    <span class="fw-semibold text-dark">${karyawanTerkaitRupiah?.nama_lengkap ?? '-'}</span>
-                                    <span>• ${karyawanTerkaitRupiah?.jabatan ?? '-'}</span>
-                                </div>
-                                `;
+                                    <hr class="my-3">
+
+                                    <div class="d-flex align-items-center gap-2 text-muted small">
+                                        <i class="bi bi-person-circle fs-5"></i>
+                                        <span class="fw-semibold text-dark">${karyawanTerkaitRupiah?.nama_lengkap ?? '-'}</span>
+                                        <span>• ${karyawanTerkaitRupiah?.jabatan ?? '-'}</span>
+                                    </div>
+                                    `;
 
                         } else {
                             contentPieChart = `
-                                <h6 class="fw-semibold mb-3 text-secondary">
-                                    <i class="fa-solid fa-chart-pie me-2"></i>Chart ${data.condition}
-                                </h6>
-                                                
-                                <div class="chart-container flex-grow-1">
-                                    <canvas id="MyChartDoughtnut"></canvas>
-                                </div>
-                            `;
+                                    <h6 class="fw-semibold mb-3 text-secondary">
+                                        <i class="fa-solid fa-chart-pie me-2"></i>Chart ${data.condition}
+                                    </h6>
+
+                                    <div class="chart-container flex-grow-1">
+                                        <canvas id="MyChartDoughtnut"></canvas>
+                                    </div>
+                                `;
                         }
 
                         let contentStatisticChart = '';
@@ -1593,28 +1591,28 @@
                             contentStatisticChart = ``;
                         } else {
                             contentStatisticChart = `
-                                <div class="mt-4">
-                                    <div class="card shadow-sm border-0 rounded-4">
-                                        <div class="card-body">
-                                            <div class="d-flex justify-content-between mb-3">
-                                                <h6 class="fw-semibold mb-0">Statistik ${data.condition}</h6>
-                                                <div class="d-flex gap-2">
-                                                    <select class="form-select form-select-sm" id="filterType">
-                                                        <option value="year">Per Tahun</option>
-                                                        <option value="month">Per Bulan</option>
-                                                    </select>
-                                                    <select class="form-select form-select-sm d-none" id="filterMonth">
-                                                        <option value="">Pilih Bulan</option>
-                                                    </select>
+                                    <div class="mt-4">
+                                        <div class="card shadow-sm border-0 rounded-4">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between mb-3">
+                                                    <h6 class="fw-semibold mb-0">Statistik ${data.condition}</h6>
+                                                    <div class="d-flex gap-2">
+                                                        <select class="form-select form-select-sm" id="filterType">
+                                                            <option value="year">Per Tahun</option>
+                                                            <option value="month">Per Bulan</option>
+                                                        </select>
+                                                        <select class="form-select form-select-sm d-none" id="filterMonth">
+                                                            <option value="">Pilih Bulan</option>
+                                                        </select>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div style="height:300px">
-                                                <canvas id="StatisticChart"></canvas>
+                                                <div style="height:300px">
+                                                    <canvas id="StatisticChart"></canvas>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            `;
+                                `;
                         }
 
                         let widthProgress;
@@ -1629,115 +1627,115 @@
 
 
                         body.append(`
-                        <div class="modal-header border-0 pb-0">
-                            <h5 class="modal-title fw-bold">${data.judul}</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-
-                        <div class="modal-body pt-3">
-                            <div class="container-fluid p-3">
-                                <div class="row g-4">
-                                    <div class="col-lg-8">
-                                        <div class="card shadow h-100">
-                                            <div class="card-body">
-                                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                                    <span class="badge bg-primary">${data.jangka_target}</span>
-                                                    <span class="badge bg-${bgCard}">${Tercapai}</span>
-                                                </div>
-
-                                                <div class="row text-center mb-3">
-                                                    <div class="col">
-                                                        <small class="text-muted d-block">Target</small>
-                                                        <h4 class="fw-bold mb-0" style="font-size: 25px">${targetValue}</h4>
-                                                    </div>
-                                                    <div class="col">
-                                                        <small class="text-muted d-block">Progress</small>
-                                                        <h1 class="fw-bold text-${bgCard} mb-0" style="font-size: 55px;">${progressValue}</h1>
-                                                    </div>
-                                                    <div class="col">
-                                                        <small class="text-muted d-block">Gap</small>
-                                                        <h4 class="fw-bold text-danger mb-0" style="font-size: 25px">-${gapValue}</h4>
-                                                    </div>
-                                                </div>
-
-                                                <div class="position-relative mb-3">
-                                                    <div class="progress" style="height:18px;">
-                                                        <div class="progress-bar bg-${bgCard} progress-bar-striped progress-bar-animated"
-                                                            style="width: ${widthProgress}%"></div>
-                                                    </div>
-                                                    <div class="position-absolute bg-light top-0" style="left: ${StripedProgress}%; height:18px; width:2px;"></div>
-                                                </div>
-
-                                                <div class="text-muted mb-4">
-                                                    <i class="fa-solid fa-calendar-days me-1"></i>
-                                                    Deadline: <strong>${data.tenggat_waktu}</strong>
-                                                </div>
-
-                                                <div class="row g-4">
-                                                    <div class="col-md-6">
-                                                        <div class="card border-0 shadow-sm rounded-4 kpi-card">
-                                                            <div class="card-body px-4 py-3">
-                                                                <div class="d-flex align-items-center mb-3">
-                                                                    <div class="me-2 rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center" style="width:36px;height:36px;">
-                                                                        <i class="fa-solid fa-chart-line text-primary"></i>
-                                                                    </div>
-                                                                    <h6 class="mb-0 fw-semibold text-secondary">INFORMASI KPI</h6>
-                                                                </div>
-                                                                <div class="row mb-3">
-                                                                    <div class="col-4 label">KPI Divisi</div>
-                                                                    <div class="col-8 value">${data.divisi_kpi}</div>
-                                                                </div>
-                                                                <div class="row mb-3">
-                                                                    <div class="col-4 label">KPI Jabatan</div>
-                                                                    <div class="col-8 value">${data.jabatan_kpi}</div>
-                                                                </div>
-                                                                <div class="row">
-                                                                    <div class="col-4 label">Pembuat</div>
-                                                                    <div class="col-8 value">${data.pembuat}</div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="col-md-6">
-                                                        <div class="card border-0 shadow-sm rounded-4 participant-card h-100">
-                                                            <div class="card-body px-4 py-3">
-                                                                <div class="d-flex align-items-center mb-3">
-                                                                    <div class="me-2 rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center" style="width:36px;height:36px;">
-                                                                        <i class="fa-solid fa-users text-success"></i>
-                                                                    </div>
-                                                                    <h6 class="mb-0 fw-semibold text-secondary">KARYAWAN</h6>
-                                                                </div>
-                                                                <div class="participant-list" style="overflow-y: scroll; max-height: 140px;">
-                                                                    ${karyawanHtml}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                <div class="col-lg-4">
-                                        <div class="card shadow h-100">
-                                            <div class="card border-0 shadow-sm rounded-4 h-100">
-                                                <div class="card-body d-flex flex-column">
-                                                    ${contentPieChart}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                ${contentStatisticChart}
+                            <div class="modal-header border-0 pb-0">
+                                <h5 class="modal-title fw-bold">${data.judul}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                             </div>
-                        </div>
 
-                        <div class="modal-footer border-0">
-                            <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Tutup</button>
-                        </div>
-                    `);
+                            <div class="modal-body pt-3">
+                                <div class="container-fluid p-3">
+                                    <div class="row g-4">
+                                        <div class="col-lg-8">
+                                            <div class="card shadow h-100">
+                                                <div class="card-body">
+                                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                                        <span class="badge bg-primary">${data.jangka_target}</span>
+                                                        <span class="badge bg-${bgCard}">${Tercapai}</span>
+                                                    </div>
+
+                                                    <div class="row text-center mb-3">
+                                                        <div class="col">
+                                                            <small class="text-muted d-block">Target</small>
+                                                            <h4 class="fw-bold mb-0" style="font-size: 25px">${targetValue}</h4>
+                                                        </div>
+                                                        <div class="col">
+                                                            <small class="text-muted d-block">Progress</small>
+                                                            <h1 class="fw-bold text-${bgCard} mb-0" style="font-size: 55px;">${progressValue}</h1>
+                                                        </div>
+                                                        <div class="col">
+                                                            <small class="text-muted d-block">Gap</small>
+                                                            <h4 class="fw-bold text-danger mb-0" style="font-size: 25px">-${gapValue}</h4>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="position-relative mb-3">
+                                                        <div class="progress" style="height:18px;">
+                                                            <div class="progress-bar bg-${bgCard} progress-bar-striped progress-bar-animated"
+                                                                style="width: ${widthProgress}%"></div>
+                                                        </div>
+                                                        <div class="position-absolute bg-light top-0" style="left: ${StripedProgress}%; height:18px; width:2px;"></div>
+                                                    </div>
+
+                                                    <div class="text-muted mb-4">
+                                                        <i class="fa-solid fa-calendar-days me-1"></i>
+                                                        Deadline: <strong>${data.tenggat_waktu}</strong>
+                                                    </div>
+
+                                                    <div class="row g-4">
+                                                        <div class="col-md-6">
+                                                            <div class="card border-0 shadow-sm rounded-4 kpi-card">
+                                                                <div class="card-body px-4 py-3">
+                                                                    <div class="d-flex align-items-center mb-3">
+                                                                        <div class="me-2 rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center" style="width:36px;height:36px;">
+                                                                            <i class="fa-solid fa-chart-line text-primary"></i>
+                                                                        </div>
+                                                                        <h6 class="mb-0 fw-semibold text-secondary">INFORMASI KPI</h6>
+                                                                    </div>
+                                                                    <div class="row mb-3">
+                                                                        <div class="col-4 label">KPI Divisi</div>
+                                                                        <div class="col-8 value">${data.divisi_kpi}</div>
+                                                                    </div>
+                                                                    <div class="row mb-3">
+                                                                        <div class="col-4 label">KPI Jabatan</div>
+                                                                        <div class="col-8 value">${data.jabatan_kpi}</div>
+                                                                    </div>
+                                                                    <div class="row">
+                                                                        <div class="col-4 label">Pembuat</div>
+                                                                        <div class="col-8 value">${data.pembuat}</div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="col-md-6">
+                                                            <div class="card border-0 shadow-sm rounded-4 participant-card h-100">
+                                                                <div class="card-body px-4 py-3">
+                                                                    <div class="d-flex align-items-center mb-3">
+                                                                        <div class="me-2 rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center" style="width:36px;height:36px;">
+                                                                            <i class="fa-solid fa-users text-success"></i>
+                                                                        </div>
+                                                                        <h6 class="mb-0 fw-semibold text-secondary">KARYAWAN</h6>
+                                                                    </div>
+                                                                    <div class="participant-list" style="overflow-y: scroll; max-height: 140px;">
+                                                                        ${karyawanHtml}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    <div class="col-lg-4">
+                                            <div class="card shadow h-100">
+                                                <div class="card border-0 shadow-sm rounded-4 h-100">
+                                                    <div class="card-body d-flex flex-column">
+                                                        ${contentPieChart}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    ${contentStatisticChart}
+                                </div>
+                            </div>
+
+                            <div class="modal-footer border-0">
+                                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Tutup</button>
+                            </div>
+                        `);
 
                         const NAMA_BULAN = [
                             'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -1783,7 +1781,7 @@
                                             ticks: {
                                                 count: 6,
                                                 precision: 0,
-                                                callback: function(value) {
+                                                callback: function (value) {
                                                     return Math.round(value);
                                                 }
                                             }
@@ -1797,7 +1795,7 @@
                         const monthValues = Object.values(monthlyData);
                         renderStatistic(monthLabels, monthValues, 'Rata-rata');
 
-                        $('#filterType').off('change').on('change', function() {
+                        $('#filterType').off('change').on('change', function () {
                             if (this.value === 'month') {
                                 $('#filterMonth').removeClass('d-none').empty().append(
                                     '<option value="">Pilih Bulan</option>');
@@ -1813,7 +1811,7 @@
                             }
                         });
 
-                        $('#filterMonth').off('change').on('change', function() {
+                        $('#filterMonth').off('change').on('change', function () {
                             const selectedMonth = this.value;
                             if (!selectedMonth || !dailyData[selectedMonth]) return;
 
@@ -1829,13 +1827,13 @@
                     const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
                     modal.show();
                 },
-                error: function() {
+                error: function () {
                     Swal.fire('Error', 'Gagal memuat detail target', 'error');
                 }
             });
         });
 
-        $(document).on('click', '.buttonHapusTarget', function() {
+        $(document).on('click', '.buttonHapusTarget', function () {
             let id = $(this).data('id');
             Swal.fire({
                 title: 'Yakin ingin menghapus?',
@@ -1856,7 +1854,7 @@
                         data: {
                             _token: '{{ csrf_token() }}'
                         },
-                        success: function(response) {
+                        success: function (response) {
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Berhasil!',
@@ -1866,7 +1864,7 @@
                             });
                             loadContentForm();
                         },
-                        error: function(xhr) {
+                        error: function (xhr) {
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Gagal!',
@@ -1909,29 +1907,29 @@
                 }
             }
 
-            $assistantRoute.off('change').on('change', function() {
+            $assistantRoute.off('change').on('change', function () {
                 const value = $(this).val();
                 const tipe = $tipeTarget.val();
                 if (value === 'Kepuasan Pelanggan') {
                     $tipeTarget.html(`
-                <option selected disabled>-- Pilih Tipe --</option>
-                <option value="angka" disabled>Angka (Unit, Jumlah, dll)</option>
-                <option value="rupiah" disabled>Rupiah (Nilai Keuangan)</option>
-                <option value="persen">Persen (%)</option>
-            `);
+                    <option selected disabled>-- Pilih Tipe --</option>
+                    <option value="angka" disabled>Angka (Unit, Jumlah, dll)</option>
+                    <option value="rupiah" disabled>Rupiah (Nilai Keuangan)</option>
+                    <option value="persen">Persen (%)</option>
+                `);
                     $tipeTarget.removeAttr('disabled');
                 } else {
                     $tipeTarget.html(`
-                <option selected disabled>-- Pilih Tipe --</option>
-                <option value="angka">Angka (Unit, Jumlah, dll)</option>
-                <option value="rupiah">Rupiah (Nilai Keuangan)</option>
-                <option value="persen">Persen (%)</option>
-            `);
+                    <option selected disabled>-- Pilih Tipe --</option>
+                    <option value="angka">Angka (Unit, Jumlah, dll)</option>
+                    <option value="rupiah">Rupiah (Nilai Keuangan)</option>
+                    <option value="persen">Persen (%)</option>
+                `);
                     $tipeTarget.removeAttr('disabled');
                 }
             });
 
-            $nilaiTarget.off('input').on('input', function() {
+            $nilaiTarget.off('input').on('input', function () {
                 const tipe = $tipeTarget.val();
                 let value = $(this).val().replace(/\D/g, '');
                 if (!value) {
@@ -1955,7 +1953,7 @@
                 updateKonversiIfNeeded();
             });
 
-            $jangkaTarget.off('change').on('change', function() {
+            $jangkaTarget.off('change').on('change', function () {
                 const jangka = $(this).val();
                 $detailJangkaGroup.hide();
                 $detailJangkaField.empty();
@@ -1966,11 +1964,11 @@
                     const tahunIni = new Date().getFullYear();
                     const tahunDepan = tahunIni + 1;
                     const html = `
-                <select class="form-select" name="detail_jangka" required>
-                    <option value="${tahunIni}">${tahunIni}</option>
-                    <option value="${tahunDepan}">${tahunDepan}</option>
-                </select>
-            `;
+                    <select class="form-select" name="detail_jangka" required>
+                        <option value="${tahunIni}">${tahunIni}</option>
+                        <option value="${tahunDepan}">${tahunDepan}</option>
+                    </select>
+                `;
                     $detailJangkaField.html(html);
                     $detailJangkaGroup.show();
                     updateKonversiIfNeeded();
@@ -2098,7 +2096,7 @@
         $('#tipeTarget').prop('disabled', true).html(
             '<option selected disabled>-- Pilih Assistant Route Terlebih Dahulu --</option>');
 
-        $('#jabatan').on('change', function() {
+        $('#jabatan').on('change', function () {
             const selectedJabatan = $(this).val();
             const assistantRouteSelect = $('#assistant_route');
             const tipeTargetSelect = $('#tipeTarget');
@@ -2126,7 +2124,10 @@
             const hasOB = selectedJabatan.includes('Office Boy');
             const hasInstruktur = selectedJabatan.includes('Instruktur');
             const hasManagerEdu = selectedJabatan.includes('Education Manager');
+            const hasSales = selectedJabatan.includes('Sales');
             const hasSPVSales = selectedJabatan.includes('SPV Sales');
+            const hasAdmSales = selectedJabatan.includes('Adm Sales');
+            const hasAdmHolding = selectedJabatan.includes('Admin Holding');
 
             let options = '<option selected disabled>-- Pilih Assistant Route --</option>';
 
@@ -2148,21 +2149,21 @@
                 //GM
                 if (hasGM) {
                     options += `
-                        <option value="Pemasukan Kotor">Pemasukan Kotor (PK * Pengeluaran)</option>
-                        <option value="pemasukan bersih">Laba Bersih</option>
-                        <option value="Kepuasan Pelanggan">Feedback Peserta</option>
-                        <option value="rasio biaya operasional terhadap revenue">Rasio Biaya Operasional Terhadap Revenue</option>
-                        <option value="performa KPI departemen">Performa KPI Departemen</option>
-                    `;
+                            <option value="Pemasukan Kotor">Pemasukan Kotor (PK * Pengeluaran)</option>
+                            <option value="pemasukan bersih">Laba Bersih</option>
+                            <option value="Kepuasan Pelanggan">Feedback Peserta</option>
+                            <option value="rasio biaya operasional terhadap revenue">Rasio Biaya Operasional Terhadap Revenue</option>
+                            <option value="performa KPI departemen">Performa KPI Departemen</option>
+                        `;
                 }
                 //CS
                 else if (hasCC) {
                     options += `
-                        <option value="peserta puas dengan pelayanan dan fasilitas training">Peserta Puas Dengan Pelayanan & Fasilitas Training</option>
-                        <option value="dorong inovasi pelayanan">Dorong Inovasi Pelayanan</option>
-                        <option value="penanganan komplain perseta">Penanganan Komplain Peserta</option>
-                        <option value="report persiapan kelas">Report Persiapan Kelas</option>
-                    `;
+                            <option value="peserta puas dengan pelayanan dan fasilitas training">Peserta Puas Dengan Pelayanan & Fasilitas Training</option>
+                            <option value="dorong inovasi pelayanan">Dorong Inovasi Pelayanan</option>
+                            <option value="penanganan komplain perseta">Penanganan Komplain Peserta</option>
+                            <option value="report persiapan kelas">Report Persiapan Kelas</option>
+                        `;
                 }
                 //Finanace
                 else if (hasFinance) {
@@ -2179,73 +2180,81 @@
                 //HRD
                 else if (hasHRD) {
                     options += `
-                        <option value="pelaksanaan kegiatan karyawan">Pelaksanaan Kegiatan Karyawan</option>
-                        <option value="pengeluaran biaya karyawan">Pengeluaran Biaya Karyawan</option>
-                        <option value="administrasi karyawan">Administrasi Karyawan</option>
-                    `;
+                            <option value="pelaksanaan kegiatan karyawan">Pelaksanaan Kegiatan Karyawan</option>
+                            <option value="pengeluaran biaya karyawan">Pengeluaran Biaya Karyawan</option>
+                            <option value="administrasi karyawan">Administrasi Karyawan</option>
+                        `;
                 }
 
                 //Driver
                 else if (hasDriver) {
                     options += `
-                        <option value="perbaikan kendaraan">Perbaikan kendaraan</option>
-                        <option value="report kondisi kendaraan">Report Kondisi Kendaraan</option>
-                        <option value="kontrol pengeluaran transportasi">Kontrol Pengeluaran Transportasi</option>
-                    `;
+                            <option value="perbaikan kendaraan">Perbaikan kendaraan</option>
+                            <option value="report kondisi kendaraan">Report Kondisi Kendaraan</option>
+                            <option value="kontrol pengeluaran transportasi">Kontrol Pengeluaran Transportasi</option>
+                        `;
                 }
 
                 //OB
                 else if (hasOB) {
                     options += `
-                        <option value="feedback kebersihan dan kenyamanan">Feedback Kebersihan Dan Kenyamanan Peserta</option>
-                    `;
+                            <option value="feedback kebersihan dan kenyamanan">Feedback Kebersihan Dan Kenyamanan Peserta</option>
+                        `;
                 }
 
                 //ITSM
                 //Koordinator ITSM
                 else if (hasKoorITSM) {
                     options += `
-                        <option value="meningkatkan kepuasan dan loyalitas peserta/client">Meningkatkan Kepuasan Dan Loyalitas Peserta/Client</option>
-                        <option value="availability sistem internal kritis">Availability Sistem Internal Kritis (Uptime%)</option>
-                    `;
+                            <option value="meningkatkan kepuasan dan loyalitas peserta/client">Meningkatkan Kepuasan Dan Loyalitas Peserta/Client</option>
+                            <option value="availability sistem internal kritis">Availability Sistem Internal Kritis (Uptime%)</option>
+                        `;
                 }
                 //Programmer
                 else if (hasProgrammer) {
                     options += `
-                        <option value="ketepatan waktu penyelesaian fitur">Ketepatan Waktu Penyelesaian Fitur/Modul</option>
-                        <option value="mengukur kualitas aplikasi agar minim bug">Mengukur Kualitas Aplikasi Agar Minim Bug</option>
-                    `;
+                            <option value="ketepatan waktu penyelesaian fitur">Ketepatan Waktu Penyelesaian Fitur/Modul</option>
+                            <option value="mengukur kualitas aplikasi agar minim bug">Mengukur Kualitas Aplikasi Agar Minim Bug</option>
+                        `;
                 }
                 //Digital
                 else if (hasDigital) {
                     options += `
-                        <option value="konsistensi campaign digital">Konsistensi Campaign Digital</option>
-                        <option value="efektifitas diital marketing">Database Client Baru</option>
-                    `;
+                            <option value="konsistensi campaign digital">Konsistensi Campaign Digital</option>
+                            <option value="efektifitas diital marketing">Database Client Baru</option>
+                        `;
                 }
                 //TS
                 else if (hasTS) {
                     options += `
-                        <option value="keberhasilan support memenuhi sla">Tingkat Keberhasilan Support Memenuhi SLA</option>
-                        <option value="kualitas layanan exam">Kualitas Layanan Exam</option>
-                    `;
+                            <option value="keberhasilan support memenuhi sla">Tingkat Keberhasilan Support Memenuhi SLA</option>
+                            <option value="kualitas layanan exam">Kualitas Layanan Exam</option>
+                        `;
                 }
                 //Education
                 //Instruktur
                 else if (hasInstruktur) {
                     options += `
-                        <option value="kepuasan peserta pelatihan">Kepuasan Peserta Pelatihan</option>
-                        <option value="upseling lanjutan materi">Upseling Lanjutan Materi</option>
-                        <option value="sertifikasi kompetensi internal">Peningkatan Kompetensi Instruktur - Sertifikasi Internal</option>
-                        <option value="pelatihan kompetensi eksternal">Peningkatan Kompetensi Instruktur - Pelatihan Eksternal</option>
-                    `;
+                            <option value="kepuasan peserta pelatihan">Kepuasan Peserta Pelatihan</option>
+                            <option value="upseling lanjutan materi">Upseling Lanjutan Materi</option>
+                            <option value="sertifikasi kompetensi internal">Peningkatan Kompetensi Instruktur - Sertifikasi Internal</option>
+                            <option value="pelatihan kompetensi eksternal">Peningkatan Kompetensi Instruktur - Pelatihan Eksternal</option>
+                        `;
                 }
 
                 //Education Manager
                 else if (hasManagerEdu) {
                     options += `
-                        <option value="pengembangan kurikulum pelatihan">Pengembangan Kurikulum & Modul Pelatihan</option>
-                        <option value="peningkatan knowledge sharing">Peningkatan Knowledge Sharing</option>
+                            <option value="pengembangan kurikulum pelatihan">Pengembangan Kurikulum & Modul Pelatihan</option>
+                            <option value="peningkatan knowledge sharing">Peningkatan Knowledge Sharing</option>
+                        `;
+                }
+
+                //Sales & Materketing
+                //Sales
+                else if (hasSales) {
+                    options += `
+                        <option value="target penjualan tahunan">Target Penjualan Tahunan</option>
                     `;
                 }
 
@@ -2256,6 +2265,20 @@
                         <option value="meningkatkan revenue perusahaan">Meningkatkan Revenue Perusahaan</option></option>
                     `;
                 }
+
+                // ADM Sales
+                else if (hasAdmSales) {
+                    options += `
+                        <option value="laporan mom">Laporan MOM</option></option>
+                    `;
+                }
+
+                // ADM Holding
+                else if (hasAdmHolding) {
+                    options += `
+                        <option value="ketepatan waktu po">Ketepatan Waktu PO</option></option>
+                    `;
+                }
                 
 
                 //end/selesai
@@ -2263,6 +2286,7 @@
                     options +=
                         '<option value="">-- Tidak ada Assistant Route tersedia untuk jabatan ini --</option>';
                 }
+
             }
 
             assistantRouteSelect.html(options);
@@ -2274,7 +2298,7 @@
                 '<option selected disabled>-- Pilih Assistant Route Terlebih Dahulu --</option>');
         });
 
-        $('#assistant_route').on('change', function() {
+        $('#assistant_route').on('change', function () {
             const selectedRoute = $(this).val();
             const tipeTargetSelect = $('#tipeTarget');
 
@@ -2308,33 +2332,33 @@
 
             if (persenRoutes.includes(selectedRoute)) {
                 tipeTargetSelect.html(`
-                    <option selected disabled>-- Pilih Tipe --</option>
-                    <option disabled>Angka (Unit, Jumlah, dll)</option>
-                    <option disabled>Rupiah (Nilai Keuangan)</option>
-                    <option value="persen">Persen (%)</option>
-                `).prop('disabled', true);
+                        <option selected disabled>-- Pilih Tipe --</option>
+                        <option disabled>Angka (Unit, Jumlah, dll)</option>
+                        <option disabled>Rupiah (Nilai Keuangan)</option>
+                        <option value="persen">Persen (%)</option>
+                    `).prop('disabled', true);
 
             } else if (rupiahRoutes.includes(selectedRoute)) {
                 tipeTargetSelect.html(`
-                    <option selected disabled>-- Pilih Tipe --</option>
-                    <option disabled>Angka (Unit, Jumlah, dll)</option>
-                    <option value="rupiah">Rupiah (Nilai Keuangan)</option>
-                    <option disabled>Persen (%)</option>
-                `).prop('disabled', false);
+                        <option selected disabled>-- Pilih Tipe --</option>
+                        <option disabled>Angka (Unit, Jumlah, dll)</option>
+                        <option value="rupiah">Rupiah (Nilai Keuangan)</option>
+                        <option disabled>Persen (%)</option>
+                    `).prop('disabled', false);
 
             } else if (angka.includes(selectedRoute)) {
                 tipeTargetSelect.html(`
-                    <option selected disabled>-- Pilih Tipe --</option>
-                    <option value="angka">Angka (Unit, Jumlah, dll)</option>
-                    <option disabled>Rupiah (Nilai Keuangan)</option>
-                    <option disabled>Persen (%)</option>
-                `).prop('disabled', false);
+                        <option selected disabled>-- Pilih Tipe --</option>
+                        <option value="angka">Angka (Unit, Jumlah, dll)</option>
+                        <option disabled>Rupiah (Nilai Keuangan)</option>
+                        <option disabled>Persen (%)</option>
+                    `).prop('disabled', false);
             }
 
             tipeTargetSelect.trigger('change');
         });
 
-        document.getElementById('manual_document').addEventListener('change', function(e) {
+        document.getElementById('manual_document').addEventListener('change', function (e) {
             const preview = document.getElementById('documentPreview');
             preview.innerHTML = '';
 
@@ -2345,7 +2369,7 @@
 
             if (fileType.startsWith('image/')) {
                 const reader = new FileReader();
-                reader.onload = function(event) {
+                reader.onload = function (event) {
                     const img = document.createElement('img');
                     img.src = event.target.result;
                     img.classList.add('img-fluid', 'rounded');
@@ -2356,9 +2380,9 @@
             } else if (fileType === 'application/pdf') {
                 const pdfInfo = document.createElement('div');
                 pdfInfo.innerHTML = `
-                <p class="mb-2"><strong>PDF:</strong> ${file.name}</p>
-                <embed src="${URL.createObjectURL(file)}" type="application/pdf" width="100%" height="300px">
-            `;
+                    <p class="mb-2"><strong>PDF:</strong> ${file.name}</p>
+                    <embed src="${URL.createObjectURL(file)}" type="application/pdf" width="100%" height="300px">
+                `;
                 preview.appendChild(pdfInfo);
             } else {
                 preview.innerHTML = `<p><strong>File:</strong> ${file.name}</p>`;

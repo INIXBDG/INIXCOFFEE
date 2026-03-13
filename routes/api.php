@@ -11,6 +11,8 @@ use App\Http\Controllers\WebhookController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WebPushController;
+use App\Http\Controllers\MoodleApiController;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -73,3 +75,6 @@ Route::post('/telegram/webhook', [TelegramController::class, 'webhook'])->name('
 Route::get('/dashboard/csat-instruktur', [apiController::class, 'CSATinstruktur'])->name('CSATinstruktur');
 Route::get('/dashboard/aktivitas-instruktur', [apiController::class, 'AktivitasInstruktur'])->name('AktivitasInstruktur');
 Route::get('/dashboard/rekomendasi-materi', [apiController::class, 'RekomendasiMateri'])->name('RekomendasiMateri');
+
+
+Route::get('/moodle-grades-sharingknowledge', [MoodleApiController::class, 'fetchGradesSharingKnowledge']);
