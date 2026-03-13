@@ -13,6 +13,7 @@ use App\Models\ContentSchedule;
 use App\Models\detailPersonKPI;
 use App\Models\DetailTargetKPI;
 use App\Models\formPenilaian;
+use App\Models\IdeInovasi;
 use App\Models\karyawan;
 use App\Models\Kegiatan;
 use App\Models\KomplainPeserta;
@@ -317,6 +318,8 @@ class TargetKPIController extends Controller
             // ITSM
             elseif ($route === 'kepuasan client ITSM') {
                 return method_exists($this, 'calculateProgressKepuasanClientITSM') ? $this->calculateProgressKepuasanClientITSM($item, $personId) : null;
+            } elseif ($route === 'inovation adaption rate') {
+                return method_exists($this, 'calculateInovationAdaptionRate') ? $this->calculateInovationAdaptionRate($item, $personId) : null;
             } elseif ($route === 'availability sistem internal kritis') {
                 return method_exists($this, 'calculateAvailabilitySistemInternalKritis') ? $this->calculateAvailabilitySistemInternalKritis($item, $personId) : null;
             } elseif ($route === 'meningkatkan kepuasan dan loyalitas peserta/client') {
@@ -770,6 +773,8 @@ class TargetKPIController extends Controller
                     //All kecuali Koordinator ITSM
                     elseif ($item->asistant_route === 'kepuasan client ITSM') {
                         $progress = $this->calculateProgressKepuasanClientITSM($item, $personId);
+                    } elseif ($item->asistant_route === 'inovation adaption rate') {
+                        $progress = $this->calculateInovationAdaptionRate($item, $personId);
                     }
 
                     //Koordinator ITSM
@@ -1088,8 +1093,8 @@ class TargetKPIController extends Controller
                     $progress = $this->calculatePenyelesaianTagihanTepatWaktu($target, $personId);
                 } elseif ($target->asistant_route === 'penyelesaian tagihan perusahaan') {
                     $progress = $this->calculatePenyelesaianTagihanPerusahaan($target, $personId);
-                } 
-    
+                }
+
                 // HRD
                 elseif ($target->asistant_route === 'pelaksanaan kegiatan karyawan') {
                     $progress = $this->calculatePelaksanaanKegiatanKaryawan($target, $personId);
@@ -1113,6 +1118,8 @@ class TargetKPIController extends Controller
                 // ITSM
                 elseif ($target->asistant_route === 'kepuasan client ITSM') {
                     $progress = $this->calculateProgressKepuasanClientITSM($target, $personId);
+                } elseif ($target->asistant_route === 'inovation adaption rate') {
+                    $progress = $this->calculateInovationAdaptionRate($target, $personId);
                 }
                 // Koordinator ITSM
                 elseif ($target->asistant_route === 'availability sistem internal kritis') {
@@ -2607,6 +2614,20 @@ class TargetKPIController extends Controller
         return round($progress, 1);
     }
 
+    private function calculateInovationAdaptionRate($item, $personId)
+    {
+        $detail = $item->detailTargetKPI->first();
+        $nilaiTarget = (float) $detail->nilai_target;
+
+        $tahun = (int) ($detail->detail_jangka ?? now()->year);
+
+        $totalIde = IdeInovasi::whereYear('created_at', $tahun)->count();
+
+        $progress = $totalIde > 0 ? 100 : 0;
+
+        return round($progress, 1);
+    }
+
     //Education
     //Instruktur
     private function calculateKepuasanPesertaPelatihan($item, $personId)
@@ -3242,6 +3263,8 @@ class TargetKPIController extends Controller
                     // ITSM - all kecuali Koordinator ITSM
                     elseif ($itemDetail->asistant_route === 'kepuasan client ITSM') {
                         $data = $this->calculateProgressKepuasanClientITSMDetail($itemDetail);
+                    } elseif ($itemDetail->asistant_route === 'inovation adaption rate') {
+                        $data = $this->calculateInovationAdaptionRateDetail($itemDetail, $personId);
                     }
 
                     // Koordinator ITSM
@@ -3401,6 +3424,8 @@ class TargetKPIController extends Controller
         // --- ITSM ---
         elseif ($route === 'kepuasan client ITSM') {
             return $this->calculateProgressKepuasanClientITSMDetail($itemDetail);
+        } elseif ($route === 'inovation adaption rate') {
+            return $this->calculateInovationAdaptionRateDetail($itemDetail, $personId);
         } elseif ($route === 'availability sistem internal kritis') {
             return $this->calculateAvailabilitySistemInternalKritisDetail($itemDetail);
         } elseif ($route === 'meningkatkan kepuasan dan loyalitas peserta/client') {
@@ -4170,6 +4195,8 @@ class TargetKPIController extends Controller
                 // ITSM
                 elseif ($target->asistant_route === 'kepuasan client ITSM') {
                     $progress = $this->calculateProgressKepuasanClientITSM($target, $personId);
+                } elseif ($target->asistant_route === 'inovation adaption rate') {
+                    $progress = $this->calculateInovationAdaptionRate($target, $personId);
                 }
                 // Koordinator ITSM
                 elseif ($target->asistant_route === 'availability sistem internal kritis') {
@@ -6946,6 +6973,107 @@ class TargetKPIController extends Controller
         ];
     }
 
+    private function calculateInovationAdaptionRateDetail($item, $personId)
+    {
+        $detail = $item->detailTargetKPI->first();
+
+        if (!$detail || !is_numeric($detail->nilai_target)) {
+            return [
+                'progress' => 0,
+                'gap' => 0,
+                'pie_chart' => ['above' => 0, 'below' => 0],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+            ];
+        }
+
+        $nilaiTarget = (float) $detail->nilai_target;
+        $tahun = (int) ($detail->detail_jangka ?? now()->year);
+
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            return [
+                'progress' => 0,
+                'gap' => 0,
+                'pie_chart' => ['above' => 0, 'below' => 0],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+            ];
+        }
+
+        $start = "$tahun-01-01";
+        $end = "$tahun-12-31";
+
+        $ideInovasi = IdeInovasi::whereBetween('created_at', [$start, $end])->get();
+
+        if ($ideInovasi->isEmpty()) {
+            return [
+                'progress' => 0,
+                'gap' => 0,
+                'pie_chart' => ['above' => 0, 'below' => 0],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+            ];
+        }
+
+        $dailyResults = [];
+
+        foreach ($ideInovasi as $ide) {
+
+            $tanggal = $ide->created_at->format('Y-m-d');
+
+            // aturan bisnis tetap: ada ide = 100
+            $dailyResults[$tanggal][] = 100;
+        }
+
+        $dailyAverages = [];
+
+        foreach ($dailyResults as $tanggal => $values) {
+            $dailyAverages[$tanggal] = array_sum($values) / count($values);
+        }
+
+        $totalDays = count($dailyAverages);
+        $above = $totalDays; // karena jika ada ide = 100
+        $below = 0;
+
+        $progress = $totalDays > 0 ? 100 : 0;
+
+        $gapRaw = $progress - $nilaiTarget;
+        $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
+
+        $monthlyData = [];
+        $dailyBreakdownPerMonth = [];
+
+        foreach ($dailyAverages as $dateStr => $avg) {
+
+            $date = Carbon::parse($dateStr);
+            $monthKey = $date->format('Y-m');
+            $dayKey = $date->format('Y-m-d');
+
+            $monthlyData[$monthKey][] = $avg;
+            $dailyBreakdownPerMonth[$monthKey][$dayKey] = $avg;
+        }
+
+        $monthlyAverages = [];
+
+        foreach ($monthlyData as $month => $values) {
+            $monthlyAverages[$month] = round(array_sum($values) / count($values), 1);
+        }
+
+        ksort($monthlyAverages);
+        ksort($dailyBreakdownPerMonth);
+
+        return [
+            'progress' => $progress,
+            'gap' => $gap,
+            'pie_chart' => [
+                'above' => $above,
+                'below' => $below
+            ],
+            'monthly_data' => $monthlyAverages,
+            'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
+        ];
+    }
+
     //TS
     private function calculateTingkatKeberhasilanSupportMemenuhiSLADetail($itemDetail, $personId = null)
     {
@@ -8764,6 +8892,8 @@ class TargetKPIController extends Controller
                 return $this->calculateDorongInovasiPelayanan($item, $personId);
             case 'penanganan komplain perseta':
                 return $this->calculatePenangananKomplainPerseta($item, $personId);
+            case 'report persiapan kelas':
+                return $this->calculateReportPersiapanKelas($item, $personId);
             //Finance
             case 'inisiatif efesiensi keuangan':
                 return $this->calculateInisiatifEfisiensiKeuangan($item, $personId);
@@ -8796,6 +8926,8 @@ class TargetKPIController extends Controller
             //All kecuali Koordinator ITSM
             case 'kepuasan client itsm':
                 return $this->calculateProgressKepuasanClientITSM($item, $personId);
+            case 'inovation adaption rate':
+                return $this->calculateInovationAdaptionRate($item, $personId);
             //Koordinator ITSM
             case 'availability sistem internal kritis':
                 return $this->calculateAvailabilitySistemInternalKritis($item, $personId);
