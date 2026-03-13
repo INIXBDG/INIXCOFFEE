@@ -360,7 +360,7 @@ class TargetKPIController extends Controller
             //Sales & Marketing
             else if ($route === 'target penjualan tahunan') {
                 return method_exists($this, 'calculateTargetPenjualanTahunan') ? $this->calculateTargetPenjualanTahunan($item, $personId) : null;
-            // SPV Sales
+            }// SPV Sales
             elseif ($route === 'meningkatkan revenue perusahaan') {
                 return method_exists($this, 'calculateMeningkatkanRevenuePerusahaan') ? $this->calculateMeningkatkanRevenuePerusahaan($item, $personId) : null;
             }
@@ -3000,6 +3000,7 @@ class TargetKPIController extends Controller
         }
 
         $progress = (float) ($totalSales ?? 0);
+    }
 
     private function calculateMeningkatkanRevenuePerusahaan($item, $personId)
     {
@@ -3287,7 +3288,7 @@ class TargetKPIController extends Controller
                     //Sales & Marketing
                     elseif ($itemDetail->asistant_route === 'total penjualan setahun') {
                         $data = $this->calculateTotalPenjualanSetahunDetail($itemDetail, $personId);
-                    // SPV Sales
+                    }// SPV Sales
                     elseif ($itemDetail->asistant_route === 'meningkatkan revenue perusahaan') {
                         $data = $this->calculateMeningkatkanRevenuePerusahaanDetail($itemDetail);
                     }
