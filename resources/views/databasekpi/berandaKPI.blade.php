@@ -331,7 +331,7 @@
                         </li>
                     @endif
 
-                    @if ($auth === 'Technical Support' || $auth === 'Tim Digital' || $auth === 'Programmer')
+                    @if ($auth === 'Technical Support' || $auth === 'Tim Digital' || $auth === 'Programmer' || $auth === 'Finance & Accounting')
                         <li class="nav-item {{ Request::routeIs('kpi.overview.indexPersonal') ? 'active' : '' }}">
                             <a class="nav-link" href="{{ route('kpi.overview.indexPersonal') }}">
                                 <span class="menu-title">Overview Personal</span>
