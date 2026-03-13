@@ -1110,6 +1110,8 @@ class TargetKPIController extends Controller
                     $progress = $this->calculateKontrolPengeluaranTransportasi($target, $personId);
                 } elseif ($target->asistant_route === 'report kondisi kendaraan') {
                     $progress = $this->calculateReportKondisiKendaraan($target, $personId);
+                } elseif ($target->asistant_route === 'feedback kenyamanan berkendara') {
+                    $progress = $this->calculateFeedbackKenyamananBerkendara($target, $personId);
                 }
                 // OB
                 elseif ($target->asistant_route === 'feedback kebersihan dan kenyamanan') {
@@ -1882,6 +1884,52 @@ class TargetKPIController extends Controller
 
         return round($presentase, 1);
     }
+    private function calculateFeedbackKenyamananBerkendara($item, $personId)
+    {
+        $detail = $item->detailTargetKPI->first();
+
+        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
+            return 0;
+        }
+
+        $nilaiTarget = (float) $detail->nilai_target;
+        $tahun = (int) $detail->detail_jangka;
+
+        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
+            return 0;
+        }
+
+        $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
+        $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
+
+        $allScores = [];
+
+        $feedbacks = Nilaifeedback::whereBetween('created_at', [$start, $end])->get();
+
+        foreach ($feedbacks as $fb) {
+            $p8 = is_numeric($fb->p8) ? (float) $fb->p8 : 0;
+
+            $avg = ($p8) / 1;
+            $avg = min(4, max(1, $avg));
+            $allScores[] = $avg;
+        }
+
+        if (empty($allScores)) {
+            return 0;
+        }
+
+        $totalResponden = count($allScores);
+        $respondenPuas = 0;
+
+        foreach ($allScores as $skor) {
+            if ($skor >= 3.5) {
+                $respondenPuas++;
+            }
+        }
+
+        $progress = ($respondenPuas / $totalResponden) * 100;
+        return round($progress, 1);
+    }
 
     //OB
     private function calculateFeedbackKebersihanDanKenyamanan($item, $personId)
@@ -2623,7 +2671,11 @@ class TargetKPIController extends Controller
 
         $totalIde = IdeInovasi::whereYear('created_at', $tahun)->count();
 
-        $progress = $totalIde > 0 ? 100 : 0;
+        if ($nilaiTarget <= 0) {
+            return 0;
+        }
+
+        $progress = ($totalIde / $totalIde) * 100;
 
         return round($progress, 1);
     }
@@ -3253,6 +3305,8 @@ class TargetKPIController extends Controller
                         $data = $this->calculateKontrolPengeluaranTransportasiDetail($itemDetail, $personId);
                     } elseif ($itemDetail->asistant_route === 'report kondisi kendaraan') {
                         $data = $this->calculateReportKondisiKendaraanDetail($itemDetail, $personId);
+                    } elseif ($itemDetail->asistant_route === 'feedback kenyamanan berkendara') {
+                        $data = $this->calculateFeedbackKenyamananBerkendaraDetail($itemDetail, $personId);
                     }
 
                     //OB
@@ -3414,6 +3468,8 @@ class TargetKPIController extends Controller
             return $this->calculateKontrolPengeluaranTransportasiDetail($itemDetail, $personId);
         } elseif ($route === 'report kondisi kendaraan') {
             return $this->calculateReportKondisiKendaraanDetail($itemDetail, $personId);
+        } elseif ($route === 'feedback kenyamanan berkendara') {
+            return $this->calculateFeedbackKenyamananBerkendaraDetail($itemDetail, $personId);
         }
 
         // --- OB ---
@@ -4187,6 +4243,8 @@ class TargetKPIController extends Controller
                     $progress = $this->calculateKontrolPengeluaranTransportasi($target, $personId);
                 } elseif ($target->asistant_route === 'report kondisi kendaraan') {
                     $progress = $this->calculateReportKondisiKendaraan($target, $personId);
+                } elseif ($target->asistant_route === 'feedback kenyamanan berkendara') {
+                    $progress = $this->calculateFeedbackKenyamananBerkendara($target, $personId);
                 }
                 // OB
                 elseif ($target->asistant_route === 'feedback kebersihan dan kenyamanan') {
@@ -5843,6 +5901,119 @@ class TargetKPIController extends Controller
         ];
     }
 
+     private function calculateFeedbackKenyamananBerkendaraDetail($itemDetail)
+    {
+        $detail = $itemDetail->detailTargetKPI->first();
+
+        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
+            return [
+                'progress' => 0,
+                'gap' => 0,
+                'pie_chart' => ['above' => 0, 'below' => 0],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+            ];
+        }
+
+        $nilaiTarget = (float) $detail->nilai_target;
+        $tahun = (int) $detail->detail_jangka;
+
+        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
+            return [
+                'progress' => 0,
+                'gap' => 0,
+                'pie_chart' => ['above' => 0, 'below' => 0],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+            ];
+        }
+
+        $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
+        $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
+
+        $allScores = [];
+        $scoreDatePairs = [];
+
+        $feedbacks = Nilaifeedback::whereBetween('created_at', [$start, $end])->get();
+
+        foreach ($feedbacks as $fb) {
+            $p8 = is_numeric($fb->p8) ? (float) $fb->p8 : 0;
+
+            $avg = ($p8) / 1;
+            $avg = min(4, max(1, $avg));
+
+            $allScores[] = $avg;
+            $scoreDatePairs[] = [
+                'score' => $avg,
+                'date' => $fb->created_at->format('Y-m-d'),
+            ];
+        }
+
+        if (empty($allScores)) {
+            return [
+                'progress' => 0,
+                'gap' => 0,
+                'pie_chart' => ['above' => 0, 'below' => 0],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+            ];
+        }
+
+        $totalResponden = count($allScores);
+        $respondenPuas = 0;
+
+        foreach ($allScores as $skor) {
+            if ($skor >= 3.5) {
+                $respondenPuas++;
+            }
+        }
+
+        $progress = ($respondenPuas / $totalResponden) * 100;
+        $progress = round($progress, 1);
+
+        $gapRaw = $progress - $nilaiTarget;
+        $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
+
+        $monthlyData = [];
+        $dailyBreakdownPerMonth = [];
+
+        foreach ($scoreDatePairs as $pair) {
+            $date = Carbon::parse($pair['date']);
+            $monthKey = $date->format('Y-m');
+            $dayKey = $pair['date'];
+            $score = $pair['score'];
+
+            if (!isset($monthlyData[$monthKey])) {
+                $monthlyData[$monthKey] = [];
+            }
+            $monthlyData[$monthKey][] = $score;
+
+            if (!isset($dailyBreakdownPerMonth[$monthKey])) {
+                $dailyBreakdownPerMonth[$monthKey] = [];
+            }
+            $dailyBreakdownPerMonth[$monthKey][$dayKey] = $score;
+        }
+
+        $monthlyAverages = [];
+        foreach ($monthlyData as $month => $dailyVals) {
+            $monthlyAverages[$month] = round(array_sum($dailyVals) / count($dailyVals), 1);
+        }
+
+        ksort($monthlyAverages);
+        ksort($dailyBreakdownPerMonth);
+
+        return [
+            'progress' => $progress,
+            'gap' => $gap,
+            'pie_chart' => [
+                'above' => $respondenPuas,
+                'below' => $totalResponden - $respondenPuas,
+            ],
+            'monthly_data' => $monthlyAverages,
+            'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
+        ];
+    }
+
     //OB
     private function calculateFeedbackKebersihanDanKenyamananDetail($itemDetail)
     {
@@ -7039,6 +7210,12 @@ class TargetKPIController extends Controller
 
         $gapRaw = $progress - $nilaiTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
+
+        if ($progress > $nilaiTarget) {
+            $gap = 0;
+        } else {
+            $gap = $progress - $nilaiTarget;
+        }
 
         $monthlyData = [];
         $dailyBreakdownPerMonth = [];
@@ -8917,6 +9094,8 @@ class TargetKPIController extends Controller
                 return $this->calculateKontrolPengeluaranTransportasi($item, $personId);
             case 'report kondisi kendaraan':
                 return $this->calculateReportKondisiKendaraan($item, $personId);
+            case 'feedback kenyamanan berkendara':
+                return $this->calculateFeedbackKenyamananBerkendara($item, $personId);
 
             //OB
             case 'feedback kebersihan dan kenyamanan':
