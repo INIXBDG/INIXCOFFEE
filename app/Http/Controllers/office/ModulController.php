@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Notifications\PersetujuanPreorder;
 use App\Notifications\PreorderNotification;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -330,6 +331,15 @@ class ModulController extends Controller
         ]);
 
         return back()->with('success', 'Data peserta berhasil diperbarui');
+    }
+
+    public function uploaded($id){
+        $nomor = NomorModul::findOrFail($id);
+        $nomor->status = 'Uploaded';
+        $nomor->uploaded = Carbon::now();
+        $nomor->save();
+
+        return back()->with('success', 'Status uploaded berhasil diupdate');
     }
 
     public function deletePeserta(Request $request, $id)
