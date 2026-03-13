@@ -4,6 +4,7 @@ namespace App\Http\Controllers\office;
 
 use App\Http\Controllers\Controller;
 use App\Models\AbsensiKaryawan;
+use App\Models\AdministrasiKaryawan;
 use App\Models\ChecklistKeperluan;
 use App\Models\Feedback;
 use App\Models\karyawan;
@@ -227,6 +228,10 @@ class OfficeController extends Controller
             ->whereBetween('tanggal_perkiraan_selesai', [$startOfThisWeek, $endOfNextWeek])
             ->orderByDesc('created_at')
             ->get(); 
+        
+        $administrasis = AdministrasiKaryawan::orderBy('dateline', 'desc')
+            ->where('status', '!=', 'selesai')
+            ->get();
 
         return view('office.dashboard', compact(
             'total_karyawan',
@@ -238,7 +243,8 @@ class OfficeController extends Controller
             'jumlahPeserta',
             'jumlahInstruktur',
             'rkms',
-            'trackingTagihanPerusahaans'
+            'trackingTagihanPerusahaans',
+            'administrasis'
         ));
     }
 

@@ -8,20 +8,22 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Notifications\Messages\BroadcastMessage;
+use App\Models\Tickets;
 
 class SurveyReminderNotification extends Notification implements ShouldBroadcast
 {
     use Queueable, InteractsWithSockets;
 
-    protected $data;
+    protected $ticket;
     protected $path;
     protected $type;
 
-    public function __construct($data = [], $path = null, $type = 'survey_reminder')
+    public function __construct(Tickets $ticket)
     {
-        $this->data = $data;
-        $this->path = $path ?? route('surveyKepuasan.create');
-        $this->type = $type;
+        $this->ticket = $ticket;
+        // Penyesuaian path agar mengarah langsung ke survei dengan parameter ticket_id
+        $this->path = route('surveykepuasan.index', ['ticket_id' => $ticket->ticket_id]);
+        $this->type = 'survey_reminder';
     }
 
     public function via($notifiable): array
@@ -46,8 +48,8 @@ class SurveyReminderNotification extends Notification implements ShouldBroadcast
             'user' => auth()->user()?->username ?? 'System',
             'message' => [
                 'tipe'       => $this->type,
-                'judul'      => 'Survey Kepuasan ITSM!',
-                'deskripsi'  => 'dimohon untuk anda dapat mengisi survey kepuasan pelayanan ITSM.',
+                'judul'      => 'Tiket Selesai - ' . $this->ticket->ticket_id,
+                'deskripsi'  => 'Tiket Anda telah selesai ditangani. Harap mengisi survei kepuasan terhadap pelayanan ticketing.',
             ],
             'path'   => $this->path,
             'status' => 'unread',
@@ -60,8 +62,8 @@ class SurveyReminderNotification extends Notification implements ShouldBroadcast
             'user' => auth()->user()?->username ?? 'System',
             'message' => [
                 'tipe'       => $this->type,
-                'judul'      => 'Survey Kepuasan ITSM!',
-                'deskripsi'  => 'dimohon untuk anda dapat mengisi survey kepuasan pelayanan ITSM.',
+                'judul'      => 'Tiket Selesai - ' . $this->ticket->ticket_id,
+                'deskripsi'  => 'Tiket Anda telah selesai ditangani. Harap mengisi survei kepuasan terhadap pelayanan ticketing.',
             ],
             'path'   => $this->path,
             'status' => 'unread',

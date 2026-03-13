@@ -74,6 +74,14 @@
                     <div class="text-truncate" data-i18n="contact">Pengajuan Kegiatan</div>
                 </a>
             </li>
+            
+            <li class="menu-item {{ request()->routeIs('administrasi.karyawan') ? 'active open' : '' }}">
+                <a href="{{ route('administrasi.karyawan') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-receipt"></i>
+                    <div class="text-truncate" data-i18n="contact">Administrasi Karyawan</div>
+                </a>
+            </li>
+
         @endif
 
         <li class="menu-header small text-uppercase">

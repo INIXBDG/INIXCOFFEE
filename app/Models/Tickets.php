@@ -9,6 +9,7 @@ class Tickets extends Model
 {
     use HasFactory;
     protected $fillable = [
+        'ticket_id',
         'nama_karyawan',
         'divisi',
         'kategori',
@@ -19,6 +20,7 @@ class Tickets extends Model
         'pic',
         'penanganan',
         'status',
+        'is_surveyed', // Tambahan atribut
         'keterangan',
         'tanggal_selesai',
         'jam_selesai',
