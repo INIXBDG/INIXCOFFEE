@@ -2054,7 +2054,7 @@ class TargetKPIController extends Controller
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $contentSchedules = ContentSchedule::whereBetween('created_at', [$start, $end])
+        $contentSchedules = ContentSchedule::whereBetween('upload_date', [$start, $end])
             ->whereNotNull('upload_date')
             ->get();
 
@@ -2064,7 +2064,7 @@ class TargetKPIController extends Controller
 
         $weeklyCounts = [];
         foreach ($contentSchedules as $schedule) {
-            $weekKey = Carbon::parse($schedule->created_at)->format('o-\WW');
+            $weekKey = Carbon::parse($schedule->upload_date)->format('o-\WW');
             $weeklyCounts[$weekKey] = ($weeklyCounts[$weekKey] ?? 0) + 1;
         }
 
@@ -6187,8 +6187,8 @@ class TargetKPIController extends Controller
                 'progress' => 0,
                 'gap' => 0,
                 'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
+                'weekly_data' => [],
+                'daily_breakdown_per_week' => [],
             ];
         }
 
@@ -6201,7 +6201,7 @@ class TargetKPIController extends Controller
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $contentSchedules = ContentSchedule::whereBetween('created_at', [$start, $end])
+        $contentSchedules = ContentSchedule::whereBetween('upload_date', [$start, $end])
             ->whereNotNull('upload_date')
             ->get();
 
@@ -6210,76 +6210,71 @@ class TargetKPIController extends Controller
                 'progress' => 0,
                 'gap' => 0,
                 'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [],
-                'daily_breakdown_per_month' => [],
+                'weekly_data' => [],
+                'daily_breakdown_per_week' => [],
             ];
         }
 
-        // Hitung jumlah konten per minggu
         $weeklyCounts = [];
+        $dailyBreakdownPerWeek = [];
+
         foreach ($contentSchedules as $schedule) {
-            $weekKey = Carbon::parse($schedule->created_at)->format('o-\WW');
+
+            $date = Carbon::parse($schedule->upload_date);
+
+            $weekKey = $date->format('o-\WW');
+            $dayKey = $date->format('Y-m-d');
+
+            // Hitung konten per minggu
             $weeklyCounts[$weekKey] = ($weeklyCounts[$weekKey] ?? 0) + 1;
+
+            // Breakdown harian per minggu
+            if (!isset($dailyBreakdownPerWeek[$weekKey])) {
+                $dailyBreakdownPerWeek[$weekKey] = [];
+            }
+
+            $dailyBreakdownPerWeek[$weekKey][$dayKey] =
+                ($dailyBreakdownPerWeek[$weekKey][$dayKey] ?? 0) + 1;
         }
 
         $compliantWeeks = 0;
         $totalWeeksWithData = 0;
 
         foreach ($weeklyCounts as $count) {
+
             if ($count >= 1) {
                 $totalWeeksWithData++;
+
                 if ($count >= 3) {
                     $compliantWeeks++;
                 }
             }
         }
 
-        if ($totalWeeksWithData === 0) {
-            $progress = 0;
-        } else {
-            $progress = round(($compliantWeeks / $totalWeeksWithData) * 100, 1);
-        }
+        $progress = $totalWeeksWithData === 0
+            ? 0
+            : round(($compliantWeeks / $totalWeeksWithData) * 100, 1);
 
         $nilaiTarget = $details->pluck('nilai_target')->first() ?? 0;
+
         $gapRaw = $progress - $nilaiTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
         $above = $compliantWeeks;
         $below = $totalWeeksWithData - $compliantWeeks;
 
-        $monthlyData = [];
-        $dailyBreakdownPerMonth = [];
-
-        foreach ($contentSchedules as $schedule) {
-            $date = Carbon::parse($schedule->created_at);
-            $monthKey = $date->format('Y-m');
-            $dayKey = $date->format('Y-m-d');
-
-            if (!isset($monthlyData[$monthKey])) {
-                $monthlyData[$monthKey] = [];
-            }
-            $monthlyData[$monthKey][] = 1;
-
-            if (!isset($dailyBreakdownPerMonth[$monthKey])) {
-                $dailyBreakdownPerMonth[$monthKey] = [];
-            }
-            $dailyBreakdownPerMonth[$monthKey][$dayKey] = ($dailyBreakdownPerMonth[$monthKey][$dayKey] ?? 0) + 1;
-        }
-
-        $monthlyAverages = [];
-        foreach ($monthlyData as $month => $dailyVals) {
-            $monthlyAverages[$month] = round(array_sum($dailyVals) / count($dailyVals), 1);
-        }
-
-        ksort($monthlyAverages);
-        ksort($dailyBreakdownPerMonth);
+        ksort($weeklyCounts);
+        ksort($dailyBreakdownPerWeek);
 
         return [
             'progress' => $progress,
             'gap' => $gap,
-            'pie_chart' => ['above' => $above, 'below' => $below],
-            'monthly_data' => $monthlyAverages,
-            'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
+            'pie_chart' => [
+                'above' => $above,
+                'below' => $below
+            ],
+            'weekly_data' => $weeklyCounts,
+            'daily_breakdown_per_week' => $dailyBreakdownPerWeek,
         ];
     }
 
