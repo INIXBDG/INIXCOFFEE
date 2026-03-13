@@ -2137,6 +2137,7 @@
                 if (hasProgrammer && hasDigital && hasTS) {
                     options += `
                         <option value="kepuasan client ITSM">Kepuasan Client ITSM</option>
+                        <option value="inovation adaption rate">Inovation Adaption Rate</option>
                     `;
                 } else {
                     options +=
