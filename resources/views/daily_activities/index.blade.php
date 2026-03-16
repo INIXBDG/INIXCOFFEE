@@ -83,6 +83,7 @@
                             <th>Timestamp</th>
                             <th>Aktivitas</th>
                             <th>Task Terkait</th>
+                            <th>PIC</th>
                             <th>Tanggal Mulai</th>
                             <th>Tanggal Selesai</th>
                             <th>Status</th>
@@ -92,9 +93,11 @@
                     <tbody>
                         @foreach($activities as $activity)
                         <tr data-id="{{ $activity->id }}" style="cursor: pointer;" class="activity-row-click">
+                            {{-- {{ $activity }} --}}
                             <td>{{ $activity->created_at }}</td>
                             <td>{{ $activity->activity }}</td>
                             <td>{{ $activity->task->title ?? '-' }}</td>
+                            <td>{{ $activity->user->karyawan->kode_karyawan ?? '-' }}</td>
                             <td>{{ \Carbon\Carbon::parse($activity->start_date)->format('d/m/Y') }}</td>
                             <td>{{ $activity->end_date ? \Carbon\Carbon::parse($activity->end_date)->format('d/m/Y') : '-' }}</td>
                             <td>
@@ -105,14 +108,28 @@
                                 @endif
                             </td>
                             <td class="text-center">
+                                @php
+                                    $user = auth()->user();
+                                    $picTask = $activity->user->karyawan->kode_karyawan ?? null;
+                                    $kodeKaryawan = $user->karyawan->kode_karyawan ?? null;
+                                    $isPicMatch = $picTask === $kodeKaryawan;
+                                    // dd($picTask, $kodeKaryawan);
+                                @endphp
+
                                 @if($activity->status != 'Selesai')
-                                <button type="button" class="btn btn-sm btn-success btn-update-status" 
-                                    data-id="{{ $activity->id }}" 
-                                    data-activity="{{ $activity->activity }}">
-                                    <i class="fas fa-check me-1"></i> Selesaikan
-                                </button>
+
+                                    <button type="button"
+                                        class="btn btn-sm btn-success btn-update-status"
+                                        data-id="{{ $activity->id }}"
+                                        data-activity="{{ $activity->activity }}"
+                                        {{ !$isPicMatch ? 'disabled' : '' }}
+                                        title="{{ !$isPicMatch ? 'Hanya PIC task yang dapat menyelesaikan aktivitas ini' : '' }}">
+                                        
+                                        <i class="fas fa-check me-1"></i> Selesaikan
+                                    </button>
+
                                 @else
-                                <span class="text-muted"><i class="fas fa-check-double"></i> Selesai</span>
+                                    <span class="text-muted"><i class="fas fa-check-double"></i> Selesai</span>
                                 @endif
                             </td>
                         </tr>
