@@ -14,6 +14,7 @@ class NomorModul extends Model
         'status',
         'note_modul',
         'note_peserta',
+        'uploaded'
     ];
 
     public function moduls()
