@@ -774,7 +774,10 @@
                 }
             }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> cdf4c59a6ba2d42ae9c0ccc01f7f36eb7952029b
             $assistantRoute.off('change').on('change', function () {
                 const value = $(this).val();
                 const itsmRoutes = [
@@ -2118,8 +2121,10 @@
                 // Programmer + Tim Digital + TS
                 if (hasProgrammer && hasDigital && hasTS) {
                     options += `
-                            <option value="kepuasan client ITSM">Kepuasan Client ITSM</option>
-                        `;
+
+                        <option value="kepuasan client ITSM">Kepuasan Client ITSM</option>
+                        <option value="inovation adaption rate">Inovation Adaption Rate</option>
+                    `;
                 } else {
                     options +=
                         '<option disabled>-- Kombinasi jabatan ini belum memiliki Assistant Route --</option>';
@@ -2169,10 +2174,12 @@
                 //Driver
                 else if (hasDriver) {
                     options += `
-                            <option value="perbaikan kendaraan">Perbaikan kendaraan</option>
-                            <option value="report kondisi kendaraan">Report Kondisi Kendaraan</option>
-                            <option value="kontrol pengeluaran transportasi">Kontrol Pengeluaran Transportasi</option>
-                        `;
+                        <option value="perbaikan kendaraan">Perbaikan kendaraan</option>
+                        <option value="report kondisi kendaraan">Report Kondisi Kendaraan</option>
+                        <option value="kontrol pengeluaran transportasi">Kontrol Pengeluaran Transportasi</option>
+                        <option value="feedback kenyamanan berkendara">Feedback Kenyamanan Berkendara</option>
+
+                    `;
                 }
 
                 //OB
