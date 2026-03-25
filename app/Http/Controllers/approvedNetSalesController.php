@@ -22,6 +22,8 @@ class ApprovedNetSalesController extends Controller
             $netSales = perhitunganNetSales::with('karyawan')->where('id_rkm', $id)->first();
 
             if (!$netSales) {
+                Log::warning("[PA] Data not found for RKM ID: $id");
+                Log::warning("[PA] Request data: " . $netSales);
                 return response()->json(['error' => 'Data tidak ditemukan.'], 404);
             }
 

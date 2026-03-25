@@ -482,6 +482,61 @@
             </div>
         </div>
 
+        <div class="modal fade" id="approveModal" tabindex="-1" aria-labelledby="approveModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="approveModalLabel">Confirm Approval</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="approveForm" method="POST">
+                            @csrf
+                            <p>Apakah Disetujui?</p>
+                            <div id="manager-row">
+                                @php
+                                    $jabatan = auth()->user()->jabatan;
+                                @endphp
+                                @if ($jabatan == 'Finance & Accounting')
+                                    <div class="row my-2">
+                                        <select name="status_tracking" id="status_tracking" class="form-select">
+                                            <option disabled selected>Pilih Status Tracking</option>
+                                            <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager">Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager</option>
+                                            <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi">Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi</option>
+                                            <option value="Finance Menunggu Approve Direksi">Finance Menunggu Approve Direksi</option>
+                                            <option value="Membuat Permintaan Ke Direktur Utama">Membuat Permintaan Ke Direktur Utama</option>
+                                            <option value="Pengajuan sedang dalam proses Pencairan">Pengajuan sedang dalam proses Pencairan</option>
+                                            <option value="Pencairan Sudah Selesai">Pencairan Sudah Selesai</option>
+                                            <option value="Selesai">Selesai</option>
+                                        </select>
+                                        <div class="invalid-feedback">Silakan pilih status tracking terlebih dahulu.</div>
+                                    </div>
+                                @endif
+
+                                <div class="btn-group" role="group">
+                                    <input type="hidden" value="" id="id_rkm" name="id_rkm">
+                                    <button class="btn btn-outline-primary" type="submit" id="btnApproveYes">Ya</button>
+
+                                    <input type="radio" class="btn-check" name="approval" id="approveNo" value="2" autocomplete="off">
+                                    <label class="btn btn-outline-danger" for="approveNo" onclick="toggleAlasanManager(true)">Tidak</label>
+                                </div>
+
+                                <div class="mt-3" id="alasanManagerInput" style="display: none;">
+                                    <label for="alasan_manager" class="form-label">Alasan Penolakan</label>
+                                    <textarea class="form-control" id="alasan_manager" name="keterangan" rows="3"></textarea>
+                                    <input type="hidden" value="{{ auth()->user()->jabatan }}" name="jabatan">
+                                    <button class="btn btn-outline-success mt-3" type="submit">Kirim</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Modal Update Tahap -->
         <div class="modal fade" id="updateProbabilitasModal" tabindex="-1" aria-labelledby="updateProbabilitasLabel"
             aria-hidden="true">
@@ -561,6 +616,7 @@
                         <div class="modal-body">
 
                             <input type="hidden" name="id_rkm" value='{{ $peluang->id_rkm }}'>
+                            <input type="hidden" name="id_peluang" value='{{ $peluang->id }}'>
 
                             <!-- TRANSPORTASI -->
                             <div class="mb-3">
@@ -815,6 +871,53 @@
                     </div>
 
                     <div class="modal-footer">
+                        @if ($netsales)
+                            @php
+                                $pa = $netsales->first();
+                                $approvals = $pa->approvedNetSales ?? collect();
+                                $lastApproval = $approvals->last();
+                                
+                                $jabatanUser = auth()->user()->jabatan;
+                                $level = $lastApproval ? $lastApproval->level_status : null;
+                                
+                                // Tambahkan pengecekan status Selesai di sini
+                                $isSelesai = ($lastApproval && $lastApproval->keterangan === 'Selesai');
+                                
+                                $canApprove = false;
+
+                                // Jika sudah selesai, button tidak akan muncul (canApprove tetap false)
+                                if (!$isSelesai) {
+                                    if (is_null($level) || $level === '' || $level === 'Belum Disetujui') {
+                                        $canApprove = ($jabatanUser === 'SPV Sales');
+                                    } elseif ($level === '1') {
+                                        $canApprove = in_array($jabatanUser, ['GM', 'Koordinator Office']);
+                                    } elseif ($level === '2') {
+                                        $canApprove = ($jabatanUser === 'Finance & Accounting');
+                                    } elseif ($level === '3') {
+                                        $canApprove = in_array($jabatanUser, ['Finance & Accounting', 'GM', 'SPV Sales']);
+                                    }
+                                }
+                            @endphp
+
+                            @if ($isSelesai)
+                                <div class="text-end">
+                                    <span class="badge bg-label-success p-2">
+                                        <i class="bi bi-check-all"></i> Seluruh Proses Selesai
+                                    </span>
+                                </div>
+                            @elseif ($canApprove)
+                                <div class="text-end">
+                                    <button type="button" class="btn btn-success"
+                                        onclick="openApproveModal('{{ $pa->id_rkm ?? $peluang->id_rkm }}')">
+                                        <i class="bi bi-check-circle"></i> Approve Sekarang
+                                    </button>
+                                </div>
+                            @else
+    
+                            @endif
+                        @endif
+                        
+                        <a type="button" class="btn btn-primary" target="_blank" href="{{route('netsales.detail', ['id' => $peluang->id_rkm])}}">View PA</a>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     </div>
 
@@ -859,6 +962,109 @@
 
         <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+        <script>
+            // 1. Inisialisasi variabel global
+            let approveType = '';
+
+            // 2. Fungsi untuk membuka modal Approve (Global Scope)
+            window.openApproveModal = function(id_rkm) {
+                console.log('ID RKM yang dikirim ke modal:', id_rkm);
+                
+                // --- TAMBAHAN: Tutup modal detail PA terlebih dahulu ---
+                const detailPAModalEl = document.getElementById('detailPAModal');
+                const detailPAModalInstance = bootstrap.Modal.getInstance(detailPAModalEl);
+                if (detailPAModalInstance) {
+                    detailPAModalInstance.hide();
+                } else {
+                    // Jika instance belum ada (fallback menggunakan jQuery)
+                    $('#detailPAModal').modal('hide');
+                }
+                // -------------------------------------------------------
+
+                // Reset form dan state modal approve
+                $('#approveForm')[0].reset();
+                $('#id_rkm').val(id_rkm);
+                $('#alasanManagerInput').hide();
+                $('#status_tracking').removeClass('is-invalid');
+                approveType = '';
+
+                // Tampilkan modal approve menggunakan instance Bootstrap 5
+                const modalElement = document.getElementById('approveModal');
+                const modalInstance = new bootstrap.Modal(modalElement);
+                modalInstance.show();
+            };
+
+            // 3. Fungsi toggle alasan penolakan (Global Scope)
+            window.toggleAlasanManager = function(show) {
+                if (show) {
+                    $('#alasanManagerInput').slideDown();
+                    $('#btnApproveYes').hide(); // Sembunyikan tombol "Ya" jika memilih "Tidak"
+                } else {
+                    $('#alasanManagerInput').slideUp();
+                    $('#alasan_manager').val('');
+                    $('#btnApproveYes').show();
+                }
+            };
+
+            // 4. Event Listeners (Jquery Ready)
+            $(document).ready(function() {
+                
+                // Menentukan tipe approve berdasarkan tombol yang diklik
+                $(document).on('click', '#btnApproveYes', function() {
+                    approveType = 'ya';
+                    window.toggleAlasanManager(false);
+                });
+
+                $(document).on('click', '#approveNo', function() {
+                    approveType = 'tidak';
+                });
+
+                // Handle Submit Form via AJAX
+                $(document).on('submit', '#approveForm', function(e) {
+                    e.preventDefault();
+
+                    const jabatan = "{{ auth()->user()->jabatan }}";
+                    const selectedTracking = $('#status_tracking').val();
+
+                    // Validasi tracking khusus Finance jika memilih "Ya"
+                    if (approveType === 'ya' && jabatan === 'Finance & Accounting') {
+                        if (!selectedTracking || selectedTracking === "null" || selectedTracking === "") {
+                            alert('Silakan pilih status tracking terlebih dahulu.');
+                            $('#status_tracking').addClass('is-invalid');
+                            return;
+                        }
+                    }
+
+                    let formData = new FormData(this);
+                    // Tambahkan flag ke FormData agar controller tahu ini Approve atau Reject
+                    formData.append('approval_status', approveType); 
+
+                    $.ajax({
+                        url: "{{ route('netsales.approved') }}",
+                        method: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        dataType: 'json',
+                        beforeSend: function() {
+                            $('button[type="submit"]').prop('disabled', true).text('Processing...');
+                        },
+                        success: function(response) {
+                            const modalEl = document.getElementById('approveModal');
+                            const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                            if (modalInstance) modalInstance.hide();
+                            
+                            location.reload(); 
+                        },
+                        error: function(xhr) {
+                            $('button[type="submit"]').prop('disabled', false).text('Kirim');
+                            console.error(xhr.responseText);
+                            alert('Terjadi kesalahan saat memproses data.');
+                        }
+                    });
+                });
+            });
+        </script>
         <script>
             $(document).ready(function() {
                 const perusahaanId = $('#id_perusahaan').val();
