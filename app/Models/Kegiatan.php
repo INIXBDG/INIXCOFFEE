@@ -23,6 +23,7 @@ class Kegiatan extends Model
         'pencairan',
         'selesai',
         'tipe',
+        'realisasi',
     ];
 
     public function rincian()

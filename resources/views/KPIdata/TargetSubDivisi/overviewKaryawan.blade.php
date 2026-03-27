@@ -32,17 +32,17 @@
                         </div>
                     </div>
                     <div class="text-white">
-                        <h3 class="fw-bold mb-1" id="userName">Muhamad Ardhan H</h3>
+                        <h3 class="fw-bold mb-1" id="userName"></h3>
 
                         <div class="d-flex flex-wrap gap-2">
                             <span class="badge bg-light text-primary px-3 py-2 rounded-pill">
                                 <i class="fa-solid fa-briefcase me-1"></i>
-                                <span id="userJabatan">Koordinator ITSM</span>
+                                <span id="userJabatan"></span>
                             </span>
 
                             <span class="badge bg-light text-primary px-3 py-2 rounded-pill">
                                 <i class="fa-solid fa-building me-1"></i>
-                                <span id="userDivisi">IT Service Management</span>
+                                <span id="userDivisi"></span>
                             </span>
                         </div>
                     </div>
@@ -178,6 +178,233 @@
         let allTargetsData = [];
         let currentFilter = 'all';
 
+        const allowedAssistantRoutes = [
+            'dorong inovasi pelayanan',
+            'pemasukan bersih',
+            'inisiatif efisiensi keuangan',
+            'rasio biaya operasional terhadap revenue',
+            'mengurangi manual work dan error',
+            'laporan analisis keuangan',
+            'pengeluaran biaya karyawan'
+        ];
+
+        const allowedDoubleManualRoutes = [
+            'pengeluaran biaya karyawan'
+        ];
+
+
+        function formatNumber(value) {
+            if (!value && value !== '0') return '';
+            const raw = String(value).replace(/[^0-9]/g, '');
+            if (!raw) return '';
+            return new Intl.NumberFormat('id-ID').format(raw);
+        }
+
+        function getRawNumber(value) {
+            if (!value) return '';
+            return String(value).replace(/[^0-9]/g, '');
+        }
+
+        function initInputFormatting() {
+            $('#manual_value_display').off('input.formatting');
+            $('#manual_value_display').on('input.formatting', function() {
+                const raw = getRawNumber($(this).val());
+                $('#manual_value').val(raw);
+                
+                const format = $('#manual_format').val();
+                let formatted = formatNumber(raw);
+                
+                if (format === 'rupiah' && raw) {
+                    formatted = 'Rp ' + formatted;
+                } else if (format === 'persen' && raw) {
+                    formatted = formatted + '%';
+                }
+                
+                $(this).val(formatted);
+            });
+            
+            $('#biaya_gaji_display').off('input.formatting');
+            $('#biaya_gaji_display').on('input.formatting', function() {
+                const raw = getRawNumber($(this).val());
+                $('#biaya_gaji_tahunan').val(raw);
+                $(this).val(raw ? 'Rp ' + formatNumber(raw) : '');
+            });
+            
+            $('#biaya_bpjs_display').off('input.formatting');
+            $('#biaya_bpjs_display').on('input.formatting', function() {
+                const raw = getRawNumber($(this).val());
+                $('#biaya_bpjs_tahunan').val(raw);
+                $(this).val(raw ? 'Rp ' + formatNumber(raw) : '');
+            });
+            
+            $('#biaya_rekrutmen_display').off('input.formatting');
+            $('#biaya_rekrutmen_display').on('input.formatting', function() {
+                const raw = getRawNumber($(this).val());
+                $('#biaya_rekrutmen_tahunan').val(raw);
+                $(this).val(raw ? 'Rp ' + formatNumber(raw) : '');
+            });
+        }
+
+        $(document).ready(function() {
+            initInputFormatting();
+
+            $('#modalFormManual').on('show.bs.modal', function() {
+                resetFormManual();
+            });
+
+            $('#modalFormManual').on('hidden.bs.modal', function() {
+                resetFormManual();
+            });
+        });
+
+        function resetFormManual() {
+            $('#formManualValue')[0].reset();
+            $('#documentPreview').html('');
+            $('#singleInputArea').show();
+            $('#doubleInputArea').hide();
+            
+            $('#manual_value_display').val('').trigger('input');
+            $('#manual_value').val('');
+            $('#biaya_gaji_display').val('').trigger('input');
+            $('#biaya_gaji_tahunan').val('');
+            $('#biaya_bpjs_display').val('').trigger('input');
+            $('#biaya_bpjs_tahunan').val('');
+            
+            $('#biaya_rekrutmen_display').val('').trigger('input');
+            $('#biaya_rekrutmen_tahunan').val('');
+            
+            $('#manualValueId').val('');
+        }
+
+        $(document).on('click', '.buttonForm', function() {
+            const route = $(this).data('route');
+            const value = $(this).data('value') || '';
+            const id = $(this).data('id');
+            
+            $('#manualValueId').val(id);
+            
+            if (allowedDoubleManualRoutes.includes(route)) {
+                $('#singleInputArea').hide();
+                $('#doubleInputArea').show();
+                
+                let gaji = '';
+                let bpjs = '';
+                let rekrutmen = '';  
+                
+                if (value && value.includes(',')) {
+                    const parts = value.split(',');
+                    gaji = parts[0] || '';
+                    bpjs = parts[1] || '';
+                    rekrutmen = parts[2] || ''; 
+                } else {
+                    gaji = value;
+                    bpjs = '';
+                    rekrutmen = '';
+                }
+                
+                const gajiRaw = getRawNumber(gaji);
+                const bpjsRaw = getRawNumber(bpjs);
+                const rekrutmenRaw = getRawNumber(rekrutmen);  
+                
+                $('#biaya_gaji_display').val(gajiRaw ? 'Rp ' + formatNumber(gajiRaw) : '');
+                $('#biaya_gaji_tahunan').val(gajiRaw);
+                $('#biaya_bpjs_display').val(bpjsRaw ? 'Rp ' + formatNumber(bpjsRaw) : '');
+                $('#biaya_bpjs_tahunan').val(bpjsRaw);
+                
+                $('#biaya_rekrutmen_display').val(rekrutmenRaw ? 'Rp ' + formatNumber(rekrutmenRaw) : '');
+                $('#biaya_rekrutmen_tahunan').val(rekrutmenRaw);
+                
+            } else {
+                $('#singleInputArea').show();
+                $('#doubleInputArea').hide();
+                
+                const format = $('#manual_format').val();
+                const rawValue = getRawNumber(value);
+                let displayValue = formatNumber(rawValue);
+                
+                if (format === 'rupiah' && rawValue) {
+                    displayValue = 'Rp ' + displayValue;
+                } else if (format === 'persen' && rawValue) {
+                    displayValue = displayValue + '%';
+                }
+                
+                $('#manual_value_display').val(displayValue);
+                $('#manual_value').val(rawValue);
+            }
+        });
+
+        $(document).on('change', '#manual_format', function() {
+            if ($('#doubleInputArea').is(':visible')) {
+                return;
+            }
+
+            const format = $(this).val();
+            const rawValue = getRawNumber($('#manual_value').val());
+            let displayValue = formatNumber(rawValue);
+
+            if (format === 'rupiah' && rawValue) {
+                displayValue = 'Rp ' + displayValue;
+            } else if (format === 'persen' && rawValue) {
+                displayValue = displayValue + '%';
+            }
+
+            $('#manual_value_display').val(displayValue);
+
+            console.log('Format changed:', {
+                format,
+                rawValue,
+                displayValue
+            });
+        });
+
+        $('#formManualValue').on('submit', function(e) {
+            e.preventDefault();
+            
+            const $submitBtn = $(this).find('button[type="submit"]');
+            const originalText = $submitBtn.html();
+            
+            $submitBtn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin me-2"></i>Menyimpan...');
+            
+            const formData = new FormData(this);
+            
+            if ($('#doubleInputArea').is(':visible')) {
+                formData.set('biaya_gaji_tahunan', $('#biaya_gaji_tahunan').val());
+                formData.set('biaya_bpjs_tahunan', $('#biaya_bpjs_tahunan').val());
+                formData.set('biaya_rekrutmen_tahunan', $('#biaya_rekrutmen_tahunan').val()); 
+            } else {
+                formData.set('manual_value', $('#manual_value').val());
+                formData.set('manual_format', $('#manual_format').val());
+            }
+            
+            $.ajax({
+                url: "{{ route('kpi.manualValue') }}",
+                type: "POST",
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function(res) {
+                    $('#modalFormManual').modal('hide');
+                    resetFormManual();
+                    $submitBtn.prop('disabled', false).html(originalText);
+                    
+                    if (typeof loadContentForm === 'function') {
+                        loadContentForm();
+                    }                    
+                },
+                error: function(xhr) {
+                    $submitBtn.prop('disabled', false).html(originalText);
+                    
+                    if (xhr.status === 422) {
+                        const errors = xhr.responseJSON?.errors || {};
+                        const msg = Object.values(errors).map(e => e[0]).join('\n');
+                        alert(msg);
+                    } else {
+                        alert('Terjadi kesalahan sistem: ' + (xhr.statusText || 'Unknown error'));
+                    }
+                }
+            });
+        });
+
         $(document).ready(function() {
             loadDataPersonal();
         });
@@ -254,9 +481,56 @@
             let targetLabels = statistikTargets.map(item => {
                 return item.judul.length > 20 ? item.judul.substring(0, 20) + '...' : item.judul;
             });
-            let targetProgress = statistikTargets.map(item => Math.round(item.progress || 0));
+
+            let targetProgress = statistikTargets.map(item => {
+                if (item.tipe_target === "rupiah") {
+                    if (!item.target || item.target === 0) return 0;
+                    return Math.round((item.progress / item.target) * 100);
+                } else {
+                    return Math.round(item.progress || 0);
+                }
+            });
+
+            let backgroundColors = statistikTargets.map(item => {
+                let progress = item.progress || 0;
+
+                if (progress === 0) {
+                    return 'rgba(254, 215, 24, 0.7)';
+                }
+
+                if (item.tipe_target === "rupiah") {
+                    let percent = item.target ? (progress / item.target) * 100 : 0;
+                    return percent >= 100
+                        ? 'rgba(40, 207, 180, 0.7)'
+                        : 'rgba(254, 124, 150, 0.7)';
+                }
+
+                return progress >= item.target
+                    ? 'rgba(40, 207, 180, 0.7)'
+                    : 'rgba(254, 124, 150, 0.7)';
+            });
+
+            let borderColors = statistikTargets.map(item => {
+                let progress = item.progress || 0;
+
+                if (progress === 0) {
+                    return 'rgba(254, 215, 24, 1)';
+                }
+
+                if (item.tipe_target === "rupiah") {
+                    let percent = item.target ? (progress / item.target) * 100 : 0;
+                    return percent >= 100
+                        ? 'rgba(40, 207, 180, 1)'
+                        : 'rgba(254, 124, 150, 1)';
+                }
+
+                return progress >= item.target
+                    ? 'rgba(40, 207, 180, 1)'
+                    : 'rgba(254, 124, 150, 1)';
+            });
 
             const performanceCtx = document.getElementById('performanceChart').getContext('2d');
+
             performanceChart = new Chart(performanceCtx, {
                 type: 'bar',
                 data: {
@@ -264,16 +538,8 @@
                     datasets: [{
                         label: 'Progress (%)',
                         data: targetProgress,
-                        backgroundColor: targetProgress.map(progress => {
-                            if (progress >= 75) return 'rgba(40, 207, 180, 0.7)';
-                            if (progress >= 50) return 'rgba(94, 0, 188, 0.3)';
-                            return 'rgba(254, 124, 150, 0.7)';
-                        }),
-                        borderColor: targetProgress.map(progress => {
-                            if (progress >= 75) return 'rgba(40, 207, 180, 1)';
-                            if (progress >= 50) return 'rgba(94, 0, 188, 1)';
-                            return 'rgba(254, 124, 150, 1)';
-                        }),
+                        backgroundColor: backgroundColors,
+                        borderColor: borderColors,
                         borderWidth: 1
                     }]
                 },
@@ -310,6 +576,7 @@
             let pieData = Object.values(distribusiStatus);
 
             const statusCtx = document.getElementById('statusPieChart').getContext('2d');
+
             statusPieChart = new Chart(statusCtx, {
                 type: 'doughnut',
                 data: {
@@ -347,7 +614,6 @@
                 }
             });
         }
-
         function updateTargetCards(targets) {
             if (!targets || targets.length === 0) {
                 $('#targetCardContainer').html(`
@@ -367,8 +633,8 @@
             let html = '';
             targets.forEach((target, index) => {
                 let progressBarColor = '';
-                if (target.progress >= 75) progressBarColor = 'bg-success';
-                else if (target.progress >= 50) progressBarColor = 'bg-primary';
+                if (target.progress >= target.target) progressBarColor = 'bg-success';
+                else if (target.progress < target.target) progressBarColor = 'bg-primary';
                 else progressBarColor = 'bg-warning';
 
                 let badgeClass = target.status === 'Selesai' ? 'bg-success' : 'bg-warning text-dark';
@@ -386,6 +652,32 @@
                 let progressTextColor = 'text-primary';
 
                 let yearBadgeColor = 'bg-primary';
+
+                let perubahanProgressRupiah; 
+
+                if (target.tipe_target === 'rupiah') {
+                    perubahanProgressRupiah = (target.progress / target.target) * 100;
+                } else {
+                    perubahanProgressRupiah = target.progress;
+                }
+
+                let targetChange;
+
+                if (target.tipe_target === "rupiah") {
+                    targetChange = "Rp " + Number(target.target).toLocaleString("id-ID");
+                } else if (target.tipe_target === "persen") {
+                    targetChange = target.target + "%";
+                } else {
+                    targetChange = target.target;
+                }
+
+                let realisasiChange;
+
+                if (target.tipe_target === "rupiah") {
+                    realisasiChange = "Rp " + Number(target.progress).toLocaleString("id-ID");
+                } else {
+                    realisasiChange = target.progress + "%";
+                }
 
                 html += `
                     <div class="col-12 col-sm-6 col-lg-4 mb-4">
@@ -424,8 +716,8 @@
                                             <div class="progress ${progressBarBg} rounded-pill" style="height: 8px;">
                                                 <div class="progress-bar ${progressBarColor} rounded-pill" 
                                                     role="progressbar" 
-                                                    style="width: ${target.progress}%" 
-                                                    aria-valuenow="${target.progress}" 
+                                                    style="width: ${perubahanProgressRupiah}%" 
+                                                    aria-valuenow="${perubahanProgressRupiah}" 
                                                     aria-valuemin="0" 
                                                     aria-valuemax="100"></div>
                                             </div>
@@ -434,11 +726,11 @@
                                         <div class="row g-2 pt-3">
                                             <div class="col-6 border-end">
                                                 <small class="text-muted d-block" style="font-size: 0.75rem;">Target</small>
-                                                <strong class="${targetTextColor}">${target.target}</strong>
+                                                <strong class="${targetTextColor}">${targetChange}</strong>
                                             </div>
                                             <div class="col-6 ps-3">
                                                 <small class="text-muted d-block" style="font-size: 0.75rem;">Realisasi</small>
-                                                <strong class="${progressTextColor}">${target.progress}%</strong>
+                                                <strong class="${progressTextColor}">${realisasiChange}</strong>
                                             </div>
                                         </div>
                                     </div>
@@ -656,14 +948,28 @@
                         ];
                         let no = 1;
                         const karyawanHtml = karyawanList.map(item => `
-                        <div class="d-flex align-items-center py-2 participant-item">
-                            <div class="avatar me-3">${no++}</div>
-                            <div class="flex-grow-1">
-                                <div class="fw-semibold text-dark small">${item.nama_lengkap}</div>
-                                <div class="text-muted small">${item.jabatan}</div>
+                            <div class="d-flex align-items-center py-2 participant-item">
+                                <div class="avatar me-3">${no++}</div>
+                                <div class="flex-grow-1">
+                                    <div class="fw-semibold text-dark small">${item.nama_lengkap}</div>
+                                    <div class="text-muted small">${item.jabatan}</div>
+                                </div>
                             </div>
-                        </div>
-                    `).join('');
+                        `).join('');
+                        
+                        let FormatedProgress = 0;
+
+                        if (data.nilai_target && data.nilai_target > 0) {
+                            if (data.tipe_target === "rupiah") {
+                                const rawProgress = (data.data_detail.progress / data.nilai_target) * 100;
+                                
+                                FormatedProgress = Math.min(rawProgress, 100).toFixed(2);
+                            } else {
+                                FormatedProgress = Math.min(data.data_detail.progress, 100).toFixed(2);
+                            }
+                        } else {
+                            FormatedProgress = 0;
+                        }
 
                         body.append(`
                         <div class="modal-header border-0 pb-0">
@@ -700,7 +1006,7 @@
                                                 <div class="position-relative mb-3">
                                                     <div class="progress" style="height:18px;">
                                                         <div class="progress-bar bg-${bgCard} progress-bar-striped progress-bar-animated"
-                                                            style="width: ${data.data_detail.progress}%"></div>
+                                                            style="width: ${FormatedProgress}%"></div>
                                                     </div>
                                                     <div class="position-absolute bg-light top-0" style="left:${data.nilai_target}%; height:18px; width:2px;"></div>
                                                 </div>

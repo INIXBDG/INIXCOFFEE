@@ -1,53 +1,62 @@
 @extends('layouts_office.app')
-
 @section('office_contents')
     <meta name="csrf-token" content="{{ csrf_token() }}">
-
     <style>
-        #pickupDriverCondition {
-            display: none;
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px
         }
 
-        #pickupDriverCondition .hidePickup {
-            display: none;
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(0, 0, 0, .02)
+        }
+
+        .task-text {
+            transition: all .3s ease
         }
     </style>
     <div class="container-fluid py-4">
-
         @if (session('success'))
-            <div class="alert alert-success alert-dismissible fade show rounded-4 shadow-sm" role="alert">
-                <i class="fas fa-check-circle me-2"></i>
-                <strong>Berhasil!</strong> {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <div class="alert alert-success alert-dismissible fade show rounded-4 shadow-sm border-0" role="alert">
+                <i class="bx bx-check-circle me-2"></i><strong>Berhasil!</strong>{{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         @endif
-
         <div
             class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
             <div>
                 <h4 class="mb-1 fw-bold text-dark">Daftar Tugas Office Boy</h4>
+                <p class="text-muted small mb-0">Kelola dan pantau kebersihan serta tugas harian.</p>
             </div>
             <button class="btn btn-primary px-4 shadow-sm d-flex align-items-center gap-2" data-bs-toggle="modal"
                 data-bs-target="#createModal">
-                Buat Kategori Baru
+                <i class="bx bx-plus"></i>Buat Kategori Baru
             </button>
         </div>
-
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
             <div class="card-header bg-white border-0 py-3">
                 <div class="row align-items-center g-3">
                     <div class="col-md-5">
-                        <h5 class="mb-0 fw-semibold" id="dynamicTitle">
-                            Daftar Tugas Harian - {{ now()->translatedFormat('l, d F Y') }}
-                        </h5>
+                        <h5 class="mb-0 fw-semibold" id="dynamicTitle">Daftar Tugas Harian -
+                            {{ now()->translatedFormat('l, d F Y') }}</h5>
                     </div>
                     <div class="col-md-7">
-                        <div class="row">
-                            <div class="col"></div>
-                            <div class="col"></div>
-                        </div>
                         <div class="d-flex flex-wrap gap-2 justify-content-md-end align-items-center">
-                            <select id="filterTipe" class="form-select form-select-sm" style="width: auto;">
+                            <select id="filterTipe" class="form-select form-select-sm" style="width:auto">
                                 <option value="Harian" selected>Harian</option>
                                 <option value="Mingguan">Mingguan</option>
                                 <option value="Bulanan">Bulanan</option>
@@ -55,95 +64,95 @@
                                 <option value="Semester">Semester</option>
                                 <option value="Tahunan">Tahunan</option>
                             </select>
-
-                            <input type="date" id="filterTanggal" class="form-control form-control-sm"
-                                style="width: auto;" value="{{ now()->format('Y-m-d') }}">
-
-                            <button class="btn btn-outline-secondary btn-sm" id="btnResetFilter">
-                                <i class="bx bx-reset"></i>
-                            </button>
+                            <input type="date" id="filterTanggal" class="form-control form-control-sm" style="width:auto"
+                                value="{{ now()->format('Y-m-d') }}">
+                            <button class="btn btn-outline-secondary btn-sm" id="btnResetFilter" title="Reset Filter"><i
+                                    class="bx bx-reset"></i></button>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="card-header bg-white border-0 py-3">
-                <div class="row align-items-center">
-                    <div class="col text-end" style="overflow-x: scrool">
-                        <div class="row">
-                            <div class="col">Update Tugas</div>
-                            <div class="btn-group" role="group" aria-label="Basic example">
-                                <button type="button" class="btn btn-primary btn-update-tugas"
-                                    data-route="{{ route('office.DaftarTugas.UpdateTugasHarian') }}">
-                                    Harian
-                                </button>
-                                <button type="button" class="btn btn-primary btn-update-tugas"
-                                    data-route="{{ route('office.DaftarTugas.UpdateTugasMingguan') }}">
-                                    Mingguan
-                                </button>
-                                <button type="button" class="btn btn-primary btn-update-tugas"
-                                    data-route="{{ route('office.DaftarTugas.UpdateTugasBulanan') }}">
-                                    Bulanan
-                                </button>
-                                {{-- <button type="button" class="btn btn-primary btn-update-tugas"
-                                    data-route="{{ route('office.DaftarTugas.UpdateTugasQuartal') }}">
-                                    Quartal
-                                </button>
-                                <button type="button" class="btn btn-primary btn-update-tugas"
-                                    data-route="{{ route('office.DaftarTugas.UpdateTugasSemester') }}">
-                                    Semester
-                                </button>
-                                <button type="button" class="btn btn-primary btn-update-tugas"
-                                    data-route="{{ route('office.DaftarTugas.UpdateTugasTahunan') }}">
-                                    Tahunan
-                                </button> --}}
+            @if (Auth::user()->jabatan === 'Office Boy')
+                <div class="card-header bg-white border-0 py-3">
+                    <div class="row align-items-center">
+                        <div class="col text-end" style="overflow-x: scrool">
+                            <div class="row">
+                                <div class="col">Update Tugas</div>
+                                <div class="btn-group" role="group" aria-label="Basic example">
+                                    <form action="{{ route('office.DaftarTugas.UpdateTugasHarian') }}" method="GET"
+                                        style="display:inline;">
+                                        <button type="submit" class="btn btn-primary">
+                                            Harian
+                                        </button>
+                                    </form>
+
+                                    <form action="{{ route('office.DaftarTugas.UpdateTugasMingguan') }}" method="GET"
+                                        style="display:inline;">
+                                        <button type="submit" class="btn btn-primary">
+                                            Mingguan
+                                        </button>
+                                    </form>
+
+                                    <form action="{{ route('office.DaftarTugas.UpdateTugasBulanan') }}" method="GET"
+                                        style="display:inline;">
+                                        <button type="submit" class="btn btn-primary">
+                                            Bulanan
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            @endif
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-hover mb-0 align-middle">
                         <thead class="text-dark fw-semibold small bg-light">
                             <tr>
-                                <th class="ps-4 border-0" style="width: 5%;">Chacklist</th>
-                                <th class="border-0" style="width: 25%;">Tugas</th>
-                                <th class="border-0" style="width: 25%;">Tipe</th>
-                                <th class="border-0" style="width: 15%;">Deadline</th>
-                                <th class="border-0 text-center" style="width: 18%;">Aksi</th>
+                                <th class="ps-4 border-0" style="width:5%">Checklist</th>
+                                <th class="border-0" style="width:30%">Tugas</th>
+                                <th class="border-0" style="width:20%">Tipe</th>
+                                <th class="border-0" style="width:15%">Deadline</th>
+                                <th class="border-0 text-center" style="width:20%">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody id="tbody">
-                        </tbody>
+                        <tbody id="tbody"></tbody>
                     </table>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="modal fade" id="createModal" tabindex="-1" aria-labelledby="createModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-md">
+    <div class="modal fade" id="createModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <form action="{{ route('office.DaftarTugas.store') }}" method="POST">
-                    @csrf
-
+                <form id="formCreateKategori" action="{{ route('office.DaftarTugas.store') }}" method="POST">@csrf
                     <div class="modal-header">
-                        <h5 class="modal-title" id="createModalLabel">Kategori Tugas</h5>
+                        <h5 class="modal-title fw-bold">Kategori Tugas Baru</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
-
                     <div class="modal-body">
-
+                        @if (Auth::user()->jabatan === 'HRD')
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Penanggung Jawab</label>
+                                <select name="jabatan_pembuat" required class="form-select">
+                                    <option value="" disabled selected>Pilih Karyawan</option>
+                                    @foreach ($officeBoy as $data)
+                                        <option value="{{ $data->id }}">{{ $data->nama_lengkap }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
                         <div class="mb-3">
-                            <label class="form-label">Tugas</label>
-                            <input type="text" placeholder="Contoh : Payroll/Gaji Karyawan" class="form-control"
-                                required name="tugas">
+                            <label class="form-label fw-semibold">Nama Tugas</label>
+                            <input type="text" class="form-control" name="tugas"
+                                placeholder="Contoh : Kebersihan Ruangan Meeting" required>
                         </div>
-
                         <div class="mb-3">
-                            <label class="form-label">Tipe</label>
-                            <select name="Tipe" required class="form-control">
-                                <option selected disabled>Pilih Tipe</option>
+                            <label class="form-label fw-semibold">Tipe Frekuensi</label>
+                            <select name="Tipe" required class="form-select">
+                                <option value="" disabled selected>Pilih Tipe</option>
                                 <option value="Harian">Harian</option>
                                 <option value="Mingguan">Mingguan</option>
                                 <option value="Bulanan">Bulanan</option>
@@ -152,80 +161,179 @@
                                 <option value="Tahunan">Tahunan</option>
                             </select>
                         </div>
-
-                        <hr>
-
-                        <h6 class="mb-3">Daftar Kategori</h6>
-
-                        <div style="max-height:250px; overflow-y:auto;">
-                            <table class="table table-sm table-bordered">
+                        <hr class="my-4">
+                        <h6 class="mb-3 fw-semibold"><i class="bx bx-list-ul me-2"></i>Daftar Kategori Saat Ini</h6>
+                        <div style="max-height:300px;overflow-y:auto;border:1px solid #eee;border-radius:8px">
+                            <table class="table table-sm table-bordered mb-0" id="tabelKategori">
                                 <thead class="table-light">
                                     <tr>
                                         <th>Tugas</th>
-                                        <th width="120">Tipe</th>
+                                        <th width="100">Tipe</th>
+                                        <th>PIC</th>
+                                        <th width="130">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach ($dataKategori as $data)
-                                        <tr>
+                                    @forelse($dataKategori as $data)
+                                        <tr data-id="{{ $data->id }}">
                                             <td>{{ $data->judul_kategori }}</td>
-                                            <td>{{ $data->Tipe }}</td>
+                                            <td><span class="badge bg-info text-dark">{{ $data->Tipe }}</span></td>
+                                            <td>{{ $data->karyawan->nama_lengkap ?? '-' }}</td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm w-100">
+                                                    <button type="button"
+                                                        class="btn btn-outline-primary btn-edit-kategori"
+                                                        data-id="{{ $data->id }}"
+                                                        data-judul="{{ $data->judul_kategori }}"
+                                                        data-tipe="{{ $data->Tipe }}"
+                                                        data-user="{{ $data->karyawan->nama_lengkap ?? 'N/A' }}"><i
+                                                            class="bx bx-edit"></i></button>
+                                                    <button type="button"
+                                                        class="btn btn-outline-danger btn-delete-kategori"
+                                                        data-id="{{ $data->id }}"
+                                                        data-judul="{{ $data->judul_kategori }}"><i
+                                                            class="bx bx-trash"></i></button>
+                                                </div>
+                                            </td>
                                         </tr>
-                                    @endforeach
+                                    @empty
+                                        <tr>
+                                            <td colspan="4" class="text-center py-3 text-muted">Belum ada kategori.
+                                            </td>
+                                        </tr>
+                                    @endforelse
                                 </tbody>
                             </table>
                         </div>
-
                     </div>
-
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary">Simpan</button>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                        <button type="submit" class="btn btn-primary" id="btnSimpanKategori"><span
+                                class="spinner-border spinner-border-sm d-none" id="createSpinner"></span>Simpan
+                            Kategori</button>
                     </div>
-
                 </form>
             </div>
         </div>
     </div>
 
-    <div class="modal fade" id="modalUploadBukti" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="modalEditKategori" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form id="formEditKategori">@csrf<input type="hidden" name="id" id="edit_id">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold">Edit Kategori Tugas</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3"><label class="form-label fw-semibold">Judul Kategori</label><input
+                                type="text" name="judul_kategori" id="edit_judul" class="form-control" required>
+                        </div>
+                        <div class="mb-3"><label class="form-label fw-semibold">Tipe</label><select name="tipe"
+                                id="edit_tipe" class="form-select" required>
+                                <option value="Harian">Harian</option>
+                                <option value="Mingguan">Mingguan</option>
+                                <option value="Bulanan">Bulanan</option>
+                                <option value="Quartal">Quartal</option>
+                                <option value="Semester">Semester</option>
+                                <option value="Tahunan">Tahunan</option>
+                            </select></div>
+                        @if (Auth::user()->jabatan === 'HRD')
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Penanggung Jawab</label>
+                                <select name="jabatan_pembuat" required class="form-select">
+                                    <option value="" disabled selected>Pilih Karyawan</option>
+                                    @foreach ($officeBoy as $data)
+                                        <option value="{{ $data->id }}">{{ $data->nama_lengkap }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary"><span
+                                class="spinner-border spinner-border-sm d-none" id="editSpinner"></span>Simpan
+                            Perubahan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalDeleteKategori" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title small fw-bold">Konfirmasi Hapus</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <i class="bx bx-error text-danger mb-3" style="font-size:2rem"></i>
+                    <p class="mb-2">Apakah Anda yakin ingin menghapus kategori:</p>
+                    <strong id="delete_judul" class="text-dark d-block mb-3"></strong>
+                    <input type="hidden" id="delete_id">
+                </div>
+                <div class="modal-footer justify-content-center bg-light">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-danger" id="confirmDelete"><span
+                            class="spinner-border spinner-border-sm d-none" id="deleteSpinner"></span>Ya, Hapus</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalUploadBukti" tabindex="-1" data-bs-backdrop="static">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <form id="formUploadBukti" enctype="multipart/form-data">
-                    @csrf
+                <form id="formUploadBukti" enctype="multipart/form-data">@csrf
                     <div class="modal-header">
-                        <h5 class="modal-title">📎 Upload Bukti Pelaksanaan</h5>
+                        <h5 class="modal-title fw-bold"><i class="bx bx-paperclip me-2"></i>Upload Bukti Pelaksanaan</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
                         <input type="hidden" name="tugas_id" id="uploadTugasId">
-
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Tugas</label>
-                            <input type="text" class="form-control" id="uploadTugasNama" readonly>
+                        <div class="mb-3"><label class="form-label fw-semibold small text-muted">Tugas</label><input
+                                type="text" id="uploadTugasNama" class="form-control-plaintext fw-bold" readonly>
                         </div>
-
                         <div class="mb-3">
                             <label class="form-label fw-semibold">File Bukti <small class="text-muted">(Max:
                                     5MB)</small></label>
                             <input type="file" class="form-control" name="bukti_file" id="inputBuktiFile"
                                 accept="image/*,.pdf,.doc,.docx" required>
-                            <small class="text-muted">Format: JPG, PNG, PDF, DOC</small>
+                            <div class="form-text">Format: JPG, PNG, PDF, DOC, DOCX</div>
                         </div>
-
-                        <div id="previewContainer" class="d-none text-center">
-                            <img id="imagePreview" src="" class="img-fluid rounded border"
-                                style="max-height: 200px;">
+                        <div id="previewContainer" class="d-none text-center mt-3 p-2 bg-light rounded border">
+                            <img id="imagePreview" src="" class="img-fluid rounded shadow-sm"
+                                style="max-height:200px">
                         </div>
                     </div>
-                    <div class="modal-footer">
+                    <div class="modal-footer bg-light">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary" id="btnSubmitUpload">
-                            <span class="spinner-border spinner-border-sm d-none" id="uploadSpinner"></span>
-                            <span id="btnUploadText">Upload</span>
-                        </button>
+                        <button type="submit" class="btn btn-primary" id="btnSubmitUpload"><span
+                                class="spinner-border spinner-border-sm d-none" id="uploadSpinner"></span><span
+                                id="btnUploadText">Upload Bukti</span></button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalPreviewBukti" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="previewModalTitle">Detail Bukti</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center bg-light p-5" id="previewModalBody" style="min-height:400px">
+                    <div class="spinner-border text-primary" role="status"></div>
+                </div>
+                <div class="modal-footer">
+                    <a href="#" id="previewDownloadLink" target="_blank" class="btn btn-outline-primary btn-sm"><i
+                            class="bx bx-download me-1"></i>Download</a>
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
+                </div>
             </div>
         </div>
     </div>
@@ -233,436 +341,377 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         $(document).ready(function() {
-            $('#filterTanggal').val(new Date().toISOString().split('T')[0]);
+            const today = new Date().toISOString().split('T')[0];
+            $('#filterTanggal').val(today);
+
+            function updateTitle() {
+                const t = $('#filterTipe').val();
+                const d = $('#filterTanggal').val();
+                const dt = new Date(d + 'T00:00:00');
+                $('#dynamicTitle').text(
+                    `Daftar Tugas ${t} - ${dt.toLocaleDateString('id-ID', {weekday:'long',year:'numeric',month:'long',day:'numeric'})}`
+                );
+            }
+
+            function loadData() {
+                $.ajax({
+                    url: "{{ route('office.DaftarTugas.get') }}",
+                    type: 'GET',
+                    data: {
+                        tipe: $('#filterTipe').val(),
+                        tanggal: $('#filterTanggal').val()
+                    },
+                    success: function(r) {
+                        const tb = $('#tbody');
+                        tb.empty();
+                        if (!r.data || !r.data.length) {
+                            tb.append(
+                                `<tr><td colspan="5" class="text-center py-5"><div class="d-flex flex-column align-items-center gap-3"><div class="bg-light rounded-circle p-4"><i class="bx bx-clipboard text-muted" style="font-size:3rem"></i></div><h5 class="text-muted mb-1">Belum ada Tugas</h5></div></td></tr>`
+                            );
+                            return;
+                        }
+                        r.data.forEach(function(it) {
+                            const kat = it.kategori_daftar_tugas?.judul_kategori ||
+                                'Tanpa Kategori';
+                            const tipe = it.kategori_daftar_tugas?.Tipe || '-';
+                            const dl = it.Deadline_Date || '-';
+                            const chk = it.status == 1 ? 'checked' : '';
+                            const done = it.status == 1 ?
+                                'text-decoration-line-through text-muted opacity-50' : '';
+                            const bukti = it.bukti ?
+                                `<button class="btn btn-success btn-sm btn-viewBukti" data-bukti="/storage/${it.bukti}" data-judul="${kat.replace(/"/g,'&quot;')}"><i class="bx bx-show"></i>Lihat</button>` :
+                                `<button class="btn btn-primary btn-sm btn-uploadBukti" data-id="${it.id}" data-judul="${kat.replace(/"/g,'&quot;')}"><i class="bx bx-upload"></i>Bukti</button>`;
+                            tb.append(
+                                `<tr class="${done?'bg-light':''}"><td class="ps-4"><div class="form-check"><input class="form-check-input checkStatus" type="checkbox" data-id="${it.id}" ${chk}></div></td><td class="task-text ${done} fw-medium">${kat}</td><td class="task-text ${done}"><span class="badge bg-secondary">${tipe}</span></td><td class="task-text ${done} small">${dl}</td><td class="text-center"><div class="btn-group"><button class="btn btn-outline-danger btn-sm btn-hapus" data-id="${it.id}"><i class="bx bx-trash"></i></button>${bukti}</div></td></tr>`
+                            );
+                        });
+                    }
+                });
+            }
+
+            function refreshKategoriTable() {
+                $.ajax({
+                    url: "{{ route('office.DaftarTugas.getKategori') }}",
+                    type: 'GET',
+                    success: function(d) {
+                        const tb = $('#tabelKategori tbody');
+                        tb.empty();
+                        if (!d.length) {
+                            tb.append(
+                                '<tr><td colspan="4" class="text-center py-3 text-muted">Belum ada kategori.</td></tr>'
+                            );
+                            return;
+                        }
+                        d.forEach(function(it) {
+                            tb.append(
+                                `<tr data-id="${it.id}"><td>${it.judul_kategori}</td><td><span class="badge bg-info text-dark">${it.Tipe}</span></td><td>${it.karyawan?.nama_lengkap||'-'}</td><td><div class="btn-group btn-group-sm w-100"><button class="btn btn-outline-primary btn-edit-kategori" data-id="${it.id}" data-judul="${it.judul_kategori}" data-tipe="${it.Tipe}" data-user="${it.karyawan?.nama_lengkap||'N/A'}"><i class="bx bx-edit"></i></button><button class="btn btn-outline-danger btn-delete-kategori" data-id="${it.id}" data-judul="${it.judul_kategori}"><i class="bx bx-trash"></i></button></div></td></tr>`
+                            );
+                        });
+                    }
+                });
+            }
 
             loadData();
 
-            $('#filterTipe, #filterTanggal').on('change', function() {
+            $('#filterTipe,#filterTanggal').on('change', function() {
                 updateTitle();
                 loadData();
             });
 
             $('#btnResetFilter').on('click', function() {
                 $('#filterTipe').val('Harian');
-                $('#filterTanggal').val(new Date().toISOString().split('T')[0]);
+                $('#filterTanggal').val(today);
                 updateTitle();
                 loadData();
             });
-        });
 
-        function updateTitle() {
-            const tipe = $('#filterTipe').val();
-            const tanggal = $('#filterTanggal').val();
-
-            const dateObj = new Date(tanggal + 'T00:00:00');
-            const formattedDate = dateObj.toLocaleDateString('id-ID', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
+            $('#formCreateKategori').on('submit', function(e) {
+                e.preventDefault();
+                const f = $(this);
+                const btn = $('#btnSimpanKategori');
+                const sp = $('#createSpinner');
+                btn.prop('disabled', true);
+                sp.removeClass('d-none');
+                $.ajax({
+                    url: f.attr('action'),
+                    type: 'POST',
+                    data: f.serialize(),
+                    success: function(r) {
+                        if (r.success) {
+                            showNotification('Berhasil!', r.message, 'success');
+                            refreshKategoriTable();
+                            f[0].reset();
+                        } else {
+                            showNotification('Gagal', r.message, 'danger');
+                        }
+                    },
+                    complete: function() {
+                        btn.prop('disabled', false);
+                        sp.addClass('d-none');
+                    }
+                });
             });
 
-            $('#dynamicTitle').text(`Daftar Tugas ${tipe} - ${formattedDate}`);
-        }
+            let wasCreateModalOpen = false;
 
-        function loadData() {
-            const tipe = $('#filterTipe').val();
-            const tanggal = $('#filterTanggal').val();
+            function closeCreateModalIfOpen() {
+                const createModalEl = document.getElementById('createModal');
+                const bsModal = bootstrap.Modal.getInstance(createModalEl);
+                if (bsModal && bsModal._isShown) {
+                    wasCreateModalOpen = true;
+                    bsModal.hide();
+                } else {
+                    wasCreateModalOpen = false;
+                }
+            }
 
-            $.ajax({
-                url: "{{ route('office.DaftarTugas.get') }}",
-                type: 'GET',
-                data: {
-                    tipe: tipe,
-                    tanggal: tanggal
-                },
-                success: function(response) {
-                    const tbody = $('#tbody');
-                    tbody.empty();
+            function isAnyOtherModalOpen() {
+                return (
+                    bootstrap.Modal.getInstance(document.getElementById('modalEditKategori'))?._isShown ||
+                    bootstrap.Modal.getInstance(document.getElementById('modalDeleteKategori'))?._isShown
+                );
+            }
 
-                    if (response.data.length === 0) {
-                        tbody.append(`
-                            <tr>
-                                <td colspan="5" class="text-center py-5">
-                                    <div class="d-flex flex-column align-items-center gap-3">
-                                        <i class="fas fa-clipboard-list text-muted" style="font-size: 3rem;"></i>
-                                        <h5 class="text-muted mb-1">Belum ada Tugas untuk filter ini</h5>
-                                        <small class="text-muted">Coba ubah tipe atau tanggal filter</small>
-                                    </div>
-                                </td>
-                            </tr>
-                        `);
+            function reopenCreateModalIfNeeded() {
+                if (!wasCreateModalOpen) return;
+
+                const tryReopen = () => {
+                    if (!isAnyOtherModalOpen()) {
+                        const createModal = new bootstrap.Modal(document.getElementById('createModal'));
+                        createModal.show();
+                        wasCreateModalOpen = false;
+                    } else {
+                        setTimeout(tryReopen, 150); // cek lagi setelah 150ms
+                    }
+                };
+
+                setTimeout(tryReopen, 100); // beri jeda awal agar animasi hide selesai
+            }
+
+            $(document).on('click', '.btn-edit-kategori', function() {
+                closeCreateModalIfOpen();
+                const id = $(this).data('id');
+                const judul = $(this).data('judul');
+                const tipe = $(this).data('tipe');
+                const user = $(this).data('user');
+                $('#edit_id').val(id);
+                $('#edit_judul').val(judul);
+                $('#edit_tipe').val(tipe);
+                $('#edit_user_name').val(user);
+                const modal = new bootstrap.Modal(document.getElementById('modalEditKategori'));
+                modal.show();
+            });
+
+            $('#formEditKategori').on('submit', function(e) {
+                e.preventDefault();
+                const btn = $(this).find('button[type="submit"]');
+                const sp = $('#editSpinner');
+                btn.prop('disabled', true);
+                sp.removeClass('d-none');
+
+                $.ajax({
+                    url: "/office/daftar-tugas/kategori/update",
+                    type: 'POST',
+                    data: $(this).serialize() + '&_token=' + $('meta[name="csrf-token"]').attr(
+                        'content'),
+                    success: function(r) {
+                        if (r.success) {
+                            showNotification('Berhasil!', r.message ||
+                                'Kategori berhasil diupdate', 'success');
+                            refreshKategoriTable();
+                            bootstrap.Modal.getInstance(document.getElementById(
+                                'modalEditKategori')).hide();
+                        } else {
+                            showNotification('Gagal', r.message || 'Gagal update kategori',
+                                'danger');
+                        }
+                    },
+                    error: function(xhr) {
+                        showNotification('Gagal', xhr.responseJSON?.message ||
+                            'Terjadi kesalahan server', 'danger');
+                    },
+                    complete: function() {
+                        btn.prop('disabled', false);
+                        sp.addClass('d-none');
+                        reopenCreateModalIfNeeded();
+                    }
+                });
+            });
+
+            $(document).on('click', '.btn-delete-kategori', function() {
+                closeCreateModalIfOpen();
+                const id = $(this).data('id');
+                const judul = $(this).data('judul');
+                $('#delete_id').val(id);
+                $('#delete_judul').text(judul);
+                const modal = new bootstrap.Modal(document.getElementById('modalDeleteKategori'));
+                modal.show();
+            });
+
+            $('#confirmDelete').on('click', function() {
+                const btn = $(this);
+                const sp = $('#deleteSpinner');
+                const id = $('#delete_id').val();
+                btn.prop('disabled', true);
+                sp.removeClass('d-none');
+
+                $.ajax({
+                    url: "/office/daftar-tugas/kategori/hapus",
+                    type: 'POST',
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr('content'),
+                        id: id
+                    },
+                    success: function(r) {
+                        refreshKategoriTable();
+                        showNotification('Berhasil', r.message || 'Kategori berhasil dihapus',
+                            'success');
+                        bootstrap.Modal.getInstance(document.getElementById(
+                            'modalDeleteKategori')).hide();
+                    },
+                    error: function(xhr) {
+                        showNotification('Gagal', xhr.responseJSON?.message ||
+                            'Tidak bisa menghapus kategori', 'danger');
+                    },
+                    complete: function() {
+                        btn.prop('disabled', false);
+                        sp.addClass('d-none');
+                        reopenCreateModalIfNeeded();
+                    }
+                });
+            });
+
+            $('#modalEditKategori').on('hidden.bs.modal', function() {
+                reopenCreateModalIfNeeded();
+            });
+
+            $('#modalDeleteKategori').on('hidden.bs.modal', function() {
+                reopenCreateModalIfNeeded();
+            });
+
+            $(document).on('click', '.btn-uploadBukti', function() {
+                $('#uploadTugasId').val($(this).data('id'));
+                $('#uploadTugasNama').val($(this).data('judul'));
+                $('#inputBuktiFile').val('');
+                $('#previewContainer').addClass('d-none');
+                new bootstrap.Modal(document.getElementById('modalUploadBukti')).show();
+            });
+
+            $(document).on('change', '#inputBuktiFile', function(e) {
+                const f = e.target.files[0];
+                if (f && f.type.startsWith('image/')) {
+                    if (f.size > 5 * 1024 * 1024) {
+                        alert('Ukuran file terlalu besar! Maksimal 5MB.');
+                        $(this).val('');
+                        $('#previewContainer').addClass('d-none');
                         return;
                     }
-
-                    response.data.forEach(function(item) {
-                        let kategori = item.kategori_daftar_tugas ? item.kategori_daftar_tugas
-                            .judul_kategori : '-';
-                        let Tipe = item.kategori_daftar_tugas ? item.kategori_daftar_tugas.Tipe : '-';
-                        let deadline = item.Deadline_Date ?? '-';
-                        let checked = item.status == 1 ? 'checked' : '';
-                        let doneClass = item.status == 1 ? 'text-decoration-line-through text-muted' :
-                            '';
-
-                        let btnBukti;
-                        let buktiUrl = item.bukti ? '/storage/' + item.bukti : null;
-
-                        if (item.bukti) {
-                            btnBukti = `<button class="btn btn-success btn-sm btn-viewBukti" 
-                                            data-bukti="${buktiUrl}" 
-                                            data-judul="${kategori}">
-                                            <i class="fas fa-eye"></i> Lihat
-                                        </button>`;
-                        } else {
-                            btnBukti = `<button class="btn btn-primary btn-sm btn-uploadBukti" 
-                                            data-id="${item.id}">
-                                            <i class="fas fa-upload"></i> Bukti
-                                        </button>`;
-                        }
-
-                        tbody.append(`
-                            <tr>
-                                <td>
-                                    <input class="form-check-input checkStatus" 
-                                        type="checkbox" 
-                                        data-id="${item.id}"
-                                        ${checked}>
-                                </td>
-                                <td class="task-text ${doneClass}">${kategori}</td>
-                                <td class="task-text ${doneClass}">${Tipe}</td>
-                                <td class="task-text ${doneClass}">${deadline}</td>
-                                <td class="text-center">
-                                    <button class="btn btn-danger btn-sm btn-hapus" data-id="${item.id}">
-                                        Hapus
-                                    </button>
-                                    ${btnBukti}
-                                </td>
-                            </tr>
-                        `);
-                    });
-                },
-                error: function(xhr) {
-                    console.error('Error:', xhr.responseText);
-                    $('#tbody').html(`
-                        <tr>
-                            <td colspan="5" class="text-center py-4 text-danger">
-                                Gagal memuat data. Silakan refresh halaman.
-                            </td>
-                        </tr>
-                    `);
-                }
-            });
-        }
-
-        $(document).on('click', '.btn-hapus', function() {
-            const btn = $(this);
-            const id = btn.data('id');
-            const row = btn.closest('tr');
-
-            if (!confirm('Yakin ingin menghapus tugas ini?')) {
-                return;
-            }
-
-            const originalText = btn.text();
-            btn.prop('disabled', true).text('Menghapus...');
-
-            $.ajax({
-                url: "{{ route('office.DaftarTugas.delete', '') }}/" + id,
-                method: 'DELETE',
-                data: {
-                    _token: $('meta[name="csrf-token"]').attr('content')
-                },
-                success: function(response) {
-                    row.fadeOut(300, function() {
-                        $(this).remove();
-
-                        if ($('#tbody tr').length === 0) {
-                            $('#tbody').html(`
-                        <tr>
-                            <td colspan="5" class="text-center py-5">
-                                <div class="d-flex flex-column align-items-center gap-3">
-                                    <i class="fas fa-clipboard-list text-muted" style="font-size: 3rem;"></i>
-                                    <h5 class="text-muted mb-1">Belum ada Tugas untuk filter ini</h5>
-                                    <small class="text-muted">Coba ubah tipe atau tanggal filter</small>
-                                </div>
-                            </td>
-                        </tr>
-                    `);
-                        }
-                    });
-
-                    showNotification('Berhasil', 'Data berhasil dihapus', 'success');
-                },
-                error: function(xhr) {
-                    console.error('Error:', xhr.responseText);
-                    alert('Gagal menghapus data. Silakan coba lagi.');
-                    btn.prop('disabled', false).text(originalText);
-                }
-            });
-        });
-
-        $(document).on('click', '.btn-viewBukti', function(e) {
-            e.preventDefault();
-            let fileUrl = $(this).data('bukti');
-            let judul = $(this).data('judul');
-            let ext = fileUrl.split('.').pop().toLowerCase();
-
-            let isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
-            let isPdf = ext === 'pdf';
-
-            let contentPreview = '';
-
-            if (isImage) {
-                contentPreview = `<img src="${fileUrl}" class="img-fluid rounded" style="max-height: 70vh;">`;
-            } else if (isPdf) {
-                contentPreview =
-                    `<iframe src="${fileUrl}" width="100%" height="600px" style="border:none;"></iframe>`;
-            } else {
-                window.open(fileUrl, '_blank');
-                return;
-            }
-
-            let modalHtml = `
-                <div class="modal fade" id="modalPreviewBukti" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog modal-lg modal-dialog-centered">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title">📄 ${judul}</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body text-center bg-light">
-                                ${contentPreview}
-                            </div>
-                            <div class="modal-footer">
-                                <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm">
-                                    <i class="fas fa-external-link-alt"></i> Buka di Tab Baru
-                                </a>
-                                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            $('#modalPreviewBukti').remove();
-            $('body').append(modalHtml);
-
-            var previewModal = new bootstrap.Modal(document.getElementById('modalPreviewBukti'));
-            previewModal.show();
-
-            $('#modalPreviewBukti').on('hidden.bs.modal', function() {
-                $(this).remove();
-            });
-        });
-
-        $(document).on('click', '.btn-hapus', function() {
-            const btn = $(this);
-            const id = btn.data('id');
-            const row = btn.closest('tr');
-
-            if (!confirm('Yakin ingin menghapus tugas ini?')) {
-                return;
-            }
-
-            const originalText = btn.text();
-            btn.prop('disabled', true).text('Menghapus...');
-
-            $.ajax({
-                url: "{{ route('office.DaftarTugas.delete', '') }}/" + id,
-                method: 'DELETE',
-                data: {
-                    _token: $('meta[name="csrf-token"]').attr('content')
-                },
-                success: function(response) {
-                    row.fadeOut(300, function() {
-                        $(this).remove();
-
-                        if ($('#tbody tr').length === 0) {
-                            $('#tbody').html(`
-                        <tr>
-                            <td colspan="5" class="text-center py-5">
-                                <div class="d-flex flex-column align-items-center gap-3">
-                                    <i class="fas fa-clipboard-list text-muted" style="font-size: 3rem;"></i>
-                                    <h5 class="text-muted mb-1">Belum ada Tugas untuk filter ini</h5>
-                                    <small class="text-muted">Coba ubah tipe atau tanggal filter</small>
-                                </div>
-                            </td>
-                        </tr>
-                    `);
-                        }
-                    });
-
-                    showNotification('Berhasil', 'Data berhasil dihapus', 'success');
-                },
-                error: function(xhr) {
-                    console.error('Error:', xhr.responseText);
-                    alert('Gagal menghapus data. Silakan coba lagi.');
-                    btn.prop('disabled', false).text(originalText);
-                }
-            });
-        });
-
-        $(document).on('change', '#inputBuktiFile', function(e) {
-            const file = e.target.files[0];
-            const previewContainer = $('#previewContainer');
-            const imagePreview = $('#imagePreview');
-
-            if (file && file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    imagePreview.attr('src', e.target.result);
-                    previewContainer.removeClass('d-none');
-                }
-                reader.readAsDataURL(file);
-            } else {
-                previewContainer.addClass('d-none');
-            }
-        });
-
-        $(document).on('click', '.btn-uploadBukti', function() {
-            const btn = $(this);
-            const id = btn.data('id');
-            const row = btn.closest('tr');
-            const tugasNama = row.find('.task-text').first().text().trim();
-
-            $('#uploadTugasId').val(id);
-            $('#uploadTugasNama').val(tugasNama);
-            $('#inputBuktiFile').val('');
-            $('#previewContainer').addClass('d-none');
-            $('textarea[name="catatan"]').val('');
-
-            const modal = new bootstrap.Modal(document.getElementById('modalUploadBukti'));
-            modal.show();
-        });
-
-        $('#formUploadBukti').on('submit', function(e) {
-            e.preventDefault();
-
-            const formData = new FormData(this);
-            const tugasId = $('#uploadTugasId').val();
-            const btnSubmit = $('#btnSubmitUpload');
-            const spinner = $('#uploadSpinner');
-            const btnText = $('#btnUploadText');
-
-            const fileInput = $('#inputBuktiFile')[0].files[0];
-            if (fileInput && fileInput.size > 5 * 1024 * 1024) {
-                alert('Ukuran file maksimal 5MB!');
-                return;
-            }
-
-            btnSubmit.prop('disabled', true);
-            spinner.removeClass('d-none');
-            btnText.text('Mengupload...');
-
-            $.ajax({
-                url: "{{ route('office.DaftarTugas.uploadBukti') }}",
-                method: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function(response) {
-                    const modalEl = document.getElementById('modalUploadBukti');
-                    const modal = bootstrap.Modal.getInstance(modalEl);
-                    modal.hide();
-
-                    const row = $(`.btn-uploadBukti[data-id="${tugasId}"]`).closest('tr');
-                    const btnBukti = row.find('.btn-uploadBukti');
-                    if (!btnBukti.hasClass('btn-success')) {
-                        btnBukti.removeClass('btn-primary').addClass('btn-success')
-                            .html('<i class="fas fa-check"></i> Terupload');
-                    }
-
-                    showNotification('Berhasil!', 'Bukti berhasil diupload.', 'success');
-
-                    $('#formUploadBukti')[0].reset();
+                    const r = new FileReader();
+                    r.onload = e => {
+                        $('#imagePreview').attr('src', e.target.result);
+                        $('#previewContainer').removeClass('d-none');
+                    };
+                    r.readAsDataURL(f);
+                } else {
                     $('#previewContainer').addClass('d-none');
-                },
-                error: function(xhr) {
-                    console.error('Upload error:', xhr.responseText);
-                    let errorMsg = 'Gagal mengupload bukti.';
-                    if (xhr.responseJSON?.message) {
-                        errorMsg = xhr.responseJSON.message;
+                }
+            });
+
+            $('#formUploadBukti').on('submit', function(e) {
+                e.preventDefault();
+                const fd = new FormData(this);
+                const btn = $('#btnSubmitUpload');
+                const sp = $('#uploadSpinner');
+                const txt = $('#btnUploadText');
+                btn.prop('disabled', true);
+                sp.removeClass('d-none');
+                txt.text('Mengupload...');
+                $.ajax({
+                    url: "{{ route('office.DaftarTugas.uploadBukti') }}",
+                    method: 'POST',
+                    data: fd,
+                    processData: false,
+                    contentType: false,
+                    success: function() {
+                        $('#modalUploadBukti').modal('hide');
+                        loadData();
+                        showNotification('Berhasil!', 'Bukti berhasil diupload.', 'success');
+                    },
+                    error: function(x) {
+                        showNotification('Gagal', x.responseJSON?.message, 'danger');
+                    },
+                    complete: function() {
+                        btn.prop('disabled', false);
+                        sp.addClass('d-none');
+                        txt.text('Upload Bukti');
                     }
-                    alert(errorMsg);
-                },
-                complete: function() {
-                    btnSubmit.prop('disabled', false);
-                    spinner.addClass('d-none');
-                    btnText.text('Upload');
-                }
-            });
-        });
-
-        function showNotification(title, message, type = 'info') {
-            const alertHtml = `
-                <div class="position-fixed top-0 end-0 p-3" style="z-index: 1080">
-                    <div class="alert alert-${type} alert-dismissible fade show shadow-sm rounded-4" role="alert">
-                        <strong>${title}</strong> ${message}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                </div>
-            `;
-            $('body').append(alertHtml);
-
-            setTimeout(() => {
-                $('.alert').fadeOut(300, function() {
-                    $(this).remove();
                 });
-            }, 3000);
-        }
+            });
 
-        $(document).on('change', '.checkStatus', function() {
+            $(document).on('change', '.checkStatus', function() {
+                const id = $(this).data('id');
+                const st = $(this).is(':checked') ? 1 : 0;
+                const row = $(this).closest('tr');
+                $.ajax({
+                    url: "{{ route('office.DaftarTugas.updateStatus') }}",
+                    method: 'POST',
+                    data: {
+                        id: id,
+                        status: st,
+                        _token: $('meta[name="csrf-token"]').attr('content')
+                    }
+                });
+                const txt = row.find('.task-text');
+                if (st === 1) {
+                    txt.addClass('text-decoration-line-through text-muted opacity-50');
+                    row.addClass('bg-light');
+                } else {
+                    txt.removeClass('text-decoration-line-through text-muted opacity-50');
+                    row.removeClass('bg-light');
+                }
+            });
 
-            let checkbox = $(this);
-            let id = checkbox.data('id');
-            let row = checkbox.closest('tr');
+            $(document).on('click', '.btn-hapus', function() {
+                const btn = $(this);
+                const id = btn.data('id');
+                const row = btn.closest('tr');
+                if (!confirm('Yakin ingin menghapus tugas ini?')) return;
+                const orig = btn.html();
+                btn.prop('disabled', true).html('<i class="bx bx-loader-alt bx-spin"></i>');
+                $.ajax({
+                    url: "{{ route('office.DaftarTugas.delete', '') }}/" + id,
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function(r) {
+                        row.fadeOut(300, function() {
+                            $(this).remove();
+                            if (!$('#tbody tr').length) loadData();
+                        });
+                        showNotification('Berhasil', r.message || 'Tugas berhasil dihapus',
+                            'success');
+                    },
+                    error: function(x) {
+                        showNotification('Gagal', x.responseJSON?.message ||
+                            'Gagal menghapus tugas.', 'danger');
+                        btn.prop('disabled', false).html(orig);
+                    }
+                });
+            });
 
-            let status = checkbox.is(':checked') ? 1 : 0;
-
-            updateStatus(id, status);
-
-            if (status == 1) {
-                row.find('.task-text').addClass('text-decoration-line-through text-muted');
-            } else {
-                row.find('.task-text').removeClass('text-decoration-line-through text-muted');
+            function showNotification(title, msg, type = 'success') {
+                $('.custom-toast-container').remove();
+                const id = 'toast-' + Date.now();
+                const html =
+                    `<div class="custom-toast-container position-fixed top-0 end-0 p-3" style="z-index:9999"><div id="${id}" class="toast align-items-center text-white bg-${type} border-0 show"><div class="d-flex"><div class="toast-body"><strong>${title}</strong><br>${msg}</div><button type="button" class="btn-close btn-close-white me-2 m-auto"></button></div></div></div>`;
+                $('body').append(html);
+                setTimeout(function() {
+                    $('#' + id).fadeOut(500, function() {
+                        $(this).closest('.custom-toast-container').remove();
+                    });
+                }, 3500);
             }
-
-        });
-
-        function updateStatus(id, status) {
-            $.ajax({
-                url: "{{ route('office.DaftarTugas.updateStatus') }}",
-                method: 'POST',
-                data: {
-                    id: id,
-                    status: status,
-                    _token: $('meta[name="csrf-token"]').attr('content')
-                }
-            });
-        }
-
-        $(document).on('click', '.btn-update-tugas', function(e) {
-            e.preventDefault();
-            const routeUrl = $(this).data('route');
-            const btn = $(this);
-
-            const originalText = btn.text();
-            btn.prop('disabled', true).text('Memproses...');
-
-            $.ajax({
-                url: routeUrl,
-                method: 'get',
-                success: function(response) {
-                    console.log(response);
-                    loadData();
-                    btn.prop('disabled', false).text(originalText);
-                },
-                error: function(xhr) {
-                    console.error('Error:', xhr.responseText);
-                    alert('Terjadi kesalahan saat memproses permintaan.');
-                    btn.prop('disabled', false).text(originalText);
-                }
-            });
         });
     </script>
 @endsection

@@ -465,7 +465,7 @@
             'pemasukan bersih',
             'inisiatif efisiensi keuangan',
             'rasio biaya operasional terhadap revenue',
-            'mengurangi Manual Work Dan Error',
+            'mengurangi manual work dan error',
             'laporan analisis keuangan',
             'pengeluaran biaya karyawan'
 
@@ -1016,15 +1016,6 @@
                                 if (progressNumeric === 0) {
                                     statusText = 'Belum Dimulai';
                                     badgeClass = 'bg-warning text-dark';
-                                } else if (item.asistant_route ===
-                                    'rasio biaya operasional terhadap revenue') {
-                                    if (item.progress > item.nilai_target) {
-                                        statusText = 'Gagal';
-                                        badgeClass = 'bg-danger';
-                                    } else {
-                                        statusText = 'Selesai';
-                                        badgeClass = 'bg-success';
-                                    }
                                 } else if (nowTime > item.tenggat_waktu && progressNumeric <
                                     item.nilai_target) {
                                     statusText = 'Gagal';
@@ -1139,8 +1130,6 @@
                             content_target.append(cardWrapper);
                         });
                     }
-
-                    setupFormListeners('targetForm', false);
 
                     const $editJangka = $('#edit_jangka_target');
                     $editJangka.empty().append('<option selected disabled>-- Pilih Jangka --</option>');
@@ -1297,17 +1286,8 @@
                         if (isDateBefore(dateNow, startOfYear)) {
                             Tercapai = "Belum Dimulai";
                         } else if (isDateAfter(dateNow, tenggatWaktu) || dateNow === tenggatWaktu) {
-                            if (data.condition === 'rasio biaya operasional terhadap revenue') {
-                                if (data.data_detail.progress > data.nilai_target) {
-                                    Tercapai = 'Target Gagal';
-                                } else {
-                                    Tercapai = 'Mencapai Target';
-                                }
-                            } else {
-                                Tercapai = data.data_detail.progress >= data.nilai_target ?
-                                    "Mencapai Target" : "Target Gagal";
-                            }
-
+                            Tercapai = data.data_detail.progress >= data.nilai_target ?
+                                "Mencapai Target" : "Target Gagal";
                         } else {
                             Tercapai = data.data_detail.progress >= data.nilai_target ?
                                 "Mencapai Target" : "Sedang Berjalan";
@@ -1449,7 +1429,7 @@
                             'pemasukan bersih',
                             'rasio biaya operasional terhadap revenue',
                             'inisiatif efisiensi keuangan',
-                            'mengurangi Manual Work Dan Error',
+                            'mengurangi manual work dan error',
                             'laporan analisis keuangan',
                             'pengeluaran biaya karyawan'
                         ];
@@ -2204,8 +2184,10 @@
                 //OB
                 else if (hasOB) {
                     options += `
-                            <option value="feedback kebersihan dan kenyamanan">Feedback Kebersihan Dan Kenyamanan Peserta</option>
-                        `;
+                        <option value="feedback kebersihan dan kenyamanan">Feedback Kebersihan Dan Kenyamanan Peserta</option>
+                        <option value="penyelesaian tugas harian">Peyelesaian Tugas Harian</option>
+                    `;
+
                 }
 
                 //ITSM
@@ -2237,6 +2219,7 @@
                             <option value="kualitas layanan exam">Kualitas Layanan Exam</option>
                         `;
                 }
+                
                 //Education
                 //Instruktur
                 else if (hasInstruktur) {
@@ -2307,36 +2290,46 @@
         $('#assistant_route').on('change', function () {
             const selectedRoute = $(this).val();
             const tipeTargetSelect = $('#tipeTarget');
+            const nilaiTarget = $('#nilaiTarget');
 
             if (!selectedRoute) {
                 tipeTargetSelect.prop('disabled', true).html(
                     '<option selected disabled>-- Pilih Assistant Route --</option>');
+                nilaiTarget.prop('disabled', true).val('');
                 return;
             }
 
             tipeTargetSelect.prop('disabled', false);
+            nilaiTarget.prop('disabled', false); 
 
             const persenRoutes = [
-                'Kepuasan Pelanggan',
-                'kepuasan client ITSM',
-                'keberhasilan support memenuhi sla',
-                'ketepatan waktu penyelesaian fitur',
-                'konsistensi campaign digital',
-                'mengukur kualitas aplikasi agar minim bug'
-            ];
+                'pemasukan bersih', 'kepuasan pelanggan', 'rasio biaya operasional terhadap revenue',
+                'performa kpi departemen', 'peserta puas dengan pelayanan dan fasilitas training',
+                'penanganan komplain peserta', 'report persiapan kelas', 'banyak tagihan client yang belum lunas',
+                'pelaksanaan kegiatan karyawan', 'pengeluaran biaya karyawan', 'administrasi karyawan',
+                'perbaikan kendaraan', 'report kondisi kendaraan', 'kontrol pengeluaran transportasi',
+                'feedback kebersihan dan kenyamanan', 'penyelesaian tugas harian',
+                'kepuasan client itsm', 'meningkatkan kepuasan dan loyalitas peserta/client',
+                'availability sistem internal kritis', 'ketepatan waktu penyelesaian fitur',
+                'mengukur kualitas aplikasi agar minim bug', 'konsistensi campaign digital',
+                'keberhasilan support memenuhi sla', 'kualitas layanan exam',
+                'kepuasan peserta pelatihan', 'upseling lanjutan materi', 'outstanding'
+            ].map(r => r.toLowerCase());
 
-            const rupiahRoutes = [
-                'Pemasukan Kotor',
-                'Pemasukan Bersih',
-                'Rasio Biaya Operasional',
-                'meningkatkan revenue perusahaan'
-            ];
+            const rupiahRoutes = ['pemasukan kotor'].map(r => r.toLowerCase());
+            
+            const angkaRoutes = [
+                'dorong inovasi pelayanan', 'inisiatif efisiensi keuangan', 
+                'mengurangi manual work dan error', 'laporan analisis keuangan',
+                'efektifitas digital marketing', 'sertifikasi kompetensi internal',
+                'pelatihan kompetensi eksternal', 'pengembangan kurikulum pelatihan',
+                'peningkatan knowledge sharing'
+            ].map(r => r.toLowerCase());
 
-            const angka = [
-                'Rata Rata Pencapaian Per Departement'
-            ];
+            const routeLower = selectedRoute.toLowerCase();
 
-            if (persenRoutes.includes(selectedRoute)) {
+            // --- Set opsi tipe target ---
+            if (persenRoutes.includes(routeLower)) {
                 tipeTargetSelect.html(`
                         <option selected disabled>-- Pilih Tipe --</option>
                         <option disabled>Angka (Unit, Jumlah, dll)</option>
@@ -2360,6 +2353,48 @@
                         <option disabled>Persen (%)</option>
                     `).prop('disabled', false);
             }
+
+            let isAutoFilled = false;
+
+            if (routeLower === 'sertifikasi kompetensi internal' || 
+                routeLower === 'pelatihan kompetensi eksternal') {
+                const selectedJabatan = $('#jabatan').val();
+                const count = Array.isArray(selectedJabatan) ? selectedJabatan.length : (selectedJabatan ? 1 : 0);
+                nilaiTarget.val(count).trigger('input');
+                isAutoFilled = true;
+            } 
+            else if (routeLower === 'efektifitas digital marketing') {
+                nilaiTarget.val('4').trigger('input');
+                isAutoFilled = true;
+            } 
+            else if (routeLower === 'laporan analisis keuangan') {
+                nilaiTarget.val('12').trigger('input');
+                isAutoFilled = true;
+            } 
+            else if (routeLower === 'dorong inovasi pelayanan') {
+                nilaiTarget.val('3').trigger('input');
+                isAutoFilled = true;
+            } 
+            else if (routeLower === 'mengurangi manual work dan error') {
+                nilaiTarget.val('2').trigger('input');
+                isAutoFilled = true;
+            } 
+            else if (routeLower === 'inisiatif efisiensi keuangan') {
+                nilaiTarget.val('2').trigger('input');
+                isAutoFilled = true;
+            } 
+            else if (routeLower === 'pengembangan kurikulum pelatihan') {
+                nilaiTarget.val('12').trigger('input');
+                isAutoFilled = true;
+            } 
+            else if (routeLower === 'peningkatan knowledge sharing') {
+                const currentYear = new Date().getFullYear();
+                const weeks = (new Date(currentYear, 0, 1).getDay() === 4 || new Date(currentYear, 11, 31).getDay() === 4) ? 53 : 52;
+                nilaiTarget.val(weeks).trigger('input');
+                isAutoFilled = true;
+            }
+
+            nilaiTarget.prop('disabled', isAutoFilled);
 
             tipeTargetSelect.trigger('change');
         });
