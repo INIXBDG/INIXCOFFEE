@@ -21,61 +21,54 @@ class DailyActivityController extends Controller
         $divisionName = 'Tidak Terdaftar';
         $activities = collect();
         $tasks = collect();
-        $userDivisionName = null;
 
-        if ($karyawan) {
-            $userDivisionName = $karyawan->divisi;
-            $userJobTitle = $karyawan->jabatan;
+        if ($karyawan && !empty($karyawan->divisi)) {
 
-            if (!empty($userDivisionName)) {
-                $divisionName = $userDivisionName;
-                
-                $tasks = Task::whereHas('user.karyawan', function ($query) use ($userDivisionName) {
-                    $query->where('divisi', $userDivisionName);
-                })->orderBy('title')->get();
+            $divisionName = $karyawan->divisi;
 
-                $activities = DailyActivity::with(['user.karyawan', 'task'])
-                    ->whereHas('user.karyawan', function ($query) use ($userDivisionName, $userJobTitle) {
-                        $query->where('divisi', $userDivisionName);
-                        if ($userDivisionName === 'IT Service Management') {
-                            if (in_array($userJobTitle, ['Koordinator ITSM', 'Programmer'])) {
-                                $query->whereIn('jabatan', ['Koordinator ITSM', 'Programmer']);
-                            } else {
-                                $query->where('jabatan', $userJobTitle);
-                            }
-                        }
-                    })
-                    ->whereYear('start_date', '2026')
-                    ->latest('start_date')
-                    ->latest('created_at')
-                    ->get();
-            }
+            // Ambil task divisi
+            $tasks = Task::whereHas('user.karyawan', function ($query) use ($divisionName) {
+                $query->where('divisi', $divisionName);
+            })->orderBy('title')->get();
+
+            // Ambil aktivitas divisi
+            $activities = DailyActivity::with(['user.karyawan', 'task.user.karyawan'])
+                ->whereHas('user.karyawan', function ($query) use ($divisionName) {
+                    $query->where('divisi', $divisionName);
+                })
+                ->whereYear('start_date', '2026')
+                ->latest('start_date')
+                ->latest('created_at')
+                ->get();
         }
 
         $totalActivities = $activities->count();
         $doneActivities = $activities->where('status', 'Selesai')->count();
         $inProgressActivities = $activities->where('status', 'On Progres')->count();
-        $progressPercentage = $totalActivities > 0 ? round(($doneActivities / $totalActivities) * 100) : 0;
 
-        // Kalkulasi Metrik Dasbor (Baru: Ringkasan Tenggat Waktu)
-        $todayString = now()->format('Y-m-d');
-        
-        $dueTodayActivities = $activities->where('status', '!=', 'Selesai')
-                                        ->where('end_date', $todayString)
-                                        ->count();
+        $progressPercentage = $totalActivities > 0
+            ? round(($doneActivities / $totalActivities) * 100)
+            : 0;
 
-        $overdueActivities = $activities->where('status', '!=', 'Selesai')
-                                        ->filter(function ($activity) use ($todayString) {
-                                            return !empty($activity->end_date) && $activity->end_date < $todayString;
-                                        })->count();
+        $today = now()->format('Y-m-d');
+
+        $dueTodayActivities = $activities
+            ->where('status', '!=', 'Selesai')
+            ->where('end_date', $today)
+            ->count();
+
+        $overdueActivities = $activities
+            ->where('status', '!=', 'Selesai')
+            ->filter(fn($a) => !empty($a->end_date) && $a->end_date < $today)
+            ->count();
 
         return view('daily_activities.index', compact(
-            'activities', 
-            'divisionName', 
-            'tasks', 
-            'totalActivities', 
-            'doneActivities', 
-            'inProgressActivities', 
+            'activities',
+            'divisionName',
+            'tasks',
+            'totalActivities',
+            'doneActivities',
+            'inProgressActivities',
             'progressPercentage',
             'dueTodayActivities',
             'overdueActivities'

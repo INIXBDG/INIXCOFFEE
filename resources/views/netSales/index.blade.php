@@ -555,7 +555,7 @@
                                     if (sales.level_status === null || sales.level_status === 'Belum Disetujui') {
                                         if (jabatan === "SPV Sales") {
                                             html += `
-                                    <button class="dropdown-item" type="button" onclick="openApproveModal('${sales.id}');" title="approved">
+                                    <button class="dropdown-item" type="button" onclick="openApproveModal('${sales.id_rkm}');" title="approved">
                                         <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
                                     </button>
                                 `;
@@ -569,7 +569,7 @@
                                     } else if (sales.level_status === "1") {
                                         if (jabatan === "GM" || jabatan === 'Koordinator Office') {
                                             html += `
-                                    <button class="dropdown-item" type="button" onclick="openApproveModal('${sales.id}');" title="approved">
+                                    <button class="dropdown-item" type="button" onclick="openApproveModal('${sales.id_rkm}');" title="approved">
                                         <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
                                     </button>
                                 `;
@@ -583,7 +583,7 @@
                                     } else if (sales.level_status === "2") {
                                         if (jabatan === 'Finance &amp; Accounting') {
                                             html += `
-                                    <button class="dropdown-item" type="button" onclick="openApproveModal('${sales.id}');" title="Detail">
+                                    <button class="dropdown-item" type="button" onclick="openApproveModal('${sales.id_rkm}');" title="Detail">
                                         <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
                                     </button>
                                 `;
@@ -605,7 +605,7 @@
                                     `;
                                             } else {
                                                 html += `
-                                        <button class="dropdown-item" type="button" onclick="openApproveModal('${sales.id}');" title="Detail">
+                                        <button class="dropdown-item" type="button" onclick="openApproveModal('${sales.id_rkm}');" title="Detail">
                                             <i class="fa-regular fa-circle-check" style="font-size: 20px;"></i> Approved
                                         </button>
                                     `;
@@ -659,9 +659,9 @@
 
                 let approvalSelected = false;
 
-                function openApproveModal(id) {
-                    console.log('ID yang dikirim ke modal:', id);
-                    $('#id_rkm').val(id);
+                function openApproveModal(id_rkm) {
+                    console.log('ID yang dikirim ke modal:', id_rkm);
+                    $('#id_rkm').val(id_rkm);
                     $('#approveModal').modal('show');
                     approvalSelected = false;
 

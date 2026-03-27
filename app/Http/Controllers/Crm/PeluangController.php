@@ -31,7 +31,7 @@ class PeluangController extends Controller
     {
         $user = Auth::user();
         $allowedJabatan = ['Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
-        $materi = Materi::all();
+        $materi = Materi::where('status', '!=', 'Nonaktif')->get();
         $aktivitas = Aktivitas::where('id_sales', $user->id_sales)->whereNull('id_peluang')->get();
 
         if ($user->jabatan === 'Sales') {
@@ -134,7 +134,7 @@ class PeluangController extends Controller
             $peluang->rkm->tanggal_awal_year = $peluang->rkm->tanggal_awal ? date('Y', strtotime($peluang->rkm->tanggal_awal)) : null;
         }
 
-        $materi = Materi::all();
+        $materi = Materi::where('status', '!=', 'Nonaktif')->get();
 
         $netsales = perhitunganNetSales::with('trackingNetSales', 'approvedNetSales', 'peserta')
             ->where('id_rkm', $peluang->id_rkm)
@@ -630,6 +630,7 @@ class PeluangController extends Controller
 
         $request->validate([
             'id_rkm' => 'required|numeric',
+            'id_peluang' => 'required|numeric',
 
             'transportasi' => 'nullable|numeric',
             'jenis_transportasi' => 'nullable|string',
@@ -732,9 +733,11 @@ class PeluangController extends Controller
                 Log::info("[PA] Sending notification");
 
                 $url = url('paymentAdvance.index');
-                $path = request()->path();
+                $path = "/crm/peluang/detail/" . $request->id_peluang;
                 $receiverUsers = $user->id;
                 Notification::send($user, new CommentNotification($dummyComment, $url, $path, $receiverUsers));
+
+                Log::info("[PA] Path ($path) and URL ($url) included in notification");
             }
         } else {
             Log::warning("[PA] No SPV Sales found");

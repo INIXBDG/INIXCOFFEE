@@ -774,7 +774,6 @@
                 }
             }
 
-
             $assistantRoute.off('change').on('change', function () {
                 const value = $(this).val();
                 const itsmRoutes = [
@@ -1039,7 +1038,7 @@
                                                     data-id="${item.id}"
                                                     data-value="${item.manual_value}"
                                                     data-route="${item.asistant_route}"
-                                                    title="isi data" 
+                                                    title="isi data"
                                                     data-bs-toggle="modal"
                                                     data-bs-target="#modalFormManual"
                                                     style="width: 36px; height: 36px; font-size: 0.9rem;">
@@ -1107,7 +1106,7 @@
 
                                                 <div class="mt-2 mb-1">
                                                     <div class="progress rounded-pill" style="height: 12px; background-color: #e9ecef; position: relative;">
-                                                        <div class="progress-bar rounded-pill" 
+                                                        <div class="progress-bar rounded-pill"
                                                             style="width: ${lengthProgress}%; background: ${badgeClass === 'bg-success' ? '#28a745' :
                                         badgeClass === 'bg-danger' ? '#dc3545' : '#ffc107'
                                     }"></div>
@@ -2118,8 +2117,13 @@
                 // Programmer + Tim Digital + TS
                 if (hasProgrammer && hasDigital && hasTS) {
                     options += `
-                            <option value="kepuasan client ITSM">Kepuasan Client ITSM</option>
-                        `;
+                        <option value="kepuasan client ITSM">Kepuasan Client ITSM</option>
+                        <option value="inovation adaption rate">Inovation Adaption Rate</option>
+                    `;
+                } else if (hasSales && hasSPVSales && hasAdmSales) {
+                    options += `
+                        <option value="peningkatan kemampuan kompetensi sales">Peningkatan Kemampuan Kompetensi Sales</option>
+                    `;
                 } else {
                     options +=
                         '<option disabled>-- Kombinasi jabatan ini belum memiliki Assistant Route --</option>';
@@ -2169,10 +2173,12 @@
                 //Driver
                 else if (hasDriver) {
                     options += `
-                            <option value="perbaikan kendaraan">Perbaikan kendaraan</option>
-                            <option value="report kondisi kendaraan">Report Kondisi Kendaraan</option>
-                            <option value="kontrol pengeluaran transportasi">Kontrol Pengeluaran Transportasi</option>
-                        `;
+                        <option value="perbaikan kendaraan">Perbaikan kendaraan</option>
+                        <option value="report kondisi kendaraan">Report Kondisi Kendaraan</option>
+                        <option value="kontrol pengeluaran transportasi">Kontrol Pengeluaran Transportasi</option>
+                        <option value="feedback kenyamanan berkendara">Feedback Kenyamanan Berkendara</option>
+
+                    `;
                 }
 
                 //OB
@@ -2262,7 +2268,7 @@
                         <option value="ketepatan waktu po">Ketepatan Waktu PO</option></option>
                     `;
                 }
-                
+
 
                 //end/selesai
                 else {
@@ -2325,25 +2331,27 @@
             // --- Set opsi tipe target ---
             if (persenRoutes.includes(routeLower)) {
                 tipeTargetSelect.html(`
-                    <option disabled>-- Pilih Tipe --</option>
-                    <option disabled>Angka (Unit, Jumlah, dll)</option>
-                    <option disabled>Rupiah (Nilai Keuangan)</option>
-                    <option selected value="persen">Persen (%)</option>
-                `);
-            } else if (rupiahRoutes.includes(routeLower)) {
+                        <option selected disabled>-- Pilih Tipe --</option>
+                        <option disabled>Angka (Unit, Jumlah, dll)</option>
+                        <option disabled>Rupiah (Nilai Keuangan)</option>
+                        <option value="persen">Persen (%)</option>
+                    `).prop('disabled', true);
+
+            } else if (rupiahRoutes.includes(selectedRoute)) {
                 tipeTargetSelect.html(`
-                    <option disabled>-- Pilih Tipe --</option>
-                    <option disabled>Angka (Unit, Jumlah, dll)</option>
-                    <option selected value="rupiah">Rupiah (Nilai Keuangan)</option>
-                    <option disabled>Persen (%)</option>
-                `);
-            } else if (angkaRoutes.includes(routeLower)) {
+                        <option selected disabled>-- Pilih Tipe --</option>
+                        <option disabled>Angka (Unit, Jumlah, dll)</option>
+                        <option value="rupiah">Rupiah (Nilai Keuangan)</option>
+                        <option disabled>Persen (%)</option>
+                    `).prop('disabled', false);
+
+            } else if (angka.includes(selectedRoute)) {
                 tipeTargetSelect.html(`
-                    <option disabled>-- Pilih Tipe --</option>
-                    <option selected value="angka">Angka (Unit, Jumlah, dll)</option>
-                    <option disabled>Rupiah (Nilai Keuangan)</option>
-                    <option disabled>Persen (%)</option>
-                `);
+                        <option selected disabled>-- Pilih Tipe --</option>
+                        <option value="angka">Angka (Unit, Jumlah, dll)</option>
+                        <option disabled>Rupiah (Nilai Keuangan)</option>
+                        <option disabled>Persen (%)</option>
+                    `).prop('disabled', false);
             }
 
             let isAutoFilled = false;
