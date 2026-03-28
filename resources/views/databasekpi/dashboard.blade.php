@@ -1279,6 +1279,9 @@
                         contentKPITim.empty();
 
                         dataContentKPITim.forEach(function(item) {
+
+                            let nilai = parseFloat(item.nilaitargetkpi ?? 0).toFixed(0);
+
                             let performanceColorTim = "warning";
                             let performanceIconTim = "∿";
 
@@ -1291,9 +1294,9 @@
                             }
 
                             let progressColor = "bg-warning";
-                            if (item.nilaitargetkpi >= 80) {
+                            if (nilai >= 80) {
                                 progressColor = "bg-success";
-                            } else if (item.nilaitargetkpi < 50) {
+                            } else if (nilai < 50) {
                                 progressColor = "bg-danger";
                             }
 
@@ -1305,12 +1308,16 @@
                                             <small class="text-muted">${item.jabatan}</small>
                                         </div>
                                         <div class="text-end">
-                                            <h6 class="mb-0 fw-bold">${item.nilaitargetkpi}%</h6>
-                                            <small class="text-${performanceColorTim}">${performanceIconTim} ${item.nilai_performance}% bulan ini</small>
+                                            <h6 class="mb-0 fw-bold">${nilai}%</h6>
+                                            <small class="text-${performanceColorTim}">
+                                                ${performanceIconTim} ${item.performance ?? 0}%
+                                            </small>
                                         </div>
                                     </div>
                                     <div class="progress" style="height:6px;">
-                                        <div class="progress-bar ${progressColor}" style="width:${item.nilaitargetkpi}%"></div>
+                                        <div class="progress-bar ${progressColor}" 
+                                            style="width:${Math.min(nilai,100)}%">
+                                        </div>
                                     </div>
                                 </div>
                             `);
@@ -1321,6 +1328,7 @@
                         contentKPIDivisi.empty();
 
                         datacontentKPIDivisi.forEach(item => {
+
                             let nilai = parseFloat(item.nilai_kpi ?? 0).toFixed(0);
                             let performance = parseFloat(item.performance ?? 0).toFixed(0);
 
@@ -1347,15 +1355,21 @@
                                                 <small class="text-muted">${item.performance_title ?? '-'}</small>
                                             </div>
                                             <div class="text-end">
-                                                <h2 class="fw-bold mb-0 counter" data-value="${nilai}">${item.nilai_kpi}%</h2>
+                                                <h2 class="fw-bold mb-0">${nilai}%</h2>
+                                                <small class="text-${colorClass}">
+                                                    ${icon} ${performance}%
+                                                </small>
                                             </div>
                                         </div>
                                         <div class="progress" style="height:6px;">
-                                            <div class="progress-bar bg-${colorClass} progress-animated" data-value="${nilai}" style="width:${item.nilai_kpi}%"></div>
+                                            <div class="progress-bar bg-${colorClass}" 
+                                                style="width:${Math.min(nilai,100)}%">
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             `;
+
                             contentKPIDivisi.append(html);
                         });
                     }
