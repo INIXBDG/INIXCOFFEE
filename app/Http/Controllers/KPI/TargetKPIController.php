@@ -14,6 +14,8 @@ use App\Models\detailPersonKPI;
 use App\Models\DetailTargetKPI;
 use App\Models\formPenilaian;
 use App\Models\JenisTunjangan;
+use App\Models\KategoriDaftarTugas;
+use App\Models\KontrolTugas;
 use App\Models\IdeInovasi;
 use App\Models\karyawan;
 use App\Models\KategoriDaftarTugas;
@@ -972,9 +974,9 @@ class TargetKPIController extends Controller
 
         foreach ($targetsByDivisi as $divisi => $targets) {
             $progresses = [];
-
             foreach ($targets as $targetItem) {
                 if ($targetItem->asistant_route === 'performa KPI departemen') {
+
                     continue;
                 }
 
@@ -990,6 +992,7 @@ class TargetKPIController extends Controller
                     $progress = $targetValue > 0 ? max(0, min(100, round(($dataRupiah / $targetValue) * 100, 1))) : 0;
                 } else {
                     $progress = $this->resolveProgress($targetItem, $personId);
+
                 }
 
                 if ($progress !== null && is_numeric($progress)) {
@@ -1876,6 +1879,7 @@ class TargetKPIController extends Controller
         if ($personId !== null) {
             $daftarTugas = KontrolTugas::whereYear('created_at', $tahun)
                 ->where('id_karyawan', $personId);
+
         } else {
             $daftarTugas = KontrolTugas::whereYear('created_at', $tahun);
         }
@@ -1885,7 +1889,6 @@ class TargetKPIController extends Controller
         if ($jumlahTugas === 0) {
             return 0;
         }
-
         $jumlahTugasSelesai = $daftarTugas->where('status', '1')->count();
 
         $presentase = ($jumlahTugasSelesai / $jumlahTugas) * 100;
@@ -9415,6 +9418,104 @@ class TargetKPIController extends Controller
             $karyawanId = Auth()->user()->id;
             $tahunFilter = $request->tahun ?? now()->year;
 
+            $calculateProgress = function($item, $personId) {
+                $route = strtolower($item->asistant_route);
+                
+                // Target Office - GM
+                if ($route === 'kepuasan pelanggan') {
+                    return $this->calculateProgressKepuasanPelanggan($item, $personId);
+                } elseif ($route === 'pemasukan kotor') {
+                    return $this->calculatePemasukanKotor($item, $personId);
+                } elseif ($route === 'pemasukan bersih') {
+                    return $this->calculatePemasukanBersih($item, $personId);
+                } elseif ($route === 'rasio biaya operasional terhadap revenue') {
+                    return $this->calculateRasioBiayaOperasionalTerhadapRevenue($item, $personId);
+                } elseif ($route === 'performa kpi departemen') {
+                    return $this->calculatePerformaKPIDepartemen($item, $personId);
+                
+                // CS
+                } elseif ($route === 'peserta puas dengan pelayanan dan fasilitas training') {
+                    return $this->calculatePesertaPuasDenganPelayananDanFasilitasTraining($item, $personId);
+                } elseif ($route === 'dorong inovasi pelayanan') {
+                    return $this->calculateDorongInovasiPelayanan($item, $personId);
+                } elseif ($route === 'penanganan komplain peserta') {
+                    return $this->calculatePenangananKomplainPerseta($item, $personId);
+                } else if ($route === 'report persiapan kelas') {
+                    return $this->calculateReportPersiapanKelas($item, $personId);
+                }
+                
+                // Finance
+                elseif ($route === 'inisiatif efesiensi keuangan') {
+                    return $this->calculateInisiatifEfisiensiKeuangan($item, $personId);
+                } elseif ($route === 'outstanding') {
+                    return $this->calculateOutstanding($item, $personId);
+                } elseif ($route === 'mengurangi manual work dan error') {
+                    return $this->calculateMengurangiManualWorkDanError($item, $personId);
+                } elseif ($route === 'laporan analisis keuangan') {
+                    return $this->calculateLaporanAnalisisKeuangan($item, $personId);
+                
+                // HRD
+                } elseif ($route === 'pelaksanaan kegiatan karyawan') {
+                    return $this->calculatePelaksanaanKegiatanKaryawan($item, $personId);
+                } elseif ($route === 'pengeluaran biaya karyawan') {
+                    return $this->calculatePengeluaranBiayaKaryawan($item, $personId);
+                } elseif ($route === 'administrasi karyawan') {
+                    return $this->calculateAdministrasiKaryawan($item, $personId);
+                
+                // Driver
+                } elseif ($route === 'perbaikan kendaraan') {
+                    return $this->calculatePerbaikanKendaraan($item, $personId);
+                } elseif ($route === 'kontrol pengeluaran transportasi') {
+                    return $this->calculateKontrolPengeluaranTransportasi($item, $personId);
+                } elseif ($route === 'report kondisi kendaraan') {
+                    return $this->calculateReportKondisiKendaraan($item, $personId);
+                
+                // OB
+                } elseif ($route === 'feedback kebersihan dan kenyamanan') {
+                    return $this->calculateFeedbackKebersihanDanKenyamanan($item, $personId);
+                } elseif ($route === 'penyelesaian tugas harian') {
+                    return $this->calculatePenyelesaianTugasHarian($item, $personId);
+                    
+                // Target ITSM
+                } elseif ($route === 'kepuasan client itsm') {
+                    return $this->calculateProgressKepuasanClientITSM($item, $personId);
+                } elseif ($route === 'availability sistem internal kritis') {
+                    return $this->calculateAvailabilitySistemInternalKritis($item, $personId);
+                } elseif ($route === 'meningkatkan kepuasan dan loyalitas peserta/client') {
+                    return $this->calculateMeningkatkanKepuasanDanLoyalitasPeserta($item, $personId);
+                } elseif ($route === 'ketepatan waktu penyelesaian fitur') {
+                    return $this->calculateProgressKetepatanWaktuPenyelesaianFitur($item, $personId);
+                } elseif ($route === 'mengukur kualitas aplikasi agar minim bug') {
+                    return $this->calculateMengukurKualitasAplikasiAgarMinimBug($item, $personId);
+                } elseif ($route === 'konsistensi campaign digital') {
+                    return $this->calculateKonsistensiCampaignDigital($item, $personId);
+                } elseif ($route === 'efektifitas diital marketing') {
+                    return $this->calculateEfektifitasDiitalMarketing($item, $personId);
+                } elseif ($route === 'keberhasilan support memenuhi sla') {
+                    return $this->calculateTingkatKeberhasilanSupportMemenuhiSLA($item, $personId);
+                } elseif ($route === 'kualitas layanan exam') {
+                    return $this->calculateKualitasLayananExam($item, $personId);
+                
+                // Education
+                } elseif ($route === 'kepuasan peserta pelatihan') {
+                    return $this->calculateKepuasanPesertaPelatihan($item, $personId);
+                } elseif ($route === 'upseling lanjutan materi') {
+                    return $this->calculateUpselingLanjutanMateri($item, $personId);
+                } elseif ($route === 'sertifikasi kompetensi internal') {
+                    return $this->calculateSertifikasiKompetensiInternal($item, $personId);
+                } elseif ($route === 'pelatihan kompetensi eksternal') {
+                    return $this->calculatePelatihanKompetensiEksternal($item, $personId);
+                
+                // Education Manager
+                } elseif ($route === 'pengembangan kurikulum pelatihan') {
+                    return $this->calculatePengembanganKurikulumPelatihan($item, $personId);
+                } elseif ($route === 'peningkatan knowledge sharing') {
+                    return $this->calculatePeningkatanKnowledgeSharing($item, $personId);
+                }
+                
+                return null;
+            };
+
             $allTargets = targetKPI::with(['karyawan', 'detailTargetKPI.detailPersonKPI.karyawan'])
                 ->whereYear('created_at', $tahunFilter)
                 ->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($karyawanId) {
@@ -9433,6 +9534,7 @@ class TargetKPIController extends Controller
                 if (!$detail) continue;
 
                 $progress = $this->resolveProgress($target, $karyawanId);
+
                 $nilaiTarget = $detail->nilai_target;
                 $tipeTarget = $detail->tipe_target;
 
@@ -9558,6 +9660,22 @@ class TargetKPIController extends Controller
                 ];
             }
 
+                    $daftarTargetPribadi[] = [
+                        'id' => $item->id,
+                        'judul' => $item->judul,
+                        'periode' => $detail->jangka_target . ' ' . $detail->detail_jangka,
+                        'tipe_target' => $tipeTarget,
+                        'target' => $nilaiTarget,
+                        'progress' => round($progress),
+                        'progress_display' => $progressDisplay,
+                        'status' => $status,
+                        'status_badge' => $status === 'Selesai' ? 'bg-success' : 'bg-warning text-dark',
+                        'deskripsi' => $detail->deskripsi ?? '-',
+                        'created_at' => $item->created_at->format('d M Y'),
+                    ];
+                }
+
+            // --- INFO KARYAWAN ---
             $karyawan = karyawan::where('id', $karyawanId)->first();
 
             return response()->json([
