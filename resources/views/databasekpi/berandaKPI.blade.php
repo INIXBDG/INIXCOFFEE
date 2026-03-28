@@ -313,7 +313,7 @@
                             $auth === 'HRD' ||
                             $auth === 'Education Manager' ||
                             $auth === 'GM' ||
-                            $auth === 'SPV Sales')
+                            $auth === 'Finance & Accounting')
 
                         <li class="nav-item {{ Request::routeIs('kpi.index') ? 'active' : '' }}">
                             <a class="nav-link" href="{{ route('kpi.index') }}">
