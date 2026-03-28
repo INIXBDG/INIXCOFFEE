@@ -405,7 +405,8 @@
                             <div class="form-group">
                                 <label>Biaya Rekrutmen Tahunan</label>
                                 <input type="text" class="form-control" id="biaya_rekrutmen_display">
-                                <input type="hidden" name="biaya_rekrutmen_tahunan" id="biaya_rekrutmen_tahunan" required>
+                                <input type="hidden" name="biaya_rekrutmen_tahunan" id="biaya_rekrutmen_tahunan"
+                                    required>
                             </div>
                         </div>
 
@@ -456,7 +457,7 @@
             dropdownParent: $('#modalBuatTarget')
         });
 
-        $(document).on('click', '.buttonHapusTarget, .buttonForm', function (e) {
+        $(document).on('click', '.buttonHapusTarget, .buttonForm', function(e) {
             e.stopPropagation();
         });
 
@@ -491,7 +492,7 @@
         function initInputFormatting() {
             // Single Input
             $('#manual_value_display').off('input.formatting');
-            $('#manual_value_display').on('input.formatting', function () {
+            $('#manual_value_display').on('input.formatting', function() {
                 const raw = getRawNumber($(this).val());
                 $('#manual_value').val(raw);
 
@@ -509,7 +510,7 @@
 
             // Double Input - Biaya Gaji
             $('#biaya_gaji_display').off('input.formatting');
-            $('#biaya_gaji_display').on('input.formatting', function () {
+            $('#biaya_gaji_display').on('input.formatting', function() {
                 const raw = getRawNumber($(this).val());
                 $('#biaya_gaji_tahunan').val(raw);
                 $(this).val(raw ? 'Rp ' + formatNumber(raw) : '');
@@ -517,7 +518,7 @@
 
             // Double Input - Biaya BPJS
             $('#biaya_bpjs_display').off('input.formatting');
-            $('#biaya_bpjs_display').on('input.formatting', function () {
+            $('#biaya_bpjs_display').on('input.formatting', function() {
                 const raw = getRawNumber($(this).val());
                 $('#biaya_bpjs_tahunan').val(raw);
                 $(this).val(raw ? 'Rp ' + formatNumber(raw) : '');
@@ -525,21 +526,21 @@
 
             // ✅ Double Input - Biaya Rekrutmen (BARU)
             $('#biaya_rekrutmen_display').off('input.formatting');
-            $('#biaya_rekrutmen_display').on('input.formatting', function () {
+            $('#biaya_rekrutmen_display').on('input.formatting', function() {
                 const raw = getRawNumber($(this).val());
                 $('#biaya_rekrutmen_tahunan').val(raw);
                 $(this).val(raw ? 'Rp ' + formatNumber(raw) : '');
             });
         }
 
-        $(document).ready(function () {
+        $(document).ready(function() {
             initInputFormatting();
 
-            $('#modalFormManual').on('show.bs.modal', function () {
+            $('#modalFormManual').on('show.bs.modal', function() {
                 resetFormManual();
             });
 
-            $('#modalFormManual').on('hidden.bs.modal', function () {
+            $('#modalFormManual').on('hidden.bs.modal', function() {
                 resetFormManual();
             });
         });
@@ -563,7 +564,7 @@
             $('#manualValueId').val('');
         }
 
-        $(document).on('click', '.buttonForm', function () {
+        $(document).on('click', '.buttonForm', function() {
             const route = $(this).data('route');
             const value = $(this).data('value') || '';
             const id = $(this).data('id');
@@ -620,7 +621,7 @@
             }
         });
 
-        $(document).on('change', '#manual_format', function () {
+        $(document).on('change', '#manual_format', function() {
             if ($('#doubleInputArea').is(':visible')) {
                 return;
             }
@@ -644,7 +645,7 @@
             });
         });
 
-        $('#formManualValue').on('submit', function (e) {
+        $('#formManualValue').on('submit', function(e) {
             e.preventDefault();
 
             const $submitBtn = $(this).find('button[type="submit"]');
@@ -669,7 +670,7 @@
                 data: formData,
                 contentType: false,
                 processData: false,
-                success: function (res) {
+                success: function(res) {
                     $('#modalFormManual').modal('hide');
                     resetFormManual();
                     $submitBtn.prop('disabled', false).html(originalText);
@@ -678,7 +679,7 @@
                         loadContentForm();
                     }
                 },
-                error: function (xhr) {
+                error: function(xhr) {
                     $submitBtn.prop('disabled', false).html(originalText);
 
                     if (xhr.status === 422) {
@@ -692,11 +693,11 @@
             });
         });
 
-        $(document).ready(function () {
+        $(document).ready(function() {
             loadContentForm();
         });
 
-        $('#targetForm').on('submit', function (e) {
+        $('#targetForm').on('submit', function(e) {
             e.preventDefault();
             const judul = $('#judul_kpi').val().trim();
             if (!judul) {
@@ -715,7 +716,7 @@
                 data: formData,
                 processData: false,
                 contentType: false,
-                success: function (response) {
+                success: function(response) {
                     Swal.fire({
                         icon: 'success',
                         title: 'Berhasil!',
@@ -727,7 +728,7 @@
                     });
                     loadContentForm();
                 },
-                error: function (xhr) {
+                error: function(xhr) {
                     let msg = 'Terjadi kesalahan. Silakan coba lagi.';
                     if (xhr.responseJSON?.errors) {
                         msg = Object.values(xhr.responseJSON.errors).flat().join('<br>');
@@ -774,11 +775,7 @@
                 }
             }
 
-<<<<<<< HEAD
-
-=======
->>>>>>> cdf4c59a6ba2d42ae9c0ccc01f7f36eb7952029b
-            $assistantRoute.off('change').on('change', function () {
+            $assistantRoute.off('change').on('change', function() {
                 const value = $(this).val();
                 const itsmRoutes = [
                     'kepuasan client ITSM',
@@ -813,7 +810,7 @@
                 $nilaiTarget.val('');
             });
 
-            $nilaiTarget.off('input').on('input', function () {
+            $nilaiTarget.off('input').on('input', function() {
                 const tipe = $tipeTarget.val();
                 let value = $(this).val().replace(/\D/g, '');
                 if (!value) {
@@ -837,7 +834,7 @@
                 updateKonversiIfNeeded();
             });
 
-            $jangkaTarget.off('change').on('change', function () {
+            $jangkaTarget.off('change').on('change', function() {
                 const jangka = $(this).val();
                 $detailJangkaGroup.hide();
                 $detailJangkaField.empty();
@@ -865,7 +862,7 @@
             $.ajax({
                 url: '{{ route('kpi.getDataTarget') }}',
                 type: 'GET',
-                success: function (response) {
+                success: function(response) {
                     const data = response;
                     const content_target = $('#content_target');
                     const jabatanSelect = $('#jabatan');
@@ -876,7 +873,7 @@
 
                     content_target.empty();
 
-                    if (data.detail.length === 0) { } else {
+                    if (data.detail.length === 0) {} else {
                         const now = new Date();
                         const groupedByPembuat = {};
                         data.detail.forEach(item => {
@@ -916,7 +913,7 @@
                                 `);
                             const targetContainer = cardWrapper.find('div.d-flex');
 
-                            group.targets.forEach(function (item) {
+                            group.targets.forEach(function(item) {
                                 let formattedTarget = item.nilai_target;
                                 if (item.tipe_target === 'persen' || item.tipe_target ===
                                     'angka') {
@@ -1195,14 +1192,14 @@
                     $('#detailJangkaGroup').hide();
                     $('#konversiGroup').hide();
                 },
-                error: function (xhr) {
+                error: function(xhr) {
                     Swal.fire('Error', 'Gagal memuat data form: ' + (xhr.responseJSON?.message ||
                         'Silakan coba lagi.'), 'error');
                 }
             });
         }
 
-        $('#jabatan').on('change', function () {
+        $('#jabatan').on('change', function() {
             const selectedJabatan = $(this).val();
             const karyawanSelect = $('#karyawan');
 
@@ -1217,7 +1214,7 @@
                 data: {
                     jabatan: selectedJabatan
                 },
-                success: function (response) {
+                success: function(response) {
                     karyawanSelect.empty();
 
                     response.forEach(item => {
@@ -1227,7 +1224,7 @@
 
                     karyawanSelect.trigger('change');
                 },
-                error: function () {
+                error: function() {
                     Swal.fire('Error', 'Gagal memuat daftar karyawan.', 'error');
                     karyawanSelect.empty().trigger('change');
                 }
@@ -1235,7 +1232,7 @@
         });
 
 
-        $(document).on('click', '#buttonDetailTarget', function () {
+        $(document).on('click', '#buttonDetailTarget', function() {
             let id = $(this).data('id');
 
             $.ajax({
@@ -1245,7 +1242,7 @@
                     id
                 },
                 dataType: 'json',
-                success: function (response) {
+                success: function(response) {
                     const body = $('#bodyContentDetailTarget');
                     if (body.length === 0) {
                         console.error("Elemen #bodyContentDetailTarget tidak ditemukan!");
@@ -1443,6 +1440,10 @@
                             'meningkatkan revenue perusahaan'
                         ];
 
+                        const allowedAssistantRoutesForPresentaseGapKompetensi = [
+                            'persentase gap kompetensi tim terhadap standar skill'
+                        ]
+
                         let contentPieChart = '';
 
                         if (allowedAssistantRoutes.includes(data.condition)) {
@@ -1541,11 +1542,11 @@
                                         <div class="text-muted small mb-2">Top Hari Tertinggi</div>
 
                                         ${top3HariTertinggi.map(([tanggal, nilai], index) => `
-                                                        <div class="d-flex justify-content-between mb-1 ${index > 0 ? 'text-muted' : ''}">
-                                                            <span>${formatTanggalSingkat(tanggal)}</span>
-                                                            <span class="fw-semibold">${formatRupiah(nilai)}</span>
-                                                        </div>
-                                                    `).join('')}
+                                                                <div class="d-flex justify-content-between mb-1 ${index > 0 ? 'text-muted' : ''}">
+                                                                    <span>${formatTanggalSingkat(tanggal)}</span>
+                                                                    <span class="fw-semibold">${formatRupiah(nilai)}</span>
+                                                                </div>
+                                                            `).join('')}
                                     </div>
 
                                     <hr class="my-3">
@@ -1573,6 +1574,115 @@
 
                         if (allowedAssistantRoutes.includes(data.condition)) {
                             contentStatisticChart = ``;
+                        } else if (allowedAssistantRoutesForPresentaseGapKompetensi.includes(data.condition)) {
+                            contentStatisticChart = `
+                                <div class="mt-4">
+                                    <div class="card shadow-sm border-0 rounded-4">
+                                        <div class="card-body">
+                                            <h6 class="fw-semibold mb-3">Input Presentase Kemampuan Programmer</h6>
+
+                                            <form id="formGapKompetensi">
+
+                                                <!-- HEADER -->
+                                                <div class="row mb-2 fw-semibold text-muted border-bottom pb-2">
+                                                    <div class="col-md-4">Nama Karyawan</div>
+                                                    <div class="col-md-4">Kemampuan (%)</div>
+                                                    <div class="col-md-4">Standar (%)</div>
+                                                </div>
+
+                                                <!-- DATA -->
+                                                ${(data.karyawan || []).map((item, index) => {
+
+                                                    const kemampuan = parseFloat(item.presentase_kemampuan ?? 0);
+                                                    const standar = parseFloat(item.presentase_standar ?? 100);
+
+                                                    let badge = '';
+                                                    let rowClass = '';
+
+                                                    if (kemampuan === 0) {
+                                                        badge = `<span class="badge bg-danger">0%</span>`;
+                                                    } else if (kemampuan < standar) {
+                                                        badge = `<span class="badge bg-warning text-dark">Not Achieved</span>`;
+                                                    } else {
+                                                        badge = `<span class="badge bg-success">Achieved</span>`;
+                                                    }
+
+                                                    return `
+                                                        <div class="row mb-2 align-items-center p-2 rounded">
+                                                            
+                                                            <div class="col-md-4 d-flex justify-content-between align-items-center">
+                                                                <span>${item.nama_lengkap ?? '-'}</span>
+                                                                ${badge}
+                                                            </div>
+
+                                                            <div class="col-md-4">
+                                                                <input type="number" step="0.1" class="form-control kemampuan-input"
+                                                                    name="data[${index}][kemampuan]"
+                                                                    value="${kemampuan}">
+                                                            </div>
+
+                                                            <div class="col-md-4">
+                                                                <input type="number" step="0.1" class="form-control standar-input"
+                                                                    name="data[${index}][standar]"
+                                                                    value="${standar}">
+                                                            </div>
+
+                                                            <input type="hidden" name="data[${index}][id]" value="${item.id}">
+                                                        </div>
+                                                    `;
+                                                }).join('')}
+
+                                                <!-- BUTTON -->
+                                                <div class="mt-3">
+                                                    <button type="submit" class="btn btn-primary">
+                                                        Simpan
+                                                    </button>
+                                                </div>
+
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                `;
+
+                            $(document).on('submit', '#formGapKompetensi', function(e) {
+                                e.preventDefault();
+
+                                let formData = $(this).serialize();
+
+                                $.ajaxSetup({
+                                    headers: {
+                                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                                    }
+                                });
+
+                                $.ajax({
+                                    url: "{{ route('kpi.updateGapKompetensi') }}",
+                                    method: 'POST',
+                                    data: formData,
+                                    success: function(res) {
+                                        Swal.fire({
+                                            icon: 'success',
+                                            title: 'Berhasil!',
+                                            text: 'berhasil diupdate.',
+                                            timer: 2000,
+                                            showConfirmButton: false
+                                        }).then(() => {
+                                            $('#detailTargetModal').modal('hide');
+                                        });
+                                        loadContentForm();
+                                    },
+                                    error: function(err) {
+                                        Swal.fire({
+                                            icon: 'error',
+                                            title: 'Gagal!',
+                                            html: msg
+                                        });
+                                        console.log(err);
+                                    }
+                                });
+                            });
+
                         } else {
                             contentStatisticChart = `
                                     <div class="mt-4">
@@ -1765,7 +1875,7 @@
                                             ticks: {
                                                 count: 6,
                                                 precision: 0,
-                                                callback: function (value) {
+                                                callback: function(value) {
                                                     return Math.round(value);
                                                 }
                                             }
@@ -1779,7 +1889,7 @@
                         const monthValues = Object.values(monthlyData);
                         renderStatistic(monthLabels, monthValues, 'Rata-rata');
 
-                        $('#filterType').off('change').on('change', function () {
+                        $('#filterType').off('change').on('change', function() {
                             if (this.value === 'month') {
                                 $('#filterMonth').removeClass('d-none').empty().append(
                                     '<option value="">Pilih Bulan</option>');
@@ -1795,7 +1905,7 @@
                             }
                         });
 
-                        $('#filterMonth').off('change').on('change', function () {
+                        $('#filterMonth').off('change').on('change', function() {
                             const selectedMonth = this.value;
                             if (!selectedMonth || !dailyData[selectedMonth]) return;
 
@@ -1811,13 +1921,13 @@
                     const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
                     modal.show();
                 },
-                error: function () {
+                error: function() {
                     Swal.fire('Error', 'Gagal memuat detail target', 'error');
                 }
             });
         });
 
-        $(document).on('click', '.buttonHapusTarget', function () {
+        $(document).on('click', '.buttonHapusTarget', function() {
             let id = $(this).data('id');
             Swal.fire({
                 title: 'Yakin ingin menghapus?',
@@ -1838,7 +1948,7 @@
                         data: {
                             _token: '{{ csrf_token() }}'
                         },
-                        success: function (response) {
+                        success: function(response) {
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Berhasil!',
@@ -1848,7 +1958,7 @@
                             });
                             loadContentForm();
                         },
-                        error: function (xhr) {
+                        error: function(xhr) {
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Gagal!',
@@ -1891,29 +2001,7 @@
                 }
             }
 
-            $assistantRoute.off('change').on('change', function () {
-                const value = $(this).val();
-                const tipe = $tipeTarget.val();
-                if (value === 'Kepuasan Pelanggan') {
-                    $tipeTarget.html(`
-                    <option selected disabled>-- Pilih Tipe --</option>
-                    <option value="angka" disabled>Angka (Unit, Jumlah, dll)</option>
-                    <option value="rupiah" disabled>Rupiah (Nilai Keuangan)</option>
-                    <option value="persen">Persen (%)</option>
-                `);
-                    $tipeTarget.removeAttr('disabled');
-                } else {
-                    $tipeTarget.html(`
-                    <option selected disabled>-- Pilih Tipe --</option>
-                    <option value="angka">Angka (Unit, Jumlah, dll)</option>
-                    <option value="rupiah">Rupiah (Nilai Keuangan)</option>
-                    <option value="persen">Persen (%)</option>
-                `);
-                    $tipeTarget.removeAttr('disabled');
-                }
-            });
-
-            $nilaiTarget.off('input').on('input', function () {
+            $nilaiTarget.off('input').on('input', function() {
                 const tipe = $tipeTarget.val();
                 let value = $(this).val().replace(/\D/g, '');
                 if (!value) {
@@ -1937,7 +2025,7 @@
                 updateKonversiIfNeeded();
             });
 
-            $jangkaTarget.off('change').on('change', function () {
+            $jangkaTarget.off('change').on('change', function() {
                 const jangka = $(this).val();
                 $detailJangkaGroup.hide();
                 $detailJangkaField.empty();
@@ -2080,7 +2168,7 @@
         $('#tipeTarget').prop('disabled', true).html(
             '<option selected disabled>-- Pilih Assistant Route Terlebih Dahulu --</option>');
 
-        $('#jabatan').on('change', function () {
+        $('#jabatan').on('change', function() {
             const selectedJabatan = $(this).val();
             const assistantRouteSelect = $('#assistant_route');
             const tipeTargetSelect = $('#tipeTarget');
@@ -2121,9 +2209,9 @@
                 // Programmer + Tim Digital + TS
                 if (hasProgrammer && hasDigital && hasTS) {
                     options += `
-
                         <option value="kepuasan client ITSM">Kepuasan Client ITSM</option>
                         <option value="inovation adaption rate">Inovation Adaption Rate</option>
+                        <option value="persentase gap kompetensi tim terhadap standar skill">Persentase Gap Kompetensi Tim terhadap Standar Skill</option>
                     `;
                 } else if (hasSales && hasSPVSales && hasAdmSales) {
                     options += `
@@ -2163,6 +2251,7 @@
                         <option value="laporan analisis keuangan">Laporan Analisis Keuangan</option>
                         <option value="pencairan biaya operasional">Pencairan Biaya Operasional Kantor</option>
                         <option value="penyelesaian tagihan perusahaan">Penyelesaian Tagihan Perusahaan</option>
+                        <option value="akurasi pencatatan masuk">Akurasi Pencatatan Masuk</option>
                     `;
                 }
 
@@ -2181,8 +2270,7 @@
                         <option value="perbaikan kendaraan">Perbaikan kendaraan</option>
                         <option value="report kondisi kendaraan">Report Kondisi Kendaraan</option>
                         <option value="kontrol pengeluaran transportasi">Kontrol Pengeluaran Transportasi</option>
-                        <option value="feedback kenyamanan berkendara">Feedback Kenyamanan Berkendara</option>
-
+                        <option value="feedback kenyamanan berkendaran">Feedback Kenyamanan Berkendara</option>
                     `;
                 }
 
@@ -2192,7 +2280,6 @@
                         <option value="feedback kebersihan dan kenyamanan">Feedback Kebersihan Dan Kenyamanan Peserta</option>
                         <option value="penyelesaian tugas harian">Peyelesaian Tugas Harian</option>
                     `;
-
                 }
 
                 //ITSM
@@ -2224,7 +2311,7 @@
                             <option value="kualitas layanan exam">Kualitas Layanan Exam</option>
                         `;
                 }
-                
+
                 //Education
                 //Instruktur
                 else if (hasInstruktur) {
@@ -2252,25 +2339,25 @@
                     `;
                 }
 
-                //sales & marketing
                 //SPV Sales
                 else if (hasSPVSales) {
                     options += `
-                        <option value="meningkatkan revenue perusahaan">Meningkatkan Revenue Perusahaan</option></option>
+                        <option value="meningkatkan revenue perusahaan">Meningkatkan Revenue Perusahaan</option>
                     `;
                 }
 
                 // ADM Sales
                 else if (hasAdmSales) {
                     options += `
-                        <option value="laporan mom">Laporan MOM</option></option>
+                        <option value="laporan mom">Laporan MOM</option>
+                        <option value="akurasi kelengkapan data penjualan">Akurasi Kelengkapan Data Penjualan</option>
                     `;
                 }
 
                 // ADM Holding
                 else if (hasAdmHolding) {
                     options += `
-                        <option value="ketepatan waktu po">Ketepatan Waktu PO</option></option>
+                        <option value="ketepatan waktu po">Ketepatan Waktu PO</option>
                     `;
                 }
 
@@ -2278,7 +2365,7 @@
                 //end/selesai
                 else {
                     options +=
-                        '<option value="">-- Tidak ada Assistant Route tersedia untuk jabatan ini --</option>';
+                        '<option disabled>-- Tidak ada Assistant Route tersedia untuk jabatan ini --</option>';
                 }
 
             }
@@ -2292,117 +2379,141 @@
                 '<option selected disabled>-- Pilih Assistant Route Terlebih Dahulu --</option>');
         });
 
-        $('#assistant_route').on('change', function () {
+        $(document).on('change', '#assistant_route', function() {
             const selectedRoute = $(this).val();
-            const tipeTargetSelect = $('#tipeTarget');
-            const nilaiTarget = $('#nilaiTarget');
-
+            const $tipeTarget = $('#tipeTarget');
+            const $nilaiTarget = $('#nilaiTarget');
+            
             if (!selectedRoute) {
-                tipeTargetSelect.prop('disabled', true).html(
-                    '<option selected disabled>-- Pilih Assistant Route --</option>');
-                nilaiTarget.prop('disabled', true).val('');
+                $tipeTarget.prop('disabled', true)
+                        .html('<option selected disabled>-- Pilih Assistant Route --</option>');
+                $nilaiTarget.prop('disabled', true).val('');
                 return;
             }
 
-            tipeTargetSelect.prop('disabled', false);
-            nilaiTarget.prop('disabled', false); 
-
-            const persenRoutes = [
-                'pemasukan bersih', 'kepuasan pelanggan', 'rasio biaya operasional terhadap revenue',
-                'performa kpi departemen', 'peserta puas dengan pelayanan dan fasilitas training',
-                'penanganan komplain peserta', 'report persiapan kelas', 'banyak tagihan client yang belum lunas',
-                'pelaksanaan kegiatan karyawan', 'pengeluaran biaya karyawan', 'administrasi karyawan',
-                'perbaikan kendaraan', 'report kondisi kendaraan', 'kontrol pengeluaran transportasi',
-                'feedback kebersihan dan kenyamanan', 'penyelesaian tugas harian',
-                'kepuasan client itsm', 'meningkatkan kepuasan dan loyalitas peserta/client',
-                'availability sistem internal kritis', 'ketepatan waktu penyelesaian fitur',
-                'mengukur kualitas aplikasi agar minim bug', 'konsistensi campaign digital',
-                'keberhasilan support memenuhi sla', 'kualitas layanan exam',
-                'kepuasan peserta pelatihan', 'upseling lanjutan materi', 'outstanding'
-            ].map(r => r.toLowerCase());
-
-            const rupiahRoutes = ['pemasukan kotor'].map(r => r.toLowerCase());
-            
-            const angkaRoutes = [
-                'dorong inovasi pelayanan', 'inisiatif efisiensi keuangan', 
-                'mengurangi manual work dan error', 'laporan analisis keuangan',
-                'efektifitas digital marketing', 'sertifikasi kompetensi internal',
-                'pelatihan kompetensi eksternal', 'pengembangan kurikulum pelatihan',
-                'peningkatan knowledge sharing'
-            ].map(r => r.toLowerCase());
-
             const routeLower = selectedRoute.toLowerCase();
+            
+            const persenRoutes = [
+                'pemasukan bersih',
+                'kepuasan pelanggan',
+                'rasio biaya operasional terhadap revenue',
 
-            // --- Set opsi tipe target ---
+                'performa kpi departemen',
+                'peserta puas dengan pelayanan dan fasilitas training',
+                'penanganan komplain peserta',
+                'report persiapan kelas',
+
+                'banyak tagihan client yang belum lunas',
+
+                'pelaksanaan kegiatan karyawan',
+                'pengeluaran biaya karyawan',
+                'administrasi karyawan',
+
+                'perbaikan kendaraan',
+                'report kondisi kendaraan',
+                'kontrol pengeluaran transportasi',
+
+                'feedback kebersihan dan kenyamanan',
+                'penyelesaian tugas harian',
+
+                'kepuasan client itsm',
+                'meningkatkan kepuasan dan loyalitas peserta/client',
+
+                'availability sistem internal kritis',
+                'ketepatan waktu penyelesaian fitur',
+                'mengukur kualitas aplikasi agar minim bug',
+
+                'konsistensi campaign digital',
+                'keberhasilan support memenuhi sla',
+                'kualitas layanan exam',
+
+                'kepuasan peserta pelatihan',
+                'upseling lanjutan materi',
+                'outstanding',
+
+                'akurasi kelengkapan data penjualan',
+                'persentase gap kompetensi tim terhadap standar skill'
+            ].map(route => route.toLowerCase());
+
+            const rupiahRoutes = [
+                'pemasukan kotor', 
+                'meningkatkan revenue perusahaan'
+            ].map(r => r.toLowerCase());
+
+            const angkaRoutes = [
+                'dorong inovasi pelayanan',
+                'inisiatif efisiensi keuangan',
+
+                'mengurangi manual work dan error',
+                'laporan analisis keuangan',
+
+                'efektifitas digital marketing',
+
+                'sertifikasi kompetensi internal',
+                'pelatihan kompetensi eksternal',
+                'pengembangan kurikulum pelatihan',
+                'peningkatan knowledge sharing',
+                'peningkatan kemampuan kompetensi sales',
+
+                'target penjualan tahunan',
+                'laporan mom',
+                'ketepatan waktu po',
+
+                'feedback kenyamanan berkendaran',
+
+                'penyelesaian tagihan perusahaan',
+                'akurasi pencatatan masuk',
+                'pencairan biaya operasional',
+
+                'inovation adaption rate'
+            ].map(route => route.toLowerCase());
+
             if (persenRoutes.includes(routeLower)) {
-                tipeTargetSelect.html(`
-                    <option disabled>-- Pilih Tipe --</option>
-                    <option disabled>Angka (Unit, Jumlah, dll)</option>
-                    <option disabled>Rupiah (Nilai Keuangan)</option>
-                    <option selected value="persen">Persen (%)</option>
-                `);
-            } else if (rupiahRoutes.includes(routeLower)) {
-                tipeTargetSelect.html(`
-                    <option disabled>-- Pilih Tipe --</option>
-                    <option disabled>Angka (Unit, Jumlah, dll)</option>
-                    <option selected value="rupiah">Rupiah (Nilai Keuangan)</option>
-                    <option disabled>Persen (%)</option>
-                `);
-            } else if (angkaRoutes.includes(routeLower)) {
-                tipeTargetSelect.html(`
-                    <option disabled>-- Pilih Tipe --</option>
-                    <option selected value="angka">Angka (Unit, Jumlah, dll)</option>
-                    <option disabled>Rupiah (Nilai Keuangan)</option>
-                    <option disabled>Persen (%)</option>
-                `);
+                $tipeTarget.html(`
+                    <option value="persen" selected>Persen (%)</option>
+                `).prop('disabled', true);
+            } 
+            else if (rupiahRoutes.includes(routeLower)) {
+                $tipeTarget.html(`
+                    <option value="rupiah" selected>Rupiah (Nilai Keuangan)</option>
+                `).prop('disabled', true);
+            } 
+            else if (angkaRoutes.includes(routeLower)) {
+                $tipeTarget.html(`
+                    <option value="angka" selected>Angka (Unit, Jumlah, dll)</option>
+                `).prop('disabled', true);
+            } 
+            else {
+                $tipeTarget.html(`
+                    <option selected disabled>-- Pilih Tipe --</option>
+                    <option value="angka">Angka (Unit, Jumlah, dll)</option>
+                    <option value="rupiah">Rupiah (Nilai Keuangan)</option>
+                    <option value="persen">Persen (%)</option>
+                `).prop('disabled', false);
             }
 
-            let isAutoFilled = false;
+            const autoFillValues = {
+                'sertifikasi kompetensi internal': $('#jabatan').val()?.length || 1,
+                'pelatihan kompetensi eksternal': $('#jabatan').val()?.length || 1,
+                'efektifitas digital marketing': 4,
+                'laporan analisis keuangan': 12,
+                'dorong inovasi pelayanan': 3,
+                'mengurangi manual work dan error': 2,
+                'inisiatif efisiensi keuangan': 2,
+                'pengembangan kurikulum pelatihan': 12,
+            };
 
-            if (routeLower === 'sertifikasi kompetensi internal' || 
-                routeLower === 'pelatihan kompetensi eksternal') {
-                const selectedJabatan = $('#jabatan').val();
-                const count = Array.isArray(selectedJabatan) ? selectedJabatan.length : (selectedJabatan ? 1 : 0);
-                nilaiTarget.val(count).trigger('input');
-                isAutoFilled = true;
-            } 
-            else if (routeLower === 'efektifitas digital marketing') {
-                nilaiTarget.val('4').trigger('input');
-                isAutoFilled = true;
-            } 
-            else if (routeLower === 'laporan analisis keuangan') {
-                nilaiTarget.val('12').trigger('input');
-                isAutoFilled = true;
-            } 
-            else if (routeLower === 'dorong inovasi pelayanan') {
-                nilaiTarget.val('3').trigger('input');
-                isAutoFilled = true;
-            } 
-            else if (routeLower === 'mengurangi manual work dan error') {
-                nilaiTarget.val('2').trigger('input');
-                isAutoFilled = true;
-            } 
-            else if (routeLower === 'inisiatif efisiensi keuangan') {
-                nilaiTarget.val('2').trigger('input');
-                isAutoFilled = true;
-            } 
-            else if (routeLower === 'pengembangan kurikulum pelatihan') {
-                nilaiTarget.val('12').trigger('input');
-                isAutoFilled = true;
-            } 
-            else if (routeLower === 'peningkatan knowledge sharing') {
-                const currentYear = new Date().getFullYear();
-                const weeks = (new Date(currentYear, 0, 1).getDay() === 4 || new Date(currentYear, 11, 31).getDay() === 4) ? 53 : 52;
-                nilaiTarget.val(weeks).trigger('input');
-                isAutoFilled = true;
+            if (autoFillValues.hasOwnProperty(routeLower)) {
+                $nilaiTarget.val(autoFillValues[routeLower]).trigger('input');
             }
 
-            nilaiTarget.prop('disabled', isAutoFilled);
-
-            tipeTargetSelect.trigger('change');
+            // 🔹 Trigger formatting jika nilai sudah terisi
+            if ($nilaiTarget.val()) {
+                $nilaiTarget.trigger('input');
+            }
         });
 
-        document.getElementById('manual_document').addEventListener('change', function (e) {
+        document.getElementById('manual_document').addEventListener('change', function(e) {
             const preview = document.getElementById('documentPreview');
             preview.innerHTML = '';
 
@@ -2413,7 +2524,7 @@
 
             if (fileType.startsWith('image/')) {
                 const reader = new FileReader();
-                reader.onload = function (event) {
+                reader.onload = function(event) {
                     const img = document.createElement('img');
                     img.src = event.target.result;
                     img.classList.add('img-fluid', 'rounded');
