@@ -291,7 +291,7 @@ class PengajuanLabdanSubsController extends Controller
         ]);
 
         $data = PengajuanLabSubs::with('karyawan')->findOrFail($id);
-        $jabatan = auth()->user()->jabatan;
+        $jabatan = auth()->user()->karyawan->jabatan;
 
         if ($jabatan === 'Finance & Accounting' && !in_array($request->approval, ['1', '2'])) {
             $status = $request->approval;

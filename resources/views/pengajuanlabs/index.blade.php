@@ -164,7 +164,29 @@
 
                     <div class="card m-4">
                         <div class="card-body table-responsive">
-                            <h3 class="card-title text-center my-1">Riwayat Selesai</h3>
+                            <h3 class="card-title text-center my-1">Data Permitaan Lab Existing</h3>
+                            <table class="table table-striped" id="pengajuanExistingTable">
+                                <thead>
+                                    <tr>
+                                        <th>Tanggal</th>
+                                        <th>Pengaju</th>
+                                        <th>Divisi</th>
+                                        <th>Jabatan</th>
+                                        <th>Kategori</th>
+                                        <th>Nama Lab</th>
+                                        <th>Status Akhir</th>
+                                        <th>RKM / Materi</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="card m-4">
+                        <div class="card-body table-responsive">
+                            <h3 class="card-title text-center my-1">Data Riwayat Pengajuan Selesai</h3>
                             <table class="table table-striped" id="pengajuanSelesaiTable">
                                 <thead>
                                     <tr>
@@ -312,6 +334,8 @@
                                                 <select class="form-select" name="mata_uang" id="edit_mata_uang">
                                                     <option value="Dollar">Dollar</option>
                                                     <option value="Rupiah">Rupiah</option>
+                                                    <option value="Euro">Euro</option>
+                                                    <option value="Poundsterling">Poundsterling</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -380,8 +404,7 @@
     const userId = {{ auth()->user()->karyawan->id ?? 'null' }};
 
     $(document).ready(function() {
-        loadPengajuan();
-        loadPengajuanSelesai();
+        loadAllTables();
 
         $('.calculate-harga').on('input', calculateEstimasiRupiah);
         $('#edit_mata_uang').on('change', calculateEstimasiRupiah);
@@ -409,49 +432,7 @@
         }
     }
 
-    // --- 1. LOAD PENGAJUAN AKTIF ---
-    function loadPengajuan() {
-        let month = $('#bulan').length ? $('#bulan').val() : (new Date().getMonth() + 1);
-        let year  = $('#tahun').length ? $('#tahun').val() : new Date().getFullYear();
-
-        $.ajax({
-            url: `/getPengajuanLabSubs/${month}/${year}`,
-            type: "GET",
-            beforeSend: function() {
-                $("#pengajuanLabSubsTable tbody").html('<tr><td colspan="9" class="text-center">Loading data...</td></tr>');
-            },
-            success: function(res) {
-                if (res.success && res.data.length > 0) {
-                    let rows = '';
-                    $.each(res.data, function(index, item) {
-                        let lastTrack = item.tracking.length > 0 ? item.tracking[item.tracking.length - 1].tracking : 'Belum Ada Tracking';
-
-                        if (lastTrack.includes('Selesai') || lastTrack.includes('Siap Digunakan')) return;
-
-                        rows += renderRow(item, lastTrack);
-                    });
-
-                    if(!rows) rows = '<tr><td colspan="9" class="text-center text-muted">Tidak ada pengajuan aktif.</td></tr>';
-
-                    $("#pengajuanLabSubsTable tbody").html(rows);
-
-                    if ($.fn.DataTable.isDataTable('#pengajuanLabSubsTable')) {
-                        $('#pengajuanLabSubsTable').DataTable().destroy();
-                    }
-                    $('#pengajuanLabSubsTable').DataTable({ "order": [[ 0, "desc" ]] });
-
-                } else {
-                    $("#pengajuanLabSubsTable tbody").html('<tr><td colspan="9" class="text-center text-muted">Data tidak ditemukan.</td></tr>');
-                }
-            },
-            error: function() {
-                $("#pengajuanLabSubsTable tbody").html('<tr><td colspan="9" class="text-center text-danger">Gagal memuat data.</td></tr>');
-            }
-        });
-    }
-
-    // --- 2. LOAD RIWAYAT SELESAI ---
-    function loadPengajuanSelesai() {
+    function loadAllTables() {
         let month = $('#bulan').length ? $('#bulan').val() : (new Date().getMonth() + 1);
         let year  = $('#tahun').length ? $('#tahun').val() : new Date().getFullYear();
 
@@ -459,25 +440,60 @@
             url: `/getPengajuanLabSubs/${month}/${year}`,
             type: "GET",
             success: function(res) {
-                if (res.success && res.data.length > 0) {
-                    let rows = '';
-                    $.each(res.data, function(index, item) {
-                        let lastTrack = item.tracking.length > 0 ? item.tracking[item.tracking.length - 1].tracking : '-';
+                if (res.success && res.data) {
+                    let rowsAktif = '';
+                    let rowsExisting = '';
+                    let rowsSelesai = '';
 
-                        if (lastTrack.includes('Selesai') || lastTrack.includes('Siap Digunakan')) {
-                            rows += renderRowSelesai(item, lastTrack);
+                    $.each(res.data, function(index, item) {
+                        // Amankan agar tidak error jika tracking kosong
+                        let trackTexts = (item.tracking || []).map(t => t.tracking || '');
+                        let lastTrack = trackTexts.length > 0 ? trackTexts[trackTexts.length - 1] : '';
+
+                        let isSelesai = lastTrack && (lastTrack.includes('Selesai') || lastTrack.includes('Siap Digunakan'));
+
+                        // Cek existing dengan aman (t && t.toLowerCase())
+                        let isExistingApproved = item.jenis_transaksi === 'existing' &&
+                                                 trackTexts.some(t => t && t.toLowerCase().includes('telah disetujui oleh koordinator itsm dan lihat akses nya di detail'));
+
+                        // DISTRIBUSI KE TABEL MASING-MASING
+                        if (isExistingApproved) {
+                            rowsExisting += renderRowSelesai(item, lastTrack);
+                        } else if (isSelesai) {
+                            rowsSelesai += renderRowSelesai(item, lastTrack);
+                        } else {
+                            rowsAktif += renderRow(item, lastTrack);
                         }
                     });
 
-                    if(!rows) rows = '<tr><td colspan="9" class="text-center text-muted">Belum ada riwayat selesai.</td></tr>';
+                    // Render Tabel 1 (Aktif)
+                    if ($.fn.DataTable.isDataTable('#pengajuanLabSubsTable')) $('#pengajuanLabSubsTable').DataTable().destroy();
+                    $("#pengajuanLabSubsTable tbody").html(rowsAktif);
+                    $('#pengajuanLabSubsTable').DataTable({
+                        "order": [[ 0, "desc" ]],
+                        "language": { "emptyTable": "Tidak ada pengajuan aktif saat ini." }
+                    });
 
-                    $("#pengajuanSelesaiTable tbody").html(rows);
+                    // Render Tabel 2 (Existing Disetujui)
+                    if ($.fn.DataTable.isDataTable('#pengajuanExistingTable')) $('#pengajuanExistingTable').DataTable().destroy();
+                    $("#pengajuanExistingTable tbody").html(rowsExisting);
+                    $('#pengajuanExistingTable').DataTable({
+                        "order": [[ 0, "desc" ]],
+                        "language": { "emptyTable": "Belum ada pengajuan existing yang disetujui." }
+                    });
 
-                    if ($.fn.DataTable.isDataTable('#pengajuanSelesaiTable')) {
-                        $('#pengajuanSelesaiTable').DataTable().destroy();
-                    }
-                    $('#pengajuanSelesaiTable').DataTable({ "order": [[ 0, "desc" ]] });
+                    // Render Tabel 3 (Selesai Baru)
+                    if ($.fn.DataTable.isDataTable('#pengajuanSelesaiTable')) $('#pengajuanSelesaiTable').DataTable().destroy();
+                    $("#pengajuanSelesaiTable tbody").html(rowsSelesai);
+                    $('#pengajuanSelesaiTable').DataTable({
+                        "order": [[ 0, "desc" ]],
+                        "language": { "emptyTable": "Belum ada riwayat selesai." }
+                    });
+
                 }
+            },
+            error: function() {
+                Swal.fire('Error', 'Gagal mengambil data dari server.', 'error');
             }
         });
     }
@@ -485,8 +501,8 @@
     // --- RENDER ROW ---
     function renderRow(item, status) {
         let kategori = item.jenis_transaksi === 'baru'
-            ? '<span class="badge bg-danger">Pengadaan Baru</span>'
-            : '<span class="badge bg-success">Existing Asset</span>';
+            ? '<span class="badge bg-info">Pengadaan Baru</span>'
+            : '<span class="badge bg-success">Lab Existing</span>';
 
         let labName = item.lab ? item.lab.nama_labs : '-';
         let rkmInfo = item.rkm ? `${item.rkm.materi?.nama_materi ?? '-'} <br><small class="text-muted">(${item.rkm.perusahaan?.nama_perusahaan ?? '-'})</small>` : '-';
@@ -510,14 +526,17 @@
     function renderRowSelesai(item, status) {
         let kategori = item.jenis_transaksi === 'baru' ? '<span class="badge bg-danger">Baru</span>' : '<span class="badge bg-success">Existing</span>';
         let labName = item.lab ? item.lab.nama_labs : '-';
-        let rkmInfo = item.rkm ? item.rkm.materi?.nama_materi : '-';
+        let rkmInfo = item.rkm ? (item.rkm.materi?.nama_materi ?? '-') : '-';
+
+        // Sembunyikan tombol upload invoice jika kategorinya existing
+        let invoiceBtn = item.jenis_transaksi === 'baru' ? invoiceAction(item.id, item.invoice, item) : '';
 
         let btns = `
             <div class="dropdown">
                 <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">Aksi</button>
                 <ul class="dropdown-menu shadow">
                     <li><button class="dropdown-item" onclick="viewDetail(${item.id})"><img src="{{ asset('icon/clipboard-primary.svg') }}" width="16" class="me-1"> Detail</button></li>
-                    ${invoiceAction(item.id, item.invoice, item)}
+                    ${invoiceBtn}
                 </ul>
             </div>`;
 
@@ -544,8 +563,8 @@
             <ul class="dropdown-menu shadow">
                 <li><button class="dropdown-item" onclick="viewDetail(${item.id})"><img src="{{ asset('icon/clipboard-primary.svg') }}" width="16" class="me-1"> Detail</button></li>`;
 
-        // Ubah string status ke huruf kecil untuk keamanan pencocokan (case-insensitive)
-        let statusLower = status.toLowerCase();
+        // Ubah string status ke huruf kecil untuk keamanan pencocokan, amankan jika status null
+        let statusLower = status ? status.toLowerCase() : '';
 
         if (isOwner && statusLower.includes('diajukan') && !statusLower.includes('ditolak')) {
             btns += `<li><button class="dropdown-item text-danger" onclick="deletePengajuan(${item.id})"><img src="{{ asset('icon/trash-danger.svg') }}" width="16" class="me-1"> Hapus</button></li>`;
@@ -553,7 +572,6 @@
 
         let canApprove = false;
 
-        // PERBAIKAN: Gunakan statusLower untuk mencocokkan teks
         if (userRole === 'Education Manager' && statusLower.includes('ditinjau oleh education manager')) {
             canApprove = true;
         }
@@ -585,7 +603,6 @@
                 'selesai'
             ];
 
-            // PERBAIKAN: Cek menggunakan statusLower
             if (financeStatuses.some(finStatus => statusLower.includes(finStatus))) {
                  btns += `<li><button class="dropdown-item text-warning" onclick="openApproveRejectModal(${item.id}, 'finance-update')"><img src="{{ asset('icon/edit-warning.svg') }}" width="16" class="me-1"> Update Pencairan</button></li>`;
              }
