@@ -76,6 +76,7 @@ use App\Http\Controllers\LaporanHarianSalesController;
 use App\Http\Controllers\WebhookController;
 use App\Http\Controllers\IdeInovasiController;
 use App\Http\Controllers\office\TagihanPerusahaanController;
+use App\Http\Controllers\JurnalAkuntansiController;
 
 /*
 |--------------------------------------------------------------------------
@@ -1002,7 +1003,6 @@ Route::prefix('office')
             Route::post('kategori/update', [DaftarTugasController::class, 'updateKategori'])->name('updateKategori');
             Route::post('kategori/hapus', [DaftarTugasController::class, 'deleteKategori'])->name('deleteKategori');
         });
-    });
 
 Route::prefix('/catering')
     ->name('catering.')
@@ -1213,3 +1213,11 @@ Route::get('/internal/open-tickets', [TicketController::class, 'getOpenTickets']
 Route::get('/colaborator/data', [colaboratorController::class, 'getData'])->name('colaborator.data');
 
 Route::resource('ide-inovasi', IdeInovasiController::class)->only(['index', 'store', 'update', 'destroy']);
+
+Route::get('/jurnalakuntansi', [JurnalAkuntansiController::class, 'index'])->name('jurnalakuntansi.index');
+Route::get('/jurnalakuntansi/data', [JurnalAkuntansiController::class, 'getData'])->name('getJurnalAkuntansi');
+Route::get('/jurnalakuntansi/belum-jurnal', [JurnalAkuntansiController::class, 'getBelumJurnal'])->name('jurnalakuntansi.belumJurnal');
+Route::post('/jurnalakuntansi/store-manual/{id}', [JurnalAkuntansiController::class, 'storeManual'])->name('jurnalakuntansi.storeManual');
+Route::get('/jurnalakuntansi/{id}/edit', [JurnalAkuntansiController::class, 'edit'])->name('jurnalakuntansi.edit');
+Route::put('/jurnalakuntansi/{id}', [JurnalAkuntansiController::class, 'update'])->name('jurnalakuntansi.update');
+Route::post('/jurnalakuntansi/petty-cash', [JurnalAkuntansiController::class, 'storePettyCash'])->name('jurnalakuntansi.storePettyCash');

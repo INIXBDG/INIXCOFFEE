@@ -70,6 +70,23 @@
                 </div>
             </div>
         </div>
+        <div class="modal fade" id="detailPerubahanModal" tabindex="-1" aria-labelledby="detailPerubahanModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="detailPerubahanModalLabel">Detail Perubahan Data Barang</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="detailPerubahanContent">
+                            </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                    </div>
+                </div>
+            </div>
+        </div>
         <!-- Detail Pengajuan Barang -->
         <div class="row justify-content-center">
             <div class="col-md-12">
@@ -231,7 +248,7 @@
                                                 </thead>
                                                 <tbody>
                                                     @foreach ($tracking as $item)
-                                                        <tr>
+                                                        <tr class="tracking-row" style="cursor: pointer;" data-detail="{{ json_encode($item->detail_perubahan) }}" title="Klik untuk melihat detail perubahan">
                                                             <td data-label="No">{{ $loop->iteration }}</td>
                                                             <td data-label="Tanggal">
                                                                 {{ \Carbon\Carbon::parse($item->tanggal)->translatedFormat('d F Y H:i:s') }}
@@ -477,6 +494,60 @@
 
             $(document).on('click', '.removeItemButton', function() {
                 $(this).closest('.item').remove();
+            });
+
+            // Event listener untuk klik pada baris tabel tracking
+            $('.tracking-row').on('click', function() {
+                var detailData = $(this).data('detail');
+                var detailHtml = '';
+
+                // Memeriksa validitas data detail_perubahan
+                if (detailData && detailData.length > 0) {
+                    detailHtml += '<ul class="list-group">';
+                    
+                    detailData.forEach(function(change) {
+                        detailHtml += '<li class="list-group-item">';
+                        detailHtml += '<h6 class="mb-1"><strong>Aksi: </strong> <span class="badge bg-info text-dark">' + change.aksi + '</span></h6>';
+                        
+                        if (change.aksi === 'Tambah' || change.aksi === 'Hapus') {
+                            detailHtml += '<div class="ms-3">';
+                            detailHtml += '<span><strong>Nama Barang:</strong> ' + change.nama_barang + '</span><br>';
+                            detailHtml += '<span><strong>Kuantitas:</strong> ' + change.qty + '</span><br>';
+                            detailHtml += '<span><strong>Harga:</strong> Rp. ' + change.harga + '</span>';
+                            detailHtml += '</div>';
+                        } else if (change.aksi === 'Ubah') {
+                            detailHtml += '<div class="ms-3">';
+                            detailHtml += '<span><strong>Referensi Barang:</strong> ' + change.nama_barang_referensi + '</span><br><br>';
+                            
+                            detailHtml += '<table class="table table-sm table-bordered">';
+                            detailHtml += '<thead class="table-light"><tr><th>Atribut</th><th>Data Lama</th><th>Data Baru</th></tr></thead><tbody>';
+                            
+                            if (change.perubahan.nama_barang) {
+                                detailHtml += '<tr><td>Nama Barang</td><td>' + change.perubahan.nama_barang.lama + '</td><td>' + change.perubahan.nama_barang.baru + '</td></tr>';
+                            }
+                            if (change.perubahan.qty) {
+                                detailHtml += '<tr><td>Kuantitas (Qty)</td><td>' + change.perubahan.qty.lama + '</td><td>' + change.perubahan.qty.baru + '</td></tr>';
+                            }
+                            if (change.perubahan.harga) {
+                                detailHtml += '<tr><td>Harga</td><td>Rp. ' + change.perubahan.harga.lama + '</td><td>Rp. ' + change.perubahan.harga.baru + '</td></tr>';
+                            }
+                            
+                            detailHtml += '</tbody></table>';
+                            detailHtml += '</div>';
+                        }
+                        
+                        detailHtml += '</li>';
+                    });
+                    
+                    detailHtml += '</ul>';
+                } else {
+                    // Tampilan standar jika tidak ada data array JSON perubahan
+                    detailHtml = '<div class="alert alert-secondary" role="alert">Tidak ada rincian perubahan spesifik pada log ini.</div>';
+                }
+
+                // Injeksi HTML ke dalam DOM Modal dan eksekusi instruksi tampil
+                $('#detailPerubahanContent').html(detailHtml);
+                $('#detailPerubahanModal').modal('show');
             });
         });
 
