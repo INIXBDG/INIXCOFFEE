@@ -2336,6 +2336,7 @@
                 else if (hasSales) {
                     options += `
                         <option value="target penjualan tahunan">Target Penjualan Tahunan</option>
+                        <option value="biaya akuisisi perclient">Biaya Akuisisi Perclient</option>
                     `;
                 }
 
@@ -2397,6 +2398,7 @@
                 'pemasukan bersih',
                 'kepuasan pelanggan',
                 'rasio biaya operasional terhadap revenue',
+                'biaya akuisisi perclient'
 
                 'performa kpi departemen',
                 'peserta puas dengan pelayanan dan fasilitas training',
