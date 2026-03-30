@@ -77,6 +77,8 @@ use App\Http\Controllers\WebhookController;
 use App\Http\Controllers\IdeInovasiController;
 use App\Http\Controllers\office\TagihanPerusahaanController;
 use App\Http\Controllers\JurnalAkuntansiController;
+use App\Http\Controllers\ProjectAdministrationController;
+use App\Http\Controllers\ProjectKanbanController;
 
 /*
 |--------------------------------------------------------------------------
@@ -1221,3 +1223,14 @@ Route::post('/jurnalakuntansi/store-manual/{id}', [JurnalAkuntansiController::cl
 Route::get('/jurnalakuntansi/{id}/edit', [JurnalAkuntansiController::class, 'edit'])->name('jurnalakuntansi.edit');
 Route::put('/jurnalakuntansi/{id}', [JurnalAkuntansiController::class, 'update'])->name('jurnalakuntansi.update');
 Route::post('/jurnalakuntansi/petty-cash', [JurnalAkuntansiController::class, 'storePettyCash'])->name('jurnalakuntansi.storePettyCash');
+Route::middleware(['auth'])->group(function () {
+    // Route Administrasi Project
+    // Route::post('/projects/{project}/administrasi', [ProjectAdministrationController::class, 'updateStage'])
+    //     ->name('projects.administrasi.update');
+    Route::get('/projects/administrasi/get-data', [ProjectAdministrationController::class, 'getAdministrasi'])->name('getAdministrasi');
+    Route::resource('/projects/administrasi', ProjectAdministrationController::class);
+    
+    // Route Kanban Project
+    Route::patch('/tasks/{task}/status', [ProjectKanbanController::class, 'updateStatus'])
+        ->name('tasks.status.update');
+});
