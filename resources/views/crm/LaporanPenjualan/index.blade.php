@@ -145,7 +145,7 @@
                     </div>
 
                     <!-- SUMMARY WIN -->
-                    <div id="summaryWin" class="mt-4 p-3 rounded d-none">
+                    <div id="summaryWin" class="mt-4 p-3 rounded d-none" style="border: 1px solid #e3e6f0; background-color: #f8f9fc;">
                         <h6 class="fw-bold text-success">Ringkasan Win</h6>
                         <div class="row text-center">
                             <div class="col-md-3">
@@ -153,7 +153,7 @@
                                 <p class="fw-bold text-primary mb-0" id="winHargaJual">Rp 0</p>
                             </div>
                             <div class="col-md-3">
-                                <small class="text-muted">Total P</small>
+                                <small class="text-muted">Total PA (Actual CAC)</small>
                                 <p class="fw-bold text-warning mb-0" id="winNetSales">Rp 0</p>
                             </div>
                             <div class="col-md-3">
@@ -163,6 +163,22 @@
                             <div class="col-md-3">
                                 <small class="text-muted">Grand Total</small>
                                 <p class="fw-bold text-success mb-0" id="winGrandTotal">Rp 0</p>
+                            </div>
+                        </div>
+
+                        <hr class="my-2">
+                        <div class="row text-center mt-2">
+                            <div class="col-md-4">
+                                <small class="text-muted">Target Budget CAC (10%)</small>
+                                <p class="fw-bold mb-0" id="winTargetCAC">Rp 0</p>
+                            </div>
+                            <div class="col-md-4">
+                                <small class="text-muted">Selisih Budget</small>
+                                <p class="fw-bold mb-0" id="winSelisihCAC">Rp 0</p>
+                            </div>
+                            <div class="col-md-4">
+                                <small class="text-muted">Status Efisiensi</small>
+                                <div id="winStatusEfisiensi" class="fw-bold">-</div>
                             </div>
                         </div>
                     </div>
@@ -452,6 +468,30 @@
                                     0));
                                 $(`#${prefix}GrandTotal`).text(formatRupiah(summary
                                     .total_grand || 0));
+
+                                if (summary.target_cac_periode) {
+                                    // Tampilkan Target & Selisih
+                                    $(`#${prefix}TargetCAC`).text(formatRupiah(summary.target_cac_periode));
+                                    
+                                    let selisih = summary.selisih_cac;
+                                    let textSelisih = formatRupiah(Math.abs(selisih));
+                                    
+                                    $(`#${prefix}SelisihCAC`)
+                                        .text((selisih >= 0 ? '+ ' : '- ') + textSelisih)
+                                        .removeClass('text-success text-danger')
+                                        .addClass(selisih >= 0 ? 'text-success' : 'text-danger');
+
+                                    // Update Badge Status Efisiensi
+                                    let statusEl = $(`#${prefix}StatusEfisiensi`);
+                                    if (summary.is_overbudget) {
+                                        statusEl.html(`<span class="badge bg-danger">Overbudget (${summary.persentase_pemakaian}%)</span>`);
+                                        $(`#${prefix}NetSales`).removeClass('text-warning').addClass('text-danger');
+                                    } else {
+                                        statusEl.html(`<span class="badge bg-success">Efisien (${summary.persentase_pemakaian}%)</span>`);
+                                        $(`#${prefix}NetSales`).removeClass('text-danger').addClass('text-warning');
+                                    }
+                                }
+
                                 $(summaryId).removeClass('d-none');
 
                                 // Row Click
