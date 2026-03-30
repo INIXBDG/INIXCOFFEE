@@ -2224,6 +2224,7 @@
                 //Instruktur
                 else if (hasInstruktur) {
                     options += `
+                            <option value="presentase kinerja instruktur">Presentase Kinerja Instruktur</option>
                             <option value="kepuasan peserta pelatihan">Kepuasan Peserta Pelatihan</option>
                             <option value="upseling lanjutan materi">Upseling Lanjutan Materi</option>
                             <option value="sertifikasi kompetensi internal">Peningkatan Kompetensi Instruktur - Sertifikasi Internal</option>
@@ -2236,6 +2237,7 @@
                     options += `
                             <option value="pengembangan kurikulum pelatihan">Pengembangan Kurikulum & Modul Pelatihan</option>
                             <option value="peningkatan knowledge sharing">Peningkatan Knowledge Sharing</option>
+                            <option value="peningkatan kontribusi pelatihan">Peningkatan Kontribusi Pelatihan</option>
                         `;
                 }
 
@@ -2289,31 +2291,70 @@
 
         $('#assistant_route').on('change', function () {
             const selectedRoute = $(this).val();
-            const tipeTargetSelect = $('#tipeTarget');
-            const nilaiTarget = $('#nilaiTarget');
+            const $tipeTarget = $('#tipeTarget');
+            const $nilaiTarget = $('#nilaiTarget');
 
             if (!selectedRoute) {
-                tipeTargetSelect.prop('disabled', true).html(
-                    '<option selected disabled>-- Pilih Assistant Route --</option>');
-                nilaiTarget.prop('disabled', true).val('');
+                $tipeTarget
+                    .removeClass('select-readonly')
+                    .html(`
+                        <option selected disabled>-- Silahkan Memilih Assistant Route --</option>
+                    `)
+                    .prop('disabled', false);
+                $nilaiTarget.prop('disabled', false).val('').trigger('input');
                 return;
             }
 
-            tipeTargetSelect.prop('disabled', false);
-            nilaiTarget.prop('disabled', false); 
+
+            const routeLower = selectedRoute.toLowerCase();
 
             const persenRoutes = [
-                'pemasukan bersih', 'kepuasan pelanggan', 'rasio biaya operasional terhadap revenue',
-                'performa kpi departemen', 'peserta puas dengan pelayanan dan fasilitas training',
-                'penanganan komplain peserta', 'report persiapan kelas', 'banyak tagihan client yang belum lunas',
-                'pelaksanaan kegiatan karyawan', 'pengeluaran biaya karyawan', 'administrasi karyawan',
-                'perbaikan kendaraan', 'report kondisi kendaraan', 'kontrol pengeluaran transportasi',
-                'feedback kebersihan dan kenyamanan', 'penyelesaian tugas harian',
-                'kepuasan client itsm', 'meningkatkan kepuasan dan loyalitas peserta/client',
-                'availability sistem internal kritis', 'ketepatan waktu penyelesaian fitur',
-                'mengukur kualitas aplikasi agar minim bug', 'konsistensi campaign digital',
-                'keberhasilan support memenuhi sla', 'kualitas layanan exam',
-                'kepuasan peserta pelatihan', 'upseling lanjutan materi', 'outstanding'
+                'pemasukan bersih',
+                'kepuasan pelanggan',
+                'rasio biaya operasional terhadap revenue',
+
+                'performa kpi departemen',
+                'peserta puas dengan pelayanan dan fasilitas training',
+                'penanganan komplain peserta',
+                'report persiapan kelas',
+
+                'banyak tagihan client yang belum lunas',
+
+                'pelaksanaan kegiatan karyawan',
+                'pengeluaran biaya karyawan',
+                'administrasi karyawan',
+
+                'perbaikan kendaraan',
+                'report kondisi kendaraan',
+                'kontrol pengeluaran transportasi',
+
+                'feedback kebersihan dan kenyamanan',
+                'penyelesaian tugas harian',
+
+                'kepuasan client itsm',
+                'meningkatkan kepuasan dan loyalitas peserta/client',
+
+                'availability sistem internal kritis',
+                'ketepatan waktu penyelesaian fitur',
+                'mengukur kualitas aplikasi agar minim bug',
+
+                'konsistensi campaign digital',
+                'keberhasilan support memenuhi sla',
+                'kualitas layanan exam',
+
+                'kepuasan peserta pelatihan',
+                'upseling lanjutan materi',
+                'outstanding',
+
+                'akurasi kelengkapan data penjualan',
+                'persentase gap kompetensi tim terhadap standar skill',
+                'presentase kinerja instruktur',
+                'peningkatan kontribusi pelatihan'
+            ].map(route => route.toLowerCase());
+
+            const rupiahRoutes = [
+                'pemasukan kotor',
+                'meningkatkan revenue perusahaan'
             ].map(r => r.toLowerCase());
 
             const rupiahRoutes = ['pemasukan kotor'].map(r => r.toLowerCase());
@@ -2356,42 +2397,40 @@
 
             let isAutoFilled = false;
 
-            if (routeLower === 'sertifikasi kompetensi internal' || 
-                routeLower === 'pelatihan kompetensi eksternal') {
-                const selectedJabatan = $('#jabatan').val();
-                const count = Array.isArray(selectedJabatan) ? selectedJabatan.length : (selectedJabatan ? 1 : 0);
-                nilaiTarget.val(count).trigger('input');
-                isAutoFilled = true;
-            } 
-            else if (routeLower === 'efektifitas digital marketing') {
-                nilaiTarget.val('4').trigger('input');
-                isAutoFilled = true;
-            } 
-            else if (routeLower === 'laporan analisis keuangan') {
-                nilaiTarget.val('12').trigger('input');
-                isAutoFilled = true;
-            } 
-            else if (routeLower === 'dorong inovasi pelayanan') {
-                nilaiTarget.val('3').trigger('input');
-                isAutoFilled = true;
-            } 
-            else if (routeLower === 'mengurangi manual work dan error') {
-                nilaiTarget.val('2').trigger('input');
-                isAutoFilled = true;
-            } 
-            else if (routeLower === 'inisiatif efisiensi keuangan') {
-                nilaiTarget.val('2').trigger('input');
-                isAutoFilled = true;
-            } 
-            else if (routeLower === 'pengembangan kurikulum pelatihan') {
-                nilaiTarget.val('12').trigger('input');
-                isAutoFilled = true;
-            } 
-            else if (routeLower === 'peningkatan knowledge sharing') {
-                const currentYear = new Date().getFullYear();
-                const weeks = (new Date(currentYear, 0, 1).getDay() === 4 || new Date(currentYear, 11, 31).getDay() === 4) ? 53 : 52;
-                nilaiTarget.val(weeks).trigger('input');
-                isAutoFilled = true;
+            if (persenRoutes.includes(routeLower)) {
+                $tipeTarget
+                    .html(`
+                        <option disabled>Angka (Unit, Jumlah, dll)</option>
+                        <option disabled>Rupiah (Nilai Keuangan)</option>
+                        <option value="persen" selected>Persen (%)</option>
+                    `)
+                    .addClass('select-readonly')
+                    .prop('disabled', false); 
+            } else if (rupiahRoutes.includes(routeLower)) {
+                $tipeTarget
+                    .html(`
+                        <option disabled>Angka (Unit, Jumlah, dll)</option>
+                        <option value="rupiah" selected>Rupiah (Nilai Keuangan)</option>
+                        <option disabled>Persen (%)</option>
+                    `)
+                    .addClass('select-readonly')
+                    .prop('disabled', false);
+            } else if (angkaRoutes.includes(routeLower)) {
+                $tipeTarget
+                    .html(`
+                        <option value="angka" selected>Angka (Unit, Jumlah, dll)</option>
+                        <option disabled>Rupiah (Nilai Keuangan)</option>
+                        <option disabled>Persen (%)</option>
+                    `)
+                    .addClass('select-readonly')
+                    .prop('disabled', false);
+            } else {
+                $tipeTarget
+                    .html(`
+                        <option selected disabled>-- Route Tidak Dikenali --</option>
+                    `)
+                    .removeClass('select-readonly') 
+                    .prop('disabled', false);
             }
 
             nilaiTarget.prop('disabled', isAutoFilled);
