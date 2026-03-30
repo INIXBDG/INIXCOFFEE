@@ -138,9 +138,9 @@
                                     <p class="mt-2 text-muted">Loading data...</p>
                                 </div>
                             </div>
-                            <button class="btn btn-outline-primary btn-sm w-100">
+                            {{-- <button class="btn btn-outline-primary btn-sm w-100">
                                 <i class="fa-solid fa-message me-1"></i> Jadwalkan Coaching
-                            </button>
+                            </button> --}}
                         </div>
                     </div>
                 </div>
