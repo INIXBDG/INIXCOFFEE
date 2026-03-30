@@ -2336,7 +2336,6 @@
                 else if (hasSales) {
                     options += `
                         <option value="target penjualan tahunan">Target Penjualan Tahunan</option>
-                        <option value="biaya akuisisi perclient">Biaya Akuisisi Perclient</option>
                     `;
                 }
 
@@ -2344,6 +2343,7 @@
                 else if (hasSPVSales) {
                     options += `
                         <option value="meningkatkan revenue perusahaan">Meningkatkan Revenue Perusahaan</option>
+                        <option value="biaya akuisisi perclient">Biaya Akuisisi Perclient</option>
                     `;
                 }
 
