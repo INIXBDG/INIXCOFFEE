@@ -2343,7 +2343,7 @@
                 else if (hasSPVSales) {
                     options += `
                         <option value="meningkatkan revenue perusahaan">Meningkatkan Revenue Perusahaan</option>
-                        <option value="biaya akuisisi perclient">Biaya Akuisisi Perclient</option>
+                        <option value="customer acquisition cost">Customer Acquisition Cost</option>
                     `;
                 }
 
@@ -2361,6 +2361,7 @@
                         <option value="ketepatan waktu po">Ketepatan Waktu PO</option>
                     `;
                 }
+
 
 
                 //end/selesai
@@ -2398,7 +2399,7 @@
                 'pemasukan bersih',
                 'kepuasan pelanggan',
                 'rasio biaya operasional terhadap revenue',
-                'biaya akuisisi perclient'
+                'customer acquisition cost',
 
                 'performa kpi departemen',
                 'peserta puas dengan pelayanan dan fasilitas training',
