@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\WebPushService;
 use App\Models\PushSubscription;
+use App\Models\JurnalAkuntansi;
+use App\Models\HistoriPerubahanBarang;
 
 class PengajuanBarangController extends Controller
 {
@@ -338,6 +340,27 @@ class PengajuanBarangController extends Controller
                     $data->update([
                         'id_tracking' => $e2->id,
                     ]);
+
+                    $totalPengeluaran = 0;
+                    foreach ($detail as $item) {
+                        $qtyValue = (int) $item->qty;
+                        $harga = explode('.', $item->harga);
+                        $hargaValue = (float) $harga[0];
+                        $totalPengeluaran += ($qtyValue * $hargaValue);
+                    }
+
+                    // Cek apakah jurnal untuk pengajuan ini sudah ada agar tidak duplikat
+                    $jurnalExist = JurnalAkuntansi::where('id_pengajuan_barang', $id)->first();
+                    if (!$jurnalExist) {
+                        JurnalAkuntansi::create([
+                            'id_pengajuan_barang' => $id,
+                            'tanggal_transaksi' => now(),
+                            'keterangan' => 'Pengeluaran untuk Pengajuan Barang ID: ' . $id . ' (' . $data->tipe . ')',
+                            'debit' => $totalPengeluaran,
+                            'kredit' => 0,
+                        ]);
+                    }
+
                     $to = $data->karyawan->nama_lengkap;
                     $path = '/pengajuanbarang';
                     $type = 'Pengajuan selesai diproses';
@@ -577,22 +600,27 @@ class PengajuanBarangController extends Controller
 
     public function updateBarang(Request $request, $id)
     {
-        // return $request->all();
-        // Mengambil data pengajuan barang
         $data = PengajuanBarang::with('karyawan')->findOrFail($id);
-        $tracking = tracking_pengajuan_barang::where('id_pengajuan_barang', $id)->latest()->first();
         $totalHarga = 0;
-        $jabatan = auth()->user()->jabatan;
+        $detailPerubahan = [];
 
         if ($request->has('deletedatabarang')) {
             foreach ($request->deletedatabarang as $deletedId) {
-                // Hapus detail barang dari database
-                detailPengajuanBarang::where('id', $deletedId)->delete();
+                $deletedItem = detailPengajuanBarang::find($deletedId);
+                if ($deletedItem) {
+                    $detailPerubahan[] = [
+                        'aksi' => 'Hapus',
+                        'nama_barang' => $deletedItem->nama_barang,
+                        'qty' => $deletedItem->qty,
+                        'harga' => $deletedItem->harga,
+                    ];
+                    $deletedItem->delete();
+                }
             }
         }
+
         if ($request->has('id_pengajuan_barang')) {
             foreach ($request->id_detail_pengajuan as $index => $detailId) {
-                // Jika id_detail_pengajuan adalah null, masukkan data baru
                 if (is_null($detailId)) {
                     detailPengajuanBarang::create([
                         'id_pengajuan_barang' => $request->id_pengajuan_barang[$index],
@@ -601,9 +629,40 @@ class PengajuanBarangController extends Controller
                         'harga' => $request->harga[$index],
                         'keterangan' => $request->keterangan[$index],
                     ]);
+
+                    $detailPerubahan[] = [
+                        'aksi' => 'Tambah',
+                        'nama_barang' => $request->nama_barang[$index],
+                        'qty' => $request->qty[$index],
+                        'harga' => $request->harga[$index],
+                    ];
                 } else {
-                    // Jika id_detail_pengajuan tidak null, update data yang ada
                     $detail = detailPengajuanBarang::findOrFail($detailId);
+                    
+                    $isChanged = false;
+                    $perubahanItem = [];
+
+                    if ($detail->nama_barang != $request->nama_barang[$index]) {
+                        $isChanged = true;
+                        $perubahanItem['nama_barang'] = ['lama' => $detail->nama_barang, 'baru' => $request->nama_barang[$index]];
+                    }
+                    if ($detail->qty != $request->qty[$index]) {
+                        $isChanged = true;
+                        $perubahanItem['qty'] = ['lama' => $detail->qty, 'baru' => $request->qty[$index]];
+                    }
+                    if ($detail->harga != $request->harga[$index]) {
+                        $isChanged = true;
+                        $perubahanItem['harga'] = ['lama' => $detail->harga, 'baru' => $request->harga[$index]];
+                    }
+
+                    if ($isChanged) {
+                        $detailPerubahan[] = [
+                            'aksi' => 'Ubah',
+                            'nama_barang_referensi' => $detail->nama_barang,
+                            'perubahan' => $perubahanItem,
+                        ];
+                    }
+
                     $detail->update([
                         'id_pengajuan_barang' => $request->id_pengajuan_barang[$index],
                         'nama_barang' => $request->nama_barang[$index],
@@ -613,18 +672,19 @@ class PengajuanBarangController extends Controller
                     ]);
                 }
 
-                // Hitung total harga
                 $totalHarga += $request->qty[$index] * $request->harga[$index];
             }
         }
-        $status = 'Terjadi perubahan data Barang';
-        $e = tracking_pengajuan_barang::create([
-            'id_pengajuan_barang' => $id,
-            'tracking' => $status,
-            'tanggal' => now(),
-        ]);
 
-        // Redirect setelah pembaruan
+        if (!empty($detailPerubahan)) {
+            tracking_pengajuan_barang::create([
+                'id_pengajuan_barang' => $id,
+                'tracking' => 'Terjadi perubahan data barang',
+                'detail_perubahan' => $detailPerubahan,
+                'tanggal' => now(),
+            ]);
+        }
+
         return redirect()->route('pengajuanbarang.show', $id)->with('success', 'Data Berhasil diperbarui.');
     }
 
