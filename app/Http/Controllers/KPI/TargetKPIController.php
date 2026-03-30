@@ -52,6 +52,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
 use Exception;
+use Illuminate\Support\Facades\Auth;
 
 class TargetKPIController extends Controller
 {
@@ -782,6 +783,10 @@ class TargetKPIController extends Controller
         // SPV Sales
         elseif ($item->asistant_route === 'meningkatkan revenue perusahaan') {
             $progress = $this->calculateMeningkatkanRevenuePerusahaan($item, $personId);
+        }
+
+        elseif ($item->asistant_route === 'biaya akuisisi client') {
+            $progress = $this->calculateBiayaAkuisisiClient($item, $personId);
         }
 
         // Admin
@@ -3200,6 +3205,7 @@ class TargetKPIController extends Controller
         return round($progress, 1);
     }
 
+    // SPV Saless
     private function calculateMeningkatkanRevenuePerusahaan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
@@ -3242,6 +3248,62 @@ class TargetKPIController extends Controller
             $progress += $bersih;
         }
 
+        return round($progress, 1);
+    }
+
+    private function calculateBiayaAkuisisiClient($item, $personId)
+    {
+        $detail = $item->detailTargetKPI->first();
+
+        if (!$detail) {
+            return 0.0;
+        }
+
+        $tahun = (int) $detail->detail_jangka;
+        $nilaiTarget = (float) $detail->nilai_target; 
+
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            return 0.0;
+        }
+
+        $peluang = Peluang::with('rkm.perhitunganNetSales')
+            ->whereYear('created_at', $tahun)
+            ->get();
+
+        // dd($peluang->toArray());
+        $actualCAC = 0;
+        $targetTahunan = $this->calculatePemasukanKotor($item, $personId); // 9M
+
+        foreach ($peluang as $p) {
+            if ($p->tahap === 'merah') {
+                if ($p->rkm->perhitunganNetSales) {
+                    foreach ($p->rkm->perhitunganNetSales as $perhitungan) {
+                        $actualCAC +=
+                            ($perhitungan->transportasi ?? 0) +
+                            ($perhitungan->akomodasi_peserta ?? 0) +
+                            ($perhitungan->akomodasi_tim ?? 0) +
+                            ($perhitungan->fresh_money ?? 0) +
+                            ($perhitungan->entertaint ?? 0) +
+                            ($perhitungan->souvenir ?? 0) +
+                            ($perhitungan->cashback ?? 0) +
+                            ($perhitungan->sewa_laptop ?? 0);
+                    }
+                }
+            }
+        }
+
+        if ($actualCAC <= 0) {
+            return 0.0;
+        }
+
+        $maxCAC = ($nilaiTarget / 100) * $targetTahunan;
+
+        if ($maxCAC <= 0) {
+            return 0.0;
+        }
+
+        $progress = min(($maxCAC / $actualCAC) * 100, 100);
+        
         return round($progress, 1);
     }
 
@@ -3734,6 +3796,10 @@ class TargetKPIController extends Controller
         // SPV Sales
         elseif ($itemDetail->asistant_route === 'meningkatkan revenue perusahaan') {
             return $this->calculateMeningkatkanRevenuePerusahaanDetail($itemDetail);
+        }
+
+        elseif ($itemDetail->asistant_route === 'biaya akuisisi client') {
+            return $this->calculateBiayaAkuisisiClientDetail($itemDetail);
         }
 
         // ADM Sales
@@ -9526,6 +9592,113 @@ class TargetKPIController extends Controller
             'progress' => $progress,
             'gap' => $gap,
             'pie_chart' => ['above' => 0, 'below' => 0],
+            'monthly_data' => $monthlyData,
+            'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
+        ];
+    }
+
+    private function calculateBiayaAkuisisiClientDetail($itemDetail)
+    {
+        $details = $itemDetail->detailTargetKPI;
+        $detail = $details->first();
+        $nilaiTarget = (float) ($detail->nilai_target ?? 0);
+        $item = $itemDetail;
+        $personId = Auth::user()->id;
+
+        if (!$detail || $nilaiTarget <= 0) {
+            return [
+                'progress' => 0,
+                'gap' => 0,
+                'pie_chart' => ['above' => 0, 'below' => 0],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+            ];
+        }
+
+        $tahun = (int) $detail->detail_jangka;
+        $persentaseTarget = (float) $detail->nilai_target; 
+        $targetTahunanUnit = $this->calculatePemasukanKotor($item, $personId); // Basis 9 Miliar
+
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            return [
+                'progress' => 0,
+                'gap' => 0,
+                'pie_chart' => ['above' => 0, 'below' => 0],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+            ];
+        }
+
+        $peluangs = Peluang::with('rkm.perhitunganNetSales')
+            ->whereYear('created_at', $tahun)
+            ->get();
+
+        $actualCAC = 0;
+        $dailyBreakdownPerMonth = [];
+        
+        $maxCAC = ($persentaseTarget / 100) * $targetTahunanUnit;
+
+        foreach ($peluangs as $p) {
+            if ($p->tahap !== 'merah') {
+                continue;
+            }
+
+            $totalBiayaPeluang = 0;
+            if ($p->rkm && $p->rkm->perhitunganNetSales) {
+                foreach ($p->rkm->perhitunganNetSales as $perhitungan) {
+                    $totalBiayaPeluang += ($perhitungan->transportasi ?? 0)
+                        + ($perhitungan->akomodasi_peserta ?? 0)
+                        + ($perhitungan->akomodasi_tim ?? 0)
+                        + ($perhitungan->fresh_money ?? 0)
+                        + ($perhitungan->entertaint ?? 0)
+                        + ($perhitungan->souvenir ?? 0)
+                        + ($perhitungan->cashback ?? 0)
+                        + ($perhitungan->sewa_laptop ?? 0);
+                }
+            }
+
+            $actualCAC += $totalBiayaPeluang;
+
+            $date = \Carbon\Carbon::parse($p->created_at);
+            $dateKey = $date->format('Y-m-d');
+            $monthKey = $date->format('Y-m');
+
+            if (!isset($dailyBreakdownPerMonth[$monthKey][$dateKey])) {
+                $dailyBreakdownPerMonth[$monthKey][$dateKey] = 0;
+            }
+            $dailyBreakdownPerMonth[$monthKey][$dateKey] += $totalBiayaPeluang;
+        }
+
+        // Hitung Progress (Persentase Efisiensi)
+        $progress = 0;
+        if ($actualCAC > 0) {
+            $progress = min(($maxCAC / $actualCAC) * 100, 100);
+        }
+
+        // Hitung rata-rata pengeluaran bulanan berdasarkan data yang ada
+        $monthlyData = [];
+        foreach ($dailyBreakdownPerMonth as $month => $days) {
+            $monthlyData[$month] = round(array_sum($days) / count($days), 1);
+        }
+
+        ksort($monthlyData);
+        ksort($dailyBreakdownPerMonth);
+
+        $gapRaw = $maxCAC - $actualCAC;
+        if($progress > $nilaiTarget) {
+            $gapRaw = 0;
+        }
+        $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
+
+        return [
+            'progress' => round($progress, 1),
+            'actual_cac' => $actualCAC,
+            'max_cac' => $maxCAC,
+            'gap' => $gap,
+            'pie_chart' => [
+                'above' => $actualCAC > $maxCAC ? 1 : 0, 
+                'below' => $actualCAC <= $maxCAC ? 1 : 0
+            ],
             'monthly_data' => $monthlyData,
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
         ];
