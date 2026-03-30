@@ -20,9 +20,9 @@ class penilaianExcangheNotifikasi extends Notification implements ShouldBroadcas
 
     public function __construct($comment, $path, $receiverId)
     {
-        $this->comment     = $comment;
-        $this->path        = $path;
-        $this->receiverId  = $receiverId;
+        $this->comment = $comment;
+        $this->path = $path;
+        $this->receiverId = $receiverId;
     }
 
     public function via($notifiable): array
@@ -37,13 +37,13 @@ class penilaianExcangheNotifikasi extends Notification implements ShouldBroadcas
         return new BroadcastMessage([
             'user' => $user?->username ?? 'System',
             'message' => [
-                'tipe'          => 'Penilaian 360',
-                'karyawan_key'  => $this->comment->karyawan_key,
-                'content'       => $this->comment->content,
-                'pengirim'      => $user?->nama_lengkap ?? 'Sistem',
-                'jabatan'       => $user?->jabatan ?? null,
+                'tipe' => 'Penilaian 360',
+                'karyawan_key' => $this->comment->karyawan_key,
+                'content' => $this->comment->content,
+                'pengirim' => $user?->nama_lengkap ?? 'Sistem',
+                'jabatan' => $user?->jabatan ?? null,
             ],
-            'path'   => $this->path ?? '#',
+            'path' => $this->path ?? '#',
             'status' => 'unread',
         ]);
     }
@@ -55,30 +55,22 @@ class penilaianExcangheNotifikasi extends Notification implements ShouldBroadcas
         return [
             'user' => $user?->username ?? 'System',
             'message' => [
-                'tipe'          => 'Penilaian 360',
-                'karyawan_key'  => $this->comment->karyawan_key,
-                'content'       => $this->comment->content,
-                'pengirim'      => $user?->nama_lengkap ?? 'Sistem',
-                'jabatan'       => $user?->jabatan ?? null,
+                'tipe' => 'Penilaian 360',
+                'karyawan_key' => $this->comment->karyawan_key,
+                'content' => $this->comment->content,
+                'pengirim' => $user?->nama_lengkap ?? 'Sistem',
+                'jabatan' => $user?->jabatan ?? null,
             ],
-            'path'   => $this->path ?? '#',
+            'path' => $this->path ?? '#',
             'status' => 'unread',
         ];
     }
 
-    /**
-     * Get the channels the event should broadcast on.
-     *
-     * @return \Illuminate\Broadcasting\PrivateChannel
-     */
     public function broadcastOn(): PrivateChannel
     {
         return new PrivateChannel('notifikasi.' . $this->receiverId);
     }
 
-    /**
-     * The event's broadcast name.
-     */
     public function broadcastAs(): string
     {
         return 'notifikasi-event';
