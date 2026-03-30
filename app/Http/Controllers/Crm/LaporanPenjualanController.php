@@ -36,14 +36,16 @@ class LaporanPenjualanController extends Controller
     {
         $status = $request->query('status');
         $query = RKM::with(['exam', 'perhitunganNetSales', 'materi', 'perusahaan', 'invoice', 'peluang.regis'])
-            ->orderByDesc('tanggal_awal');
+                    ->orderByDesc('tanggal_awal');
 
+        // Filter Status
         if ($status !== null) {
             $query->where('status', $status);
         } else {
             $query->whereIn('status', ['0', '2']);
         }
 
+        // Filter Sales & Materi
         if ($request->filled('sales_key')) {
             $query->where('sales_key', $request->sales_key);
         }
@@ -52,6 +54,7 @@ class LaporanPenjualanController extends Controller
             $query->where('materi_key', $request->materi_key);
         }
 
+        // Filter Range Tanggal
         if ($request->filled('tanggal_awal_mulai') && $request->filled('tanggal_awal_akhir')) {
             $query->whereBetween('tanggal_awal', [
                 $request->tanggal_awal_mulai,
@@ -63,6 +66,7 @@ class LaporanPenjualanController extends Controller
             $query->whereDate('tanggal_awal', '<=', $request->tanggal_awal_akhir);
         }
 
+        // Filter Triwulan/Bulan
         if ($request->filled('triwulan')) {
             $triwulanMapping = [
                 '1' => [1, 2, 3],
@@ -70,9 +74,7 @@ class LaporanPenjualanController extends Controller
                 '3' => [7, 8, 9],
                 '4' => [10, 11, 12],
             ];
-
             $triwulan = $request->input('triwulan');
-
             if (array_key_exists($triwulan, $triwulanMapping)) {
                 $query->whereIn(DB::raw('MONTH(tanggal_awal)'), $triwulanMapping[$triwulan]);
             }
@@ -80,6 +82,7 @@ class LaporanPenjualanController extends Controller
             $query->whereMonth('tanggal_awal', $request->bulan);
         }
 
+        // Filter Minggu & Tahun
         if ($request->filled('minggu')) {
             $query->whereRaw('WEEK(tanggal_awal, 1) = ?', [$request->minggu]);
         }
@@ -88,7 +91,7 @@ class LaporanPenjualanController extends Controller
             $query->whereYear('tanggal_awal', $request->tahun);
         }
 
-        // Inisialisasi variable untuk total keseluruhan
+        // Inisialisasi variabel untuk total keseluruhan
         $totalHargaJualKeseluruhan = 0;
         $totalNetSalesKeseluruhan = 0;
         $totalExamKeseluruhan = 0;
@@ -100,20 +103,13 @@ class LaporanPenjualanController extends Controller
 
             $examHarga = ($exam && isset($exam->harga_rupiah)) ? (float) $exam->harga_rupiah : 0.0;
             $pax = (float) ($item->pax ?? 0);
-
             $totalexam = $examHarga * $pax;
 
             if (is_null($netsales)) {
                 $sum = [
-                    'transportasi' => 0.0,
-                    'akomodasi_peserta' => 0.0,
-                    'akomodasi_tim' => 0.0,
-                    'fresh_money' => 0.0,
-                    // 'cashback' => 0.0,
-                    'entertaint' => 0.0,
-                    'souvenir' => 0.0,
-                    'sewa_laptop' => 0.0,
-                    'pembayaran' => null,
+                    'transportasi' => 0.0, 'akomodasi_peserta' => 0.0, 'akomodasi_tim' => 0.0,
+                    'fresh_money' => 0.0, 'entertaint' => 0.0, 'souvenir' => 0.0,
+                    'sewa_laptop' => 0.0, 'cashback' => 0.0, 'grand_total' => 0.0, 'pembayaran' => null,
                 ];
                 $netsales = collect();
             } else {
@@ -129,25 +125,20 @@ class LaporanPenjualanController extends Controller
                     'pembayaran' => $netsales->pluck('tipe_pembayaran')->first(),
                 ];
 
-                $sum['grand_total'] =
-                    $sum['transportasi'] +
-                    $sum['akomodasi_peserta'] +
-                    $sum['akomodasi_tim'] +
-                    $sum['fresh_money'] +
-                    $sum['cashback'] +
-                    $sum['entertaint'] +
-                    $sum['sewa_laptop'] +
-                    $sum['souvenir'];
+                $sum['grand_total'] = array_sum([
+                    $sum['transportasi'], $sum['akomodasi_peserta'], $sum['akomodasi_tim'],
+                    $sum['fresh_money'], $sum['cashback'], $sum['entertaint'],
+                    $sum['sewa_laptop'], $sum['souvenir']
+                ]);
             }
 
             $hargaJual = (float) ($item->harga_jual ?? 0.0);
             $totalPenjualan = $hargaJual * $pax;
-
             $grandtotal = $totalPenjualan - ($sum['grand_total'] + $totalexam);
 
             // Akumulasi total keseluruhan
-            $totalHargaJualKeseluruhan += $hargaJual;
-            $totalNetSalesKeseluruhan += $sum['grand_total'];
+            $totalHargaJualKeseluruhan += $totalPenjualan; // Total sales revenue
+            $totalNetSalesKeseluruhan += $sum['grand_total']; // Total CAC costs
             $totalExamKeseluruhan += $totalexam;
             $totalGrandKeseluruhan += $grandtotal;
 
@@ -158,7 +149,7 @@ class LaporanPenjualanController extends Controller
                 'perusahaan_key' => $item->perusahaan_key,
                 'pax' => $pax,
                 'harga' => $hargaJual,
-                'total_penjualan' => $totalPenjualan, // Total Harga x Pax
+                'total_penjualan' => $totalPenjualan,
                 'exam' => $examHarga,
                 'total_exam' => $totalexam,
                 'tanggal_awal' => $item->tanggal_awal,
@@ -174,6 +165,21 @@ class LaporanPenjualanController extends Controller
             ];
         });
 
+        // --- LOGIKA PERHITUNGAN TARGET CAC (10% DARI 9M) ---
+        $targetTahunan9M = 9000000000;
+        $targetCAC = 0.10 * $targetTahunan9M; // 900jt
+        $targetPeriode = $targetCAC; // Default Tahunan
+
+        if ($request->filled('triwulan')) {
+            $targetPeriode = $targetCAC / 4;
+        } elseif ($request->filled('bulan')) {
+            $targetPeriode = $targetCAC / 12;
+        } elseif ($request->filled('minggu')) {
+            $targetPeriode = $targetCAC / 52;
+        }
+
+        $selisihBudget = $targetPeriode - $totalNetSalesKeseluruhan;
+
         return response()->json([   
             'data' => $data,
             'summary' => [
@@ -181,6 +187,11 @@ class LaporanPenjualanController extends Controller
                 'total_netsales' => $totalNetSalesKeseluruhan,
                 'total_exam' => $totalExamKeseluruhan,
                 'total_grand' => $totalGrandKeseluruhan,
+
+                'target_cac_periode' => $targetPeriode,
+                'selisih_cac' => $selisihBudget,
+                'is_overbudget' => ($selisihBudget < 0),
+                'persentase_pemakaian' => ($targetPeriode > 0) ? round(($totalNetSalesKeseluruhan / $targetPeriode) * 100, 2) : 0
             ]
         ]);
     }

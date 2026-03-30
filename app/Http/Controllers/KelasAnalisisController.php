@@ -425,102 +425,66 @@ class KelasAnalisisController extends Controller
     {
         Carbon::setLocale('id');
 
-        // Map month names in Indonesian to numbers
         $months = [
-            'Januari' => 1,
-            'Februari' => 2,
-            'Maret' => 3,
-            'April' => 4,
-            'Mei' => 5,
-            'Juni' => 6,
-            'Juli' => 7,
-            'Agustus' => 8,
-            'September' => 9,
-            'Oktober' => 10,
-            'November' => 11,
-            'Desember' => 12,
+            'Januari' => 1, 'Februari' => 2, 'Maret' => 3, 'April' => 4,
+            'Mei' => 5, 'Juni' => 6, 'Juli' => 7, 'Agustus' => 8,
+            'September' => 9, 'Oktober' => 10, 'November' => 11, 'Desember' => 12,
         ];
 
-        // Get the month number based on the name provided
         $month = $months[$monthName] ?? null;
-
         if (!$month) {
             return new PostResource(false, "Bulan tidak valid: $monthName", null);
         }
 
-        // Get all RKM data for the specified year
         $rkm = RKM::with(['materi', 'analisisrkm', 'analisisrkm.analisisrkmmingguan'])
             ->where('status', '0')
-            ->get();
+            ->get()
+            ->filter(fn($item) => Carbon::parse($item->tanggal_awal)->year == $year);
 
-        // Filter data by year
-        $rkmFiltered = $rkm->filter(function ($item) use ($year) {
-            $tanggalAwal = Carbon::parse($item->tanggal_awal);
-            return $tanggalAwal->year == $year;
-        });
+        $firstDayOfMonth = CarbonImmutable::create($year, $month, 1);
+        $lastDayOfMonth = $firstDayOfMonth->endOfMonth();
 
-        // Group data by month number
-        $groupedByMonth = $rkmFiltered->groupBy(function ($item) {
-            return Carbon::parse($item->tanggal_awal)->month;
-        });
+        $weeks = [];
+        $startOfWeek = $firstDayOfMonth->startOfWeek();
+        $weekNumber = 1;
 
-        // Retrieve data for the specified month number
-        $monthData = $groupedByMonth->get($month);
+        while ($startOfWeek->lte($lastDayOfMonth)) {
+            $endOfWeek = $startOfWeek->endOfWeek();
 
-        if (!$monthData) {
-            return new PostResource(false, "Tidak ada data RKM untuk bulan $monthName", null);
-        }
-
-        // Get the first and last days of the month
-        $firstDayOfMonth = Carbon::createFromDate($year, $month, 1)->startOfMonth();
-        $lastDayOfMonth = $firstDayOfMonth->copy()->endOfMonth();
-        $totalWeeksInMonth = $lastDayOfMonth->weekOfMonth;
-
-        // Initialize a total profit accumulator
-        $totalProfit = 0;
-        $firstFixCost = $monthData->pluck('analisisrkm.analisisrkmmingguan.*.fixcost')
-            ->flatten()
-            ->filter()
-            ->first() ?? 0;
-        // Group month data by week and calculate total profit for each week
-        $groupedByWeek = $monthData->groupBy(function ($item) {
-            return Carbon::parse($item->tanggal_awal)->weekOfMonth;
-        });
-
-        // Loop through each week in the month and calculate profit
-        $weeklyProfits = collect(range(1, $totalWeeksInMonth))->mapWithKeys(function ($weekNumber) use ($groupedByWeek, &$totalProfit, $firstFixCost) {
-            $weekItems = $groupedByWeek->get($weekNumber, collect());
-
-            // Initialize total profit for the week
-            $profit = 0;
-
-            if ($weekItems->isNotEmpty()) {
-                // Calculate the total profit for each item in the week
-                foreach ($weekItems as $item) {
-                    $analisisRkmmingguanData = $item->analisisrkm->analisisrkmmingguan ?? null;
-                    if ($analisisRkmmingguanData) {
-                        foreach ($analisisRkmmingguanData as $data) {
-                            $profit = (float)($data['profit'] ?? '0');
-                        }
-                    }
-                }
-            } else {
-                // Use the first fixcost value with a negative sign if the week is empty
-                $profit = -abs((float)$firstFixCost);
+            // Hindari minggu yang mulai di bulan sebelumnya
+            if ($startOfWeek->month != $month) {
+                $startOfWeek = $startOfWeek->addWeek();
+                $weekNumber++;
+                continue;
             }
 
-            // Accumulate the weekly profit into the total profit
-            $totalProfit += $profit;
+            $weekItems = $rkm->filter(fn($item) => 
+                $item->tanggal_awal >= $startOfWeek->format('Y-m-d') &&
+                $item->tanggal_awal <= $endOfWeek->format('Y-m-d')
+            );
 
-            return ['Minggu ' . $weekNumber => $profit];
-        });
+            $profit = 0;
+            if ($weekItems->isNotEmpty()) {
+                foreach ($weekItems as $item) {
+                    $analisisRkmmingguan = $item->analisisrkm->analisisrkmmingguan ?? [];
+                    foreach ($analisisRkmmingguan as $data) {
+                        $profit += floatval($data['profit'] ?? 0);
+                    }
+                }
+            }
 
-        // Include the total profit at the end of the response
+            $weeks['Minggu ' . $weekNumber] = $profit;
+            $weekNumber++;
+            $startOfWeek = $startOfWeek->addWeek();
+        }
+
+        $totalProfit = array_sum($weeks);
+
         return new PostResource(true, "Data Profit Bulanan untuk $monthName Tahun $year", [
-            'tahun'       => $year,
-            'bulan'       => $monthName,
-            'weeklyProfit' => $weeklyProfits,
-            'totalProfit' => $totalProfit,  // Include the accumulated total profit
+            'tahun' => $year,
+            'bulan' => $monthName,
+            'weeklyProfit' => $weeks,
+            'totalProfit' => $totalProfit,
         ]);
     }
 
