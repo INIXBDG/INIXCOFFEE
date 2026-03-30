@@ -44,6 +44,7 @@
                             <th>Waktu Pelaksanaan</th>
                             <th>Tanggal Pelaksanaan</th>
                             <th>Topik</th>
+                            <th>Jenis Catatan</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -67,6 +68,13 @@
                                 <td>{{ \Carbon\Carbon::parse($laporan->waktu_pelaksanaan)->format('H:i') }}</td>
                                 <td>{{ \Carbon\Carbon::parse($laporan->tanggal_pelaksanaan)->format('l, d F Y') }}</td>
                                 <td>{{ $laporan->topic }}</td>
+                                <td>
+                                    @if (count($laporan->catatanClient) > 0)
+                                        <span class="badge bg-info">Catatan Client</span>
+                                    @else
+                                        <span class="badge bg-secondary">Catatan Sales</span>
+                                    @endif
+                                </td>
                                 <td>
                                     <a href="{{ route('laporan.harian.edit', $laporan->id) }}" class="btn btn-sm btn-warning">
                                         <i class="bx bx-edit"></i> Edit
