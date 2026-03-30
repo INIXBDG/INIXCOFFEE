@@ -2346,6 +2346,7 @@
                 else if (hasSPVSales) {
                     options += `
                         <option value="meningkatkan revenue perusahaan">Meningkatkan Revenue Perusahaan</option>
+                        <option value="biaya akuisisi client">Biaya Akuisisi Client</option>
                     `;
                 }
 
@@ -2363,6 +2364,7 @@
                         <option value="ketepatan waktu po">Ketepatan Waktu PO</option>
                     `;
                 }
+
 
 
                 //end/selesai
@@ -2443,12 +2445,14 @@
                 'akurasi kelengkapan data penjualan',
                 'persentase gap kompetensi tim terhadap standar skill',
                 'presentase kinerja instruktur',
-                'peningkatan kontribusi pelatihan'
+                'peningkatan kontribusi pelatihan',
+                'biaya akuisisi client'
             ].map(route => route.toLowerCase());
 
             const rupiahRoutes = [
                 'pemasukan kotor',
-                'meningkatkan revenue perusahaan'
+                'meningkatkan revenue perusahaan',
+                'biaya akuisisi client'
             ].map(r => r.toLowerCase());
 
             const angkaRoutes = [
