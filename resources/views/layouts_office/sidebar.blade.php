@@ -1,6 +1,5 @@
-<aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme"
-    style="display: flex; flex-direction: column; height: 100vh;">
-    <div class="app-brand demo" style="flex-shrink: 0;">
+<aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
+    <div class="app-brand demo">
         <a href="{{ route('office.dashboard') }}" class="app-brand-link">
             <span class="app-brand-logo demo text-primary">
                 {{-- Logo SVG atau Image --}}
@@ -14,7 +13,7 @@
 
     <div class="menu-inner-shadow"></div>
 
-    <ul class="menu-inner py-1" style="flex-grow: 1; overflow-y: auto; overflow-x: hidden; height: 100%;">
+    <ul class="menu-inner py-1">
         @php
             $user = Auth::user();
             $allowedRoles = [
@@ -30,6 +29,22 @@
                 'Admin Holding',
             ];
         @endphp
+
+        <li class="menu-header small text-uppercase">
+            <span class="menu-header-text"></span>
+        </li>
+
+        <li class="menu-item mt-4 pb-3" style="padding-left: 12px; padding-right: 12px;">
+            <a href="{{ route('home') }}"
+                class="btn btn-primary d-flex align-items-center justify-content-center w-100">
+                <i class="bx bx-home me-2"></i>BACK TO INIXCOFFE
+            </a>
+        </li>
+
+        <li class="menu-header small text-uppercase">
+            <span class="menu-header-text">Office</span>
+        </li>
+
 
         <li class="menu-item {{ request()->is('office/dashboard') ? 'active' : '' }}">
             <a href="{{ route('office.dashboard') }}" class="menu-link">
@@ -74,14 +89,13 @@
                     <div class="text-truncate" data-i18n="contact">Pengajuan Kegiatan</div>
                 </a>
             </li>
-            
+
             <li class="menu-item {{ request()->routeIs('administrasi.karyawan') ? 'active open' : '' }}">
                 <a href="{{ route('administrasi.karyawan') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-receipt"></i>
                     <div class="text-truncate" data-i18n="contact">Administrasi Karyawan</div>
                 </a>
             </li>
-
         @endif
 
         <li class="menu-header small text-uppercase">
@@ -195,14 +209,15 @@
             </a>
         </li>
 
-        <li class="menu-item mb-4"></li>
-    </ul>
+        <li class="menu-header small text-uppercase">
+            <span class="menu-header-text">Finance</span>
+        </li>
 
-    <div class="sidebar-footer p-3 bg-menu-theme" style="flex-shrink: 0; border-top: 1px solid rgba(0,0,0,0.05);">
-        <a href="{{ route('home') }}"
-            class="btn btn-primary w-100 d-flex align-items-center justify-content-center shadow-sm">
-            <i class="bx bx-home me-2"></i>
-            <span>BACK TO INIXCOFFE</span>
-        </a>
-    </div>
+        <li class="menu-item {{ request()->routeIs('index.analysis') ? 'active open' : '' }}">
+            <a href="{{ route('index.analysis') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-wrench"></i>
+                <div class="text-truncate" data-i18n="contact">Jumlah laporan Analisis</div>
+            </a>
+        </li>
+    </ul>
 </aside>
