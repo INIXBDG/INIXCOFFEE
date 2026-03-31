@@ -1228,6 +1228,7 @@ Route::middleware(['auth'])->group(function () {
     // Route::post('/projects/{project}/administrasi', [ProjectAdministrationController::class, 'updateStage'])
     //     ->name('projects.administrasi.update');
     Route::get('/projects/administrasi/get-data', [ProjectAdministrationController::class, 'getAdministrasi'])->name('getAdministrasi');
+    Route::post('/projects/administrasi/{id}/update-stage', [ProjectAdministrationController::class, 'updateStage'])->name('administrasi.updateStage');
     Route::resource('/projects/administrasi', ProjectAdministrationController::class);
     
     // Route Kanban Project

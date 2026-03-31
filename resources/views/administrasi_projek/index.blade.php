@@ -22,6 +22,60 @@
                 {{-- @endcan --}}
             </div>
 
+            <div class="modal fade" id="updateStageModal" tabindex="-1" aria-labelledby="updateStageModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="updateStageModalLabel">{{ __('Kelola Administrasi Proyek') }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <form id="formUpdateStage" enctype="multipart/form-data">
+                            @csrf
+                            <input type="hidden" id="update_project_id" name="project_id">
+                            
+                            <div class="modal-body">
+                                <h6 class="fw-bold mb-3 text-primary" id="update_project_name">Nama Proyek</h6>
+                                
+                                <div id="uploadSection">
+                                    <div class="mb-3">
+                                        <label for="current_stage" class="form-label">{{ __('Pilih Tahap Dokumen') }}</label>
+                                        <select class="form-select" id="current_stage" name="current_stage">
+                                            <option value="kak">KAK</option>
+                                            <option value="penganggaran">Budget/Penganggaran</option>
+                                            <option value="legal">Legal</option>
+                                            <option value="dokumen_klien">Dokumen Klien</option>
+                                            <option value="pembayaran">Pembayaran</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="file" class="form-label">{{ __('Unggah Dokumen (PDF/DOCX/JPG/PNG)') }}</label>
+                                        <input class="form-control" type="file" id="file" name="file">
+                                    </div>
+                                </div>
+
+                                <div id="decisionSection" style="display: none;">
+                                    <div class="alert alert-success" role="alert">
+                                        Seluruh dokumen administrasi telah lengkap. Tentukan status proyek selanjutnya.
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="final_decision" class="form-label">{{ __('Keputusan Proyek') }}</label>
+                                        <select class="form-select" id="final_decision" name="final_decision">
+                                            <option value="">-- Pilih Keputusan --</option>
+                                            <option value="lanjut">Lanjut ke Eksekusi (Project Task)</option>
+                                            <option value="gagal">Gagal (Negosiasi Batal)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ __('Tutup') }}</button>
+                                <button type="submit" class="btn btn-primary" id="btnUpdateSave">{{ __('Simpan Perubahan') }}</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
             <div class="modal fade" id="createModal" tabindex="-1" aria-labelledby="createModalLabel" aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
@@ -63,6 +117,7 @@
                             <tr>
                                 <th scope="col">No</th>
                                 <th scope="col">Nama Projek</th>
+                                <th scope="col">Nama Perusahaan</th>
                                 <th scope="col">Deskripsi</th>
                                 <th scope="col">KAK</th>
                                 <th scope="col">Budget</th>
@@ -70,6 +125,7 @@
                                 <th scope="col">Dokumen Klien</th>
                                 <th scope="col">Pembayaran</th>
                                 <th scope="col">Status Pengerjaan</th>
+                                <th scope="col">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -154,6 +210,7 @@
                         $('#loadingModal').on('hidden.bs.modal', function () {
                             $('#loadingModal').attr('inert', true);
                         });
+                        console.log();
                     }, 1000);
                 }
             },
@@ -167,16 +224,13 @@
                     }
                 },
                 {
-                    "data": "project.dataproject",
-                    "render": function(data, type, row) {
-                        return data && data.name ? data.name : '-';
-                    }
+                    "data": 'dataproject.name',
                 },
                 {
-                    "data": "project.dataproject",
-                    "render": function(data, type, row) {
-                        return data && data.description ? data.description : '-';
-                    }
+                    "data": 'dataproject.client.nama_perusahaan',
+                },
+                {
+                    "data": 'dataproject.description',
                 },
                 {
                     "data": "kak_file",
@@ -218,7 +272,28 @@
                         }
                         return 'Belum ada tugas';
                     }
-                }
+                },
+                {
+                    "data": null,
+                    "render": function(data, type, row) {
+                        var actions = "";
+                        // Logika pengecekan kelengkapan dokumen
+                        var isComplete = row.kak_file && row.budget_file && row.legal_file && row.client_doc_file && row.payment_doc_file;
+                        
+                        if (row.dataproject.phase === 'teknis') {
+                            actions += '<span class="badge bg-success">Fase Teknis Aktif</span>';
+                        } else if (row.dataproject.phase === 'gagal') {
+                            actions += '<span class="badge bg-danger">Proyek Gagal</span>';
+                        } else {
+                            var btnClass = isComplete ? 'btn-success' : 'btn-primary';
+                            var btnText = isComplete ? 'Keputusan Akhir' : 'Kelola Dokumen';
+                            // Menyematkan kelas khusus untuk diikat pada event listener jQuery
+                            actions += '<button class="btn btn-sm ' + btnClass + ' btn-update-stage">' + btnText + '</button>';
+                        }
+                        
+                        return actions;
+                    }
+                },
             ]
         });
 
@@ -270,6 +345,86 @@
                 },
                 complete: function() {
                     $('#btnSave').prop('disabled', false).text('Simpan');
+                    setTimeout(() => {
+                        $('#loadingModal').modal('hide');
+                    }, 500);
+                }
+            });
+        });
+
+        // Event Listener untuk tombol Kelola Dokumen di dalam DataTables
+        $('#administrasiProjekTable tbody').on('click', '.btn-update-stage', function () {
+            var data = $('#administrasiProjekTable').DataTable().row($(this).parents('tr')).data();
+            console.log(data);
+            bukaModalUpdate(data);
+        });
+
+        function bukaModalUpdate(rowData) {
+            $('#formUpdateStage')[0].reset();
+            $('#update_project_id').val(rowData.dataproject.id);
+            $('#update_project_name').text(rowData.dataproject.name);
+
+            // Validasi kelengkapan berkas
+            var isComplete = rowData.kak_file && rowData.budget_file && rowData.legal_file && rowData.client_doc_file && rowData.payment_doc_file;
+
+            if (isComplete) {
+                // Tampilkan antarmuka keputusan akhir
+                $('#uploadSection').hide();
+                $('#decisionSection').show();
+                
+                // Menonaktifkan validasi wajib pada unggah file
+                $('#file').removeAttr('required');
+                $('#final_decision').attr('required', true);
+            } else {
+                // Tampilkan antarmuka unggah dokumen
+                $('#uploadSection').show();
+                $('#decisionSection').hide();
+                
+                $('#final_decision').removeAttr('required');
+                $('#file').attr('required', true);
+
+                // Otomatis memilih dropdown dokumen mana yang belum terisi
+                if (!rowData.kak_file) $('#current_stage').val('kak');
+                else if (!rowData.budget_file) $('#current_stage').val('penganggaran');
+                else if (!rowData.legal_file) $('#current_stage').val('legal');
+                else if (!rowData.client_doc_file) $('#current_stage').val('dokumen_klien');
+                else if (!rowData.payment_doc_file) $('#current_stage').val('pembayaran');
+            }
+
+            $('#updateStageModal').modal('show');
+        }
+
+        // Penanganan Submit Form Update Stage (Menggunakan FormData untuk berkas)
+        $('#formUpdateStage').on('submit', function(e) {
+            e.preventDefault();
+            var projectId = $('#update_project_id').val();
+            var formData = new FormData(this);
+            var actionUrl = "{{ url('/projects/administrasi') }}/" + projectId + "/update-stage";
+
+            $.ajax({
+                url: actionUrl,
+                type: "POST",
+                data: formData,
+                contentType: false, // Wajib disetel false untuk transmisi berkas
+                processData: false, // Wajib disetel false untuk transmisi berkas
+                beforeSend: function() {
+                    $('#btnUpdateSave').prop('disabled', true).text('Memproses...');
+                    $('#loadingModal').modal('show');
+                },
+                success: function(response) {
+                    $('#updateStageModal').modal('hide');
+                    $('#formUpdateStage')[0].reset();
+                    $('#administrasiProjekTable').DataTable().ajax.reload(null, false);
+                },
+                error: function(xhr) {
+                    let errorMessage = 'Terjadi kesalahan saat memproses data.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    }
+                    alert(errorMessage);
+                },
+                complete: function() {
+                    $('#btnUpdateSave').prop('disabled', false).text('Simpan Perubahan');
                     setTimeout(() => {
                         $('#loadingModal').modal('hide');
                     }, 500);

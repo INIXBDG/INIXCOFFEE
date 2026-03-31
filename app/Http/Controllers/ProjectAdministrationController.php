@@ -17,15 +17,15 @@ class ProjectAdministrationController extends Controller
     }
     public function getAdministrasi(Request $request): JsonResponse
     {
-        if ($request->ajax()) {
+        // if ($request->ajax()) {
             $data = ProjectAdministration::with('dataproject', 'dataproject.tasks', 'dataproject.client')->get();
 
             return response()->json([
                 'data' => $data
             ], 200);
-        }
+        // }
 
-        return response()->json(['message' => 'Permintaan tidak valid'], 400);
+        // return response()->json(['message' => 'Permintaan tidak valid'], 400);
     }
 
     /**
@@ -77,52 +77,89 @@ class ProjectAdministrationController extends Controller
         return response()->json(['message' => 'Permintaan tidak valid'], 400);
     }
 
-    public function updateStage(Request $request, Project $project)
+    public function updateStage(Request $request, $id): JsonResponse
     {
-        $this->authorize('manageAdministration', $project);
+        if (!$request->ajax()) {
+            return response()->json(['message' => 'Permintaan tidak valid'], 400);
+        }
 
+        $project = Project::findOrFail($id);
+        $administration = ProjectAdministration::where('project_id', $project->id)->firstOrFail();
+
+        // ✅ Gunakan filled() supaya tidak ke-trigger kalau kosong
+        if ($request->filled('final_decision')) {
+
+            $request->validate([
+                'final_decision' => 'in:lanjut,gagal'
+            ]);
+
+            if ($request->final_decision === 'lanjut') {
+                $project->update(['phase' => 'teknis']);
+            } elseif ($request->final_decision === 'gagal') {
+                $project->update(['phase' => 'gagal']);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Keputusan akhir proyek berhasil ditetapkan.'
+            ], 200);
+        }
+
+        // ✅ Validasi upload
         $request->validate([
-            'current_stage' => 'required|in:kak,penganggaran,legal,dokumen_klien,pembayaran,assign_tim',
-            'file' => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:2048',
+            'current_stage' => 'required|in:kak,penganggaran,legal,dokumen_klien,pembayaran',
+            'file' => 'required|file|mimes:pdf,doc,docx,jpg,png|max:5120',
         ]);
 
-        $administration = $project->administration()->firstOrCreate(
-            ['project_id' => $project->id]
-        );
+        $columnMap = [
+            'kak' => 'kak_file',
+            'penganggaran' => 'budget_file',
+            'legal' => 'legal_file',
+            'dokumen_klien' => 'client_doc_file',
+            'pembayaran' => 'payment_doc_file',
+        ];
 
-        $administration->current_stage = $request->current_stage;
+        $stage = $request->current_stage;
 
-        if ($request->hasFile('file')) {
-            $filePath = $request->file('file')->store('administrasi_projects', 'public');
-            
-            // Pemetaan nama kolom berdasarkan tahap
-            $columnMap = [
-                'kak' => 'kak_file',
-                'penganggaran' => 'budget_file',
-                'legal' => 'legal_file',
-                'dokumen_klien' => 'client_doc_file',
-                'pembayaran' => 'payment_doc_file',
-            ];
+        // ❗ Tambahkan validasi file benar-benar ada
+        if (!$request->hasFile('file')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'File tidak ditemukan dalam request.'
+            ], 422);
+        }
 
-            if (array_key_exists($request->current_stage, $columnMap)) {
-                // Hapus berkas lama jika ada
-                if ($administration->{$columnMap[$request->current_stage]}) {
-                    Storage::disk('public')->delete($administration->{$columnMap[$request->current_stage]});
-                }
-                $administration->{$columnMap[$request->current_stage]} = $filePath;
+        if (!array_key_exists($stage, $columnMap)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Stage tidak valid.'
+            ], 422);
+        }
+
+        try {
+            // Hapus file lama
+            if ($administration->{$columnMap[$stage]}) {
+                \Storage::disk('public')->delete($administration->{$columnMap[$stage]});
             }
+
+            // Simpan file baru
+            $filePath = $request->file('file')->store('administrasi_projects', 'public');
+
+            $administration->{$columnMap[$stage]} = $filePath;
+            $administration->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Dokumen tahap ' . strtoupper($stage) . ' berhasil diunggah.',
+                'path' => $filePath // optional debug
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal upload file.',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        // Jika tahap adalah assign_tim, simpan pm_id (kode_karyawan)
-        if ($request->current_stage === 'assign_tim') {
-            $this->authorize('assignTeam', $project);
-            $request->validate(['pm_id' => 'required|string|exists:karyawans,kode_karyawan']);
-            $administration->pm_id = $request->pm_id;
-            $project->update(['phase' => 'teknis']); // Pindah ke fase Kanban
-        }
-
-        $administration->save();
-
-        return redirect()->back()->with('success', 'Tahap administrasi berhasil diperbarui.');
     }
 }
