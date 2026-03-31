@@ -59,6 +59,7 @@ use App\Http\Controllers\office\DashboardSouvenirController;
 use App\Http\Controllers\Crm\ImportPerusahaanAndContactController;
 use App\Http\Controllers\RKMController as ControllersRKMController;
 use App\Http\Controllers\colaboratorController;
+use App\Http\Controllers\DaftarPesertaExamController;
 use App\Http\Controllers\DaftarTugasController;
 use App\Http\Controllers\dbklienController;
 use App\Http\Controllers\ForumSSOController;
@@ -338,6 +339,13 @@ Route::post('/store-only', [App\Http\Controllers\examController::class, 'storeOn
 Route::get('/hargaExam', [App\Http\Controllers\examController::class, 'hargaExam']);
 Route::get('/detailHargaExam/{id}', [App\Http\Controllers\examController::class, 'detailHargaExam']);
 Route::get('/pengajuanUpdateExam/{id}', [App\Http\Controllers\examController::class, 'pengajuanUpdateExam']);
+
+Route::get('/daftar-peserta-exam', [App\Http\Controllers\DaftarPesertaExamController::class, 'index'])->name('daftar-peserta-exam.index');
+Route::get('/daftar-peserta-exam/create/{id}', [App\Http\Controllers\DaftarPesertaExamController::class, 'create'])->name('daftar-peserta-exam.create');
+Route::post('/daftar-peserta-exam/store', [App\Http\Controllers\DaftarPesertaExamController::class, 'store'])->name('daftar-peserta-exam.store');
+Route::get('/daftar-peserta-exam/get-data', [App\Http\Controllers\DaftarPesertaExamController::class, 'getData'])->name('daftar-peserta-exam.get-data');
+Route::get('/daftar-peserta-exam/{id}/edit', [App\Http\Controllers\DaftarPesertaExamController::class, 'edit'])->name('daftar-peserta-exam.edit');
+Route::put('/daftar-peserta-exam/{id}', [App\Http\Controllers\DaftarPesertaExamController::class, 'update'])->name('daftar-peserta-exam.update');
 
 Route::get('/feedbackPelayanan', [App\Http\Controllers\feedbackController::class, 'pelayananFeedbackShow'])->name('feedbackPelayanan');
 Route::get('/pengajuanExam/{id}', [App\Http\Controllers\examController::class, 'create'])->name('pengajuanExam');
