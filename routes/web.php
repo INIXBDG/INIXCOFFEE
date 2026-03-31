@@ -79,6 +79,7 @@ use App\Http\Controllers\WebhookController;
 use App\Http\Controllers\IdeInovasiController;
 use App\Http\Controllers\office\TagihanPerusahaanController;
 use App\Http\Controllers\JurnalAkuntansiController;
+use App\Http\Controllers\office\AnalysisReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -858,6 +859,13 @@ Route::prefix('office')->group(function () {
     Route::get('administrasi-karyawan/{id}', [AdministrasiKaryawanController::class, 'edit'])->name('administrasi.karyawan.edit');
     Route::post('administrasi-karyawan/update/{id}', [AdministrasiKaryawanController::class, 'update'])->name('administrasi.karyawan.update');
     Route::delete('administrasi-karyawan/destroy/{id}', [AdministrasiKaryawanController::class, 'destroy'])->name('administrasi.karyawan.destroy');
+
+        Route::get('analysis', [AnalysisReportController::class, 'index'])->name('index.analysis');
+        Route::post('analysis/store', [AnalysisReportController::class, 'store'])->name('store.analysis');
+        Route::put('analysis/update/{id}', [AnalysisReportController::class, 'update'])->name('update.analysis');
+        Route::delete('analysis/destroy/{id}', [AnalysisReportController::class, 'destroy'])->name('destroy.analysis');
+        Route::get('analysis/download/{id}/{index}', [AnalysisReportController::class, 'download'])->name('download.analysis');
+        Route::post('analysis/year-description', [AnalysisReportController::class, 'updateYearDescription'])->name('update.year.description.analysis');
 });
 
 Route::prefix('dashboard-sla/{team}')->group(function () {
@@ -1006,7 +1014,7 @@ Route::prefix('office')
             Route::post('status/update', [DaftarTugasController::class, 'updateStatus'])->name('updateStatus');
             Route::post('bukti/upload', [DaftarTugasController::class, 'uploadBukti'])->name('uploadBukti');
             Route::delete('hapus/{id}', [DaftarTugasController::class, 'delete'])->name('delete');
-            
+
             // Update tugas periode
             Route::get('update/harian', [DaftarTugasController::class, 'updateTugasHarian'])->name('UpdateTugasHarian');
             Route::get('update/mingguan', [DaftarTugasController::class, 'updateTugasMingguan'])->name('UpdateTugasMingguan');
@@ -1014,7 +1022,7 @@ Route::prefix('office')
             Route::get('update/quartal', [DaftarTugasController::class, 'updateTugasQuartal'])->name('UpdateTugasQuartal');
             Route::get('update/semester', [DaftarTugasController::class, 'updateTugasSemester'])->name('UpdateTugasSemester');
             Route::get('update/tahunan', [DaftarTugasController::class, 'updateTugasTahunan'])->name('UpdateTugasTahunan');
-            
+
             // Kategori
             Route::post('kategori/update', [DaftarTugasController::class, 'updateKategori'])->name('updateKategori');
             Route::post('kategori/hapus', [DaftarTugasController::class, 'deleteKategori'])->name('deleteKategori');
