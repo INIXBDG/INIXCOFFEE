@@ -32,7 +32,7 @@ class RegisFormController extends Controller
         $ttdSPV = karyawan::where('jabatan', 'SPV Sales')->value('ttd');
         $ttd = [
             'ttd_user' => $ttdauth,
-            'ttd_spv'  => $ttdSPV,
+            'ttd_spv' => $ttdSPV,
         ];
         return view('crm.regisform.regis', compact('lead', 'ketentuan', 'ttd'));
     }
@@ -53,7 +53,7 @@ class RegisFormController extends Controller
         $exam = listexam::all();
 
         $month = Carbon::now()->month;
-        $year  = Carbon::now()->year;
+        $year = Carbon::now()->year;
 
         // Daftar angka Romawi untuk bulan
         $romanMonths = [
@@ -84,7 +84,7 @@ class RegisFormController extends Controller
     {
         $data = $request->validate([
             'id_peluang' => 'required|integer',
-            'pdf'        => 'required|file|mimes:pdf|max:20480',
+            'pdf' => 'required|file|mimes:pdf|max:20480',
         ]);
 
         $file = $data['pdf'];
@@ -109,13 +109,24 @@ class RegisFormController extends Controller
                 'name' => $file->getClientOriginalName(),
                 'path' => $storedPath,
             ]);
+        } elseif ($existing) {
+            if (!empty($existing->path) && Storage::disk('public')->exists($existing->path)) {
+                Storage::disk('public')->delete($existing->path);
+            }
+
+            $existing->update([
+                'name' => $file->getClientOriginalName(),
+                'path' => $storedPath,
+            ]);
         } else {
             RegisForm::create([
                 'id_peluang' => $data['id_peluang'],
-                'name'       => $file->getClientOriginalName(),
-                'path'       => $storedPath,
+                'name' => $file->getClientOriginalName(),
+                'path' => $storedPath,
             ]);
         }
+
+
 
         // ✅ Cek juga di RKM
         $peluang = Peluang::find($data['id_peluang']);
