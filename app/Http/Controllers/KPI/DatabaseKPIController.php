@@ -746,22 +746,25 @@ class DatabaseKPIController extends Controller
                 ->get();
         });
 
-        $allNilaiKPI = nilaiKPI::where('id_evaluated', $id_karyawan)
-            ->where('kode_form', $kodeForm)
-            ->get();
-
-        $groupedNilaiKPI = $allNilaiKPI->groupBy(['jenis_penilaian', 'name_variabel']);
-
         $evaluatorList = [];
 
         foreach ($allEvaluatorData as $evaluatorItem) {
             $jenis_penilaian = $evaluatorItem->jenis_penilaian;
+            $id_evaluator = $evaluatorItem->id_evaluator;
 
             $listNilaiEvaluator = [];
 
+            $nilaiKPIByEvaluator = nilaiKPI::where('id_evaluated', $id_karyawan)
+                ->where('kode_form', $kodeForm)
+                ->where('id_evaluator', $id_evaluator)
+                ->where('jenis_penilaian', $jenis_penilaian)
+                ->get();
+
+            $groupedByKategori = $nilaiKPIByEvaluator->groupBy('name_variabel');
+
             foreach ($allKategoriKPIs as $kategori) {
                 $judul_kategori = $kategori->judul_kategori;
-                $nilaiItem = $groupedNilaiKPI->get($jenis_penilaian, collect())->get($judul_kategori);
+                $nilaiItem = $groupedByKategori->get($judul_kategori);
 
                 if ($nilaiItem && $nilaiItem->count() > 0) {
                     $firstItem = $nilaiItem->first();
@@ -778,7 +781,7 @@ class DatabaseKPIController extends Controller
             }
 
             $evaluatorList[] = [
-                'nama'            => optional($evaluatorItem->evaluator)->nama_lengkap . ' - ' . optional($evaluatorItem->evaluator)->divisi ?? '-',
+                'nama'            => optional($evaluatorItem->evaluator)->nama_lengkap . ' - ' . (optional($evaluatorItem->evaluator)->divisi ?? '-'),
                 'jenis_penilaian' => $evaluatorItem->jenis_penilaian ?? '-',
                 'nilai'           => $listNilaiEvaluator
             ];
@@ -802,18 +805,18 @@ class DatabaseKPIController extends Controller
 
                     return [
                         'sub_kriteria' => $kategori->judul_kategori,
-                        'bobot' => $kategori->bobot,
-                        'tipe_input' => $kategori->tipe_kategori,
+                        'bobot'        => $kategori->bobot,
+                        'tipe_input'   => $kategori->tipe_kategori,
                         'detailTipeSubKriteria' => $tipeDetails->map(fn($tipe) => [
-                            'ket_sub_tipe' => $tipe->ket_tipe,
+                            'ket_sub_tipe'       => $tipe->ket_tipe,
                             'nilai_ket_sub_tipe' => $tipe->nilai_ket_sub_tipe
                         ])->toArray()
                     ];
                 });
 
                 return [
-                    'kriteria' => $namaPenilaian,
-                    'kodeForm' => $kodeForm,
+                    'kriteria'       => $namaPenilaian,
+                    'kodeForm'       => $kodeForm,
                     'detailKriteria' => $detailKriteria
                 ];
             })
@@ -824,8 +827,8 @@ class DatabaseKPIController extends Controller
             'data' => [[
                 'evaluated' => $evaluated,
                 'dataAbsen' => $dataAbsen,
-                'data' => [
-                    'evaluator' => $evaluatorList,
+                'data'      => [
+                    'evaluator'    => $evaluatorList,
                     'dataKriteria' => $dataKriteria,
                 ],
             ]]
@@ -1355,7 +1358,8 @@ class DatabaseKPIController extends Controller
                     ];
 
                     $url = url('getFormPenilaian/' . $kode_form . '/' . $id_evaluated);
-                    Notification::send($user, new penilaianExcangheNotifikasi($dummyComment, $url, $url));
+                    
+                    Notification::send($user, new penilaianExcangheNotifikasi($dummyComment, $url, $user->id));
                 }
             }
         }

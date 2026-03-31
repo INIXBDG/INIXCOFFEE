@@ -2338,6 +2338,7 @@
                 else if (hasSales) {
                     options += `
                         <option value="target penjualan tahunan">Target Penjualan Tahunan</option>
+                        <option value="biaya akuisisi perclient">Biaya Akuisisi Perclient</option>
                     `;
                 }
 
@@ -2345,6 +2346,8 @@
                 else if (hasSPVSales) {
                     options += `
                         <option value="meningkatkan revenue perusahaan">Meningkatkan Revenue Perusahaan</option>
+                        <option value="customer acquisition cost">Customer Acquisition Cost</option>
+                        <option value="biaya akuisisi client">Biaya Akuisisi Client</option>
                     `;
                 }
 
@@ -2353,6 +2356,7 @@
                     options += `
                         <option value="laporan mom">Laporan MOM</option>
                         <option value="akurasi kelengkapan data penjualan">Akurasi Kelengkapan Data Penjualan</option>
+                        <option value="todo administrasi">Todo Administrasi</option>
                     `;
                 }
 
@@ -2362,7 +2366,6 @@
                         <option value="ketepatan waktu po">Ketepatan Waktu PO</option>
                     `;
                 }
-
 
                 //end/selesai
                 else {
@@ -2404,6 +2407,8 @@
                 'pemasukan bersih',
                 'kepuasan pelanggan',
                 'rasio biaya operasional terhadap revenue',
+                'customer acquisition cost',
+                'biaya akuisisi perclient',
 
                 'performa kpi departemen',
                 'peserta puas dengan pelayanan dan fasilitas training',
@@ -2441,12 +2446,16 @@
                 'akurasi kelengkapan data penjualan',
                 'persentase gap kompetensi tim terhadap standar skill',
                 'presentase kinerja instruktur',
-                'peningkatan kontribusi pelatihan'
+                'peningkatan kontribusi pelatihan',
+                'biaya akuisisi client',
+                'laporan mom',
+                'todo administrasi'
             ].map(route => route.toLowerCase());
 
             const rupiahRoutes = [
                 'pemasukan kotor',
-                'meningkatkan revenue perusahaan'
+                'meningkatkan revenue perusahaan',
+                'biaya akuisisi client'
             ].map(r => r.toLowerCase());
 
             const angkaRoutes = [
@@ -2465,7 +2474,6 @@
                 'peningkatan kemampuan kompetensi sales',
 
                 'target penjualan tahunan',
-                'laporan mom',
                 'ketepatan waktu po',
 
                 'feedback kenyamanan berkendaran',

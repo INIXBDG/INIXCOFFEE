@@ -153,6 +153,15 @@
                 </li>
             @endif
 
+            @if (in_array($user->jabatan, ['Adm Sales']))
+                <li class="menu-item {{ request()->routeIs('todo-administrasi.index') ? 'active open' : '' }}">
+                    <a href="{{ route('todo-administrasi.index') }}" class="menu-link">
+                        <i class='menu-icon tf-icons bx bx-task'></i>
+                        <div class="text-truncate" data-i18n="crmLaporanHarian">Todo List</div>
+                    </a>
+                </li>
+            @endif
+            
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Untuk &amp; Anda</span>
             </li>
