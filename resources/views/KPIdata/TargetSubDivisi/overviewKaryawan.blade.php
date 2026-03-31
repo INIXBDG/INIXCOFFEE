@@ -1313,7 +1313,7 @@
 
                         let contentPieChart = '';
                         
-                        if (allowedAssistantRoutes.includes(data.condition)) {
+                        if (allowedDetailAssistantRoutes.includes(data.condition)) {
                             const fileUrl = data.data_detail.dataManual.manual_document;
                             const fileName = fileUrl ? fileUrl.split('/').pop() : '';
                             const fileExtension = fileName ? fileName.split('.').pop().toLowerCase() :
@@ -1388,7 +1388,7 @@
                                         Klik tombol download untuk menyimpan file
                                     </div>
                                 `;
-                        } else if (allowedAssistantRoutesForRupiah.includes(data.condition)) {
+                        } else if (allowedDetailAssistantRoutesForRupiah.includes(data.condition)) {
                             contentPieChart = `
                                     <div class="mb-4">
                                         <h6 class="fw-semibold text-primary mb-1">
