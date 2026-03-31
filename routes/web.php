@@ -611,6 +611,8 @@ Route::prefix('crm')->group(function () {
     Route::get('/chartPerusahaan', [CRMController::class, 'chartPerusahaan'])->name('chartPerusahaan');
     Route::get('/chartClosed', [CRMController::class, 'chartClosed'])->name('chartClosed');
 
+    Route::post('/checklist/update', [CRMController::class, 'updateChecklist'])->name('checklist.update');
+
     // Contact CRM
     Route::get('/contact/index', [ContactController::class, 'index'])->name('index.contact');
     Route::get('/contact/{id}/detail', [ContactController::class, 'detail'])->name('detail.contact');

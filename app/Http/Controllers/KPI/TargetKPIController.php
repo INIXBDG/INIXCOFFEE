@@ -8,10 +8,12 @@ use App\Models\ActivityInstruktur;
 use App\Models\activityLog;
 use App\Models\BiayaTransportasiDriver;
 use App\Models\ChecklistKeperluan;
+use App\Models\checklistRKM;
 use App\Models\colaborator;
 use App\Models\ContentSchedule;
 use App\Models\detailPersonKPI;
 use App\Models\DetailTargetKPI;
+use App\Models\DokumentasiExam;
 use App\Models\formPenilaian;
 use App\Models\JenisTunjangan;
 use App\Models\IdeInovasi;
@@ -35,6 +37,7 @@ use App\Models\PenilaianExam;
 use App\Models\PerbaikanKendaraan;
 use App\Models\perhitunganNetSales;
 use App\Models\pickupDriver;
+use App\Models\Registrasi;
 use App\Models\RekomendasiLanjutan;
 use App\Models\RKM;
 use App\Models\Sertifikasi;
@@ -221,7 +224,7 @@ class TargetKPIController extends Controller
             'manual_document' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
 
-        $detail = DetailTargetKPI::where('id', $request->id)->first();
+        $detail = DetailTargetKPI::where('id_targetKPI', $request->id)->first();
 
         if (!$detail) {
             return response()->json(
@@ -705,6 +708,8 @@ class TargetKPIController extends Controller
         //Admin Holding
         elseif ($item->asistant_route === 'ketepatan waktu po') {
             $progress = $this->calculateKetepatanWaktuPo($item, $personId);
+        } elseif ($item->asistant_route === 'kualitas dokumentasi support dan proctor') {
+            $progress = $this->calculatekualitasDokumentasiSupportDanProctor($item, $personId);
         }
 
         // OB
@@ -922,7 +927,7 @@ class TargetKPIController extends Controller
         }
 
         if ($manualValue > 0) {
-            $progress = ($manualValue / $labaKotor) * 10;
+            $progress = ($manualValue / $labaKotor) * 100;
         }
 
         return round($progress, 1);
@@ -1224,7 +1229,7 @@ class TargetKPIController extends Controller
         }
 
         if ($manualValue > 0) {
-            $progress = ($manualValue / $targetValue) * 10;
+            $progress = ($manualValue / $targetValue) * 100;
         }
 
         return round($progress, 1);
@@ -1247,7 +1252,7 @@ class TargetKPIController extends Controller
         }
 
         if ($manualValue > 0) {
-            $progress = ($manualValue / $targetValue) * 10;
+            $progress = ($manualValue / $targetValue) * 100;
         }
 
         return round($progress, 1);
@@ -3204,7 +3209,9 @@ class TargetKPIController extends Controller
                 ->value('total_sales');
         }
 
-        $progress = (float) ($totalSales ?? 0);
+        $progressRupiah = (float) ($totalSales ?? 0);
+
+        $progress = ($progressRupiah / $nilaiTarget) * 100;
 
         return round($progress, 1);
     }
@@ -3390,6 +3397,9 @@ class TargetKPIController extends Controller
 
         $momCount = LaporanHarianSales::whereYear('created_at', $tahun)->count();
 
+        $PACount = checklistRKM::whereYear('created_at', $tahun)->where('PA', '1')->count();
+        $SuratKontrakCount = checklistRKM::whereYear('created_at', $tahun)->where('surat_kontrak', '1')->count();
+
         $rkmBase = RKM::whereYear('tanggal_awal', $tahun);
 
         $totalDataERegist = (clone $rkmBase)->count();
@@ -3398,10 +3408,12 @@ class TargetKPIController extends Controller
             ->whereNotNull('registrasi_form')
             ->count();
 
-        $persenCalculationMom = $momCount == 0 ? 100 : 50;
-        $persenCalculationERegist = $totalDataERegist == 0 ? 0 : 50;
+        $persenCalculationMom = $momCount == 0 ? 100 : 25;
+        $persenCalculationERegist = $totalDataERegist == 0 ? 0 : 25;
 
         $progressMoM = $momCount > 0 ? ($momCount / $momCount) * $persenCalculationERegist : 0;
+        $progressPA = $PACount > 0 ? ($PACount / $PACount) * $persenCalculationERegist : 0;
+        $progressSuratKontrak = $SuratKontrakCount > 0 ? ($SuratKontrakCount / $SuratKontrakCount) * $persenCalculationERegist : 0;
 
         if ($progressMoM == 0) {
             $progressMoM = 0;
@@ -3415,7 +3427,7 @@ class TargetKPIController extends Controller
             $progressERegist = 0;
         }
 
-        $progress = $progressMoM + $progressERegist;
+        $progress = $progressMoM + $progressERegist + $progressPA + $progressSuratKontrak;
 
         if ($progress == 0) {
             return 0;
@@ -3493,58 +3505,6 @@ class TargetKPIController extends Controller
         $persentase = ($totalRkmAkurat / $totalRkmDenganPerhitungan) * 100;
 
         return round($persentase, 1);
-    }
-
-    private function calculateBiayaAkuisisiPerclient($item, $personId)
-    {
-        $detail = $item->detailTargetKPI->first();
-
-        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
-            return 0;
-        }
-
-        $nilaiTarget = (float) $detail->nilai_target;
-        $tahun = (int) $detail->detail_jangka;
-
-        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
-            return 0;
-        }
-
-        $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
-        $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
-
-        $labaKotor = $this->calculatePemasukanKotor($item, $personId);
-
-        if ($labaKotor == 0) {
-            return 0;
-        }
-
-        $totalBiayaAkuisisi = perhitunganNetSales::where('id_rkm', $item->id_rkm)
-            ->whereBetween('created_at', [$start, $end])
-            ->get()
-            ->reduce(function ($carry, $record) {
-                return $carry +
-                    ($record->transportasi ?? 0) +
-                    ($record->akomodasi_peserta ?? 0) +
-                    ($record->akomodasi_tim ?? 0) +
-                    ($record->fresh_money ?? 0) +
-                    ($record->entertaint ?? 0) +
-                    ($record->souvenir ?? 0) +
-                    ($record->cashback ?? 0) +
-                    ($record->sewa_laptop ?? 0);
-            }, 0);
-
-        $batasMaksimal = $labaKotor * 0.10;
-        $biayaAkuisisi = min($totalBiayaAkuisisi, $batasMaksimal);
-
-        if ($biayaAkuisisi > 0) {
-            $rasio = ($biayaAkuisisi / $labaKotor) * 100;
-            $batas = $nilaiTarget;
-            $progress = ($batas / $rasio) * 100;
-            return round($progress, 1);
-        }
-
-        return 0;
     }
 
     //All Sales
@@ -3697,6 +3657,39 @@ class TargetKPIController extends Controller
         $progress = $totalPercent / $count;
 
         return round($progress, 1);
+    }
+
+    private function calculatekualitasDokumentasiSupportDanProctor($item, $personId)
+    {
+        $detail = $item->detailTargetKPI->first();
+
+        if (!$detail) {
+            return 0.0;
+        }
+
+        $tahun = (int) $detail->detail_jangka;
+
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            return 0.0;
+        }
+
+        $registrasi = Registrasi::whereYear('created_at', $tahun)
+            ->count();
+
+        if ($registrasi === 0) {
+            return 0.0;
+        }
+
+        $dataTerdokumentasi = DokumentasiExam::whereYear('created_at', $tahun)
+            ->where(function ($q) {
+                $q->whereNotNull('skor')
+                ->orWhereNotNull('dokumentasi');
+            })
+            ->count();
+
+        $progress = ($dataTerdokumentasi / $registrasi) * 100;
+
+        return round($progress, 2);
     }
 
     private function defaultResult()
@@ -3866,6 +3859,8 @@ class TargetKPIController extends Controller
         // ADM Holding
         elseif ($itemDetail->asistant_route === 'ketepatan waktu po') {
             return $this->calculateKetepatanWaktuPoDetail($itemDetail);
+        } elseif ($itemDetail->asistant_route === 'kualitas dokumentasi support dan proctor') {
+            return $this->calculatekualitasDokumentasiSupportDanProctorDetail($itemDetail);
         }
 
         // --- OB ---
@@ -6590,6 +6585,269 @@ class TargetKPIController extends Controller
                 'below' => $totalResponden - $respondenPuas,
             ],
             'monthly_data' => $monthlyAverages,
+            'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
+        ];
+    }
+
+    //Admin Holding
+    private function calculateKetepatanWaktuPoDetail($itemDetail)
+    {
+        $detail = $itemDetail->detailTargetKPI->first();
+
+        if (!$detail || !is_numeric($detail->detail_jangka) || !is_numeric($detail->nilai_target)) {
+            return [
+                'progress' => 0,
+                'gap' => 0,
+                'pie_chart' => ['above' => 0, 'below' => 0],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+            ];
+        }
+
+        $tahun = (int) $detail->detail_jangka;
+        $nilaiTarget = (float) $detail->nilai_target;
+
+        if ($tahun < 2000 || $tahun > now()->year + 5 || $nilaiTarget <= 0) {
+            return [
+                'progress' => 0,
+                'gap' => 0,
+                'pie_chart' => ['above' => 0, 'below' => 0],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+            ];
+        }
+
+        $pos = NomorModul::with('moduls')
+            ->whereYear('created_at', $tahun)
+            ->get();
+
+        if ($pos->isEmpty()) {
+            return [
+                'progress' => 0,
+                'gap' => 0,
+                'pie_chart' => ['above' => 0, 'below' => 0],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+            ];
+        }
+
+        $allPercents = [];
+        $percentDatePairs = [];
+
+        foreach ($pos as $po) {
+
+            if (!$po->uploaded) {
+                continue;
+            }
+
+            $uploaded = Carbon::parse($po->uploaded)->startOfDay();
+
+            foreach ($po->moduls as $modul) {
+
+                if (!$modul->awal_training) {
+                    continue;
+                }
+
+                $awalTraining = Carbon::parse($modul->awal_training)->startOfDay();
+
+                $daysBefore = $awalTraining->diffInDays($uploaded);
+
+                if ($daysBefore >= 7) {
+                    $percent = 100;
+                } elseif ($daysBefore > 0) {
+                    $percent = ($daysBefore * 100) / 7;
+                } else {
+                    $percent = 0;
+                }
+
+                $percent = round($percent, 1);
+
+                $allPercents[] = $percent;
+
+                $percentDatePairs[] = [
+                    'percent' => $percent,
+                    'date' => $uploaded->format('Y-m-d'),
+                ];
+            }
+        }
+
+        if (empty($allPercents)) {
+            return [
+                'progress' => 0,
+                'gap' => 0,
+                'pie_chart' => ['above' => 0, 'below' => 0],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+            ];
+        }
+
+        $totalData = count($allPercents);
+        $aboveTarget = 0;
+
+        foreach ($allPercents as $val) {
+            if ($val >= $nilaiTarget) {
+                $aboveTarget++;
+            }
+        }
+
+        $progress = ($aboveTarget / $totalData) * 100;
+        $progress = round($progress, 1);
+
+        $gapRaw = $progress - $nilaiTarget;
+        $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
+
+        // === Monthly & Daily Breakdown ===
+        $monthlyData = [];
+        $dailyBreakdownPerMonth = [];
+
+        foreach ($percentDatePairs as $pair) {
+            $date = Carbon::parse($pair['date']);
+            $monthKey = $date->format('Y-m');
+            $dayKey = $pair['date'];
+            $percent = $pair['percent'];
+
+            if (!isset($monthlyData[$monthKey])) {
+                $monthlyData[$monthKey] = [];
+            }
+            $monthlyData[$monthKey][] = $percent;
+
+            if (!isset($dailyBreakdownPerMonth[$monthKey])) {
+                $dailyBreakdownPerMonth[$monthKey] = [];
+            }
+            $dailyBreakdownPerMonth[$monthKey][$dayKey] = $percent;
+        }
+
+        $monthlyAverages = [];
+        foreach ($monthlyData as $month => $values) {
+            $monthlyAverages[$month] = round(array_sum($values) / count($values), 1);
+        }
+
+        ksort($monthlyAverages);
+        ksort($dailyBreakdownPerMonth);
+
+        return [
+            'progress' => $progress,
+            'gap' => $gap,
+            'pie_chart' => [
+                'above' => $aboveTarget,
+                'below' => $totalData - $aboveTarget,
+            ],
+            'monthly_data' => $monthlyAverages,
+            'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
+        ];
+    }
+
+    private function calculatekualitasDokumentasiSupportDanProctorDetail($itemDetail)
+    {
+        $detail = $itemDetail->detailTargetKPI->first();
+
+        if (
+            !$detail ||
+            !is_numeric($detail->detail_jangka) ||
+            !is_numeric($detail->nilai_target)
+        ) {
+            return [
+                'progress' => 0,
+                'gap' => 0,
+                'pie_chart' => ['above' => 0, 'below' => 0],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+            ];
+        }
+
+        $tahun = (int) $detail->detail_jangka;
+        $nilaiTarget = (float) $detail->nilai_target;
+
+        if ($tahun < 2000 || $tahun > now()->year + 5 || $nilaiTarget <= 0) {
+            return [
+                'progress' => 0,
+                'gap' => 0,
+                'pie_chart' => ['above' => 0, 'below' => 0],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+            ];
+        }
+
+        $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
+        $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
+
+        $registrasi = Registrasi::whereBetween('created_at', [$start, $end])->get();
+
+        if ($registrasi->isEmpty()) {
+            return [
+                'progress' => 0,
+                'gap' => 0,
+                'pie_chart' => ['above' => 0, 'below' => 0],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
+            ];
+        }
+
+        $dokumentasi = DokumentasiExam::whereBetween('created_at', [$start, $end])
+            ->where(function ($q) {
+                $q->whereNotNull('skor')
+                ->orWhereNotNull('dokumentasi');
+            })
+            ->get();
+
+        $totalRegistrasi = $registrasi->count();
+        $totalDokumentasi = $dokumentasi->count();
+
+        $progress = ($totalDokumentasi / $totalRegistrasi) * 100;
+        $progress = round($progress, 2);
+
+        if ($progress > $nilaiTarget) {
+            $gapRaw = 0;
+        } else {
+            $gapRaw = $progress - $nilaiTarget;
+        }
+        $gap = rtrim(rtrim(sprintf('%.2f', $gapRaw), '0'), '.');
+
+        $monthlyData = [];
+        $dailyBreakdownPerMonth = [];
+
+        foreach ($dokumentasi as $doc) {
+            $date = $doc->created_at;
+            $monthKey = $date->format('Y-m');
+            $dayKey = $date->format('Y-m-d');
+
+            if (!isset($monthlyData[$monthKey])) {
+                $monthlyData[$monthKey] = 0;
+            }
+            $monthlyData[$monthKey]++;
+
+            if (!isset($dailyBreakdownPerMonth[$monthKey])) {
+                $dailyBreakdownPerMonth[$monthKey] = [];
+            }
+            $dailyBreakdownPerMonth[$monthKey][$dayKey] = 
+                ($dailyBreakdownPerMonth[$monthKey][$dayKey] ?? 0) + 1;
+        }
+
+        $monthlyPercentages = [];
+
+        foreach ($monthlyData as $month => $countDok) {
+            $registrasiPerMonth = $registrasi->filter(function ($r) use ($month) {
+                return $r->created_at->format('Y-m') === $month;
+            })->count();
+
+            if ($registrasiPerMonth > 0) {
+                $monthlyPercentages[$month] = round(($countDok / $registrasiPerMonth) * 100, 2);
+            } else {
+                $monthlyPercentages[$month] = 0;
+            }
+        }
+
+        ksort($monthlyPercentages);
+        ksort($dailyBreakdownPerMonth);
+
+        return [
+            'progress' => $progress,
+            'gap' => $gap,
+            'pie_chart' => [
+                'above' => $totalDokumentasi,
+                'below' => $totalRegistrasi - $totalDokumentasi,
+            ],
+            'monthly_data' => $monthlyPercentages,
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
         ];
     }
@@ -9649,7 +9907,10 @@ class TargetKPIController extends Controller
         ksort($monthlyData);
         ksort($dailyBreakdownPerMonth);
 
-        $progress = round($totalSales, 1);
+        $progressRupiah = round($totalSales, 1);
+
+        $progress = ($progressRupiah / $nilaiTarget) * 100;
+
         $gapRaw = $totalSales - $nilaiTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
@@ -10002,6 +10263,8 @@ class TargetKPIController extends Controller
         }
 
         $momCount = LaporanHarianSales::whereYear('created_at', $tahun)->count();
+        $PACount = checklistRKM::whereYear('created_at', $tahun)->where('PA', '1')->count();
+        $SuratKontrakCount = checklistRKM::whereYear('created_at', $tahun)->where('surat_kontrak', '1')->count();
 
         $rkmBase = RKM::whereYear('tanggal_awal', $tahun);
 
@@ -10011,18 +10274,26 @@ class TargetKPIController extends Controller
             ->whereNotNull('registrasi_form')
             ->count();
 
-        $persenCalculationMom = $momCount == 0 ? 100 : 50;
-        $persenCalculationERegist = $totalDataERegist == 0 ? 0 : 50;
+        $persenCalculationMom = $momCount == 0 ? 100 : 25;
+        $persenCalculationERegist = $totalDataERegist == 0 ? 0 : 25;
 
         $progressMoM = $momCount > 0
             ? ($momCount / $momCount) * $persenCalculationERegist
+            : 0;
+
+        $progressSuratKontrak = $SuratKontrakCount > 0
+            ? ($SuratKontrakCount / $SuratKontrakCount) * $persenCalculationERegist
+            : 0;        
+        
+        $progressPA = $PACount > 0
+            ? ($PACount / $PACount) * $persenCalculationERegist
             : 0;
 
         $progressERegist = $totalDataERegist > 0
             ? ($totalDataAboveERegist / $totalDataERegist) * $persenCalculationMom
             : 0;
 
-        $progress = $progressMoM + $progressERegist;
+        $progress = $progressMoM + $progressERegist + $progressPA + $progressSuratKontrak;
 
         $laporans = LaporanHarianSales::whereYear('created_at', $tahun)
             ->select(DB::raw('DATE(created_at) as tanggal, COUNT(*) as total'))
@@ -10518,6 +10789,7 @@ class TargetKPIController extends Controller
                 $progress = $this->resolveProgress($target, $karyawanId);
                 $nilaiTarget = $detail->nilai_target;
                 $tipeTarget = $detail->tipe_target;
+                $manualValue = $detail->manual_value;
 
                 if ($progress !== null) {
                     if ($tipeTarget === 'rupiah') {
@@ -10629,6 +10901,7 @@ class TargetKPIController extends Controller
                 $daftarTargetPribadi[] = [
                     'id' => $item->id,
                     'judul' => $item->judul,
+                    'asistant_route' => $item->asistant_route,
                     'periode' => $detail->jangka_target . ' ' . $detail->detail_jangka,
                     'tipe_target' => $tipeTarget,
                     'target' => $nilaiTarget,
@@ -10637,6 +10910,7 @@ class TargetKPIController extends Controller
                     'status' => $status,
                     'status_badge' => $status === 'Selesai' ? 'bg-success' : 'bg-warning text-dark',
                     'deskripsi' => $detail->deskripsi ?? '-',
+                    'manual_value' => $manualValue,
                     'created_at' => $item->created_at->format('d M Y'),
                 ];
             }
