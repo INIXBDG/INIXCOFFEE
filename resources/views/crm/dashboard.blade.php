@@ -1,356 +1,746 @@
 @extends('layouts_crm.app')
 
 @section('crm_contents')
-<div class="container-xxl flex-grow-1 container-p-y">
-    <div class="row g-4 mb-4">
-        <div class="col-xl-8 col-lg-7">
-            <div class="card h-100 shadow-sm border-0 rounded-4 overflow-hidden">
-                <div class="card-header bg-primary py-3 px-4 d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0 text-white fw-bold">
-                        Target Aktivitas Sales
-                    </h5>
-                    <span class="badge bg-white text-primary rounded-pill">{{ $tanggalRange }}</span>
-                </div>
-                <div class="card-body p-4">
-                    <form method="GET" class="row g-2 mb-4 align-items-end pb-3 border-bottom">
-                        <div class="col-md-3">
-                            <label class="form-label small fw-bold text-muted mb-1">Tahun</label>
-                            <select name="tahun" class="form-select form-select-sm border-light-subtle">
-                                @for ($t = now()->year; $t >= now()->year - 3; $t--)
-                                    <option value="{{ $t }}" {{ $tahun == $t ? 'selected' : '' }}>{{ $t }}</option>
-                                @endfor
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label small fw-bold text-muted mb-1">Bulan</label>
-                            <select name="bulan" class="form-select form-select-sm border-light-subtle">
-                                @for ($b = 1; $b <= 12; $b++)
-                                    <option value="{{ $b }}" {{ $bulan == $b ? 'selected' : '' }}>
-                                        {{ \Carbon\Carbon::create()->month($b)->locale('id')->translatedFormat('F') }}
-                                    </option>
-                                @endfor
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label small fw-bold text-muted mb-1">Minggu</label>
-                            <select name="minggu" class="form-select form-select-sm border-light-subtle">
-                                <option value="" {{ empty($mingguKe) ? 'selected' : '' }}>Semua Minggu</option>
-                                @for ($m = 1; $m <= 5; $m++)
-                                    <option value="{{ $m }}" {{ $mingguKe == $m ? 'selected' : '' }}>Minggu ke {{ $m }}</option>
-                                @endfor
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <button type="submit" class="btn btn-sm btn-primary w-100 shadow-sm">
-                                Terapkan Filter
-                            </button>
-                        </div>
-                    </form>
-
-                    <div class="mb-4 overflow-auto">
-                        <div class="btn-group btn-group-sm mb-1" role="group">
-                            <button type="button" class="btn btn-outline-primary filter-btn active" data-filter="all">Semua Sales</button>
-                            @foreach ($activitysales as $sales)
-                                <button type="button" class="btn btn-outline-primary filter-btn" data-filter="{{ $sales['id_sales'] }}">{{ $sales['id_sales'] }}</button>
-                            @endforeach
-                        </div>
+    <div class="container-xxl flex-grow-1 container-p-y">
+        <div class="row g-4 mb-4">
+            <div class="col-xl-8 col-lg-7">
+                <div class="card h-100 shadow-sm border-0 rounded-4 overflow-hidden">
+                    <div class="card-header bg-primary py-3 px-4 d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0 text-white fw-bold">
+                            Target Aktivitas Sales
+                        </h5>
+                        <span class="badge bg-white text-primary rounded-pill">{{ $tanggalRange }}</span>
                     </div>
+                    <div class="card-body p-4">
+                        <form method="GET" class="row g-2 mb-4 align-items-end pb-3 border-bottom">
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold text-muted mb-1">Tahun</label>
+                                <select name="tahun" class="form-select form-select-sm border-light-subtle">
+                                    @for ($t = now()->year; $t >= now()->year - 3; $t--)
+                                        <option value="{{ $t }}" {{ $tahun == $t ? 'selected' : '' }}>
+                                            {{ $t }}</option>
+                                    @endfor
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold text-muted mb-1">Bulan</label>
+                                <select name="bulan" class="form-select form-select-sm border-light-subtle">
+                                    @for ($b = 1; $b <= 12; $b++)
+                                        <option value="{{ $b }}" {{ $bulan == $b ? 'selected' : '' }}>
+                                            {{ \Carbon\Carbon::create()->month($b)->locale('id')->translatedFormat('F') }}
+                                        </option>
+                                    @endfor
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold text-muted mb-1">Minggu</label>
+                                <select name="minggu" class="form-select form-select-sm border-light-subtle">
+                                    <option value="" {{ empty($mingguKe) ? 'selected' : '' }}>Semua Minggu</option>
+                                    @for ($m = 1; $m <= 5; $m++)
+                                        <option value="{{ $m }}" {{ $mingguKe == $m ? 'selected' : '' }}>Minggu
+                                            ke {{ $m }}</option>
+                                    @endfor
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <button type="submit" class="btn btn-sm btn-primary w-100 shadow-sm">
+                                    Terapkan Filter
+                                </button>
+                            </div>
+                        </form>
 
-                    <div class="activity-container pe-2" style="max-height: 400px; overflow-y: auto;">
-                        @forelse ($activitysales as $sales)
-                            <div class="sales-block mb-4 p-3 rounded-3 sales-item" data-sales-id="{{ $sales['id_sales'] }}">
-                                <div class="d-flex align-items-center mb-3">
-                                    <div class="avatar me-2">
-                                        <span class="avatar-initial rounded-circle bg-label-primary p-2"><i class="bx bx-user"></i></span>
+                        <div class="mb-4 overflow-auto">
+                            <div class="btn-group btn-group-sm mb-1" role="group">
+                                <button type="button" class="btn btn-outline-primary filter-btn active"
+                                    data-filter="all">Semua Sales</button>
+                                @foreach ($activitysales as $sales)
+                                    <button type="button" class="btn btn-outline-primary filter-btn"
+                                        data-filter="{{ $sales['id_sales'] }}">{{ $sales['id_sales'] }}</button>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <div class="activity-container pe-2" style="max-height: 400px; overflow-y: auto;">
+                            @forelse ($activitysales as $sales)
+                                <div class="sales-block mb-4 p-3 rounded-3 sales-item"
+                                    data-sales-id="{{ $sales['id_sales'] }}">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="avatar me-2">
+                                            <span class="avatar-initial rounded-circle bg-label-primary p-2"><i
+                                                    class="bx bx-user"></i></span>
+                                        </div>
+                                        <strong class="text-dark fs-6">{{ $sales['id_sales'] }}</strong>
                                     </div>
-                                    <strong class="text-dark fs-6">{{ $sales['id_sales'] }}</strong>
-                                </div>
-                                
-                                <div class="row g-3">
-                                    @php
-                                        $aktivitas = [
-                                            'DB' => ['jumlah' => $sales['DB'], 'target' => $sales['target_DB'], 'warna' => 'info', 'icon' => 'bx-data'],
-                                            'Contact' => ['jumlah' => $sales['contact'], 'target' => $sales['target_contact'], 'warna' => 'info', 'icon' => 'bx-phone-call'],
-                                            'Call' => ['jumlah' => $sales['call'], 'target' => $sales['target_call'], 'warna' => 'info', 'icon' => 'bx-phone-incoming'],
-                                            'Email' => ['jumlah' => $sales['email'], 'target' => $sales['target_email'], 'warna' => 'warning', 'icon' => 'bx-envelope'],
-                                            'Visit' => ['jumlah' => $sales['visit'], 'target' => $sales['target_visit'], 'warna' => 'warning', 'icon' => 'bx-map-pin'],
-                                            'Meet' => ['jumlah' => $sales['meet'], 'target' => $sales['target_meet'], 'warna' => 'warning', 'icon' => 'bx-group'],
-                                            'Incharge' => ['jumlah' => $sales['incharge'], 'target' => $sales['target_incharge'], 'warna' => 'success', 'icon' => 'bx-user-check'],
-                                            'Penawaran Awal' => ['jumlah' => $sales['PA'], 'target' => $sales['target_PA'], 'warna' => 'success', 'icon' => 'bx-file'],
-                                            'Penawaran Internal' => ['jumlah' => $sales['PI'], 'target' => $sales['target_PI'], 'warna' => 'success', 'icon' => 'bx-detail'],
-                                            'Telemarketing' => ['jumlah' => $sales['Telemarketing'], 'target' => $sales['target_Telemarketing'], 'warna' => 'danger', 'icon' => 'bx-headphone'],
-                                            'Form Masuk' => ['jumlah' => $sales['Form_Masuk'], 'target' => $sales['target_Form_Masuk'], 'warna' => 'danger', 'icon' => 'bx-log-in-circle'],
-                                            'Form Keluar' => ['jumlah' => $sales['Form_Keluar'], 'target' => $sales['target_Form_Keluar'], 'warna' => 'danger', 'icon' => 'bx-log-out-circle'],
-                                        ];
-                                    @endphp
 
-                                    @foreach ($aktivitas as $label => $data)
+                                    <div class="row g-3">
                                         @php
-                                            $persen = $data['target'] > 0 ? min(round(($data['jumlah'] / $data['target']) * 100), 100) : 0;
+                                            $aktivitas = [
+                                                'DB' => [
+                                                    'jumlah' => $sales['DB'],
+                                                    'target' => $sales['target_DB'],
+                                                    'warna' => 'info',
+                                                    'icon' => 'bx-data',
+                                                ],
+                                                'Contact' => [
+                                                    'jumlah' => $sales['contact'],
+                                                    'target' => $sales['target_contact'],
+                                                    'warna' => 'info',
+                                                    'icon' => 'bx-phone-call',
+                                                ],
+                                                'Call' => [
+                                                    'jumlah' => $sales['call'],
+                                                    'target' => $sales['target_call'],
+                                                    'warna' => 'info',
+                                                    'icon' => 'bx-phone-incoming',
+                                                ],
+                                                'Email' => [
+                                                    'jumlah' => $sales['email'],
+                                                    'target' => $sales['target_email'],
+                                                    'warna' => 'warning',
+                                                    'icon' => 'bx-envelope',
+                                                ],
+                                                'Visit' => [
+                                                    'jumlah' => $sales['visit'],
+                                                    'target' => $sales['target_visit'],
+                                                    'warna' => 'warning',
+                                                    'icon' => 'bx-map-pin',
+                                                ],
+                                                'Meet' => [
+                                                    'jumlah' => $sales['meet'],
+                                                    'target' => $sales['target_meet'],
+                                                    'warna' => 'warning',
+                                                    'icon' => 'bx-group',
+                                                ],
+                                                'Incharge' => [
+                                                    'jumlah' => $sales['incharge'],
+                                                    'target' => $sales['target_incharge'],
+                                                    'warna' => 'success',
+                                                    'icon' => 'bx-user-check',
+                                                ],
+                                                'Penawaran Awal' => [
+                                                    'jumlah' => $sales['PA'],
+                                                    'target' => $sales['target_PA'],
+                                                    'warna' => 'success',
+                                                    'icon' => 'bx-file',
+                                                ],
+                                                'Penawaran Internal' => [
+                                                    'jumlah' => $sales['PI'],
+                                                    'target' => $sales['target_PI'],
+                                                    'warna' => 'success',
+                                                    'icon' => 'bx-detail',
+                                                ],
+                                                'Telemarketing' => [
+                                                    'jumlah' => $sales['Telemarketing'],
+                                                    'target' => $sales['target_Telemarketing'],
+                                                    'warna' => 'danger',
+                                                    'icon' => 'bx-headphone',
+                                                ],
+                                                'Form Masuk' => [
+                                                    'jumlah' => $sales['Form_Masuk'],
+                                                    'target' => $sales['target_Form_Masuk'],
+                                                    'warna' => 'danger',
+                                                    'icon' => 'bx-log-in-circle',
+                                                ],
+                                                'Form Keluar' => [
+                                                    'jumlah' => $sales['Form_Keluar'],
+                                                    'target' => $sales['target_Form_Keluar'],
+                                                    'warna' => 'danger',
+                                                    'icon' => 'bx-log-out-circle',
+                                                ],
+                                            ];
                                         @endphp
-                                        <div class="col-md-6 col-lg-4 activity-item" data-activity="{{ $label }}">
-                                            <div class="p-2 border rounded-2 bg-white h-100">
-                                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                                    <small class="text-muted fw-bold" style="font-size: 0.75rem;">{{ $label }}</small>
-                                                    <span class="badge bg-{{ $data['warna'] }}-subtle text-{{ $data['warna'] }} rounded-pill" 
-                                                          style="font-size: 0.65rem; cursor: pointer;"
-                                                          data-sales-id="{{ $sales['id_sales'] }}" 
-                                                          data-activity="{{ $label }}">{{ $persen }}%</span>
-                                                </div>
-                                                <div class="d-flex align-items-baseline">
-                                                    <h6 class="mb-1 me-1">{{ $data['jumlah'] }}</h6>
-                                                    <small class="text-muted">/{{ $data['target'] }}</small>
-                                                </div>
-                                                <div class="progress rounded-pill" style="height: 4px;">
-                                                    <div class="progress-bar bg-{{ $data['warna'] }} rounded-pill" role="progressbar" style="width: {{ $persen }}%"></div>
+
+                                        @foreach ($aktivitas as $label => $data)
+                                            @php
+                                                $persen =
+                                                    $data['target'] > 0
+                                                        ? min(round(($data['jumlah'] / $data['target']) * 100), 100)
+                                                        : 0;
+                                            @endphp
+                                            <div class="col-md-6 col-lg-4 activity-item"
+                                                data-activity="{{ $label }}">
+                                                <div class="p-2 border rounded-2 bg-white h-100">
+                                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                                        <small class="text-muted fw-bold"
+                                                            style="font-size: 0.75rem;">{{ $label }}</small>
+                                                        <span
+                                                            class="badge bg-{{ $data['warna'] }}-subtle text-{{ $data['warna'] }} rounded-pill"
+                                                            style="font-size: 0.65rem; cursor: pointer;"
+                                                            data-sales-id="{{ $sales['id_sales'] }}"
+                                                            data-activity="{{ $label }}">{{ $persen }}%</span>
+                                                    </div>
+                                                    <div class="d-flex align-items-baseline">
+                                                        <h6 class="mb-1 me-1">{{ $data['jumlah'] }}</h6>
+                                                        <small class="text-muted">/{{ $data['target'] }}</small>
+                                                    </div>
+                                                    <div class="progress rounded-pill" style="height: 4px;">
+                                                        <div class="progress-bar bg-{{ $data['warna'] }} rounded-pill"
+                                                            role="progressbar" style="width: {{ $persen }}%"></div>
+                                                    </div>
                                                 </div>
                                             </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="text-center py-5">
+                                    <img src="https://illustrations.popsy.co/gray/no-data.svg" alt="no-data"
+                                        style="width: 120px;" class="mb-3">
+                                    <p class="text-muted small">Tidak ada data aktivitas sales pada periode ini.</p>
+                                </div>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-4 col-lg-5">
+                <div class="row g-4 h-100">
+                    <div class="col-12">
+                        <div class="card shadow-sm border-0 h-100">
+                            <div
+                                class="card-header d-flex justify-content-between align-items-center bg-transparent border-0">
+                                <h5 class="card-title mb-0 text-primary">Data Perusahaan</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container" style="height: 250px;">
+                                    <canvas id="kategoriChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="card shadow-sm border-0 h-100">
+                            <div
+                                class="card-header d-flex justify-content-between align-items-center bg-transparent border-0">
+                                <h5 class="card-title mb-0 text-primary">Pembelian per Segmen</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container" style="height: 250px;">
+                                    <canvas id="spendChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (auth()->user()->jabatan === 'Adm Sales')
+            @php
+                $tasks = ['Registratsi Form', 'Surat Kontrak', 'PA', 'PO'];
+            @endphp
+            @php
+                $taskMap = [
+                    'Registratsi Form' => 'registrasi_form',
+                    'Surat Kontrak' => 'surat_kontrak',
+                    'PA' => 'PA',
+                    'PO' => 'PO',
+                ];
+            @endphp
+
+            <div class="row g-4 mb-4">
+                <div class="col-md-12">
+                    <div class="card shadow-sm border-0 h-100">
+
+                        <div class="card-header bg-transparent border-0">
+                            <h5 class="card-title mb-3 text-primary">Check List RKM</h5>
+
+                            <form method="GET">
+                                <div class="row g-2">
+
+                                    <div class="col-md-3">
+                                        <input type="text" name="search" value="{{ request('search') }}"
+                                            class="form-control" placeholder="Search...">
+                                    </div>
+
+                                    <div class="col-md-2">
+                                        <select name="bulan" class="form-select">
+                                            <option value="">Bulan</option>
+                                            @foreach (range(1, 12) as $bulan)
+                                                <option value="{{ $bulan }}"
+                                                    {{ request('bulan') == $bulan ? 'selected' : '' }}>
+                                                    {{ $bulan }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-2">
+                                        <select name="tahun" class="form-select">
+                                            <option value="">Tahun</option>
+                                            @foreach (range(date('Y') - 3, date('Y') + 1) as $tahun)
+                                                <option value="{{ $tahun }}"
+                                                    {{ request('tahun') == $tahun ? 'selected' : '' }}>
+                                                    {{ $tahun }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-2">
+                                        <select name="minggu" class="form-select">
+                                            <option value="">Minggu</option>
+                                            @for ($i = 1; $i <= 4; $i++)
+                                                <option value="{{ $i }}"
+                                                    {{ request('minggu') == $i ? 'selected' : '' }}>
+                                                    Minggu {{ $i }}
+                                                </option>
+                                            @endfor
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-2">
+                                        <button class="btn btn-primary w-100">Filter</button>
+                                    </div>
+
+                                </div>
+                            </form>
+                        </div>
+
+                        <div class="card-body">
+
+                            <div class="table-responsive">
+                                <table class="table table-bordered text-center align-middle" id="rkmTable">
+
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>No</th>
+                                            <th>RKM</th>
+                                            @foreach ($tasks as $task)
+                                                <th>{{ $task }}</th>
+                                            @endforeach
+                                        </tr>
+                                    </thead>
+
+                                    <tbody>
+                                        @foreach ($dataRKM as $item)
+                                            <tr>
+                                                <td>{{ $loop->iteration }}</td>
+                                                <td>
+                                                    <button class="btn btn-link text-decoration-none show-detail"
+                                                        data-id="{{ $item->id }}"
+                                                        data-materi="{{ $item->materi->nama_materi }}"
+                                                        data-perusahaan="{{ $item->perusahaan->nama_perusahaan ?? '-' }}"
+                                                        data-instruktur="{{ $item->instruktur->nama_lengkap ?? '-' }}"
+                                                        data-tanggaltraining="{{ $item->tanggal_awal ?? '-' }} s/d {{ $item->tanggal_akhir ?? '-' }}"
+                                                        data-sales="{{ $item->sales->nama_lengkap ?? '-' }}">
+                                                        {{ $item->materi->nama_materi }}
+                                                    </button>
+                                                </td>
+                                                @foreach ($tasks as $task)
+                                                    @php
+                                                        $field = $taskMap[$task];
+                                                        $isChecked = $item->checklist->$field ?? false;
+                                                    @endphp
+
+                                                    <td>
+                                                        <input type="checkbox" class="form-check-input checklist-checkbox"
+                                                            data-rkm="{{ $item->id }}"
+                                                            data-field="{{ $field }}"
+                                                            {{ $isChecked ? 'checked' : '' }}>
+                                                    </td>
+                                                @endforeach
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                                <div class="mt-3">
+                                    {{ $dataRKM->links() }}
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        <div class="modal fade" id="modalDetail" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg rounded-4">
+
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title fw-semibold text-primary">
+                            Detail RKM
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body pt-3">
+
+                        <div class="row g-3">
+
+                            <div class="col-12">
+                                <div class="p-3 bg-light rounded-3">
+                                    <small class="text-muted d-block">Tanggal</small>
+                                    <span id="detailTanggal" class="fw-semibold"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="p-3 bg-light rounded-3">
+                                    <small class="text-muted d-block">Materi</small>
+                                    <span id="detailMateri" class="fw-semibold"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="p-3 bg-light rounded-3">
+                                    <small class="text-muted d-block">Perusahaan</small>
+                                    <span id="detailPerusahaan" class="fw-semibold"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="p-3 bg-light rounded-3 h-100">
+                                    <small class="text-muted d-block">Instruktur</small>
+                                    <span id="detailInstruktur" class="fw-semibold"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="p-3 bg-light rounded-3 h-100">
+                                    <small class="text-muted d-block">Sales</small>
+                                    <span id="detailSales" class="fw-semibold"></span>
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    {{-- FOOTER --}}
+                    <div class="modal-footer border-0 pt-0">
+                        <button class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">
+                            Tutup
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-transparent border-0">
+                        <h5 class="card-title mb-0 text-primary">Top Vendor</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" style="height: 280px;">
+                            <canvas id="vendorChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-transparent border-0">
+                        <h5 class="card-title mb-0 text-primary">Top Tipe Materi</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" style="height: 280px;">
+                            <canvas id="materiChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0 text-success fw-bold">Total Win</h5>
+                        <select class="form-select form-select-sm win-year-filter border-0 bg-light" style="width: auto;"
+                            hidden id="filterTahunLaporan">
+                            @for ($year = now()->year - 5; $year <= now()->year + 1; $year++)
+                                <option value="{{ $year }}" {{ $tahunDipilih == $year ? 'selected' : '' }}>
+                                    {{ $year }}</option>
+                            @endfor
+                        </select>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" style="height: 280px;">
+                            <canvas id="totalWinChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0 text-danger fw-bold">Total Lost</h5>
+                        <select class="form-select form-select-sm lost-year-filter border-0 bg-light"
+                            style="width: auto;">
+                            @for ($year = now()->year - 5; $year <= now()->year + 1; $year++)
+                                <option value="{{ $year }}" {{ $tahunDipilih == $year ? 'selected' : '' }}>
+                                    {{ $year }}</option>
+                            @endfor
+                        </select>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" style="height: 280px;">
+                            <canvas id="totalLostChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-lg-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header border-bottom bg-transparent py-3">
+                        <h5 class="card-title mb-0 text-primary fw-bold">Top 5 Produk</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <ul class="nav nav-tabs nav-fill border-0 bg-light" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link active small py-2" data-bs-toggle="tab" href="#tab-terjual">Terjual
+                                    (Pax)</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link small py-2" data-bs-toggle="tab" href="#tab-profit">Profit
+                                    (Revenue)</a>
+                            </li>
+                        </ul>
+                        <div class="tab-content p-3">
+                            <div id="tab-terjual" class="tab-pane fade show active">
+                                @forelse ($best as $item)
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div class="text-truncate" style="max-width: 70%;">
+                                            <small
+                                                class="text-dark fw-medium d-block">{{ $item->materi->nama_materi ?? $item->materi_key }}</small>
                                         </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                        @empty
-                            <div class="text-center py-5">
-                                <img src="https://illustrations.popsy.co/gray/no-data.svg" alt="no-data" style="width: 120px;" class="mb-3">
-                                <p class="text-muted small">Tidak ada data aktivitas sales pada periode ini.</p>
-                            </div>
-                        @endforelse
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-4 col-lg-5">
-            <div class="row g-4 h-100">
-                <div class="col-12">
-                    <div class="card shadow-sm border-0 h-100">
-                        <div class="card-header d-flex justify-content-between align-items-center bg-transparent border-0">
-                            <h5 class="card-title mb-0 text-primary">Data Perusahaan</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="chart-container" style="height: 250px;">
-                                <canvas id="kategoriChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-12">
-                    <div class="card shadow-sm border-0 h-100">
-                        <div class="card-header d-flex justify-content-between align-items-center bg-transparent border-0">
-                            <h5 class="card-title mb-0 text-primary">Pembelian per Segmen</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="chart-container" style="height: 250px;">
-                                <canvas id="spendChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row g-4 mb-4">
-        <div class="col-md-6">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg-transparent border-0">
-                    <h5 class="card-title mb-0 text-primary">Top Vendor</h5>
-                </div>
-                <div class="card-body">
-                    <div class="chart-container" style="height: 280px;">
-                        <canvas id="vendorChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg-transparent border-0">
-                    <h5 class="card-title mb-0 text-primary">Top Tipe Materi</h5>
-                </div>
-                <div class="card-body">
-                    <div class="chart-container" style="height: 280px;">
-                        <canvas id="materiChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row g-4 mb-4">
-        <div class="col-md-6">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0 text-success fw-bold">Total Win</h5>
-                    <select class="form-select form-select-sm win-year-filter border-0 bg-light" style="width: auto;" hidden id="filterTahunLaporan">
-                        @for ($year = now()->year - 5; $year <= now()->year + 1; $year++)
-                            <option value="{{ $year }}" {{ $tahunDipilih == $year ? 'selected' : '' }}>{{ $year }}</option>
-                        @endfor
-                    </select>
-                </div>
-                <div class="card-body">
-                    <div class="chart-container" style="height: 280px;">
-                        <canvas id="totalWinChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0 text-danger fw-bold">Total Lost</h5>
-                    <select class="form-select form-select-sm lost-year-filter border-0 bg-light" style="width: auto;">
-                        @for ($year = now()->year - 5; $year <= now()->year + 1; $year++)
-                            <option value="{{ $year }}" {{ $tahunDipilih == $year ? 'selected' : '' }}>{{ $year }}</option>
-                        @endfor
-                    </select>
-                </div>
-                <div class="card-body">
-                    <div class="chart-container" style="height: 280px;">
-                        <canvas id="totalLostChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row g-4 mb-4">
-        <div class="col-lg-4">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-header border-bottom bg-transparent py-3">
-                    <h5 class="card-title mb-0 text-primary fw-bold">Top 5 Produk</h5>
-                </div>
-                <div class="card-body p-0">
-                    <ul class="nav nav-tabs nav-fill border-0 bg-light" role="tablist">
-                        <li class="nav-item">
-                            <a class="nav-link active small py-2" data-bs-toggle="tab" href="#tab-terjual">Terjual (Pax)</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link small py-2" data-bs-toggle="tab" href="#tab-profit">Profit (Revenue)</a>
-                        </li>
-                    </ul>
-                    <div class="tab-content p-3">
-                        <div id="tab-terjual" class="tab-pane fade show active">
-                            @forelse ($best as $item)
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <div class="text-truncate" style="max-width: 70%;">
-                                        <small class="text-dark fw-medium d-block">{{ $item->materi->nama_materi ?? $item->materi_key }}</small>
+                                        <span
+                                            class="badge bg-success-subtle text-success border border-success-subtle">{{ number_format($item->total_pax, 0, ',', '.') }}
+                                            Pax</span>
                                     </div>
-                                    <span class="badge bg-success-subtle text-success border border-success-subtle">{{ number_format($item->total_pax, 0, ',', '.') }} Pax</span>
-                                </div>
-                            @empty
-                                <p class="text-center text-muted my-4 small">Tidak ada data.</p>
-                            @endforelse
-                        </div>
-                        <div id="tab-profit" class="tab-pane fade">
-                            @forelse ($profit as $item)
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <div class="text-truncate" style="max-width: 60%;">
-                                        <small class="text-dark fw-medium d-block">{{ $item->materi->nama_materi ?? $item->materi_key }}</small>
-                                    </div>
-                                    <span class="text-primary fw-bold small">Rp {{ number_format($item->total_revenue, 0, ',', '.') }}</span>
-                                </div>
-                            @empty
-                                <p class="text-center text-muted my-4 small">Tidak ada data.</p>
-                            @endforelse
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-8">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg-transparent border-bottom py-3">
-                    <h5 class="card-title mb-0 text-primary fw-bold">Prospek Terbuat Minggu Ini</h5>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive" style="max-height: 350px;">
-                        <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
-                            <thead class="bg-light text-muted">
-                                <tr>
-                                    <th class="ps-4">Sales & Materi</th>
-                                    <th>Harga</th>
-                                    <th>Periode</th>
-                                    <th>Pax</th>
-                                    <th class="pe-4">Tahap</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($prospek as $item)
-                                    <tr>
-                                        <td class="ps-4">
-                                            <span class="fw-bold text-dark d-block">{{ $item->id_sales }}</span>
-                                            <small class="text-muted">{{ $item->materiRelation->nama_materi }}</small>
-                                        </td>
-                                        <td><span class="fw-medium">Rp {{ number_format($item->harga, 0, ',', '.') }}</span></td>
-                                        <td>
-                                            @if ($item->tentatif == 1)
-                                                <span class="badge bg-warning-subtle text-warning">Tentatif</span>
-                                            @else
-                                                <small>
-                                                    {{ \Carbon\Carbon::parse($item->periode_mulai)->translatedFormat('d M Y') }}
-                                                    -
-                                                    {{ \Carbon\Carbon::parse($item->periode_selesai)->translatedFormat('d M Y') }}
-                                                </small>
-                                            @endif
-                                        </td>
-                                        <td>{{ number_format($item->pax, 0, ',', '.') }}</td>
-                                        <td class="pe-4">
-                                            <span class="badge bg-info-subtle text-info border border-info-subtle w-100">{{ strtoupper($item->tahap) }}</span>
-                                        </td>
-                                    </tr>
                                 @empty
-                                    <tr><td colspan="5" class="text-center py-4 text-muted">Belum ada prospek baru.</td></tr>
+                                    <p class="text-center text-muted my-4 small">Tidak ada data.</p>
                                 @endforelse
-                            </tbody>
-                        </table>
+                            </div>
+                            <div id="tab-profit" class="tab-pane fade">
+                                @forelse ($profit as $item)
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div class="text-truncate" style="max-width: 60%;">
+                                            <small
+                                                class="text-dark fw-medium d-block">{{ $item->materi->nama_materi ?? $item->materi_key }}</small>
+                                        </div>
+                                        <span class="text-primary fw-bold small">Rp
+                                            {{ number_format($item->total_revenue, 0, ',', '.') }}</span>
+                                    </div>
+                                @empty
+                                    <p class="text-center text-muted my-4 small">Tidak ada data.</p>
+                                @endforelse
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <div class="row g-4 mb-4">
-        <div class="col-12">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-transparent py-3 border-bottom d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0 text-primary fw-bold">Total Status Perusahaan per Sales</h5>
-                    <div class="badge bg-label-secondary text-muted">Pivot Table View</div>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover table-striped align-middle mb-0" style="font-size: 0.85rem;">
-                            <thead class="bg-primary text-white">
-                                <tr>
-                                    <th class="ps-4 border-0">Sales Executive</th>
-                                    @php $statuses = $totalStatus->pluck('status')->unique()->sort(); @endphp
-                                    @foreach ($statuses as $status)
-                                        <th class="text-center border-0">{{ $status }}</th>
-                                    @endforeach
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @php
-                                    $pivotData = [];
-                                    foreach ($totalStatus as $item) { $pivotData[$item->sales_key][$item->status] = $item->total; }
-                                @endphp
-                                @forelse ($pivotData as $salesKey => $statusData)
+            <div class="col-lg-8">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-transparent border-bottom py-3">
+                        <h5 class="card-title mb-0 text-primary fw-bold">Prospek Terbuat Minggu Ini</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive" style="max-height: 350px;">
+                            <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
+                                <thead class="bg-light text-muted">
                                     <tr>
-                                        <td class="ps-4 fw-bold">{{ $salesKey }}</td>
-                                        @foreach ($statuses as $status)
-                                            <td class="text-center fw-medium">
-                                                @if(isset($statusData[$status]))
-                                                    {{ number_format($statusData[$status], 0, ',', '.') }}
+                                        <th class="ps-4">Sales & Materi</th>
+                                        <th>Harga</th>
+                                        <th>Periode</th>
+                                        <th>Pax</th>
+                                        <th class="pe-4">Tahap</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($prospek as $item)
+                                        <tr>
+                                            <td class="ps-4">
+                                                <span class="fw-bold text-dark d-block">{{ $item->id_sales }}</span>
+                                                <small class="text-muted">{{ $item->materiRelation->nama_materi }}</small>
+                                            </td>
+                                            <td><span class="fw-medium">Rp
+                                                    {{ number_format($item->harga, 0, ',', '.') }}</span></td>
+                                            <td>
+                                                @if ($item->tentatif == 1)
+                                                    <span class="badge bg-warning-subtle text-warning">Tentatif</span>
                                                 @else
-                                                    <span class="text-light-emphasis">0</span>
+                                                    <small>
+                                                        {{ \Carbon\Carbon::parse($item->periode_mulai)->translatedFormat('d M Y') }}
+                                                        -
+                                                        {{ \Carbon\Carbon::parse($item->periode_selesai)->translatedFormat('d M Y') }}
+                                                    </small>
                                                 @endif
                                             </td>
+                                            <td>{{ number_format($item->pax, 0, ',', '.') }}</td>
+                                            <td class="pe-4">
+                                                <span
+                                                    class="badge bg-info-subtle text-info border border-info-subtle w-100">{{ strtoupper($item->tahap) }}</span>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="5" class="text-center py-4 text-muted">Belum ada prospek baru.
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <div
+                        class="card-header bg-transparent py-3 border-bottom d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0 text-primary fw-bold">Total Status Perusahaan per Sales</h5>
+                        <div class="badge bg-label-secondary text-muted">Pivot Table View</div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped align-middle mb-0" style="font-size: 0.85rem;">
+                                <thead class="bg-primary text-white">
+                                    <tr>
+                                        <th class="ps-4 border-0">Sales Executive</th>
+                                        @php $statuses = $totalStatus->pluck('status')->unique()->sort(); @endphp
+                                        @foreach ($statuses as $status)
+                                            <th class="text-center border-0">{{ $status }}</th>
                                         @endforeach
                                     </tr>
-                                @empty
-                                    <tr><td colspan="{{ $statuses->count() + 1 }}" class="text-center py-4">Data tidak tersedia.</td></tr>
-                                @endforelse
+                                </thead>
+                                <tbody>
+                                    @php
+                                        $pivotData = [];
+                                        foreach ($totalStatus as $item) {
+                                            $pivotData[$item->sales_key][$item->status] = $item->total;
+                                        }
+                                    @endphp
+                                    @forelse ($pivotData as $salesKey => $statusData)
+                                        <tr>
+                                            <td class="ps-4 fw-bold">{{ $salesKey }}</td>
+                                            @foreach ($statuses as $status)
+                                                <td class="text-center fw-medium">
+                                                    @if (isset($statusData[$status]))
+                                                        {{ number_format($statusData[$status], 0, ',', '.') }}
+                                                    @else
+                                                        <span class="text-light-emphasis">0</span>
+                                                    @endif
+                                                </td>
+                                            @endforeach
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="{{ $statuses->count() + 1 }}" class="text-center py-4">Data
+                                                tidak tersedia.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-12">
+                <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+                    <div class="card-header bg-white py-3 px-4 border-0">
+                        <h5 class="card-title mb-0 text-primary fw-bold">Distribusi Perusahaan per Lokasi</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="map" style="height: 450px; background-color: #f8f9fa;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="detailAktivitas" class="w3-modal" tabindex="-1" aria-hidden="true">
+        <div class="w3-modal-content w3-animate-top shadow-lg"
+            style="max-width: 800px; border-radius: 12px; overflow: hidden;">
+            <div class="card border-0">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Detail Aktivitas Sales</h5>
+                    <button type="button" class="btn-close btn-close-white"
+                        onclick="document.getElementById('detailAktivitas').style.display='none'"></button>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6 border-end">
+                            <div class="mb-2"><small class="text-muted d-block">Sales Executive</small><strong
+                                    id="modalSalesId" class="fs-5"></strong></div>
+                            <div><small class="text-muted d-block">Aktivitas</small><strong id="modalActivity"
+                                    class="text-primary fs-5"></strong></div>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <div class="mb-2"><small class="text-muted d-block">Progress Capaian</small><span
+                                    id="modalPersen" class="badge bg-info p-2 fs-6"></span></div>
+                            <div><small class="text-muted d-block">Realisasi / Target</small><strong><span
+                                        id="modalJumlah"></span> / <span id="modalTarget"></span></strong></div>
+                        </div>
+                    </div>
+
+                    <div class="progress mb-4" style="height: 12px; border-radius: 10px;">
+                        <div id="modalProgressBar" class="progress-bar progress-bar-striped progress-bar-animated"
+                            style="width: 0%;"></div>
+                    </div>
+
+                    <div class="table-responsive rounded-3 border">
+                        <table class="table table-hover align-middle mb-0 shadow-none">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="small border-0">Client</th>
+                                    <th class="small border-0">Tipe</th>
+                                    <th class="small border-0">Deskripsi</th>
+                                    <th class="small border-0">Foto</th>
+                                    <th class="small border-0">Lokasi</th>
+                                    <th class="small border-0 text-center">Waktu</th>
+                                </tr>
+                            </thead>
+                            <tbody class="small">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer border-0 text-end py-3">
+                    <button type="button" class="btn btn-secondary px-4"
+                        onclick="document.getElementById('detailAktivitas').style.display='none'">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="chartRKM" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">Detail Data</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover" id="tableChartRkm">
+                            <thead>
+                                <tr>
+                                    <th>Nama Materi</th>
+                                    <th>Perusahaan</th>
+                                    <th>Sales</th>
+                                    <th>Harga Jual</th>
+                                    <th>Tanggal</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bodyChartRkm">
                             </tbody>
                         </table>
                     </div>
@@ -359,149 +749,60 @@
         </div>
     </div>
 
-    <div class="row g-4">
-        <div class="col-12">
-            <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
-                <div class="card-header bg-white py-3 px-4 border-0">
-                    <h5 class="card-title mb-0 text-primary fw-bold">Distribusi Perusahaan per Lokasi</h5>
+    <div class="modal fade" id="chartPerusahaan" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitles">Detail Data</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="card-body p-0">
-                    <div id="map" style="height: 450px; background-color: #f8f9fa;"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div id="detailAktivitas" class="w3-modal" tabindex="-1" aria-hidden="true">
-    <div class="w3-modal-content w3-animate-top shadow-lg" style="max-width: 800px; border-radius: 12px; overflow: hidden;">
-        <div class="card border-0">
-            <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Detail Aktivitas Sales</h5>
-                <button type="button" class="btn-close btn-close-white" onclick="document.getElementById('detailAktivitas').style.display='none'"></button>
-            </div>
-            <div class="card-body p-4">
-                <div class="row g-4 mb-4">
-                    <div class="col-md-6 border-end">
-                        <div class="mb-2"><small class="text-muted d-block">Sales Executive</small><strong id="modalSalesId" class="fs-5"></strong></div>
-                        <div><small class="text-muted d-block">Aktivitas</small><strong id="modalActivity" class="text-primary fs-5"></strong></div>
-                    </div>
-                    <div class="col-md-6 text-md-end">
-                        <div class="mb-2"><small class="text-muted d-block">Progress Capaian</small><span id="modalPersen" class="badge bg-info p-2 fs-6"></span></div>
-                        <div><small class="text-muted d-block">Realisasi / Target</small><strong><span id="modalJumlah"></span> / <span id="modalTarget"></span></strong></div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover" id="tableChartPerusahaan">
+                            <thead>
+                                <tr>
+                                    <th>Perusahaan</th>
+                                    <th>Sales</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bodyChartPerusahaan">
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-                
-                <div class="progress mb-4" style="height: 12px; border-radius: 10px;">
-                    <div id="modalProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%;"></div>
-                </div>
+            </div>
+        </div>
+    </div>
 
-                <div class="table-responsive rounded-3 border">
-                    <table class="table table-hover align-middle mb-0 shadow-none">
-                        <thead class="bg-light">
-                            <tr>
-                                <th class="small border-0">Client</th>
-                                <th class="small border-0">Tipe</th>
-                                <th class="small border-0">Deskripsi</th>
-                                <th class="small border-0">Foto</th>
-                                <th class="small border-0">Lokasi</th>
-                                <th class="small border-0 text-center">Waktu</th>
-                            </tr>
-                        </thead>
-                        <tbody class="small">
+    <div class="modal fade" id="chartLaporanPenjualan" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitlesLaporan">Detail Data</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover" id="tableChartLaporanPenjualan">
+                            <thead>
+                                <tr>
+                                    <th>Perusahaan</th>
+                                    <th>Materi</th>
+                                    <th>Netsales</th>
+                                    <th>Pax</th>
+                                    <th>Total</th>
+                                    <th>Waktu</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bodyChartLaporanPenjualan">
                             </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="card-footer border-0 text-end py-3">
-                <button type="button" class="btn btn-secondary px-4" onclick="document.getElementById('detailAktivitas').style.display='none'">Tutup</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="chartRKM" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalTitle">Detail Data</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover" id="tableChartRkm">
-                        <thead>
-                            <tr>
-                                <th>Nama Materi</th>
-                                <th>Perusahaan</th>
-                                <th>Sales</th>
-                                <th>Harga Jual</th>
-                                <th>Tanggal</th>
-                            </tr>
-                        </thead>
-                        <tbody id="bodyChartRkm">
-                            </tbody>
-                    </table>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
-
-<div class="modal fade" id="chartPerusahaan" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalTitles">Detail Data</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover" id="tableChartPerusahaan">
-                        <thead>
-                            <tr>
-                                <th>Perusahaan</th>
-                                <th>Sales</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="bodyChartPerusahaan">
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="chartLaporanPenjualan" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalTitlesLaporan">Detail Data</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover" id="tableChartLaporanPenjualan">
-                        <thead>
-                            <tr>
-                                <th>Perusahaan</th>
-                                <th>Materi</th>
-                                <th>Netsales</th>
-                                <th>Pax</th>
-                                <th>Total</th>
-                                <th>Waktu</th>
-                            </tr>
-                        </thead>
-                        <tbody id="bodyChartLaporanPenjualan">
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
     <!-- Leaflet.js and Chart.js -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -509,6 +810,39 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 
     <script>
+        document.querySelectorAll('.show-detail').forEach(btn => {
+            btn.addEventListener('click', function () {
+
+                document.getElementById('detailMateri').innerText = this.dataset.materi;
+                document.getElementById('detailPerusahaan').innerText = this.dataset.perusahaan;
+                document.getElementById('detailInstruktur').innerText = this.dataset.instruktur;
+                document.getElementById('detailSales').innerText = this.dataset.sales;
+                document.getElementById('detailTanggal').innerText = this.dataset.tanggaltraining;
+
+                let modal = new bootstrap.Modal(document.getElementById('modalDetail'));
+                modal.show();
+            });
+        });
+
+        document.querySelectorAll('.checklist-checkbox').forEach(cb => {
+            cb.addEventListener('change', function() {
+
+                fetch("{{ route('checklist.update') }}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                    },
+                    body: JSON.stringify({
+                        rkm_id: this.dataset.rkm,
+                        field: this.dataset.field,
+                        value: this.checked ? 1 : 0
+                    })
+                });
+
+            });
+        });
+
         document.addEventListener('DOMContentLoaded', () => {
             // Initialize all charts with responsive container
             const initChart = (id, config) => {
@@ -677,14 +1011,14 @@
                     plugins: {
                         tooltip: {
                             callbacks: {
-                                label: function (context) {
+                                label: function(context) {
 
                                     const index = context.dataIndex;
 
                                     const spend = spendData[index].spend;
                                     const total = spendData[index].total;
 
-                                    const formatRupiah = number => 
+                                    const formatRupiah = number =>
                                         new Intl.NumberFormat('id-ID', {
                                             style: 'currency',
                                             currency: 'IDR'
@@ -701,10 +1035,10 @@
             function openModalRKM(label, type) {
                 const modalTitle = document.getElementById('modalTitle');
                 const tableBody = document.getElementById('bodyChartRkm');
-                
+
                 modalTitle.innerText = `Detail: ${label}`;
                 tableBody.innerHTML = '<tr><td colspan="5" class="text-center">Ditunggu ya bro</td></tr>';
-                
+
                 const detailModal = new bootstrap.Modal(document.getElementById('chartRKM'));
                 detailModal.show();
 
@@ -714,7 +1048,8 @@
                         tableBody.innerHTML = '';
 
                         if (data.length === 0) {
-                            tableBody.innerHTML = '<tr><td colspan="4" class="text-center">Tidak ada data ditemukan.</td></tr>';
+                            tableBody.innerHTML =
+                                '<tr><td colspan="4" class="text-center">Tidak ada data ditemukan.</td></tr>';
                             return;
                         }
 
@@ -732,18 +1067,19 @@
                         });
                     })
                     .catch(error => {
-                        console.error('Error:', error); 
-                        tableBody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Gagal memuat data.</td></tr>';
+                        console.error('Error:', error);
+                        tableBody.innerHTML =
+                            '<tr><td colspan="4" class="text-center text-danger">Gagal memuat data.</td></tr>';
                     });
             }
 
             function openModalPerusahaan(label) {
                 const tableBody = document.getElementById('bodyChartPerusahaan');
                 const modalTitle = document.getElementById('modalTitles');
-                
+
                 modalTitle.innerText = `Daftar Perusahaan: ${label}`;
                 tableBody.innerHTML = '<tr><td colspan="3" class="text-center">Sabar bro...</td></tr>';
-                
+
                 const myModal = new bootstrap.Modal(document.getElementById('chartPerusahaan'));
                 myModal.show();
 
@@ -753,7 +1089,8 @@
                         tableBody.innerHTML = '';
 
                         if (data.length === 0) {
-                            tableBody.innerHTML = '<tr><td colspan="3" class="text-center">Tidak ada data.</td></tr>';
+                            tableBody.innerHTML =
+                                '<tr><td colspan="3" class="text-center">Tidak ada data.</td></tr>';
                             return;
                         }
 
@@ -769,7 +1106,8 @@
                     })
                     .catch(error => {
                         console.error('Error:', error);
-                        tableBody.innerHTML = '<tr><td colspan="3" class="text-center text-danger">Gagal mengambil data.</td></tr>';
+                        tableBody.innerHTML =
+                            '<tr><td colspan="3" class="text-center text-danger">Gagal mengambil data.</td></tr>';
                     });
             }
 
@@ -778,7 +1116,8 @@
                 const tableBody = document.getElementById('bodyChartLaporanPenjualan');
                 const modalTitle = document.getElementById('modalTitlesLaporan');
 
-                modalTitle.innerText = `Detail ${status.toUpperCase()} ${id_sales.toUpperCase()}- ${triwulan} (${tahun})`;
+                modalTitle.innerText =
+                    `Detail ${status.toUpperCase()} ${id_sales.toUpperCase()}- ${triwulan} (${tahun})`;
                 tableBody.innerHTML = `
                     <tr>
                         <td colspan="6" class="text-center">Sabar bro...</td>
@@ -790,7 +1129,8 @@
                 );
                 modal.show();
 
-                const url = `/crm/chartClosed?id_sales=${encodeURIComponent(id_sales)}&triwulan=${encodeURIComponent(triwulan)}&tahun=${encodeURIComponent(tahun)}&status=${encodeURIComponent(status)}`;
+                const url =
+                    `/crm/chartClosed?id_sales=${encodeURIComponent(id_sales)}&triwulan=${encodeURIComponent(triwulan)}&tahun=${encodeURIComponent(tahun)}&status=${encodeURIComponent(status)}`;
 
                 fetch(url)
                     .then(response => {
@@ -891,7 +1231,7 @@
                             }
                         }
                     },
-                    onClick: function (evt, elements) {
+                    onClick: function(evt, elements) {
                         if (elements.length > 0) {
                             const element = elements[0];
 
@@ -955,7 +1295,7 @@
                             }
                         }
                     },
-                    onClick: function (evt, elements) {
+                    onClick: function(evt, elements) {
                         if (elements.length > 0) {
                             const element = elements[0];
 
@@ -1081,7 +1421,10 @@
             // Function to show modal with activity details
             async function showActivityDetails(salesId, activityLabel) {
                 const sales = activityData.find(s => s.id_sales === salesId);
-                console.log("Membuka modal →", { salesId, activityLabel });
+                console.log("Membuka modal →", {
+                    salesId,
+                    activityLabel
+                });
                 console.log(sales);
 
                 const saless = activityData.find(s => s.id_sales === salesId);
