@@ -13,13 +13,17 @@ class AnalysisReportController extends Controller
 {
     public function index(Request $request)
     {
+        $allowedRoles = ['Finance & Accounting', 'GM', 'HRD'];
+        $userRole = auth()->user()->karyawan->jabatan ?? null;
+
+        if (!in_array($userRole, $allowedRoles)) {
+            abort(403, 'Akses ditolak. Anda tidak memiliki otorisasi untuk melihat halaman ini.');
+        }
         $availableYears = AnalysisReport::select('year')
             ->distinct()
             ->orderBy('year', 'desc')
             ->pluck('year');
-
         $query = AnalysisReport::with('user.karyawan');
-
         $selectedYear = $request->has('year_filter') ? $request->input('year_filter') : date('Y');
 
         if (!empty($selectedYear)) {
@@ -30,7 +34,6 @@ class AnalysisReportController extends Controller
         }
 
         $reports = $query->get();
-
         $yearDescriptions = AnalysisYearDescription::whereIn('year', $years)->pluck('description', 'year');
 
         return view('office.analysis.index', compact('years', 'availableYears', 'reports', 'selectedYear', 'yearDescriptions'));
@@ -160,7 +163,7 @@ class AnalysisReportController extends Controller
             'year'        => 'required|digits:4|integer',
             'description' => 'nullable|string',
         ]);
-        
+
         AnalysisYearDescription::updateOrCreate(
             ['year' => $request->input('year')],
             ['description' => $request->input('description')]

@@ -209,15 +209,19 @@
             </a>
         </li>
 
-        <li class="menu-header small text-uppercase">
-            <span class="menu-header-text">Finance</span>
-        </li>
+        @if(auth()->check() && isset(auth()->user()->karyawan) && in_array(auth()->user()->karyawan->jabatan, ['Finance & Accounting', 'GM', 'HRD']))
 
-        <li class="menu-item {{ request()->routeIs('index.analysis') ? 'active open' : '' }}">
-            <a href="{{ route('index.analysis') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-wrench"></i>
-                <div class="text-truncate" data-i18n="contact">Jumlah laporan Analisis</div>
-            </a>
-        </li>
+            <li class="menu-header small text-uppercase">
+                <span class="menu-header-text">Finance</span>
+            </li>
+
+            <li class="menu-item {{ request()->routeIs('index.analysis') ? 'active open' : '' }}">
+                <a href="{{ route('index.analysis') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-wrench"></i>
+                    <div class="text-truncate" data-i18n="contact">Jumlah laporan Analisis</div>
+                </a>
+            </li>
+
+        @endif
     </ul>
 </aside>
