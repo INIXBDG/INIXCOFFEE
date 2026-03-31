@@ -2356,6 +2356,7 @@
                     options += `
                         <option value="laporan mom">Laporan MOM</option>
                         <option value="akurasi kelengkapan data penjualan">Akurasi Kelengkapan Data Penjualan</option>
+                        <option value="todo administrasi">Todo Administrasi</option>
                     `;
                 }
 
@@ -2365,8 +2366,6 @@
                         <option value="ketepatan waktu po">Ketepatan Waktu PO</option>
                     `;
                 }
-
-
 
                 //end/selesai
                 else {
@@ -2448,7 +2447,9 @@
                 'persentase gap kompetensi tim terhadap standar skill',
                 'presentase kinerja instruktur',
                 'peningkatan kontribusi pelatihan',
-                'biaya akuisisi client'
+                'biaya akuisisi client',
+                'laporan mom',
+                'todo administrasi'
             ].map(route => route.toLowerCase());
 
             const rupiahRoutes = [
@@ -2473,7 +2474,6 @@
                 'peningkatan kemampuan kompetensi sales',
 
                 'target penjualan tahunan',
-                'laporan mom',
                 'ketepatan waktu po',
 
                 'feedback kenyamanan berkendaran',

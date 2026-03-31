@@ -41,6 +41,7 @@ use App\Models\Sertifikasi;
 use App\Models\SurveyKepuasan;
 use App\Models\targetKPI;
 use App\Models\Tickets;
+use App\Models\TodoAdministrasi;
 use App\Models\trackingTagihanPerusahaan;
 use App\Models\TunjanganKaryawan;
 use Carbon\Carbon;
@@ -796,6 +797,8 @@ class TargetKPIController extends Controller
             $progress = $this->calculateLaporanMOM($item, $personId);
         } elseif ($item->asistant_route === 'akurasi kelengkapan data penjualan') {
             $progress = $this->calculateAkurasiKelengkapanDataPenjualan($item, $personId);
+        } elseif ($item->asistant_route === 'todo administrasi') {
+            $progress = $this->calculateTodoAdministrasi($item);
         }
 
         return $progress;
@@ -3386,7 +3389,37 @@ class TargetKPIController extends Controller
         }
 
         $momCount = LaporanHarianSales::whereYear('created_at', $tahun)->count();
-        $progress = ($momCount / $momCount) * 100;
+
+        $rkmBase = RKM::whereYear('tanggal_awal', $tahun);
+
+        $totalDataERegist = (clone $rkmBase)->count();
+
+        $totalDataAboveERegist = (clone $rkmBase)
+            ->whereNotNull('registrasi_form')
+            ->count();
+
+        $persenCalculationMom = $momCount == 0 ? 100 : 50;
+        $persenCalculationERegist = $totalDataERegist == 0 ? 0 : 50;
+
+        $progressMoM = $momCount > 0 ? ($momCount / $momCount) * $persenCalculationERegist : 0;
+
+        if ($progressMoM == 0) {
+            $progressMoM = 0;
+        }
+
+        $progressERegist = $totalDataERegist > 0
+            ? ($totalDataAboveERegist / $totalDataERegist) * $persenCalculationMom
+            : 0;
+
+        if ($progressERegist == 0) {
+            $progressERegist = 0;
+        }
+
+        $progress = $progressMoM + $progressERegist;
+
+        if ($progress == 0) {
+            return 0;
+        }
 
         return round($progress, 1);
     }
@@ -3925,6 +3958,8 @@ class TargetKPIController extends Controller
             return $this->calculateLaporanMOMDetail($itemDetail);
         } elseif ($itemDetail->asistant_route === 'akurasi kelengkapan data penjualan') {
             return $this->calculateAkurasiKelengkapanDataPenjualanDetail($itemDetail, $personId);
+        }  elseif ($itemDetail->asistant_route === 'todo administrasi') {
+            return $this->calculateTodoAdministrasiDetail($itemDetail);
         }
 
         return null;
@@ -9941,8 +9976,10 @@ class TargetKPIController extends Controller
     {
         $details = $itemDetail->detailTargetKPI;
 
-        $tahun = (int) optional($details->first())->detail_jangka;
-        $nilaiTarget = (float) optional($details->first())->nilai_target;
+        $firstDetail = $details->first();
+
+        $tahun = (int) optional($firstDetail)->detail_jangka;
+        $nilaiTarget = (float) optional($firstDetail)->nilai_target;
 
         if ($details->isEmpty() || $nilaiTarget <= 0) {
             return [
@@ -9964,13 +10001,34 @@ class TargetKPIController extends Controller
             ];
         }
 
+        $momCount = LaporanHarianSales::whereYear('created_at', $tahun)->count();
+
+        $rkmBase = RKM::whereYear('tanggal_awal', $tahun);
+
+        $totalDataERegist = (clone $rkmBase)->count();
+
+        $totalDataAboveERegist = (clone $rkmBase)
+            ->whereNotNull('registrasi_form')
+            ->count();
+
+        $persenCalculationMom = $momCount == 0 ? 100 : 50;
+        $persenCalculationERegist = $totalDataERegist == 0 ? 0 : 50;
+
+        $progressMoM = $momCount > 0
+            ? ($momCount / $momCount) * $persenCalculationERegist
+            : 0;
+
+        $progressERegist = $totalDataERegist > 0
+            ? ($totalDataAboveERegist / $totalDataERegist) * $persenCalculationMom
+            : 0;
+
+        $progress = $progressMoM + $progressERegist;
+
         $laporans = LaporanHarianSales::whereYear('created_at', $tahun)
             ->select(DB::raw('DATE(created_at) as tanggal, COUNT(*) as total'))
             ->groupBy('tanggal')
             ->get();
 
-        $progress = 0;
-        $totalProgress = 0;
         $dailyBreakdownPerMonth = [];
         $monthlyDataTemp = [];
 
@@ -9980,15 +10038,13 @@ class TargetKPIController extends Controller
             $monthKey = $date->format('Y-m');
 
             $total = (float) $row->total;
-            $totalProgress += $total;
-
-            $progress = ($totalProgress / $totalProgress) * 100;
 
             if (!isset($dailyBreakdownPerMonth[$monthKey])) {
                 $dailyBreakdownPerMonth[$monthKey] = [];
             }
             $dailyBreakdownPerMonth[$monthKey][$dateKey] = $total;
 
+            // Monthly temp
             if (!isset($monthlyDataTemp[$monthKey])) {
                 $monthlyDataTemp[$monthKey] = [];
             }
@@ -9997,19 +10053,34 @@ class TargetKPIController extends Controller
 
         $monthlyData = [];
         foreach ($monthlyDataTemp as $month => $totals) {
-            $monthlyData[$month] = round(array_sum($totals) / count($totals), 1);
+            $count = count($totals);
+
+            $monthlyData[$month] = $count > 0
+                ? round(array_sum($totals) / $count, 1)
+                : 0;
         }
 
         ksort($monthlyData);
         ksort($dailyBreakdownPerMonth);
 
-        $gapRaw = $progress - $nilaiTarget;
-        $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
+        $pieChart = [
+            'above' => $totalDataAboveERegist,
+            'below' => max(0, $totalDataERegist - $totalDataAboveERegist),
+        ];
+
+        $gap = 0;
+
+        if ($progress > $nilaiTarget) {
+            $gap = 0;
+        } else {
+            $gapRaw = $progress - $nilaiTarget;
+            $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
+        }
 
         return [
-            'progress' => $progress,
+            'progress' => round($progress, 1),
             'gap' => $gap,
-            'pie_chart' => ['above' => 0, 'below' => 0],
+            'pie_chart' => $pieChart,
             'monthly_data' => $monthlyData,
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
         ];
@@ -10136,6 +10207,122 @@ class TargetKPIController extends Controller
         ];
     }
 
+    private function calculateTodoAdministrasiDetail($itemDetail)
+    {
+        $details = $itemDetail->detailTargetKPI;
+
+        $tahun = (int) optional($details->first())->detail_jangka;
+        $nilaiTarget = (float) optional($details->first())->nilai_target;
+
+        $default = [
+            'progress' => 0,
+            'gap' => 0,
+            'pie_chart' => ['above' => 0, 'below' => 0],
+            'monthly_data' => [],
+            'daily_breakdown_per_month' => [],
+        ];
+
+        if ($details->isEmpty() || $tahun < 2000 || $tahun > now()->year + 5) {
+            return $default;
+        }
+
+        $todos = TodoAdministrasi::whereYear('created_at', $tahun)->get();
+
+        if ($todos->isEmpty()) {    
+            return $default;
+        }
+
+        $totalData = $todos->count();
+
+        $totalDone = $todos->where('status', 'selesai')
+            ->whereNotNull('solusi')
+            ->count();
+
+        $totalNotDone = $totalData - $totalDone;
+
+        $progress = $totalData > 0 ? ($totalDone / $totalData) * 100 : 0;
+        $progress = round($progress, 1);
+
+        $dailyBreakdownPerMonth = [];
+        $monthlyDataTemp = [];
+
+        foreach ($todos as $todo) {
+            $date = \Carbon\Carbon::parse($todo->created_at);
+            $dateKey = $date->format('Y-m-d');
+            $monthKey = $date->format('Y-m');
+
+            if (!isset($dailyBreakdownPerMonth[$monthKey])) {
+                $dailyBreakdownPerMonth[$monthKey] = [];
+            }
+
+            if (!isset($dailyBreakdownPerMonth[$monthKey][$dateKey])) {
+                $dailyBreakdownPerMonth[$monthKey][$dateKey] = 0;
+            }
+
+            $dailyBreakdownPerMonth[$monthKey][$dateKey]++;
+
+            if (!isset($monthlyDataTemp[$monthKey])) {
+                $monthlyDataTemp[$monthKey] = [];
+            }
+
+            $monthlyDataTemp[$monthKey][] = $dailyBreakdownPerMonth[$monthKey][$dateKey];
+        }
+
+        $monthlyData = [];
+        foreach ($monthlyDataTemp as $month => $values) {
+            $monthlyData[$month] = round(array_sum($values) / count($values), 1);
+        }
+
+        ksort($monthlyData);
+        ksort($dailyBreakdownPerMonth);
+
+        $gapRaw = $progress - $nilaiTarget;
+        $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
+
+        $pieChart = [
+            'above' => $totalDone,
+            'below' => $totalNotDone,
+        ];
+
+        return [
+            'progress' => $progress,
+            'gap' => $gap,
+            'pie_chart' => $pieChart,
+            'monthly_data' => $monthlyData,
+            'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
+        ];
+    }
+
+    private function calculateTodoAdministrasi($item)
+    {
+        $detail = $item->detailTargetKPI->first();
+
+        if (!$detail) {
+            return 0.0;
+        }
+
+        $tahun = (int) $detail->detail_jangka;
+
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            return 0.0;
+        }
+
+        $momCount = TodoAdministrasi::whereYear('created_at', $tahun)->count();
+
+        if ($momCount == 0) {
+            return 0;
+        }
+
+        $momDone = TodoAdministrasi::whereYear('created_at', $tahun)
+            ->where('status', 'selesai')
+            ->whereNotNull('solusi')
+            ->count();
+
+        $progress = ($momDone / $momCount) * 100;
+
+        return round($progress, 1);
+    }
+    
     //All Sales
     private function calculatePeningkatanKemampuanKompetensiSalesDetail($itemDetail, $personId)
     {
