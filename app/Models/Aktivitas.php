@@ -23,6 +23,8 @@ class Aktivitas extends Model
         'foto_lokasi',
         'longitude',
         'latitude',
+        'deleted_at',
+        'deleted_by',
     ];
 
     public function peluang()

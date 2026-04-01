@@ -372,13 +372,28 @@ class PeluangController extends Controller
         try {
             $peluang = Peluang::with('rkm')->findOrFail($id);
 
+            $deletedBy = Auth::user()->karyawan->kode_karyawan ?? null;
+            $now = Carbon::now();
+
             if ($peluang->rkm) {
-                $peluang->rkm->forceDelete();
+                $peluang->rkm->update([
+                    'deleted_at' => $now,
+                    'deleted_by' => $deletedBy,
+                ]);
             }
 
-            $peluang->delete();
+            $peluang->update([
+                'lost' => $now,
+                'tahap' => 'lost',
+                'deleted_at' => $now,
+                'deleted_by' => $deletedBy,
+            ]);
 
-            Aktivitas::where('id_peluang', $id)->delete();
+            Aktivitas::where('id_peluang', $id)
+                ->update([
+                    'deleted_at' => $now,
+                    'deleted_by' => $deletedBy,
+                ]);
 
             return response()->json([
                 'success' => true,
@@ -387,7 +402,8 @@ class PeluangController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menghapus peluang atau aktivitas terkait.'
+                'message' => 'Gagal menghapus peluang atau aktivitas terkait.',
+                'error' => $e->getMessage()
             ], 500);
         }
     }

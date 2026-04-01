@@ -25,6 +25,8 @@ class Peluang extends Model
         'lost',
         'tahap',
         'tentatif',
+        'deleted_at',
+        'deleted_by',
     ];
 
     public function perusahaan()
