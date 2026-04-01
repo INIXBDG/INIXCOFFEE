@@ -9,6 +9,7 @@ use App\Models\Feedback;
 use App\Models\Materi;
 use App\Models\Nilaifeedback;
 use App\Models\Peluang;
+use App\Models\perhitunganNetSales;
 use App\Models\Perusahaan;
 use App\Models\Peserta;
 use App\Models\RKM;
@@ -462,6 +463,12 @@ class CRMController extends Controller
 
             // dd($topSpendSeg, $topKategoriMateri, $topVendors);
 
+            // 18 PA yg belum di approve
+            $PA = perhitunganNetSales::with(['rkm.materi', 'rkm.perusahaan', 'trackingNetSales', 'rkm.peluang'])
+                ->whereHas('trackingNetSales', function ($query) {
+                    $query->where('tracking', '!=', 'Selesai');
+                })->paginate(10);
+
             return view('crm.dashboard', compact(
                 'chartData',
                 'activitysales',
@@ -485,6 +492,7 @@ class CRMController extends Controller
                 'topSpendSeg',
                 'topKategoriMateri',
                 'topVendors',
+                'PA',
             ));
         } else {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
