@@ -1232,6 +1232,10 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('/projects/administrasi', ProjectAdministrationController::class);
     
     // Route Kanban Project
-    Route::patch('/tasks/{task}/status', [ProjectKanbanController::class, 'updateStatus'])
+    Route::get('/projects/kanban', [ProjectKanbanController::class, 'index'])->name('kanban.index');
+    Route::patch('/projects/kanban/tasks/{task}/status', [ProjectKanbanController::class, 'updateStatus'])
         ->name('tasks.status.update');
+        Route::get('/projects/kanban/get-tasks', [ProjectKanbanController::class, 'getTasks']);
+    Route::get('/projects/kanban/{id}/team-members', [ProjectKanbanController::class, 'getTeamMembers']);
+    Route::post('/projects/kanban/{id}/assign-team', [ProjectKanbanController::class, 'assignTeam']);
 });

@@ -7,6 +7,7 @@ use App\Models\ActivityInstruktur;
 use App\Models\dbklien;
 use App\Models\Inventaris;
 use App\Models\jabatan;
+use App\Models\karyawan;
 use App\Models\Materi;
 use App\Models\Nilaifeedback;
 use App\Models\Perusahaan;
@@ -223,6 +224,18 @@ class apiController extends Controller
     {
         // $registrasi = Registrasi::with('rkm', 'peserta.perusahaan', 'materi')->get();
         $user = User::with('karyawan')->where('status_akun', '1')->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'List perusahaan',
+            'data' => $user,
+        ]);
+    }
+
+    public function getUserProject()
+    {
+        // $registrasi = Registrasi::with('rkm', 'peserta.perusahaan', 'materi')->get();
+        $user = karyawan::with('user')->whereIn('divisi', ['Education', 'IT Service Management'])->get();
 
         return response()->json([
             'success' => true,
