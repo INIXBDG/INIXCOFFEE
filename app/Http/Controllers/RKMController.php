@@ -346,10 +346,13 @@ class RKMController extends Controller
         }
 
         // Query RKM
-        $rkm = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan', 'instruktur2', 'asisten', 'rekomendasilanjutan'])
+        $rkm = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan', 'instruktur2', 'asisten', 'rekomendasilanjutan', 'peluang'])
             ->where('materi_key', $materi_key)
             ->where('metode_kelas', $kelas)
             ->whereBetween('tanggal_awal', [$tanggal_awal, $tanggal_akhir])
+            ->whereDoesntHave('peluang', function ($query) {
+                $query->where('tentatif', 1);
+            })
             ->get();
 
         if ($rkm->isEmpty()) {
