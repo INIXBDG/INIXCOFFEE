@@ -598,6 +598,70 @@
             </div>
         </div>
 
+    <div class="row g-4 mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-transparent py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0 text-primary fw-bold">Incomplete Payments Advance</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped align-middle mb-0" style="font-size: 0.85rem;">
+                            <thead class="bg-primary text-white">
+                                <tr>
+                                    <th>No</th>
+                                    <th>Perusahaan</th>
+                                    <th>Materi</th>
+                                    <th>Waktu</th>
+                                    <th>Total PA</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($PA as $item)
+                                    <tr>
+                                        <td>{{ $loop->iteration }}</td>
+                                        <td>{{ $item->rkm->perusahaan->nama_perusahaan ?? '-' }}</td>
+                                        <td>{{ $item->rkm->materi->nama_materi ?? '-' }}</td>
+                                        <td>
+                                            {{ \Carbon\Carbon::parse($item->rkm->tanggal_awal)->translatedFormat('d M Y') ?? '-' }}
+                                            -
+                                            {{ \Carbon\Carbon::parse($item->rkm->tanggal_akhir)->translatedFormat('d M Y') ?? '-' }}
+                                        </td>
+                                        <td>
+                                            {{ number_format(
+                                                $item->transportasi +
+                                                $item->akomodasi_peserta +
+                                                $item->akomodasi_tim +
+                                                $item->fresh_money +
+                                                $item->entertaint +
+                                                $item->souvenir +
+                                                $item->cashback +
+                                                $item->sewa_laptop,
+                                            0, ',', '.') }}
+                                        </td>
+                                        <td>{{ $item->trackingNetSales->tracking ?? '-' }}</td>      
+                                        <td>
+                                            <a class="btn btn-sm btn-outline-primary" 
+                                            href="{{ route('detail.peluang', $item->rkm->peluang->id) }}" 
+                                            target="_blank">View</a>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+
+                        <div class="p-3">
+                            {{ $PA->links() }}
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
         <div class="row g-4 mb-4">
             <div class="col-12">
                 <div class="card shadow-sm border-0">

@@ -10,6 +10,7 @@ use App\Models\Feedback;
 use App\Models\Materi;
 use App\Models\Nilaifeedback;
 use App\Models\Peluang;
+use App\Models\perhitunganNetSales;
 use App\Models\Perusahaan;
 use App\Models\Peserta;
 use App\Models\RKM;
@@ -463,7 +464,13 @@ class CRMController extends Controller
 
             // dd($topSpendSeg, $topKategoriMateri, $topVendors);
 
-            // 19. Data Checklist Milik Adm Sales
+            // 19 PA yg belum di approve
+            $PA = perhitunganNetSales::with(['rkm.materi', 'rkm.perusahaan', 'trackingNetSales', 'rkm.peluang'])
+                ->whereHas('trackingNetSales', function ($query) {
+                    $query->where('tracking', '!=', 'Selesai');
+                })->paginate(10);
+          
+            // 20. Data Checklist Milik Adm Sales
             $query = RKM::with(['checklist', 'materi', 'perusahaan', 'instruktur', 'sales']);
 
             // 🔍 SEARCH
@@ -514,6 +521,7 @@ class CRMController extends Controller
                 'topSpendSeg',
                 'topKategoriMateri',
                 'topVendors',
+                'PA',
                 'dataRKM'
             ));
         } else {
