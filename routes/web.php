@@ -411,13 +411,14 @@ Route::prefix('kpi-data/')
             ->group(function () {
                 route::get('/index', [TargetKPIController::class, 'kpiOverview'])->name('index');
                 route::get('/get', [TargetKPIController::class, 'getDataOverview'])->name('get');
-                route::get('/index/personal', [TargetKPIController::class, 'personalIndex'])->name('indexPersonal');
+                route::get('/index/personal/{id?}', [TargetKPIController::class, 'personalIndex'])->name('indexPersonal');
                 route::get('/kpi/personal/data', [TargetKPIController::class, 'getDataOverviewPersonal'])->name('dataPersonal');
             });
 
         //Target Departement
         route::get('/table-data', [TargetKPIController::class, 'kpiIndex'])->name('index');
         route::post('/create-target', [TargetKPIController::class, 'createTarget'])->name('createTarget');
+        route::post('/import-target', [TargetKPIController::class, 'importTarget'])->name('importTarget');
         route::get('/get-data-target', [TargetKPIController::class, 'getDataTarget'])->name('getDataTarget');
         route::get('/detail-data-target', [TargetKPIController::class, 'detailData'])->name('detail');
         route::delete('/hapus-data-target/{id}', [TargetKPIController::class, 'hapusTarget'])->name('hapus');

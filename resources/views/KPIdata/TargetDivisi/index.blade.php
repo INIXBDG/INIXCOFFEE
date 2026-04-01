@@ -229,7 +229,11 @@
         <div class="stretch-card">
             <div class="card">
                 <div class="card-body">
-                    <h4 class="card-title"><i class="fas fa-bullseye card-icon me-2"></i> Buat Target Baru</h4>
+                    <h4 class="card-title"><i class="fas fa-bullseye card-icon me-2"></i> Buat Target Baru</h4> 
+                    {{-- <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ModalImport">
+                        Import Target
+                    </button> --}}
+
                     <div class="d-flex flex-wrap gap-3 mt-3" id="targetContainer">
                         <button type="button" class="target-card add-card d-flex align-items-center justify-content-center"
                             data-bs-toggle="modal" data-bs-target="#modalBuatTarget" style="width: 280px; flex: 0 0 auto;">
@@ -239,6 +243,35 @@
                         <div id="content_target" class="d-flex flex-wrap gap-3"></div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="ModalImport" tabindex="-1" role="dialog" aria-labelledby="ModalImportLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <form action="{{ route('kpi.importTarget') }}" method="post">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="ModalImportLabel">Modal title</h5>
+                        <button type="button" class="btn btn-close" data-bs-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="file">File Import</label>
+                            <input type="file" class="form-control" id="file" placeholder="pilih file xlsx,xls,csv">
+                        </div>
+                        <div class="form-group text-center">     
+                            <small id="emailHelp" class="form-text text-muted">jika belum memiliki file template, silahkan di download.</small>
+                            <a href="{{ asset('template_KPI/template_import_kpi.xlsx') }}" class="btn btn-success" download>Download Template</a>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Keluar</button>
+                        <button type="submit" class="btn btn-primary">Import</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -2339,7 +2372,6 @@
                     options += `
                         <option value="meningkatkan revenue perusahaan">Meningkatkan Revenue Perusahaan</option>
                         <option value="customer acquisition cost">Customer Acquisition Cost</option>
-                        <option value="biaya akuisisi client">Biaya Akuisisi Client</option>
                         <option value="evaluasi kinerja sales">Evaluasi Kinerja Sales</option>
                     `;
                 }
@@ -2398,84 +2430,115 @@
             const routeLower = selectedRoute.toLowerCase();
 
             const persenRoutes = [
+                // ================= GM =================
                 'pemasukan bersih',
                 'kepuasan pelanggan',
                 'rasio biaya operasional terhadap revenue',
-                'customer acquisition cost',
-                'biaya akuisisi perclient',
-
                 'performa kpi departemen',
+
+                // ================= CS =================
                 'peserta puas dengan pelayanan dan fasilitas training',
                 'penanganan komplain peserta',
                 'report persiapan kelas',
 
-                'banyak tagihan client yang belum lunas',
+                // ================= Finance =================
+                'outstanding',
+                'penyelesaian tagihan perusahaan',
+                'akurasi pencatatan masuk',
+                'pencairan biaya operasional',
 
+                // ================= HRD =================
                 'pelaksanaan kegiatan karyawan',
                 'pengeluaran biaya karyawan',
                 'administrasi karyawan',
 
+                // ================= Driver =================
                 'perbaikan kendaraan',
                 'report kondisi kendaraan',
                 'kontrol pengeluaran transportasi',
+                'feedback kenyamanan berkendaran',
 
+                // ================= OB =================
                 'feedback kebersihan dan kenyamanan',
                 'penyelesaian tugas harian',
 
+                // ================= ITSM =================
                 'kepuasan client itsm',
                 'meningkatkan kepuasan dan loyalitas peserta/client',
-
                 'availability sistem internal kritis',
+
+                // ================= Programmer =================
                 'ketepatan waktu penyelesaian fitur',
                 'mengukur kualitas aplikasi agar minim bug',
 
+                // ================= Digital =================
                 'konsistensi campaign digital',
+
+                // ================= TS =================
                 'keberhasilan support memenuhi sla',
                 'kualitas layanan exam',
 
+                // ================= Instruktur =================
+                'presentase kinerja instruktur',
                 'kepuasan peserta pelatihan',
                 'upseling lanjutan materi',
-                'outstanding',
 
-                'akurasi kelengkapan data penjualan',
-                'persentase gap kompetensi tim terhadap standar skill',
-                'presentase kinerja instruktur',
+                // ================= Manager Edu =================
                 'peningkatan kontribusi pelatihan',
-                'biaya akuisisi client',
-                'laporan mom',
-                'todo administrasi',
-                'kualitas dokumentasi support dan proctor',
-                'ketepatan waktu po',
-                'peningkatan kemampuan kompetensi sales',
-                'feedback kenyamanan berkendaran',
-                'target penjualan tahunan',
-                'penyelesaian tagihan perusahaan',
-                'akurasi pencatatan masuk',
-                'pencairan biaya operasional',
-                'inovation adaption rate',
                 'evaluasi kinerja instruktur',
-                'evaluasi kinerja sales'
+
+                // ================= Sales =================
+                'target penjualan tahunan',
+                'biaya akuisisi perclient',
+
+                // ================= SPV Sales =================
+                'customer acquisition cost',
+                'evaluasi kinerja sales',
+
+                // ================= Adm Sales =================
+                'laporan mom',
+                'akurasi kelengkapan data penjualan',
+                'todo administrasi',
+
+                // ================= Adm Holding =================
+                'ketepatan waktu po',
+                'kualitas dokumentasi support dan proctor',
+
+                // ================= Kombinasi =================
+                'persentase gap kompetensi tim terhadap standar skill',
+                'peningkatan kemampuan kompetensi sales'
             ].map(route => route.toLowerCase());
 
             const rupiahRoutes = [
+                // GM
                 'pemasukan kotor',
+
+                // SPV Sales
                 'meningkatkan revenue perusahaan',
-                'biaya akuisisi client'
             ].map(r => r.toLowerCase());
 
             const angkaRoutes = [
+                // CS
                 'dorong inovasi pelayanan',
-                'inisiatif efisiensi keuangan',
 
+                // Finance
+                'inisiatif efisiensi keuangan',
                 'mengurangi manual work dan error',
                 'laporan analisis keuangan',
 
+                // Digital
                 'efektifitas digital marketing',
 
+                // Instruktur
                 'sertifikasi kompetensi internal',
                 'pelatihan kompetensi eksternal',
+
+                // Manager Edu
                 'pengembangan kurikulum pelatihan',
                 'peningkatan knowledge sharing',
+
+                // Kombinasi IT
+                'inovation adaption rate'
             ].map(route => route.toLowerCase());
 
             if (persenRoutes.includes(routeLower)) {

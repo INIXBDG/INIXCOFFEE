@@ -58,6 +58,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
 use Exception;
 use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
 
 class TargetKPIController extends Controller
 {
@@ -149,6 +150,148 @@ class TargetKPIController extends Controller
             ],
             201,
         );
+    }
+
+    public function importTarget(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv|max:10240', // Tambah batas ukuran file
+        ]);
+
+        $file = $request->file('file');
+        // Menggunakan heading row import lebih aman jika urutan kolom berubah, 
+        // tapi kita tetap pakai toArray sesuai kode asli Anda dengan asumsi template fixed.
+        $data = Excel::toArray([], $file)[0];
+
+        $successCount = 0;
+        $failedRows = [];
+
+        // Opsional: Pre-fetch data karyawan untuk mengurangi query (Optimasi Performa)
+        // Ambil semua karyawan sekali saja untuk mapping nama & jabatan
+        $allKaryawan = Karyawan::select('id', 'nama_lengkap', 'jabatan', 'divisi')->get();
+        
+        // Buat mapping: Jabatan -> Divisi (Ambil unik, asumsi 1 jabatan = 1 divisi)
+        // Jika 1 jabatan punya banyak divisi, logika ini harus disesuaikan
+        $jabatanDivisiMap = $allKaryawan->unique('jabatan')->pluck('divisi', 'jabatan')->toArray();
+
+        foreach ($data as $index => $row) {
+            if ($index === 0) continue; // Skip header
+
+            // Gunakan try-catch per baris agar satu baris error tidak menghentikan semua
+            try {
+                DB::transaction(function () use ($row, &$successCount, $allKaryawan, $jabatanDivisiMap) {
+                    
+                    // Mapping kolom (Pastikan index sesuai file Excel)
+                    $rowData = [
+                        'judul_kpi'       => trim($row[1] ?? ''),
+                        'deskripsi_kpi'   => trim($row[2] ?? ''),
+                        'jabatan'         => trim($row[3] ?? ''),
+                        'karyawan'        => trim($row[4] ?? ''), 
+                        'jangka_target'   => trim($row[5] ?? ''),
+                        'detail_jangka'   => trim($row[6] ?? ''),
+                        'tipe_target'     => trim($row[7] ?? ''),
+                        'nilai_target'    => $row[8] ?? 0,
+                        'asistant_route'  => trim($row[9] ?? ''),
+                    ];
+
+                    // Validasi Wajib
+                    if (empty($rowData['judul_kpi']) || empty($rowData['jabatan'])) {
+                        throw new \Exception("Judul dan Jabatan wajib diisi.");
+                    }
+
+                    $listJabatan = array_filter(array_map('trim', explode(',', $rowData['jabatan'])));
+                    $listNamaKaryawanInput = array_filter(array_map('trim', explode(',', $rowData['karyawan'])));
+
+                    if (empty($listJabatan)) {
+                        throw new \Exception("Format jabatan tidak valid.");
+                    }
+
+                    // 1. Buat Target KPI Utama
+                    $createTarget = TargetKPI::create([ // Gunakan PascalCase untuk Model
+                        'id_assistant'   => null,
+                        'id_pembuat'     => auth()->id(),
+                        'judul'          => $rowData['judul_kpi'],
+                        'deskripsi'      => $rowData['deskripsi_kpi'],
+                        'asistant_route' => $rowData['asistant_route'],
+                        'status'         => '0',
+                    ]);
+
+                    if (!$createTarget) {
+                        throw new \Exception("Gagal membuat Target KPI Utama.");
+                    }
+
+                    foreach ($listJabatan as $jabatan) {
+                        // 2. Ambil Divisi dari Mapping (Bukan Query Loop)
+                        $divisi = $jabatanDivisiMap[$jabatan] ?? null;
+                        
+                        // Validasi apakah jabatan ada di database
+                        if (!$divisi) {
+                            // Opsional: Bisa throw error atau skip
+                            throw new \Exception("Jabatan '{$jabatan}' tidak ditemukan di database.");
+                        }
+
+                        $detailStore = DetailTargetKPI::create([
+                            'id_targetKPI'   => $createTarget->id,
+                            'jabatan'        => $jabatan,
+                            'divisi'         => $divisi,
+                            'jangka_target'  => $rowData['jangka_target'],
+                            'detail_jangka'  => $rowData['detail_jangka'],
+                            'tipe_target'    => $rowData['tipe_target'],
+                            'nilai_target'   => $rowData['nilai_target'],
+                        ]);
+
+                        // 3. Assign Karyawan (Jika ada nama yang diinput)
+                        if ($detailStore && !empty($listNamaKaryawanInput)) {
+                            // Filter karyawan dari collection yang sudah di-load di awal (Lebih Cepat)
+                            $validKaryawanIds = $allKaryawan
+                                ->whereIn('nama_lengkap', $listNamaKaryawanInput)
+                                ->where('jabatan', $jabatan)
+                                ->pluck('id')
+                                ->toArray();
+
+                            if (empty($validKaryawanIds)) {
+                                // Opsional: Warning jika nama karyawan tidak ditemukan untuk jabatan ini
+                                // throw new \Exception("Tidak ditemukan karyawan dengan nama tersebut untuk jabatan {$jabatan}.");
+                            }
+
+                            $personData = [];
+                            foreach ($validKaryawanIds as $karyawanId) {
+                                $personData[] = [
+                                    'id_target'       => $createTarget->id,
+                                    'detailTargetKey' => $detailStore->id,
+                                    'id_karyawan'     => $karyawanId,
+                                    'created_at'      => now(),
+                                    'updated_at'      => now(),
+                                ];
+                            }
+
+                            // Bulk Insert untuk performa lebih baik
+                            if (!empty($personData)) {
+                                DetailPersonKPI::insert($personData);
+                            }
+                        }
+                    }
+                    
+                    $successCount++;
+                });
+            } catch (\Exception $e) {
+                $failedRows[] = [
+                    'row'   => $index + 1,
+                    'error' => $e->getMessage()
+                ];
+                // Lanjut ke baris berikutnya (tidak re-throw)
+            }
+        }
+
+        // 4. Berikan Feedback yang Jelas
+        if (empty($failedRows)) {
+            return back()->with('success', "Berhasil mengimport {$successCount} data.");
+        } else {
+            return back()->with([
+                'success'    => "Selesai. {$successCount} berhasil, " . count($failedRows) . " gagal.",
+                'failedRows' => $failedRows
+            ]);
+        }
     }
 
     public function updateGapKompetensi(Request $request)
@@ -3229,7 +3372,7 @@ class TargetKPIController extends Controller
             $dateKey = $date->format('Y-m-d');
 
             foreach ($instrukturs as $instruktur) {
-                    $key = $instruktur->id . '_' . $dateKey;
+                $key = $instruktur->id . '_' . $dateKey;
 
                 if (isset($activities[$key])) {
                     $totalAktif++;
@@ -11036,9 +11179,20 @@ class TargetKPIController extends Controller
     }
 
     //Overview KPI
-    public function personalIndex()
+    public function personalIndex($id = null)
     {
-        return view('KPIdata.TargetSubDivisi.overviewKaryawan');
+        $targetId = $id ?? Auth::id(); 
+        $currentUserId = Auth::id();
+        $userJabatan = Auth::user()->karyawan->jabatan ?? '';
+
+        if ($targetId != $currentUserId) {
+            $allowedRoles = ['GM', 'HRD', 'Manager', 'Supervisor']; 
+            if (!in_array($userJabatan, $allowedRoles)) {
+                abort(403, 'Anda tidak memiliki akses untuk melihat data karyawan ini.');
+            }
+        }
+
+        return view('KPIdata.TargetSubDivisi.overviewKaryawan', compact('targetId'));
     }
 
     public function getDataOverviewPersonal(Request $request)
@@ -11051,7 +11205,7 @@ class TargetKPIController extends Controller
                 ], 404);
             }
 
-            $karyawanId = Auth()->user()->id;
+            $karyawanId = $request->id_karyawan ?? Auth()->id();
             $tahunFilter = $request->tahun ?? now()->year;
 
             $allTargets = targetKPI::with(['karyawan', 'detailTargetKPI.detailPersonKPI.karyawan'])
@@ -11380,6 +11534,7 @@ class TargetKPIController extends Controller
             $rataRata = count($progressList) > 0 ? round(array_sum($progressList) / count($progressList), 2) : 0;
 
             $karyawanDepartemen[] = [
+                'id_karyawan' => $karyawan->id,
                 'nama' => $karyawan->nama_lengkap,
                 'jabatan' => $karyawan->jabatan,
                 'total_target_belum_tercapai' => $targetBelumTercapai,
