@@ -13,6 +13,8 @@ class TodoAdministrasi extends Model
         'case',
         'status',
         'solusi',
-        'catatan'
+        'catatan',
+        'tanggal_selesai',
+        'dokumen',
     ];
 }
