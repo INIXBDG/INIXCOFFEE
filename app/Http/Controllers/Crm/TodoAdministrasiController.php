@@ -48,7 +48,7 @@ class TodoAdministrasiController extends Controller
             $query->whereBetween('created_at', [$filterStart, $filterEnd]);
         }
         
-        $todos = $query->orderByDesc('created_at')->get();
+        $todos = $query->orderByDesc('created_at')->paginate(10);
         
         return view('crm.todoAdministrasi.index', compact('todos', 'filterType', 'tahun', 'bulan', 'triwulan', 'startDate', 'endDate'));
     }
