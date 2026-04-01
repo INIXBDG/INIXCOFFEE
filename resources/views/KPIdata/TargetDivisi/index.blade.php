@@ -2321,6 +2321,7 @@
                             <option value="pengembangan kurikulum pelatihan">Pengembangan Kurikulum & Modul Pelatihan</option>
                             <option value="peningkatan knowledge sharing">Peningkatan Knowledge Sharing</option>
                             <option value="peningkatan kontribusi pelatihan">Peningkatan Kontribusi Pelatihan</option>
+                            <option value="evaluasi kinerja instruktur">Evaluasi Kinerja Instruktur</option>
                         `;
                 }
 
@@ -2339,6 +2340,7 @@
                         <option value="meningkatkan revenue perusahaan">Meningkatkan Revenue Perusahaan</option>
                         <option value="customer acquisition cost">Customer Acquisition Cost</option>
                         <option value="biaya akuisisi client">Biaya Akuisisi Client</option>
+                        <option value="evaluasi kinerja sales">Evaluasi Kinerja Sales</option>
                     `;
                 }
 
@@ -2450,7 +2452,9 @@
                 'penyelesaian tagihan perusahaan',
                 'akurasi pencatatan masuk',
                 'pencairan biaya operasional',
-                'inovation adaption rate'
+                'inovation adaption rate',
+                'evaluasi kinerja instruktur',
+                'evaluasi kinerja sales'
             ].map(route => route.toLowerCase());
 
             const rupiahRoutes = [
@@ -2525,7 +2529,6 @@
                 $nilaiTarget.val(autoFillValues[routeLower]).trigger('input');
             }
 
-            // 🔹 Trigger formatting jika nilai sudah terisi
             if ($nilaiTarget.val()) {
                 $nilaiTarget.trigger('input');
             }
