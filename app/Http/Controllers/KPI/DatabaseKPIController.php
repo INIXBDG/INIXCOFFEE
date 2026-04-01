@@ -642,11 +642,12 @@ class DatabaseKPIController extends Controller
             ], 500);
         }
     }
+
     public function sendCatatan(Request $request)
     {
         $request->validate([
             'id_karyawan' => 'required',
-            'quartal'     => 'required',
+            'quartal'     => 'required|in:S1,S2,Q1,Q2,Q3,Q4',
             'tahun'       => 'required',
             'kode_form'   => 'required',
             'catatan'     => 'required|string'
@@ -658,15 +659,27 @@ class DatabaseKPIController extends Controller
         $kode_form   = $request->input('kode_form');
         $catatan     = $request->input('catatan');
 
-        formPenilaian::where('id_karyawan', $id_karyawan)
+        $query = formPenilaian::where('id_karyawan', $id_karyawan)
             ->where('kode_form', $kode_form)
-            ->where('quartal', $quartal)
-            ->where('tahun', $tahun)
-            ->update([
-                'catatan' => $catatan
-            ]);
+            ->where('tahun', $tahun);
 
-        return back()->with(['status', 'success']);
+        if ($quartal === 'S1') {
+            $query->whereIn('quartal', ['Q1', 'Q2']);
+        } elseif ($quartal === 'S2') {
+            $query->whereIn('quartal', ['Q3', 'Q4']);
+        } else {
+            $query->where('quartal', $quartal);
+        }
+
+        $affectedRows = $query->update([
+            'catatan' => $catatan
+        ]);
+
+        if ($affectedRows > 0) {
+            return back()->with('success', 'berhasil memberikan catatan');
+        } else {
+            return back()->with('error', 'Tidak ada data yang ditemukan untuk diperbarui.');
+        }
     }
 
     public function getDetailPenilaian(Request $request)
