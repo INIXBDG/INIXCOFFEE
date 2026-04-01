@@ -1590,7 +1590,6 @@ class DatabaseKPIController extends Controller
         };
 
         $sharedForms = shareForm::where('id_evaluator', $id_evaluator)->get();
-
         $isEvaluator = $sharedForms->isNotEmpty();
 
         if ($sharedForms->isEmpty()) {
@@ -1608,6 +1607,7 @@ class DatabaseKPIController extends Controller
                 ->where('quartal', $currentQuartal)
                 ->where('tahun', $currentYear)
                 ->where('id_karyawan', $share->id_evaluated)
+                ->where('jenis_penilaian', $share->jenis_penilaian)
                 ->get();
 
             foreach ($formPenilaians as $formItem) {
@@ -1674,13 +1674,17 @@ class DatabaseKPIController extends Controller
                 })->toArray();
 
                 $alreadyExists = collect($groupedOutputData[$groupKey]['detail_kategori'] ?? [])
-                    ->contains(fn($item) => $item['kode_kategori_form'] === $formItem->kode_kategori);
+                    ->contains(fn($item) => 
+                        $item['kode_kategori_form'] === $formItem->kode_kategori && 
+                        $item['jenis_penilaian'] === $share->jenis_penilaian 
+                    );
 
                 if (!$alreadyExists) {
                     $groupedOutputData[$groupKey]['detail_kategori'][] = [
                         'kriteria_utama'     => $formItem->nama_penilaian,
                         'isi_kriteria'       => $isiKriteria,
                         'kode_kategori_form' => $formItem->kode_kategori,
+                        'jenis_penilaian'    => $share->jenis_penilaian,
                     ];
                 }
             }

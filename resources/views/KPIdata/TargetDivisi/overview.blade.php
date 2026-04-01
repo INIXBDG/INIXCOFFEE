@@ -285,7 +285,10 @@
                         '<span class="badge bg-danger-subtle text-danger">⚠️ Perlu Bimbingan</span>' : '');
 
                 html += `
-                <div class="p-3 mb-3 rounded-3 shadow-sm ${bgColor}">
+                <div 
+                    class="p-3 mb-3 rounded-3 shadow-sm ${bgColor} clickable-item"
+                    onclick="handleClickCheck(${emp.id_karyawan})" 
+                    style="cursor: pointer;">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <strong>${emp.nama}</strong><br>
@@ -301,6 +304,10 @@
             });
 
             $('#employeeList').html(html);
+        }
+
+        function handleClickCheck(karyawanId) {
+            window.location.href = "{{ route('kpi.overview.indexPersonal') }}/" + karyawanId;
         }
 
         function updateLowPerformanceList(employees) {
