@@ -361,14 +361,6 @@
         </div>
     </div>
 
-    <div class="modal fade" id="modalEditTarget" tabindex="-1" role="dialog" aria-labelledby="modalEditTargetLabel"
-        aria-hidden="true">
-        <div class="modal-dialog modal-lg" role="document">
-            <div class="modal-content" id="ModalEdit">
-            </div>
-        </div>
-    </div>
-
     <div class="modal fade" id="modalFormManual" tabindex="-1" role="dialog" aria-labelledby="modalFormManualLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-md" role="document">
@@ -469,7 +461,6 @@
             'mengurangi manual work dan error',
             'laporan analisis keuangan',
             'pengeluaran biaya karyawan'
-
         ];
 
         const allowedDoubleManualRoutes = [
@@ -2364,6 +2355,7 @@
                 else if (hasAdmHolding) {
                     options += `
                         <option value="ketepatan waktu po">Ketepatan Waktu PO</option>
+                        <option value="kualitas dokumentasi support dan proctor">Kualitas Dokumentasi Support Dan Proctor</option>
                     `;
                 }
 
@@ -2449,7 +2441,16 @@
                 'peningkatan kontribusi pelatihan',
                 'biaya akuisisi client',
                 'laporan mom',
-                'todo administrasi'
+                'todo administrasi',
+                'kualitas dokumentasi support dan proctor',
+                'ketepatan waktu po',
+                'peningkatan kemampuan kompetensi sales',
+                'feedback kenyamanan berkendaran',
+                'target penjualan tahunan',
+                'penyelesaian tagihan perusahaan',
+                'akurasi pencatatan masuk',
+                'pencairan biaya operasional',
+                'inovation adaption rate'
             ].map(route => route.toLowerCase());
 
             const rupiahRoutes = [
@@ -2471,18 +2472,6 @@
                 'pelatihan kompetensi eksternal',
                 'pengembangan kurikulum pelatihan',
                 'peningkatan knowledge sharing',
-                'peningkatan kemampuan kompetensi sales',
-
-                'target penjualan tahunan',
-                'ketepatan waktu po',
-
-                'feedback kenyamanan berkendaran',
-
-                'penyelesaian tagihan perusahaan',
-                'akurasi pencatatan masuk',
-                'pencairan biaya operasional',
-
-                'inovation adaption rate'
             ].map(route => route.toLowerCase());
 
             if (persenRoutes.includes(routeLower)) {

@@ -43,6 +43,11 @@ class RKM extends Model
         return $this->hasMany(perhitunganNetSales::class, 'id_rkm', 'id');
     }
 
+    public function checklist()
+    {
+        return $this->hasOne(checklistRKM::class, 'id_rkm');
+    }
+    
     public function outstanding()
     {
         return $this->hasOne(outstanding::class, 'id_rkm', 'id');
