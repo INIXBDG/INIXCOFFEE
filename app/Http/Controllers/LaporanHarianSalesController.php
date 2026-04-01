@@ -16,7 +16,7 @@ class LaporanHarianSalesController extends Controller
      */
     public function index()
     {
-        $laporans = LaporanHarianSales::with('catatanSales', 'catatanClient')->orderBy('created_at', 'desc')->get();
+        $laporans = LaporanHarianSales::with('catatanSales', 'catatanClient')->orderBy('created_at', 'desc')->paginate(10);
 
         return view('crm.laporanHarian.index', compact('laporans'));
     }
@@ -52,19 +52,41 @@ class LaporanHarianSalesController extends Controller
             'catatan' => 'nullable',
         ]);
 
-        $laporan = LaporanHarianSales::create([
-            'tanggal_pelaksanaan' => $request->tanggal_pelaksanaan,
-            'waktu_pelaksanaan' => trim($request->waktu_pelaksanaan),
-            'tempat_or_media' => $request->tempat_or_media,
-            'jumlah_peserta_hadir' => $request->jumlah_peserta_hadir,
-            'jumlah_peserta_tidak_hadir' => $request->jumlah_peserta_tidak_hadir ?? null,
-            'alasan_peserta_tidak_hadir' => $request->alasan_peserta_tidak_hadir ?? null,
-            'jenis_meeting' => $request->jenis_meeting,
-            'pic' => $request->pic,
-            'notulis' => $request->notulis,
-            'topic' => $request->topic,
-            'catatan' => $request->catatan ?? null,
-        ]);
+        // Cek apakah ada id (dari draft autosave)
+        if ($request->id) {
+            // Update existing draft menjadi final
+            $laporan = LaporanHarianSales::findOrFail($request->id);
+            $laporan->update([
+                'tanggal_pelaksanaan' => $request->tanggal_pelaksanaan,
+                'waktu_pelaksanaan' => trim($request->waktu_pelaksanaan),
+                'tempat_or_media' => $request->tempat_or_media,
+                'jumlah_peserta_hadir' => $request->jumlah_peserta_hadir,
+                'jumlah_peserta_tidak_hadir' => $request->jumlah_peserta_tidak_hadir ?? null,
+                'alasan_peserta_tidak_hadir' => $request->alasan_peserta_tidak_hadir ?? null,
+                'jenis_meeting' => $request->jenis_meeting,
+                'pic' => $request->pic,
+                'notulis' => $request->notulis,
+                'topic' => $request->topic,
+                'catatan' => $request->catatan ?? null,
+                'is_draft' => false,
+            ]);
+        } else {
+            // Create new laporan (tidak ada draft sebelumnya)
+            $laporan = LaporanHarianSales::create([
+                'tanggal_pelaksanaan' => $request->tanggal_pelaksanaan,
+                'waktu_pelaksanaan' => trim($request->waktu_pelaksanaan),
+                'tempat_or_media' => $request->tempat_or_media,
+                'jumlah_peserta_hadir' => $request->jumlah_peserta_hadir,
+                'jumlah_peserta_tidak_hadir' => $request->jumlah_peserta_tidak_hadir ?? null,
+                'alasan_peserta_tidak_hadir' => $request->alasan_peserta_tidak_hadir ?? null,
+                'jenis_meeting' => $request->jenis_meeting,
+                'pic' => $request->pic,
+                'notulis' => $request->notulis,
+                'topic' => $request->topic,
+                'catatan' => $request->catatan ?? null,
+                'is_draft' => false,
+            ]);
+        }
 
 
         // Catanan untuk sales
@@ -74,6 +96,9 @@ class LaporanHarianSalesController extends Controller
                 'sales' => 'required',
                 'catatan_sales' => 'required'
             ]);
+
+            // Delete existing catatan sales
+            CatatanMeetingSales::where('laporan_id', $laporan->id)->delete();
 
             foreach ($request->sales as $index => $sales_id) {
 
@@ -97,6 +122,9 @@ class LaporanHarianSalesController extends Controller
                 'nama_perusahaan' => 'required',
             ]);
 
+            // Delete existing catatan client
+            CatatanClientSales::where('laporan_id', $laporan->id)->delete();
+
             foreach ($request->nama_perusahaan as $index => $nama_perusahaan){
 
                 if (!$nama_perusahaan) {
@@ -115,6 +143,97 @@ class LaporanHarianSalesController extends Controller
 
         return redirect()->route('laporan.harian')->with('success', 'Laporan berhasil disimpan.');
     }
+
+    public function autoSave(Request $request)
+    {
+        try {
+            // Cek apakah id laporan ada
+            if ($request->id) {
+                // Update existing laporan
+                $mom = LaporanHarianSales::find($request->id);
+
+                if (!$mom) {
+                    return response()->json(['error' => 'Laporan tidak ditemukan.'], 404);
+                }
+
+                // Update laporan data
+                $mom->update([
+                    'tanggal_pelaksanaan' => $request->tanggal_pelaksanaan ?? $mom->tanggal_pelaksanaan,
+                    'waktu_pelaksanaan' => $request->waktu_pelaksanaan ? trim($request->waktu_pelaksanaan) : $mom->waktu_pelaksanaan,
+                    'tempat_or_media' => $request->tempat_or_media ?? $mom->tempat_or_media,
+                    'jumlah_peserta_hadir' => $request->jumlah_peserta_hadir ?? $mom->jumlah_peserta_hadir,
+                    'jumlah_peserta_tidak_hadir' => $request->jumlah_peserta_tidak_hadir,
+                    'alasan_peserta_tidak_hadir' => $request->alasan_peserta_tidak_hadir,
+                    'jenis_meeting' => $request->jenis_meeting ?? $mom->jenis_meeting,
+                    'pic' => $request->pic ?? $mom->pic,
+                    'notulis' => $request->notulis ?? $mom->notulis,
+                    'topic' => $request->topic ?? $mom->topic,
+                    'catatan' => $request->catatan,
+                ]);
+            } else {
+                // Create new laporan with is_draft = true
+                $mom = LaporanHarianSales::create([
+                    'tanggal_pelaksanaan' => $request->tanggal_pelaksanaan ?? now()->toDateString(),
+                    'waktu_pelaksanaan' => $request->waktu_pelaksanaan ? trim($request->waktu_pelaksanaan) : '00:00',
+                    'tempat_or_media' => $request->tempat_or_media,
+                    'jumlah_peserta_hadir' => $request->jumlah_peserta_hadir ?? 0,
+                    'jumlah_peserta_tidak_hadir' => $request->jumlah_peserta_tidak_hadir,
+                    'alasan_peserta_tidak_hadir' => $request->alasan_peserta_tidak_hadir,
+                    'jenis_meeting' => $request->jenis_meeting,
+                    'pic' => $request->pic,
+                    'notulis' => $request->notulis,
+                    'topic' => $request->topic,
+                    'catatan' => $request->catatan,
+                    'is_draft' => true,
+                ]);
+            }
+
+            // Handle Catatan Meeting Sales
+            if ($request->sales && is_array($request->sales)) {
+                // Delete existing catatan sales
+                CatatanMeetingSales::where('laporan_id', $mom->id)->delete();
+
+                foreach ($request->sales as $index => $sales_id) {
+                    if ($sales_id) {
+                        CatatanMeetingSales::create([
+                            'laporan_id' => $mom->id,
+                            'sales_id' => $sales_id,
+                            'catatan' => $request->catatan_sales[$index] ?? null,
+                        ]);
+                    }
+                }
+            }
+
+            // Handle Catatan Client Sales
+            if ($request->nama_perusahaan && is_array($request->nama_perusahaan)) {
+                // Delete existing catatan client
+                CatatanClientSales::where('laporan_id', $mom->id)->delete();
+
+                foreach ($request->nama_perusahaan as $index => $nama_perusahaan) {
+                    if ($nama_perusahaan) {
+                        CatatanClientSales::create([
+                            'laporan_id' => $mom->id,
+                            'nama_perusahaan' => $nama_perusahaan,
+                            'kebutuhan' => $request->kebutuhan[$index] ?? null,
+                            'rekomendasi_silabus' => $request->rekomendasi_silabus[$index] ?? null,
+                            'catatan' => $request->catatan_client[$index] ?? null,
+                        ]);
+                    }
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Laporan otomatis disimpan.',
+                'id' => $mom->id,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Terjadi kesalahan: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
     /**
      * Show the form for editing the specified resource.
      */
@@ -161,6 +280,7 @@ class LaporanHarianSalesController extends Controller
             'notulis' => $request->notulis ?? null,
             'topic' => $request->topic,
             'catatan' => $request->catatan ?? null,
+            'is_draft' => false,
         ]);
 
         // Delete existing catatan sales
