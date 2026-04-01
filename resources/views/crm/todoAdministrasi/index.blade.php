@@ -171,6 +171,11 @@
                     </tbody>
                 </table>
             </div>
+            
+            <!-- Pagination -->
+            <div class="mt-4 d-flex justify-content-center">
+                {{ $todos->links() }}
+            </div>
         </div>
     </div>
 
