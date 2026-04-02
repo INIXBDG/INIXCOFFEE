@@ -10,9 +10,10 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('project_id')->constrained('projects')->onDelete('cascade');
             $table->string('title');
+            $table->text('startdate')->nullable();
+            $table->text('enddate')->nullable();
             $table->text('description')->nullable();
             $table->string('assignee_id')->nullable();
-            $table->foreign('assignee_id')->references('kode_karyawan')->on('karyawans')->onDelete('set null');
             $table->enum('status', [
                 'backlog', 'to_do', 'in_progress', 'testing', 'validate', 'deploy', 'evaluasi'
             ])->default('backlog');

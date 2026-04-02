@@ -15,7 +15,7 @@ return new class extends Migration {
             $table->string('client_doc_file')->nullable();
             $table->string('payment_doc_file')->nullable();
             $table->string('pm_id')->nullable();
-            $table->foreign('pm_id')->references('kode_karyawan')->on('karyawans')->onDelete('set null');
+            $table->string('assignee_id')->nullable();
             $table->enum('current_stage', [
                 'kak', 'penganggaran', 'legal', 'dokumen_klien', 'pembayaran', 'assign_tim'
             ])->default('kak');

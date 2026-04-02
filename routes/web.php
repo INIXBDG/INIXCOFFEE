@@ -1233,9 +1233,15 @@ Route::middleware(['auth'])->group(function () {
     
     // Route Kanban Project
     Route::get('/projects/kanban', [ProjectKanbanController::class, 'index'])->name('kanban.index');
-    Route::patch('/projects/kanban/tasks/{task}/status', [ProjectKanbanController::class, 'updateStatus'])
-        ->name('tasks.status.update');
-        Route::get('/projects/kanban/get-tasks', [ProjectKanbanController::class, 'getTasks']);
+    Route::get('/projects/kanban/get-tasks', [ProjectKanbanController::class, 'getTasks']);
     Route::get('/projects/kanban/{id}/team-members', [ProjectKanbanController::class, 'getTeamMembers']);
     Route::post('/projects/kanban/{id}/assign-team', [ProjectKanbanController::class, 'assignTeam']);
+    
+    // CRUD Route ProjectTask
+    Route::post('/projects/kanban/tasks', [ProjectKanbanController::class, 'storeTask']);
+    Route::patch('/projects/kanban/tasks/{id}', [ProjectKanbanController::class, 'updateTask']);
+    Route::delete('/projects/kanban/tasks/{id}', [ProjectKanbanController::class, 'deleteTask']);
+    Route::patch('/projects/kanban/tasks/{task}/status', [ProjectKanbanController::class, 'updateStatus'])->name('tasks.status.update');
+    Route::post('/projects/kanban/tasks/{id}/activities', [ProjectKanbanController::class, 'storeActivity']);
+    Route::get('/projects/kanban/tasks/{id}/activities', [ProjectKanbanController::class, 'getActivities']);
 });
