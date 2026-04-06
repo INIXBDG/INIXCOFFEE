@@ -49,7 +49,7 @@ class ProjectAdministrationController extends Controller
                 $project = Project::create([
                     'name' => $request->nama_projek,
                     'description' => $request->deskripsi,
-                    'perusahaan_key' => $request->perusahaan_key, // Menyimpan relasi klien
+                    'client_id' => $request->perusahaan_key, // Menyimpan relasi klien
                     'phase' => 'administrasi',
                 ]);
 
@@ -57,6 +57,7 @@ class ProjectAdministrationController extends Controller
                 ProjectAdministration::create([
                     'project_id' => $project->id,
                     'current_stage' => 'kak',
+                    'pm_id' => 'AD',
                 ]);
 
                 DB::commit();

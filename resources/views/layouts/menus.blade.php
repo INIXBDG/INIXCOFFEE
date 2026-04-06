@@ -2444,7 +2444,7 @@
                                                             <div class="card" id="card-hover">
                                                                 <div class="card-body d-flex">
                                                                     <div class="col-md-2">
-                                                                        <img src="{{ asset('icon/target.svg') }}"
+                                                                        <img src="{{ asset('icon/layout.svg') }}"
                                                                             class="img-responsive" width="30px">
                                                                     </div>
                                                                     <div class="col-md-10" style="margin-left: 10px">
@@ -2463,7 +2463,7 @@
                                                             <div class="card" id="card-hover">
                                                                 <div class="card-body d-flex">
                                                                     <div class="col-md-2">
-                                                                        <img src="{{ asset('icon/target.svg') }}"
+                                                                        <img src="{{ asset('icon/calendar.svg') }}"
                                                                             class="img-responsive" width="30px">
                                                                     </div>
                                                                     <div class="col-md-10" style="margin-left: 10px">
