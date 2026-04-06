@@ -413,6 +413,9 @@ Route::prefix('kpi-data/')
                 route::get('/get', [TargetKPIController::class, 'getDataOverview'])->name('get');
                 route::get('/index/personal/{id?}', [TargetKPIController::class, 'personalIndex'])->name('indexPersonal');
                 route::get('/kpi/personal/data', [TargetKPIController::class, 'getDataOverviewPersonal'])->name('dataPersonal');
+
+                //yang hilang
+                route::post('/update-target-per-sales', [TargetKPIController::class, 'updateTargetPerSales'])->name('updateTargetPerSales');
             });
 
         //Target Departement
@@ -1019,12 +1022,7 @@ Route::prefix('office')
             Route::delete('hapus/{id}', [DaftarTugasController::class, 'delete'])->name('delete');
 
             // Update tugas periode
-            Route::get('update/harian', [DaftarTugasController::class, 'updateTugasHarian'])->name('UpdateTugasHarian');
-            Route::get('update/mingguan', [DaftarTugasController::class, 'updateTugasMingguan'])->name('UpdateTugasMingguan');
-            Route::get('update/bulanan', [DaftarTugasController::class, 'updateTugasBulanan'])->name('UpdateTugasBulanan');
-            Route::get('update/quartal', [DaftarTugasController::class, 'updateTugasQuartal'])->name('UpdateTugasQuartal');
-            Route::get('update/semester', [DaftarTugasController::class, 'updateTugasSemester'])->name('UpdateTugasSemester');
-            Route::get('update/tahunan', [DaftarTugasController::class, 'updateTugasTahunan'])->name('UpdateTugasTahunan');
+            Route::post('/aktifkan-tugas', [DaftarTugasController::class, 'aktifkanTugas'])->name('aktifkanTugas');
 
             // Kategori
             Route::post('kategori/update', [DaftarTugasController::class, 'updateKategori'])->name('updateKategori');
