@@ -2362,12 +2362,20 @@ class TargetKPIController extends Controller
             return 0;
         }
 
+        $normalizedPicNames = array_map(function ($name) {
+            if ($name === 'Stepanus') return 'Stefan';
+            if ($name === 'Jonathan') return 'Valen';
+            return $name;
+        }, $picNames);
+
         $errorQuery = Tickets::whereBetween('created_at', [$start, $end])
             ->where('kategori', 'Error (Aplikasi)')
             ->where('keperluan', 'Programming')
             ->whereNotNull('tanggal_selesai');
 
-        $requestQuery = Tickets::whereBetween('created_at', [$start, $end])->where('kategori', 'Request');
+        $requestQuery = Tickets::whereBetween('created_at', [$start, $end])
+            ->where('kategori', 'Request');
+
         if ($personId !== null) {
             $karyawanData = karyawan::find($personId);
             if (!$karyawanData) {
@@ -2377,24 +2385,16 @@ class TargetKPIController extends Controller
             if (!$firstName) {
                 return 0;
             }
-
-            if ($firstName = 'Stepanus') {
+            if ($firstName === 'Stepanus') {
                 $firstName = 'Stefan';
-            } else if ($firstName = 'Jonathan') {
+            } elseif ($firstName === 'Jonathan') {
                 $firstName = 'Valen';
             }
-
             $errorQuery->where('pic', $firstName);
             $requestQuery->where('pic', $firstName);
         } else {
-            if ($picNames = 'Stepanus') {
-                $picNames = 'Stefan';
-            } else if ($picNames = 'Jonathan') {
-                $picNames = 'Valen';
-            }
-
-            $errorQuery->whereIn('pic', $picNames);
-            $requestQuery->whereIn('pic', $picNames);
+            $errorQuery->whereIn('pic', $normalizedPicNames);
+            $requestQuery->whereIn('pic', $normalizedPicNames);
         }
 
         $ticketsError = $errorQuery->get();
@@ -2418,11 +2418,9 @@ class TargetKPIController extends Controller
             foreach ($ticketsError as $ticket) {
                 $startAt = Carbon::parse($ticket->created_at, 'Asia/Jakarta');
                 if (strlen($ticket->tanggal_selesai) > 10) {
-                    // sudah datetime
                     $endAt = Carbon::parse($ticket->tanggal_selesai, 'Asia/Jakarta');
                 } else {
-                    // hanya date
-                    $endAt = Carbon::parse($ticket->tanggal_selesai . ' ' . $ticket->jam_selesai, 'Asia/Jakarta');
+                    $endAt = Carbon::parse($ticket->tanggal_selesai . ' ' . ($ticket->jam_selesai ?? '23:59:59'), 'Asia/Jakarta');
                 }
                 $durasiJam = $this->hitungJamKerja($startAt, $endAt);
 
@@ -2448,7 +2446,7 @@ class TargetKPIController extends Controller
 
         $skorKualitas = $skorRasio * 0.5 + $rataSkorError * 0.5;
 
-        $progress = ($skorKualitas / $nilaiTarget) * 100;
+        $progress = $nilaiTarget > 0 ? ($skorKualitas / $nilaiTarget) * 100 : 0;
         $progress = round($progress, 1);
         $progress = min($progress, 100);
 
@@ -2513,10 +2511,9 @@ class TargetKPIController extends Controller
                 $firstName = explode(' ', $karyawanData->nama_lengkap)[0] ?? '';
                 if ($firstName === 'Stepanus') {
                     $firstName = 'Stefan';
-                } else if ($firstName == 'Jonathan') {
+                } elseif ($firstName === 'Jonathan') {
                     $firstName = 'Valen';
                 }
-                
                 $ticketQuery->where('pic', $firstName);
             } else {
                 $ticketQuery->whereIn('pic', $picNames);
@@ -2535,24 +2532,25 @@ class TargetKPIController extends Controller
         foreach ($tickets as $ticket) {
             $priority = 'Other';
 
-            if (in_array($ticket->tingkat_kesulitan, ['Major', 'Moderate'])) {
+            if (in_array(strtolower($ticket->tingkat_kesulitan), ['major', 'moderate'])) {
                 $priority = 'High';
-            } elseif (in_array($ticket->tingkat_kesulitan, ['minor', 'normal']) && $ticket->kategori === 'Error (Aplikasi)') {
+            } elseif (in_array(strtolower($ticket->tingkat_kesulitan), ['minor', 'normal']) && $ticket->kategori === 'Error (Aplikasi)') {
                 $priority = 'Medium';
             } elseif ($ticket->kategori === 'Request') {
                 $priority = 'Low';
             }
 
             $startAt = Carbon::parse($ticket->created_at, 'Asia/Jakarta');
+            
             if (strlen($ticket->tanggal_selesai) > 10) {
-                // sudah datetime
                 $endAt = Carbon::parse($ticket->tanggal_selesai, 'Asia/Jakarta');
             } else {
-                // hanya date
-                $endAt = Carbon::parse($ticket->tanggal_selesai . ' ' . $ticket->jam_selesai, 'Asia/Jakarta');
+                $endAt = Carbon::parse($ticket->tanggal_selesai . ' ' . ($ticket->jam_selesai ?? '23:59:59'), 'Asia/Jakarta');
             }
+            
             $actualHours = $this->hitungJamKerja($startAt, $endAt);
             $slaMet = false;
+            
             if ($priority === 'High' && $actualHours <= 24) {
                 $slaMet = true;
             } elseif ($priority === 'Medium' && $actualHours <= 40) {
@@ -2566,10 +2564,10 @@ class TargetKPIController extends Controller
             }
         }
 
-        $realisasiPersen = ($metCount / $total) * 100;
-        $progress = ($realisasiPersen / $nilaiTarget) * 100;
+        $realisasiPersen = $total > 0 ? ($metCount / $total) * 100 : 0;
+        $progress = $nilaiTarget > 0 ? ($realisasiPersen / $nilaiTarget) * 100 : 0;
 
-        return round($progress, 1);
+        return min(100, round($progress, 1));
     }
 
     //TS
@@ -8090,7 +8088,6 @@ class TargetKPIController extends Controller
 
             if (!empty($idKaryawans)) {
                 $namaLengkapList = karyawan::whereIn('id', $idKaryawans)->pluck('nama_lengkap')->toArray();
-
                 $picNames = array_map(function ($nama) {
                     return explode(' ', trim($nama))[0] ?? '';
                 }, $namaLengkapList);
@@ -8100,18 +8097,14 @@ class TargetKPIController extends Controller
 
             if (!empty($idKaryawans)) {
                 $namaLengkapList = karyawan::whereIn('id', $idKaryawans)->pluck('nama_lengkap')->toArray();
-
-                // Ekstrak nama depan (bisa jadi array berisi banyak nama)
                 $picNames = array_map(function ($nama) {
                     return explode(' ', trim($nama))[0] ?? '';
                 }, $namaLengkapList);
             }
         }
 
-        // Filter nama yang kosong
         $picNames = array_filter($picNames);
 
-        // Jika tidak ada nama PIC yang ditemukan, return kosong
         if (empty($picNames)) {
             return [
                 'progress' => 0,
@@ -8122,39 +8115,35 @@ class TargetKPIController extends Controller
             ];
         }
 
-        if ($picNames === 'Stepanus') {
-            $picNames === 'Stefan';
-        } else if ($picNames === 'Jonathan') {
-            $picNames === 'Valen';
-        }
-        
+        $normalizedPicNames = array_map(function ($name) {
+            if ($name === 'Stepanus') return 'Stefan';
+            if ($name === 'Jonathan') return 'Valen';
+            return $name;
+        }, $picNames);
 
-        // ✅ QUERY TIKET (MENGGUNAKAN whereIn UNTUK MENDUKUNG BANYAK PIC)
         if ($personId !== null) {
-            // Jika spesifik 1 orang, bisa pakai where (tapi whereIn juga aman)
             $ticketsError = Tickets::whereBetween('created_at', [$start, $end])
                 ->where('kategori', 'Error (Aplikasi)')
                 ->where('keperluan', 'Programming')
-                ->whereIn('pic', $picNames) // Tetap pakai whereIn untuk konsistensi
+                ->whereIn('pic', $normalizedPicNames)
                 ->whereNotNull('tanggal_selesai')
                 ->get();
 
             $ticketsRequest = Tickets::whereBetween('created_at', [$start, $end])
                 ->where('kategori', 'Request')
-                ->whereIn('pic', $picNames)
+                ->whereIn('pic', $normalizedPicNames)
                 ->get();
         } else {
-            // Jika null, ambil semua tiket dari daftar PIC yang ditemukan di detailPersonKPI
             $ticketsError = Tickets::whereBetween('created_at', [$start, $end])
                 ->where('kategori', 'Error (Aplikasi)')
                 ->where('keperluan', 'Programming')
-                ->whereIn('pic', $picNames) // ✅ PENTING: Filter berdasarkan array nama dari detailPerson
+                ->whereIn('pic', $normalizedPicNames)
                 ->whereNotNull('tanggal_selesai')
                 ->get();
 
             $ticketsRequest = Tickets::whereBetween('created_at', [$start, $end])
                 ->where('kategori', 'Request')
-                ->whereIn('pic', $picNames) // ✅ PENTING: Filter berdasarkan array nama dari detailPerson
+                ->whereIn('pic', $normalizedPicNames)
                 ->get();
         }
 
@@ -8187,11 +8176,9 @@ class TargetKPIController extends Controller
             foreach ($ticketsError as $ticket) {
                 $startAt = Carbon::parse($ticket->created_at, 'Asia/Jakarta');
                 if (strlen($ticket->tanggal_selesai) > 10) {
-                    // sudah datetime
                     $endAt = Carbon::parse($ticket->tanggal_selesai, 'Asia/Jakarta');
                 } else {
-                    // hanya date
-                    $endAt = Carbon::parse($ticket->tanggal_selesai . ' ' . $ticket->jam_selesai, 'Asia/Jakarta');
+                    $endAt = Carbon::parse($ticket->tanggal_selesai . ' ' . ($ticket->jam_selesai ?? '23:59:59'), 'Asia/Jakarta');
                 }
                 $durasiJam = $this->hitungJamKerja($startAt, $endAt);
 
@@ -8254,7 +8241,7 @@ class TargetKPIController extends Controller
         }
 
         $skorKualitas = $skorRasio * 0.5 + $rataSkorError * 0.5;
-        $progress = ($skorKualitas / $nilaiTarget) * 100;
+        $progress = $nilaiTarget > 0 ? ($skorKualitas / $nilaiTarget) * 100 : 0;
         $progress = round($progress, 1);
         $progress = min($progress, 100);
 
@@ -8302,46 +8289,30 @@ class TargetKPIController extends Controller
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        // ✅ LOGIKA PENGAMBILAN PIC NAME (SELALU DARI detailPersonKPI)
         $picNames = [];
 
         if ($personId !== null) {
-            // 1. Jika ada personId: Ambil hanya karyawan tersebut dari detailPersonKPI
             $idKaryawans = detailPersonKPI::where('detailTargetKey', $firstDetail->id)->where('id_karyawan', $personId)->pluck('id_karyawan')->unique()->toArray();
 
             if (!empty($idKaryawans)) {
                 $namaLengkapList = karyawan::whereIn('id', $idKaryawans)->pluck('nama_lengkap')->toArray();
-
-                // Ekstrak nama depan
                 $picNames = array_map(function ($nama) {
                     return explode(' ', trim($nama))[0] ?? '';
                 }, $namaLengkapList);
             }
         } else {
-            // 2. Jika personId NULL: Ambil SEMUA karyawan dari detailPersonKPI (BUKAN dari jabatan)
             $idKaryawans = detailPersonKPI::where('detailTargetKey', $firstDetail->id)->pluck('id_karyawan')->unique()->toArray();
 
             if (!empty($idKaryawans)) {
                 $namaLengkapList = karyawan::whereIn('id', $idKaryawans)->pluck('nama_lengkap')->toArray();
-
-                // Ekstrak nama depan (bisa jadi array berisi banyak nama)
                 $picNames = array_map(function ($nama) {
                     return explode(' ', trim($nama))[0] ?? '';
                 }, $namaLengkapList);
             }
         }
 
-        // Filter nama yang kosong
         $picNames = array_filter($picNames);
 
-        if ($picNames === 'Stepanus') {
-            $picNames === 'Stefan';
-        } else if ($picNames === 'Jonathan') {
-            $picNames === 'Valen';
-        }
-        
-
-        // Jika tidak ada nama PIC yang ditemukan dari detailPersonKPI, return kosong
         if (empty($picNames)) {
             return [
                 'progress' => 0,
@@ -8352,7 +8323,12 @@ class TargetKPIController extends Controller
             ];
         }
 
-        // ✅ AMBIL TARGET JABATAN UNTUK FILTER KEPERLUAN
+        $normalizedPicNames = array_map(function ($name) {
+            if ($name === 'Stepanus') return 'Stefan';
+            if ($name === 'Jonathan') return 'Valen';
+            return $name;
+        }, $picNames);
+
         $targetJabatanList = $details->pluck('jabatan')->unique()->toArray();
         if (empty($targetJabatanList)) {
             return [
@@ -8387,10 +8363,9 @@ class TargetKPIController extends Controller
             ];
         }
 
-        // ✅ QUERY TIKET (MENGGUNAKAN whereIn UNTUK MENDUKUNG BANYAK PIC)
         $tickets = Tickets::whereIn('keperluan', $jabatanFilter)
             ->whereBetween('created_at', [$start, $end])
-            ->whereIn('pic', $picNames) // ✅ PENTING: Filter berdasarkan PIC dari detailPersonKPI
+            ->whereIn('pic', $normalizedPicNames)
             ->whereNotNull('tanggal_selesai')
             ->get();
 
@@ -8411,9 +8386,9 @@ class TargetKPIController extends Controller
         foreach ($tickets as $ticket) {
             $priority = 'Other';
 
-            if (in_array($ticket->tingkat_kesulitan, ['Major', 'Moderate'])) {
+            if (in_array(strtolower($ticket->tingkat_kesulitan), ['major', 'moderate'])) {
                 $priority = 'High';
-            } elseif ($ticket->tingkat_kesulitan === 'Minor' && $ticket->kategori === 'Error (Aplikasi)') {
+            } elseif (in_array(strtolower($ticket->tingkat_kesulitan), ['minor', 'normal']) && $ticket->kategori === 'Error (Aplikasi)') {
                 $priority = 'Medium';
             } elseif ($ticket->kategori === 'Request') {
                 $priority = 'Low';
@@ -8421,11 +8396,9 @@ class TargetKPIController extends Controller
 
             $startAt = Carbon::parse($ticket->created_at, 'Asia/Jakarta');
             if (strlen($ticket->tanggal_selesai) > 10) {
-                // sudah datetime
                 $endAt = Carbon::parse($ticket->tanggal_selesai, 'Asia/Jakarta');
             } else {
-                // hanya date
-                $endAt = Carbon::parse($ticket->tanggal_selesai . ' ' . $ticket->jam_selesai, 'Asia/Jakarta');
+                $endAt = Carbon::parse($ticket->tanggal_selesai . ' ' . ($ticket->jam_selesai ?? '23:59:59'), 'Asia/Jakarta');
             }
             $actualHours = $this->hitungJamKerja($startAt, $endAt);
 
@@ -8446,8 +8419,8 @@ class TargetKPIController extends Controller
             $slaResults[$dateKey] = $slaMet;
         }
 
-        $realisasiPersen = ($metCount / $total) * 100;
-        $progress = ($realisasiPersen / $nilaiTarget) * 100;
+        $realisasiPersen = $total > 0 ? ($metCount / $total) * 100 : 0;
+        $progress = $nilaiTarget > 0 ? ($realisasiPersen / $nilaiTarget) * 100 : 0;
         $progress = round($progress, 1);
         $progress = min($progress, 100);
 
@@ -8481,7 +8454,7 @@ class TargetKPIController extends Controller
 
         $monthlyAverages = [];
         foreach ($monthlyData as $month => $dailyVals) {
-            $avg = (array_sum($dailyVals) / count($dailyVals)) * 100;
+            $avg = count($dailyVals) > 0 ? (array_sum($dailyVals) / count($dailyVals)) * 100 : 0;
             $monthlyAverages[$month] = round($avg, 1);
         }
 
