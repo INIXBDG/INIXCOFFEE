@@ -1078,7 +1078,7 @@
                                         }
                                     }
                                 } else {
-                                    statusText = 'Dalam Proses';
+                                    statusText = 'Dalam Progress';
                                     badgeClass = 'bg-warning text-dark';
                                 }
 
