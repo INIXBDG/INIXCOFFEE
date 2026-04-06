@@ -2433,6 +2433,57 @@
                                         </div>
                                     </div>
                                 @endcan
+                                {{-- @can('Fitur Project') --}}
+                                    <div class="row">
+                                        <div class="col-md-12 mt-1">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <h5 class="text-center card-title">Project</h5>
+                                                    <div class="row">
+                                                        <div class="col-sm-6 mt-2">
+                                                            <div class="card" id="card-hover">
+                                                                <div class="card-body d-flex">
+                                                                    <div class="col-md-2">
+                                                                        <img src="{{ asset('icon/target.svg') }}"
+                                                                            class="img-responsive" width="30px">
+                                                                    </div>
+                                                                    <div class="col-md-10" style="margin-left: 10px">
+                                                                        <a href="/projects/administrasi"
+                                                                            class="link stretched-link text-decoration-none">
+                                                                            <h5 class="card-title">Administrasi
+                                                                            </h5>
+                                                                        </a>
+                                                                        <p class="card-text">Fitur Administrasi Projek yang akan dilakukan.
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-sm-6 mt-2">
+                                                            <div class="card" id="card-hover">
+                                                                <div class="card-body d-flex">
+                                                                    <div class="col-md-2">
+                                                                        <img src="{{ asset('icon/target.svg') }}"
+                                                                            class="img-responsive" width="30px">
+                                                                    </div>
+                                                                    <div class="col-md-10" style="margin-left: 10px">
+                                                                        <a href="/projects/kanban"
+                                                                            class="link stretched-link text-decoration-none">
+                                                                            <h5 class="card-title">Kanban
+                                                                            </h5>
+                                                                        </a>
+                                                                        <p class="card-text">Kanban Teknis untuk Project.
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {{-- @endcan --}}
 
                             </div>
                         </div>
@@ -2541,7 +2592,7 @@
                                                         width="30px">
                                                 </div>
                                                 <div class="col-md-10" style="margin-left: 10px">
-                                                    <a href="https://inixindo.sentry.io/issues/"
+                                                    <a href="https://webinix.sentry.io/issues/"
                                                         class="link stretched-link text-decoration-none">
                                                         <h5 class="card-title">Sentry Dashboard</h5>
                                                     </a>
