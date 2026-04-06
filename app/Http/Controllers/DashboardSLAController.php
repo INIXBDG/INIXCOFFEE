@@ -58,17 +58,17 @@ class DashboardSLAController extends Controller
 
         $validator = Validator::make($request->all(), [
             'start_date' => 'nullable|date',
-            'end_date'   => 'nullable|date|after_or_equal:start_date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
         ]);
 
         if ($validator->fails()) {
             // Gunakan default SEMESTER jika validasi gagal
             return [
                 'startDate' => $defaultStartDate,
-                'endDate'   => $defaultEndDate,
-                'filters'   => [
+                'endDate' => $defaultEndDate,
+                'filters' => [
                     'start' => $defaultStartDate->toDateTimeString(),
-                    'end'   => $defaultEndDate->toDateTimeString(),
+                    'end' => $defaultEndDate->toDateTimeString(),
                     'error' => $validator->errors()->first()
                 ]
             ];
@@ -85,8 +85,8 @@ class DashboardSLAController extends Controller
 
         return [
             'startDate' => $startDate,
-            'endDate'   => $endDate,
-            'filters'   => ['start' => $startDate->toDateTimeString(), 'end' => $endDate->toDateTimeString()]
+            'endDate' => $endDate,
+            'filters' => ['start' => $startDate->toDateTimeString(), 'end' => $endDate->toDateTimeString()]
         ];
     }
 
@@ -95,23 +95,23 @@ class DashboardSLAController extends Controller
         return [
             // --- TAHAP PERENCANAAN (H-30) ---
             'Link Pendaftaran' => ['offset' => -30, 'stage' => 'Perencanaan', 'desc' => 'Max H-30'],
-            'Pemateri'         => ['offset' => -30, 'stage' => 'Perencanaan', 'desc' => 'Fixasi H-30'],
+            'Pemateri' => ['offset' => -30, 'stage' => 'Perencanaan', 'desc' => 'Fixasi H-30'],
 
             // --- TAHAP PERSIAPAN (H-14 s/d H-3) ---
-            'Flyer'            => ['offset' => -14, 'stage' => 'Persiapan', 'desc' => 'Max H-14'],
-            'Background Zoom'  => ['offset' => -7,  'stage' => 'Persiapan', 'desc' => 'Max H-7'],
-            'Akun E-Learning'  => ['offset' => -7,  'stage' => 'Persiapan', 'desc' => 'Max H-7'],
-            'Teknis & Ruangan' => ['offset' => -3,  'stage' => 'Persiapan', 'desc' => 'Max H-3'],
-            'MC'               => ['offset' => -3,  'stage' => 'Persiapan', 'desc' => 'Naskah H-3'],
-            'Moderator'        => ['offset' => -3,  'stage' => 'Persiapan', 'desc' => 'Briefing H-3'],
+            'Flyer' => ['offset' => -14, 'stage' => 'Persiapan', 'desc' => 'Max H-14'],
+            'Background Zoom' => ['offset' => -7, 'stage' => 'Persiapan', 'desc' => 'Max H-7'],
+            'Akun E-Learning' => ['offset' => -7, 'stage' => 'Persiapan', 'desc' => 'Max H-7'],
+            'Teknis & Ruangan' => ['offset' => -3, 'stage' => 'Persiapan', 'desc' => 'Max H-3'],
+            'MC' => ['offset' => -3, 'stage' => 'Persiapan', 'desc' => 'Naskah H-3'],
+            'Moderator' => ['offset' => -3, 'stage' => 'Persiapan', 'desc' => 'Briefing H-3'],
 
             // --- TAHAP FINALISASI (H-1) ---
-            'Blast Link Zoom'  => ['offset' => -1,  'stage' => 'Finalisasi', 'desc' => 'H-1 Pagi'],
+            'Blast Link Zoom' => ['offset' => -1, 'stage' => 'Finalisasi', 'desc' => 'H-1 Pagi'],
             'Link Zoom & Youtube' => ['offset' => -1, 'stage' => 'Finalisasi', 'desc' => 'Ready H-1'],
 
             // --- TAHAP PELAPORAN (H+7) ---
-            'Sertifikat Webinar' => ['offset' => 2,   'stage' => 'Pelaporan', 'desc' => 'Max H+2'],
-            'Link Feed Back'     => ['offset' => 7,   'stage' => 'Pelaporan', 'desc' => 'Data H+7'],
+            'Sertifikat Webinar' => ['offset' => 2, 'stage' => 'Pelaporan', 'desc' => 'Max H+2'],
+            'Link Feed Back' => ['offset' => 7, 'stage' => 'Pelaporan', 'desc' => 'Data H+7'],
         ];
     }
 
@@ -130,9 +130,14 @@ class DashboardSLAController extends Controller
         // 1. Ambil Data Mentah
         $rawTickets = DB::table('tickets')
             ->select(
-                'id', 'created_at', 'kategori', 'tingkat_kesulitan',
-                'tanggal_response', 'jam_response',
-                'tanggal_selesai', 'jam_selesai'
+                'id',
+                'created_at',
+                'kategori',
+                'tingkat_kesulitan',
+                'tanggal_response',
+                'jam_response',
+                'tanggal_selesai',
+                'jam_selesai'
             )
             ->where('keperluan', 'LIKE', $keperluan) // <-- Gunakan variabel dinamis
             ->whereNotNull('tanggal_selesai')
@@ -212,9 +217,14 @@ class DashboardSLAController extends Controller
         $picNamesForQuery = array_values($userToPicMap);
         $rawTickets = DB::table('tickets')
             ->select(
-                'pic', 'created_at', 'kategori', 'tingkat_kesulitan',
-                'tanggal_response', 'jam_response',
-                'tanggal_selesai', 'jam_selesai'
+                'pic',
+                'created_at',
+                'kategori',
+                'tingkat_kesulitan',
+                'tanggal_response',
+                'jam_response',
+                'tanggal_selesai',
+                'jam_selesai'
             )
             ->whereIn('pic', $picNamesForQuery)
             ->whereNotNull('tanggal_selesai')
@@ -233,7 +243,8 @@ class DashboardSLAController extends Controller
         // 7. Proses SLA untuk setiap user
         $kpiPerUser = [];
         foreach ($ticketsByUser as $nama => $tickets) {
-            if ($nama === 'Lainnya') continue;
+            if ($nama === 'Lainnya')
+                continue;
 
             $stats = $this->processTicketSla($tickets);
             $total = $stats['total_tickets'];
@@ -270,17 +281,22 @@ class DashboardSLAController extends Controller
 
         // 1. Ambil Insiden
         $insidenSelesai = laporanInsiden::whereHas('tracking', function ($q) {
-                $q->whereIn('status', ['Selesai', 'Tidak Ditangani']);
-            })
+            $q->whereIn('status', ['Selesai', 'Tidak Ditangani']);
+        })
             ->with(['tracking' => fn($q) => $q->orderBy('id', 'asc'), 'tracking.karyawan'])
             ->whereBetween('created_at', [$dateRange['startDate'], $dateRange['endDate']])
             ->get();
 
         // 2. Proses Kalkulasi SLA di PHP
         $stats = [
-            'total_insiden' => 0, 'total_tidak_ditangani' => 0, 'response_count' => 0,
-            'response_met' => 0, 'resolution_count' => 0, 'resolution_met' => 0,
-            'sum_response_hours' => 0, 'sum_resolution_hours' => 0,
+            'total_insiden' => 0,
+            'total_tidak_ditangani' => 0,
+            'response_count' => 0,
+            'response_met' => 0,
+            'resolution_count' => 0,
+            'resolution_met' => 0,
+            'sum_response_hours' => 0,
+            'sum_resolution_hours' => 0,
         ];
         $listInsiden = [];
 
@@ -300,7 +316,8 @@ class DashboardSLAController extends Controller
                 ->where('id', '>', $eventPenanganan ? $eventPenanganan->id : 0)
                 ->firstWhere('status', 'Selesai');
 
-            if (!$eventBaru || !$eventPenanganan || !$eventSelesai) continue;
+            if (!$eventBaru || !$eventPenanganan || !$eventSelesai)
+                continue;
 
             // Cek 'responder' di event 'Dalam Penanganan'
             $handler = $eventPenanganan->karyawan;
@@ -328,14 +345,16 @@ class DashboardSLAController extends Controller
             $actualResponseHours = $this->calculateBusinessHours($timeBaru, $timePenanganan);
             $stats['sum_response_hours'] += $actualResponseHours;
             $responseMet = ($actualResponseHours <= 1);
-            if ($responseMet) $stats['response_met']++;
+            if ($responseMet)
+                $stats['response_met']++;
 
             // 2. Kalkulasi SLA Resolusi (Penanganan -> Selesai)
             $stats['resolution_count']++;
             $actualResolutionHours = $this->calculateBusinessHours($timePenanganan, $timeSelesai);
             $stats['sum_resolution_hours'] += $actualResolutionHours;
             $resolutionMet = ($actualResolutionHours <= 8);
-            if ($resolutionMet) $stats['resolution_met']++;
+            if ($resolutionMet)
+                $stats['resolution_met']++;
 
             $listInsiden[] = [
                 'id' => $insiden->id,
@@ -448,14 +467,14 @@ class DashboardSLAController extends Controller
 
             // Grouping data untuk View JSON
             $details[$rule['stage']][] = [
-                'activity'    => $taskName,
-                'pic'         => $pic,
-                'sla_label'   => $rule['desc'], // Label teks H-Min
+                'activity' => $taskName,
+                'pic' => $pic,
+                'sla_label' => $rule['desc'], // Label teks H-Min
                 'target_date' => $targetDate->format('d M Y'),
                 'actual_date' => $actualDateStr,
-                'status'      => $status,
+                'status' => $status,
                 // Hitung selisih hari (opsional untuk sorting/indikator)
-                'days_diff'   => $isDone ? $actualDateObj->diffInDays($targetDate, false) : 0
+                'days_diff' => $isDone ? $actualDateObj->diffInDays($targetDate, false) : 0
             ];
         }
 
@@ -463,15 +482,15 @@ class DashboardSLAController extends Controller
         $total = $stats['total_tasks'];
         $kpi = [
             'completion_rate' => ($total > 0) ? ($stats['completed_tasks'] / $total) * 100 : 0,
-            'sla_compliance'  => ($stats['completed_tasks'] > 0) ? ($stats['on_time'] / $stats['completed_tasks']) * 100 : 0,
-            'total_late'      => $stats['late'],
-            'total_overdue'   => $stats['overdue'],
-            'event_title'     => $mapping->eventDetail->title ?? 'Judul Belum Diset',
-            'event_date'      => $dDay->format('d M Y')
+            'sla_compliance' => ($stats['completed_tasks'] > 0) ? ($stats['on_time'] / $stats['completed_tasks']) * 100 : 0,
+            'total_late' => $stats['late'],
+            'total_overdue' => $stats['overdue'],
+            'event_title' => $mapping->eventDetail->title ?? 'Judul Belum Diset',
+            'event_date' => $dDay->format('d M Y')
         ];
 
         return response()->json([
-            'kpi'     => $kpi,
+            'kpi' => $kpi,
             'details' => $details
         ]);
     }
@@ -489,9 +508,14 @@ class DashboardSLAController extends Controller
         // 1. Ambil Data Tiket
         $rawTickets = DB::table('tickets')
             ->select(
-                'id', 'created_at', 'kategori', 'tingkat_kesulitan',
-                'tanggal_response', 'jam_response',
-                'tanggal_selesai', 'jam_selesai'
+                'id',
+                'created_at',
+                'kategori',
+                'tingkat_kesulitan',
+                'tanggal_response',
+                'jam_response',
+                'tanggal_selesai',
+                'jam_selesai'
             )
             ->where('keperluan', 'LIKE', $keperluan)
             ->whereNotNull('tanggal_selesai')
@@ -515,14 +539,17 @@ class DashboardSLAController extends Controller
 
         foreach ($period as $date) {
             $startOfWeek = $date->copy()->startOfWeek();
-            $endOfWeek   = $date->copy()->endOfWeek();
+            $endOfWeek = $date->copy()->endOfWeek();
 
             // Batasi agar tidak melebihi range filter (jika filter parsial)
-            if ($startOfWeek < $dateRange['startDate']) $startOfWeek = $dateRange['startDate'];
-            if ($endOfWeek > $dateRange['endDate']) $endOfWeek = $dateRange['endDate'];
+            if ($startOfWeek < $dateRange['startDate'])
+                $startOfWeek = $dateRange['startDate'];
+            if ($endOfWeek > $dateRange['endDate'])
+                $endOfWeek = $dateRange['endDate'];
 
             // Skip jika start > end (edge case akhir periode)
-            if ($startOfWeek > $endOfWeek) continue;
+            if ($startOfWeek > $endOfWeek)
+                continue;
 
             $contentStats['total_weeks']++;
 
@@ -619,13 +646,19 @@ class DashboardSLAController extends Controller
 
             // Tentukan Prioritas
             $priority = 'Other';
-            if (in_array($ticket->tingkat_kesulitan, ['Major', 'Moderate'])) {
+
+            // Standarisasi string dari database untuk akurasi komparasi
+            $tingkatKesulitan = strtolower(trim($ticket->tingkat_kesulitan ?? ''));
+            $kategori = strtolower(trim($ticket->kategori ?? ''));
+
+            if (in_array($tingkatKesulitan, ['major', 'moderate'])) {
                 $priority = 'High';
-            } elseif ($ticket->tingkat_kesulitan == 'Minor' && $ticket->kategori == 'Error (Aplikasi)') {
-                $priority = 'Medium';
-            } elseif ($ticket->kategori == 'Request') {
+            } elseif ($kategori == 'request') {
                 $priority = 'Low';
+            } elseif (in_array($tingkatKesulitan, ['minor', 'normal', '']) || $kategori == 'error (aplikasi)') {
+                $priority = 'Medium';
             }
+
             $stats['priority_count'][$priority]++;
 
             // Parsing Waktu
@@ -646,18 +679,21 @@ class DashboardSLAController extends Controller
                 $stats['sum_response_hours'] += $actualResponseHours;
 
                 // Cek Kepatuhan SLA Response
-                if (($priority == 'High' && $actualResponseHours <= 4) ||
+                if (
+                    ($priority == 'High' && $actualResponseHours <= 4) ||
                     ($priority == 'Medium' && $actualResponseHours <= 8) ||
-                    ($priority == 'Low' && $actualResponseHours <= 16))
-                {
+                    ($priority == 'Low' && $actualResponseHours <= 16)
+                ) {
                     $stats['response_met']++;
                 }
             }
 
             // Cek Kepatuhan SLA Resolusi
-            if (($priority == 'High' && $actualResolutionHours <= 24) ||
+            if (
+                ($priority == 'High' && $actualResolutionHours <= 24) ||
                 ($priority == 'Medium' && $actualResolutionHours <= 40) ||
-                ($priority == 'Low')) // Low/Request dianggap 'met'
+                ($priority == 'Low')
+            ) // Low/Request dianggap 'met'
             {
                 $stats['resolution_met']++;
             }
@@ -692,7 +728,7 @@ class DashboardSLAController extends Controller
 
             if ($current < $endOfFirstDay) {
                 if ($current->hour < $this->businessEndHour) {
-                     $totalBusinessMinutes += $current->diffInMinutes($endOfFirstDay);
+                    $totalBusinessMinutes += $current->diffInMinutes($endOfFirstDay);
                 }
             }
         }
@@ -724,15 +760,15 @@ class DashboardSLAController extends Controller
 
         // Koreksi untuk kasus di mana start dan end di hari yang sama
         if ($start->isSameDay($end)) {
-             $dayStart = $start->copy()->hour($this->businessStartHour)->minute(0)->second(0);
-             $dayEnd = $start->copy()->hour($this->businessEndHour)->minute(0)->second(0);
-             $calcStart = ($start < $dayStart) ? $dayStart : $start;
-             $calcEnd = ($end > $dayEnd) ? $dayEnd : $end;
-             if ($calcStart < $calcEnd && $calcStart->isWeekday() && $calcStart->hour < $this->businessEndHour && $calcEnd->hour >= $this->businessStartHour) {
-                 return $calcStart->diffInMinutes($calcEnd) / 60.0;
-             } else {
-                 return 0;
-             }
+            $dayStart = $start->copy()->hour($this->businessStartHour)->minute(0)->second(0);
+            $dayEnd = $start->copy()->hour($this->businessEndHour)->minute(0)->second(0);
+            $calcStart = ($start < $dayStart) ? $dayStart : $start;
+            $calcEnd = ($end > $dayEnd) ? $dayEnd : $end;
+            if ($calcStart < $calcEnd && $calcStart->isWeekday() && $calcStart->hour < $this->businessEndHour && $calcEnd->hour >= $this->businessStartHour) {
+                return $calcStart->diffInMinutes($calcEnd) / 60.0;
+            } else {
+                return 0;
+            }
         }
 
         // Kembalikan dalam jam (float)
