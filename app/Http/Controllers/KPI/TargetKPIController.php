@@ -5148,7 +5148,7 @@ class TargetKPIController extends Controller
             $cleanValues = [];
 
             foreach ($values as $v) {
-                $cleanValues[] = is_numeric($v) ? (float)$v : 0;
+                $cleanValues[] = is_numeric($v) ? (float) $v : 0;
             }
 
             $avg = array_sum($cleanValues) / 12;
@@ -11528,7 +11528,8 @@ class TargetKPIController extends Controller
 
         for ($i = 0; $i < $moodleDataCount; $i++) {
             $data = $moodleDataValid[$i];
-            if (!isset($data['username'])) continue;
+            if (!isset($data['username']))
+                continue;
 
             $moodleUsername = strtolower(trim($data['username']));
             $dateString = $data['activity_submitted_at'] ?? $data['activity_created_at'] ?? null;
@@ -11662,7 +11663,8 @@ class TargetKPIController extends Controller
 
             foreach ($allTargets as $target) {
                 $detail = $target->detailTargetKPI->first();
-                if (!$detail) continue;
+                if (!$detail)
+                    continue;
 
                 $progress = $this->resolveProgress($target, $karyawanId);
                 $nilaiTarget = $detail->nilai_target;
@@ -11717,7 +11719,8 @@ class TargetKPIController extends Controller
                 if (!$target) continue;
 
                 $detail = $target->detailTargetKPI->first();
-                if (!$detail) continue;
+                if (!$detail)
+                    continue;
 
                 $progress = $this->resolveProgress($target, $karyawanId);
                 $nilaiTarget = $detail->nilai_target;
