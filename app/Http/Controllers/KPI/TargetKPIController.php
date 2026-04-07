@@ -384,12 +384,12 @@ class TargetKPIController extends Controller
             }
 
             // Adm Sales
-            elseif($route === 'laporan mom') {
+            elseif ($route === 'laporan mom') {
                 return method_exists($this, 'calculateLaporanMOM') ? $this->calculateLaporanMOM($item) : null;
             }
 
             // Adm Holding
-            elseif($route === 'ketepatan waktu po') {
+            elseif ($route === 'ketepatan waktu po') {
                 return method_exists($this, 'calculateKetepatanWaktuPo') ? $this->calculateKetepatanWaktuPo($item) : null;
             }
 
@@ -1196,17 +1196,17 @@ class TargetKPIController extends Controller
 
                 //Sales & Marketing
                 // SPV Sales
-                elseif($target->asistant_route === 'meningkatkan revenue perusahaan') {
+                elseif ($target->asistant_route === 'meningkatkan revenue perusahaan') {
                     $progress = $this->calculateMeningkatkanRevenuePerusahaan($target, $personId);
                 }
 
                 // ADM Sales
-                elseif($target->asistant_route === 'laporan mom') {
+                elseif ($target->asistant_route === 'laporan mom') {
                     $progress = $this->calculateLaporanMOM($target);
                 }
 
                 // ADM Holding
-                elseif($target->asistant_route === 'ketepatan waktu po') {
+                elseif ($target->asistant_route === 'ketepatan waktu po') {
                     $progress = $this->calculateKetepatanWaktuPo($target);
                 }
 
@@ -1410,7 +1410,7 @@ class TargetKPIController extends Controller
 
         return round($presentase, 1);
     }
-    
+
     private function calculateInisiatifEfisiensiKeuangan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
@@ -1688,7 +1688,7 @@ class TargetKPIController extends Controller
 
         return round($progress, 1);
     }
-    
+
     private function calculateAdministrasiKaryawan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
@@ -3170,7 +3170,7 @@ class TargetKPIController extends Controller
         }
 
         $momCount = LaporanHarianSales::whereYear('created_at', $tahun)->count();
-        $progress = $momCount/$momCount * 100;
+        $progress = $momCount / $momCount * 100;
 
         return round($progress, 1);
     }
@@ -3191,8 +3191,8 @@ class TargetKPIController extends Controller
 
         $userQuery = User::whereHas('karyawan', function ($query) use ($personId, $karyawanJabatan) {
             $query->where('divisi', 'Sales & Marketing')
-                  ->whereIn('jabatan', $karyawanJabatan);
-            
+                ->whereIn('jabatan', $karyawanJabatan);
+
             if ($personId !== null) {
                 $query->where('id', $personId);
             }
@@ -3239,7 +3239,7 @@ class TargetKPIController extends Controller
             }
 
             $data = $moodleDataValid[$i];
-            
+
             $moodleUsername = strtolower(trim($data['username']));
 
             if (in_array($moodleUsername, $salesUsernames)) {
@@ -3492,12 +3492,12 @@ class TargetKPIController extends Controller
                     }
 
                     // Adm Sales
-                    elseif($itemDetail->asistant_route === 'laporan mom') {
+                    elseif ($itemDetail->asistant_route === 'laporan mom') {
                         $data = $this->calculateLaporanMomDetail($itemDetail);
                     }
 
                     // Adm Holding
-                    elseif($itemDetail->asistant_route === 'ketepatan waktu po') {
+                    elseif ($itemDetail->asistant_route === 'ketepatan waktu po') {
                         $data = $this->calculateKetepatanWaktuPoDetail($itemDetail);
                     }
 
@@ -3664,12 +3664,12 @@ class TargetKPIController extends Controller
         }
 
         // ADM Sales
-        elseif($itemDetail->asistant_route === 'laporan mom') {
+        elseif ($itemDetail->asistant_route === 'laporan mom') {
             return $this->calculateLaporanMOMDetail($itemDetail);
         }
 
         // ADM Holding
-        elseif($itemDetail->asistant_route === 'ketepatan waktu po') {
+        elseif ($itemDetail->asistant_route === 'ketepatan waktu po') {
             return $this->calculateKetepatanWaktuPoDetail($itemDetail);
         }
 
@@ -4131,21 +4131,21 @@ class TargetKPIController extends Controller
 
         $monthlyData = [];
         foreach ($monthlyDataTemp as $month => $totals) {
-            $monthlyData[$month] = array_sum($totals); 
+            $monthlyData[$month] = array_sum($totals);
         }
 
         ksort($monthlyData);
         ksort($dailyBreakdownPerMonth);
 
         $gapRaw = $progress - $nilaiTarget;
-        
+
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
         $above = 0;
         $below = 0;
 
         if ($progress >= $nilaiTarget) {
-            $above = $progress - $nilaiTarget; 
+            $above = $progress - $nilaiTarget;
             $below = 0;
         } else {
             $above = 0;
@@ -4468,9 +4468,7 @@ class TargetKPIController extends Controller
                 // SPV Sales
                 elseif ($target->asistant_route === 'meningkatkan revenue perusahaan') {
                     $data = $this->calculateMeningkatkanRevenuePerusahaan($target, $personId);
-                }
-
-                elseif($target->asistant_route === 'laporan mom') {
+                } elseif ($target->asistant_route === 'laporan mom') {
                     $data = $this->calculateLaporanMOM($target);
                 }
 
@@ -4562,15 +4560,24 @@ class TargetKPIController extends Controller
         foreach ($feedbacks as $fb) {
 
             $values = [
-                $fb->F1,$fb->F2,$fb->F3,$fb->F4,$fb->F5,
-                $fb->P1,$fb->P2,$fb->P3,$fb->P4,$fb->P5,
-                $fb->P1,$fb->P2 // mengikuti function kedua (yang kamu bilang benar)
+                $fb->F1,
+                $fb->F2,
+                $fb->F3,
+                $fb->F4,
+                $fb->F5,
+                $fb->P1,
+                $fb->P2,
+                $fb->P3,
+                $fb->P4,
+                $fb->P5,
+                $fb->P1,
+                $fb->P2 // mengikuti function kedua (yang kamu bilang benar)
             ];
 
             $cleanValues = [];
 
             foreach ($values as $v) {
-                $cleanValues[] = is_numeric($v) ? (float)$v : 0;
+                $cleanValues[] = is_numeric($v) ? (float) $v : 0;
             }
 
             $avg = array_sum($cleanValues) / 12;
@@ -4687,7 +4694,7 @@ class TargetKPIController extends Controller
         } else {
             $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
         }
-        
+
         return [
             'progress' => $progress,
             'gap' => $gap,
@@ -5535,7 +5542,7 @@ class TargetKPIController extends Controller
         } else {
             $gap = 0;
         }
-        
+
 
         return [
             'progress' => $progress,
@@ -6049,7 +6056,7 @@ class TargetKPIController extends Controller
         ];
     }
 
-     private function calculateFeedbackKenyamananBerkendaraDetail($itemDetail)
+    private function calculateFeedbackKenyamananBerkendaraDetail($itemDetail)
     {
         $detail = $itemDetail->detailTargetKPI->first();
 
@@ -8998,7 +9005,7 @@ class TargetKPIController extends Controller
         ];
     }
 
-private function calculatePeningkatanKemampuanKompetensiSalesDetail($itemDetail, $personId = null)
+    private function calculatePeningkatanKemampuanKompetensiSalesDetail($itemDetail, $personId = null)
     {
         $detail = $itemDetail->detailTargetKPI->first();
 
@@ -9035,8 +9042,8 @@ private function calculatePeningkatanKemampuanKompetensiSalesDetail($itemDetail,
 
         $userQuery = User::whereHas('karyawan', function ($query) use ($personId, $karyawanJabatan) {
             $query->where('divisi', 'Sales & Marketing')
-                  ->whereIn('jabatan', $karyawanJabatan);
-            
+                ->whereIn('jabatan', $karyawanJabatan);
+
             if ($personId !== null) {
                 $query->where('id', $personId);
             }
@@ -9049,9 +9056,11 @@ private function calculatePeningkatanKemampuanKompetensiSalesDetail($itemDetail,
 
         if (empty($salesUsernames)) {
             return [
-                'progress' => 0, 'gap' => 0,
+                'progress' => 0,
+                'gap' => 0,
                 'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [], 'daily_breakdown_per_month' => [],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
             ];
         }
 
@@ -9071,9 +9080,11 @@ private function calculatePeningkatanKemampuanKompetensiSalesDetail($itemDetail,
 
         if (empty($moodleRaw['data']) || !is_array($moodleRaw['data'])) {
             return [
-                'progress' => 0, 'gap' => 0,
+                'progress' => 0,
+                'gap' => 0,
                 'pie_chart' => ['above' => 0, 'below' => 0],
-                'monthly_data' => [], 'daily_breakdown_per_month' => [],
+                'monthly_data' => [],
+                'daily_breakdown_per_month' => [],
             ];
         }
 
@@ -9087,7 +9098,8 @@ private function calculatePeningkatanKemampuanKompetensiSalesDetail($itemDetail,
 
         for ($i = 0; $i < $moodleDataCount; $i++) {
             $data = $moodleDataValid[$i];
-            if (!isset($data['username'])) continue;
+            if (!isset($data['username']))
+                continue;
 
             $moodleUsername = strtolower(trim($data['username']));
             $dateString = $data['activity_submitted_at'] ?? $data['activity_created_at'] ?? null;
@@ -9170,9 +9182,9 @@ private function calculatePeningkatanKemampuanKompetensiSalesDetail($itemDetail,
             $karyawanId = Auth()->user()->id;
             $tahunFilter = $request->tahun ?? now()->year;
 
-            $calculateProgress = function($item, $personId) {
+            $calculateProgress = function ($item, $personId) {
                 $route = strtolower($item->asistant_route);
-                
+
                 // Target Office - GM
                 if ($route === 'kepuasan pelanggan') {
                     return $this->calculateProgressKepuasanPelanggan($item, $personId);
@@ -9184,8 +9196,8 @@ private function calculatePeningkatanKemampuanKompetensiSalesDetail($itemDetail,
                     return $this->calculateRasioBiayaOperasionalTerhadapRevenue($item, $personId);
                 } elseif ($route === 'performa kpi departemen') {
                     return $this->calculatePerformaKPIDepartemen($item, $personId);
-                
-                // CS
+
+                    // CS
                 } elseif ($route === 'peserta puas dengan pelayanan dan fasilitas training') {
                     return $this->calculatePesertaPuasDenganPelayananDanFasilitasTraining($item, $personId);
                 } elseif ($route === 'dorong inovasi pelayanan') {
@@ -9195,7 +9207,7 @@ private function calculatePeningkatanKemampuanKompetensiSalesDetail($itemDetail,
                 } else if ($route === 'report persiapan kelas') {
                     return $this->calculateReportPersiapanKelas($item, $personId);
                 }
-                
+
                 // Finance
                 elseif ($route === 'inisiatif efesiensi keuangan') {
                     return $this->calculateInisiatifEfisiensiKeuangan($item, $personId);
@@ -9205,30 +9217,30 @@ private function calculatePeningkatanKemampuanKompetensiSalesDetail($itemDetail,
                     return $this->calculateMengurangiManualWorkDanError($item, $personId);
                 } elseif ($route === 'laporan analisis keuangan') {
                     return $this->calculateLaporanAnalisisKeuangan($item, $personId);
-                
-                // HRD
+
+                    // HRD
                 } elseif ($route === 'pelaksanaan kegiatan karyawan') {
                     return $this->calculatePelaksanaanKegiatanKaryawan($item, $personId);
                 } elseif ($route === 'pengeluaran biaya karyawan') {
                     return $this->calculatePengeluaranBiayaKaryawan($item, $personId);
                 } elseif ($route === 'administrasi karyawan') {
                     return $this->calculateAdministrasiKaryawan($item, $personId);
-                
-                // Driver
+
+                    // Driver
                 } elseif ($route === 'perbaikan kendaraan') {
                     return $this->calculatePerbaikanKendaraan($item, $personId);
                 } elseif ($route === 'kontrol pengeluaran transportasi') {
                     return $this->calculateKontrolPengeluaranTransportasi($item, $personId);
                 } elseif ($route === 'report kondisi kendaraan') {
                     return $this->calculateReportKondisiKendaraan($item, $personId);
-                
-                // OB
+
+                    // OB
                 } elseif ($route === 'feedback kebersihan dan kenyamanan') {
                     return $this->calculateFeedbackKebersihanDanKenyamanan($item, $personId);
                 } elseif ($route === 'penyelesaian tugas harian') {
                     return $this->calculatePenyelesaianTugasHarian($item, $personId);
-                    
-                // Target ITSM
+
+                    // Target ITSM
                 } elseif ($route === 'kepuasan client itsm') {
                     return $this->calculateProgressKepuasanClientITSM($item, $personId);
                 } elseif ($route === 'availability sistem internal kritis') {
@@ -9247,8 +9259,8 @@ private function calculatePeningkatanKemampuanKompetensiSalesDetail($itemDetail,
                     return $this->calculateTingkatKeberhasilanSupportMemenuhiSLA($item, $personId);
                 } elseif ($route === 'kualitas layanan exam') {
                     return $this->calculateKualitasLayananExam($item, $personId);
-                
-                // Education
+
+                    // Education
                 } elseif ($route === 'kepuasan peserta pelatihan') {
                     return $this->calculateKepuasanPesertaPelatihan($item, $personId);
                 } elseif ($route === 'upseling lanjutan materi') {
@@ -9257,14 +9269,14 @@ private function calculatePeningkatanKemampuanKompetensiSalesDetail($itemDetail,
                     return $this->calculateSertifikasiKompetensiInternal($item, $personId);
                 } elseif ($route === 'pelatihan kompetensi eksternal') {
                     return $this->calculatePelatihanKompetensiEksternal($item, $personId);
-                
-                // Education Manager
+
+                    // Education Manager
                 } elseif ($route === 'pengembangan kurikulum pelatihan') {
                     return $this->calculatePengembanganKurikulumPelatihan($item, $personId);
                 } elseif ($route === 'peningkatan knowledge sharing') {
                     return $this->calculatePeningkatanKnowledgeSharing($item, $personId);
                 }
-                
+
                 return null;
             };
 
@@ -9283,7 +9295,8 @@ private function calculatePeningkatanKemampuanKompetensiSalesDetail($itemDetail,
 
             foreach ($allTargets as $target) {
                 $detail = $target->detailTargetKPI->first();
-                if (!$detail) continue;
+                if (!$detail)
+                    continue;
 
                 $progress = $calculateProgress($target, $karyawanId);
                 $nilaiTarget = $detail->nilai_target;
@@ -9304,24 +9317,26 @@ private function calculatePeningkatanKemampuanKompetensiSalesDetail($itemDetail,
             }
 
             $progressValuesNonZero = array_filter($progressValues, fn($v) => $v > 0);
-            $rataRataProgress = count($progressValuesNonZero) > 0 
-                ? round(array_sum($progressValuesNonZero) / count($progressValuesNonZero), 2) 
+            $rataRataProgress = count($progressValuesNonZero) > 0
+                ? round(array_sum($progressValuesNonZero) / count($progressValuesNonZero), 2)
                 : 0;
 
             // --- STATISTIK PER TARGET (Inline) ---
             $statistikPerTarget = [];
             $detailPersonsStats = detailPersonKPI::whereHas('detailTargetKPI.targetKPI', function ($q) use ($tahunFilter) {
-                    $q->whereYear('created_at', $tahunFilter);
-                })
+                $q->whereYear('created_at', $tahunFilter);
+            })
                 ->where('id_karyawan', $karyawanId)
                 ->with(['detailTargetKPI.targetKPI'])
                 ->get();
 
             foreach ($detailPersonsStats as $dp) {
                 $target = $dp->detailTargetKPI->targetKPI ?? null;
-                if (!$target) continue;
+                if (!$target)
+                    continue;
                 $detail = $target->detailTargetKPI->first();
-                if (!$detail) continue;
+                if (!$detail)
+                    continue;
 
                 $progress = $calculateProgress($target, $karyawanId);
                 $nilaiTarget = $detail->nilai_target;
@@ -9339,49 +9354,51 @@ private function calculatePeningkatanKemampuanKompetensiSalesDetail($itemDetail,
 
             $daftarTargetPribadi = [];
             $detailPersonsList = detailPersonKPI::whereHas('detailTargetKPI.targetKPI', function ($q) use ($tahunFilter) {
-                    $q->whereYear('created_at', $tahunFilter);
-                })
+                $q->whereYear('created_at', $tahunFilter);
+            })
                 ->where('id_karyawan', $karyawanId)
                 ->with(['detailTargetKPI.targetKPI', 'detailTargetKPI'])
                 ->get();
 
-                foreach ($detailPersonsList as $dp) {
-                    $item = $dp->detailTargetKPI->targetKPI ?? null;
-                    if (!$item) continue;
+            foreach ($detailPersonsList as $dp) {
+                $item = $dp->detailTargetKPI->targetKPI ?? null;
+                if (!$item)
+                    continue;
 
-                    $detail = $item->detailTargetKPI->first();
-                    if (!$detail) continue;
+                $detail = $item->detailTargetKPI->first();
+                if (!$detail)
+                    continue;
 
-                    $progress = $calculateProgress($item, $karyawanId);
-                    $nilaiTarget = $detail->nilai_target;
-                    $tipeTarget = $detail->tipe_target;
+                $progress = $calculateProgress($item, $karyawanId);
+                $nilaiTarget = $detail->nilai_target;
+                $tipeTarget = $detail->tipe_target;
 
-                    $status = $progress >= $nilaiTarget ? 'Selesai' : 'Aktif';
+                $status = $progress >= $nilaiTarget ? 'Selesai' : 'Aktif';
 
-                    if ($progress === null) {
-                        $progressDisplay = '-';
-                    } elseif ($tipeTarget === 'rupiah') {
-                        $progressDisplay = 'Rp ' . number_format($progress, 0, ',', '.');
-                    } elseif ($tipeTarget === 'persen') {
-                        $progressDisplay = round($progress, 2) . '%';
-                    } else {
-                        $progressDisplay = number_format($progress, 0, ',', '.');
-                    }
-
-                    $daftarTargetPribadi[] = [
-                        'id' => $item->id,
-                        'judul' => $item->judul,
-                        'periode' => $detail->jangka_target . ' ' . $detail->detail_jangka,
-                        'tipe_target' => $tipeTarget,
-                        'target' => $nilaiTarget,
-                        'progress' => round($progress),
-                        'progress_display' => $progressDisplay,
-                        'status' => $status,
-                        'status_badge' => $status === 'Selesai' ? 'bg-success' : 'bg-warning text-dark',
-                        'deskripsi' => $detail->deskripsi ?? '-',
-                        'created_at' => $item->created_at->format('d M Y'),
-                    ];
+                if ($progress === null) {
+                    $progressDisplay = '-';
+                } elseif ($tipeTarget === 'rupiah') {
+                    $progressDisplay = 'Rp ' . number_format($progress, 0, ',', '.');
+                } elseif ($tipeTarget === 'persen') {
+                    $progressDisplay = round($progress, 2) . '%';
+                } else {
+                    $progressDisplay = number_format($progress, 0, ',', '.');
                 }
+
+                $daftarTargetPribadi[] = [
+                    'id' => $item->id,
+                    'judul' => $item->judul,
+                    'periode' => $detail->jangka_target . ' ' . $detail->detail_jangka,
+                    'tipe_target' => $tipeTarget,
+                    'target' => $nilaiTarget,
+                    'progress' => round($progress),
+                    'progress_display' => $progressDisplay,
+                    'status' => $status,
+                    'status_badge' => $status === 'Selesai' ? 'bg-success' : 'bg-warning text-dark',
+                    'deskripsi' => $detail->deskripsi ?? '-',
+                    'created_at' => $item->created_at->format('d M Y'),
+                ];
+            }
 
             // --- INFO KARYAWAN ---
             $karyawan = karyawan::where('id', $karyawanId)->first();
@@ -9403,37 +9420,38 @@ private function calculatePeningkatanKemampuanKompetensiSalesDetail($itemDetail,
                 'tahun' => $tahunFilter,
             ]);
 
-        $detailPersons = detailPersonKPI::whereHas('detailTargetKPI.targetKPI', function ($q) use ($tahun) {
-            $q->whereYear('created_at', $tahun);
-        })
-            ->where('id_karyawan', $karyawanId)
-            ->with(['detailTargetKPI.targetKPI'])
-            ->get();
+            $detailPersons = detailPersonKPI::whereHas('detailTargetKPI.targetKPI', function ($q) use ($tahun) {
+                $q->whereYear('created_at', $tahun);
+            })
+                ->where('id_karyawan', $karyawanId)
+                ->with(['detailTargetKPI.targetKPI'])
+                ->get();
 
-        foreach ($detailPersons as $dp) {
-            $target = $dp->detailTargetKPI->targetKPI ?? null;
-            if (!$target) {
-                continue;
+            foreach ($detailPersons as $dp) {
+                $target = $dp->detailTargetKPI->targetKPI ?? null;
+                if (!$target) {
+                    continue;
+                }
+
+                $detail = $target->detailTargetKPI->first();
+                if (!$detail) {
+                    continue;
+                }
+
+                $progress = $this->calculateProgress($target, $karyawanId);
+                $nilaiTarget = $detail->nilai_target;
+
+                $statistik[] = [
+                    'judul' => $target->judul,
+                    'periode' => $detail->jangka_target . ' ' . $detail->detail_jangka,
+                    'target' => $nilaiTarget,
+                    'progress' => $progress ?? 0,
+                    'status' => $progress >= $nilaiTarget ? 'Selesai' : ($progress > 0 ? 'Aktif' : 'Belum Mulai'),
+                ];
             }
 
-            $detail = $target->detailTargetKPI->first();
-            if (!$detail) {
-                continue;
-            }
-
-            $progress = $this->calculateProgress($target, $karyawanId);
-            $nilaiTarget = $detail->nilai_target;
-
-            $statistik[] = [
-                'judul' => $target->judul,
-                'periode' => $detail->jangka_target . ' ' . $detail->detail_jangka,
-                'target' => $nilaiTarget,
-                'progress' => $progress ?? 0,
-                'status' => $progress >= $nilaiTarget ? 'Selesai' : ($progress > 0 ? 'Aktif' : 'Belum Mulai'),
-            ];
+            return $statistik;
         }
-
-        return $statistik;
     }
 
     private function getAllPersonalTargets($karyawanId, $tahun)
@@ -9891,8 +9909,10 @@ private function calculatePeningkatanKemampuanKompetensiSalesDetail($itemDetail,
         $workingDays = 0;
 
         foreach ($period as $date) {
-            if (!in_array($date->dayOfWeek, [Carbon::SATURDAY, Carbon::SUNDAY])
-                && !in_array($date->toDateString(), $holidays)) {
+            if (
+                !in_array($date->dayOfWeek, [Carbon::SATURDAY, Carbon::SUNDAY])
+                && !in_array($date->toDateString(), $holidays)
+            ) {
                 $workingDays++;
             }
         }

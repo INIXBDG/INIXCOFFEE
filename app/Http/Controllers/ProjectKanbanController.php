@@ -199,14 +199,26 @@ class ProjectKanbanController extends Controller
                 'project_id' => 'required|exists:projects,id'
             ]);
 
-            // PERBAIKAN: Menggunakan relasi 'assignee' sesuai definisi pada model ProjectTask
-            $tasks = ProjectTask::with(['assignee'])
-                ->where('project_id', $request->project_id)
-                ->get();
+            $currentUser = auth()->user();
+            $currentKaryawanId = $currentUser->karyawan->kode_karyawan ?? null;
+
+            $project = Project::with('administration.projectManager')
+                ->findOrFail($request->project_id);
+            $pmId = $project->administration->projectManager->kode_karyawan ?? null;
+
+            $query = ProjectTask::with(['assignee'])
+                ->where('project_id', $request->project_id);
+
+            if ($currentKaryawanId !== $pmId) {
+                $query->where('assignee_id', $currentKaryawanId);
+            }
+
+            $tasks = $query->get();
 
             return response()->json([
                 'success' => true,
-                'data' => $tasks
+                'data' => $tasks,
+                'user_role' => $currentKaryawanId === $pmId ? 'pm' : 'member'
             ], 200);
 
         } catch (\Exception $e) {
