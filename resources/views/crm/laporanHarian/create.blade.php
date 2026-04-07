@@ -26,32 +26,32 @@
 
         <div class="card-body">
 
-            <form method="POST" action="{{ route('laporan.harian.store') }}" enctype="multipart/form-data">
+            <form class="auto-save" method="POST" action="{{ route('laporan.harian.store') }}" enctype="multipart/form-data">
                 @csrf
 
                 <div class="row g-3"> 
 
                     <div class="col-md-6">
-                        <label class="form-label">Topik</label>
+                        <label class="form-label">Topik <span class="text-danger">*</span></label>
                         <input type="text" name="topic" class="form-control">
                     </div>
 
                     <div class="col-md-3">
-                        <label class="form-label">Tanggal Pelaksanaan</label>
+                        <label class="form-label">Tanggal Pelaksanaan <span class="text-danger">*</span></label>
                         <input type="date" name="tanggal_pelaksanaan" class="form-control">
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">Waktu Pelaksanaan</label>
+                        <label class="form-label">Waktu Pelaksanaan <span class="text-danger">*</span></label>
                         <input type="time" name="waktu_pelaksanaan" class="form-control">
                     </div>
 
                     <div class="col-md-3">
-                        <label class="form-label">Tempat / Media Pelaksanaan</label>
+                        <label class="form-label">Tempat / Media Pelaksanaan <span class="text-danger">*</span></label>
                         <input type="text" name="tempat_or_media" class="form-control">
                     </div>
 
                     <div class="col-md-3">
-                        <label class="form-label">Pimpinan Meeting</label>
+                        <label class="form-label">Pimpinan Meeting <span class="text-danger">*</span></label>
                         <select name="pic" class="form-select">
                             <option value="" hidden disable>Pilih Pimpinan</option>
                             @foreach ($sales as $item)
@@ -61,7 +61,7 @@
                     </div>
                     
                     <div class="col-md-3">
-                        <label class="form-label">Notulis</label>
+                        <label class="form-label">Notulis <span class="text-danger">*</span></label>
                         <select name="notulis" class="form-select">
                             <option value="" hidden disable>Pilih Notulis</option>
                             @foreach ($sales as $item)
@@ -71,7 +71,7 @@
                     </div>
 
                     <div class="col-md-3">
-                        <label class="form-label">Jenis Meeting</label>
+                        <label class="form-label">Jenis Meeting <span class="text-danger">*</span></label>
 
                         <select name="jenis_meeting" id="jenis_meeting" class="form-control select2">
                             <option value="" hidden disable>Pilih Jenis</option>
@@ -84,7 +84,7 @@
                     </div>
 
                     <div class="col-md-3">
-                        <label class="form-label">Jumlah Peserta Hadir</label>
+                        <label class="form-label">Jumlah Peserta Hadir <span class="text-danger">*</span></label>
                         <input type="number" name="jumlah_peserta_hadir" class="form-control">
                     </div>
                     <div class="col-md-3">
@@ -104,7 +104,7 @@
 
                 </div>
 
-                <div class="row mt-4">
+                <div class="row mt-4 justify-content-between col-md-12">
 
                     <div class="col-md-4">
                         <label class="form-label">Jenis Catatan Lainnya</label>
@@ -114,6 +114,15 @@
                             <option value="sales">Catatan Untuk Sales</option>
                             <option value="client">Catatan Untuk Client</option>
                         </select>
+                    </div>
+
+                    <div class="col-md-3 mt-4 text-end">
+                        <div class="col-md-12">
+                            <button type="button" class="btn btn-info" id="autoSaveBtn" disabled>
+                                <i class="bi bi-cloud-arrow-up me-1"></i>Simpan Draf
+                            </button>
+                        </div>
+                        <small class="form-text text-muted">Harap isi topik untuk menyimpan draf</small>
                     </div>
 
                 </div>
@@ -158,8 +167,10 @@
 
                 <div class="mt-4 d-flex justify-content-end gap-2">
                     <a href="{{ url()->previous() }}" class="btn btn-secondary">Kembali</a>
-                    <button type="submit" class="btn btn-primary">Simpan</button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">Simpan</button>
                 </div>
+
+                <input type="hidden" id="is_draft_input" name="is_draft" value="false">
 
             </form>
 
@@ -354,6 +365,173 @@
 
         });
 
+        let momId = null;
+        let timeout = null;
+        let hasChanged = false;
+        let isAutoSaving = false; // Flag untuk prevent double request
+
+        // Fungsi untuk validasi autosave (hanya topic)
+        function isValidAutoSave() {
+            let topic = $('input[name="topic"]').val();
+            
+            // Topic HARUS terisi sebagai persyaratan utama
+            if (!topic || topic.trim() === '') {
+                return false;
+            }
+            
+            return true;
+        }
+
+        // Fungsi untuk validasi form submit - cek semua field required
+        function isFormValid() {
+            const topic = $('input[name="topic"]').val();
+            const tanggalPelaksanaan = $('input[name="tanggal_pelaksanaan"]').val();
+            const waktuPelaksanaan = $('input[name="waktu_pelaksanaan"]').val();
+            const tempatMedia = $('input[name="tempat_or_media"]').val();
+            const jumlahHadir = $('input[name="jumlah_peserta_hadir"]').val();
+            const jenisMeeting = $('select[name="jenis_meeting"]').val();
+            const pic = $('select[name="pic"]').val();
+
+            // Validasi semua field required
+            if (!topic || topic.trim() === '') return false;
+            if (!tanggalPelaksanaan || tanggalPelaksanaan.trim() === '') return false;
+            if (!waktuPelaksanaan || waktuPelaksanaan.trim() === '') return false;
+            if (!tempatMedia || tempatMedia.trim() === '') return false;
+            if (!jumlahHadir || jumlahHadir.trim() === '' || parseInt(jumlahHadir) < 1) return false;
+            if (!jenisMeeting || jenisMeeting.trim() === '') return false;
+            if (!pic || pic.trim() === '') return false;
+
+            return true;
+        }
+
+        // Update status button submit
+        function updateSubmitButtonState() {
+            let isValid = isFormValid();
+            $('#submitBtn').prop('disabled', !isValid);
+        }
+
+        function updateAutoSaveButtonState() {
+            let isValid = isValidAutoSave();
+            $('#autoSaveBtn').prop('disabled', !isValid);
+        }
+
+        // Monitor perubahan di semua field required
+        $('input[name="topic"], input[name="tanggal_pelaksanaan"], input[name="waktu_pelaksanaan"], input[name="tempat_or_media"], input[name="jumlah_peserta_hadir"], select[name="jenis_meeting"], select[name="pic"]').on('change input', function() {
+            updateSubmitButtonState();
+            updateAutoSaveButtonState();
+        });
+
+        // Initial state
+        updateSubmitButtonState();
+        updateAutoSaveButtonState();
+
+        $('.auto-save').on('input', function () {
+            hasChanged = true;
+
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                if (!isAutoSaving && isValidAutoSave()) {
+                    console.log('Auto-saving...');
+                    autoSave();
+                    hasChanged = false;
+                } else {
+                    console.log('Belum memenuhi syarat autosave atau sedang autosave');
+                }
+            }, 5000);
+        });
+
+
+        function autoSave() {
+            // Cegah double request
+            if (isAutoSaving) {
+                console.log('Auto-save sedang berjalan, skip request...');
+                return;
+            }
+
+            isAutoSaving = true;
+            let formData = $('.auto-save').serializeArray();
+
+            // Hanya kirim id jika sudah ada (untuk update), jangan kirim id jika null
+            if (momId) {
+                formData.push({ name: 'id', value: momId });
+            }
+
+            console.log('Data untuk auto-save:', formData);
+
+            $.ajax({
+                url: "{{ route('laporan.harian.autosave') }}",
+                method: 'POST',
+                data: $.param(formData),
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function (response) {
+                    if (response.success) {
+                        
+                        if (response.id && !momId) {
+                            momId = response.id;
+                            console.log('Laporan draft dibuat dengan ID:', momId);
+                           
+                            showNotification('Draf berhasil disimpan', 'success');
+                        } else if (response.id) {
+                            console.log('Laporan draft diperbarui, ID:', response.id);
+                            showNotification('Draf berhasil diperbarui', 'success');
+                        }
+                    }
+                    isAutoSaving = false;
+                },
+                error: function (error) {
+                    console.error('Auto-save failed:', error);
+                    showNotification('Gagal menyimpan draf', 'error');
+                    isAutoSaving = false;
+                }
+            });
+        }
+
+        // Manual trigger auto save button
+        $('#autoSaveBtn').click(function() {
+            if (isValidAutoSave()) {
+                console.log('Manual auto-save triggered');
+                autoSave();
+            }
+        });
+
+        function showNotification(message, type) {
+            let alertClass = type === 'success' ? 'success' : 'danger';
+            
+            let notification = `
+                <div class="alert alert-${alertClass} alert-dismissible fade show position-fixed" 
+                     style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;" 
+                     role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            
+            $('body').append(notification);
+            
+            // Auto remove after 3 seconds
+            setTimeout(() => {
+                $('.position-fixed.alert').fadeOut(() => {
+                    $('.position-fixed.alert').remove();
+                });
+            }, 3000);
+        }
+
+        // Handle form submit - ubah is_draft menjadi false dan tambahkan momId jika ada
+        $('.auto-save').on('submit', function(e) {
+            // Set is_draft menjadi false untuk submit manual
+            $('#is_draft_input').val('false');
+            
+            // Jika ada draft ID, tambahkan sebagai hidden input
+            if (momId) {
+                // Hapus hidden input id jika sudah ada
+                $('input[name="id"]').remove();
+                // Tambah hidden input dengan momId
+                $(this).append('<input type="hidden" name="id" value="' + momId + '">');
+                console.log('Form submit dengan draft ID:', momId);
+            }
+        });
     });
 </script>
 

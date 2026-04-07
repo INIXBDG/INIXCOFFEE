@@ -1965,6 +1965,22 @@
     </div>
 @endif
 
+@if ( $notification->data['message']['tipe'] == 'Menyetujui Pengajuan Barang')
+    <div class="notification mb-3">
+        <p><strong style="text-transform: capitalize;">{{ $notification->data['user'] }}</strong> telah {{ $notification->data['message']['tipe'] }} {{ $notification->data['message']['nama_lengkap'] }} dengan Status "{{ $notification->data['message']['status'] }}" Pada Tanggal {{ \Carbon\Carbon::parse($notification->data['message']['tanggal'])->format('d M Y') }}</p>
+        <p>Pada {{ $notification->created_at->format('d M Y H:i:s') }}</p>
+        {{-- <p><strong>Status:</strong> {{ $notification->data['status'] }}</p> --}}
+        <div class="d-flex">
+            <a href="{{ $notification->data['path'] }}" class="btn btn-primary btn-sm" style="margin-right:8px;">Lihat Selengkapnya</a>
+            <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
+                @csrf
+                @method('PUT')
+                <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
+            </form>
+        </div>
+    </div>
+@endif
+
 
 @if ($notification->data['message']['tipe'] == 'Status Menunggu')
     <div class="notification mb-3 p-3 border rounded bg-light">
@@ -2009,7 +2025,6 @@
         </div>
     </div>
 @endif
-
 
 @if ($notification->data['message']['tipe'] == 'Laporan Kondisi Kendaraan')
     <div class="notification mb-3 p-3 border rounded bg-light">
@@ -2083,6 +2098,7 @@
         </div>
     </div>
 @endif
+
 @if ($notification->data['message']['tipe'] == 'Ide Inovasi Baru')
     <div class="notification mb-3 p-3 border rounded bg-light">
         <div class="w-100">

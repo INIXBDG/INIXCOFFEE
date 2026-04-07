@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Crm;
 
 use App\Http\Controllers\Controller;
 use App\Models\Aktivitas;
+use App\Models\checklistRKM;
 use App\Models\Contact;
 use App\Models\Feedback;
 use App\Models\Materi;
 use App\Models\Nilaifeedback;
 use App\Models\Peluang;
+use App\Models\perhitunganNetSales;
 use App\Models\Perusahaan;
 use App\Models\Peserta;
 use App\Models\RKM;
@@ -462,6 +464,40 @@ class CRMController extends Controller
 
             // dd($topSpendSeg, $topKategoriMateri, $topVendors);
 
+            // 19 PA yg belum di approve
+            $PA = perhitunganNetSales::with(['rkm.materi', 'rkm.perusahaan', 'trackingNetSales', 'rkm.peluang'])
+                ->whereHas('trackingNetSales', function ($query) {
+                    $query->where('tracking', '!=', 'Selesai');
+                })->paginate(10);
+          
+            // 20. Data Checklist Milik Adm Sales
+            $query = RKM::with(['checklist', 'materi', 'perusahaan', 'instruktur', 'sales']);
+
+            // 🔍 SEARCH
+            if ($request->search) {
+                $query->whereHas('materi', function ($q) use ($request) {
+                    $q->where('nama_materi', 'like', '%' . $request->search . '%');
+                });
+            }
+
+            // 📅 BULAN
+            if ($request->bulan) {
+                $query->whereMonth('created_at', $request->bulan);
+            }
+
+            // 📅 TAHUN
+            if ($request->tahun) {
+                $query->whereYear('created_at', $request->tahun);
+            }
+
+            // 📅 MINGGU
+            if ($request->minggu) {
+                $query->whereRaw('CEIL(DAY(created_at)/7) = ?', [$request->minggu]);
+            }
+
+            // ✅ PAGINATION (baru di sini)
+            $dataRKM = $query->paginate(10);
+
             return view('crm.dashboard', compact(
                 'chartData',
                 'activitysales',
@@ -485,10 +521,37 @@ class CRMController extends Controller
                 'topSpendSeg',
                 'topKategoriMateri',
                 'topVendors',
+                'PA',
+                'dataRKM'
             ));
         } else {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
+    }
+
+    public function updateChecklist(Request $request)
+    {
+        $checklist = checklistRKM::where('id_rkm', $request->rkm_id)->first();
+
+        if (!$checklist) {
+            $checklist = checklistRKM::create([
+                'id_rkm' => $request->rkm_id,
+                'registrasi_form' => 0,
+                'surat_kontrak'   => 0,
+                'PA'              => 0,
+                'PO'              => 0,
+            ]);
+        }
+
+        $checklist->update([
+            $request->field => (bool) $request->value
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'updated_field' => $request->field,
+            'value' => (bool) $request->value
+        ]);
     }
 
     public function chartRKM(Request $request)

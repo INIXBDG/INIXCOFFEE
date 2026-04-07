@@ -1876,6 +1876,25 @@
                                                             </div>
                                                         </div>
                                                     @endcan
+                                                    @can('Daftar Peserta Exam')
+                                                        <div class="col-sm-6 mt-2">
+                                                            <div class="card" id="card-hover">
+                                                                <div class="card-body d-flex">
+                                                                    <div class="col-md-2">
+                                                                        <img src="{{ asset('icon/user.svg') }}"
+                                                                            class="img-responsive" width="30px">
+                                                                    </div>
+                                                                    <div class="col-md-10" style="margin-left: 10px">
+                                                                        <a href="/daftar-peserta-exam"
+                                                                            class="link stretched-link text-decoration-none">
+                                                                            <h5 class="card-title">Daftar Peserta Exam</h5>
+                                                                        </a>
+                                                                        <p class="card-text">Daftar peserta exam dan dokumentasi.</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    @endcan
                                                     @can('List Exam Sales')
                                                         <div class="col-sm-6 mt-2">
                                                             <div class="card" id="card-hover">
