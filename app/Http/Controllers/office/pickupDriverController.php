@@ -15,12 +15,12 @@ use App\Models\User;
 use App\Notifications\KoordinasiDriverNotifcation;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
 use Illuminate\Support\Facades\Auth;
-use App\Notifications\TelegramKoordinasiDriverNotification;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use App\Exports\PickupDriverReportExport;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Http\Controllers\TelegramController;
 
 class pickupDriverController extends Controller
 {
@@ -213,7 +213,6 @@ class pickupDriverController extends Controller
             NotificationFacade::send($user, new KoordinasiDriverNotifcation($data, $path, $type, $user->id));
         }
 
-        $telegramChatId = env('TELEGRAM_HARD_CODED_CHAT_ID', '-1003758833562');
         $telegramData = [
             'title' => '🆕 Koordinasi Driver Baru',
             'id_pengajuan' => $send->id,
@@ -222,6 +221,7 @@ class pickupDriverController extends Controller
             'budget' => $budget,
             'tanggal_pembuatan' => now(),
             'status_text' => 'Menunggu Konfirmasi',
+            'status_apply' => 0,
             'tipe' => $request->tipe ?? [],
             'lokasi' => $request->lokasi ?? [],
             'tanggal' => $request->tanggal ?? [],
@@ -231,7 +231,9 @@ class pickupDriverController extends Controller
             'path' => $path,
         ];
 
-        NotificationFacade::route('telegram', $telegramChatId)->notify(new TelegramKoordinasiDriverNotification($telegramData));
+        $telegramCtrl = new TelegramController();
+        $personalData = $telegramCtrl->formatPersonalCoordinationMessage($telegramData);
+        $telegramCtrl->sendPersonalTelegramMessage($personalData);
 
         return redirect()->route('office.pickupDriver.index')->with('success', 'Koordinasi pickup driver berhasil dibuat.');
     }
@@ -353,25 +355,27 @@ class pickupDriverController extends Controller
             );
         }
 
-        $telegramChatId = env('TELEGRAM_HARD_CODED_CHAT_ID', '-1003758833562');
-        NotificationFacade::route('telegram', $telegramChatId)->notify(
-            new TelegramKoordinasiDriverNotification([
-                'title' => '🔄 Status Diperbarui',
-                'id_pengajuan' => $pickupDriver->id,
-                'creator_name' => $creatorKaryawan->nama_lengkap,
-                'driver_name' => $driver->nama ?? ($driver->nama_lengkap ?? '-'),
-                'budget' => $pickupDriver->budget,
-                'tanggal_pembuatan' => now(),
-                'status_text' => $statusDriver,
-                'tipe' => $detailTipe,
-                'lokasi' => [],
-                'tanggal' => [],
-                'waktu' => [],
-                'detail' => [],
-                'log_text' => null,
-                'path' => '/office/pickup-driver/index',
-            ]),
-        );
+        $telegramPayload = [
+            'title' => '🔄 Status Diperbarui',
+            'id_pengajuan' => $pickupDriver->id,
+            'creator_name' => $creatorKaryawan->nama_lengkap,
+            'driver_name' => $driver->nama ?? ($driver->nama_lengkap ?? '-'),
+            'budget' => $pickupDriver->budget,
+            'tanggal_pembuatan' => now(),
+            'status_text' => $statusDriver,
+            'status_apply' => $pickupDriver->status_apply,
+            'tipe' => $detailTipe,
+            'lokasi' => [],
+            'tanggal' => [],
+            'waktu' => [],
+            'detail' => [],
+            'log_text' => null,
+            'path' => '/office/pickup-driver/index',
+        ];
+
+        $telegramCtrl = new TelegramController();
+        $personalData = $telegramCtrl->formatPersonalCoordinationMessage($telegramPayload);
+        $telegramCtrl->sendPersonalTelegramMessage($personalData);
 
         return redirect()->route('office.pickupDriver.index')->with('success', 'Koordinasi diterima. Selamat bertugas!');
     }
@@ -447,25 +451,27 @@ class pickupDriverController extends Controller
             );
         }
 
-        $telegramChatId = env('TELEGRAM_HARD_CODED_CHAT_ID', '-1003758833562');
-        NotificationFacade::route('telegram', $telegramChatId)->notify(
-            new TelegramKoordinasiDriverNotification([
-                'title' => '✅ Koordinasi Selesai',
-                'id_pengajuan' => $pickupDriver->id,
-                'creator_name' => $creatorKaryawan->nama_lengkap,
-                'driver_name' => $driver->nama ?? ($driver->nama_lengkap ?? '-'),
-                'budget' => $pickupDriver->budget,
-                'tanggal_pembuatan' => now(),
-                'status_text' => 'Selesai, Driver Ready',
-                'tipe' => $detailTipe,
-                'lokasi' => [],
-                'tanggal' => [],
-                'waktu' => [],
-                'detail' => [],
-                'log_text' => 'KM: ' . ($request->KM_awal ?? '-') . ' KM → ' . ($request->KM_akhir ?? '-') . ' KM',
-                'path' => '/office/pickup-driver/index',
-            ]),
-        );
+        $telegramPayload = [
+            'title' => '✅ Koordinasi Selesai',
+            'id_pengajuan' => $pickupDriver->id,
+            'creator_name' => $creatorKaryawan->nama_lengkap,
+            'driver_name' => $driver->nama ?? ($driver->nama_lengkap ?? '-'),
+            'budget' => $pickupDriver->budget,
+            'tanggal_pembuatan' => now(),
+            'status_text' => 'Selesai, Driver Ready',
+            'status_apply' => $pickupDriver->status_apply,
+            'tipe' => $detailTipe,
+            'lokasi' => [],
+            'tanggal' => [],
+            'waktu' => [],
+            'detail' => [],
+            'log_text' => 'KM: ' . ($request->KM_awal ?? '-') . ' KM → ' . ($request->KM_akhir ?? '-') . ' KM',
+            'path' => '/office/pickup-driver/index',
+        ];
+
+        $telegramCtrl = new TelegramController();
+        $personalData = $telegramCtrl->formatPersonalCoordinationMessage($telegramPayload);
+        $telegramCtrl->sendPersonalTelegramMessage($personalData);
 
         return redirect()->route('office.pickupDriver.index')->with('success', 'Waktu kepulangan dan data KM berhasil disimpan.');
     }
@@ -524,25 +530,27 @@ class pickupDriverController extends Controller
             );
         }
 
-        $telegramChatId = env('TELEGRAM_HARD_CODED_CHAT_ID', '-1003758833562');
-        NotificationFacade::route('telegram', $telegramChatId)->notify(
-            new TelegramKoordinasiDriverNotification([
-                'title' => '🗑️ Data Dihapus',
-                'id_pengajuan' => $data->id,
-                'creator_name' => $creatorKaryawan->nama_lengkap,
-                'driver_name' => $driver->nama ?? ($driver->nama_lengkap ?? '-'),
-                'budget' => $data->budget,
-                'tanggal_pembuatan' => now(),
-                'status_text' => 'Dihapus dari Sistem',
-                'tipe' => $detailTipe,
-                'lokasi' => [],
-                'tanggal' => [],
-                'waktu' => [],
-                'detail' => [],
-                'log_text' => null,
-                'path' => '/office/pickup-driver/index',
-            ]),
-        );
+        $telegramPayload = [
+            'title' => '🗑️ Data Dihapus',
+            'id_pengajuan' => $data->id,
+            'creator_name' => $creatorKaryawan->nama_lengkap,
+            'driver_name' => $driver->nama ?? ($driver->nama_lengkap ?? '-'),
+            'budget' => $data->budget,
+            'tanggal_pembuatan' => now(),
+            'status_text' => 'Dihapus dari Sistem',
+            'status_apply' => $data->status_apply,
+            'tipe' => $detailTipe,
+            'lokasi' => [],
+            'tanggal' => [],
+            'waktu' => [],
+            'detail' => [],
+            'log_text' => null,
+            'path' => '/office/pickup-driver/index',
+        ];
+
+        $telegramCtrl = new TelegramController();
+        $personalData = $telegramCtrl->formatPersonalCoordinationMessage($telegramPayload);
+        $telegramCtrl->sendPersonalTelegramMessage($personalData);
 
         $data->delete();
         return response()->json(['message' => 'Data berhasil dihapus']);
@@ -672,25 +680,27 @@ class pickupDriverController extends Controller
             );
         }
 
-        $telegramChatId = env('TELEGRAM_HARD_CODED_CHAT_ID', '-1003758833562');
-        NotificationFacade::route('telegram', $telegramChatId)->notify(
-            new TelegramKoordinasiDriverNotification([
-                'title' => '✏️ Koordinasi Diperbarui',
-                'id_pengajuan' => $pickup->id,
-                'creator_name' => $creatorKaryawan->nama_lengkap,
-                'driver_name' => $driver->nama ?? ($driver->nama_lengkap ?? '-'),
-                'budget' => $pickup->budget,
-                'tanggal_pembuatan' => now(),
-                'status_text' => 'Diperbarui',
-                'tipe' => $detailTipe,
-                'lokasi' => [],
-                'tanggal' => [],
-                'waktu' => [],
-                'detail' => [],
-                'log_text' => implode("\n", array_merge($changes, $deleted, $added)),
-                'path' => '/office/pickup-driver/index',
-            ]),
-        );
+        $telegramPayload = [
+            'title' => '✏️ Koordinasi Diperbarui',
+            'id_pengajuan' => $pickup->id,
+            'creator_name' => $creatorKaryawan->nama_lengkap,
+            'driver_name' => $driver->nama ?? ($driver->nama_lengkap ?? '-'),
+            'budget' => $pickup->budget,
+            'tanggal_pembuatan' => now(),
+            'status_text' => 'Diperbarui',
+            'status_apply' => $pickup->status_apply,
+            'tipe' => $detailTipe,
+            'lokasi' => [],
+            'tanggal' => [],
+            'waktu' => [],
+            'detail' => [],
+            'log_text' => implode("\n", array_merge($changes, $deleted, $added)),
+            'path' => '/office/pickup-driver/index',
+        ];
+
+        $telegramCtrl = new TelegramController();
+        $personalData = $telegramCtrl->formatPersonalCoordinationMessage($telegramPayload);
+        $telegramCtrl->sendPersonalTelegramMessage($personalData);
 
         return response()->json(['success' => true, 'message' => 'Koordinasi berhasil diperbarui.']);
     }

@@ -902,13 +902,8 @@ Route::prefix('office')
                 Route::get('/get-onlineStatus', [pickupDriverController::class, 'getDriverStatus'])->name('getDriverStatus');
                 Route::get('/export/excel', [pickupDriverController::class, 'exportExcel'])->name('export.excel');
                 Route::get('/export/pdf', [pickupDriverController::class, 'exportPdf'])->name('export.pdf');
-                Route::get('/action/terima-token/{id}/{token}', [pickupDriverController::class, 'actionTerimaFromTelegramToken'])
-                    ->name('action.terima.token')
-                    ->middleware('throttle:10,1');
-                    
-                Route::get('/action/selesaikan-token/{id}/{token}', [pickupDriverController::class, 'actionSelesaikanFromTelegramToken'])
-                    ->name('action.selesaikan.token')
-                    ->middleware('throttle:10,1');
+                Route::get('action/terima/{id}', [pickupDriverController::class, 'actionTerimaFromTelegramToken'])->name('action.terima');
+                Route::get('action/selesaikan/{id}', [pickupDriverController::class, 'actionSelesaikanFromTelegramToken'])->name('action.selesaikan');
             });
 
         Route::prefix('biaya-transportasi')

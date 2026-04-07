@@ -40,8 +40,4 @@ return [
     'vapid' => [
         'public_key' => env('VAPID_PUBLIC_KEY'),
     ],
-
-    'telegram-bot-api' => [
-        'token' => env('TELEGRAM_BOT_TOKEN'),
-    ],
 ];
