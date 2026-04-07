@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Crm;
 
 use App\Http\Controllers\Controller;
+use App\Models\Aktivitas;
 use App\Models\Deskripsi;
 use App\Models\karyawan;
 use App\Models\KetentuanForm;
@@ -88,7 +89,7 @@ class RegisFormController extends Controller
         ]);
 
         $file = $data['pdf'];
-        $prefix = now()->format('d-m-Y'); // contoh: 27-08-2025
+        $prefix = now()->format('d-m-Y');
 
         // Generate path baru
         $storedPath = $file->storeAs(
@@ -97,7 +98,6 @@ class RegisFormController extends Controller
             'public'                      // disk
         );
 
-        // ✅ Cek RegisForm
         $existing = RegisForm::where('id_peluang', $data['id_peluang'])->first();
 
         if ($existing) {
@@ -133,17 +133,23 @@ class RegisFormController extends Controller
         if ($peluang && $peluang->id_rkm) {
             $rkm = RKM::find($peluang->id_rkm);
             if ($rkm) {
-                // kalau sudah ada file lama, hapus
                 if ($rkm->registrasi_form && Storage::disk('public')->exists($rkm->registrasi_form)) {
                     Storage::disk('public')->delete($rkm->registrasi_form);
                 }
 
-                // update dengan file baru
                 $rkm->update([
                     'registrasi_form' => $storedPath
                 ]);
             }
         }
+
+        $aktivitasSales = new Aktivitas();
+        $aktivitasSales->id_peluang = $data['id_peluang'];
+        $aktivitasSales->id_sales = Auth::user()->id_sales;
+        $aktivitasSales->aktivitas = 'Form_Masuk';
+        $aktivitasSales->deskripsi = 'Aktivitas berbasis PDF tanpa input manual';
+        $aktivitasSales->waktu_aktivitas = now();
+        $aktivitasSales->save();
 
         return back()->with('success', 'PDF berhasil diupload');
     }
