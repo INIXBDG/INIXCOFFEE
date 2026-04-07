@@ -293,7 +293,7 @@
                                                     ];
                                                 @endphp
                                                 <span
-                                                    class="badge bg-{{ $config['color'] }}-subtle text-{{ $config['color'] }} px-3 py-2 text-capitalize">
+                                                    class="badge bg-{{ $config['color'] }}-subtle text-{{ $config['color'] }} px-3 py-text-capitalize2 ">
                                                     <i class="bx {{ $config['icon'] }} me-1"></i>
                                                     {{ $tagihan->status }}
                                                 </span>
@@ -358,6 +358,137 @@
         @endif
 
         @if (Auth::user()->jabatan === 'HRD')
+        <div class="row g-4 mb-5">
+            <div class="col-12">
+                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden">
+                    <div class="card-header bg-white border-bottom-0 pb-0 d-flex justify-content-between">
+                        <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
+                            <i class="bx bx-calendar text-primary me-2" style="font-size: 1.5rem;"></i>
+                            Hari Libur 
+                        </h5>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahHariLibur">
+                            Tambah Hari Libur
+                        </button>
+
+                        <!-- Modal Tambah -->
+                        <div class="modal fade" id="modalTambahHariLibur" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+
+                                    <div class="modal-header">
+                                        <h1 class="modal-title fs-5">Tambah Hari Libur</h1>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+
+                                    <div class="modal-body">
+                                        <form method="post" action="{{ route('storeHariLibur') }}"
+                                            enctype="multipart/form-data">
+                                            @csrf
+
+                                            <div class="mb-3">
+                                                <label class="form-label col-form-label">Nama Hari Libur <span class="text-danger">*</span></label>
+                                                <input type="text" name="nama" class="form-control" autocomplete="off">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label col-form-label">Tanggal <span class="text-danger">*</span></label>
+                                                <input type="date" name="tanggal" class="form-control">
+                                            </div>
+
+                                            <div class="modal-footer">
+                                                <button type="submit" class="btn btn-primary">Simpan</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Modal Edit -->
+                        <div class="modal fade" id="modalEditHariLibur" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+
+                                    <div class="modal-header">
+                                        <h1 class="modal-title fs-5">Edit Hari Libur</h1>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+
+                                    <div class="modal-body">
+                                        <form id="formEditHariLibur" method="POST" enctype="multipart/form-data">
+                                            @csrf
+
+                                            <input type="hidden" id="id">
+
+                                            <div class="mb-3">
+                                                <label class="form-label">Nama Hari Libur <span class="text-danger">*</span></label>
+                                                <input type="text" id="nama" name="nama" class="form-control">
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label">Tanggal <span class="text-danger">*</span></label>
+                                                <input type="date" id="tanggal" name="tanggal" class="form-control">
+                                            </div>
+
+                                            <div class="modal-footer">
+                                                <button type="submit" class="btn btn-primary">Update</button>
+                                            </div>
+                                        </form>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (session('success_libur'))
+                        <div class="alert alert-success">{{ session('success_libur') }}</div>
+                    @endif
+
+                    <div class="card-body p-4 mb-4 h-100 row g-4">
+                        <!-- Kalender -->
+                        <div class="col-xl-8">
+                            <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden">
+                                <div class="card-body p-4" style="background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);">
+                                    <div id="calendar" class="fc-custom"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Detail & List Hari Libur -->
+                        <div class="col-xl-4">
+                            <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden d-flex flex-column">
+                                <div class="card-header bg-white border-bottom-0 pb-0">
+                                    <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
+                                        <i class="bx bx-calendar-check text-success me-2" style="font-size: 1.5rem;"></i>
+                                        Hari Libur Bulan Ini
+                                    </h5>
+                                </div>
+                                <div class="card-body p-4 flex-grow-1 d-flex flex-column" style="height: auto; gap: 12px;">
+                                    <div id="holiday-list" style="flex: 1; min-height: 200px; overflow-y: auto;">
+                                        <div class="text-center py-4">
+                                            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                            <p class="text-muted mt-2 mb-0 small">Memuat data libur...</p>
+                                        </div>
+                                    </div>
+                                    <hr class="my-2">
+                                    <div id="holiday-detail" class="pt-2">
+                                        <div class="text-center py-3">
+                                            <i class="bx bx-info-circle text-muted" style="font-size: 2.5rem; opacity: 0.5;"></i>
+                                            <p class="text-muted small mt-2 mb-0">Klik tanggal libur di kalender</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>        
+                </div>
+            </div>
+
+        </div>
+
+
         <div class="row g-4 mb-5">
             <div class="col-12">
                 <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden">
@@ -1735,10 +1866,131 @@
             left: 2px;
             top: -2px;
         }
+
+        /* FullCalendar Custom Styling */
+        .fc-custom {
+            --fc-border-color: #e9ecef;
+            --fc-button-bg-color: #667eea;
+            --fc-button-border-color: #667eea;
+            --fc-button-hover-bg-color: #5568d3;
+            --fc-button-hover-border-color: #5568d3;
+            --fc-button-active-bg-color: #5568d3;
+            --fc-button-active-border-color: #5568d3;
+            --fc-today-bg-color: #f0f4ff;
+        }
+
+        .fc-custom .fc-button-primary {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 6px;
+        }
+
+        .fc-custom .fc-button-primary:not(:disabled).fc-button-active {
+            background-color: #5568d3;
+            border-color: #5568d3;
+        }
+
+        .fc-custom .fc-daygrid-day {
+            border-color: #e9ecef;
+        }
+
+        .fc-custom .fc-daygrid-day:hover {
+            background-color: #f8f9fa;
+        }
+
+        .fc-custom .fc-daygrid-day.fc-day-other {
+            opacity: 0.4;
+        }
+
+        .fc-custom .fc-event {
+            border-radius: 6px;
+            padding: 4px 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .fc-custom .fc-event:hover {
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .fc-custom .fc-col-header-cell {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+            border-color: #e9ecef;
+            padding: 12px 4px;
+        }
+
+        .fc-custom .fc-daygrid-day-number {
+            padding: 8px 4px;
+            font-size: 0.95rem;
+        }
+
+        .fc-custom .fc-daygrid-day-frame {
+            min-height: 80px;
+        }
+
+        .fc-custom .fc-button-group {
+            gap: 4px;
+        }
+
+        .fc-custom .fc-button {
+            padding: 6px 12px;
+            font-size: 0.9rem;
+            border-radius: 6px;
+            text-transform: capitalize;
+        }
+
+        .fc-custom .fc-button-group > button {
+            border-radius: 6px;
+        }
+
+        .fc-custom .fc-button-group > .fc-button:first-child {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        .fc-custom .fc-button-group > .fc-button:last-child {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+
+        .holiday-detail-card {
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .holiday-list-item .badge {
+            min-height: 35px;
+            min-width: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .actions-dropdown {
+            z-index: 1050 !important;
+        }
     </style>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {  
             const ctx = document.getElementById('kehadiranChart')?.getContext('2d');
@@ -2388,6 +2640,229 @@
 
             });
 
+
+            // Calendar Hari Libur
+            $.ajax({
+                url: '/office/data-hari-libur/' + new Date().getFullYear(),
+                type: 'GET',
+                dataType: 'json',
+                success: function(holidays) {
+                    let currentDisplayMonth = new Date().getMonth();
+                    let currentDisplayYear = new Date().getFullYear();
+
+                    const typeClassMap = {
+                        nasional: {
+                            bg: '#e74c3c',
+                            br: '#c0392b',
+                            badge: 'bg-danger-subtle text-danger',
+                            border: 'border-danger'
+                        },
+                        perusahaan: {
+                            bg: '#3498db',
+                            br: '#2c80b4',
+                            badge: 'bg-primary-subtle text-primary',
+                            border: 'border-primary'
+                        }
+                    };
+                    // Mapping data ke format FullCalendar
+                    const events = holidays.map(h => {
+                        const color = typeClassMap[h.tipe] || {
+                            bg: '#95a5a6',
+                            border: '#7f8c8d',
+                        };
+                        
+                        return {
+                            title: h.nama,
+                            start: h.tanggal,
+                            display: 'block',
+                            backgroundColor: color.bg,
+                            borderColor: color.br,
+                            textColor: '#fff',
+                            extendedProps: {
+                                description: h.nama,
+                                date: h.tanggal,
+                                fullDate: new Date(h.tanggal),
+                                type: h.tipe
+                            }
+                    }});
+
+                    let calendar = new FullCalendar.Calendar($('#calendar')[0], {
+                        initialView: 'dayGridMonth',
+                        locale: 'id',
+                        height: 'auto',
+                        contentHeight: 'auto',
+                        headerToolbar: {
+                            left: 'prev,next',
+                            center: 'title',
+                            right: ''
+                        },
+                        buttonText: {
+                            prev: '<< Prev',
+                            next: 'Next >>',
+                        },
+                        events: events,
+                        eventClick: function(info) {
+                            let data = info.event.extendedProps;
+                            const dateObj = new Date(data.date);
+                            const dayName = dateObj.toLocaleDateString('id-ID', { weekday: 'long' });
+                            const formattedDate = dateObj.toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+
+                            const typeClass = typeClassMap[data.type] || {
+                                badge: 'bg-secondary-subtle text-secondary',
+                                border: 'border-secondary'
+                            };
+
+                            const detailHtml = `
+                                <div class="holiday-detail-card">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="badge ${typeClass.badge} px-3 py-2 d-flex align-items-center justify-content-center" style="min-width: 50px; font-size: 1.2rem; height: 50px;">
+                                            ${dateObj.getDate()}
+                                        </div>
+                                        <div class="ms-3">
+                                            <small class="text-muted d-block text-capitalize">Hari Libur ${data.type}</small>
+                                            <small class="text-muted fw-medium">${dayName}</small>
+                                        </div>
+                                    </div>
+                                    <div class="bg-light rounded-3 p-3 border-start border-4 ${typeClass.border}">
+                                        <h6 class="mb-2 fw-bold text-dark">${data.description}</h6>
+                                        <small class="text-muted d-block">${formattedDate}</small>
+                                    </div>
+                                </div>
+                            `;
+                            $('#holiday-detail').html(detailHtml);
+                        },
+                        datesSet: function(info) {
+                            const currentDate = info.view.currentStart;
+
+                            currentDisplayMonth = currentDate.getMonth();
+                            currentDisplayYear = currentDate.getFullYear();
+
+                            updateHolidayList();
+                        }
+                    });
+
+                    function updateHolidayList() {
+                        const monthHolidays = holidays.filter(h => {
+                            const date = new Date(h.tanggal);
+                            return date.getMonth() === currentDisplayMonth && date.getFullYear() === currentDisplayYear;
+                        }).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                        const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                        const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+
+                        if (monthHolidays.length === 0) {
+                            const emptyHtml = `
+                                <div class="text-center py-4">
+                                    <i class="bx bx-smile text-success" style="font-size: 2.5rem; opacity: 0.5;"></i>
+                                    <p class="text-muted small mt-2 mb-0">Tidak ada libur di bulan ini</p>
+                                </div>
+                            `;
+                            $('#holiday-list').html(emptyHtml);
+                            return;
+                        }
+
+                        let html = `<div class="mb-2"><span class="badge bg-success-subtle text-success px-3 py-2">${monthHolidays.length} Hari Libur - ${monthNames[currentDisplayMonth]}</span></div>`;
+                        
+                        monthHolidays.forEach(holiday => {
+                            const date = new Date(holiday.tanggal);
+                            const dayName = dayNames[date.getDay()];
+                            const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                            // const isPast = new Date(holiday.tanggal) < new Date();
+                            const isDisabled = holiday.tipe === 'nasional' ;
+
+                            const typeClass = typeClassMap[holiday.tipe] || {
+                                badge: 'bg-secondary-subtle text-secondary',
+                                border: 'border-secondary'
+                            };
+
+                            html += `
+                                <div class="holiday-list-item list-group-item bg-transparent d-flex align-items-center p-2 rounded-2 border-start border-4 ${typeClass.border}" style="transition: all 0.3s ease; cursor: pointer;">
+                                    <div class="badge ${typeClass.badge} d-flex align-items-center justify-content-center" style="min-width: 35px; height: 35px; font-weight: bold;">
+                                        ${date.getDate()}
+                                    </div>
+                                    <div class="ms-3 flex-grow-1">
+                                        <small class="fw-medium text-dark d-block" style="max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${holiday.nama}">${holiday.nama}</small>
+                                        <small class="text-muted">${dayName} ${isWeekend ? '<i class="bx bx-sm bx-info-circle"></i>' : ''}</small>
+                                    </div>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-light border-0 ${isDisabled ? 'disabled' : ''}" data-bs-toggle="dropdown" ${isDisabled ? 'disabled' : ''}>
+                                            <i class="bx bx-dots-vertical-rounded"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end actions-dropdown">
+                                            <li>
+                                                <a href="#" class="dropdown-item btn-edit-libur" data-id="${holiday.id}">
+                                                    <i class="bx bx-edit-alt me-2"></i> Edit
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item text-danger btn-delete-libur" data-id="${holiday.id}">
+                                                    <i class="bx bx-trash me-2"></i> Delete
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            `;
+                        });
+
+                        $('#holiday-list').html(html);
+                    }
+                        
+                    $(document).on('click', '.btn-edit-libur', function(e) {
+                        e.preventDefault();
+
+                        const id = $(this).data('id');
+
+                        $.ajax({
+                            url: `/office/data-hari-libur/edit/${id}`,
+                            type: 'GET',
+                            success: function(res) {
+
+                                // set action
+                                $('#formEditHariLibur').attr('action', '/office/data-hari-libur/update/' + id);
+
+                                // isi form
+                                $('#id').val(res.id);
+                                $('#nama').val(res.nama);
+                                $('#tanggal').val(res.tanggal);
+
+                                // tampilkan modal
+                                $('#modalEditHariLibur').modal('show');
+                            },
+                            error: function() {
+                                alert('Gagal mengambil data hari libur');
+                            }
+                        });
+                    });
+                    
+                    $(document).on('click', '.btn-delete-libur', function(e) {
+                        e.preventDefault();
+
+                        const id = $(this).data('id');
+
+                        $.ajax({
+                            url: `/office/data-hari-libur/delete/${id}`,
+                            type: 'POST',
+                            data: {
+                                _token: $('meta[name="csrf-token"]').attr('content')
+                            },
+                            success: function(res) {
+                                location.reload();
+                            },
+                            error: function(error) {
+                                console.log(error)
+                            },
+                        });
+                    });
+
+                    calendar.render();
+                    updateHolidayList();
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error loading holidays:', error);
+                    $('#holiday-list').html('<p class="text-danger small">Gagal memuat data libur</p>');
+                }
+            });
         });
     </script>
 @endsection

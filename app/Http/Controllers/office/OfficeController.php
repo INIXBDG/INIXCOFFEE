@@ -7,6 +7,7 @@ use App\Models\AbsensiKaryawan;
 use App\Models\AdministrasiKaryawan;
 use App\Models\ChecklistKeperluan;
 use App\Models\Feedback;
+use App\Models\HariLibur;
 use App\Models\karyawan;
 use App\Models\Nilaifeedback;
 use App\Models\pengajuancuti;
@@ -513,4 +514,64 @@ class OfficeController extends Controller
             'rentangWaktu' => $rentangWaktu
             ]);
     }
+
+    // Function hari Libur
+
+    public function dataHariLibur($year)
+    {
+        $response = HariLibur::where('year', $year)->get();
+
+        return response()->json($response);
+    }
+
+    public function storeHariLibur(Request $request)
+    {
+        $request->validate([
+            'nama' => 'required|string',
+            'tanggal' => 'required|date',
+        ]);
+
+        HariLibur::create([
+            'nama' => $request->nama,
+            'tanggal' => $request->tanggal,
+            'year' => Carbon::parse($request->tanggal)->year,
+            'tipe' => 'perusahaan',
+        ]);
+
+        return redirect()->back()->with('success_libur', 'Hari libur berhasil ditambahkan.');
+    }
+
+    public function deleteHariLibur($id)
+    {
+        $hariLibur = HariLibur::findOrFail($id);
+        $hariLibur->delete();
+
+        return redirect()->back()->with('success_libur', 'Hari libur berhasil dihapus.');
+    }
+
+    public function editHariLibur($id)
+    {
+        $hariLibur = HariLibur::findOrFail($id);
+
+        return response()->json($hariLibur);
+    }
+
+    public function updateHariLibur(Request $request, $id)
+    {
+        $request->validate([
+            'nama' => 'required|string',
+            'tanggal' => 'required|date',
+        ]);
+
+        $hariLibur = HariLibur::findOrFail($id);
+        $hariLibur->update([
+            'nama' => $request->nama ?? $hariLibur->nama,
+            'tanggal' => $request->tanggal ?? $hariLibur->tanggal,
+            'year' => Carbon::parse($request->tanggal)->year ?? $hariLibur->year,
+        ]);
+
+        return redirect()->back()->with('success_libur', 'Hari libur berhasil diperbarui.');
+    }
+
+    // End hari libur
 }
