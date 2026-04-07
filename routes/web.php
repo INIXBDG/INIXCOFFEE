@@ -900,6 +900,15 @@ Route::prefix('office')
                 Route::delete('/delete/{id}', [pickupDriverController::class, 'delete'])->name('delete');
                 Route::post('/update-koordinasi', [pickupDriverController::class, 'updateKoordinasi'])->name('updateKoordinasi');
                 Route::get('/get-onlineStatus', [pickupDriverController::class, 'getDriverStatus'])->name('getDriverStatus');
+                Route::get('/export/excel', [pickupDriverController::class, 'exportExcel'])->name('export.excel');
+                Route::get('/export/pdf', [pickupDriverController::class, 'exportPdf'])->name('export.pdf');
+                Route::get('/action/terima-token/{id}/{token}', [pickupDriverController::class, 'actionTerimaFromTelegramToken'])
+                    ->name('action.terima.token')
+                    ->middleware('throttle:10,1');
+                    
+                Route::get('/action/selesaikan-token/{id}/{token}', [pickupDriverController::class, 'actionSelesaikanFromTelegramToken'])
+                    ->name('action.selesaikan.token')
+                    ->middleware('throttle:10,1');
             });
 
         Route::prefix('biaya-transportasi')
@@ -908,9 +917,10 @@ Route::prefix('office')
                 Route::get('/index', [BiayaTransportasiController::class, 'index'])->name('index');
                 Route::post('/create', [BiayaTransportasiController::class, 'create'])->name('create');
                 Route::get('/get', [BiayaTransportasiController::class, 'get'])->name('get');
-                Route::put('/update/{id}', [BiayaTransportasiController::class, 'update'])->name('office.biayaTransportasi.update');
-                Route::delete('/delete/{id}', [BiayaTransportasiController::class, 'destroy'])->name('office.biayaTransportasi.destroy');
+                Route::post('/update/{id_pickup_driver}', [BiayaTransportasiController::class, 'update'])->name('update');
+                Route::delete('/delete/{id_pickup_driver}', [BiayaTransportasiController::class, 'destroy'])->name('destroy');
             });
+            
         Route::prefix('feedback')
             ->name('feedback.')
             ->group(function () {
@@ -1020,6 +1030,9 @@ Route::prefix('office')
             Route::post('status/update', [DaftarTugasController::class, 'updateStatus'])->name('updateStatus');
             Route::post('bukti/upload', [DaftarTugasController::class, 'uploadBukti'])->name('uploadBukti');
             Route::delete('hapus/{id}', [DaftarTugasController::class, 'delete'])->name('delete');
+
+            Route::get('/export/excel', [DaftarTugasController::class, 'exportExcel'])->name('export.excel');
+            Route::get('/export/pdf', [DaftarTugasController::class, 'exportPdf'])->name('export.pdf');
 
             // Update tugas periode
             Route::post('/aktifkan-tugas', [DaftarTugasController::class, 'aktifkanTugas'])->name('aktifkanTugas');

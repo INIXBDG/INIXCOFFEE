@@ -9,6 +9,9 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use App\Exports\DaftarTugasReportExport;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
 
 class DaftarTugasController extends Controller
 {
@@ -202,5 +205,95 @@ class DaftarTugasController extends Controller
         });
         $kategori->delete();
         return response()->json(['success' => true, 'message' => 'Kategori dan tugas terkait berhasil dihapus']);
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $request->validate([
+            'report_type' => 'nullable|in:kategori,tugas',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'tipe' => 'nullable|string',
+            'status' => 'nullable|integer|in:0,1',
+            'karyawan' => 'nullable|exists:karyawans,id',
+        ]);
+
+        $reportType = $request->get('report_type', 'tugas');
+        $filename = 'Laporan_Tugas_' . $reportType . '_' . date('Y-m-d_His') . '.xlsx';
+
+        return Excel::download(new DaftarTugasReportExport($reportType, $request->start_date, $request->end_date, $request->tipe, $request->status, $request->karyawan), $filename);
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $request->validate([
+            'report_type' => 'nullable|in:kategori,tugas',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'tipe' => 'nullable|string',
+            'status' => 'nullable|integer|in:0,1',
+            'karyawan' => 'nullable|exists:karyawans,id',
+        ]);
+
+        $reportType = $request->get('report_type', 'tugas');
+
+        if ($reportType === 'kategori') {
+            $query = \App\Models\KategoriDaftarTugas::with('karyawan');
+
+            if ($request->karyawan) {
+                $query->where('id_user', $request->karyawan);
+            }
+            if ($request->tipe && $request->tipe !== 'all') {
+                $query->where('Tipe', $request->tipe);
+            }
+            if (Auth::user()->jabatan !== 'HRD') {
+                $query->where('id_user', Auth::id());
+            }
+
+            $data = $query->orderBy('Tipe')->orderBy('judul_kategori')->get();
+        } else {
+            $query = KontrolTugas::with(['kategoriDaftarTugas', 'karyawan']);
+
+            if ($request->start_date) {
+                $query->whereDate('created_at', '>=', $request->start_date);
+            }
+            if ($request->end_date) {
+                $query->whereDate('created_at', '<=', $request->end_date);
+            }
+            if ($request->tipe && $request->tipe !== 'all') {
+                $query->whereHas('kategoriDaftarTugas', fn($q) => $q->where('Tipe', $request->tipe));
+            }
+            if ($request->status !== null) {
+                $query->where('status', $request->status);
+            }
+            if ($request->karyawan) {
+                $query->where('id_karyawan', $request->karyawan);
+            }
+            if (Auth::user()->jabatan !== 'HRD') {
+                $query->where('id_karyawan', Auth::id());
+            }
+
+            $data = $query->orderBy('Deadline_Date')->orderBy('created_at', 'desc')->get();
+        }
+
+        $totalTugas = $reportType === 'tugas' ? $data->count() : 0;
+        $totalSelesai = $reportType === 'tugas' ? $data->where('status', 1)->count() : 0;
+        $totalPending = $totalTugas - $totalSelesai;
+
+        $pdf = Pdf::loadView('office.reports.daftar_tugas_pdf', [
+            'data' => $data,
+            'reportType' => $reportType,
+            'startDate' => $request->start_date,
+            'endDate' => $request->end_date,
+            'filterTipe' => $request->tipe,
+            'filterStatus' => $request->status,
+            'filterKaryawan' => $request->karyawan,
+            'totalTugas' => $totalTugas,
+            'totalSelesai' => $totalSelesai,
+            'totalPending' => $totalPending,
+            'approver' => auth()->user()->karyawan->jabatan ?? 'Manager',
+        ]);
+
+        return $pdf->stream('Laporan_Tugas_' . $reportType . '_' . date('Y-m-d') . '.pdf');
     }
 }
