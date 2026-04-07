@@ -41,7 +41,7 @@
     </div>
     
     {{-- Modal Detail Task --}}
-<div id="taskDetailModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center hidden z-[60]">
+<div id="taskDetailModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-start justify-center hidden z-[60]">
   <div class="relative mx-auto p-6 border w-full max-w-lg shadow-xl rounded-lg bg-white">
     <form id="taskDetailForm">
       <div class="flex justify-between items-center border-b pb-3 mb-4">
