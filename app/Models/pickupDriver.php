@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class pickupDriver extends Model
 {
     use HasFactory;
-    protected $fillable = ['id_karyawan', 'id_pembuat', 'status_apply', 'waktu_kepulangan', 'status_driver', 'kendaraan', 'budget'];
+    protected $fillable = ['id_karyawan', 'id_pembuat', 'status_apply', 'waktu_kepulangan', 'status_driver', 'kendaraan', 'budget', 'KM_awal', 'KM_akhir', 'tipe_perjalanan'];
 
     public function detailPickupDriver()
     {
