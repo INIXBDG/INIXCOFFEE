@@ -447,16 +447,18 @@ class AktivitasController extends Controller
     {
         $rules = [
             'id_perusahaan'   => 'nullable|integer',
+            'id_peluang'      => 'nullable|integer',
             'id_contact'      => 'nullable',
             'aktivitas'       => 'required|in:Call,Email,Visit,Meet,Incharge,PA,PI,DB,Telemarketing,Form_Masuk,Form_Keluar',
             'deskripsi'       => 'nullable|string',
             'waktu_aktivitas' => 'required|date',
+            'total'           => 'nullable|numeric',
             'foto_lokasi'     => 'nullable|string',
             'latitude'        => 'nullable|string',
             'longitude'       => 'nullable|string',
         ];
 
-        if ($request->aktivitas !== 'Visit') {
+        if (!in_array($request->aktivitas, ['Visit', 'Form_Keluar', 'Form_Masuk'])) {
             $rules['id_contact'] = 'required';
         }
 
@@ -551,10 +553,33 @@ class AktivitasController extends Controller
 
         try {
             $aktivitas = Aktivitas::create($aktivitasData);
-            return back()->with(['message' => 'Aktivitas Visit berhasil direkam dengan foto dan lokasi.']);
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Aktivitas berhasil disimpan',
+                    'data' => $aktivitas
+                ]);
+            }
+
+            return back()->with([
+                'message' => 'Aktivitas berhasil disimpan'
+            ]);
         } catch (\Exception $e) {
-            Log::error('Gagal simpan aktivitas', ['error' => $e->getMessage()]);
-            return back()->withErrors(['db' => 'Gagal menyimpan data ke database.']);
+            Log::error('Gagal simpan aktivitas', [
+                'error' => $e->getMessage(),
+                'data' => $aktivitasData
+            ]);
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal menyimpan aktivitas'
+                ], 500);
+            }
+
+            return back()->withErrors([
+                'db' => 'Gagal menyimpan data'
+            ]);
         }
     }
 

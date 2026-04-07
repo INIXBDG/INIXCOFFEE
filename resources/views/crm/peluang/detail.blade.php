@@ -135,33 +135,25 @@
                                     </li>
 
                                     <div class="d-flex gap-2 flex-wrap mb-3">
-                                        {{-- Hanya tampil kalau biru sudah ada & belum merah --}}
-                                        @if (!$peluang->merah)
-                                            <a href="{{ route('crm.index.regis', ['id' => $peluang->id]) }}" target="_blank"
-                                                class="btn btn-sm btn-info">
-                                                <i class="bi bi-file-earmark-plus"></i> Generate Regis Form
-                                            </a>
-
-                                            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal"
-                                                data-bs-target="#uploadPdfModal">
-                                                <i class="bi bi-upload"></i> Upload PDF
-                                            </button>
-                                        @endif
-
                                         @if ($regis)
                                             <a href="{{ asset('storage/' . $regis->path) }}" target="_blank"
                                                 class="btn btn-sm btn-success">
                                                 <i class="bi bi-file-earmark-pdf"></i> Lihat Regis Form
                                             </a>
+                                            @endif
                                             <a href="{{ route('crm.index.regis', ['id' => $peluang->id]) }}" target="_blank"
                                                 class="btn btn-sm btn-info">
                                                 <i class="bi bi-file-earmark-plus"></i> Generate Regis Form
                                             </a>
                                             <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal"
                                                 data-bs-target="#uploadPdfModal">
-                                                <i class="bi bi-upload"></i> Edit PDF
+                                                <i class="bi bi-upload"></i>
+                                                @if ($regis)
+                                                    Edit PDF
+                                                @else
+                                                    Upload PDF                                                
+                                                @endif
                                             </button>
-                                        @endif
                                     </div>
                                 @endif
 
@@ -225,7 +217,7 @@
                     <h5 class="card-title mb-0">Aktivitas Terkait</h5>
                 </div>
                 <div class="card-body">
-                    @if ($aktivitass->isEmpty())
+                    @if ($peluang->aktivitas->isEmpty())
                         <p class="text-muted">Belum ada aktivitas yang tercatat.</p>
                     @else
                         <div class="table-responsive">
@@ -235,14 +227,13 @@
                                         <th scope="col" class="px-3 py-2 text-center">ID Sales</th>
                                         <th scope="col" class="px-3 py-2">Contact (PIC)</th>
                                         <th scope="col" class="px-3 py-2">Aktivitas</th>
-                                        <th scope="col" class="px-3 py-2">Subject</th>
                                         <th scope="col" class="px-3 py-2">Deskripsi</th>
                                         <th scope="col" class="px-3 py-2">Waktu Aktivitas</th>
                                         <th scope="col" class="px-3 py-2 text-center">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach ($aktivitass as $item)
+                                    @foreach ($peluang->aktivitas as $item)
                                         <tr>
                                             <td class="px-3 py-2 text-center">{{ $item->id_sales }}</td>
                                             <td class="px-3 py-2">
@@ -251,11 +242,14 @@
                                             <td class="px-3 py-2">
                                                 @if ($item->aktivitas === 'Incharge')
                                                     Incharge Inhouse
+                                                @elseif ($item->aktivitas === 'Form_Keluar')
+                                                    Regis Form Keluar
+                                                @elseif ($item->aktivitas === 'Form_Masuk')
+                                                    Regis Form Masuk
                                                 @else
                                                     {{ $item->aktivitas }}
                                                 @endif
                                             </td>
-                                            <td class="px-3 py-2">{{ $item->subject }}</td>
                                             <td class="px-3 py-2">{{ $item->deskripsi ?? '-' }}</td>
                                             <td class="px-3 py-2">
                                                 {{ \Carbon\Carbon::parse($item->waktu_aktivitas)->translatedFormat('d F Y') }}

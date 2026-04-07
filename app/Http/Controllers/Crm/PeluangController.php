@@ -121,7 +121,7 @@ class PeluangController extends Controller
     public function detail($id)
     {
         // Ambil peluang dan relasi terkait
-        $peluang = Peluang::with(['materiRelation', 'rkm'])
+        $peluang = Peluang::with(['materiRelation', 'rkm', 'aktivitas'])
             ->where('id', $id)
             ->firstOrFail();
 
@@ -178,6 +178,8 @@ class PeluangController extends Controller
         usort($items, function ($a, $b) {
             return strcasecmp($a['label'], $b['label']);
         });
+
+        // dd($peluang);
         return view('crm.peluang.detail', compact(
             'peluang',
             'aktivitass',
