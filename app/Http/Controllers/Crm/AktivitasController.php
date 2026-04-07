@@ -77,7 +77,7 @@ class AktivitasController extends Controller
             $user = Auth::user();
             $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'SPV Sales'];
 
-            $query = Aktivitas::with(['contact.perusahaan', 'peserta.perusahaan'])
+            $query = Aktivitas::with(['contact.perusahaan', 'peserta.perusahaan', 'perusahaanLangsung'])
                 ->select('id', 'id_sales', 'id_contact', 'id_peserta', 'aktivitas', 'pax', 'total', 'harga', 'deskripsi', 'waktu_aktivitas', 'created_at', 'foto_lokasi', 'longitude', 'latitude');
 
             if ($user->jabatan === 'Sales') {
@@ -117,6 +117,9 @@ class AktivitasController extends Controller
                                 ->orWhereHas('perusahaan', function ($q3) use ($searchValue) {
                                     $q3->where('nama_perusahaan', 'like', "%{$searchValue}%");
                                 });
+                        })
+                        ->orWhereHas('perusahaanLangsung', function ($q2) use ($searchValue) {
+                            $q2->where('nama_perusahaan', 'like', "%{$searchValue}%");
                         });
                 });
             }
@@ -165,19 +168,28 @@ class AktivitasController extends Controller
                     $namaKontak = null;
                     $namaPerusahaan = null;
                     $idContact = null;
-                    $relasi = $item->id_peserta
-                        ? $item->peserta
-                        : $item->contact;
-                    $perusahaan = $relasi?->perusahaan;
+                    $relasi = null;
+                    $perusahaan = null;
 
-                    if (!empty($item->id_peserta)) {
-                        $namaKontak = $item->peserta?->nama;
-                        $namaPerusahaan = $item->peserta?->perusahaan?->nama_perusahaan;
-                        $idContact = $item->id_peserta;
-                    } else {
-                        $namaKontak = $item->contact?->nama;
-                        $namaPerusahaan = $item->contact?->perusahaan?->nama_perusahaan;
+                    // Kondisi khusus untuk aktivitas PA
+                    if ($item->aktivitas === 'PA') {
+                        $perusahaan = $item->perusahaanLangsung; // Menggunakan relasi langsung ke Perusahaan
+                        $namaPerusahaan = $perusahaan?->nama_perusahaan;
                         $idContact = $item->id_contact;
+                    } else {
+                        // Kondisi standar selain aktivitas PA
+                        $relasi = $item->id_peserta ? $item->peserta : $item->contact;
+                        $perusahaan = $relasi?->perusahaan;
+
+                        if (!empty($item->id_peserta)) {
+                            $namaKontak = $item->peserta?->nama;
+                            $namaPerusahaan = $item->peserta?->perusahaan?->nama_perusahaan;
+                            $idContact = $item->id_peserta;
+                        } else {
+                            $namaKontak = $item->contact?->nama;
+                            $namaPerusahaan = $item->contact?->perusahaan?->nama_perusahaan;
+                            $idContact = $item->id_contact;
+                        }
                     }
 
                     if ($item->aktivitas === 'DB') {

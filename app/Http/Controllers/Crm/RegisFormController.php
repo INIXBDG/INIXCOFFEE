@@ -9,6 +9,7 @@ use App\Models\KetentuanForm;
 use App\Models\listexam;
 use App\Models\Materi;
 use App\Models\Peluang;
+use App\Models\Aktivitas;
 use App\Models\Perusahaan;
 use App\Models\RegisForm;
 use App\Models\RKM;
@@ -356,5 +357,118 @@ class RegisFormController extends Controller
                 'message' => 'Gagal generate Word: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    public function storeProspectAktivitas(Request $request)
+    {
+        $request->validate([
+            'id_contact' => 'required|integer',
+            'no_surat' => 'nullable|string',
+            'pelatihan' => 'required|array',
+            'pelatihan.*.materi_id' => 'nullable',
+            'pelatihan.*.materi_text' => 'required|string',
+            'pelatihan.*.metode_kelas' => 'required|string',
+            'pelatihan.*.exam' => 'nullable|string',
+            'pelatihan.*.pax' => 'required|numeric',
+            'pelatihan.*.durasi' => 'required|numeric', // Diubah menjadi numeric
+            'pelatihan.*.tanggal_awal' => 'nullable|date', // Tambahan validasi tanggal
+            'pelatihan.*.harga' => 'required|numeric',
+        ]);
+
+        $start = now();
+        $bulanInt = (int) $start->format('n');
+        $bulanNamaMap = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
+        ];
+        $bulanNama = $bulanNamaMap[$bulanInt];
+
+        if ($bulanInt >= 1 && $bulanInt <= 3) $kuartal = 'Q1';
+        elseif ($bulanInt >= 4 && $bulanInt <= 6) $kuartal = 'Q2';
+        elseif ($bulanInt >= 7 && $bulanInt <= 9) $kuartal = 'Q3';
+        else $kuartal = 'Q4';
+
+        $tahun = $start->format('Y');
+        $idSales = auth()->user()->id_sales ?? null;
+        $noSurat = $request->no_surat ?? '-';
+
+        // Persiapan Variabel Agregasi untuk Aktivitas
+        $grandTotal = 0;
+        $detailPelatihan = "";
+
+        foreach ($request->pelatihan as $index => $item) {
+            $grandTotal += $item['harga'];
+            $no = $index + 1;
+            $exam = $item['exam'] ?? '-';
+            $detailPelatihan .= "{$no}. Materi: {$item['materi_text']} | Exam: {$exam} | Metode: {$item['metode_kelas']} | Pax: {$item['pax']} | Durasi: {$item['durasi']} Hari | Subtotal: Rp " . number_format($item['harga'], 0, ',', '.') . "\n";
+        }
+
+        $deskripsiAktivitas = "Penawaran dikirim (Surat No: {$noSurat}).\nDetail Pelatihan:\n" . $detailPelatihan;
+        $peluangIdUtama = null;
+
+        // Iterasi Pembuatan Peluang dan RKM per baris
+        foreach ($request->pelatihan as $index => $item) {
+
+            $materiDatabaseValue = $item['materi_id'] ? $item['materi_id'] : $item['materi_text'];
+
+            // Kalkulasi Tanggal menggunakan Carbon
+            // Jika tanggal_awal kosong, gunakan hari ini (now)
+            $tglAwalObj = !empty($item['tanggal_awal']) ? \Carbon\Carbon::parse($item['tanggal_awal']) : now();
+
+            // Konversi durasi menjadi integer. Dikurangi 1 karena hari pertama sudah dihitung sebagai 1 hari.
+            $durasiInt = (int) $item['durasi'];
+            $penambahanHari = $durasiInt > 0 ? $durasiInt - 1 : 0;
+
+            // Salin (copy) objek agar tidak mengubah nilai $tglAwalObj
+            $tglAkhirObj = $tglAwalObj->copy()->addDays($penambahanHari);
+
+            $rkm = RKM::create([
+                'sales_key' => $idSales,
+                'materi_key' => $materiDatabaseValue,
+                'perusahaan_key' => $request->id_contact,
+                'harga_jual' => $item['harga'],
+                'pax' => $item['pax'],
+                'isi_pax' => $item['pax'],
+                'metode_kelas' => $item['metode_kelas'],
+                'event' => 'Kelas',
+                'exam' => $item['exam'] !== '-' ? '1' : '0',
+                'authorize' => '0',
+                'tanggal_awal' => $tglAwalObj->toDateString(), // Input tanggal hasil kalkulasi
+                'tanggal_akhir' => $tglAkhirObj->toDateString(), // Input tanggal hasil kalkulasi
+                'bulan' => $bulanNama,
+                'quartal' => $kuartal,
+                'tahun' => $tahun,
+                'status' => '2',
+            ]);
+
+            $peluang = Peluang::create([
+                'id_contact' => $request->id_contact,
+                'id_rkm' => $rkm->id,
+                'id_sales' => $idSales,
+                'materi' => $materiDatabaseValue,
+                'harga' => $item['harga'],
+                'pax' => $item['pax'],
+                'periode_mulai' => $tglAwalObj->toDateString(), // Input tanggal hasil kalkulasi
+                'periode_selesai' => $tglAkhirObj->toDateString(), // Input tanggal hasil kalkulasi
+            ]);
+
+            if ($index === 0) {
+                $peluangIdUtama = $peluang->id;
+            }
+        }
+
+        // Pembuatan Aktivitas
+        Aktivitas::create([
+            'id_sales' => $idSales,
+            'id_contact' => $request->id_contact,
+            'id_peluang' => $peluangIdUtama,
+            'aktivitas' => 'PA',
+            'waktu_aktivitas' => $start,
+            'deskripsi' => $deskripsiAktivitas,
+            'total' => $grandTotal
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Prospect dan Aktivitas berhasil direkam.']);
     }
 }
