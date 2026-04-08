@@ -281,6 +281,8 @@ Route::get('getOutstandingRKM/{year}/{month}', [App\Http\Controllers\Outstanding
 Route::get('getOutstandingPA', [OutstandingController::class, 'getOutstandingPA'])->name('getOutstandingPA');
 Route::get('/outstanding/{id}/detail', [OutstandingController::class, 'detailPA'])->name('detailDataOutstanding');
 Route::get('singkronDataOutstandingRKM', [App\Http\Controllers\OutstandingController::class, 'singkronDataOutstanding'])->name('outstanding.singkronDataOutstanding');
+Route::get('/outstanding/export/excel', [OutstandingController::class, 'exportExcel'])->name('outstanding.export.excel');
+Route::get('/outstanding/export/pdf', [OutstandingController::class, 'exportPdf'])->name('outstanding.export.pdf');
 Route::get('/download/dokumen/{id}', [OutstandingController::class, 'dokumenGabungan'])->name('dokumenGabungan');
 Route::get('cekregisform/{id}', [App\Http\Controllers\RKMController::class, 'cekregisform'])->name('cekregisform');
 Route::get('getMateri/{id}', [App\Http\Controllers\MateriController::class, 'getMateriById'])->name('getMateriById');
@@ -618,6 +620,10 @@ Route::prefix('crm')->group(function () {
     Route::get('/chartClosed', [CRMController::class, 'chartClosed'])->name('chartClosed');
 
     Route::post('/checklist/update', [CRMController::class, 'updateChecklist'])->name('checklist.update');
+
+    //Koordinasi Driver
+    Route::get('/koordinasi-driver', [CRMController::class, 'indexKoordinasi'])->name('CRM.index.koordinasi');
+    Route::get('/koordinasi-driver/create', [CRMController::class, 'createKoordinasi'])->name('CRM.create.koordinasi');
 
     // Contact CRM
     Route::get('/contact/index', [ContactController::class, 'index'])->name('index.contact');

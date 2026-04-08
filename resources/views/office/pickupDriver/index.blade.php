@@ -1,6 +1,6 @@
-@extends('layouts_office.app')
+@extends($extends)
 
-@section('office_contents')
+@section($section)
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 
     <style>
@@ -127,12 +127,24 @@
                         <div class="mb-3" id="budget_calculation" style="display:none;">
                             <label class="form-label fw-semibold">Estimasi Pemakaian Budget</label>
                             <div class="alert alert-info mb-0">
-                                Jarak: <span id="jarak_tempuh">0</span> KM × Rp <span id="rate_per_km">500</span>/KM =
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <small class="d-block text-muted">Kapasitas Tangki</small>
+                                        <strong id="tank_capacity_display">0</strong> Liter
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="d-block text-muted">Harga Bensin</small>
+                                        <strong>Rp <span id="fuel_price_display">0</span></strong>/Liter
+                                    </div>
+                                </div>
+                                <hr class="my-2">
+                                Jarak: <span id="jarak_tempuh">0</span> KM × Rp <span id="rate_per_km">0</span>/KM =
                                 <strong>Rp <span id="total_pemakaian">0</span></strong>
                             </div>
                         </div>
                         <input type="hidden" name="pickup_driver_id" id="kepulangan_id">
                         <input type="hidden" name="total_pemakaian" id="total_pemakaian_hidden">
+                        <input type="hidden" name="vehicle_type" id="vehicle_type_hidden">
                     </div>
                     <div class="modal-footer border-0 px-4 pb-4">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
@@ -217,27 +229,40 @@
         </div>
     </div>
 
-    <div class="container-fluid py-4">
-        <div class="d-flex justify-content-between align-items-center mb-5">
-            <h4 class="fw-bold text-dark">Koordinasi Driver</h4>
-            <small class="text-muted fw-medium">{{ now()->translatedFormat('l, d F Y') }}</small>
-        </div>
+    @if ($section === 'crm_contents')
+        <div class="content-wrapper">
+            <div class="container-xxl flex-grow-1 container-p-y">
+            @else
+                <div class="container-fluid py-4">
+    @endif
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <h4 class="fw-bold text-dark">Koordinasi Driver</h4>
+        <small class="text-muted fw-medium">{{ now()->translatedFormat('l, d F Y') }}</small>
+    </div>
 
-        <div class="card shadow-lg border-0 rounded-4 mb-3">
-            <div class="card-body px-3 py-3">
-                <div id="content-person" class="d-flex gap-3 overflow-x-auto p-3">
-                </div>
+    <div class="card shadow-lg border-0 rounded-4 mb-3">
+        <div class="card-body px-3 py-3">
+            <div id="content-person" class="d-flex gap-3 overflow-x-auto p-3">
             </div>
         </div>
+    </div>
 
-        <div class="card shadow-lg border-0 rounded-4">
-            <div class="card-header bg-white">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div class="d-flex flex-wrap gap-2 mb-4">
-
+    <div class="card shadow-lg border-0 rounded-4">
+        <div class="card-header bg-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex flex-wrap gap-2 mb-4">
+                    @if ($section === 'crm_contents')
+                        <a class="btn btn-primary" href="{{ route('CRM.create.koordinasi') }}">
+                            <i class="fa fa-plus me-1"></i> Buat Koordinasi
+                        </a>
+                    @else
                         <a class="btn btn-primary" href="{{ route('office.pickupDriver.create') }}">
                             <i class="fa fa-plus me-1"></i> Buat Koordinasi
                         </a>
+                    @endif
+
+
+                    @if (Auth()->user()->jabatan === 'HRD' || Auth()->user()->jabatan === 'GM' || Auth()->user()->jabatan === 'Office Boy')
                         <div class="btn-group">
                             <button class="btn btn-success dropdown-toggle" type="button" data-bs-toggle="dropdown">
                                 <i class="fas fa-file-export me-1"></i> Export Laporan
@@ -264,80 +289,85 @@
                                 </li>
                             </ul>
                         </div>
-                    </div>
+                    @endif
 
-                    <div class="modal fade" id="modalExport" tabindex="-1">
-                        <div class="modal-dialog modal-dialog-centered">
-                            <div class="modal-content">
-                                <form id="formExport" method="GET">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title"><i class="fas fa-filter me-2"></i>Filter Export Laporan
-                                        </h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <div class="row g-3">
-                                            <div class="col-md-6">
-                                                <label class="form-label">Tanggal Mulai</label>
-                                                <input type="date" name="start_date" class="form-control">
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label">Tanggal Akhir</label>
-                                                <input type="date" name="end_date" class="form-control">
-                                            </div>
-                                            <div class="col-md-12">
-                                                <label class="form-label">Kendaraan</label>
-                                                <select name="kendaraan" class="form-select">
-                                                    <option value="">Semua Kendaraan</option>
-                                                    <option value="H1">H1</option>
-                                                    <option value="Inova">Inova</option>
-                                                </select>
-                                            </div>
+                </div>
+
+                <div class="modal fade" id="modalExport" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <form id="formExport" method="GET">
+                                <div class="modal-header">
+                                    <h5 class="modal-title"><i class="fas fa-filter me-2"></i>Filter Export Laporan
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Tanggal Mulai</label>
+                                            <input type="date" name="start_date" class="form-control">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Tanggal Akhir</label>
+                                            <input type="date" name="end_date" class="form-control">
+                                        </div>
+                                        <div class="col-md-12">
+                                            <label class="form-label">Kendaraan</label>
+                                            <select name="kendaraan" class="form-select">
+                                                <option value="">Semua Kendaraan</option>
+                                                <option value="H1">H1</option>
+                                                <option value="Inova">Inova</option>
+                                            </select>
                                         </div>
                                     </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary"
-                                            data-bs-dismiss="modal">Batal</button>
-                                        <button type="submit" class="btn btn-success"
-                                            formaction="{{ route('office.pickupDriver.export.excel') }}"
-                                            formtarget="_blank">
-                                            <i class="fas fa-file-excel me-1"></i> Export Excel
-                                        </button>
-                                        <button type="submit" class="btn btn-danger"
-                                            formaction="{{ route('office.pickupDriver.export.pdf') }}"
-                                            formtarget="_blank">
-                                            <i class="fas fa-file-pdf me-1"></i> Export PDF
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary"
+                                        data-bs-dismiss="modal">Batal</button>
+                                    <button type="submit" class="btn btn-success"
+                                        formaction="{{ route('office.pickupDriver.export.excel') }}">
+                                        <i class="fas fa-file-excel me-1"></i> Export Excel
+                                    </button>
+                                    <button type="submit" class="btn btn-danger"
+                                        formaction="{{ route('office.pickupDriver.export.pdf') }}">
+                                        <i class="fas fa-file-pdf me-1"></i> Export PDF
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
-                    <span id="dataCountBadge" class="badge bg-primary-subtle text-primary">Loading...</span>
                 </div>
+                <span id="dataCountBadge" class="badge bg-primary-subtle text-primary">Loading...</span>
             </div>
+        </div>
 
-            <div class="card-body m-4">
-                <div class="table-responsive">
-                    <table id="pickupTable" class="table table-hover table-sm align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Driver</th>
-                                <th>Tipe</th>
-                                <th>Lokasi</th>
-                                <th>Tanggal</th>
-                                <th>Pembuat</th>
-                                <th>Apply Driver</th>
-                                <th>Status</th>
-                                <th class="text-center pe-4">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="content_body"></tbody>
-                    </table>
-                </div>
+        <div class="card-body m-4">
+            <div class="table-responsive">
+                <table id="pickupTable" class="table table-hover table-sm align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Driver</th>
+                            <th>Tipe</th>
+                            <th>Lokasi</th>
+                            <th>Tanggal</th>
+                            <th>Pembuat</th>
+                            <th>Apply Driver</th>
+                            <th>Status</th>
+                            <th class="text-center pe-4">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="content_body"></tbody>
+                </table>
             </div>
         </div>
     </div>
+    @if ($section === 'crm_contents')
+        </div>
+        </div>
+    @else
+        </div>
+    @endif
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -347,7 +377,19 @@
     <script>
         const AuthId = "{{ Auth()->user()->id }}";
         const baseUrl = "{{ url('/') }}";
-        const RATE_PER_KM = 500; // Rate per KM untuk perhitungan budget (bisa disesuaikan)
+
+        const VEHICLE_CONFIG = {
+            'Innova': {
+                fuelPrice: 14000,
+                tankCapacity: 55,
+                kmPerLiter: 10
+            },
+            'H1': {
+                fuelPrice: 12500,
+                tankCapacity: 75,
+                kmPerLiter: 8
+            }
+        };
 
         $(document).ready(function() {
             loadData();
@@ -478,7 +520,6 @@
             `;
         }
 
-        // === EDIT KOORDINASI (Tetap sama) ===
         $(document).on('click', '.btn-edit-koordinasi', function() {
             const item = JSON.parse($(this).attr('data-item'));
             $('#edit_id').val(item.id);
@@ -545,7 +586,6 @@
             });
         });
 
-        // === APPLY DRIVER (DISEDERSHANAKAN - TANPA PILIH KENDARAAN) ===
         function getDriverButton(item, AuthId) {
             const isDriver = item.karyawan?.jabatan === "Driver";
             const isOwner = Number(item.karyawan?.id) == AuthId;
@@ -554,7 +594,6 @@
                 return `<span class="badge bg-warning-subtle text-warning">Dalam Perjalanan</span>`;
             if (item.status_apply === 2) return `<span class="badge bg-success-subtle text-success">Selesai</span>`;
 
-            // === PERUBAHAN: HANYA TOMBOL TERIMA, TANPA DROPDOWN KENDARAAN ===
             if (item.status_apply === 0 && isDriver && isOwner) {
                 return `
                 <button class="btn btn-sm btn-warning btn-driver" data-id="${item.id}">
@@ -564,7 +603,6 @@
             return `<span class="badge bg-secondary-subtle text-secondary">Menunggu</span>`;
         }
 
-        // === CLICK HANDLER UNTUK TOMBOL TERIMA (TANPA VALIDASI KENDARAAN) ===
         $(document).on('click', '.btn-driver', function() {
             const id = $(this).data('id');
 
@@ -579,18 +617,23 @@
                 if (result.isConfirmed) {
                     $.post(`{{ url('/office/pickup-driver/update-status') }}/${id}`, {
                             _token: '{{ csrf_token() }}'
-                            // === PERUBAHAN: Tidak mengirim vehicle lagi ===
                         })
                         .done(function(response) {
-                            loadData();
-                            Swal.fire('Berhasil!', 'Koordinasi diterima. Selamat bertugas!', 'success');
+                            if (response.success) {
+                                loadData();
+                                Swal.fire('Berhasil!', response.message, 'success');
+                            } else {
+                                Swal.fire('Error!', response.message, 'error');
+                            }
                         })
-                        .fail(() => Swal.fire('Error!', 'Gagal mengupdate status.', 'error'));
+                        .fail((xhr) => {
+                            const msg = xhr.responseJSON?.message || 'Gagal mengupdate status.';
+                            Swal.fire('Error!', msg, 'error');
+                        });
                 }
             });
         });
 
-        // === DETAIL MODAL (Tetap sama) ===
         $(document).on('click', '.btn-detail', function() {
             const item = JSON.parse($(this).attr('data-item'));
 
@@ -647,10 +690,10 @@
                                     : '-'}
                             </h6>
                             ${item.sisa_budget < 0 ? `
-                                                <small class="text-danger">
-                                                    Penggunaan dana melebihi budget
-                                                </small>
-                                            ` : ''}
+                                                                <small class="text-danger">
+                                                                    Penggunaan dana melebihi budget
+                                                                </small>
+                                                            ` : ''}
                         </div>
                     </div>
                 </div>
@@ -695,24 +738,38 @@
             $('#detailModal').modal('show');
         });
 
-        // === MODAL KEPULANGAN (UPDATED DENGAN KM AWAL & AKHIR) ===
         $(document).on('click', '.btn-kepulangan', function() {
             const id = $(this).data('id');
             $('#kepulangan_id').val(id);
 
-            // Reset form
             $('#kepulanganForm')[0].reset();
             $('#km_warning').addClass('d-none');
             $('#budget_calculation').hide();
             $('#total_pemakaian_hidden').val('');
 
+            const item = $(this).closest('tr').data('item');
+            let vehicleType = item?.kendaraan || 'Innova';
+            if (!VEHICLE_CONFIG[vehicleType]) {
+                vehicleType = 'Innova';
+            }
+
+            const config = VEHICLE_CONFIG[vehicleType];
+            const ratePerKm = config.fuelPrice / config.kmPerLiter;
+
+            $('#vehicle_type_hidden').val(vehicleType);
+            $('#tank_capacity_display').text(config.tankCapacity);
+            $('#fuel_price_display').text(config.fuelPrice.toLocaleString('id-ID'));
+            $('#rate_per_km').text(ratePerKm.toLocaleString('id-ID'));
+
             $('#kepulanganModal').modal('show');
         });
 
-        // === VALIDASI & KALKULASI KM ===
         $('#KM_akhir').on('input', function() {
             const kmAwal = parseInt($('#KM_awal').val()) || 0;
             const kmAkhir = parseInt($(this).val()) || 0;
+            const vehicleType = $('#vehicle_type_hidden').val() || 'Innova';
+            const config = VEHICLE_CONFIG[vehicleType] || VEHICLE_CONFIG['Innova'];
+            const ratePerKm = config.fuelPrice / config.kmPerLiter;
 
             if (kmAkhir < kmAwal) {
                 $('#km_warning').removeClass('d-none');
@@ -721,10 +778,10 @@
             } else {
                 $('#km_warning').addClass('d-none');
                 const jarak = kmAkhir - kmAwal;
-                const total = jarak * RATE_PER_KM;
+                const total = jarak * ratePerKm;
 
                 $('#jarak_tempuh').text(jarak);
-                $('#rate_per_km').text(RATE_PER_KM.toLocaleString('id-ID'));
+                $('#rate_per_km').text(ratePerKm.toLocaleString('id-ID'));
                 $('#total_pemakaian').text(total.toLocaleString('id-ID'));
                 $('#total_pemakaian_hidden').val(total);
                 $('#budget_calculation').show();
@@ -735,7 +792,6 @@
             $('#KM_akhir').trigger('input');
         });
 
-        // === SUBMIT FORM KEPULANGAN ===
         $('#kepulanganForm').on('submit', function(e) {
             e.preventDefault();
 
@@ -750,17 +806,21 @@
             const formData = $(this).serialize();
 
             $.post("{{ route('office.pickupDriver.updateKepulangan') }}", formData)
-                .done(() => {
-                    loadData();
-                    Swal.fire('Berhasil!', 'Waktu kepulangan dan data KM tersimpan.', 'success');
-                    $('#kepulanganModal').modal('hide');
+                .done((res) => {
+                    if (res.success) {
+                        loadData();
+                        Swal.fire('Berhasil!', res.message, 'success');
+                        $('#kepulanganModal').modal('hide');
+                    } else {
+                        Swal.fire('Error!', res.message, 'error');
+                    }
                 })
                 .fail((xhr) => {
-                    Swal.fire('Error!', xhr.responseJSON?.message || 'Gagal menyimpan kepulangan.', 'error');
+                    const msg = xhr.responseJSON?.message || 'Gagal menyimpan kepulangan.';
+                    Swal.fire('Error!', msg, 'error');
                 });
         });
 
-        // === HAPUS DATA ===
         $(document).on('click', '.btn-delete', function() {
             const id = $(this).data('id');
             Swal.fire({
@@ -788,7 +848,6 @@
             });
         });
 
-        // === DROPDOWN RESPONSIVE (Tetap sama) ===
         document.addEventListener('DOMContentLoaded', function() {
             const dropdowns = document.querySelectorAll('.dropdown');
             dropdowns.forEach(dropdown => {
