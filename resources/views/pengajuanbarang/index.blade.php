@@ -118,6 +118,9 @@
 
                     <div class="col-md-4 mx-1">
                         <button type="submit" onclick="tableFinance()" class="btn click-primary" style="margin-top: 37px">Cari Data</button>
+                        <button type="button" onclick="exportAllToExcel()" class="btn btn-success" style="margin-top: 37px">
+                            <img src="{{ asset('icon/file-text.svg') }}" width="20px"> Export All to Excel
+                        </button>
                     </div>
                 </div>
             </div>
@@ -280,26 +283,30 @@
     .dataTables_processing {
     font-size: 16px;
     font-weight: bold;
-}
+    }
 
-.dataTables_processing:before {
-    content: "Mohon tunggu...";
-    font-weight: bold;
-    display: block;
-}
-.dataTables_processing {
-    visibility: hidden;
-}
-.dataTables_processing:before {
-    visibility: visible;
-}
+    .dataTables_processing:before {
+        content: "Mohon tunggu...";
+        font-weight: bold;
+        display: block;
+    }
+    .dataTables_processing {
+        visibility: hidden;
+    }
+    .dataTables_processing:before {
+        visibility: visible;
+    }
 
     }
 </style>
 @push('js')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
@@ -579,6 +586,18 @@ var dataBelum = data.data.filter(item =>
             // Initialize datasudah table
             var datasudahTable = $('#datasudah').DataTable({
                 data: dataSelesai,
+                dom: 'Bfrtip',
+                buttons: [
+                    {
+                        extend: 'excelHtml5',
+                        text: 'Export Excel',
+                        className: 'btn btn-success btn-sm mb-3',
+                        title: 'Data_Pengajuan_Selesai_' + bulan + '_' + tahun,
+                        exportOptions: {
+                            columns: ':visible:not(:last-child)'
+                        }
+                    }
+                ],
                 columns: [
                     {
                         "data": "created_at",
@@ -677,6 +696,18 @@ var dataBelum = data.data.filter(item =>
             // Initialize databelum table
             var databelumTable = $('#databelum').DataTable({
                 data: dataBelum,
+                dom: 'Bfrtip',
+                buttons: [
+                    {
+                        extend: 'excelHtml5',
+                        text: 'Export Excel',
+                        className: 'btn btn-success btn-sm mb-3',
+                        title: 'Data_Pengajuan_Hold_' + bulan + '_' + tahun,
+                        exportOptions: {
+                            columns: ':visible:not(:last-child)'
+                        }
+                    }
+                ],
                 "columns": [
                     {
                         "data": "created_at",
@@ -808,84 +839,93 @@ var dataBelum = data.data.filter(item =>
                 }
             });
             // ================= HAS INVOICE
-var datasudahinvTable = $('#datasudahinv').DataTable({
-    data: dataHasInvoice,
-    columns: [
-        {
-            "data": "created_at",
-            "render": function(data) {
-                moment.locale('id');
-                return moment(data).format('dddd, DD MMMM YYYY');
+            var datasudahinvTable = $('#datasudahinv').DataTable({
+                data: dataHasInvoice,
+                dom: 'Bfrtip',
+                buttons: [
+                    {
+                        extend: 'excelHtml5',
+                        text: 'Export Excel',
+                        className: 'btn btn-success btn-sm mb-3',
+                        title: 'Data_Pengajuan_HasInvoice_' + bulan + '_' + tahun,
+                        exportOptions: {
+                            columns: ':visible:not(:last-child)'
+                        }
+                    }
+                ],
+                columns: [
+                    {
+                        "data": "created_at",
+                        "render": function(data) {
+                            moment.locale('id');
+                            return moment(data).format('dddd, DD MMMM YYYY');
+                        }
+                    },
+                    {"data": "karyawan.nama_lengkap"},
+                    {"data": "karyawan.divisi"},
+                    {"data": "karyawan.jabatan"},
+                    {"data": "tipe"},
+                    {"data": "tracking.tracking"},
+                    {
+                        "data": "detail",
+                        "render": function (data) {
+                            if (data && Array.isArray(data)) {
+                                return data.map(item => item.nama_barang).join('<hr>');
+                            }
+                            return '-';
+                        }
+                    },
+                    {
+                        "data": "detail",
+                        "render": function (data) {
+                            if (data && Array.isArray(data)) {
+                                return data.map(item => item.qty).join('<hr>');
+                            }
+                            return '-';
+                        }
+                    },
+                    {
+                        "data": "detail",
+                        "render": function (data) {
+                            if (data && Array.isArray(data)) {
+                                const total = data.reduce((sum, item) => sum + (item.harga * item.qty), 0);
+                                return new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                }).format(total);
+                            }
+                            return '-';
+                        }
+                    },
+                    {
+                        "data": null,
+            "render": function(data, type, row) {
+                let actions = `
+                    <div class="dropdown">
+                        <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>
+                        <div class="dropdown-menu">
+                            <a class="dropdown-item" href="/pengajuanbarang/${row.id}">
+                                <img src="{{ asset('icon/clipboard-primary.svg') }}"> Detail
+                            </a>
+                            ${row.invoice ? `
+                            <a class="dropdown-item" href="/storage/${row.invoice}" target="_blank">
+                                <img src="{{ asset('icon/file-text.svg') }}"> Lihat Invoice
+                            </a>` : ``}
+                            <form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/pengajuanbarang') }}/' + row.id + '" method="POST">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>
+                                </form>
+                        </div>
+                    </div>
+                `;
+                return actions;
             }
-        },
-        {"data": "karyawan.nama_lengkap"},
-        {"data": "karyawan.divisi"},
-        {"data": "karyawan.jabatan"},
-        {"data": "tipe"},
-        {"data": "tracking.tracking"},
-        {
-            "data": "detail",
-            "render": function (data) {
-                if (data && Array.isArray(data)) {
-                    return data.map(item => item.nama_barang).join('<hr>');
-                }
-                return '-';
-            }
-        },
-        {
-            "data": "detail",
-            "render": function (data) {
-                if (data && Array.isArray(data)) {
-                    return data.map(item => item.qty).join('<hr>');
-                }
-                return '-';
-            }
-        },
-        {
-            "data": "detail",
-            "render": function (data) {
-                if (data && Array.isArray(data)) {
-                    const total = data.reduce((sum, item) => sum + (item.harga * item.qty), 0);
-                    return new Intl.NumberFormat('id-ID', {
-                        style: 'currency',
-                        currency: 'IDR'
-                    }).format(total);
-                }
-                return '-';
-            }
-        },
-        {
-            "data": null,
-"render": function(data, type, row) {
-    let actions = `
-        <div class="dropdown">
-            <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>
-            <div class="dropdown-menu">
-                <a class="dropdown-item" href="/pengajuanbarang/${row.id}">
-                    <img src="{{ asset('icon/clipboard-primary.svg') }}"> Detail
-                </a>
-                ${row.invoice ? `
-                <a class="dropdown-item" href="/storage/${row.invoice}" target="_blank">
-                    <img src="{{ asset('icon/file-text.svg') }}"> Lihat Invoice
-                </a>` : ``}
-				<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/pengajuanbarang') }}/' + row.id + '" method="POST">
-					@csrf
-					@method('DELETE')
-					<button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>
-					</form>
-			</div>
-        </div>
-    `;
-    return actions;
-}
 
-        }
-    ],
-    order: [[0, 'desc']]
-});
-
-
-            
+                    }
+                ],
+                order: [[0, 'desc']]
+            });
 
             // Set page for databelum table
             if (currentPageBelum > 0) {
@@ -893,6 +933,90 @@ var datasudahinvTable = $('#datasudahinv').DataTable({
             }
         },
     });
+}
+
+function exportAllToExcel() {
+    const tables = [
+        { id: '#databelum', title: 'DATA PENGAJUAN BARANG (HOLD)' },
+        { id: '#datasudahinv', title: 'DATA PENGAJUAN BARANG (HAS INVOICE)' },
+        { id: '#datasudah', title: 'DATA PENGAJUAN BARANG (SELESAI)' }
+    ];
+
+    let allData = [];
+    let bulan = $('#bulan option:selected').text();
+    let tahun = $('#tahun').val();
+
+    // Judul Utama File
+    allData.push([`LAPORAN REKAP PENGAJUAN BARANG - ${bulan} ${tahun}`]);
+    allData.push([]); // Baris Kosong
+
+    tables.forEach(table => {
+        if ($.fn.DataTable.isDataTable(table.id)) {
+            const dt = $(table.id).DataTable();
+            const data = dt.rows({ search: 'applied' }).data().toArray();
+
+            // 1. Tambahkan Judul Tabel sebagai Pemisah
+            allData.push([table.title]);
+
+            // 2. Tambahkan Header Kolom
+            allData.push([
+                "Tanggal Pengajuan",
+                "Nama Karyawan",
+                "Divisi",
+                "Tipe",
+                "Status",
+                "Nama Barang",
+                "Total Item",
+                "Total Pengajuan"
+            ]);
+
+            // 3. Tambahkan Data
+            if (data.length > 0) {
+                data.forEach(row => {
+                    let namaBarang = row.detail.map(d => d.nama_barang).join('; ');
+                    let totalQty = row.detail.reduce((sum, d) => sum + parseInt(d.qty), 0);
+                    let totalHarga = row.detail.reduce((sum, d) => sum + (d.harga * d.qty), 0);
+
+                    allData.push([
+                        moment(row.created_at).format('DD-MM-YYYY'),
+                        row.karyawan.nama_lengkap,
+                        row.karyawan.divisi,
+                        row.tipe,
+                        row.tracking.tracking,
+                        namaBarang,
+                        totalQty,
+                        totalHarga
+                    ]);
+                });
+            } else {
+                allData.push(["Tidak ada data"]);
+            }
+
+            // 4. Tambahkan Baris Kosong untuk Jeda Antar Tabel
+            allData.push([]);
+            allData.push([]);
+        }
+    });
+
+    // Proses Konversi ke CSV (agar kompatibel langsung dengan Excel)
+    let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; // \uFEFF untuk support karakter spesial/simbol
+    allData.forEach(rowArray => {
+        // Membersihkan data dari koma agar tidak merusak struktur CSV
+        let row = rowArray.map(val => {
+            if (typeof val === 'string') return `"${val.replace(/"/g, '""')}"`;
+            return val;
+        }).join(",");
+        csvContent += row + "\r\n";
+    });
+
+    // Eksekusi Download
+    var encodedUri = encodeURI(csvContent);
+    var link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Rekap_Semua_Tabel_${bulan}_${tahun}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
 
 function openApproveModal(id, jabatan) {
@@ -928,7 +1052,7 @@ function toggleAlasanManager(show) {
                 if ($.fn.DataTable.isDataTable('#barangTable')) {
                     $('#barangTable').DataTable().ajax.reload(null, false);
                 }
-                tableFinance(); 
+                tableFinance();
                 tableKaryawan();
 
                 if ('{{ auth()->user()->jabatan }}' == 'Finance & Accounting') {

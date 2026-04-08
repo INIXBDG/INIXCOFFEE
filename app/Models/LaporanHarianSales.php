@@ -21,6 +21,7 @@ class LaporanHarianSales extends Model
        'notulis',
        'topic',
        'catatan',
+       'is_draft',
     ];
 
     public function picMeeting()

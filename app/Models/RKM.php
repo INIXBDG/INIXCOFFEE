@@ -34,7 +34,9 @@ class RKM extends Model
         'tahun',
         'isi_pax',
         'makanan',
-        'pdf_peserta'
+        'pdf_peserta',
+        'deleted_at',
+        'deleted_by',
     ];
     protected $dates = ['tanggal_awal', 'tanggal_akhir'];
 

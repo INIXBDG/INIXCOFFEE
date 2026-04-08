@@ -79,6 +79,8 @@ use App\Http\Controllers\WebhookController;
 use App\Http\Controllers\IdeInovasiController;
 use App\Http\Controllers\office\TagihanPerusahaanController;
 use App\Http\Controllers\JurnalAkuntansiController;
+use App\Http\Controllers\ProjectAdministrationController;
+use App\Http\Controllers\ProjectKanbanController;
 use App\Http\Controllers\office\AnalysisReportController;
 
 /*
@@ -638,7 +640,7 @@ Route::prefix('crm')->group(function () {
     Route::get('/index/peluang', [PeluangController::class, 'indexJson'])->name('index.peluang.json');
     Route::get('/peluang/detail/{id}', [PeluangController::class, 'detail'])->name('detail.peluang');
     Route::post('/peluang/store', [PeluangController::class, 'store'])->name('store.peluang');
-    Route::delete('/peluang/delete/{id}', [PeluangController::class, 'delete'])->name('delete.peluang');
+    Route::put('/peluang/delete/{id}', [PeluangController::class, 'delete'])->name('delete.peluang');
     Route::put('/peluang/edit/{id}', [PeluangController::class, 'update'])->name('edit.peluang');
     Route::put('/peluang/update/{id}', [PeluangController::class, 'updateTahap'])->name('update.tahap');
     Route::get('/ambil/aktivitas/{id}', [PeluangController::class, 'AmbilAktivitas']);
@@ -682,6 +684,7 @@ Route::prefix('crm')->group(function () {
     Route::post('/store/deskripsi', [RegisFormController::class, 'storeDeskripsi'])->name('crm.store.deskripsi');
     Route::put('/update/deskripsi/{id}', [RegisFormController::class, 'updateDeskripsi'])->name('crm.update.deskripsi');
     Route::delete('/delete/deskripsi/{id}', [RegisFormController::class, 'deleteDeskripsi'])->name('crm.delete.deskripsi');
+    Route::post('/store-prospect-penawaran', [RegisFormController::class, 'storeProspectAktivitas'])->name('crm.store.prospect.penawaran');
 
     Route::get('/pic', [PicController::class, 'index'])->name('index.pic');
     Route::get('/index/pic', [PicController::class, 'indexJson'])->name('index.json.pic');
@@ -707,9 +710,10 @@ Route::prefix('crm')->group(function () {
     Route::get('laporan-harian/create', [LaporanHarianSalesController::class, 'create'])->name('laporan.harian.create');
     Route::get('laporan-harian/{id}/edit', [LaporanHarianSalesController::class, 'edit'])->name('laporan.harian.edit');
     Route::post('laporan-harian/store', [LaporanHarianSalesController::class, 'store'])->name('laporan.harian.store');
-    Route::put('laporan-harian/{id}/update', [LaporanHarianSalesController::class, 'update'])->name('laporan.harian.update');
+    Route::post('laporan-harian/{id}/update', [LaporanHarianSalesController::class, 'update'])->name('laporan.harian.update');
     Route::delete('laporan-harian/delete/{id}', [LaporanHarianSalesController::class, 'delete'])->name('laporan.harian.delete');
     Route::get('laporan-harian/export/{id}/{type}', [LaporanHarianSalesController::class, 'exportPdf'])->name('laporan.harian.pdf');
+    Route::post('laporan-harian/autosave', [LaporanHarianSalesController::class, 'autoSave'])->name('laporan.harian.autosave');
 
     // Todo admin sales
     Route::get('todo-administrasi', [TodoAdministrasiController::class, 'index'])->name('todo-administrasi.index');
@@ -856,6 +860,11 @@ Route::prefix('office')->group(function () {
     Route::get('/data-cuti', [OfficeController::class, 'dataCuti']);
     Route::get('/data-mengajar', [OfficeController::class, 'dataMengajar']);
     Route::get('/data-tagihan/{id}', [TagihanPerusahaanController::class, 'dataTagihan']);
+    Route::post('/store-hari-libur', [OfficeController::class, 'storeHariLibur'])->name('storeHariLibur');
+    Route::get('/data-hari-libur/{year}', [OfficeController::class, 'dataHariLibur']);
+    Route::get('/data-hari-libur/edit/{id}', [OfficeController::class, 'editHariLibur'])->name('editHariLibur');
+    Route::post('/data-hari-libur/update/{id}', [OfficeController::class, 'updateHariLibur'])->name('updateHariLibur');
+    Route::post('/data-hari-libur/delete/{id}', [OfficeController::class, 'deleteHariLibur'])->name('deleteHariLibur');
 
     // tagihan perusahaan
     Route::post('/store-tagihan', [TagihanPerusahaanController::class, 'storeTagihanPerusahaan'])->name('storeTagihanPerusahaan');
@@ -888,6 +897,7 @@ Route::prefix('dashboard-sla/{team}')->group(function () {
 });
 Route::get('/dashboard-sla/event/{mappingId}', [DashboardSLAController::class, 'dashboardEventSla']);
 Route::get('/dashboard-sla/digital', [DashboardSLAController::class, 'dashboardDigital']);
+Route::get('/dashboard/uptime/monitoring', [KPIDatabaseKPIController::class, 'UptimePresentase'])->name('dashboard.uptimeMonitoring');
 
 Route::prefix('office')
     ->name('office.')
@@ -1260,3 +1270,25 @@ Route::post('/jurnalakuntansi/store-manual/{id}', [JurnalAkuntansiController::cl
 Route::get('/jurnalakuntansi/{id}/edit', [JurnalAkuntansiController::class, 'edit'])->name('jurnalakuntansi.edit');
 Route::put('/jurnalakuntansi/{id}', [JurnalAkuntansiController::class, 'update'])->name('jurnalakuntansi.update');
 Route::post('/jurnalakuntansi/petty-cash', [JurnalAkuntansiController::class, 'storePettyCash'])->name('jurnalakuntansi.storePettyCash');
+Route::middleware(['auth'])->group(function () {
+    // Route Administrasi Project
+    // Route::post('/projects/{project}/administrasi', [ProjectAdministrationController::class, 'updateStage'])
+    //     ->name('projects.administrasi.update');
+    Route::get('/projects/administrasi/get-data', [ProjectAdministrationController::class, 'getAdministrasi'])->name('getAdministrasi');
+    Route::post('/projects/administrasi/{id}/update-stage', [ProjectAdministrationController::class, 'updateStage'])->name('administrasi.updateStage');
+    Route::resource('/projects/administrasi', ProjectAdministrationController::class);
+    
+    // Route Kanban Project
+    Route::get('/projects/kanban', [ProjectKanbanController::class, 'index'])->name('kanban.index');
+    Route::get('/projects/kanban/get-tasks', [ProjectKanbanController::class, 'getTasks']);
+    Route::get('/projects/kanban/{id}/team-members', [ProjectKanbanController::class, 'getTeamMembers']);
+    Route::post('/projects/kanban/{id}/assign-team', [ProjectKanbanController::class, 'assignTeam']);
+    
+    // CRUD Route ProjectTask
+    Route::post('/projects/kanban/tasks', [ProjectKanbanController::class, 'storeTask']);
+    Route::patch('/projects/kanban/tasks/{id}', [ProjectKanbanController::class, 'updateTask']);
+    Route::delete('/projects/kanban/tasks/{id}', [ProjectKanbanController::class, 'deleteTask']);
+    Route::patch('/projects/kanban/tasks/{task}/status', [ProjectKanbanController::class, 'updateStatus'])->name('tasks.status.update');
+    Route::post('/projects/kanban/tasks/{id}/activities', [ProjectKanbanController::class, 'storeActivity']);
+    Route::get('/projects/kanban/tasks/{id}/activities', [ProjectKanbanController::class, 'getActivities']);
+});

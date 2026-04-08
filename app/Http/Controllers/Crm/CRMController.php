@@ -12,6 +12,7 @@ use App\Models\Materi;
 use App\Models\Nilaifeedback;
 use App\Models\Peluang;
 use App\Models\PerbaikanKendaraan;
+use App\Models\perhitunganNetSales;
 use App\Models\Perusahaan;
 use App\Models\Peserta;
 use App\Models\pickupDriver;
@@ -319,7 +320,13 @@ class CRMController extends Controller
 
             // dd($topSpendSeg, $topKategoriMateri, $topVendors);
 
-            // 19. Data Checklist Milik Adm Sales
+            // 19 PA yg belum di approve
+            $PA = perhitunganNetSales::with(['rkm.materi', 'rkm.perusahaan', 'trackingNetSales', 'rkm.peluang'])
+                ->whereHas('trackingNetSales', function ($query) {
+                    $query->where('tracking', '!=', 'Selesai');
+                })->paginate(10);
+          
+            // 20. Data Checklist Milik Adm Sales
             $query = RKM::with(['checklist', 'materi', 'perusahaan', 'instruktur', 'sales']);
 
             // 🔍 SEARCH
@@ -347,7 +354,32 @@ class CRMController extends Controller
             // ✅ PAGINATION (baru di sini)
             $dataRKM = $query->paginate(10);
 
-            return view('crm.dashboard', compact('chartData', 'activitysales', 'best', 'profit', 'totalWin', 'totalLost', 'tahunDipilih', 'totalStatus', 'totalDaerah', 'sales', 'prospek', 'map', 'tanggal', 'mingguKeBulan', 'tahun', 'bulan', 'mingguKe', 'bulanTahun', 'tanggalRange', 'topSpendSeg', 'topKategoriMateri', 'topVendors', 'dataRKM'));
+            return view('crm.dashboard', compact(
+                'chartData',
+                'activitysales',
+                'best',
+                'profit',
+                'totalWin',
+                'totalLost',
+                'tahunDipilih',
+                'totalStatus',
+                'totalDaerah',
+                'sales',
+                'prospek',
+                'map',
+                'tanggal',
+                'mingguKeBulan',
+                'tahun',
+                'bulan',
+                'mingguKe',
+                'bulanTahun',
+                'tanggalRange',
+                'topSpendSeg',
+                'topKategoriMateri',
+                'topVendors',
+                'PA',
+                'dataRKM'
+            ));
         } else {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }

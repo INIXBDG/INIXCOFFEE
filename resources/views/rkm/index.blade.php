@@ -113,9 +113,7 @@
     </div>
     <div class="row justify-content-center">
         <div class="col-md-12 d-flex my-2 justify-content-end">
-            @can('Create RKM')
-                <a class="btn click-primary mx-1" href="{{ route('rkm.create') }}">Tambah RKM</a>
-            @endcan
+            
         </div>
         <div class="col-md-12">
             <div class="card" style="width: 100%">

@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Registration Form</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -494,6 +495,8 @@
     <form id="regis-form">
         <h3>Data Perusahaan</h3>
         <label>Nama Perusahaan:</label>
+        <input type="text" name="id_peluang" id="id_peluang" value="{{ $lead->id }}" hidden>
+        <input type="text" name="id_perusahaan" id="id_perusahaan" value="{{ $lead->perusahaan->id }}" hidden>
         <input type="text" id="nama-perusahaan" class="readonly" value="{{ $lead->perusahaan->nama_perusahaan ?? '-' }}"
             readonly>
         <label>Alamat:</label>
@@ -605,6 +608,8 @@
         });
 
         document.getElementById('preview-btn').addEventListener('click', () => {
+            const idPerusahaan = document.getElementById('id_perusahaan').value;
+            const idPeluang = document.getElementById('id_peluang').value;
             const namaPerusahaan = document.getElementById('nama-perusahaan').value;
             const alamat = document.getElementById('alamat').value;
             const pic = document.getElementById('pic').value;
@@ -638,6 +643,45 @@
                     </tr>
                 `;
             });
+
+            let deskripsiPeserta = pesertaRows.length > 0 
+            ? [...pesertaRows].map((row, index) => {
+                const nama = row.querySelector('.nama-peserta').value;
+                const kontak = row.querySelector('.kontak-peserta').value;
+                const harga = row.querySelector('.harga-peserta').value;
+
+                return `${index + 1}. ${nama} | ${kontak} | Rp ${parseInt(harga || 0).toLocaleString('id-ID')} ,`;
+            }).join('\n')
+            : 'Tidak ada peserta';
+
+            fetch('/crm/aktivitas/store/new', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
+                },
+                body: JSON.stringify({
+                    id_perusahaan: idPerusahaan,
+                    id_peluang: idPeluang,
+                    aktivitas: 'Form_Keluar',
+                    deskripsi: deskripsiPeserta,
+                    waktu_aktivitas: new Date().toISOString().split('T')[0],
+                    total: totalHarga,
+                })
+            })
+            .then(async res => {
+                const text = await res.text(); // ⬅️ ubah dulu ke text
+                console.log('RAW RESPONSE:', text);
+
+                try {
+                    const json = JSON.parse(text);
+                    console.log('JSON:', json);
+                } catch (e) {
+                    console.error('Bukan JSON, kemungkinan error Laravel');
+                }
+            })
+            .catch(err => console.error(err));
+
             pesertaHTML += `
                 <tr><th colspan="3">Total</th><td class="price-column">${totalHarga ? `Rp ${totalHarga.toLocaleString('id-ID')},00` : ''}</td></tr>
             `;
