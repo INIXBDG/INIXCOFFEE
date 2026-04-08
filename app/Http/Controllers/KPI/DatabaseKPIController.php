@@ -103,6 +103,70 @@ class DatabaseKPIController extends Controller
         ));
     }
 
+    public function UptimePresentase()
+    {
+        $now = Carbon::now();
+        $weekStart = $now->copy()->startOfWeek();
+        $weekEnd = $now->copy()->endOfWeek();
+        $monthStart = $now->copy()->startOfMonth();
+        $monthEnd = $now->copy()->endOfMonth();
+
+        // Coffee Week
+        $coffeeWeekTotal = activityLog::where('url', 'https://192.168.95.60:8001/')
+            ->whereBetween('created_at', [$weekStart, $weekEnd])
+            ->count();
+        $coffeeWeekUp = activityLog::where('status', '200')
+            ->where('url', 'https://192.168.95.60:8001/')
+            ->whereBetween('created_at', [$weekStart, $weekEnd])
+            ->count();
+        $coffeeWeekPercent = $coffeeWeekTotal > 0
+            ? ($coffeeWeekUp / $coffeeWeekTotal) * 100
+            : 0;
+
+        // Coffee Month
+        $coffeeMonthTotal = activityLog::where('url', 'https://192.168.95.60:8001/')
+            ->whereBetween('created_at', [$monthStart, $monthEnd])
+            ->count();
+        $coffeeMonthUp = activityLog::where('status', '200')
+            ->where('url', 'https://192.168.95.60:8001/')
+            ->whereBetween('created_at', [$monthStart, $monthEnd])
+            ->count();
+        $coffeeMonthPercent = $coffeeMonthTotal > 0
+            ? ($coffeeMonthUp / $coffeeMonthTotal) * 100
+            : 0;
+
+        // Latte Week
+        $latteWeekTotal = activityLog::where('url', 'https://192.168.95.60:8002/')
+            ->whereBetween('created_at', [$weekStart, $weekEnd])
+            ->count();
+        $latteWeekUp = activityLog::where('status', '200')
+            ->where('url', 'https://192.168.95.60:8002/')
+            ->whereBetween('created_at', [$weekStart, $weekEnd])
+            ->count();
+        $latteWeekPercent = $latteWeekTotal > 0
+            ? ($latteWeekUp / $latteWeekTotal) * 100
+            : 0;
+
+        // Latte Month
+        $latteMonthTotal = activityLog::where('url', 'https://192.168.95.60:8002/')
+            ->whereBetween('created_at', [$monthStart, $monthEnd])
+            ->count();
+        $latteMonthUp = activityLog::where('status', '200')
+            ->where('url', 'https://192.168.95.60:8002/')
+            ->whereBetween('created_at', [$monthStart, $monthEnd])
+            ->count();
+        $latteMonthPercent = $latteMonthTotal > 0
+            ? ($latteMonthUp / $latteMonthTotal) * 100
+            : 0;
+
+        return response()->json([
+            'coffee_week' => round($coffeeWeekPercent, 2),
+            'coffee_month' => round($coffeeMonthPercent, 2),
+            'latte_week' => round($latteWeekPercent, 2),
+            'latte_month' => round($latteMonthPercent, 2),
+        ]);
+    }
+
     public function getActivityChart()
     {
         try {
