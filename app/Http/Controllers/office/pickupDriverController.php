@@ -83,28 +83,7 @@ class pickupDriverController extends Controller
 
         $latestPerKendaraan = PerbaikanKendaraan::select('kendaraan')->selectRaw('MAX(id) as max_id')->groupBy('kendaraan');
 
-        $kendaraan = PerbaikanKendaraan::joinSub($latestPerKendaraan, 'latest', function ($join) {
-            $join->on('perbaikan_kendaraans.id', '=', 'latest.max_id');
-        })
-            ->where(function ($query) {
-                $query->where('type_condition', '!=', 'Kecelakaan')->orWhere('status', 'Selesai');
-            })
-            ->where(function ($query) {
-                $query->where('type_vehicle_condition', '!=', ['Kerusakan Berat', 'Kerusakan Total'])->orWhere('status', 'Selesai');
-            })
-            ->pluck('perbaikan_kendaraans.kendaraan');
-
-        if ($kendaraan->isEmpty()) {
-            $kendaraan = collect(['H1', 'Innova']);
-        }
-
-        if ($kendaraan->contains('Innova')) {
-            $kendaraan = $kendaraan->map(function ($item) {
-                return $item === 'Innova' ? 'Inova' : $item;
-            });
-        }
-
-        return view('office.pickupdriver.create', compact('dataDriver', 'budgetPerjalanan', 'kendaraan'));
+        return view('office.pickupdriver.create', compact('dataDriver', 'budgetPerjalanan'));
     }
 
     public function store(Request $request)

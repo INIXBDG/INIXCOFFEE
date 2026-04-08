@@ -52,9 +52,8 @@
                                 <div class="col-md-6">
                                     <select name="kendaraan" id="kendaraan" class="form-select" required>
                                         <option selected disabled>Pilih Kendaraan</option>
-                                        @foreach ($kendaraan as $data)
-                                            <option value="{{ $data }}">{{ $data }}</option>
-                                        @endforeach
+                                        <option value="Innova">Innova</option>
+                                        <option value="H1">H1</option>
                                     </select>
                                 </div>
                             </div>
