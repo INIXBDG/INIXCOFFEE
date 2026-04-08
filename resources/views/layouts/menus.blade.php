@@ -3070,37 +3070,37 @@
             };
 
 
-            loadUptimePercentage();
+            // loadUptimePercentage();
 
-            function loadUptimePercentage() {
-                const $content = $('#uptime-content');
-                const $loading = $('#uptime-loading');
+            // function loadUptimePercentage() {
+            //     const $content = $('#uptime-content');
+            //     const $loading = $('#uptime-loading');
 
-                $loading.removeClass('d-none');
-                $content.addClass('d-none');
+            //     $loading.removeClass('d-none');
+            //     $content.addClass('d-none');
 
-                $.ajax({
-                    url: "/activity-log/data",
-                    method: "GET",
-                    dataType: "json",
-                    success: function(response) {
-                        if (!response || typeof response !== 'object') {
-                            showError("Respons dari server tidak valid.");
-                            return;
-                        }
+            //     $.ajax({
+            //         url: "/activity-log/data",
+            //         method: "GET",
+            //         dataType: "json",
+            //         success: function(response) {
+            //             if (!response || typeof response !== 'object') {
+            //                 showError("Respons dari server tidak valid.");
+            //                 return;
+            //             }
 
-                        processService('coffee', response[services.coffee] || null);
+            //             processService('coffee', response[services.coffee] || null);
 
-                        processService('latte', response[services.latte] || null);
+            //             processService('latte', response[services.latte] || null);
 
-                        $loading.addClass('d-none');
-                        $content.removeClass('d-none');
-                    },
-                    error: function(xhr) {
-                        showError(`Koneksi gagal: Error ${xhr.status}`);
-                    }
-                });
-            }
+            //             $loading.addClass('d-none');
+            //             $content.removeClass('d-none');
+            //         },
+            //         error: function(xhr) {
+            //             showError(`Koneksi gagal: Error ${xhr.status}`);
+            //         }
+            //     });
+            // }
 
             function processService(type, data) {
                 // Prefix ID untuk elemen (coffee atau latte)
