@@ -1,6 +1,51 @@
 @extends('layouts.app')
 
 @section('content')
+    <div class="modal fade" id="modalExport" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form id="formExport" method="GET">
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="fas fa-filter me-2"></i>Filter Export Laporan
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Tanggal Mulai</label>
+                                <input type="date" name="start_date" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Tanggal Akhir</label>
+                                <input type="date" name="end_date" class="form-control">
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label">Tipe Outstandig</label>
+                                <select name="tipe_outstanding" class="form-select">
+                                    <option value="">Semua Outstanding</option>
+                                    <option value="Outstanding">Outstanding</option>
+                                    <option value="Outstanding PA">Outstanding PA</option>
+                                    <option value="Lunas">Lunas</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-success"
+                            formaction="{{ route('outstanding.export.excel') }}">
+                            <i class="fas fa-file-excel me-1"></i> Export Excel
+                        </button>
+                        <button type="submit" class="btn btn-danger"
+                            formaction="{{ route('outstanding.export.pdf') }}">
+                            <i class="fas fa-file-pdf me-1"></i> Export PDF
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
     <div class="container-fluid">
         <div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="spinnerModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
@@ -31,13 +76,39 @@
                         </div>
                     @endcan
                 </div>
-                <div class="modal fade" id="modalSinkron" tabindex="-1" role="dialog" aria-labelledby="modalSinkronLabel"
-                    aria-hidden="true">
+                    <div class="btn-group">
+                        <button class="btn btn-success dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-file-export me-1"></i> Export Laporan
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#modalExport">
+                                    <i class="fas fa-cog me-2"></i> Export dengan Filter
+                                </a>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ route('outstanding.export.excel') }}">
+                                    <i class="fas fa-file-excel text-success me-2"></i> Excel (Semua Data)
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ route('outstanding.export.pdf') }}">
+                                    <i class="fas fa-file-pdf text-danger me-2"></i> PDF (Semua Data)
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                <div class="modal fade" id="modalSinkron" tabindex="-1" role="dialog"
+                    aria-labelledby="modalSinkronLabel" aria-hidden="true">
                     <div class="modal-dialog" role="document">
                         <form action="{{ route('outstanding.singkronDataOutstanding') }}" method="GET">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title" id="modalSinkronLabel">Pilih Tanggal Untuk Singkron Outstanding
+                                    <h5 class="modal-title" id="modalSinkronLabel">Pilih Tanggal Untuk Singkron
+                                        Outstanding
                                     </h5>
                                     <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                                         <span aria-hidden="true">&times;</span>
@@ -46,12 +117,13 @@
                                 <div class="modal-body">
                                     <div class="form-group mb-3">
                                         <label for="tanggal_awal">Tanggal Awal Minggu</label>
-                                        <input type="date" class="form-control" id="tanggal_awal" name="tanggal_awal">
+                                        <input type="date" class="form-control" id="tanggal_awal"
+                                            name="tanggal_awal">
                                     </div>
                                     <div class="form-group mb-3">
                                         <label for="tanggal_akhir">Tanggal Akhir Minggu</label>
-                                        <input type="date" class="form-control" id="tanggal_akhir" name="tanggal_akhir"
-                                            readonly>
+                                        <input type="date" class="form-control" id="tanggal_akhir"
+                                            name="tanggal_akhir" readonly>
                                     </div>
 
                                     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
@@ -71,7 +143,8 @@
                                     </script>
                                 </div>
                                 <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                                    <button type="button" class="btn btn-secondary"
+                                        data-bs-dismiss="modal">Tutup</button>
                                     <button type="submit" class="btn btn-primary">Sinkron</button>
                                 </div>
                             </div>
@@ -138,7 +211,8 @@
                             <h3 class="card-title my-1">{{ __('Outstanding PA') }}</h3>
                             <div class="d-flex align-items-center">
                                 <label for="filterBulanPA" class="me-2 mb-0 text-nowrap fw-bold">Filter Bulan:</label>
-                                <input type="month" id="filterBulanPA" class="form-control form-control-sm w-auto" value="{{ date('Y-m') }}">
+                                <input type="month" id="filterBulanPA" class="form-control form-control-sm w-auto"
+                                    value="{{ date('Y-m') }}">
                             </div>
                         </div>
                         <table class="table table-striped" id="outstandingPaTable">
@@ -346,7 +420,7 @@
                             "data": null,
                             "render": function(data) {
                                 if (data.pic) {
-                                return data.pic;
+                                    return data.pic;
                                 } else {
                                     return "-";
                                 }
@@ -403,8 +477,10 @@
                                 var actions = "";
                                 actions += '@if (auth()->user()->can('Edit Outstanding') || auth()->user()->can('Delete Outstanding '))';
                                 actions += '<div class="dropdown">';
-                                actions += '<button class="btn dropdown-toggle text-white" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
-                                actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
+                                actions +=
+                                    '<button class="btn dropdown-toggle text-white" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
+                                actions +=
+                                    '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
                                 actions += `<a class="dropdown-item" href="/download/dokumen/${row.id}" target="_blank">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1">
                                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -412,20 +488,28 @@
                                                 <line x1="12" y1="15" x2="12" y2="3"></line>
                                             </svg> Download Dokumen </a>`;
                                 actions += '@can('Edit Outstanding')';
-                                actions += '<a class="dropdown-item" href="{{ url('/outstanding') }}/' + row.id + '/edit"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Edit</a>';
+                                actions +=
+                                    '<a class="dropdown-item" href="{{ url('/outstanding') }}/' + row
+                                    .id +
+                                    '/edit"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Edit</a>';
                                 actions += '@endcan';
                                 actions += '@can('Delete Outstanding')';
-                                actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/outstanding') }}/' + row.id + '" method="POST">';
+                                actions +=
+                                    '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/outstanding') }}/' +
+                                    row.id + '" method="POST">';
                                 actions += '@csrf';
                                 actions += '@method('DELETE')';
-                                actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
+                                actions +=
+                                    '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
                                 actions += '</form>';
                                 actions += '@endcan';
                                 actions += '</div>';
                                 actions += '</div>';
-                                actions += '@else';
+                                actions +=
+                                    '@else';
                                 actions += '<div class="dropdown">';
-                                actions += '<button class="btn dropdown-toggle disabled text-white" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
+                                actions +=
+                                    '<button class="btn dropdown-toggle disabled text-white" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
                                 actions += '</div>';
                                 actions += '@endif';
                                 return actions;
@@ -604,23 +688,33 @@
                                 var actions = "";
                                 actions += '@if (auth()->user()->can('Edit Outstanding') || auth()->user()->can('Delete Outstanding '))';
                                 actions += '<div class="dropdown">';
-                                actions += '<button class="btn dropdown-toggle text-white" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
-                                actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
+                                actions +=
+                                    '<button class="btn dropdown-toggle text-white" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
+                                actions +=
+                                    '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
                                 actions += '@can('Edit Outstanding')';
-                                actions += '<a class="dropdown-item" href="{{ url('/outstanding') }}/' + row.id + '/edit"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Edit</a>';
+                                actions +=
+                                    '<a class="dropdown-item" href="{{ url('/outstanding') }}/' + row
+                                    .id +
+                                    '/edit"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Edit</a>';
                                 actions += '@endcan';
                                 actions += '@can('Delete Outstanding')';
-                                actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/outstanding') }}/' + row.id + '" method="POST">';
+                                actions +=
+                                    '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/outstanding') }}/' +
+                                    row.id + '" method="POST">';
                                 actions += '@csrf';
                                 actions += '@method('DELETE')';
-                                actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
+                                actions +=
+                                    '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
                                 actions += '</form>';
                                 actions += '@endcan';
                                 actions += '</div>';
                                 actions += '</div>';
-                                actions += '@else';
+                                actions +=
+                                    '@else';
                                 actions += '<div class="dropdown">';
-                                actions += '<button class="btn dropdown-toggle disabled text-white" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
+                                actions +=
+                                    '<button class="btn dropdown-toggle disabled text-white" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
                                 actions += '</div>';
                                 actions += '@endif';
                                 return actions;
@@ -656,12 +750,10 @@
                         if (overDueDate > 180) {
                             $(row).css('background-color', '#872819');
                             $(row).css('color', 'white');
-                        }
-                        else if (overDueDate > 30) {
+                        } else if (overDueDate > 30) {
                             $(row).css('background-color', '#07b0ff');
                             $(row).css('color', 'white');
-                        }
-                        else {
+                        } else {
                             $(row).css('color', 'black');
                         }
                     }
@@ -733,11 +825,13 @@
                         {
                             "data": "id",
                             "render": function(data, type, row) {
-                                return '<a href="/outstanding/'+ data + '/detail" class="btn btn-sm btn-info text-white" onclick="console.log(' + data + ')">Detail</a>';
+                                return '<a href="/outstanding/' + data +
+                                    '/detail" class="btn btn-sm btn-info text-white" onclick="console.log(' +
+                                    data + ')">Detail</a>';
                             }
                         }
                     ],
-                    "createdRow": function (row) {
+                    "createdRow": function(row) {
                         $(row).css('background-color', '#FAB12F');
                         $(row).css('color', 'white');
                     },
