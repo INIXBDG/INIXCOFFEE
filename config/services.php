@@ -36,8 +36,8 @@ return [
         'secret' => env('FORUMIUM_SSO_SECRET'),
     ],
 
-// config/services.php
-'vapid' => [
-    'public_key' => env('VAPID_PUBLIC_KEY'),
-],
+    // config/services.php
+    'vapid' => [
+        'public_key' => env('VAPID_PUBLIC_KEY'),
+    ],
 ];

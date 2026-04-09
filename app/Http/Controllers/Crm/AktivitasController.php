@@ -77,7 +77,7 @@ class AktivitasController extends Controller
             $user = Auth::user();
             $allowedJabatan = ['Adm Sales', 'HRD', 'Finance & Accounting', 'GM', 'SPV Sales'];
 
-            $query = Aktivitas::with(['contact.perusahaan', 'peserta.perusahaan'])
+            $query = Aktivitas::with(['contact.perusahaan', 'peserta.perusahaan', 'perusahaanLangsung'])
                 ->select('id', 'id_sales', 'id_contact', 'id_peserta', 'aktivitas', 'pax', 'total', 'harga', 'deskripsi', 'waktu_aktivitas', 'created_at', 'foto_lokasi', 'longitude', 'latitude');
 
             if ($user->jabatan === 'Sales') {
@@ -117,6 +117,9 @@ class AktivitasController extends Controller
                                 ->orWhereHas('perusahaan', function ($q3) use ($searchValue) {
                                     $q3->where('nama_perusahaan', 'like', "%{$searchValue}%");
                                 });
+                        })
+                        ->orWhereHas('perusahaanLangsung', function ($q2) use ($searchValue) {
+                            $q2->where('nama_perusahaan', 'like', "%{$searchValue}%");
                         });
                 });
             }
@@ -165,19 +168,28 @@ class AktivitasController extends Controller
                     $namaKontak = null;
                     $namaPerusahaan = null;
                     $idContact = null;
-                    $relasi = $item->id_peserta
-                        ? $item->peserta
-                        : $item->contact;
-                    $perusahaan = $relasi?->perusahaan;
+                    $relasi = null;
+                    $perusahaan = null;
 
-                    if (!empty($item->id_peserta)) {
-                        $namaKontak = $item->peserta?->nama;
-                        $namaPerusahaan = $item->peserta?->perusahaan?->nama_perusahaan;
-                        $idContact = $item->id_peserta;
-                    } else {
-                        $namaKontak = $item->contact?->nama;
-                        $namaPerusahaan = $item->contact?->perusahaan?->nama_perusahaan;
+                    // Kondisi khusus untuk aktivitas PA
+                    if ($item->aktivitas === 'PA') {
+                        $perusahaan = $item->perusahaanLangsung; // Menggunakan relasi langsung ke Perusahaan
+                        $namaPerusahaan = $perusahaan?->nama_perusahaan;
                         $idContact = $item->id_contact;
+                    } else {
+                        // Kondisi standar selain aktivitas PA
+                        $relasi = $item->id_peserta ? $item->peserta : $item->contact;
+                        $perusahaan = $relasi?->perusahaan;
+
+                        if (!empty($item->id_peserta)) {
+                            $namaKontak = $item->peserta?->nama;
+                            $namaPerusahaan = $item->peserta?->perusahaan?->nama_perusahaan;
+                            $idContact = $item->id_peserta;
+                        } else {
+                            $namaKontak = $item->contact?->nama;
+                            $namaPerusahaan = $item->contact?->perusahaan?->nama_perusahaan;
+                            $idContact = $item->id_contact;
+                        }
                     }
 
                     if ($item->aktivitas === 'DB') {
@@ -447,16 +459,18 @@ class AktivitasController extends Controller
     {
         $rules = [
             'id_perusahaan'   => 'nullable|integer',
+            'id_peluang'      => 'nullable|integer',
             'id_contact'      => 'nullable',
             'aktivitas'       => 'required|in:Call,Email,Visit,Meet,Incharge,PA,PI,DB,Telemarketing,Form_Masuk,Form_Keluar',
             'deskripsi'       => 'nullable|string',
             'waktu_aktivitas' => 'required|date',
+            'total'           => 'nullable|numeric',
             'foto_lokasi'     => 'nullable|string',
             'latitude'        => 'nullable|string',
             'longitude'       => 'nullable|string',
         ];
 
-        if ($request->aktivitas !== 'Visit') {
+        if (!in_array($request->aktivitas, ['Visit', 'Form_Keluar', 'Form_Masuk'])) {
             $rules['id_contact'] = 'required';
         }
 
@@ -551,10 +565,33 @@ class AktivitasController extends Controller
 
         try {
             $aktivitas = Aktivitas::create($aktivitasData);
-            return back()->with(['message' => 'Aktivitas Visit berhasil direkam dengan foto dan lokasi.']);
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Aktivitas berhasil disimpan',
+                    'data' => $aktivitas
+                ]);
+            }
+
+            return back()->with([
+                'message' => 'Aktivitas berhasil disimpan'
+            ]);
         } catch (\Exception $e) {
-            Log::error('Gagal simpan aktivitas', ['error' => $e->getMessage()]);
-            return back()->withErrors(['db' => 'Gagal menyimpan data ke database.']);
+            Log::error('Gagal simpan aktivitas', [
+                'error' => $e->getMessage(),
+                'data' => $aktivitasData
+            ]);
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal menyimpan aktivitas'
+                ], 500);
+            }
+
+            return back()->withErrors([
+                'db' => 'Gagal menyimpan data'
+            ]);
         }
     }
 

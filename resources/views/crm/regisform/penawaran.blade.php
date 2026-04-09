@@ -463,6 +463,9 @@
         <input type="number" id="ppn-rate" value="11" min="0" max="100" step="0.1" required>
         <label><input type="checkbox" id="include-ppn" checked> Termasuk PPN</label>
         <div id="pelatihan-list"></div>
+        <div style="text-align: right; font-weight: bold; margin-top: 10px; margin-bottom: 10px; font-size: 16px;">
+            Total Keseluruhan: <span id="grand-total">Rp 0,-</span>
+        </div>
         <select name="listexam" id="exam" style="display: none">
             @foreach ($exam as $item)
                 <option value="{{ $item->nama_exam }}">{{ $item->nama_exam }}</option>
@@ -543,6 +546,7 @@
 
         <button type="button" id="preview-btn">Generate PDF</button>
         <button type="button" id="download-word">Generate WORD</button>
+        <button type="button" id="btn-create-prospect" style="background: #28a745; color: white; border: none; cursor: pointer;">Buat Prospect & Aktivitas</button>
     </form>
 
     <div id="preview-modal">
@@ -729,13 +733,17 @@
                         <option value="Inhouse">Inhouse</option>
                     </select>
                     <input type="number" class="durasi-pelatihan" placeholder="Durasi" min="1" required style="width: 80px;">
+                    <label style="font-size: 12px; display: flex; align-items: center; gap: 2px; cursor: pointer;">
+                        <input type="checkbox" class="use-pax" checked> Pax
+                    </label>
+                    <input type="number" class="pax-pelatihan" placeholder="Jml" min="1" value="" required style="width: 50px;">
                     <input type="date" class="tanggal-awal-pelatihan" required style="flex: 1;">
                 </div>
 
                 <input type="text" class="tanggal-pelatihan" readonly placeholder="Tanggal Akhir Otomatis" style="margin-top: 5px;">
                 <input type="text" class="harga-pelatihan" placeholder="Harga (Rp)" required style="margin-top: 5px;">
                 <input type="text" class="ppn-amount" readonly placeholder="PPN Amount" style="margin-top: 5px;">
-                <button type="button" onclick="this.parentElement.remove()" style="background: #ff4d4d; color: white; border: none; cursor: pointer;">Hapus Baris</button>
+                <button type="button" onclick="this.parentElement.remove(); updateGrandTotal();" style="background: #ff4d4d; color: white; border: none; cursor: pointer;">Hapus Baris</button>
             `;
 
             document.getElementById('pelatihan-list').appendChild(row);
@@ -765,6 +773,7 @@
             const materiTextInput = row.querySelector(
                 '.materi-text'); // Input baru untuk nama materi yg di customize
             const durasiInput = row.querySelector('.durasi-pelatihan');
+            const paxInput = row.querySelector('.pax-pelatihan');
             const tanggalAwalInput = row.querySelector('.tanggal-awal-pelatihan');
             const tanggalPelatihanInput = row.querySelector('.tanggal-pelatihan');
             const hargaInput = row.querySelector('.harga-pelatihan');
@@ -772,10 +781,21 @@
             const hargaExamInput = row.querySelector('.harga-exam');
 
             const metodeSelect = row.querySelector('.metode-select');
+            const usePaxCheckbox = row.querySelector('.use-pax');
 
             metodeSelect.addEventListener('change', () => {
                 updateFasilitasDanKeuntunganBasedOnMetode();
             });
+
+            usePaxCheckbox.addEventListener('change', function() {
+                paxInput.disabled = !this.checked;
+                if (!this.checked) {
+                    paxInput.value = ''; // Kosongkan input jika tidak menggunakan pax
+                }
+                updatePPN(); // Kalkulasi ulang total
+            });
+
+            paxInput.addEventListener('input', updatePPN); // Memicu pembaruan saat pax diketik
 
             function updatePPN() {
                 const ppnRate = parseFloat(document.getElementById('ppn-rate').value) || 0;
@@ -791,9 +811,11 @@
                 } = calculatePriceWithPPN(totalBeforePPN, ppnRate, includePPN);
 
                 ppnAmountInput.value = formatRupiah(ppnAmount);
+                updateGrandTotal(); // Memanggil pembaruan total keseluruhan
             }
 
             hargaInput.addEventListener('input', updatePPN);
+            hargaExamInput.addEventListener('input', updatePPN); // Tambahan pemicu harga exam
             document.getElementById('ppn-rate').addEventListener('input', updatePPN);
             document.getElementById('include-ppn').addEventListener('change', updatePPN);
 
@@ -835,6 +857,30 @@
                 }
             });
         });
+
+        // Fungsi untuk menghitung total keseluruhan
+        function updateGrandTotal() {
+            let grandTotal = 0;
+            const ppnRate = parseFloat(document.getElementById('ppn-rate').value) || 0;
+            const includePPN = document.getElementById('include-ppn').checked;
+
+            document.querySelectorAll('.pelatihan-row').forEach(row => {
+                const hargaPelatihan = parseFloat(row.querySelector('.harga-pelatihan').value) || 0;
+                const hargaExamRaw = row.querySelector('.harga-exam').value.replace(/[^0-9]/g, '') || '0';
+                const hargaExam = parseFloat(hargaExamRaw) || 0;
+
+                const usePax = row.querySelector('.use-pax').checked;
+                const paxVal = row.querySelector('.pax-pelatihan').value;
+                const paxInt = usePax ? (parseInt(paxVal) || 1) : 1;
+
+                const totalBeforePPN = hargaPelatihan + hargaExam;
+                const { total } = calculatePriceWithPPN(totalBeforePPN, ppnRate, includePPN);
+
+                grandTotal += (total * paxInt);
+            });
+
+            document.getElementById('grand-total').innerText = formatRupiah(grandTotal);
+        }
 
         // Fungsi untuk menambahkan baris fasilitas
         function addFasilitasRow(value = '') {
@@ -921,11 +967,19 @@
                 return;
             }
 
-            // Proses pelatihan
             const pelatihanRows = document.querySelectorAll('.pelatihan-row');
             let pelatihanHTML = '';
             let isPelatihanValid = true;
             let hasOnline = false;
+            let grandTotalPDF = 0;
+
+            // Pra-pengecekan: apakah ada minimal 1 baris yang menggunakan Pax
+            let showPaxColumn = false;
+            pelatihanRows.forEach(row => {
+                if (row.querySelector('.use-pax').checked) {
+                    showPaxColumn = true;
+                }
+            });
 
             pelatihanRows.forEach(row => {
                 const materi = row.querySelector('.materi-text').value || '';
@@ -939,6 +993,11 @@
 
                 const durasiVal = row.querySelector('.durasi-pelatihan').value;
                 const durasi = durasiVal ? `${durasiVal} Hari` : '';
+                const usePax = row.querySelector('.use-pax').checked;
+                const paxVal = row.querySelector('.pax-pelatihan').value || '1';
+                const paxInt = usePax ? (parseInt(paxVal) || 1) : 1;
+                const pax = usePax ? `${paxVal} Orang` : `1 Orang`;
+                const paxDisplay = usePax ? `${paxVal} Orang` : '';
                 const tanggal = row.querySelector('.tanggal-pelatihan').value || '';
 
                 const hargaPelatihan = parseFloat(row.querySelector('.harga-pelatihan').value) || 0;
@@ -951,19 +1010,24 @@
                     total
                 } = calculatePriceWithPPN(totalBeforePPN, ppnRate, includePPN);
 
+                grandTotalPDF += (total * paxInt); // Akumulasi total berdasarkan jumlah pax
+
                 if (!materi || !durasi || !tanggal || !hargaPelatihan) {
                     isPelatihanValid = false;
                     return;
                 }
 
-                pelatihanHTML += `
+                const paxTd = showPaxColumn ? `<td>${paxDisplay}</td>` : '';
+
+            pelatihanHTML += `
                     <tr>
                         <td>${materi}</td>
                         <td>${metode}</td>
                         <td>${examDisplay}</td>
                         <td>${durasi}</td>
+                        ${paxTd}
                         <td>${tanggal}</td>
-                        <td>${formatRupiah(total)}</td>
+                        <td>${formatRupiah(total * paxInt)}</td>
                     </tr>
                 `;
             });
@@ -1072,12 +1136,13 @@
             } catch (e) { showExamColumn = true; }
 
             let tableHeader = `
-                <th style="width: 27%;">Materi Pelatihan</th>
+                <th style="width: 25%;">Materi Pelatihan</th>
                 <th style="width: 10%;">Metode</th>
-                ${showExamColumn ? '<th style="width: 20%;">Exam</th>' : ''}
-                <th style="width: 15%;">Durasi</th>
+                ${showExamColumn ? '<th style="width: 15%;">Exam</th>' : ''}
+                <th style="width: 10%;">Durasi</th>
+                ${showPaxColumn ? '<th style="width: 8%;">Pax</th>' : ''}
                 <th style="width: 15%;">Tanggal</th>
-                <th style="width: 13%;">Harga ${includePPN ? `(PPN ${ppnRate}%)` : ''}</th>
+                <th style="width: 17%;">Harga ${includePPN ? `(PPN ${ppnRate}%)` : ''}</th>
             `;
 
             let pelatihanHTMLMod = pelatihanHTML;
@@ -1095,6 +1160,16 @@
                     pelatihanHTMLMod = Array.from(rows).map(r => r.outerHTML).join('');
                 } catch (e) {}
             }
+
+            let colSpanTotal = 4;
+            if (showExamColumn) colSpanTotal++;
+            if (showPaxColumn) colSpanTotal++;
+            pelatihanHTMLMod += `
+                <tr>
+                    <td colspan="${colSpanTotal}" style="text-align: right; font-weight: bold;">Grand Total Keseluruhan</td>
+                    <td style="font-weight: bold;">${formatRupiah(grandTotalPDF)}</td>
+                </tr>
+            `;
 
             let firstPageContent = `
                 <div class="container">
@@ -1313,6 +1388,7 @@
                     harga_exam: row.querySelector('.harga-exam').value,
                     metode: row.querySelector('.metode-select').value,
                     durasi: row.querySelector('.durasi-pelatihan').value,
+                    pax: row.querySelector('.pax-pelatihan').value || '1',
                     tanggal_awal: row.querySelector('.tanggal-awal-pelatihan').value,
                     tanggal: row.querySelector('.tanggal-pelatihan').value,
                     harga: row.querySelector('.harga-pelatihan').value
@@ -1386,6 +1462,78 @@
             } catch (error) {
                 console.error('Error:', error);
                 alert('Terjadi kesalahan saat generate Word: ' + error.message);
+            }
+        });
+
+        document.getElementById('btn-create-prospect').addEventListener('click', async () => {
+            const idPerusahaan = document.getElementById('perusahaan').value;
+            if (!idPerusahaan) {
+                alert('Harap pilih Perusahaan terlebih dahulu.');
+                return;
+            }
+
+            const noSurat = document.getElementById('no-surat').value || '-';
+            const ppnRate = parseFloat(document.getElementById('ppn-rate').value) || 0;
+            const includePPN = document.getElementById('include-ppn').checked;
+            const rows = document.querySelectorAll('.pelatihan-row');
+
+            const dataPelatihan = [];
+
+            rows.forEach((row) => {
+                const materiText = row.querySelector('.materi-text').value || 'Materi Tidak Diketahui';
+                const materiId = row.querySelector('.materi-select').value || null; // Ekstraksi ID Materi
+                const metode = row.querySelector('.metode-select').value || '-';
+                const pax = parseInt(row.querySelector('.pax-pelatihan').value) || 1;
+                const durasi = row.querySelector('.durasi-pelatihan').value || '-';
+                const tanggalAwal = row.querySelector('.tanggal-awal-pelatihan').value || ''; // Ekstraksi tanggal awal
+
+                const hargaPelatihan = parseFloat(row.querySelector('.harga-pelatihan').value) || 0;
+                const hargaExamRaw = row.querySelector('.harga-exam').value.replace(/[^0-9]/g, '') || '0';
+                const hargaExam = parseFloat(hargaExamRaw) || 0;
+
+                const totalBeforePPN = hargaPelatihan + hargaExam;
+                const { total } = calculatePriceWithPPN(totalBeforePPN, ppnRate, includePPN);
+                const subTotal = total * pax;
+                const examName = row.querySelector('.exam-select').value || '-'; // Ambil data exam
+
+                dataPelatihan.push({
+                    materi_id: materiId,
+                    materi_text: materiText,
+                    metode_kelas: metode,
+                    exam: examName,
+                    pax: pax,
+                    tanggal_awal: tanggalAwal,
+                    durasi: durasi,
+                    harga: subTotal
+                });
+            });
+
+            const payload = {
+                _token: "{{ csrf_token() }}",
+                id_contact: idPerusahaan,
+                no_surat: noSurat,
+                pelatihan: dataPelatihan
+            };
+
+            try {
+                const response = await fetch("{{ route('crm.store.prospect.penawaran') }}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    alert('Prospect, RKM, dan Aktivitas berhasil dibuat untuk masing-masing pelatihan!');
+                } else {
+                    alert('Gagal: ' + (result.message || 'Terjadi kesalahan pada server.'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan jaringan.');
             }
         });
     </script>

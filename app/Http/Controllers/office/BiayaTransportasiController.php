@@ -34,10 +34,10 @@ class BiayaTransportasiController extends Controller
         $validated = $request->validate([
             'id_pickup_driver' => 'required|exists:pickup_drivers,id',
             'biaya' => 'required|array|min:1',
-            'biaya.*.tipe' => 'required|in:BBM,TOL,Parkir,Lainnya',
+            'biaya.*.tipe' => 'required|in:BBM,TOL,Parkir,Lainnya,Budget Lebih',
             'biaya.*.harga' => 'required|numeric|min:500',
-            'biaya.*.bukti' => 'required|image',
-            'biaya.*.keterangan' => 'nullable|string',
+            'biaya.*.bukti' => 'required|image|mimes:jpg,jpeg,png|max:2048',
+            'biaya.*.keterangan' => 'nullable|string|max:255',
         ]);
 
         DB::transaction(function () use ($validated, $request) {
@@ -49,7 +49,7 @@ class BiayaTransportasiController extends Controller
             ]);
 
             foreach ($validated['biaya'] as $index => $item) {
-                $path = $request->file("biaya.$index.bukti")->store('biaya_transportasi_driver', 'public');
+                $path = $request->file("biaya.$index.bukti")?->store('biaya_transportasi_driver', 'public');
 
                 $biaya = BiayaTransportasiDriver::create([
                     'id_karyawan' => Auth::id(),
@@ -61,7 +61,7 @@ class BiayaTransportasiController extends Controller
                     'keterangan' => $item['keterangan'] ?? null,
                 ]);
 
-                if (!$pengajuan->invoice) {
+                if (!$pengajuan->invoice && $path) {
                     $pengajuan->update(['invoice' => $path]);
                 }
 
@@ -120,22 +120,60 @@ class BiayaTransportasiController extends Controller
 
     public function get()
     {
-        $data = BiayaTransportasiDriver::with(['PengajuanBarang', 'pengajuanBarang.tracking', 'karyawan', 'pickupDriver.karyawan', 'pickupDriver.detailPickupDriver'])
+        $data = BiayaTransportasiDriver::with(['pengajuanBarang.tracking', 'karyawan', 'pickupDriver.karyawan', 'pickupDriver.detailPickupDriver'])
             ->orderBy('id_pickup_driver')
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return response()->json(['data' => $data]);
+        $transformed = $data->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'id_karyawan' => $item->id_karyawan,
+                'id_pickup_driver' => $item->id_pickup_driver,
+                'id_pengajuan_barang' => $item->id_pengajuan_barang,
+                'tipe' => $item->tipe,
+                'harga' => $item->harga,
+                'bukti' => $item->bukti,
+                'keterangan' => $item->keterangan,
+                'created_at' => $item->created_at,
+                'updated_at' => $item->updated_at,
+
+                'pengajuan_barang' => $item->pengajuanBarang
+                    ? [
+                        'id' => $item->pengajuanBarang->id,
+                        'tracking' => $item->pengajuanBarang->tracking
+                            ? [
+                                'tracking' => $item->pengajuanBarang->tracking->tracking,
+                            ]
+                            : null,
+                    ]
+                    : null,
+
+                'pickup_driver' => $item->pickupDriver
+                    ? [
+                        'id' => $item->pickupDriver->id,
+                        'karyawan' => $item->pickupDriver->karyawan
+                            ? [
+                                'nama_lengkap' => $item->pickupDriver->karyawan->nama_lengkap,
+                            ]
+                            : null,
+                        'detail_pickup_driver' => $item->pickupDriver->detailPickupDriver ? $item->pickupDriver->detailPickupDriver->map(fn($d) => ['lokasi' => $d->lokasi]) : [],
+                    ]
+                    : null,
+            ];
+        });
+
+        return response()->json(['data' => $transformed]);
     }
 
     public function update(Request $request, $id_pickup_driver)
     {
         $validated = $request->validate([
             'items' => 'required|array|min:1',
-            'items.*.tipe' => 'required|in:BBM,TOL,Parkir,Lainnya',
+            'items.*.tipe' => 'required|in:BBM,TOL,Parkir,Lainnya,Budget Lebih',
             'items.*.harga' => 'required|numeric|min:500',
-            'items.*.keterangan' => 'nullable|string',
-            'items.*.bukti' => 'nullable|image|max:2048',
+            'items.*.keterangan' => 'nullable|string|max:255',
+            'items.*.bukti' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
         $existingItems = BiayaTransportasiDriver::where('id_pickup_driver', $id_pickup_driver)->where('id_karyawan', Auth::id())->get();
@@ -159,7 +197,9 @@ class BiayaTransportasiController extends Controller
                         ];
 
                         if ($request->hasFile("items.$index.bukti")) {
-                            Storage::disk('public')->delete($biaya->bukti);
+                            if ($biaya->bukti) {
+                                Storage::disk('public')->delete($biaya->bukti);
+                            }
                             $updateData['bukti'] = $request->file("items.$index.bukti")->store('biaya_transportasi_driver', 'public');
                         }
 
@@ -194,7 +234,7 @@ class BiayaTransportasiController extends Controller
                     $biaya = BiayaTransportasiDriver::create($newBiayaData);
                     $itemIdsToKeep[] = $biaya->id;
 
-                    $pengajuan = $existingItems->first()->pengajuanBarang;
+                    $pengajuan = $existingItems->first()?->pengajuanBarang;
 
                     if ($pengajuan) {
                         detailPengajuanBarang::create([
@@ -211,7 +251,9 @@ class BiayaTransportasiController extends Controller
             $itemsToDelete = $existingItems->whereNotIn('id', $itemIdsToKeep);
 
             foreach ($itemsToDelete as $item) {
-                Storage::disk('public')->delete($item->bukti);
+                if ($item->bukti) {
+                    Storage::disk('public')->delete($item->bukti);
+                }
                 $item->delete();
 
                 if ($item->pengajuanBarang) {
@@ -231,15 +273,15 @@ class BiayaTransportasiController extends Controller
 
     public function destroy($id_pickup_driver)
     {
-        $items = BiayaTransportasiDriver::where('id_pickup_driver', $id_pickup_driver)->where('id_karyawan', Auth::id())->with('pengajuanBarang')->get();
-
-        abort_if($items->isEmpty(), 403, 'Data tidak ditemukan atau tidak memiliki akses.');
+        $items = BiayaTransportasiDriver::where('id_pickup_driver', $id_pickup_driver)->with('pengajuanBarang')->get();
 
         DB::transaction(function () use ($items) {
             $pengajuanIds = [];
 
             foreach ($items as $item) {
-                Storage::disk('public')->delete($item->bukti);
+                if ($item->bukti) {
+                    Storage::disk('public')->delete($item->bukti);
+                }
                 $item->delete();
 
                 if ($item->pengajuanBarang) {

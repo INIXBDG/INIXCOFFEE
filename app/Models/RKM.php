@@ -34,7 +34,9 @@ class RKM extends Model
         'tahun',
         'isi_pax',
         'makanan',
-        'pdf_peserta'
+        'pdf_peserta',
+        'deleted_at',
+        'deleted_by',
     ];
     protected $dates = ['tanggal_awal', 'tanggal_akhir'];
 
@@ -43,6 +45,11 @@ class RKM extends Model
         return $this->hasMany(perhitunganNetSales::class, 'id_rkm', 'id');
     }
 
+    public function checklist()
+    {
+        return $this->hasOne(checklistRKM::class, 'id_rkm');
+    }
+    
     public function outstanding()
     {
         return $this->hasOne(outstanding::class, 'id_rkm', 'id');

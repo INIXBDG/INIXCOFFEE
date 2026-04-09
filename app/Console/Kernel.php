@@ -245,6 +245,10 @@ class Kernel extends ConsoleKernel
 
         // update tagihan Perusahaan
         $schedule->command('app:tagihan-perusahaan-command')->daily();
+
+        // update libur nasional
+        $schedule->command('app:generate-libur-nasional')->daily();
+    
     }
     /**
      * Register the commands for the application.

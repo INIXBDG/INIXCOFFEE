@@ -138,9 +138,9 @@
                                     <p class="mt-2 text-muted">Loading data...</p>
                                 </div>
                             </div>
-                            <button class="btn btn-outline-primary btn-sm w-100">
+                            {{-- <button class="btn btn-outline-primary btn-sm w-100">
                                 <i class="fa-solid fa-message me-1"></i> Jadwalkan Coaching
-                            </button>
+                            </button> --}}
                         </div>
                     </div>
                 </div>
@@ -285,7 +285,10 @@
                         '<span class="badge bg-danger-subtle text-danger">⚠️ Perlu Bimbingan</span>' : '');
 
                 html += `
-                <div class="p-3 mb-3 rounded-3 shadow-sm ${bgColor}">
+                <div 
+                    class="p-3 mb-3 rounded-3 shadow-sm ${bgColor} clickable-item"
+                    onclick="handleClickCheck(${emp.id_karyawan})" 
+                    style="cursor: pointer;">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <strong>${emp.nama}</strong><br>
@@ -301,6 +304,10 @@
             });
 
             $('#employeeList').html(html);
+        }
+
+        function handleClickCheck(karyawanId) {
+            window.location.href = "{{ route('kpi.overview.indexPersonal') }}/" + karyawanId;
         }
 
         function updateLowPerformanceList(employees) {

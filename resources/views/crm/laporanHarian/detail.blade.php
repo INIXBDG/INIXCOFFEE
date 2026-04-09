@@ -26,14 +26,14 @@
 
         <div class="card-body">
 
-            <form method="POST" action="{{ route('laporan.harian.update', $laporan->id) }}" enctype="multipart/form-data">
+            <form class="auto-save" method="POST" action="{{ route('laporan.harian.update', $laporan->id) }}" enctype="multipart/form-data">
                 @csrf
-                @method('PUT')
+                @method('POST')
 
                 <div class="row g-3"> 
 
                     <div class="col-md-6">
-                        <label class="form-label">Topik</label>
+                        <label class="form-label">Topik <span class="text-danger">*</span></label>
                         <input type="text" name="topic" class="form-control" value="{{ $laporan->topic }}">
                     </div>
 
@@ -108,7 +108,7 @@
 
                 </div>
 
-                <div class="row mt-4">
+                <div class="row mt-4 justify-content-between col-md-12">
 
                     <div class="col-md-4">
                         <label class="form-label">Jenis Catatan Lainnya</label>
@@ -118,6 +118,12 @@
                             <option value="sales">Catatan Untuk Sales</option>
                             <option value="client">Catatan Untuk Client</option>
                         </select>
+                    </div>
+
+                    <div class="col-md-2 mt-4 text-end">
+                        <button type="button" class="btn btn-info" id="autoSaveBtn" disabled>
+                            <i class="bi bi-cloud-arrow-up me-1"></i>Simpan Draf
+                        </button>
                     </div>
 
                 </div>
@@ -158,7 +164,7 @@
                                     </div>
 
                                     <div class="col-md-1 d-flex align-items-center">
-                                        <button type="button" class="btn btn-danger remove-sales w-100">
+                                        <button type="button" class="btn btn-danger remove-sales w-100" data-catatan-id="{{ $catatan->id }}">
                                             Hapus
                                         </button>
                                     </div>
@@ -221,7 +227,7 @@
                                     </div>
 
                                     <div class="col-md-1 d-flex align-items-center">
-                                        <button type="button" class="btn btn-danger remove-client w-100">
+                                        <button type="button" class="btn btn-danger remove-client w-100" data-catatan-id="{{ $catatan->id }}">
                                             Hapus
                                         </button>
                                     </div>
@@ -247,7 +253,7 @@
 
                 <div class="mt-4 d-flex justify-content-end gap-2">
                     <a href="{{ url()->previous() }}" class="btn btn-secondary">Kembali</a>
-                    <button type="submit" class="btn btn-primary">Simpan</button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">Simpan</button>
                 </div>
 
             </form>
@@ -314,25 +320,38 @@
             width: '100%'
         });
 
+        const initialJenisCatatan = `{{ 
+            $laporan->catatanClient->count() > 0 
+                ? 'client' 
+                : ($laporan->catatanSales->count() > 0 ? 'sales' : '') 
+        }}`;
 
-        // Toggle jenis catatan
-        $('#jenis_catatan').change(function(){
+        if (initialJenisCatatan !== '') {
+            $('#jenis_catatan').val(initialJenisCatatan).trigger('change');
+        }
 
-            let jenis = $(this).val();
-
-            if(jenis == 'sales'){
-
+        function toggleJenisCatatan(jenis) {
+            if (jenis === 'sales') {
                 $('#section-sales').show();
                 $('#section-client').hide();
-
-            } 
-            else if(jenis == 'client'){
-
+            } else if (jenis === 'client') {
                 $('#section-client').show();
                 $('#section-sales').hide();
-
+            } else {
+                $('#section-sales, #section-client').hide();
             }
+        }
 
+        // Set initial value
+        if (initialJenisCatatan !== '') {
+            $('#jenis_catatan').val(initialJenisCatatan);
+            toggleJenisCatatan(initialJenisCatatan);
+        }
+
+        // On change
+        $('#jenis_catatan').on('change', function () {
+            let jenis = $(this).val();
+            toggleJenisCatatan(jenis);
         });
 
 
@@ -441,6 +460,156 @@
                 $('#client-wrapper').hide();
             }
 
+        });
+
+        // Autosave functionality
+        let momId = {{ $laporan->id }}; // Set ID dari laporan yang ada
+        let timeout = null;
+        let hasChanged = false;
+        let isAutoSaving = false;
+
+        // Fungsi untuk validasi autosave (hanya topic)
+        function isValidAutoSave() {
+            let topic = $('input[name="topic"]').val();
+            
+            // Topic HARUS terisi sebagai persyaratan utama
+            if (!topic || topic.trim() === '') {
+                return false;
+            }
+            
+            return true;
+        }
+
+        // Fungsi untuk validasi form submit - cek semua field required
+        function isFormValid() {
+            const topic = $('input[name="topic"]').val();
+            const tanggalPelaksanaan = $('input[name="tanggal_pelaksanaan"]').val();
+            const waktuPelaksanaan = $('input[name="waktu_pelaksanaan"]').val();
+            const tempatMedia = $('input[name="tempat_or_media"]').val();
+            const jumlahHadir = $('input[name="jumlah_peserta_hadir"]').val();
+            const jenisMeeting = $('select[name="jenis_meeting"]').val();
+            const pic = $('select[name="pic"]').val();
+
+            // Validasi semua field required
+            if (!topic || topic.trim() === '') return false;
+            if (!tanggalPelaksanaan || tanggalPelaksanaan.trim() === '') return false;
+            if (!waktuPelaksanaan || waktuPelaksanaan.trim() === '') return false;
+            if (!tempatMedia || tempatMedia.trim() === '') return false;
+            if (!jumlahHadir || jumlahHadir.trim() === '' || parseInt(jumlahHadir) < 1) return false;
+            if (!jenisMeeting || jenisMeeting.trim() === '') return false;
+            if (!pic || pic.trim() === '') return false;
+
+            return true;
+        }
+
+        // Update status button submit
+        function updateSubmitButtonState() {
+            let isValid = isFormValid();
+            $('#submitBtn').prop('disabled', !isValid);
+        }
+
+        function updateAutoSaveButtonState() {
+            let isValid = isValidAutoSave();
+            $('#autoSaveBtn').prop('disabled', !isValid);
+        }
+
+        // Monitor perubahan di semua field required
+        $('input[name="topic"], input[name="tanggal_pelaksanaan"], input[name="waktu_pelaksanaan"], input[name="tempat_or_media"], input[name="jumlah_peserta_hadir"], select[name="jenis_meeting"], select[name="pic"]').on('change input', function() {
+            updateSubmitButtonState();
+            updateAutoSaveButtonState();
+        });
+
+        // Initial state
+        updateSubmitButtonState();
+        updateAutoSaveButtonState();
+
+        $('.auto-save').on('input', function () {
+            hasChanged = true;
+
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                if (!isAutoSaving && isValidAutoSave()) {
+                    console.log('Auto-saving...');
+                    autoSave();
+                    hasChanged = false;
+                } else {
+                    console.log('Belum memenuhi syarat autosave atau sedang autosave');
+                }
+            }, 5000);
+        });
+
+        function autoSave() {
+            // Cegah double request
+            if (isAutoSaving) {
+                console.log('Auto-save sedang berjalan, skip request...');
+                return;
+            }
+
+            isAutoSaving = true;
+            let formData = $('.auto-save').serializeArray();
+
+            if (momId) {
+                formData.push({ name: 'id', value: momId });
+            }
+
+            console.log('Data untuk auto-save:', formData);
+
+            $.ajax({
+                url: "{{ route('laporan.harian.autosave') }}",
+                method: 'POST',
+                data: $.param(formData),
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function (response) {
+                    if (response.success) {
+                        console.log('Laporan diperbarui, ID:', response.id);
+                        showNotification('Draf berhasil diperbarui', 'success');
+                    }
+                    isAutoSaving = false;
+                },
+                error: function (error) {
+                    console.error('Auto-save failed:', error);
+                    showNotification('Gagal menyimpan draf', 'error');
+                    isAutoSaving = false;
+                }
+            });
+        }
+
+        // Manual trigger auto save button
+        $('#autoSaveBtn').click(function() {
+            if (isValidAutoSave()) {
+                console.log('Manual auto-save triggered');
+                autoSave();
+            }
+        });
+
+        function showNotification(message, type) {
+            let alertClass = type === 'success' ? 'success' : 'danger';
+            
+            let notification = `
+                <div class="alert alert-${alertClass} alert-dismissible fade show position-fixed" 
+                     style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;" 
+                     role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            
+            $('body').append(notification);
+            
+            // Auto remove after 3 seconds
+            setTimeout(() => {
+                $('.position-fixed.alert').fadeOut(() => {
+                    $('.position-fixed.alert').remove();
+                });
+            }, 3000);
+        }
+
+        // Handle form submit
+        $('.auto-save').on('submit', function(e) {
+            // Form akan submit ke route update dengan method PUT
+            console.log('Form submit dengan ID:', momId);
         });
 
     });

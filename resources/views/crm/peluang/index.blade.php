@@ -284,12 +284,11 @@
                             <div class="d-flex flex-column gap-2" style="min-width: 80px;">
                                 <a href="/crm/peluang/detail/${id}" class="btn btn-sm btn-warning w-100">Detail</a>
                                 ${rkmButton}
-                                <button onclick="hapusPeluang(${id})" class="btn btn-sm btn-danger w-100">Hapus</button>
+                                <button onclick="hapusPeluang(${id})" class="btn btn-sm btn-danger w-100">LOST</button>
                             </div>
                         `;
                     }}
                 ],
-                order: [[7, 'desc']]
             });
 
             // 🔹 Callback untuk nomor urut tetap mengikuti tampilan
@@ -424,7 +423,7 @@
             if (!confirm("Yakin ingin menghapus peluang ini?")) return;
 
             fetch(`/crm/peluang/delete/${id}`, {
-                    method: 'DELETE',
+                    method: 'put',
                     headers: {
                         'X-CSRF-TOKEN': '{{ csrf_token() }}',
                         'Accept': 'application/json',
@@ -435,16 +434,16 @@
                     if (response.ok) {
                         return response.json(); // Parse JSON response
                     } else {
-                        throw new Error('Gagal menghapus data.');
+                        throw new Error('Gagal mengubah status.');
                     }
                 })
                 .then(data => {
-                    alert(data.message || 'Peluang berhasil dihapus.'); // Show success message
+                    alert(data.message || 'Peluang berhasil diubah statusnya.'); // Show success message
                     $('#peluangTable').DataTable().ajax.reload(); // Refresh DataTable
                 })
                 .catch(error => {
                     console.error("Error:", error);
-                    alert(error.message || 'Terjadi kesalahan saat menghapus data.');
+                    alert(error.message || 'Terjadi kesalahan saat mengubah status data.');
                 });
         }
 

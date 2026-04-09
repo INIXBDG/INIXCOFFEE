@@ -142,7 +142,7 @@
                     </a>
                 </li>
             @endif
-            
+
             {{-- Laporan MoM --}}
             @if (in_array($user->jabatan, ['GM', 'SPV Sales', 'Adm Sales', 'HRD']))
                 <li class="menu-item {{ request()->routeIs('laporan.harian') ? 'active open' : '' }}">
@@ -153,6 +153,15 @@
                 </li>
             @endif
 
+            @if (in_array($user->jabatan, ['Adm Sales']))
+                <li class="menu-item {{ request()->routeIs('todo-administrasi.index') ? 'active open' : '' }}">
+                    <a href="{{ route('todo-administrasi.index') }}" class="menu-link">
+                        <i class='menu-icon tf-icons bx bx-task'></i>
+                        <div class="text-truncate" data-i18n="crmLaporanHarian">Todo List</div>
+                    </a>
+                </li>
+            @endif
+            
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Untuk &amp; Anda</span>
             </li>
@@ -213,6 +222,13 @@
                 </a>
             </li>
         @endif
+
+        <li class="menu-item {{ request()->routeIs('CRM.index.koordinasi') ? 'active open' : '' }}">
+            <a href="{{ route('CRM.index.koordinasi') }}" class="menu-link">
+                <i class='menu-icon tf-icons bx bx-file-blank'></i>
+                <div class="text-truncate">Koordinasi Driver</div>
+            </a>
+        </li>
 
         <div style="position: absolute; bottom: 0; left: 0; width: 100%; padding: 12px;">
             <a href="{{ route('home') }}"

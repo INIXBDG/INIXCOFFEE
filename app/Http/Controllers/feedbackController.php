@@ -178,9 +178,41 @@ class feedbackController extends Controller
 
         // Transform the feedback data
         $transformedFeedbacks = $feedbacks->map(function ($feedback) {
-            $materi = isset($feedback->M) ? intval($feedback->M) : round(($feedback->M1 + $feedback->M2 + $feedback->M3 + $feedback->M4) / 4, 1);
-            $pelayanan = isset($feedback->P) ? intval($feedback->P) : round(($feedback->P1 + $feedback->P2 + $feedback->P3 + $feedback->P4 + $feedback->P5 + $feedback->P6 + $feedback->P7) / 7, 1);
-            $fasilitas = isset($feedback->F) ? intval($feedback->F) : round(($feedback->F1 + $feedback->F2 + $feedback->F3 + $feedback->F4 + $feedback->F5) / 5, 1);
+            $materiFields = array_filter([
+                $feedback->M1,
+                $feedback->M2,
+                $feedback->M3,
+                $feedback->M4
+            ], fn($v) => !is_null($v));
+
+            $materi = count($materiFields)
+                ? round(array_sum($materiFields) / count($materiFields), 1)
+                : 0;
+                $pelayananFields = array_filter([
+                $feedback->P1,
+                $feedback->P2,
+                $feedback->P3,
+                $feedback->P4,
+                $feedback->P5,
+                $feedback->P6,
+                $feedback->P7,
+                $feedback->P8
+            ], fn($v) => !is_null($v));
+
+            $pelayanan = count($pelayananFields)
+                ? round(array_sum($pelayananFields) / count($pelayananFields), 1)
+                : 0;
+            $fasilitasFields = array_filter([
+                $feedback->F1,
+                $feedback->F2,
+                $feedback->F3,
+                $feedback->F4,
+                $feedback->F5
+            ], fn($v) => !is_null($v));
+
+            $fasilitas = count($fasilitasFields)
+                ? round(array_sum($fasilitasFields) / count($fasilitasFields), 1)
+                : 0;
             $instruktur = isset($feedback->I) ? intval($feedback->I) : round(($feedback->I1 + $feedback->I2 + $feedback->I3 + $feedback->I4 + $feedback->I5 + $feedback->I6 + $feedback->I7 + $feedback->I8) / 8, 1);
             $instruktur2 = isset($feedback->IB) ? intval($feedback->IB) : round(($feedback->I1b + $feedback->I2b + $feedback->I3b + $feedback->I4b + $feedback->I5b + $feedback->I6b + $feedback->I7b + $feedback->I8b) / 8, 1);
             $asisten = isset($feedback->IAS) ? intval($feedback->IAS) : round(($feedback->I1as + $feedback->I2as + $feedback->I3as + $feedback->I4as + $feedback->I5as + $feedback->I6as + $feedback->I7as + $feedback->I8as) / 8, 1);

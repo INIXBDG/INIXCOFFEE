@@ -139,25 +139,33 @@
         <div class="period-section" style="margin-top: 4%">
             Period :
             @php
+                // Tanggal pertama
                 $dates = explode(' - ', $certificate->tanggal_pelatihan ?? '');
                 $awal = $dates[0] ?? null;
                 $akhir = $dates[1] ?? null;
 
+                // Tanggal kedua
                 $dates2 = explode(' - ', $certificate->tanggal_pelatihan2 ?? '');
                 $awal2 = $dates2[0] ?? null;
                 $akhir2 = $dates2[1] ?? null;
+
+                function formatPeriod($start, $end) {
+                    if (!$start) return '';
+                    $startFormatted = \Carbon\Carbon::parse($start)->format('F d, Y');
+                    if (!$end || $start === $end) return $startFormatted;
+                    $endFormatted = \Carbon\Carbon::parse($end)->format('F d, Y');
+                    return "$startFormatted - $endFormatted";
+                }
             @endphp
-            @if ($awal && $akhir)
-                {{ $awal ? \Carbon\Carbon::parse($awal)->format('F d, Y') : '' }}
-                -
-                {{ $akhir ? \Carbon\Carbon::parse($akhir)->format('F d, Y') : '' }}
+
+            @if ($awal)
+                {{ formatPeriod($awal, $akhir) }}
             @endif
-            @if ($awal2 && $akhir2)
+
+            @if ($awal2)
                 <br>
                 <span style="display:inline-block; margin-left: 90px;">
-                    {{ \Carbon\Carbon::parse($awal2)->format('F d, Y') }}
-                    -
-                    {{ \Carbon\Carbon::parse($akhir2)->format('F d, Y') }}
+                    {{ formatPeriod($awal2, $akhir2) }}
                 </span>
             @endif
         </div>

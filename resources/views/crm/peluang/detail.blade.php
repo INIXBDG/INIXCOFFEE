@@ -20,8 +20,8 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="fw-bold mb-0">Detail Lead</h4>
                 <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#paymentAdvanceModal"
-                        @if ($netsales) disabled @endif>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                        data-bs-target="#paymentAdvanceModal" @if ($netsales) disabled @endif>
                         <i class="menu-icon bx bx-plus"></i> Payment Advance
                     </button>
                     @if ($isLost)
@@ -31,8 +31,7 @@
                             href="/rkm/{{ $peluang->rkm->materi_key }}ixb{{ $peluang->rkm->tanggal_awal_day }}ie{{ $peluang->rkm->tanggal_awal_year }}ie{{ $peluang->rkm->tanggal_awal_month }}ixb{{ $peluang->rkm->metode_kelas }}">Lihat
                             di RKM</a>
                     @endif
-                    <button type="button" class="btn btn-warning" data-bs-toggle="modal"
-                        data-bs-target="#editPeluangModal">
+                    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#editPeluangModal">
                         Edit Lead
                     </button>
                     <button type="button" class="btn btn-success" data-bs-toggle="modal"
@@ -89,11 +88,13 @@
 
                                 <dt class="col-sm-4">Periode Mulai</dt>
                                 <dd class="col-sm-8">
-                                    {{ \Carbon\Carbon::parse($peluang->periode_mulai)->translatedFormat('d F Y') }}</dd>
+                                    {{ \Carbon\Carbon::parse($peluang->periode_mulai)->translatedFormat('d F Y') }}
+                                </dd>
 
                                 <dt class="col-sm-4">Periode Selesai</dt>
                                 <dd class="col-sm-8">
-                                    {{ \Carbon\Carbon::parse($peluang->periode_selesai)->translatedFormat('d F Y') }}</dd>
+                                    {{ \Carbon\Carbon::parse($peluang->periode_selesai)->translatedFormat('d F Y') }}
+                                </dd>
 
                                 <dt class="col-sm-4">Client</dt>
                                 <dd class="col-sm-8">
@@ -134,25 +135,25 @@
                                     </li>
 
                                     <div class="d-flex gap-2 flex-wrap mb-3">
-                                        {{-- Hanya tampil kalau biru sudah ada & belum merah --}}
-                                        @if (!$peluang->merah)
-                                            <a href="{{ route('crm.index.regis', ['id' => $peluang->id]) }}"
-                                                target="_blank" class="btn btn-sm btn-info">
-                                                <i class="bi bi-file-earmark-plus"></i> Generate Regis Form
-                                            </a>
-
-                                            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal"
-                                                data-bs-target="#uploadPdfModal">
-                                                <i class="bi bi-upload"></i> Upload PDF
-                                            </button>
-                                        @endif
-
                                         @if ($regis)
                                             <a href="{{ asset('storage/' . $regis->path) }}" target="_blank"
                                                 class="btn btn-sm btn-success">
                                                 <i class="bi bi-file-earmark-pdf"></i> Lihat Regis Form
                                             </a>
-                                        @endif
+                                            @endif
+                                            <a href="{{ route('crm.index.regis', ['id' => $peluang->id]) }}" target="_blank"
+                                                class="btn btn-sm btn-info">
+                                                <i class="bi bi-file-earmark-plus"></i> Generate Regis Form
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal"
+                                                data-bs-target="#uploadPdfModal">
+                                                <i class="bi bi-upload"></i>
+                                                @if ($regis)
+                                                    Edit PDF
+                                                @else
+                                                    Upload PDF                                                
+                                                @endif
+                                            </button>
                                     </div>
                                 @endif
 
@@ -216,7 +217,7 @@
                     <h5 class="card-title mb-0">Aktivitas Terkait</h5>
                 </div>
                 <div class="card-body">
-                    @if ($aktivitass->isEmpty())
+                    @if ($peluang->aktivitas->isEmpty())
                         <p class="text-muted">Belum ada aktivitas yang tercatat.</p>
                     @else
                         <div class="table-responsive">
@@ -226,44 +227,45 @@
                                         <th scope="col" class="px-3 py-2 text-center">ID Sales</th>
                                         <th scope="col" class="px-3 py-2">Contact (PIC)</th>
                                         <th scope="col" class="px-3 py-2">Aktivitas</th>
-                                        <th scope="col" class="px-3 py-2">Subject</th>
                                         <th scope="col" class="px-3 py-2">Deskripsi</th>
                                         <th scope="col" class="px-3 py-2">Waktu Aktivitas</th>
                                         <th scope="col" class="px-3 py-2 text-center">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach ($aktivitass as $item)
+                                    @foreach ($peluang->aktivitas as $item)
                                         <tr>
                                             <td class="px-3 py-2 text-center">{{ $item->id_sales }}</td>
                                             <td class="px-3 py-2">
-                                                {{ $item->contact->nama ?? ($item->peserta->nama ?? '-') }}</td>
+                                                {{ $item->contact->nama ?? ($item->peserta->nama ?? '-') }}
+                                            </td>
                                             <td class="px-3 py-2">
                                                 @if ($item->aktivitas === 'Incharge')
                                                     Incharge Inhouse
+                                                @elseif ($item->aktivitas === 'Form_Keluar')
+                                                    Regis Form Keluar
+                                                @elseif ($item->aktivitas === 'Form_Masuk')
+                                                    Regis Form Masuk
                                                 @else
                                                     {{ $item->aktivitas }}
                                                 @endif
                                             </td>
-                                            <td class="px-3 py-2">{{ $item->subject }}</td>
                                             <td class="px-3 py-2">{{ $item->deskripsi ?? '-' }}</td>
                                             <td class="px-3 py-2">
                                                 {{ \Carbon\Carbon::parse($item->waktu_aktivitas)->translatedFormat('d F Y') }}
                                             </td>
                                             <td class="px-3 py-2 text-center">
                                                 <div class="d-flex gap-2 justify-content-center">
-                                                    <button type="button" class="btn btn-sm btn-warning"
-                                                        data-bs-toggle="modal" data-bs-target="#editAktivitasModal"
-                                                        onclick='editAktivitas(@json($item))'>
+                                                    <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal"
+                                                        data-bs-target="#editAktivitasModal" onclick='editAktivitas(@json($item))'>
                                                         Edit
                                                     </button>
-                                                    <form action="{{ route('delete.aktivitas', $item->id) }}"
-                                                        method="POST" onsubmit="return confirm('Yakin ingin menghapus?')"
+                                                    <form action="{{ route('delete.aktivitas', $item->id) }}" method="POST"
+                                                        onsubmit="return confirm('Yakin ingin menghapus?')"
                                                         style="display: inline;">
                                                         @csrf
                                                         @method('DELETE')
-                                                        <button type="submit"
-                                                            class="btn btn-sm btn-danger">Hapus</button>
+                                                        <button type="submit" class="btn btn-sm btn-danger">Hapus</button>
                                                     </form>
                                                 </div>
                                             </td>
@@ -291,8 +293,7 @@
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title" id="tambahAktivitasModalLabel">Tambah Aktivitas</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                aria-label="Close"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
                             <div class="mb-3">
@@ -361,8 +362,7 @@
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title" id="editPeluangModalLabel">Edit Lead</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                aria-label="Close"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
 
                         <div class="modal-body">
@@ -387,8 +387,7 @@
                                 <select class="form-select" id="materi" name="materi" required>
                                     <option value="">-- Pilih Materi --</option>
                                     @foreach ($materi as $item)
-                                        <option value="{{ $item->id }}"
-                                            {{ $item->id == $peluang->materi ? 'selected' : '' }}>
+                                        <option value="{{ $item->id }}" {{ $item->id == $peluang->materi ? 'selected' : '' }}>
                                             {{ $item->nama_materi }}
                                         </option>
                                     @endforeach
@@ -400,7 +399,8 @@
 
                             <div class="mb-3">
                                 <label for="catatan" class="form-label">Catatan</label>
-                                <textarea class="form-control" id="catatan" name="catatan" rows="2">{{ old('catatan', $peluang->catatan) }}</textarea>
+                                <textarea class="form-control" id="catatan" name="catatan"
+                                    rows="2">{{ old('catatan', $peluang->catatan) }}</textarea>
                                 @error('catatan')
                                     <div class="text-danger">{{ $message }}</div>
                                 @enderror
@@ -456,8 +456,7 @@
                             <input type="hidden" name="tentatif" value="0">
                             <div class="form-check form-switch mb-3">
                                 <input class="form-check-input" type="checkbox" role="switch" id="tentatifSwitch"
-                                    name="tentatif" value="1"
-                                    {{ old('tentatif', $peluang->tentatif) ? 'checked' : '' }}>
+                                    name="tentatif" value="1" {{ old('tentatif', $peluang->tentatif) ? 'checked' : '' }}>
                                 <label class="form-check-label" for="tentatifSwitch">Tentatif</label>
                             </div>
 
@@ -501,11 +500,16 @@
                                     <div class="row my-2">
                                         <select name="status_tracking" id="status_tracking" class="form-select">
                                             <option disabled selected>Pilih Status Tracking</option>
-                                            <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager">Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager</option>
-                                            <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi">Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi</option>
-                                            <option value="Finance Menunggu Approve Direksi">Finance Menunggu Approve Direksi</option>
-                                            <option value="Membuat Permintaan Ke Direktur Utama">Membuat Permintaan Ke Direktur Utama</option>
-                                            <option value="Pengajuan sedang dalam proses Pencairan">Pengajuan sedang dalam proses Pencairan</option>
+                                            <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager">
+                                                Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager</option>
+                                            <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi">Sedang
+                                                Dikonfirmasi oleh Bagian Finance kepada Direksi</option>
+                                            <option value="Finance Menunggu Approve Direksi">Finance Menunggu Approve Direksi
+                                            </option>
+                                            <option value="Membuat Permintaan Ke Direktur Utama">Membuat Permintaan Ke Direktur
+                                                Utama</option>
+                                            <option value="Pengajuan sedang dalam proses Pencairan">Pengajuan sedang dalam
+                                                proses Pencairan</option>
                                             <option value="Pencairan Sudah Selesai">Pencairan Sudah Selesai</option>
                                             <option value="Selesai">Selesai</option>
                                         </select>
@@ -517,13 +521,16 @@
                                     <input type="hidden" value="" id="id_rkm" name="id_rkm">
                                     <button class="btn btn-outline-primary" type="submit" id="btnApproveYes">Ya</button>
 
-                                    <input type="radio" class="btn-check" name="approval" id="approveNo" value="2" autocomplete="off">
-                                    <label class="btn btn-outline-danger" for="approveNo" onclick="toggleAlasanManager(true)">Tidak</label>
+                                    <input type="radio" class="btn-check" name="approval" id="approveNo" value="2"
+                                        autocomplete="off">
+                                    <label class="btn btn-outline-danger" for="approveNo"
+                                        onclick="toggleAlasanManager(true)">Tidak</label>
                                 </div>
 
                                 <div class="mt-3" id="alasanManagerInput" style="display: none;">
                                     <label for="alasan_manager" class="form-label">Alasan Penolakan</label>
-                                    <textarea class="form-control" id="alasan_manager" name="keterangan" rows="3"></textarea>
+                                    <textarea class="form-control" id="alasan_manager" name="keterangan"
+                                        rows="3"></textarea>
                                     <input type="hidden" value="{{ auth()->user()->jabatan }}" name="jabatan">
                                     <button class="btn btn-outline-success mt-3" type="submit">Kirim</button>
                                 </div>
@@ -547,8 +554,7 @@
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">Update Tahap Peluang</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                aria-label="Tutup"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
                         </div>
                         <div class="modal-body">
                             @php
@@ -609,8 +615,7 @@
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title" id="paymentAdvanceModalLabel">Payment Advance</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                aria-label="Close"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
 
                         <div class="modal-body">
@@ -681,8 +686,7 @@
                             <!-- SEWA LAPTOP -->
                             <div class="mb-3">
                                 <label class="form-label">Sewa Laptop (Opsional)</label>
-                                <input type="text" class="form-control rupiah" name="sewa_laptop"
-                                    placeholder="Opsional">
+                                <input type="text" class="form-control rupiah" name="sewa_laptop" placeholder="Opsional">
                             </div>
 
                             {{-- Tanggal Payment --}}
@@ -721,8 +725,7 @@
 
 
         <!-- Modal Detail PA -->
-        <div class="modal fade" id="detailPAModal" tabindex="-1" aria-labelledby="detailPAModalLabel"
-            aria-hidden="true">
+        <div class="modal fade" id="detailPAModal" tabindex="-1" aria-labelledby="detailPAModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-xl">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -835,9 +838,9 @@
                                                 @php
                                                     $status = match (true) {
                                                         $approval->status === 1 &&
-                                                            $approval->level_status === '3' &&
-                                                            $approval->keterangan !== 'Selesai'
-                                                            => 'Diproses',
+                                                        $approval->level_status === '3' &&
+                                                        $approval->keterangan !== 'Selesai'
+                                                        => 'Diproses',
                                                         $approval->status === 1 => 'Disetujui',
                                                         $approval->status === 0 => 'Ditolak',
                                                         default => 'Belum diketahui',
@@ -876,13 +879,13 @@
                                 $pa = $netsales->first();
                                 $approvals = $pa->approvedNetSales ?? collect();
                                 $lastApproval = $approvals->last();
-                                
+
                                 $jabatanUser = auth()->user()->jabatan;
                                 $level = $lastApproval ? $lastApproval->level_status : null;
-                                
+
                                 // Tambahkan pengecekan status Selesai di sini
                                 $isSelesai = ($lastApproval && $lastApproval->keterangan === 'Selesai');
-                                
+
                                 $canApprove = false;
 
                                 // Jika sudah selesai, button tidak akan muncul (canApprove tetap false)
@@ -913,11 +916,12 @@
                                     </button>
                                 </div>
                             @else
-    
+
                             @endif
                         @endif
-                        
-                        <a type="button" class="btn btn-primary" target="_blank" href="{{route('netsales.detail', ['id' => $peluang->id_rkm])}}">View PA</a>
+
+                        <a type="button" class="btn btn-primary" target="_blank"
+                            href="{{route('netsales.detail', ['id' => $peluang->id_rkm])}}">View PA</a>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     </div>
 
@@ -926,8 +930,7 @@
         </div>
 
         <!-- Modal Upload RegisForm-->
-        <div class="modal fade" id="uploadPdfModal" tabindex="-1" aria-labelledby="uploadPdfModalLabel"
-            aria-hidden="true">
+        <div class="modal fade" id="uploadPdfModal" tabindex="-1" aria-labelledby="uploadPdfModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content rounded-3 shadow">
                     <div class="modal-header bg-primary text-white">
@@ -943,14 +946,13 @@
                         <div class="modal-body">
                             <div class="mb-3">
                                 <label for="pdfFile" class="form-label">Pilih File PDF</label>
-                                <input type="file" name="pdf" id="pdfFile" class="form-control"
-                                    accept="application/pdf" required>
+                                <input type="file" name="pdf" id="pdfFile" class="form-control" accept="application/pdf"
+                                    required>
                             </div>
                         </div>
 
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary btn-sm"
-                                data-bs-dismiss="modal">Batal</button>
+                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
                             <button type="submit" class="btn btn-primary btn-sm">Upload</button>
                         </div>
                     </form>
@@ -967,9 +969,9 @@
             let approveType = '';
 
             // 2. Fungsi untuk membuka modal Approve (Global Scope)
-            window.openApproveModal = function(id_rkm) {
+            window.openApproveModal = function (id_rkm) {
                 console.log('ID RKM yang dikirim ke modal:', id_rkm);
-                
+
                 // --- TAMBAHAN: Tutup modal detail PA terlebih dahulu ---
                 const detailPAModalEl = document.getElementById('detailPAModal');
                 const detailPAModalInstance = bootstrap.Modal.getInstance(detailPAModalEl);
@@ -995,7 +997,7 @@
             };
 
             // 3. Fungsi toggle alasan penolakan (Global Scope)
-            window.toggleAlasanManager = function(show) {
+            window.toggleAlasanManager = function (show) {
                 if (show) {
                     $('#alasanManagerInput').slideDown();
                     $('#btnApproveYes').hide(); // Sembunyikan tombol "Ya" jika memilih "Tidak"
@@ -1007,20 +1009,20 @@
             };
 
             // 4. Event Listeners (Jquery Ready)
-            $(document).ready(function() {
-                
+            $(document).ready(function () {
+
                 // Menentukan tipe approve berdasarkan tombol yang diklik
-                $(document).on('click', '#btnApproveYes', function() {
+                $(document).on('click', '#btnApproveYes', function () {
                     approveType = 'ya';
                     window.toggleAlasanManager(false);
                 });
 
-                $(document).on('click', '#approveNo', function() {
+                $(document).on('click', '#approveNo', function () {
                     approveType = 'tidak';
                 });
 
                 // Handle Submit Form via AJAX
-                $(document).on('submit', '#approveForm', function(e) {
+                $(document).on('submit', '#approveForm', function (e) {
                     e.preventDefault();
 
                     const jabatan = "{{ auth()->user()->jabatan }}";
@@ -1037,7 +1039,7 @@
 
                     let formData = new FormData(this);
                     // Tambahkan flag ke FormData agar controller tahu ini Approve atau Reject
-                    formData.append('approval_status', approveType); 
+                    formData.append('approval_status', approveType);
 
                     $.ajax({
                         url: "{{ route('netsales.approved') }}",
@@ -1046,17 +1048,17 @@
                         processData: false,
                         contentType: false,
                         dataType: 'json',
-                        beforeSend: function() {
+                        beforeSend: function () {
                             $('button[type="submit"]').prop('disabled', true).text('Processing...');
                         },
-                        success: function(response) {
+                        success: function (response) {
                             const modalEl = document.getElementById('approveModal');
                             const modalInstance = bootstrap.Modal.getInstance(modalEl);
                             if (modalInstance) modalInstance.hide();
-                            
-                            location.reload(); 
+
+                            location.reload();
                         },
-                        error: function(xhr) {
+                        error: function (xhr) {
                             $('button[type="submit"]').prop('disabled', false).text('Kirim');
                             console.error(xhr.responseText);
                             alert('Terjadi kesalahan saat memproses data.');
@@ -1066,7 +1068,7 @@
             });
         </script>
         <script>
-            $(document).ready(function() {
+            $(document).ready(function () {
                 const perusahaanId = $('#id_perusahaan').val();
 
                 // Function to fetch and display activities
@@ -1075,7 +1077,7 @@
                         url: `/crm/ambil/aktivitas/${perusahaanId}`,
                         method: 'GET',
                         dataType: 'json',
-                        success: function(data) {
+                        success: function (data) {
                             const activities = data.data ||
                                 data; // Fallback if response is directly an array
 
@@ -1087,44 +1089,44 @@
                             }
 
                             let table = `
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Pilih</th>
-                                    <th>Kontak</th>
-                                    <th>Jenis Aktivitas</th>
-                                    <th>Subjek</th>
-                                    <th>Deskripsi</th>
-                                    <th>Waktu Aktivitas</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                `;
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Pilih</th>
+                                        <th>Kontak</th>
+                                        <th>Jenis Aktivitas</th>
+                                        <th>Subjek</th>
+                                        <th>Deskripsi</th>
+                                        <th>Waktu Aktivitas</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
 
                             activities.forEach(a => {
                                 const waktu = new Date(a.waktu).toLocaleDateString(
                                     'id-ID', {
-                                        day: '2-digit',
-                                        month: 'long',
-                                        year: 'numeric'
-                                    });
+                                    day: '2-digit',
+                                    month: 'long',
+                                    year: 'numeric'
+                                });
                                 table += `
-                        <tr>
-                            <td><input type="checkbox" name="id_aktivitas[]" value="${a.id}"></td>
-                            <td>${a.kontak || '-'}</td>
-                            <td>${a.aktivitas || '-'}</td>
-                            <td>${a.subject || '-'}</td>
-                            <td>${a.deskripsi ?? '-'}</td>
-                            <td>${waktu}</td>
-                        </tr>
-                    `;
+                            <tr>
+                                <td><input type="checkbox" name="id_aktivitas[]" value="${a.id}"></td>
+                                <td>${a.kontak || '-'}</td>
+                                <td>${a.aktivitas || '-'}</td>
+                                <td>${a.subject || '-'}</td>
+                                <td>${a.deskripsi ?? '-'}</td>
+                                <td>${waktu}</td>
+                            </tr>
+                        `;
                             });
 
                             table += `</tbody></table></div>`;
                             $(`#${targetElementId}`).html(table);
                         },
-                        error: function(err) {
+                        error: function (err) {
                             console.error('Gagal memuat aktivitas:', err);
                             $(`#${targetElementId}`).html(
                                 `<p class="text-danger">Terjadi kesalahan saat memuat aktivitas. Periksa console untuk detail.</p>`
@@ -1137,7 +1139,7 @@
                 loadActivities('aktivitasTableWrapper');
 
                 // Load activities when Edit Lead Modal is opened
-                $('#editPeluangModal').on('show.bs.modal', function() {
+                $('#editPeluangModal').on('show.bs.modal', function () {
                     loadActivities('editAktivitasTableWrapper');
                 });
 
@@ -1185,7 +1187,7 @@
                 }
 
                 // Format rupiah for close_win_display
-                displayInput.addEventListener('input', function() {
+                displayInput.addEventListener('input', function () {
                     let value = this.value.replace(/\D/g, ''); // Pure numbers
                     if (!value) {
                         this.value = "";
@@ -1202,13 +1204,13 @@
                 });
 
                 // Ensure hiddenInput is clean before submission
-                document.getElementById('updates').addEventListener('submit', function() {
+                document.getElementById('updates').addEventListener('submit', function () {
                     hiddenInput.value = displayInput.value.replace(/\D/g, '');
                 });
 
                 // Format rupiah inputs
                 rupiahInputs.forEach(input => {
-                    input.addEventListener("input", function() {
+                    input.addEventListener("input", function () {
                         let value = this.value.replace(/\D/g, "");
                         if (!value) {
                             this.value = "";
@@ -1223,14 +1225,14 @@
                 });
 
                 // Clean rupiah inputs before submission
-                document.getElementById("StorePA").addEventListener("submit", function() {
+                document.getElementById("StorePA").addEventListener("submit", function () {
                     rupiahInputs.forEach(input => {
                         input.value = input.value.replace(/\D/g, "");
                     });
                 });
 
                 editLead.forEach(input => {
-                    input.addEventListener("input", function() {
+                    input.addEventListener("input", function () {
                         let value = this.value.replace(/\D/g, "");
                         if (!value) {
                             this.value = "";
@@ -1244,7 +1246,7 @@
                     });
                 });
 
-                document.getElementById("editLeads").addEventListener("submit", function() {
+                document.getElementById("editLeads").addEventListener("submit", function () {
                     editLead.forEach(input => {
                         input.value = input.value.replace(/\D/g, "");
                     });
@@ -1265,4 +1267,4 @@
                 }
             });
         </script>
-    @endsection
+@endsection

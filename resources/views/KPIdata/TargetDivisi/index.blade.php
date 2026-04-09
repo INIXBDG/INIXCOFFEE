@@ -229,7 +229,11 @@
         <div class="stretch-card">
             <div class="card">
                 <div class="card-body">
-                    <h4 class="card-title"><i class="fas fa-bullseye card-icon me-2"></i> Buat Target Baru</h4>
+                    <h4 class="card-title"><i class="fas fa-bullseye card-icon me-2"></i> Buat Target Baru</h4> 
+                    {{-- <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ModalImport">
+                        Import Target
+                    </button> --}}
+
                     <div class="d-flex flex-wrap gap-3 mt-3" id="targetContainer">
                         <button type="button" class="target-card add-card d-flex align-items-center justify-content-center"
                             data-bs-toggle="modal" data-bs-target="#modalBuatTarget" style="width: 280px; flex: 0 0 auto;">
@@ -239,6 +243,35 @@
                         <div id="content_target" class="d-flex flex-wrap gap-3"></div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="ModalImport" tabindex="-1" role="dialog" aria-labelledby="ModalImportLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <form action="{{ route('kpi.importTarget') }}" method="post">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="ModalImportLabel">Modal title</h5>
+                        <button type="button" class="btn btn-close" data-bs-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="file">File Import</label>
+                            <input type="file" class="form-control" id="file" placeholder="pilih file xlsx,xls,csv">
+                        </div>
+                        <div class="form-group text-center">     
+                            <small id="emailHelp" class="form-text text-muted">jika belum memiliki file template, silahkan di download.</small>
+                            <a href="{{ asset('template_KPI/template_import_kpi.xlsx') }}" class="btn btn-success" download>Download Template</a>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Keluar</button>
+                        <button type="submit" class="btn btn-primary">Import</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -361,14 +394,6 @@
         </div>
     </div>
 
-    <div class="modal fade" id="modalEditTarget" tabindex="-1" role="dialog" aria-labelledby="modalEditTargetLabel"
-        aria-hidden="true">
-        <div class="modal-dialog modal-lg" role="document">
-            <div class="modal-content" id="ModalEdit">
-            </div>
-        </div>
-    </div>
-
     <div class="modal fade" id="modalFormManual" tabindex="-1" role="dialog" aria-labelledby="modalFormManualLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-md" role="document">
@@ -405,7 +430,8 @@
                             <div class="form-group">
                                 <label>Biaya Rekrutmen Tahunan</label>
                                 <input type="text" class="form-control" id="biaya_rekrutmen_display">
-                                <input type="hidden" name="biaya_rekrutmen_tahunan" id="biaya_rekrutmen_tahunan" required>
+                                <input type="hidden" name="biaya_rekrutmen_tahunan" id="biaya_rekrutmen_tahunan"
+                                    required>
                             </div>
                         </div>
 
@@ -456,7 +482,7 @@
             dropdownParent: $('#modalBuatTarget')
         });
 
-        $(document).on('click', '.buttonHapusTarget, .buttonForm', function (e) {
+        $(document).on('click', '.buttonHapusTarget, .buttonForm', function(e) {
             e.stopPropagation();
         });
 
@@ -468,7 +494,6 @@
             'mengurangi manual work dan error',
             'laporan analisis keuangan',
             'pengeluaran biaya karyawan'
-
         ];
 
         const allowedDoubleManualRoutes = [
@@ -491,7 +516,7 @@
         function initInputFormatting() {
             // Single Input
             $('#manual_value_display').off('input.formatting');
-            $('#manual_value_display').on('input.formatting', function () {
+            $('#manual_value_display').on('input.formatting', function() {
                 const raw = getRawNumber($(this).val());
                 $('#manual_value').val(raw);
 
@@ -509,7 +534,7 @@
 
             // Double Input - Biaya Gaji
             $('#biaya_gaji_display').off('input.formatting');
-            $('#biaya_gaji_display').on('input.formatting', function () {
+            $('#biaya_gaji_display').on('input.formatting', function() {
                 const raw = getRawNumber($(this).val());
                 $('#biaya_gaji_tahunan').val(raw);
                 $(this).val(raw ? 'Rp ' + formatNumber(raw) : '');
@@ -517,7 +542,7 @@
 
             // Double Input - Biaya BPJS
             $('#biaya_bpjs_display').off('input.formatting');
-            $('#biaya_bpjs_display').on('input.formatting', function () {
+            $('#biaya_bpjs_display').on('input.formatting', function() {
                 const raw = getRawNumber($(this).val());
                 $('#biaya_bpjs_tahunan').val(raw);
                 $(this).val(raw ? 'Rp ' + formatNumber(raw) : '');
@@ -525,21 +550,23 @@
 
             // ✅ Double Input - Biaya Rekrutmen (BARU)
             $('#biaya_rekrutmen_display').off('input.formatting');
-            $('#biaya_rekrutmen_display').on('input.formatting', function () {
+            $('#biaya_rekrutmen_display').on('input.formatting', function() {
                 const raw = getRawNumber($(this).val());
                 $('#biaya_rekrutmen_tahunan').val(raw);
                 $(this).val(raw ? 'Rp ' + formatNumber(raw) : '');
             });
         }
 
-        $(document).ready(function () {
+        $(document).ready(function() {
+            loadContentForm();
+
             initInputFormatting();
 
-            $('#modalFormManual').on('show.bs.modal', function () {
+            $('#modalFormManual').on('show.bs.modal', function() {
                 resetFormManual();
             });
 
-            $('#modalFormManual').on('hidden.bs.modal', function () {
+            $('#modalFormManual').on('hidden.bs.modal', function() {
                 resetFormManual();
             });
         });
@@ -563,7 +590,7 @@
             $('#manualValueId').val('');
         }
 
-        $(document).on('click', '.buttonForm', function () {
+        $(document).on('click', '.buttonForm', function() {
             const route = $(this).data('route');
             const value = $(this).data('value') || '';
             const id = $(this).data('id');
@@ -620,7 +647,7 @@
             }
         });
 
-        $(document).on('change', '#manual_format', function () {
+        $(document).on('change', '#manual_format', function() {
             if ($('#doubleInputArea').is(':visible')) {
                 return;
             }
@@ -644,7 +671,7 @@
             });
         });
 
-        $('#formManualValue').on('submit', function (e) {
+        $('#formManualValue').on('submit', function(e) {
             e.preventDefault();
 
             const $submitBtn = $(this).find('button[type="submit"]');
@@ -669,7 +696,7 @@
                 data: formData,
                 contentType: false,
                 processData: false,
-                success: function (res) {
+                success: function(res) {
                     $('#modalFormManual').modal('hide');
                     resetFormManual();
                     $submitBtn.prop('disabled', false).html(originalText);
@@ -678,7 +705,7 @@
                         loadContentForm();
                     }
                 },
-                error: function (xhr) {
+                error: function(xhr) {
                     $submitBtn.prop('disabled', false).html(originalText);
 
                     if (xhr.status === 422) {
@@ -692,11 +719,7 @@
             });
         });
 
-        $(document).ready(function () {
-            loadContentForm();
-        });
-
-        $('#targetForm').on('submit', function (e) {
+        $('#targetForm').on('submit', function(e) {
             e.preventDefault();
             const judul = $('#judul_kpi').val().trim();
             if (!judul) {
@@ -715,7 +738,7 @@
                 data: formData,
                 processData: false,
                 contentType: false,
-                success: function (response) {
+                success: function(response) {
                     Swal.fire({
                         icon: 'success',
                         title: 'Berhasil!',
@@ -727,7 +750,7 @@
                     });
                     loadContentForm();
                 },
-                error: function (xhr) {
+                error: function(xhr) {
                     let msg = 'Terjadi kesalahan. Silakan coba lagi.';
                     if (xhr.responseJSON?.errors) {
                         msg = Object.values(xhr.responseJSON.errors).flat().join('<br>');
@@ -774,7 +797,7 @@
                 }
             }
 
-            $assistantRoute.off('change').on('change', function () {
+            $assistantRoute.off('change').on('change', function() {
                 const value = $(this).val();
                 const itsmRoutes = [
                     'kepuasan client ITSM',
@@ -809,7 +832,7 @@
                 $nilaiTarget.val('');
             });
 
-            $nilaiTarget.off('input').on('input', function () {
+            $nilaiTarget.off('input').on('input', function() {
                 const tipe = $tipeTarget.val();
                 let value = $(this).val().replace(/\D/g, '');
                 if (!value) {
@@ -833,7 +856,7 @@
                 updateKonversiIfNeeded();
             });
 
-            $jangkaTarget.off('change').on('change', function () {
+            $jangkaTarget.off('change').on('change', function() {
                 const jangka = $(this).val();
                 $detailJangkaGroup.hide();
                 $detailJangkaField.empty();
@@ -861,7 +884,7 @@
             $.ajax({
                 url: '{{ route('kpi.getDataTarget') }}',
                 type: 'GET',
-                success: function (response) {
+                success: function(response) {
                     const data = response;
                     const content_target = $('#content_target');
                     const jabatanSelect = $('#jabatan');
@@ -872,7 +895,7 @@
 
                     content_target.empty();
 
-                    if (data.detail.length === 0) { } else {
+                    if (data.detail.length === 0) {} else {
                         const now = new Date();
                         const groupedByPembuat = {};
                         data.detail.forEach(item => {
@@ -912,7 +935,7 @@
                                 `);
                             const targetContainer = cardWrapper.find('div.d-flex');
 
-                            group.targets.forEach(function (item) {
+                            group.targets.forEach(function(item) {
                                 let formattedTarget = item.nilai_target;
                                 if (item.tipe_target === 'persen' || item.tipe_target ===
                                     'angka') {
@@ -1020,11 +1043,42 @@
                                     item.nilai_target) {
                                     statusText = 'Gagal';
                                     badgeClass = 'bg-danger';
-                                } else if (progressNumeric >= 100) {
-                                    statusText = 'Selesai';
-                                    badgeClass = 'bg-success';
+                                } else if (nowTime < item.tenggat_waktu && progressNumeric > item.nilai_target) {
+                                    if (item.tipe_target === 'angka') {
+                                        if (item.manual_value >= item.nilai_target) {
+                                            statusText = 'Dalam Progress';
+                                            badgeClass = 'bg-warning text-dark';
+                                        }
+                                    } else if (item.tipe_target === 'rupiah') {
+                                        if (progressNumeric >= item.nilai_target) {
+                                            statusText = 'Dalam Progress';
+                                            badgeClass = 'bg-warning text-dark';
+                                        }
+                                    } else if (item.tipe_target === 'persen') {
+                                        if (progressNumeric >= item.nilai_target) {
+                                            statusText = 'Dalam Progress';
+                                            badgeClass = 'bg-warning text-dark';
+                                        }
+                                    }
+                                } else if (nowTime > item.tenggat_waktu && progressNumeric > item.nilai_target) {
+                                    if (item.tipe_target === 'angka') {
+                                        if (item.manual_value >= item.nilai_target) {
+                                            statusText = 'Selesai';
+                                            badgeClass = 'bg-success';
+                                        }
+                                    } else if (item.tipe_target === 'rupiah') {
+                                        if (progressNumeric >= item.nilai_target) {
+                                            statusText = 'Selesai';
+                                            badgeClass = 'bg-success';
+                                        }
+                                    } else if (item.tipe_target === 'persen') {
+                                        if (progressNumeric >= item.nilai_target) {
+                                            statusText = 'Selesai';
+                                            badgeClass = 'bg-success';
+                                        }
+                                    }
                                 } else {
-                                    statusText = 'Dalam Proses';
+                                    statusText = 'Dalam Progress';
                                     badgeClass = 'bg-warning text-dark';
                                 }
 
@@ -1108,8 +1162,8 @@
                                                     <div class="progress rounded-pill" style="height: 12px; background-color: #e9ecef; position: relative;">
                                                         <div class="progress-bar rounded-pill"
                                                             style="width: ${lengthProgress}%; background: ${badgeClass === 'bg-success' ? '#28a745' :
-                                        badgeClass === 'bg-danger' ? '#dc3545' : '#ffc107'
-                                    }"></div>
+                                                                    badgeClass === 'bg-danger' ? '#dc3545' : '#ffc107'
+                                                                }"></div>
                                                         <span class="position-absolute top-50 start-50 translate-middle" style="font-size: 0.7rem; color: black;">
                                                             ${progressValueDisplay}
                                                         </span>
@@ -1191,14 +1245,14 @@
                     $('#detailJangkaGroup').hide();
                     $('#konversiGroup').hide();
                 },
-                error: function (xhr) {
+                error: function(xhr) {
                     Swal.fire('Error', 'Gagal memuat data form: ' + (xhr.responseJSON?.message ||
                         'Silakan coba lagi.'), 'error');
                 }
             });
         }
 
-        $('#jabatan').on('change', function () {
+        $('#jabatan').on('change', function() {
             const selectedJabatan = $(this).val();
             const karyawanSelect = $('#karyawan');
 
@@ -1213,7 +1267,7 @@
                 data: {
                     jabatan: selectedJabatan
                 },
-                success: function (response) {
+                success: function(response) {
                     karyawanSelect.empty();
 
                     response.forEach(item => {
@@ -1223,7 +1277,7 @@
 
                     karyawanSelect.trigger('change');
                 },
-                error: function () {
+                error: function() {
                     Swal.fire('Error', 'Gagal memuat daftar karyawan.', 'error');
                     karyawanSelect.empty().trigger('change');
                 }
@@ -1231,7 +1285,7 @@
         });
 
 
-        $(document).on('click', '#buttonDetailTarget', function () {
+        $(document).on('click', '#buttonDetailTarget', function() {
             let id = $(this).data('id');
 
             $.ajax({
@@ -1241,7 +1295,7 @@
                     id
                 },
                 dataType: 'json',
-                success: function (response) {
+                success: function(response) {
                     const body = $('#bodyContentDetailTarget');
                     if (body.length === 0) {
                         console.error("Elemen #bodyContentDetailTarget tidak ditemukan!");
@@ -1436,8 +1490,330 @@
 
                         const allowedAssistantRoutesForRupiah = [
                             'Pemasukan Kotor',
-                            'meningkatkan revenue perusahaan'
+                            'meningkatkan revenue perusahaan',
+                            'target penjualan tahunan'
                         ];
+
+                        const allowedAssistantRoutesForPresentaseGapKompetensi = [
+                            'persentase gap kompetensi tim terhadap standar skill'
+                        ]
+
+                        const allowedAssistantRoutesForTargetPenjualanTahunan = [
+                            'target penjualan tahunan',
+                            'Pemasukan Kotor'
+                        ]
+
+                        const allowedAssistantRoutesForPeningkatanKontribusiPelatihan = [
+                            'peningkatan kontribusi pelatihan',
+                        ]
+                        
+                        let ContentTrafikSales = '';
+
+                        if (allowedAssistantRoutesForTargetPenjualanTahunan.includes(data.condition)) {
+                            const salesPerf = data.data_detail?.sales_performance;
+                            
+                            if (salesPerf && salesPerf.data) {
+                                const formatRupiah = (num) => {
+                                    return 'Rp ' + Number(num).toLocaleString('id-ID');
+                                };
+
+                                if (salesPerf.type === 'individual') {
+                                    const s = salesPerf.data;
+                                    const statusClass = s.status === 'achieved' ? 'badge-success' : 'badge-warning';
+                                    const progressColor = s.status === 'achieved' ? '#28a745' : '#ffc107';
+                                    const progressWidth = Math.min(s.percentage, 100);
+
+                                    ContentTrafikSales = `
+                                        <div class="card shadow-sm mb-4 mt-2    ">
+                                            <div class="card-body">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <p class="mb-2"><strong>Sales:</strong> ${s.nama}</p>
+                                                        <p class="mb-2"><strong>Revenue:</strong> ${formatRupiah(s.revenue)}</p>
+                                                        <p class="mb-3"><strong>Target:</strong> ${formatRupiah(s.presentase_kemampuan)}</p>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="mb-2">
+                                                            <div class="d-flex justify-content-between">
+                                                                <span>Progress</span>
+                                                                <span>${s.percentage}%</span>
+                                                            </div>
+                                                            <div class="progress" style="height: 10px;">
+                                                                <div class="progress-bar" role="progressbar" 
+                                                                    style="width: ${progressWidth}%; background-color: ${progressColor};"
+                                                                    aria-valuenow="${s.percentage}" aria-valuemin="0" aria-valuemax="100">
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="text-right">
+                                                            <span class="badge ${statusClass} p-2">${s.status.toUpperCase()}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `;
+                                }
+                                
+                                else if (salesPerf.type === 'all') {
+                                    let rows = '';
+                                    
+                                    salesPerf.data.forEach((sales, index) => {
+                                        const statusClass = sales.status === 'achieved' ? 'badge-success' : 'badge-warning';
+                                        const textClass = sales.status === 'achieved' ? 'text-success' : 'text-warning';
+                                        
+                                        const targetValue = Number(sales.presentase_kemampuan).toLocaleString('id-ID', { useGrouping: false });
+                                        
+                                        rows += `
+                                            <tr id="row-${sales.kode_karyawan}">
+                                                <td class="text-center">${index + 1}</td>
+                                                <td><strong>${sales.nama}</strong></td>
+                                                <td class="text-right">${formatRupiah(sales.revenue)}</td>
+                                                <td class="text-center">
+                                                    <div class="input-group input-group-sm" style="max-width: 150px; float: right;">
+                                                        <input type="text" 
+                                                            class="form-control text-right target-input ${sales.id_detailPerson ? '' : 'is-invalid'}" 
+                                                            value="${targetValue}" 
+                                                            data-id-detail="${sales.id_detailPerson || ''}"
+                                                            data-kode-karyawan="${sales.kode_karyawan}"
+                                                            placeholder="Target"
+                                                            ${!sales.id_detailPerson ? 'disabled' : ''}
+                                                        >
+                                                    </div>
+                                                    <div class="loading-spinner" style="display: none; float: right; margin-right: 10px;">
+                                                        <span class="spinner-border spinner-border-sm text-primary" role="status"></span>
+                                                    </div>
+                                                    <div class="update-feedback" style="display: none; float: right; margin-right: 10px; margin-top: 5px;">
+                                                        <i class="fas fa-check-circle text-success"></i>
+                                                    </div>
+                                                    <div class="clearfix"></div>
+                                                </td>
+                                                <td class="text-center ${textClass}"><strong>${sales.percentage}%</strong></td>
+                                                <td class="text-center">
+                                                    <span class="badge ${statusClass}">${sales.status.toUpperCase()}</span>
+                                                </td>
+                                            </tr>
+                                        `;
+                                    });
+
+                                    let htmlTargetTahunanSales = '';
+
+                                    Object.entries(data.data_detail.triwulan_data).forEach(([label, value]) => {
+                                        htmlTargetTahunanSales += `
+                                            <div class="col-md-6">
+                                                <div class="card h-100 shadow-sm border-0">
+                                                    <div class="card-body">
+                                                        <h5 class="card-title">${label.replace('_', ' ')}</h5>
+                                                        <p class="card-text">Rp ${value.toLocaleString('id-ID')}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        `;
+                                    });
+
+                                    ContentTrafikSales = `
+                                        <div class="row">
+                                            <div class="col">
+                                                <div class="card shadow-sm mt-3">
+                                                    <div class="card-body p-0">
+                                                        <div class="table-responsive">
+                                                            <table class="table table-hover mb-0">
+                                                                <thead class="thead-light">
+                                                                    <tr>
+                                                                        <th class="text-center" width="5%">No</th>
+                                                                        <th>Sales</th>
+                                                                        <th class="text-right" width="20%">Revenue</th>
+                                                                        <th class="text-right" width="20%">Target (Editable)</th>
+                                                                        <th class="text-center" width="15%">Persentase</th>
+                                                                        <th class="text-center" width="15%">Status</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    ${rows}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                                <div class="col">
+                                                    <div class="card shadow-sm border-0 mt-3">
+                                                        <div class="card-body">
+                                                            <div class="row g-3">
+                                                                ${htmlTargetTahunanSales}
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="mb-2 text-center">
+                                                            <hr>
+                                                            <p>Data Triwulan diambil dari tahun ${data.detail_jangka}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                        </div>
+                                    `;
+
+                                    setTimeout(() => {
+                                        document.querySelectorAll('.target-input').forEach(input => {
+                                            let timeout = null;
+                                            
+                                            input.addEventListener('input', function() {
+                                                const el = this;
+                                                const row = el.closest('tr');
+                                                const spinner = row.querySelector('.loading-spinner');
+                                                const feedback = row.querySelector('.update-feedback');
+                                                
+                                                clearTimeout(timeout);
+                                                
+                                                feedback.style.display = 'none';
+                                                
+                                                timeout = setTimeout(() => {
+                                                    const idDetailPerson = el.dataset.idDetail;
+                                                    const kodeKaryawan = el.dataset.kodeKaryawan;
+                                                    const newTarget = el.value.replace(/\./g, ''); 
+                                                    
+                                                    if (!idDetailPerson) {
+                                                        el.classList.add('is-invalid');
+                                                        return;
+                                                    }
+                                                    
+                                                    spinner.style.display = 'inline-block';
+                                                    el.disabled = true;
+                                                    
+                                                    $.ajax({
+                                                        url: "{{ route('kpi.overview.updateTargetPerSales') }}", 
+                                                        method: 'POST',
+                                                        data: {
+                                                            _token: '{{ csrf_token() }}',
+                                                            id_detailPerson: idDetailPerson,
+                                                            kode_karyawan: kodeKaryawan,
+                                                            presentase_kemampuan: newTarget
+                                                        },
+                                                        success: function(response) {
+                                                            spinner.style.display = 'none';
+                                                            el.disabled = false;
+                                                            
+                                                            feedback.style.display = 'inline-block';
+                                                            el.classList.remove('is-invalid');
+                                                            el.classList.add('is-valid');
+                                                            
+                                                            if (response.data) {
+                                                                const percentageCell = row.querySelector('td:nth-child(5)');
+                                                                const statusCell = row.querySelector('td:nth-child(6)');
+                                                                
+                                                                if (response.data.percentage) {
+                                                                    percentageCell.innerHTML = `<strong class="${response.data.status === 'achieved' ? 'text-success' : 'text-warning'}">${response.data.percentage}%</strong>`;
+                                                                }
+                                                                
+                                                                if (response.data.status) {
+                                                                    const statusClass = response.data.status === 'achieved' ? 'badge-success' : 'badge-warning';
+                                                                    statusCell.innerHTML = `<span class="badge ${statusClass}">${response.data.status.toUpperCase()}</span>`;
+                                                                }
+                                                            }
+                                                            
+                                                            setTimeout(() => {
+                                                                feedback.style.display = 'none';
+                                                                el.classList.remove('is-valid');
+                                                            }, 2000);
+                                                        },
+                                                        error: function(xhr) {
+                                                            spinner.style.display = 'none';
+                                                            el.disabled = false;
+                                                            
+                                                            el.classList.add('is-invalid');
+                                                            
+                                                            console.error('Update failed:', xhr.responseText);
+                                                        }
+                                                    });
+                                                }, 1000); 
+                                            });
+                                            
+                                            input.addEventListener('blur', function() {
+                                                const value = this.value.replace(/\./g, '');
+                                                if (value) {
+                                                    this.value = Number(value).toLocaleString('id-ID');
+                                                }
+                                            });
+                                            
+                                            input.addEventListener('focus', function() {
+                                                const value = this.value.replace(/\./g, '');
+                                                if (value) {
+                                                    this.value = value;
+                                                }
+                                            });
+                                        });
+                                    }, 100);
+                                }
+                            }
+                        } else if (allowedAssistantRoutesForPeningkatanKontribusiPelatihan.includes(data.condition)) {
+                            ContentTrafikSales = `
+                            <div class="card mt-4 border-0 rounded-4" style="background:#f8fafc;">
+                                <div class="card-body p-4">
+                                    <div class="d-flex justify-content-between align-items-end mb-4">
+                                        <div>
+                                            <div class="text-muted small">Total Kelas</div>
+                                            <div class="fs-2 fw-semibold text-dark">
+                                                ${data.data_detail.class_breakdown.total}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row g-3 mb-4">
+                                        <div class="col-md-6">
+                                            <div class="p-3 rounded-3 bg-white border h-100">
+                                                <div class="text-muted small mb-2">Kelas Inixindo</div>
+                                                <div class="fs-4 fw-semibold text-dark">
+                                                    ${data.data_detail.class_breakdown.kelas_od}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="p-3 rounded-3 bg-white border h-100">
+                                                <div class="text-muted small mb-2">Kelas Orang Luar</div>
+                                                <div class="fs-4 fw-semibold text-dark">
+                                                    ${data.data_detail.class_breakdown.kelas_ol}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="p-3 rounded-3 bg-white border h-100">
+                                                <div class="text-muted small mb-2">Kelas Offline</div>
+                                                <div class="fs-4 fw-semibold text-dark">
+                                                    ${data.data_detail.class_breakdown.kelas_offline}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <div class="p-3 rounded-3 bg-white border h-100">
+                                                <div class="text-muted small mb-2">Kelas Online</div>
+                                                <div class="fs-4 fw-semibold text-dark">
+                                                    ${data.data_detail.class_breakdown.kelas_online}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="p-3 rounded-3 bg-white border">
+                                        <div class="fw-semibold mb-3">Kelas Inhouse</div>
+                                        <div class="d-flex justify-content-between py-2 border-bottom">
+                                            <span class="text-muted small">Bandung</span>
+                                            <span class="fw-semibold text-dark">
+                                                ${data.data_detail.class_breakdown.Inhouse.kelas_inhouse}
+                                            </span>
+                                        </div>
+                                        <div class="d-flex justify-content-between py-2">
+                                            <span class="text-muted small">Luar Bandung</span>
+                                            <span class="fw-semibold text-dark">
+                                                ${data.data_detail.class_breakdown.Inhouse.kelas_inhouse_luar}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            `;
+                        } else {
+                            ContentTrafikSales = '';
+                        }
 
                         let contentPieChart = '';
 
@@ -1518,40 +1894,73 @@
                                 `;
                         } else if (allowedAssistantRoutesForRupiah.includes(data.condition)) {
                             contentPieChart = `
+                                <div class="p-2">
+
                                     <div class="mb-4">
-                                        <h6 class="fw-semibold text-primary mb-1">
-                                            <i class="fa-solid fa-wallet me-2"></i>${data.judul}
-                                        </h6>
                                         <small class="text-muted">Ringkasan performa</small>
                                     </div>
 
-                                    <div class="mb-4 p-3 rounded bg-light">
-                                        <div class="text-muted small mb-1">Bulan Terakhir</div>
-                                        <div class="fw-semibold">${labelBulanTerakhir}</div>
-                                        <div class="fw-bold fs-6 text-dark">
-                                            ${formatRupiah(nilaiBulanTerakhirRupiah)}
+                                    <div class="mb-4 p-3 rounded-3 border bg-white shadow-sm">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <div class="text-muted small">Bulan Terakhir</div>
+                                                <div class="fw-semibold">${labelBulanTerakhir}</div>
+                                            </div>
+                                            <div class="text-end">
+                                                <div class="fw-bold fs-5 text-dark">
+                                                    ${formatRupiah(nilaiBulanTerakhirRupiah)}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
                                     <div class="mb-3">
-                                        <div class="text-muted small mb-2">Top Hari Tertinggi</div>
+                                        <div class="text-muted small mb-2 fw-semibold">
+                                            Top Hari Tertinggi
+                                        </div>
 
                                         ${top3HariTertinggi.map(([tanggal, nilai], index) => `
-                                                        <div class="d-flex justify-content-between mb-1 ${index > 0 ? 'text-muted' : ''}">
-                                                            <span>${formatTanggalSingkat(tanggal)}</span>
-                                                            <span class="fw-semibold">${formatRupiah(nilai)}</span>
-                                                        </div>
-                                                    `).join('')}
+                                            <div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded 
+                                                ${index === 0 ? 'bg-success-subtle' : 'bg-light'}">
+
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <span class="badge ${index === 0 ? 'bg-success' : 'bg-secondary'}">
+                                                        #${index + 1}
+                                                    </span>
+                                                    <span class="${index === 0 ? 'fw-semibold text-dark' : 'text-muted'}">
+                                                        ${formatTanggalSingkat(tanggal)}
+                                                    </span>
+                                                </div>
+
+                                                <span class="fw-semibold ${index === 0 ? 'text-success' : 'text-dark'}">
+                                                    ${formatRupiah(nilai)}
+                                                </span>
+                                            </div>
+                                        `).join('')}
                                     </div>
 
                                     <hr class="my-3">
 
-                                    <div class="d-flex align-items-center gap-2 text-muted small">
-                                        <i class="bi bi-person-circle fs-5"></i>
-                                        <span class="fw-semibold text-dark">${karyawanTerkaitRupiah?.nama_lengkap ?? '-'}</span>
-                                        <span>• ${karyawanTerkaitRupiah?.jabatan ?? '-'}</span>
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="bi bi-person-circle fs-4 text-secondary"></i>
+                                            <div>
+                                                <div class="fw-semibold text-dark">
+                                                    ${karyawanTerkaitRupiah?.nama_lengkap ?? '-'}
+                                                </div>
+                                                <small class="text-muted">
+                                                    ${karyawanTerkaitRupiah?.jabatan ?? '-'}
+                                                </small>
+                                            </div>
+                                        </div>
+
+                                        <span class="badge bg-light text-dark border">
+                                            Karyawan
+                                        </span>
                                     </div>
-                                    `;
+
+                                </div>
+                            `;
 
                         } else {
                             contentPieChart = `
@@ -1569,6 +1978,115 @@
 
                         if (allowedAssistantRoutes.includes(data.condition)) {
                             contentStatisticChart = ``;
+                        } else if (allowedAssistantRoutesForPresentaseGapKompetensi.includes(data.condition)) {
+                            contentStatisticChart = `
+                                <div class="mt-4">
+                                    <div class="card shadow-sm border-0 rounded-4">
+                                        <div class="card-body">
+                                            <h6 class="fw-semibold mb-3">Input Presentase Kemampuan Programmer</h6>
+
+                                            <form id="formGapKompetensi">
+
+                                                <!-- HEADER -->
+                                                <div class="row mb-2 fw-semibold text-muted border-bottom pb-2">
+                                                    <div class="col-md-4">Nama Karyawan</div>
+                                                    <div class="col-md-4">Kemampuan (%)</div>
+                                                    <div class="col-md-4">Standar (%)</div>
+                                                </div>
+
+                                                <!-- DATA -->
+                                                ${(data.karyawan || []).map((item, index) => {
+
+                                                    const kemampuan = parseFloat(item.presentase_kemampuan ?? 0);
+                                                    const standar = parseFloat(item.presentase_standar ?? 100);
+
+                                                    let badge = '';
+                                                    let rowClass = '';
+
+                                                    if (kemampuan === 0) {
+                                                        badge = `<span class="badge bg-danger">0%</span>`;
+                                                    } else if (kemampuan < standar) {
+                                                        badge = `<span class="badge bg-warning text-dark">Not Achieved</span>`;
+                                                    } else {
+                                                        badge = `<span class="badge bg-success">Achieved</span>`;
+                                                    }
+
+                                                    return `
+                                                        <div class="row mb-2 align-items-center p-2 rounded">
+                                                            
+                                                            <div class="col-md-4 d-flex justify-content-between align-items-center">
+                                                                <span>${item.nama_lengkap ?? '-'}</span>
+                                                                ${badge}
+                                                            </div>
+
+                                                            <div class="col-md-4">
+                                                                <input type="number" step="0.1" class="form-control kemampuan-input"
+                                                                    name="data[${index}][kemampuan]"
+                                                                    value="${kemampuan}">
+                                                            </div>
+
+                                                            <div class="col-md-4">
+                                                                <input type="number" step="0.1" class="form-control standar-input"
+                                                                    name="data[${index}][standar]"
+                                                                    value="${standar}">
+                                                            </div>
+
+                                                            <input type="hidden" name="data[${index}][id]" value="${item.id}">
+                                                        </div>
+                                                    `;
+                                                }).join('')}
+
+                                                <!-- BUTTON -->
+                                                <div class="mt-3">
+                                                    <button type="submit" class="btn btn-primary">
+                                                        Simpan
+                                                    </button>
+                                                </div>
+
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                `;
+
+                            $(document).on('submit', '#formGapKompetensi', function(e) {
+                                e.preventDefault();
+
+                                let formData = $(this).serialize();
+
+                                $.ajaxSetup({
+                                    headers: {
+                                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                                    }
+                                });
+
+                                $.ajax({
+                                    url: "{{ route('kpi.updateGapKompetensi') }}",
+                                    method: 'POST',
+                                    data: formData,
+                                    success: function(res) {
+                                        Swal.fire({
+                                            icon: 'success',
+                                            title: 'Berhasil!',
+                                            text: 'berhasil diupdate.',
+                                            timer: 2000,
+                                            showConfirmButton: false
+                                        }).then(() => {
+                                            $('#detailTargetModal').modal('hide');
+                                        });
+                                        loadContentForm();
+                                    },
+                                    error: function(err) {
+                                        Swal.fire({
+                                            icon: 'error',
+                                            title: 'Gagal!',
+                                            html: msg
+                                        });
+                                        console.log(err);
+                                    }
+                                });
+                            });
+
                         } else {
                             contentStatisticChart = `
                                     <div class="mt-4">
@@ -1708,6 +2226,8 @@
                                         </div>
                                     </div>
 
+                                    ${ContentTrafikSales}
+
                                     ${contentStatisticChart}
                                 </div>
                             </div>
@@ -1761,7 +2281,7 @@
                                             ticks: {
                                                 count: 6,
                                                 precision: 0,
-                                                callback: function (value) {
+                                                callback: function(value) {
                                                     return Math.round(value);
                                                 }
                                             }
@@ -1775,7 +2295,7 @@
                         const monthValues = Object.values(monthlyData);
                         renderStatistic(monthLabels, monthValues, 'Rata-rata');
 
-                        $('#filterType').off('change').on('change', function () {
+                        $('#filterType').off('change').on('change', function() {
                             if (this.value === 'month') {
                                 $('#filterMonth').removeClass('d-none').empty().append(
                                     '<option value="">Pilih Bulan</option>');
@@ -1791,7 +2311,7 @@
                             }
                         });
 
-                        $('#filterMonth').off('change').on('change', function () {
+                        $('#filterMonth').off('change').on('change', function() {
                             const selectedMonth = this.value;
                             if (!selectedMonth || !dailyData[selectedMonth]) return;
 
@@ -1807,13 +2327,13 @@
                     const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
                     modal.show();
                 },
-                error: function () {
+                error: function() {
                     Swal.fire('Error', 'Gagal memuat detail target', 'error');
                 }
             });
         });
 
-        $(document).on('click', '.buttonHapusTarget', function () {
+        $(document).on('click', '.buttonHapusTarget', function() {
             let id = $(this).data('id');
             Swal.fire({
                 title: 'Yakin ingin menghapus?',
@@ -1834,7 +2354,7 @@
                         data: {
                             _token: '{{ csrf_token() }}'
                         },
-                        success: function (response) {
+                        success: function(response) {
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Berhasil!',
@@ -1844,7 +2364,7 @@
                             });
                             loadContentForm();
                         },
-                        error: function (xhr) {
+                        error: function(xhr) {
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Gagal!',
@@ -1887,29 +2407,7 @@
                 }
             }
 
-            $assistantRoute.off('change').on('change', function () {
-                const value = $(this).val();
-                const tipe = $tipeTarget.val();
-                if (value === 'Kepuasan Pelanggan') {
-                    $tipeTarget.html(`
-                    <option selected disabled>-- Pilih Tipe --</option>
-                    <option value="angka" disabled>Angka (Unit, Jumlah, dll)</option>
-                    <option value="rupiah" disabled>Rupiah (Nilai Keuangan)</option>
-                    <option value="persen">Persen (%)</option>
-                `);
-                    $tipeTarget.removeAttr('disabled');
-                } else {
-                    $tipeTarget.html(`
-                    <option selected disabled>-- Pilih Tipe --</option>
-                    <option value="angka">Angka (Unit, Jumlah, dll)</option>
-                    <option value="rupiah">Rupiah (Nilai Keuangan)</option>
-                    <option value="persen">Persen (%)</option>
-                `);
-                    $tipeTarget.removeAttr('disabled');
-                }
-            });
-
-            $nilaiTarget.off('input').on('input', function () {
+            $nilaiTarget.off('input').on('input', function() {
                 const tipe = $tipeTarget.val();
                 let value = $(this).val().replace(/\D/g, '');
                 if (!value) {
@@ -1933,7 +2431,7 @@
                 updateKonversiIfNeeded();
             });
 
-            $jangkaTarget.off('change').on('change', function () {
+            $jangkaTarget.off('change').on('change', function() {
                 const jangka = $(this).val();
                 $detailJangkaGroup.hide();
                 $detailJangkaField.empty();
@@ -2076,7 +2574,7 @@
         $('#tipeTarget').prop('disabled', true).html(
             '<option selected disabled>-- Pilih Assistant Route Terlebih Dahulu --</option>');
 
-        $('#jabatan').on('change', function () {
+        $('#jabatan').on('change', function() {
             const selectedJabatan = $(this).val();
             const assistantRouteSelect = $('#assistant_route');
             const tipeTargetSelect = $('#tipeTarget');
@@ -2119,6 +2617,7 @@
                     options += `
                         <option value="kepuasan client ITSM">Kepuasan Client ITSM</option>
                         <option value="inovation adaption rate">Inovation Adaption Rate</option>
+                        <option value="persentase gap kompetensi tim terhadap standar skill">Persentase Gap Kompetensi Tim terhadap Standar Skill</option>
                     `;
                 } else if (hasSales && hasSPVSales && hasAdmSales) {
                     options += `
@@ -2158,6 +2657,7 @@
                         <option value="laporan analisis keuangan">Laporan Analisis Keuangan</option>
                         <option value="pencairan biaya operasional">Pencairan Biaya Operasional Kantor</option>
                         <option value="penyelesaian tagihan perusahaan">Penyelesaian Tagihan Perusahaan</option>
+                        <option value="akurasi pencatatan masuk">Akurasi Pencatatan Masuk</option>
                     `;
                 }
 
@@ -2176,8 +2676,7 @@
                         <option value="perbaikan kendaraan">Perbaikan kendaraan</option>
                         <option value="report kondisi kendaraan">Report Kondisi Kendaraan</option>
                         <option value="kontrol pengeluaran transportasi">Kontrol Pengeluaran Transportasi</option>
-                        <option value="feedback kenyamanan berkendara">Feedback Kenyamanan Berkendara</option>
-
+                        <option value="feedback kenyamanan berkendaran">Feedback Kenyamanan Berkendara</option>
                     `;
                 }
 
@@ -2187,7 +2686,6 @@
                         <option value="feedback kebersihan dan kenyamanan">Feedback Kebersihan Dan Kenyamanan Peserta</option>
                         <option value="penyelesaian tugas harian">Peyelesaian Tugas Harian</option>
                     `;
-
                 }
 
                 //ITSM
@@ -2219,11 +2717,12 @@
                             <option value="kualitas layanan exam">Kualitas Layanan Exam</option>
                         `;
                 }
-                
+
                 //Education
                 //Instruktur
                 else if (hasInstruktur) {
                     options += `
+                            <option value="presentase kinerja instruktur">Presentase Kinerja Instruktur</option>
                             <option value="kepuasan peserta pelatihan">Kepuasan Peserta Pelatihan</option>
                             <option value="upseling lanjutan materi">Upseling Lanjutan Materi</option>
                             <option value="sertifikasi kompetensi internal">Peningkatan Kompetensi Instruktur - Sertifikasi Internal</option>
@@ -2236,6 +2735,8 @@
                     options += `
                             <option value="pengembangan kurikulum pelatihan">Pengembangan Kurikulum & Modul Pelatihan</option>
                             <option value="peningkatan knowledge sharing">Peningkatan Knowledge Sharing</option>
+                            <option value="peningkatan kontribusi pelatihan">Peningkatan Kontribusi Pelatihan</option>
+                            <option value="evaluasi kinerja instruktur">Evaluasi Kinerja Instruktur</option>
                         `;
                 }
 
@@ -2244,36 +2745,40 @@
                 else if (hasSales) {
                     options += `
                         <option value="target penjualan tahunan">Target Penjualan Tahunan</option>
+                        <option value="biaya akuisisi perclient">Biaya Akuisisi Perclient</option>
                     `;
                 }
 
-                //sales & marketing
                 //SPV Sales
                 else if (hasSPVSales) {
                     options += `
-                        <option value="meningkatkan revenue perusahaan">Meningkatkan Revenue Perusahaan</option></option>
+                        <option value="meningkatkan revenue perusahaan">Meningkatkan Revenue Perusahaan</option>
+                        <option value="customer acquisition cost">Customer Acquisition Cost</option>
+                        <option value="evaluasi kinerja sales">Evaluasi Kinerja Sales</option>
                     `;
                 }
 
                 // ADM Sales
                 else if (hasAdmSales) {
                     options += `
-                        <option value="laporan mom">Laporan MOM</option></option>
+                        <option value="laporan mom">Laporan MOM</option>
+                        <option value="akurasi kelengkapan data penjualan">Akurasi Kelengkapan Data Penjualan</option>
+                        <option value="todo administrasi">Todo Administrasi</option>
                     `;
                 }
 
                 // ADM Holding
                 else if (hasAdmHolding) {
                     options += `
-                        <option value="ketepatan waktu po">Ketepatan Waktu PO</option></option>
+                        <option value="ketepatan waktu po">Ketepatan Waktu PO</option>
+                        <option value="kualitas dokumentasi support dan proctor">Kualitas Dokumentasi Support Dan Proctor</option>
                     `;
                 }
-
 
                 //end/selesai
                 else {
                     options +=
-                        '<option value="">-- Tidak ada Assistant Route tersedia untuk jabatan ini --</option>';
+                        '<option disabled>-- Tidak ada Assistant Route tersedia untuk jabatan ini --</option>';
                 }
 
             }
@@ -2287,119 +2792,194 @@
                 '<option selected disabled>-- Pilih Assistant Route Terlebih Dahulu --</option>');
         });
 
-        $('#assistant_route').on('change', function () {
+        $(document).on('change', '#assistant_route', function() {
             const selectedRoute = $(this).val();
-            const tipeTargetSelect = $('#tipeTarget');
-            const nilaiTarget = $('#nilaiTarget');
+            const $tipeTarget = $('#tipeTarget');
+            const $nilaiTarget = $('#nilaiTarget');
 
             if (!selectedRoute) {
-                tipeTargetSelect.prop('disabled', true).html(
-                    '<option selected disabled>-- Pilih Assistant Route --</option>');
-                nilaiTarget.prop('disabled', true).val('');
+                $tipeTarget
+                    .removeClass('select-readonly')
+                    .html(`
+                        <option selected disabled>-- Silahkan Memilih Assistant Route --</option>
+                    `)
+                    .prop('disabled', false);
+                $nilaiTarget.prop('disabled', false).val('').trigger('input');
                 return;
             }
 
-            tipeTargetSelect.prop('disabled', false);
-            nilaiTarget.prop('disabled', false); 
-
-            const persenRoutes = [
-                'pemasukan bersih', 'kepuasan pelanggan', 'rasio biaya operasional terhadap revenue',
-                'performa kpi departemen', 'peserta puas dengan pelayanan dan fasilitas training',
-                'penanganan komplain peserta', 'report persiapan kelas', 'banyak tagihan client yang belum lunas',
-                'pelaksanaan kegiatan karyawan', 'pengeluaran biaya karyawan', 'administrasi karyawan',
-                'perbaikan kendaraan', 'report kondisi kendaraan', 'kontrol pengeluaran transportasi',
-                'feedback kebersihan dan kenyamanan', 'penyelesaian tugas harian',
-                'kepuasan client itsm', 'meningkatkan kepuasan dan loyalitas peserta/client',
-                'availability sistem internal kritis', 'ketepatan waktu penyelesaian fitur',
-                'mengukur kualitas aplikasi agar minim bug', 'konsistensi campaign digital',
-                'keberhasilan support memenuhi sla', 'kualitas layanan exam',
-                'kepuasan peserta pelatihan', 'upseling lanjutan materi', 'outstanding'
-            ].map(r => r.toLowerCase());
-
-            const rupiahRoutes = ['pemasukan kotor'].map(r => r.toLowerCase());
-            
-            const angkaRoutes = [
-                'dorong inovasi pelayanan', 'inisiatif efisiensi keuangan', 
-                'mengurangi manual work dan error', 'laporan analisis keuangan',
-                'efektifitas digital marketing', 'sertifikasi kompetensi internal',
-                'pelatihan kompetensi eksternal', 'pengembangan kurikulum pelatihan',
-                'peningkatan knowledge sharing'
-            ].map(r => r.toLowerCase());
 
             const routeLower = selectedRoute.toLowerCase();
 
-            // --- Set opsi tipe target ---
+            const persenRoutes = [
+                // ================= GM =================
+                'pemasukan bersih',
+                'kepuasan pelanggan',
+                'rasio biaya operasional terhadap revenue',
+                'performa kpi departemen',
+
+                // ================= CS =================
+                'peserta puas dengan pelayanan dan fasilitas training',
+                'penanganan komplain peserta',
+                'report persiapan kelas',
+
+                // ================= Finance =================
+                'outstanding',
+                'penyelesaian tagihan perusahaan',
+                'akurasi pencatatan masuk',
+                'pencairan biaya operasional',
+
+                // ================= HRD =================
+                'pelaksanaan kegiatan karyawan',
+                'pengeluaran biaya karyawan',
+                'administrasi karyawan',
+
+                // ================= Driver =================
+                'perbaikan kendaraan',
+                'report kondisi kendaraan',
+                'kontrol pengeluaran transportasi',
+                'feedback kenyamanan berkendaran',
+
+                // ================= OB =================
+                'feedback kebersihan dan kenyamanan',
+                'penyelesaian tugas harian',
+
+                // ================= ITSM =================
+                'kepuasan client itsm',
+                'meningkatkan kepuasan dan loyalitas peserta/client',
+                'availability sistem internal kritis',
+
+                // ================= Programmer =================
+                'ketepatan waktu penyelesaian fitur',
+                'mengukur kualitas aplikasi agar minim bug',
+
+                // ================= Digital =================
+                'konsistensi campaign digital',
+
+                // ================= TS =================
+                'keberhasilan support memenuhi sla',
+                'kualitas layanan exam',
+
+                // ================= Instruktur =================
+                'presentase kinerja instruktur',
+                'kepuasan peserta pelatihan',
+                'upseling lanjutan materi',
+
+                // ================= Manager Edu =================
+                'peningkatan kontribusi pelatihan',
+                'evaluasi kinerja instruktur',
+
+                // ================= Sales =================
+                'target penjualan tahunan',
+                'biaya akuisisi perclient',
+
+                // ================= SPV Sales =================
+                'customer acquisition cost',
+                'evaluasi kinerja sales',
+
+                // ================= Adm Sales =================
+                'laporan mom',
+                'akurasi kelengkapan data penjualan',
+                'todo administrasi',
+
+                // ================= Adm Holding =================
+                'ketepatan waktu po',
+                'kualitas dokumentasi support dan proctor',
+
+                // ================= Kombinasi =================
+                'persentase gap kompetensi tim terhadap standar skill',
+                'peningkatan kemampuan kompetensi sales'
+            ].map(route => route.toLowerCase());
+
+            const rupiahRoutes = [
+                // GM
+                'pemasukan kotor',
+
+                // SPV Sales
+                'meningkatkan revenue perusahaan',
+            ].map(r => r.toLowerCase());
+
+            const angkaRoutes = [
+                // CS
+                'dorong inovasi pelayanan',
+
+                // Finance
+                'inisiatif efisiensi keuangan',
+                'mengurangi manual work dan error',
+                'laporan analisis keuangan',
+
+                // Digital
+                'efektifitas digital marketing',
+
+                // Instruktur
+                'sertifikasi kompetensi internal',
+                'pelatihan kompetensi eksternal',
+
+                // Manager Edu
+                'pengembangan kurikulum pelatihan',
+                'peningkatan knowledge sharing',
+
+                // Kombinasi IT
+                'inovation adaption rate'
+            ].map(route => route.toLowerCase());
+
             if (persenRoutes.includes(routeLower)) {
-                tipeTargetSelect.html(`
-                        <option selected disabled>-- Pilih Tipe --</option>
+                $tipeTarget
+                    .html(`
                         <option disabled>Angka (Unit, Jumlah, dll)</option>
                         <option disabled>Rupiah (Nilai Keuangan)</option>
-                        <option value="persen">Persen (%)</option>
-                    `).prop('disabled', true);
-
-            } else if (rupiahRoutes.includes(selectedRoute)) {
-                tipeTargetSelect.html(`
-                        <option selected disabled>-- Pilih Tipe --</option>
+                        <option value="persen" selected>Persen (%)</option>
+                    `)
+                    .addClass('select-readonly')
+                    .prop('disabled', false); 
+            } else if (rupiahRoutes.includes(routeLower)) {
+                $tipeTarget
+                    .html(`
                         <option disabled>Angka (Unit, Jumlah, dll)</option>
-                        <option value="rupiah">Rupiah (Nilai Keuangan)</option>
+                        <option value="rupiah" selected>Rupiah (Nilai Keuangan)</option>
                         <option disabled>Persen (%)</option>
-                    `).prop('disabled', false);
-
-            } else if (angka.includes(selectedRoute)) {
-                tipeTargetSelect.html(`
-                        <option selected disabled>-- Pilih Tipe --</option>
-                        <option value="angka">Angka (Unit, Jumlah, dll)</option>
+                    `)
+                    .addClass('select-readonly')
+                    .prop('disabled', false);
+            } else if (angkaRoutes.includes(routeLower)) {
+                $tipeTarget
+                    .html(`
+                        <option value="angka" selected>Angka (Unit, Jumlah, dll)</option>
                         <option disabled>Rupiah (Nilai Keuangan)</option>
                         <option disabled>Persen (%)</option>
-                    `).prop('disabled', false);
+                    `)
+                    .addClass('select-readonly')
+                    .prop('disabled', false);
+            } else {
+                $tipeTarget
+                    .html(`
+                        <option selected disabled>-- Route Tidak Dikenali --</option>
+                    `)
+                    .removeClass('select-readonly') 
+                    .prop('disabled', false);
             }
 
-            let isAutoFilled = false;
+            const autoFillValues = {
+                'sertifikasi kompetensi internal': $('#jabatan').val()?.length || 1,
+                'pelatihan kompetensi eksternal': $('#jabatan').val()?.length || 1,
+                'efektifitas digital marketing': 4,
+                'laporan analisis keuangan': 12,
+                'dorong inovasi pelayanan': 3,
+                'mengurangi manual work dan error': 2,
+                'inisiatif efisiensi keuangan': 2,
+                'pengembangan kurikulum pelatihan': 12,
+            };
 
-            if (routeLower === 'sertifikasi kompetensi internal' || 
-                routeLower === 'pelatihan kompetensi eksternal') {
-                const selectedJabatan = $('#jabatan').val();
-                const count = Array.isArray(selectedJabatan) ? selectedJabatan.length : (selectedJabatan ? 1 : 0);
-                nilaiTarget.val(count).trigger('input');
-                isAutoFilled = true;
-            } 
-            else if (routeLower === 'efektifitas digital marketing') {
-                nilaiTarget.val('4').trigger('input');
-                isAutoFilled = true;
-            } 
-            else if (routeLower === 'laporan analisis keuangan') {
-                nilaiTarget.val('12').trigger('input');
-                isAutoFilled = true;
-            } 
-            else if (routeLower === 'dorong inovasi pelayanan') {
-                nilaiTarget.val('3').trigger('input');
-                isAutoFilled = true;
-            } 
-            else if (routeLower === 'mengurangi manual work dan error') {
-                nilaiTarget.val('2').trigger('input');
-                isAutoFilled = true;
-            } 
-            else if (routeLower === 'inisiatif efisiensi keuangan') {
-                nilaiTarget.val('2').trigger('input');
-                isAutoFilled = true;
-            } 
-            else if (routeLower === 'pengembangan kurikulum pelatihan') {
-                nilaiTarget.val('12').trigger('input');
-                isAutoFilled = true;
-            } 
-            else if (routeLower === 'peningkatan knowledge sharing') {
-                const currentYear = new Date().getFullYear();
-                const weeks = (new Date(currentYear, 0, 1).getDay() === 4 || new Date(currentYear, 11, 31).getDay() === 4) ? 53 : 52;
-                nilaiTarget.val(weeks).trigger('input');
-                isAutoFilled = true;
+            if (autoFillValues.hasOwnProperty(routeLower)) {
+                $nilaiTarget.val(autoFillValues[routeLower]).trigger('input');
             }
 
-            nilaiTarget.prop('disabled', isAutoFilled);
-
-            tipeTargetSelect.trigger('change');
+            if ($nilaiTarget.val()) {
+                $nilaiTarget.trigger('input');
+            }
         });
 
-        document.getElementById('manual_document').addEventListener('change', function (e) {
+        document.getElementById('manual_document').addEventListener('change', function(e) {
             const preview = document.getElementById('documentPreview');
             preview.innerHTML = '';
 
@@ -2410,7 +2990,7 @@
 
             if (fileType.startsWith('image/')) {
                 const reader = new FileReader();
-                reader.onload = function (event) {
+                reader.onload = function(event) {
                     const img = document.createElement('img');
                     img.src = event.target.result;
                     img.classList.add('img-fluid', 'rounded');
