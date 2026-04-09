@@ -30,4 +30,9 @@ class Project extends Model
     {
         return $this->belongsTo(Perusahaan::class, 'id');
     }
+
+    public function handover()
+    {
+        return $this->hasOne(ProjectHandover::class, 'project_id', 'id');
+    }
 }
