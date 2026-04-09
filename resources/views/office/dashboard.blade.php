@@ -1291,10 +1291,13 @@
                                                 <th scope="col" rowspan="2" class="border-0" style="min-width: 150px;">Ruang</th>
                                                 <th scope="col" rowspan="2" class="border-0" style="min-width: 100px;">Pax</th>
                                                 <th scope="col" rowspan="2" class="border-0" style="min-width: 120px;">Makanan</th>
-                                                <th scope="col" colspan="6" class="border-bottom border-dark text-center" style="min-width: 300px;">Checklist</th>
                                                 {{-- CheckList --}}
+                                                <th scope="col" colspan="7" class="border-bottom border-dark text-center" style="min-width: 300px;">Checklist</th>
+
+                                                <th scope="col" rowspan="2" class="border-0">Eksport</th>
                                             </tr>
                                             <tr class="text-center">
+                                                <th scope="col" class="border-0" style="min-width: 120px;">Tanggal Keperluan</th>
                                                 <th scope="col" class="border-0" style="min-width: 120px;">Materi</th>
                                                 <th scope="col" class="border-0" style="min-width: 120px;">Kelas</th>
                                                 <th scope="col" class="border-0" style="min-width: 120px;">Coffe Break</th>
@@ -1305,50 +1308,122 @@
                                         </thead>
                                         <tbody>
                                             @forelse ($rkms as $detail_rkm)
-                                                <tr class="border-bottom">
-                                                    <td class="ps-4">{{ $loop->iteration }}</td>
-                                                    <td>{{ $detail_rkm->materi->nama_materi }}</td>
-                                                    <td>{{ \Carbon\Carbon::parse($detail_rkm->tanggal_awal)->translatedFormat('d M Y') }} - {{ \Carbon\Carbon::parse($detail_rkm->tanggal_akhir)->translatedFormat('d M Y') }}</td>
-                                                    <td>
-                                                        @foreach ($detail_rkm->perusahaan as $perusahaan)
-                                                            {{ $perusahaan->nama_perusahaan }} ,
-                                                        @endforeach
-                                                    </td>
-                                                    <td>{{ $detail_rkm->sales_all }}</td>
-                                                    <td>{{ $detail_rkm->instruktur_all }}</td>
-                                                    <td>{{ $detail_rkm->ruang ? $detail_rkm->ruang : 'Belum Ditentukan' }}</td>
-                                                    <td>{{ $detail_rkm->total_pax }}</td>
-                                                    <td>
-                                                        @php
-                                                            $makananList = $detail_rkm->makanan ? explode(', ', $detail_rkm->makanan) : [];
-                                                            $makananValue = count($makananList) > 0 ? $makananList[0] : 'Tidak Ada';
-                                                        @endphp
+                                                @php
+                                                    $checklists = $detail_rkm->checklists ?? [];
+                                                    $rowspan = count($checklists) > 0 ? count($checklists) : 1;
+                                                @endphp
+                                                @if(count($checklists) > 0)
+                                                    @foreach ($checklists as $tanggal => $item)
+                                                        <tr class="border-bottom">
 
-                                                        @if ($makananValue == '0' || $makananValue == 'Tidak Ada')
-                                                            Tidak Ada
-                                                        @elseif ($makananValue == '1' || $makananValue == 'Nasi Box')
-                                                            Nasi Box
-                                                        @elseif ($makananValue == '2' || $makananValue == 'Prasmanan')
-                                                            Prasmanan
-                                                        @else
-                                                            Belum Ditentukan
-                                                        @endif
-                                                    </td>
-                                                    <td class="text-center"><input class="custom-check" type="checkbox" {{ $detail_rkm->checklist ? ($detail_rkm->checklist->materi == 1 ? 'checked' : '') : '' }} disabled></td> 
-                                                    <td class="text-center"><input class="custom-check" type="checkbox" {{ $detail_rkm->checklist ? ($detail_rkm->checklist->kelas == 1 ? 'checked' : '') : '' }} disabled></td>
-                                                    <td class="text-center"><input class="custom-check" type="checkbox" {{ $detail_rkm->checklist ? ($detail_rkm->checklist->cb == 1 ? 'checked' : '') : '' }} disabled></td> 
-                                                    <td class="text-center"><input class="custom-check" type="checkbox" {{ $detail_rkm->checklist ? ($detail_rkm->checklist->maksi == 1 ? 'checked' : '') : '' }} disabled></td> 
-                                                    <td class="text-center"><input class="custom-check" type="checkbox" {{ $detail_rkm->checklist ? ($detail_rkm->checklist->keperluan_kelas == 1 ? 'checked' : '') : '' }} disabled></td>
-                                                    <td class="text-center">{{ $detail_rkm->checklist_status ?? 0 }}%</td>
-                                                </tr>
+                                                            @if ($loop->first)
+                                                                <td class="ps-4" rowspan="{{ $rowspan }}">{{ $loop->parent->iteration }}</td>
+
+                                                                <td rowspan="{{ $rowspan }}">
+                                                                    {{ $detail_rkm->materi->nama_materi }}
+                                                                </td>
+
+                                                                <td rowspan="{{ $rowspan }}">
+                                                                    @if ($detail_rkm->tanggal_awal == $detail_rkm->tanggal_akhir)
+                                                                        {{ \Carbon\Carbon::parse($detail_rkm->tanggal_awal)->translatedFormat('d M Y') }}
+                                                                    @else
+                                                                        {{ \Carbon\Carbon::parse($detail_rkm->tanggal_awal)->translatedFormat('d M Y') }}
+                                                                        -
+                                                                        {{ \Carbon\Carbon::parse($detail_rkm->tanggal_akhir)->translatedFormat('d M Y') }}
+                                                                    @endif
+                                                                </td>
+
+                                                                <td rowspan="{{ $rowspan }}">
+                                                                    @foreach ($detail_rkm->perusahaan as $perusahaan)
+                                                                        {{ $perusahaan->nama_perusahaan }},
+                                                                    @endforeach
+                                                                </td>
+
+                                                                <td rowspan="{{ $rowspan }}">{{ $detail_rkm->sales_all }}</td>
+                                                                <td rowspan="{{ $rowspan }}">{{ $detail_rkm->instruktur_all }}</td>
+                                                                <td rowspan="{{ $rowspan }}">{{ $detail_rkm->ruang ?? 'Belum Ditentukan' }}</td>
+                                                                <td rowspan="{{ $rowspan }}">{{ $detail_rkm->total_pax }}</td>
+
+                                                                <td rowspan="{{ $rowspan }}">
+                                                                    @php
+                                                                        $makananList = $detail_rkm->makanan ? explode(', ', $detail_rkm->makanan) : [];
+                                                                        $makananValue = count($makananList) > 0 ? $makananList[0] : 'Tidak Ada';
+                                                                    @endphp
+
+                                                                    @if ($makananValue == '0' || $makananValue == 'Tidak Ada')
+                                                                        Tidak Ada
+                                                                    @elseif ($makananValue == '1' || $makananValue == 'Nasi Box')
+                                                                        Nasi Box
+                                                                    @elseif ($makananValue == '2' || $makananValue == 'Prasmanan')
+                                                                        Prasmanan
+                                                                    @else
+                                                                        Belum Ditentukan
+                                                                    @endif
+                                                                </td>
+                                                            @endif
+
+                                                            <td class="text-center">
+                                                                {{ \Carbon\Carbon::parse($tanggal)->format('d M') }}
+                                                            </td>
+
+                                                            <td class="text-center">
+                                                                <input type="checkbox" class="custom-check" {{ $item->materi ? 'checked' : '' }} disabled>
+                                                            </td>
+
+                                                            <td class="text-center">
+                                                                @if ($detail_rkm->metode_kelas === 'Offline')
+                                                                    <input type="checkbox" class="custom-check" {{ $item->kelas ? 'checked' : '' }} disabled>
+                                                                @else
+                                                                -
+                                                                @endif
+                                                            </td>
+
+                                                            <td class="text-center">
+                                                                <input type="checkbox" class="custom-check" {{ $item->cb ? 'checked' : '' }} disabled>
+                                                            </td>
+
+                                                            <td class="text-center">
+                                                                <input type="checkbox" class="custom-check" {{ $item->maksi ? 'checked' : '' }} disabled>
+                                                            </td>
+
+                                                            <td class="text-center">
+                                                                @if ($detail_rkm->metode_kelas === 'Offline')
+                                                                    <input type="checkbox" class="custom-check" {{ $item->keperluan_kelas ? 'checked' : '' }} disabled>
+                                                                @else
+                                                                -
+                                                                @endif
+                                                            </td>
+
+                                                            <td class="text-center">
+                                                                {{ $item->progress ?? 0 }}%
+                                                            </td>
+                                                            @if ($loop->first)
+                                                                <td rowspan="{{ $rowspan }}" class="text-center align-middle">
+                                                                    <a href="{{ route('export.pdf.checklist', $detail_rkm->id) }}" id="exportPdfRkm" class="btn btn-outline-danger btn-sm mb-1">
+                                                                        PDF
+                                                                    </a>
+                                                                    <a href="{{ route('export.excel.checklist', $detail_rkm->id) }}" id="exportExcelRkm" class="btn btn-outline-success btn-sm">
+                                                                        Excel
+                                                                    </a>
+                                                                </td>
+                                                            @endif
+                                                        </tr>
+                                                    @endforeach
+                                                @else
+                                                    <tr>
+                                                        <td class="ps-4">{{ $loop->iteration }}</td>
+                                                        <td>{{ $detail_rkm->materi->nama_materi }}</td>
+                                                        <td colspan="10" class="text-center text-muted">
+                                                            Tidak ada checklist
+                                                        </td>
+                                                    </tr>
+
+                                                @endif
+
                                             @empty
                                                 <tr>
-                                                    <td colspan="8" class="text-center py-5">
-                                                        <div class="d-flex flex-column align-items-center">
-                                                            <i class="bx bx-message-square-x text-muted"
-                                                                style="font-size: 3rem;"></i>
-                                                            <p class="text-muted mt-3 mb-0">Tidak ada RKM untuk ditampilkan</p>
-                                                        </div>
+                                                    <td colspan="12" class="text-center py-5">
+                                                        Tidak ada data
                                                     </td>
                                                 </tr>
                                             @endforelse

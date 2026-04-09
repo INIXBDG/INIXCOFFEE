@@ -68,36 +68,22 @@
                 </div>
                 <div class="modal-body">
 
+                    <div class="d-flex justify-content-between mb-2">
+                        <button id="prevDay" class="btn btn-sm btn-secondary">←</button>
+                        <span id="labelHari"></span>
+                        <button id="nextDay" class="btn btn-sm btn-secondary">→</button>
+                    </div>
+
                     <div class="progress mb-3" style="height: 20px;">
                         <div id="checklistProgress" class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
                     </div>
 
                     <form id="formChecklistKeperluan">
                         <input type="hidden" id="inputHiddenIdRkm" name="id_rkm">
+                        <input type="hidden" name="tanggal" id="tanggal">
+                        <input type="hidden" name="metode_kelas" id="metode_kelas">
 
-                        <div class="form-check mb-2">
-                            <input class="form-check-input checklist-item" type="checkbox" value="Materi" id="checkMateri" name="checklist[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
-                            <label class="form-check-label" for="checkMateri">Materi</label>
-                        </div>
-
-                        <div class="form-check mb-2">
-                            <input class="form-check-input checklist-item" type="checkbox" value="Kelas" id="checkKelas" name="checklist[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
-                            <label class="form-check-label" for="checkKelas">Kelas</label>
-                        </div>
-
-                        <div class="form-check mb-2">
-                            <input class="form-check-input checklist-item" type="checkbox" value="Cb" id="checkCb" name="checklist[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
-                            <label class="form-check-label" for="checkCb">Coffe Break</label>
-                        </div>
-
-                        <div class="form-check mb-2">
-                            <input class="form-check-input checklist-item" type="checkbox" value="Maksi" id="checkMaksi" name="checklist[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
-                            <label class="form-check-label" for="checkMaksi">Makan Siang</label>
-                        </div>
-
-                        <div class="form-check mb-2">
-                            <input class="form-check-input checklist-item" type="checkbox" value="Keperluan Kelas" id="checkKeperluanKelas" name="checklist[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
-                            <label class="form-check-label" for="checkKeperluanKelas">Keperluan Kelas</label>
+                        <div id="checklistContainer">
                         </div>
                     </form>
                 </div>
@@ -105,7 +91,7 @@
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
 
                     @if($bisaEditChecklist)
-                        <button type="button" class="btn btn-primary" id="btnSimpanChecklist">Simpan</button>
+                        {{-- <button type="button" class="btn btn-primary" id="btnSimpanChecklist">Simpan</button> --}}
                     @endif
                 </div>
             </div>
@@ -767,24 +753,348 @@ function excelDownloadAdmSales() {
                 }
             });
 
-            // 2. Fungsi Kalkulasi Progress Bar
-            function updateProgressBar() {
-                var totalItems = 5; // Total jumlah kotak centang
-                var checkedItems = $('.checklist-item:checked').length;
-                var percentage = Math.round((checkedItems / totalItems) * 100);
+            let dates = [];
+            let currentIndex = 0;
+            let checklistData = {};
 
-                $('#checklistProgress')
-                    .css('width', percentage + '%')
-                    .attr('aria-valuenow', percentage)
-                    .text(percentage + '%');
+            function generateDates(start, end) {
+                let result = [];
+                let s = new Date(start);
+                let e = new Date(end);
+
+                while (s <= e) {
+                    result.push(s.toISOString().split('T')[0]);
+                    s.setDate(s.getDate() + 1);
+                }
+
+                return result;
             }
 
-            // 3. Event Listener untuk Perubahan Kotak Centang
-            $(document).on('change', '.checklist-item', function() {
+            function setDefaultIndex() {
+                let today = new Date().toISOString().split('T')[0];
+
+                let index = dates.findIndex(d => d === today);
+
+                if (index !== -1) {
+                    currentIndex = index;
+                } else {
+                    currentIndex = 0; // fallback kalau hari ini di luar range
+                }
+            }
+
+            function renderDay() {
+                let tanggal = dates[currentIndex];
+                let data = checklistData[tanggal] || {};
+                let sub = data.sub || {};
+                let metodeKelas = $('#metode_kelas').val();
+
+                $('#tanggal').val(tanggal);
+                $('#labelHari').text(`Hari ke-${currentIndex + 1} (${tanggal})`);
+
+                if (metodeKelas === 'Offline') {
+                    let html = `
+                        <div class="form-check mb-2">
+                            <input class="form-check-input checklist-item " type="checkbox" value="Materi" id="checkMateri" name="checklist[]" onclick="return false;">
+                            <label class="form-check-label" for="checkMateri">Materi</label>
+                            <div class="form-check my-2">
+                                <input class="form-check-input checklist-item checkSubMateri" type="checkbox" value="Module" id="checkModule" name="checklistSubMateri[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
+                                <label class="form-check-label" for="checkModule">Module</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input checklist-item checkSubMateri" type="checkbox" value="E-Learning" id="checkELearning" name="checklistSubMateri[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
+                                <label class="form-check-label" for="checkELearning">E-Learning</label>
+                            </div>
+                        </div>
+    
+                        <br>
+    
+                        <div class="form-check mb-2">
+                            <input class="form-check-input checklist-item" type="checkbox" value="Kelas" id="checkKelas" name="checklist[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
+                            <label class="form-check-label" for="checkKelas">Kelas</label>
+                        </div>
+    
+                        <br>
+    
+                        <div class="form-check mb-2">
+                            <input class="form-check-input checklist-item" type="checkbox" value="Cb" id="checkCb" name="checklist[]" onclick="return false;">
+                            <label class="form-check-label" for="checkCb">Coffe Break</label>
+                            <div class="form-check my-2">
+                                <input class="form-check-input checklist-item checkSubCb" type="checkbox" id="checkCbInstruktur" value="Instruktur" name="checklistSubCb[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
+                                <label class="form-check-label" for="checkCbInstruktur">Instruktur</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input checklist-item checkSubCb" type="checkbox" id="checkCbPeserta" value="Peserta" name="checklistSubCb[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
+                                <label class="form-check-label" for="checkCbPeserta">Peserta</label>
+                            </div>
+                        </div>
+    
+                        <br>
+    
+                        <div class="form-check mb-2">
+                            <input class="form-check-input checklist-item" type="checkbox" value="Maksi" id="checkMaksi" name="checklist[]" onclick="return false;">
+                            <label class="form-check-label" for="checkMaksi">Makan Siang</label>
+                            <div class="form-check my-2">
+                                <input class="form-check-input checklist-item checkSubMaksi" type="checkbox" id="checkMaksiInstruktur" value="Instruktur" name="checklistSubMaksi[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
+                                <label class="form-check-label" for="checkMaksiInstruktur">Instruktur</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input checklist-item checkSubMaksi" type="checkbox" id="checkMaksiPeserta" value="Peserta" name="checklistSubMaksi[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
+                                <label class="form-check-label" for="checkMaksiPeserta">Peserta</label>
+                            </div>
+                        </div>
+    
+                        <br>
+    
+                        <div class="form-check mb-2">
+                            <input class="form-check-input checklist-item" type="checkbox" value="Keperluan Kelas" id="checkKeperluanKelas" name="checklist[]" onclick="return false;">
+                            <label class="form-check-label" for="checkKeperluanKelas">Keperluan Kelas</label>
+                            <div class="form-check my-2">
+                                <input class="form-check-input checklist-item checkSubKeperluanKelas" type="checkbox" id="checkKeperluanKelasAC" value="AC" name="checklistSubKeperluanKelas[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
+                                <label class="form-check-label" for="checkKeperluanKelasAC">AC</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input checklist-item checkSubKeperluanKelas" type="checkbox" id="checkKeperluanKelasJam" value="Jam" name="checklistSubKeperluanKelas[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
+                                <label class="form-check-label" for="checkKeperluanKelasJam">Jam</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input checklist-item checkSubKeperluanKelas" type="checkbox" id="checkKeperluanKelasBuku" value="Buku" name="checklistSubKeperluanKelas[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
+                                <label class="form-check-label" for="checkKeperluanKelasBuku">Buku</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input checklist-item checkSubKeperluanKelas" type="checkbox" id="checkKeperluanKelasPulpen" value="Pulpen" name="checklistSubKeperluanKelas[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
+                                <label class="form-check-label" for="checkKeperluanKelasPulpen">Pulpen</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input checklist-item checkSubKeperluanKelas" type="checkbox" id="checkKeperluanKelasPermen" value="Permen" name="checklistSubKeperluanKelas[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
+                                <label class="form-check-label" for="checkKeperluanKelasPermen">Permen</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input checklist-item checkSubKeperluanKelas" type="checkbox" id="checkKeperluanKelasCamilan" value="Camilan" name="checklistSubKeperluanKelas[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
+                                <label class="form-check-label" for="checkKeperluanKelasCamilan">Camilan</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input checklist-item checkSubKeperluanKelas" type="checkbox" id="checkKeperluanKelasMinuman" value="Minuman" name="checklistSubKeperluanKelas[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
+                                <label class="form-check-label" for="checkKeperluanKelasMinuman">Minuman</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input checklist-item checkSubKeperluanKelas" type="checkbox" id="checkKeperluanKelasLampu" value="Lampu" name="checklistSubKeperluanKelas[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
+                                <label class="form-check-label" for="checkKeperluanKelasLampu">Lampu</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input checklist-item checkSubKeperluanKelas" type="checkbox" id="checkKeperluanKelasKondisiKebersihan" value="Kondisi Kebersihan" name="checklistSubKeperluanKelas[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
+                                <label class="form-check-label" for="checkKeperluanKelasKondisiKebersihan">Kondisi dan Kebersihan Kelas</label>
+                            </div>
+                            </div>
+                        </div>
+                    `;
+
+                    $('#checklistContainer').html(html);
+                } else {
+                    let html = `
+                        <div class="form-check mb-2">
+                            <input class="form-check-input checklist-item " type="checkbox" value="Materi" id="checkMateri" name="checklist[]" onclick="return false;">
+                            <label class="form-check-label" for="checkMateri">Materi</label>
+                            <div class="form-check my-2">
+                                <input class="form-check-input checklist-item checkSubMateri" type="checkbox" value="Module" id="checkModule" name="checklistSubMateri[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
+                                <label class="form-check-label" for="checkModule">Module</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input checklist-item checkSubMateri" type="checkbox" value="E-Learning" id="checkELearning" name="checklistSubMateri[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
+                                <label class="form-check-label" for="checkELearning">E-Learning</label>
+                            </div>
+                        </div>
+    
+                        <br>
+
+                        <div class="form-check mb-2">
+                            <input class="form-check-input checklist-item" type="checkbox" value="Cb" id="checkCb" name="checklist[]" onclick="return false;">
+                            <label class="form-check-label" for="checkCb">Coffe Break</label>
+                            <div class="form-check my-2">
+                                <input class="form-check-input checklist-item checkSubCb" type="checkbox" id="checkCbInstruktur" value="Instruktur" name="checklistSubCb[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
+                                <label class="form-check-label" for="checkCbInstruktur">Instruktur</label>
+                            </div>
+                        </div>
+    
+                        <br>
+    
+                        <div class="form-check mb-2">
+                            <input class="form-check-input checklist-item" type="checkbox" value="Maksi" id="checkMaksi" name="checklist[]" onclick="return false;">
+                            <label class="form-check-label" for="checkMaksi">Makan Siang</label>
+                            <div class="form-check my-2">
+                                <input class="form-check-input checklist-item checkSubMaksi" type="checkbox" id="checkMaksiInstruktur" value="Instruktur" name="checklistSubMaksi[]" {{ $bisaEditChecklist ? '' : 'disabled' }}>
+                                <label class="form-check-label" for="checkMaksiInstruktur">Instruktur</label>
+                            </div>
+                        </div>
+                    `;
+
+                    $('#checklistContainer').html(html);
+                }
+
+                // parent
+                $('#checkKelas').prop('checked', data.kelas == 1);
+
+                // sub materi
+                $('#checkModule').prop('checked', sub.materi_module == 1);
+                $('#checkELearning').prop('checked', sub.materi_elearning == 1);
+
+                // cb
+                $('#checkCbInstruktur').prop('checked', sub.cb_instruktur == 1);
+                $('#checkCbPeserta').prop('checked', sub.cb_peserta == 1);
+
+                // maksi
+                $('#checkMaksiInstruktur').prop('checked', sub.maksi_instruktur == 1);
+                $('#checkMaksiPeserta').prop('checked', sub.maksi_peserta == 1);
+
+                // kelas
+                $('#checkKeperluanKelasAC').prop('checked', sub.kelas_ac == 1);
+                $('#checkKeperluanKelasJam').prop('checked', sub.kelas_jam == 1);
+                $('#checkKeperluanKelasBuku').prop('checked', sub.kelas_buku == 1);
+                $('#checkKeperluanKelasPulpen').prop('checked', sub.kelas_pulpen == 1);
+                $('#checkKeperluanKelasPermen').prop('checked', sub.kelas_permen == 1);
+                $('#checkKeperluanKelasCamilan').prop('checked', sub.kelas_camilan == 1);
+                $('#checkKeperluanKelasMinuman').prop('checked', sub.kelas_minuman == 1);
+                $('#checkKeperluanKelasLampu').prop('checked', sub.kelas_lampu == 1);
+                $('#checkKeperluanKelasKondisiKebersihan').prop('checked', sub.kelas_kondisi_kebersihan == 1);
+
+                syncParentCheckbox();
                 updateProgressBar();
+            }
+
+            //  Fungsi Kalkulasi Progress Bar
+            function updateProgressBar() {
+                let totalProgress = 0;
+                let metodeKelas = $('#metode_kelas').val();
+
+                if (metodeKelas === 'Offline') {
+                    // ===== Materi (20%) =====
+                    let materiTotal = $('.checkSubMateri').length;
+                    let materiChecked = $('.checkSubMateri:checked').length;
+                    if (materiTotal > 0) {
+                        totalProgress += (materiChecked / materiTotal) * 20;
+                    }
+    
+                    // ===== Kelas (20%) =====
+                    if ($('#checkKelas').is(':checked')) {
+                        totalProgress += 20;
+                    }
+    
+                    // ===== CB (20%) =====
+                    let cbTotal = $('.checkSubCb').length;
+                    let cbChecked = $('.checkSubCb:checked').length;
+                    if (cbTotal > 0) {
+                        totalProgress += (cbChecked / cbTotal) * 20;
+                    }
+    
+                    // ===== Maksi (20%) =====
+                    let maksiTotal = $('.checkSubMaksi').length;
+                    let maksiChecked = $('.checkSubMaksi:checked').length;
+                    if (maksiTotal > 0) {
+                        totalProgress += (maksiChecked / maksiTotal) * 20;
+                    }
+    
+                    // ===== Keperluan Kelas (20%) =====
+                    let kelasTotal = $('.checkSubKeperluanKelas').length;
+                    let kelasChecked = $('.checkSubKeperluanKelas:checked').length;
+                    if (kelasTotal > 0) {
+                        totalProgress += (kelasChecked / kelasTotal) * 20;
+                    }
+    
+                    let percentage = Math.round(totalProgress);
+    
+                    $('#checklistProgress')
+                        .css('width', percentage + '%')
+                        .attr('aria-valuenow', percentage)
+                        .text(percentage + '%');
+
+                } else {
+                    let totalKategori = 3;
+                    let kategoriSelesai = 0;
+
+                    // ===== Materi =====
+                    let materiTotal = $('.checkSubMateri').length;
+                    let materiChecked = $('.checkSubMateri:checked').length;
+                    if (materiTotal > 0) {
+                         kategoriSelesai += (materiChecked / materiTotal);
+                    }
+
+                    // ===== CB (Instruktur) =====
+                    if ($('#checkCbInstruktur').is(':checked')) {
+                        kategoriSelesai++;
+                    }
+
+                    // ===== Maksi (Instruktur) =====
+                    if ($('#checkMaksiInstruktur').is(':checked')) {
+                        kategoriSelesai++;
+                    }
+
+                    let percentage = Math.round((kategoriSelesai / totalKategori) * 100);
+    
+                    $('#checklistProgress')
+                        .css('width', percentage + '%')
+                        .attr('aria-valuenow', percentage)
+                        .text(percentage + '%');
+
+                }
+            }
+
+            $('#nextDay').click(function () {
+                if (currentIndex < dates.length - 1) {
+                    currentIndex++;
+                    storeChecklistData(false);
+                    renderDay();
+                }
             });
 
-            // 4. Logika Pembukaan Modal
+            $('#prevDay').click(function () {
+                if (currentIndex > 0) {
+                    currentIndex--;
+                    storeChecklistData(false);
+                    renderDay();
+                }
+            });
+
+            // Event Listener untuk Perubahan Kotak Centang
+            $(document).on('change', '.checklist-item', function() {
+                updateProgressBar();
+                syncParentCheckbox();
+            });
+
+            function syncParentCheckbox() {
+                // Materi -> punya Module & E-Learning
+                $('#checkMateri').prop(
+                    'checked',
+                    $('.checkSubMateri').length > 0 &&
+                    $('.checkSubMateri').length === $('.checkSubMateri:checked').length
+                );
+
+                // CB -> Instruktur & Peserta
+                $('#checkCb').prop(
+                    'checked',
+                    $('.checkSubCb').length > 0 &&
+                    $('.checkSubCb').length === $('.checkSubCb:checked').length
+                );
+
+                // Maksi -> Instruktur & Peserta
+                $('#checkMaksi').prop(
+                    'checked',
+                    $('.checkSubMaksi').length > 0 &&
+                    $('.checkSubMaksi').length === $('.checkSubMaksi:checked').length
+                );
+
+                 // Keperluan Kelas
+                $('#checkKeperluanKelas').prop(
+                    'checked',
+                    $('.checkSubKeperluanKelas').length > 0 &&
+                    $('.checkSubKeperluanKelas').length === $('.checkSubKeperluanKelas:checked').length
+                );
+            }
+
+            $(document).on('click', '#checkMateri, #checkCb, #checkMaksi, #checkKeperluanKelas', function(e){
+                e.preventDefault();
+                return false;
+            });
+
+            // Logika Pembukaan Modal
             $('#modalChecklist').on('show.bs.modal', function (event) {
                 var button = $(event.relatedTarget);
                 var idRkmStr = button.data('id');
@@ -803,25 +1113,32 @@ function excelDownloadAdmSales() {
                     type: 'GET',
                     success: function(response) {
                         if (response.status && response.data) {
-                            var data = response.data;
-                            if (data.materi === 1) $('#checkMateri').prop('checked', true);
-                            if (data.kelas === 1) $('#checkKelas').prop('checked', true);
-                            if (data.cb === 1) $('#checkCb').prop('checked', true);
-                            if (data.maksi === 1) $('#checkMaksi').prop('checked', true);
-                            if (data.keperluan_kelas === 1) $('#checkKeperluanKelas').prop('checked', true);
+                            checklistData = response.data || {};
+                            dates = generateDates(response.tanggal_awal, response.tanggal_akhir);
+                            $('#metode_kelas').val(response.metode_kelas);
 
-                            // Perbarui progress bar setelah data dimuat
-                            updateProgressBar();
+                            setDefaultIndex();
+                            renderDay();
                         }
                     },
-                    error: function() {
-                        console.error('Gagal mengambil data checklist dari server.');
+                    error: function(error) {
+                        console.error('Gagal mengambil data checklist dari server. ', error);
                     }
                 });
             });
 
-            // 5. Logika Penyimpanan Data
-            $('#btnSimpanChecklist').click(function() {
+            $('#modalChecklist').on('hidden.bs.modal', function () {
+                storeChecklistData(false); 
+            });
+
+            // Logika Penyimpanan Data
+            // $('#btnSimpanChecklist').click(function() {
+            //     storeChecklistData(true);
+            // });
+            
+
+            function storeChecklistData(showAlert = false)
+            {
                 var form = $('#formChecklistKeperluan');
                 var formData = form.serialize();
 
@@ -831,16 +1148,23 @@ function excelDownloadAdmSales() {
                     data: formData,
                     success: function(response) {
                         if (response.status) {
-                            $('#modalChecklist').modal('hide');
-                            alert(response.message);
+
+                            // hanya tampil kalau diminta
+                            if (showAlert) {
+                                $('#modalChecklist').modal('hide');
+                                alert(response.message);
+                            }
                         }
                     },
                     error: function(xhr) {
                         console.error(xhr.responseText);
-                        alert('Terjadi kesalahan sistem saat menyimpan data.');
+
+                        if (showAlert) {
+                            alert('Terjadi kesalahan sistem saat menyimpan data.');
+                        }
                     }
                 });
-            });
+            }
         });
 </script>
 @endpush
