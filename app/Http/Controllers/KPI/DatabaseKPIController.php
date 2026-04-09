@@ -114,7 +114,7 @@ class DatabaseKPIController extends Controller
         $monthEnd = $now->copy()->endOfMonth();
 
         // Pengambilan data dari server cctv
-        $response = Http::get('http://localhost:8001/uptime.php', [
+        $response = Http::get('http://192.168.95.173:8000/uptime.php', [
             'password' => env('UPTIME_PASSWORD')
         ]);
 
