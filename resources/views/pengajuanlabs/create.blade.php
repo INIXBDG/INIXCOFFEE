@@ -3,27 +3,26 @@
 @section('content')
 <div class="container">
     <div class="row justify-content-center">
-        <div class="col-md-10">
-            <div class="card">
-                <div class="card-body" id="card">
-                    <a href="{{ url()->previous() }}" class="btn click-primary my-2">
-                        <img src="{{ asset('icon/arrow-left.svg') }}" class="img-responsive" width="20px"> Back
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <a href="{{ url()->previous() }}" class="btn btn-secondary mb-3">
+                        <img src="{{ asset('icon/arrow-left.svg') }}" width="20px"> Kembali
                     </a>
-                    <h5 class="card-title text-center mb-4">{{ __('Pengajuan Lab / Subscription') }}</h5>
+
+                    <h5 class="card-title text-center mb-4 fw-bold">Pengajuan Lab (Divisi Education)</h5>
 
                     <form method="POST" action="{{ route('pengajuanlabsdansubs.store') }}">
                         @csrf
+                        <input type="hidden" name="kode_karyawan" value="{{ $karyawan->kode_karyawan }}">
 
-                        <!-- ID Karyawan -->
                         <div class="row mb-3">
                             <label class="col-md-4 col-form-label text-md-start">Nama Karyawan</label>
                             <div class="col-md-6">
-                                <input type="hidden" name="kode_karyawan" value="{{ $karyawan->kode_karyawan }}">
                                 <input disabled type="text" class="form-control" value="{{ $karyawan->nama_lengkap }}">
                             </div>
                         </div>
 
-                        <!-- Divisi -->
                         <div class="row mb-3">
                             <label class="col-md-4 col-form-label text-md-start">Divisi</label>
                             <div class="col-md-6">
@@ -31,94 +30,86 @@
                             </div>
                         </div>
 
+                        <hr class="my-4">
+
                         <div class="row mb-3">
-                            <label for="id_rkm" class="col-md-4 col-form-label text-md-start">RKM</label>
+                            <label class="col-md-4 col-form-label text-md-start">Pilih RKM</label>
                             <div class="col-md-6">
-                                <select id="id_rkm" name="id_rkm" class="form-select">
-                                    <option value="">-- Pilih RKM --</option>
+                                <select id="id_rkm" name="id_rkm" class="form-select" required>
+                                    <option value="">-- Pilih Jadwal Kelas --</option>
                                     @foreach($rkms as $rkm)
                                         <option value="{{ $rkm->id }}">
-                                            {{ $rkm->materi->nama_materi }} - {{ $rkm->perusahaan->nama_perusahaan }}
-                                            ({{ \Carbon\Carbon::parse($rkm->tanggal_awal)->locale('id')->translatedFormat('d F Y') }}
-                                            s/d {{ \Carbon\Carbon::parse($rkm->tanggal_akhir)->locale('id')->translatedFormat('d F Y') }})
+                                            {{ $rkm->perusahaan->nama_perusahaan ?? '-' }}
+                                            ({{ \Carbon\Carbon::parse($rkm->tanggal_awal)->translatedFormat('d M Y') }})
                                         </option>
                                     @endforeach
                                 </select>
                             </div>
                         </div>
 
-                        <!-- Pilihan Jenis Pengajuan -->
                         <div class="row mb-3">
-                            <label for="jenis_pengajuan" class="col-md-4 col-form-label text-md-start">Jenis Pengajuan</label>
+                            <label class="col-md-4 col-form-label text-md-start">Materi</label>
                             <div class="col-md-6">
-                                <select id="jenis_pengajuan" name="jenis_pengajuan" class="form-select" required>
-                                    <option value="">-- Pilih Jenis Pengajuan --</option>
-                                    <option value="lab">Lab</option>
-                                    <option value="subs">Subscription</option>
-                                </select>
+                                <input type="text" id="view_materi" class="form-control bg-light" readonly
+                                       placeholder="Otomatis terisi...">
                             </div>
                         </div>
 
-                        <!-- Form Lab -->
-                        <div id="formLab" class="d-none">
-                            <h6 class="text-primary">Detail Lab</h6>
+                        <hr class="my-4">
+
+                        <div class="row mb-3">
+                            <label class="col-md-4 col-form-label text-md-start">Sumber Lab</label>
+                            <div class="col-md-8 pt-2">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="sumber_lab" id="opt_existing" value="existing" checked disabled>
+                                    <label class="form-check-label" for="opt_existing">
+                                        Gunakan Lab Terdaftar
+                                    </label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="sumber_lab" id="opt_new" value="new" disabled>
+                                    <label class="form-check-label" for="opt_new">
+                                        Request Lab Baru
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="section_existing">
                             <div class="row mb-3">
                                 <label class="col-md-4 col-form-label text-md-start">Pilih Lab</label>
                                 <div class="col-md-6">
-                                    <select id="lab_id" name="lab_id" class="form-select">
-                                        <option value="">-- Pilih Lab --</option>
-                                        @foreach($labs as $lab)
-                                            <option value="{{ $lab->id }}">{{ $lab->nama_labs }}</option>
-                                        @endforeach
-                                        <option value="new">+ Tambah Lab Baru</option>
+                                    <select id="id_existing_lab" name="id_existing_lab" class="form-select" disabled>
+                                        <option value="">-- Menunggu RKM --</option>
                                     </select>
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-4 col-form-label text-md-start"></div>
-                                <div class="col-md-6">
-                                    <div id="newLabForm" class="d-none">
-                                        <input type="text" name="new_nama_labs" class="form-control mb-2" placeholder="Nama Lab">
-                                        <textarea name="new_desc_labs" class="form-control mb-2" placeholder="Deskripsi Lab"></textarea>
-                                    </div>
+                                    <small class="text-muted d-block mt-1" id="hint_existing"></small>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Form Subscription -->
-                        <div id="formSubs" class="d-none">
-                            <h6 class="text-success">Detail Subscription</h6>
+                        <div id="section_new" class="d-none">
                             <div class="row mb-3">
-                                <label class="col-md-4 col-form-label text-md-start">Pilih Subscription</label>
+                                <label class="col-md-4 col-form-label text-md-start">Nama Lab / Software</label>
                                 <div class="col-md-6">
-                                    <select id="subs_id" name="subs_id" class="form-select">
-                                        <option value="">-- Pilih Subscription --</option>
-                                        @foreach($subs as $sub)
-                                            <option value="{{ $sub->id }}">{{ $sub->nama_subs }}</option>
-                                        @endforeach
-                                        <option value="new">+ Tambah Subscription Baru</option>
-                                    </select>
+                                    <input type="text" name="new_nama_labs" class="form-control">
                                 </div>
                             </div>
 
-                            <!-- Inline Tambah Subs -->
                             <div class="row mb-3">
-                                <div class="col-md-4 col-form-label text-md-start"></div>
+                                <label class="col-md-4 col-form-label text-md-start">Vendor / Merk</label>
                                 <div class="col-md-6">
-                                    <div id="newSubsForm" class="d-none">
-                                        <input type="text" name="new_nama_subs" class="form-control mb-2" placeholder="Nama Subscription">
-                                        <input type="text" name="new_merk" class="form-control mb-2" placeholder="Merk">
-                                        <textarea name="new_desc_subs" class="form-control mb-2" placeholder="Deskripsi Subscription"></textarea>
-                                    </div>
+                                    <input type="text" name="new_merk" class="form-control">
                                 </div>
                             </div>
+
+                            <input type="hidden" name="new_tipe" value="one-time">
                         </div>
 
-                        <!-- Submit -->
-                        <div class="row mb-0">
+                        <div class="row mb-0 mt-4">
                             <div class="col-md-6 offset-md-4">
-                                <button type="submit" class="btn click-primary">Simpan</button>
+                                <button type="submit" class="btn btn-primary px-4" id="btn_submit" disabled>
+                                    <i class="bi bi-save me-1"></i> Simpan Pengajuan
+                                </button>
                             </div>
                         </div>
                     </form>
@@ -127,43 +118,74 @@
         </div>
     </div>
 </div>
-
-<!-- JS -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-$(document).ready(function () {
-    // Toggle form berdasarkan jenis pengajuan
-    $('#jenis_pengajuan').change(function () {
-        let pilihan = $(this).val();
-        if (pilihan === "lab") {
-            $('#formLab').removeClass('d-none');
-            $('#formSubs').addClass('d-none');
-        } else if (pilihan === "subs") {
-            $('#formSubs').removeClass('d-none');
-            $('#formLab').addClass('d-none');
-        } else {
-            $('#formLab, #formSubs').addClass('d-none');
+$(document).ready(function() {
+    const rkmSelect = $('#id_rkm');
+    const existingSelect = $('#id_existing_lab');
+    const materiInput = $('#view_materi');
+    const radios = $('input[name="sumber_lab"]');
+    const submitBtn = $('#btn_submit');
+    const sectionExisting = $('#section_existing');
+    const sectionNew = $('#section_new');
+
+    rkmSelect.change(function() {
+        let rkmId = $(this).val();
+
+        existingSelect.empty().append('<option value="">Loading data...</option>').prop('disabled', true);
+        materiInput.val('');
+        radios.prop('disabled', true);
+        submitBtn.prop('disabled', true);
+
+        if (rkmId) {
+            $.ajax({
+                url: '/api/get-labs-by-rkm/' + rkmId,
+                type: 'GET',
+                success: function(response) {
+                    materiInput.val(response.materi_nama);
+                    radios.prop('disabled', false);
+                    submitBtn.prop('disabled', false);
+                    existingSelect.empty().append('<option value="">-- Pilih Lab Terdaftar --</option>');
+
+                    if (response.labs.length > 0) {
+                        $.each(response.labs, function(k, v) {
+                            let typeLabel = v.tipe === 'subscription' ? '[Subs]' : '[One-Time]';
+                            let merkLabel = v.merk ? `(${v.merk})` : '';
+                            existingSelect.append(`<option value="${v.id}">${typeLabel} ${v.nama_labs} ${merkLabel}</option>`);
+                        });
+                        $('#opt_existing').prop('checked', true).trigger('change');
+                        existingSelect.prop('disabled', false);
+                    } else {
+                        existingSelect.append('<option value="" disabled>Belum ada lab terdaftar untuk materi ini</option>');
+                        $('#opt_new').prop('checked', true).trigger('change');
+                    }
+                },
+                error: function() {
+                    alert('Gagal mengambil data Lab.');
+                }
+            });
         }
     });
 
-    // Toggle inline Lab
-    $('#lab_id').change(function () {
-        if ($(this).val() === "new") {
-            $('#newLabForm').removeClass('d-none');
-        } else {
-            $('#newLabForm').addClass('d-none');
-        }
-    });
+    radios.change(function() {
+        let mode = $(this).val();
 
-    // Toggle inline Subscription
-    $('#subs_id').change(function () {
-        if ($(this).val() === "new") {
-            $('#newSubsForm').removeClass('d-none');
+        if (mode === 'existing') {
+            sectionExisting.removeClass('d-none');
+            sectionNew.addClass('d-none');
+
+            $('#id_existing_lab').prop('required', true);
+            $('input[name="new_nama_labs"]').prop('required', false);
+            $('input[name="new_merk"]').prop('required', false);
         } else {
-            $('#newSubsForm').addClass('d-none');
+            sectionExisting.addClass('d-none');
+            sectionNew.removeClass('d-none');
+
+            $('#id_existing_lab').prop('required', false);
+            $('input[name="new_nama_labs"]').prop('required', true);
+            $('input[name="new_merk"]').prop('required', true);
         }
     });
 });
 </script>
-
 @endsection

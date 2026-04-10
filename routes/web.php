@@ -288,6 +288,10 @@ Route::get('getPengajuanLabSubs/{month}/{year}', [App\Http\Controllers\Pengajuan
 Route::put('pengajuanlabsdansubs/updatelabsubs/{id}', [App\Http\Controllers\PengajuanLabdanSubsController::class, 'updateLabSubs'])->name('pengajuanlabsdansubs.updatelabsubs');
 Route::post('/pengajuanlabsdansubs/{id}/upload-invoice', [App\Http\Controllers\PengajuanLabdanSubsController::class, 'uploadInvoice'])->name('pengajuanlabsdansubs.uploadInvoice');
 Route::get('pengajuanlabsdansubs/export-pdf/{id}', [App\Http\Controllers\PengajuanLabdanSubsController::class, 'exportPDF'])->name('pengajuanlabsdansubs.exportpdf');
+Route::post('/api/master-labs/{id}/renew', [App\Http\Controllers\PengajuanLabdanSubsController::class, 'renewLab']);
+Route::put('/api/master-labs/{id}', [App\Http\Controllers\PengajuanLabdanSubsController::class, 'updateMasterLab']);
+Route::get('/api/get-labs-by-rkm/{id}', [App\Http\Controllers\PengajuanLabdanSubsController::class, 'getLabsByRkm']);
+Route::get('/api/get-master-labs', [App\Http\Controllers\PengajuanLabdanSubsController::class, 'getMasterLabs'])->name('api.master-labs');
 Route::get('getAbsen', [App\Http\Controllers\RekapitulasiAbsenController::class, 'getAbsen'])->name('getAbsen');
 Route::get('getTarget', [App\Http\Controllers\TargetController::class, 'getTarget'])->name('getTarget');
 Route::get('getOutstandingLunas', [App\Http\Controllers\OutstandingController::class, 'getOutstandingLunas'])->name('getOutstandingLunas');

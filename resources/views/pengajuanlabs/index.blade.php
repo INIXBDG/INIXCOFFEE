@@ -1,604 +1,693 @@
 @extends('layouts.app')
-
 @section('content')
 <div class="container-fluid">
     <div class="row justify-content-center">
         <div class="col-md-12">
-            <div class="d-flex justify-content-end">
-                @if ($tracking == 'tutup')
-                    <button class="btn btn-md btn-secondary mx-4" disabled title="Tidak bisa mengajukan Lab/Subs karena status tidak 'Selesai'">
-                        <img src="{{ asset('icon/plus.svg') }}" width="30px"> Ajukan Lab/Subs
-                    </button>
-                @else
-                    <a href="{{ route('pengajuanlabsdansubs.create') }}" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Ajukan Lab/Subs">
-                        <img src="{{ asset('icon/plus.svg') }}" width="30px"> Ajukan Lab/Subs
-                    </a>
-                @endif
-            </div>
 
-            <!-- Modal -->
-            <div class="modal fade" id="approveRejectModal" tabindex="-1" aria-labelledby="approveRejectModalLabel" aria-hidden="true">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="approveRejectModalLabel">Konfirmasi Approval / Penolakan</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <form id="approvalForm" method="POST">
-                            @csrf
-                            @method('PUT')
-                            <div class="modal-body">
-                                <input type="hidden" name="id" id="modalId">
-                                <input type="hidden" name="approval" id="modalApproval">
-
-                                <!-- Alasan Penolakan -->
-                                <div class="mb-3" id="reasonContainer" style="display: none;">
-                                    <label for="alasan" class="form-label">Alasan Penolakan (Wajib jika menolak)</label>
-                                    <textarea class="form-control" name="alasan" id="alasan" rows="3" placeholder="Masukkan alasan penolakan..."></textarea>
-                                </div>
-
-                                <!-- Dropdown Khusus untuk Finance -->
-                                <div class="mb-3" id="financeStatusContainer" style="display: none;">
-                                    <label for="finance_status" class="form-label">Pilih Status Pencairan</label>
-                                    <select class="form-select" id="finance_status" name="finance_status">
-                                        <option value="">-- Pilih Status --</option>
-                                        <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager">Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager</option>
-                                        <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi">Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi</option>
-                                        <option value="Finance Menunggu Approve Direksi">Finance Menunggu Approve Direksi</option>
-                                        <option value="Membuat Permintaan Ke Direktur Utama">Membuat Permintaan Ke Direktur Utama</option>
-                                        <option value="Pengajuan sedang dalam proses Pencairan">Pengajuan sedang dalam proses Pencairan</option>
-                                        <option value="Selesai">Pencairan Sudah Selesai</option>
-                                        <option value="Selesai">Selesai</option>
-                                    </select>
-                                </div>
-
-                                <p>
-                                    <i class="bi bi-exclamation-triangle"></i>
-                                    <span id="actionLabel"></span>
-                                </p>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                                <button type="submit" class="btn btn-primary">Konfirmasi</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal fade" id="uploadInvoiceModal" tabindex="-1" aria-labelledby="uploadInvoiceLabel" aria-hidden="true">
-                <div class="modal-dialog">
-                    <form id="uploadInvoiceForm" enctype="multipart/form-data">
-                    @csrf
-                    <input type="hidden" id="uploadInvoiceId">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                        <h5 class="modal-title">Upload Invoice</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                        <div class="mb-3">
-                            <label for="invoice" class="form-label">Pilih File Invoice (PDF / JPG / PNG)</label>
-                            <input type="file" name="invoice" id="invoice" class="form-control" required>
-                        </div>
-                        </div>
-                        <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary">Upload</button>
-                        </div>
-                    </div>
-                    </form>
-                </div>
-            </div>
-
-
-            {{-- FILTER (khusus Finance) --}}
             @php
-                $jabatan = auth()->user()->karyawan->jabatan ?? '';
+                $userJabatan = auth()->user()->karyawan->jabatan ?? '';
+                $isTeknis = in_array($userJabatan, ['Technical Support', 'Koordinator ITSM']);
+                $bolehMengajukan = in_array($userJabatan, ['Instruktur', 'Education Manager']);
             @endphp
-            @if (in_array($jabatan, ['Finance & Accounting', 'GM', 'Koordinator ITSM', 'Technical Support','Education Manager']))
-                <div class="card my-3">
-                    <div class="card-body d-flex justify-content-center">
-                        <div class="col-md-4 mx-1">
-                            <label for="tahun" class="form-label">Tahun</label>
-                            <select id="tahun" class="form-select">
-                                @php
-                                    $tahun_sekarang = now()->year;
-                                    for ($tahun = 2020; $tahun <= $tahun_sekarang + 2; $tahun++) {
-                                        $selected = $tahun == $tahun_sekarang ? 'selected' : '';
-                                        echo "<option value=\"$tahun\" $selected>$tahun</option>";
-                                    }
-                                @endphp
-                            </select>
-                        </div>
-                        <div class="col-md-4 mx-1">
-                            <label for="bulan" class="form-label">Bulan</label>
-                            <select id="bulan" class="form-select">
-                                @php
-                                    $bulan_sekarang = now()->month;
-                                    $nama_bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-                                    for ($i = 1; $i <= 12; $i++) {
-                                        $selected = $i == $bulan_sekarang ? 'selected' : '';
-                                        echo "<option value=\"$i\" $selected>{$nama_bulan[$i-1]}</option>";
-                                    }
-                                @endphp
-                            </select>
-                        </div>
-                        <div class="col-md-4 mx-1">
-                            <button onclick="loadPengajuan()" class="btn click-primary" style="margin-top: 32px">Cari Data</button>
-                        </div>
-                    </div>
-                </div>
+
+            @if($isTeknis)
+            <ul class="nav nav-tabs mb-4" id="labTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active fw-bold" id="pengajuan-tab" data-bs-toggle="tab" data-bs-target="#pengajuan-pane" type="button" role="tab">
+                        Daftar Pengajuan
+                    </button>
+                </li>
+
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fw-bold text-primary" id="kelola-tab" data-bs-toggle="tab" data-bs-target="#kelola-pane" type="button" role="tab" onclick="loadMasterLabs()">
+                        Kelola Master Lab
+                    </button>
+                </li>
+            </ul>
             @endif
 
-            {{-- TABEL DATA PENGAJUAN LAB/SUBS --}}
-            <div class="card m-4">
-                <div class="card-body table-responsive">
-                    <h3 class="card-title text-center my-1">{{ __('Data Pengajuan Lab & Subs') }}</h3>
-                    <table class="table table-striped" id="pengajuanLabSubsTable">
-                        <thead>
-                            <tr>
-                                <th>Tanggal Pengajuan</th>
-                                <th>Nama Karyawan</th>
-                                <th>Divisi</th>
-                                <th>Jabatan</th>
-                                <th>Jenis Pengajuan</th>
-                                <th>Nama Lab/Subs</th>
-                                <th>Status Tracking</th>
-                                <th>RKM</th>
-                                <th>Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Data akan dimuat via AJAX -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            <div class="tab-content" id="labTabsContent">
 
-            <div class="card m-4">
-                <div class="card-body table-responsive">
-                    <h3 class="card-title text-center my-1">{{ __('Data Pengajuan Selesai') }}</h3>
-                    <table class="table table-striped" id="pengajuanSelesaiTable">
-                        <thead>
-                            <tr>
-                                <th>Tanggal Pengajuan</th>
-                                <th>Nama Karyawan</th>
-                                <th>Divisi</th>
-                                <th>Jabatan</th>
-                                <th>Jenis Pengajuan</th>
-                                <th>Nama Lab/Subs</th>
-                                <th>Status Tracking</th>
-                                <th>RKM</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        </tbody>
-                    </table>
+                <div class="tab-pane fade show active" id="pengajuan-pane" role="tabpanel">
+                    @if($bolehMengajukan)
+                        <div class="d-flex justify-content-end">
+                            @if (isset($tracking) && $tracking == 'tutup')
+                                <button class="btn btn-md btn-secondary mx-4" disabled title="Selesaikan pengajuan sebelumnya terlebih dahulu">
+                                    <img src="{{ asset('icon/plus.svg') }}" width="30px"> Permintaan Lab
+                                </button>
+                            @else
+                                <a href="{{ route('pengajuanlabsdansubs.create') }}" class="btn btn-md click-primary mx-4" data-toggle="tooltip" title="Ajukan Lab">
+                                    <img src="{{ asset('icon/plus.svg') }}" width="30px"> Permintaan Lab
+                                </a>
+                            @endif
+                        </div>
+                    @endif
+
+                    <div class="modal fade" id="approveRejectModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Konfirmasi Aksi</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <form id="approvalForm">
+                                    @csrf
+                                    @method('PUT')
+                                    <input type="hidden" name="id" id="modalId">
+                                    <input type="hidden" name="approval" id="modalApproval">
+
+                                    <div class="modal-body">
+                                        <p><i class="bi bi-info-circle-fill text-primary"></i> <span id="actionLabel" class="fw-bold"></span></p>
+
+                                        <div class="mb-3 d-none" id="reasonContainer">
+                                            <label class="form-label">Alasan Penolakan <span class="text-danger">*</span></label>
+                                            <textarea class="form-control" name="alasan" id="alasan" rows="3"></textarea>
+                                        </div>
+
+                                        <div class="mb-3 d-none" id="financeStatusContainer">
+                                            <label class="form-label">Update Status Pencairan</label>
+                                            <select class="form-select" id="finance_status" name="finance_status">
+                                                <option value="">-- Pilih Status --</option>
+                                                <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager">Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager</option>
+                                                <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi">Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi</option>
+                                                <option value="Finance Menunggu Approve Direksi">Finance Menunggu Approve Direksi</option>
+                                                <option value="Membuat Permintaan Ke Direktur Utama">Membuat Permintaan Ke Direktur Utama</option>
+                                                <option value="Pengajuan sedang dalam proses Pencairan">Pengajuan sedang dalam proses Pencairan</option>
+                                                <option value="Pencairan Sudah Selesai">Pencairan Sudah Selesai</option>
+                                                <option value="Selesai">Selesai</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                        <button type="submit" class="btn btn-primary">Simpan</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal fade" id="uploadInvoiceModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <form id="uploadInvoiceForm" enctype="multipart/form-data">
+                                @csrf
+                                <input type="hidden" id="uploadInvoiceId">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Upload Invoice</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">File Invoice (PDF/JPG/PNG)</label>
+                                            <input type="file" name="invoice" class="form-control" required>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="submit" class="btn btn-primary">Upload</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    @if (in_array($userJabatan, ['Finance & Accounting', 'GM', 'Koordinator ITSM', 'Technical Support','Education Manager']))
+                        <div class="card my-3">
+                            <div class="card-body d-flex justify-content-center">
+                                <div class="col-md-4 mx-1">
+                                    <label class="form-label">Tahun</label>
+                                    <select id="tahun" class="form-select">
+                                        @for ($y = 2023; $y <= now()->year + 1; $y++)
+                                            <option value="{{ $y }}" {{ $y == now()->year ? 'selected' : '' }}>{{ $y }}</option>
+                                        @endfor
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mx-1">
+                                    <label class="form-label">Bulan</label>
+                                    <select id="bulan" class="form-select">
+                                        @foreach (range(1, 12) as $m)
+                                            <option value="{{ $m }}" {{ $m == now()->month ? 'selected' : '' }}>
+                                                {{ \Carbon\Carbon::create()->month($m)->translatedFormat('F') }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mx-1">
+                                    <button onclick="loadAllTables()" class="btn click-primary w-100" style="margin-top: 32px">Cari Data</button>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    <div class="card m-4">
+                        <div class="card-body table-responsive">
+                            <h3 class="card-title text-center my-1">Data Pengajuan Lab</h3>
+                            <table class="table table-striped" id="pengajuanLabSubsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Tanggal</th>
+                                        <th>Pengaju</th>
+                                        <th>Divisi</th>
+                                        <th>Jabatan</th>
+                                        <th>Kategori</th>
+                                        <th>Nama Lab</th>
+                                        <th>Status Tracking</th>
+                                        <th>RKM / Materi</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="card m-4">
+                        <div class="card-body table-responsive">
+                            <h3 class="card-title text-center my-1 text-primary">Data Permintaan Lab Existing</h3>
+                            <table class="table table-striped" id="pengajuanExistingTable">
+                                <thead>
+                                    <tr>
+                                        <th>Tanggal</th>
+                                        <th>Pengaju</th>
+                                        <th>Divisi</th>
+                                        <th>Jabatan</th>
+                                        <th>Kategori</th>
+                                        <th>Nama Lab</th>
+                                        <th>Status Akhir</th>
+                                        <th>RKM / Materi</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="card m-4">
+                        <div class="card-body table-responsive">
+                            <h3 class="card-title text-center my-1">Data Riwayat Pengajuan Selesai</h3>
+                            <table class="table table-striped" id="pengajuanSelesaiTable">
+                                <thead>
+                                    <tr>
+                                        <th>Tanggal</th>
+                                        <th>Pengaju</th>
+                                        <th>Divisi</th>
+                                        <th>Jabatan</th>
+                                        <th>Kategori</th>
+                                        <th>Nama Lab</th>
+                                        <th>Status Akhir</th>
+                                        <th>RKM</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
                 </div>
+
+                @if($isTeknis)
+                <div class="tab-pane fade" id="kelola-pane" role="tabpanel">
+                    <div class="card m-4">
+                        <div class="card-body table-responsive">
+                            <h3 class="card-title text-center my-1">Master Data Laboratorium</h3>
+                            <table class="table table-striped text-nowrap" id="masterLabTable" style="width:100%">
+                                <thead>
+                                    <tr>
+                                        <th>Nama Lab</th>
+                                        <th>Vendor</th>
+                                        <th>Tipe</th>
+                                        <th>Status</th>
+                                        <th>Deskripsi</th>
+                                        <th>URL Lab</th>
+                                        <th>Kode Akses</th>
+                                        <th>Masa Aktif</th>
+                                        <th>Mata Uang</th>
+                                        <th>Harga Asli</th>
+                                        <th>Kurs</th>
+                                        <th>Estimasi (Rp)</th>
+                                        <th>Materi Terhubung</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="modal fade" id="editMasterLabModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title fw-bold">Edit Data Teknis Lab</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <form id="editMasterLabForm">
+                                    @csrf
+                                    @method('PUT')
+                                    <input type="hidden" name="id" id="edit_lab_id">
+
+                                    <div class="modal-body">
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Nama Lab / Software <span class="text-danger">*</span></label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control" name="nama_labs" id="edit_nama_labs" required>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Vendor / Merk</label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control" name="merk" id="edit_merk">
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Tipe Aset</label>
+                                            <div class="col-sm-8">
+                                                <select class="form-select" name="tipe" id="edit_tipe">
+                                                    <option value="subscription">Subscription (Berlangganan)</option>
+                                                    <option value="one-time">One-Time</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row" id="row_edit_duration" style="display: none;">
+                                            <label class="col-sm-4 col-form-label">Durasi Akses (Menit)</label>
+                                            <div class="col-sm-8">
+                                                <input type="number" class="form-control" name="duration_minutes" id="edit_duration_minutes">
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Status</label>
+                                            <div class="col-sm-8">
+                                                <select class="form-select" name="status" id="edit_status">
+                                                    <option value="active">Active</option>
+                                                    <option value="pending">Pending</option>
+                                                    <option value="expired">Expired</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Deskripsi</label>
+                                            <div class="col-sm-8">
+                                                <textarea class="form-control" name="deskripsi" id="edit_deskripsi" rows="3"></textarea>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">URL Lab</label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control" name="url_labs" id="edit_url_labs">
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Kode Akses / Key</label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control" name="kode_akses" id="edit_kode_akses">
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Tanggal Mulai</label>
+                                            <div class="col-sm-8">
+                                                <input type="date" class="form-control" name="tanggal_mulai" id="edit_tanggal_mulai">
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Tanggal Berakhir</label>
+                                            <div class="col-sm-8">
+                                                <input type="date" class="form-control" name="tanggal_berakhir" id="edit_tanggal_berakhir">
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Mata Uang</label>
+                                            <div class="col-sm-8">
+                                                <select class="form-select" name="mata_uang" id="edit_mata_uang">
+                                                    <option value="Dollar">Dollar</option>
+                                                    <option value="Rupiah">Rupiah</option>
+                                                    <option value="Euro">Euro</option>
+                                                    <option value="Poundsterling">Poundsterling</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Nominal Harga Asli</label>
+                                            <div class="col-sm-8">
+                                                <input type="number" step="0.01" class="form-control calculate-harga" name="nominal_harga_asli" id="edit_nominal_harga_asli">
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Kurs (Rate)</label>
+                                            <div class="col-sm-8">
+                                                <input type="number" step="0.01" class="form-control calculate-harga" name="kurs" id="edit_kurs">
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Estimasi Rupiah</label>
+                                            <div class="col-sm-8">
+                                                <div class="input-group">
+                                                    <span class="input-group-text bg-light">Rp.</span>
+                                                    <input type="number" class="form-control bg-light" name="harga_rupiah" id="edit_harga_rupiah" readonly>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Terhubung ke Materi</label>
+                                            <div class="col-sm-8">
+                                                <select class="form-select" name="materi_ids[]" id="edit_materi" multiple="multiple" style="width: 100%;">
+                                                    @if(isset($materis))
+                                                        @foreach($materis as $m)
+                                                            <option value="{{ $m->id }}">{{ $m->nama_materi }}</option>
+                                                        @endforeach
+                                                    @endif
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="submit" class="btn btn-dark" style="background-color: #1a2a40;">Simpan Perubahan</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
             </div>
         </div>
     </div>
 </div>
+
 @push('js')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+    const userRole = "{{ auth()->user()->karyawan->jabatan ?? '' }}";
+    const userId = {{ auth()->user()->karyawan->id ?? 'null' }};
+
     $(document).ready(function() {
-        loadPengajuan();
-        loadPengajuanSelesai();
+        loadAllTables();
+
+        $('.calculate-harga').on('input', calculateEstimasiRupiah);
+        $('#edit_mata_uang').on('change', calculateEstimasiRupiah);
+
+        $('#edit_materi').select2({
+            theme: 'bootstrap-5',
+            placeholder: "Pilih Materi Terkait...",
+            allowClear: true,
+            dropdownParent: $('#editMasterLabModal')
+        });
+
+        $('#edit_tipe').on('change', function() {
+            if ($(this).val() === 'one-time') {
+                $('#row_edit_duration').slideDown();
+            } else {
+                $('#row_edit_duration').slideUp();
+                $('#edit_duration_minutes').val('');
+            }
+        });
     });
 
-    function loadPengajuan() {
-        console.log("loadPengajuan dipanggil...");
-        let now = new Date();
-        let month = $('#bulan').length ? $('#bulan').val() : (now.getMonth() + 1);
-        let year  = $('#tahun').length ? $('#tahun').val() : now.getFullYear();
+    function calculateEstimasiRupiah() {
+        let mataUang = $('#edit_mata_uang').val();
+        let nominal = parseFloat($('#edit_nominal_harga_asli').val()) || 0;
+
+        if (mataUang === 'Rupiah') {
+            $('#edit_kurs').val(1).prop('readonly', true);
+            $('#edit_harga_rupiah').val(nominal);
+        } else {
+            $('#edit_kurs').prop('readonly', false);
+            let kurs = parseFloat($('#edit_kurs').val()) || 0;
+            $('#edit_harga_rupiah').val(nominal * kurs);
+        }
+    }
+
+    function loadAllTables() {
+        let month = $('#bulan').length ? $('#bulan').val() : (new Date().getMonth() + 1);
+        let year  = $('#tahun').length ? $('#tahun').val() : new Date().getFullYear();
 
         $.ajax({
-            url: "/getPengajuanLabSubs/" + month + "/" + year,
+            url: `/getPengajuanLabSubs/${month}/${year}`,
             type: "GET",
-            beforeSend: function() {
-                $("#pengajuanLabSubsTable tbody").html(`
-                    <tr>
-                        <td colspan="9" class="text-center">Loading...</td>
-                    </tr>
-                `);
-            },
-            success: function(response) {
-                console.log(response);
-                if (response.success && Array.isArray(response.data)) {
-                    let rows = '';
-                    $.each(response.data, function(index, item) {
-                        let status = 'Belum Ada Tracking';
-                        if (item.tracking && item.tracking.length > 0) {
-                            status = item.tracking[item.tracking.length - 1].tracking;
+            success: function(res) {
+                if (res.success && res.data) {
+                    let rowsAktif = '';
+                    let rowsExisting = '';
+                    let rowsSelesai = '';
+
+                    $.each(res.data, function(index, item) {
+                        let trackTexts = (item.tracking || []).map(t => t.tracking || '');
+                        let lastTrack = trackTexts.length > 0 ? trackTexts[trackTexts.length - 1] : '';
+
+                        let isSelesai = lastTrack && (lastTrack.includes('Selesai') || lastTrack.includes('Siap Digunakan'));
+
+                        let isExistingApproved = item.jenis_transaksi === 'existing' &&
+                                                 trackTexts.some(t => t && t.toLowerCase().includes('telah disetujui oleh koordinator itsm dan lihat akses nya di detail'));
+
+                        if (isExistingApproved) {
+                            rowsExisting += renderRowSelesai(item, lastTrack);
+                        } else if (isSelesai) {
+                            rowsSelesai += renderRowSelesai(item, lastTrack);
+                        } else {
+                            rowsAktif += renderRow(item, lastTrack);
                         }
-
-                        if (status.includes('Selesai')) {
-                            return; // lanjut ke item berikutnya
-                        }
-
-                        let userRole = '{{ auth()->user()->karyawan->jabatan ?? "" }}';
-                        let userKaryawanId = {{ auth()->user()->karyawan->id ?? "null" }};
-                        let isPengaju = item.karyawan_id == userKaryawanId;
-
-                        let actionBtns = `
-                            <div class="dropdown">
-                                <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                    Actions
-                                </button>
-                                <ul class="dropdown-menu">
-                        `;
-
-                        // Jika user adalah pengaju & status masih Diajukan
-                        if (isPengaju && status.includes('Diajukan')) {
-                            actionBtns += `
-                                <li><button class="dropdown-item text-danger" onclick="deletePengajuan(${item.id})">
-                                    <img src="{{ asset('icon/trash-danger.svg') }}" width="16"> Hapus</button></li>
-                            `;
-                        }
-
-                        // Approve untuk setiap jabatan sesuai status
-                        if (
-                            (status === 'Diajukan dan Sedang Ditinjau oleh Education Manager' && userRole === 'Education Manager') ||
-                            (status === 'Diajukan dan Sedang Ditinjau oleh SPV Sales' && userRole === 'SPV Sales') ||
-                            (status === 'Diajukan dan Sedang Ditinjau oleh General Manager' && userRole === 'GM') ||
-                            (
-                                (status === 'Diajukan dan Sedang Ditinjau oleh Koordinator ITSM' && userRole === 'Koordinator ITSM') ||
-                                (status.toLowerCase().includes('sedang ditinjau oleh koordinator itsm') && userRole === 'Koordinator ITSM')
-                            ) &&
-                            (
-                                (item.subs && item.subs.nama_subs && item.subs.harga) ||
-                                (item.lab && item.lab.nama_labs && item.lab.harga)
-                            )
-                        ) {
-                            actionBtns += approveButton(item.id);
-                            actionBtns += rejectButton(item.id);
-                        }
-
-                        // Role Technical Support atau Koordinator ITSM
-                        if (
-                            (userRole === 'Technical Support' || userRole === 'Koordinator ITSM') &&
-                            (
-                                status.includes('ditinjau oleh Koordinator ITSM') ||
-                                status === 'Diajukan dan Sedang Ditinjau oleh Koordinator ITSM'
-                            )
-                        ) {
-                            actionBtns += `
-                                <li><button class="dropdown-item" onclick="editPengajuan(${item.id})">
-                                    <img src="{{ asset('icon/edit-warning.svg') }}" width="16"> Edit</button></li>
-                            `;
-                            actionBtns += invoiceAction(item.id, item.invoice, item);
-                        }
-
-                        // Finance
-                        const financeStatuses = [
-                            'Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager',
-                            'Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi',
-                            'Finance Menunggu Approve Direksi',
-                            'Membuat Permintaan Ke Direktur Utama',
-                            'Telah disetujui oleh Koordinator ITSM dan sedang diproses oleh Finance',
-                            'Pengajuan sedang dalam proses Pencairan',
-                            'Pencairan Sudah Selesai'
-                        ];
-
-                        if (userRole === 'Finance &amp; Accounting' && financeStatuses.includes(status)) {
-                            actionBtns += `
-                                <li><button class="dropdown-item text-primary" onclick="openApproveRejectModal(${item.id}, 'finance-update')">
-                                    <img src="{{ asset('icon/edit-warning.svg') }}" width="16"> Update Status Pencairan</button></li>
-                                <li><button class="dropdown-item" onclick="viewDetail(${item.id})">
-                                    <img src="{{ asset('icon/clipboard-primary.svg') }}" width="16"> Detail</button></li>
-                            `;
-                        }
-
-                        // Default Detail jika tidak ada aksi
-                        if (
-                            !(
-                                (isPengaju && status.includes('Diajukan')) ||
-                                (status.includes('Diajukan dan Sedang Ditinjau oleh Education Manager') && userRole === 'Education Manager') ||
-                                (status.includes('Diajukan dan Sedang Ditinjau oleh SPV Sales') && userRole === 'SPV Sales') ||
-                                (status.includes('Diajukan dan Sedang Ditinjau oleh General Manager') && userRole === 'GM') ||
-                                (status.includes('ditinjau oleh Koordinator ITSM') && userRole === 'Koordinator ITSM') ||
-                                (userRole === 'Finance &amp; Accounting' && financeStatuses.includes(status))
-                            )
-                        ) {
-                            actionBtns += `
-                                <li><button class="dropdown-item" onclick="viewDetail(${item.id})">
-                                    <img src="{{ asset('icon/clipboard-primary.svg') }}" width="16"> Detail</button></li>
-                            `;
-                            actionBtns += invoiceAction(item.id, item.invoice, item);
-                        }
-
-                        actionBtns += `</ul></div>`;
-
-                        rows += `
-                            <tr>
-                                <td>${formatDate(item.created_at)}</td>
-                                <td>${item.karyawan?.nama_lengkap ?? '-'}</td>
-                                <td>${item.karyawan?.divisi ?? '-'}</td>
-                                <td>${item.karyawan?.jabatan ?? '-'}</td>
-                                <td>${item.lab ? 'Lab' : 'Subscription'}</td>
-                                <td>${item.lab?.nama_labs ?? item.subs?.nama_subs ?? '-'}</td>
-                                <td>${formatStatus(status)}</td>
-                                <td>
-                                    ${item.rkm
-                                        ? `${item.rkm.perusahaan?.nama_perusahaan ?? '-'} (${item.rkm.materi?.nama_materi ?? '-'})
-                                        <small class="text-muted">
-                                            ${item.rkm.tanggal_awal ? moment(item.rkm.tanggal_awal).format('DD MMM YYYY') : '-'}
-                                            –
-                                            ${item.rkm.tanggal_akhir ? moment(item.rkm.tanggal_akhir).format('DD MMM YYYY') : '-'}
-                                        </small>`
-                                        : '-'
-                                    }
-                                </td>
-                                <td>${actionBtns}</td>
-                            </tr>
-                        `;
                     });
-                    $("#pengajuanLabSubsTable tbody").html(rows);
-                    $("#pengajuanLabSubsTable").DataTable();
-                } else {
-                    $("#pengajuanLabSubsTable tbody").html(`
-                        <tr><td colspan="9" class="text-center text-danger">Tidak ada data ditemukan.</td></tr>
-                    `);
+
+                    // Render Tabel 1 (Aktif)
+                    if ($.fn.DataTable.isDataTable('#pengajuanLabSubsTable')) $('#pengajuanLabSubsTable').DataTable().destroy();
+                    $("#pengajuanLabSubsTable tbody").html(rowsAktif);
+                    $('#pengajuanLabSubsTable').DataTable({
+                        "order": [[ 0, "desc" ]],
+                        "language": { "emptyTable": "Tidak ada pengajuan aktif saat ini." }
+                    });
+
+                    // Render Tabel 2 (Existing Disetujui)
+                    if ($.fn.DataTable.isDataTable('#pengajuanExistingTable')) $('#pengajuanExistingTable').DataTable().destroy();
+                    $("#pengajuanExistingTable tbody").html(rowsExisting);
+                    $('#pengajuanExistingTable').DataTable({
+                        "order": [[ 0, "desc" ]],
+                        "language": { "emptyTable": "Belum ada pengajuan existing yang disetujui." }
+                    });
+
+                    // Render Tabel 3 (Selesai Baru)
+                    if ($.fn.DataTable.isDataTable('#pengajuanSelesaiTable')) $('#pengajuanSelesaiTable').DataTable().destroy();
+                    $("#pengajuanSelesaiTable tbody").html(rowsSelesai);
+                    $('#pengajuanSelesaiTable').DataTable({
+                        "order": [[ 0, "desc" ]],
+                        "language": { "emptyTable": "Belum ada riwayat selesai." }
+                    });
+
                 }
             },
             error: function() {
-                $("#pengajuanLabSubsTable tbody").html(`
-                    <tr><td colspan="9" class="text-center text-danger">Gagal memuat data.</td></tr>
-                `);
+                Swal.fire('Error', 'Gagal mengambil data dari server.', 'error');
             }
         });
     }
 
-    function loadPengajuanSelesai() {
-        let now = new Date();
-        let month = $('#bulan').length ? $('#bulan').val() : (now.getMonth() + 1);
-        let year  = $('#tahun').length ? $('#tahun').val() : now.getFullYear();
+    // --- RENDER ROW ---
+    function renderRow(item, status) {
+        let kategori = item.jenis_transaksi === 'baru' ? '<span class="badge bg-info">Pengadaan Baru</span>' :
+                      (item.jenis_transaksi === 'pembaharuan' ? '<span class="badge bg-warning text-dark">Pembaharuan</span>' :
+                      '<span class="badge bg-success">Lab Existing</span>');
 
-        $.ajax({
-            url: "/getPengajuanLabSubs/" + month + "/" + year,
-            type: "GET",
-            beforeSend: function() {
-                $("#pengajuanSelesaiTable tbody").html(`
-                    <tr>
-                        <td colspan="9" class="text-center">Loading...</td>
-                    </tr>
-                `);
-            },
-            success: function(response) {
-                if (response.success && Array.isArray(response.data)) {
-                    let selesaiData = response.data.filter(item => {
-                        if (!item.tracking || item.tracking.length === 0) return false;
-                        let lastStatus = item.tracking[item.tracking.length - 1].tracking;
-                        return lastStatus.includes('Selesai');
-                    });
+        let labName = item.lab ? item.lab.nama_labs : '-';
+        let rkmInfo = item.rkm ? `${item.rkm.materi?.nama_materi ?? '-'} <br><small class="text-muted">(${item.rkm.perusahaan?.nama_perusahaan ?? '-'})</small>` : '-';
+        let btns = generateButtons(item, status);
 
-                    if (selesaiData.length > 0) {
-                        let rows = '';
-                        $.each(selesaiData, function(index, item) {
-                            let lastStatus = item.tracking[item.tracking.length - 1].tracking;
-
-                            // 🔹 Siapkan tombol action dropdown
-                            let actionBtns = `
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                        Actions
-                                    </button>
-                                    <ul class="dropdown-menu">
-                                        <li>
-                                            <button class="dropdown-item" onclick="viewDetail(${item.id})">
-                                                <img src="{{ asset('icon/clipboard-primary.svg') }}" width="16"> Detail
-                                            </button>
-                                        </li>
-                                        ${invoiceAction(item.id, item.invoice, item)}
-                                        <li><button class="dropdown-item" onclick="editPengajuan(${item.id})">
-                                            <img src="{{ asset('icon/edit-warning.svg') }}" width="16"> Edit</button></li>
-                                    </ul>
-                                </div>
-                            `;
-
-                            // 🔹 Buat baris tabel
-                            rows += `
-                                <tr>
-                                    <td>${formatDate(item.created_at)}</td>
-                                    <td>${item.karyawan?.nama_lengkap ?? '-'}</td>
-                                    <td>${item.karyawan?.divisi ?? '-'}</td>
-                                    <td>${item.karyawan?.jabatan ?? '-'}</td>
-                                    <td>${item.lab ? 'Lab' : 'Subscription'}</td>
-                                    <td>${item.lab?.nama_labs ?? item.subs?.nama_subs ?? '-'}</td>
-                                    <td>${formatStatus(lastStatus)}</td>
-                                    <td>
-                                        ${item.rkm
-                                            ? `${item.rkm.perusahaan?.nama_perusahaan ?? '-'} (${item.rkm.materi?.nama_materi ?? '-'})
-                                            <small class="text-muted d-block">
-                                                ${item.rkm.tanggal_awal ? moment(item.rkm.tanggal_awal).format('DD MMM YYYY') : '-'}
-                                                –
-                                                ${item.rkm.tanggal_akhir ? moment(item.rkm.tanggal_akhir).format('DD MMM YYYY') : '-'}
-                                            </small>`
-                                            : '-'
-                                        }
-                                    </td>
-                                    <td>${actionBtns}</td>
-                                </tr>
-                            `;
-                        });
-                        $("#pengajuanSelesaiTable tbody").html(rows);
-                        $("#pengajuanSelesaiTable").DataTable();
-                    } else {
-                        $("#pengajuanSelesaiTable tbody").html(`
-                            <tr><td colspan="9" class="text-center text-muted">Tidak ada pengajuan selesai bulan ini.</td></tr>
-                        `);
-                    }
-                } else {
-                    $("#pengajuanSelesaiTable tbody").html(`
-                        <tr><td colspan="9" class="text-center text-danger">Gagal memuat data.</td></tr>
-                    `);
-                }
-            },
-            error: function() {
-                $("#pengajuanSelesaiTable tbody").html(`
-                    <tr><td colspan="9" class="text-center text-danger">Terjadi kesalahan saat memuat data.</td></tr>
-                `);
-            }
-        });
-    }
-
-    // === Helper Button ===
-    function approveButton(id) {
         return `
-            <li><button class="dropdown-item" onclick="openApproveRejectModal(${id}, 'approve')">
-                <img src="{{ asset('icon/check-circle.svg') }}" width="16"> Approve</button></li>
+            <tr>
+                <td>${moment(item.created_at).format('DD/MM/YYYY')}</td>
+                <td>${item.karyawan?.nama_lengkap ?? '-'}</td>
+                <td>${item.karyawan?.divisi ?? '-'}</td>
+                <td>${item.karyawan?.jabatan ?? '-'}</td>
+                <td>${kategori}</td>
+                <td>${labName}</td>
+                <td>${formatStatus(status)}</td>
+                <td>${rkmInfo}</td>
+                <td>${btns}</td>
+            </tr>
         `;
     }
 
-    function rejectButton(id) {
+    function renderRowSelesai(item, status) {
+        let kategori = item.jenis_transaksi === 'baru' ? '<span class="badge bg-danger">Baru</span>' :
+                      (item.jenis_transaksi === 'pembaharuan' ? '<span class="badge bg-warning text-dark">Pembaharuan</span>' :
+                      '<span class="badge bg-success">Existing</span>');
+
+        let labName = item.lab ? item.lab.nama_labs : '-';
+        let rkmInfo = item.rkm ? (item.rkm.materi?.nama_materi ?? '-') : '-';
+
+        let invoiceBtn = (item.jenis_transaksi === 'baru' || item.jenis_transaksi === 'pembaharuan') ? invoiceAction(item.id, item.invoice, item) : '';
+
+        let btns = `
+            <div class="dropdown">
+                <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">Aksi</button>
+                <ul class="dropdown-menu shadow">
+                    <li><button class="dropdown-item" onclick="viewDetail(${item.id})"><img src="{{ asset('icon/clipboard-primary.svg') }}" width="16" class="me-1"> Detail</button></li>
+                    ${invoiceBtn}
+                </ul>
+            </div>`;
+
         return `
-            <li>
-                <button class="dropdown-item text-danger" onclick="openApproveRejectModal(${id}, 'reject')">
-                    <img src="{{ asset('icon/x-circle.svg') }}" width="16"> Reject
-                </button>
-            </li>
+            <tr>
+                <td>${moment(item.created_at).format('DD/MM/YYYY')}</td>
+                <td>${item.karyawan?.nama_lengkap ?? '-'}</td>
+                <td>${item.karyawan?.divisi ?? '-'}</td>
+                <td>${item.karyawan?.jabatan ?? '-'}</td>
+                <td>${kategori}</td>
+                <td>${labName}</td>
+                <td>${formatStatus(status)}</td>
+                <td>${rkmInfo}</td>
+                <td>${btns}</td>
+            </tr>
         `;
+    }
+
+    // --- LOGIC GENERATE BUTTONS ---
+    function generateButtons(item, status) {
+        let isOwner = (item.karyawan_id == userId);
+        let btns = `<div class="dropdown">
+            <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">Aksi</button>
+            <ul class="dropdown-menu shadow">
+                <li><button class="dropdown-item" onclick="viewDetail(${item.id})"><img src="{{ asset('icon/clipboard-primary.svg') }}" width="16" class="me-1"> Detail</button></li>`;
+
+        let statusLower = status ? status.toLowerCase() : '';
+
+        if (isOwner && statusLower.includes('diajukan') && !statusLower.includes('ditolak')) {
+            btns += `<li><button class="dropdown-item text-danger" onclick="deletePengajuan(${item.id})"><img src="{{ asset('icon/trash-danger.svg') }}" width="16" class="me-1"> Hapus</button></li>`;
+        }
+
+        let canApprove = false;
+
+        if (userRole === 'Education Manager' && statusLower.includes('ditinjau oleh education manager')) {
+            canApprove = true;
+        }
+        else if (userRole === 'Koordinator ITSM' && statusLower.includes('ditinjau oleh koordinator itsm')) {
+            canApprove = true;
+        }
+
+        if (canApprove) {
+            btns += `
+                <li><hr class="dropdown-divider"></li>
+                <li><button class="dropdown-item text-success" onclick="openApproveRejectModal(${item.id}, 'approve')"><img src="{{ asset('icon/check-circle.svg') }}" width="16" class="me-1"> Approve</button></li>
+                <li><button class="dropdown-item text-danger" onclick="openApproveRejectModal(${item.id}, 'reject')"><img src="{{ asset('icon/x-circle.svg') }}" width="16" class="me-1"> Reject</button></li>
+            `;
+        }
+
+        if ((userRole === 'Technical Support' || userRole === 'Koordinator ITSM') && !statusLower.includes('selesai')) {
+             btns += `<li><button class="dropdown-item" onclick="editPengajuan(${item.id})"><img src="{{ asset('icon/edit-warning.svg') }}" width="16" class="me-1"> Edit Teknis</button></li>`;
+        }
+
+        if ((userRole === 'Finance & Accounting' || userRole === 'Finance &amp; Accounting') && (item.jenis_transaksi === 'baru' || item.jenis_transaksi === 'pembaharuan')) {
+             const financeStatuses = [
+                'diproses oleh finance',
+                'sedang dikonfirmasi oleh bagian finance kepada general manager',
+                'sedang dikonfirmasi oleh bagian finance kepada direksi',
+                'finance menunggu approve direksi',
+                'membuat permintaan ke direktur utama',
+                'pengajuan sedang dalam proses pencairan',
+                'pencairan sudah selesai',
+                'selesai'
+            ];
+
+            if (financeStatuses.some(finStatus => statusLower.includes(finStatus))) {
+                 btns += `<li><button class="dropdown-item text-warning" onclick="openApproveRejectModal(${item.id}, 'finance-update')"><img src="{{ asset('icon/edit-warning.svg') }}" width="16" class="me-1"> Update Pencairan</button></li>`;
+             }
+        }
+
+        if (item.jenis_transaksi === 'baru' || item.jenis_transaksi === 'pembaharuan') {
+            btns += invoiceAction(item.id, item.invoice, item);
+        }
+
+        btns += `</ul></div>`;
+        return btns;
     }
 
     function invoiceAction(id, invoice, item) {
-        let dataLengkap = false;
-
-        if (item.subs) {
-            dataLengkap = !!(
-                item.subs.nama_subs &&
-                item.subs.harga &&
-                item.subs.mata_uang &&
-                item.subs.kurs
-            );
-        } else if (item.lab) {
-            dataLengkap = !!(
-                item.lab.nama_labs &&
-                item.lab.harga &&
-                item.lab.mata_uang &&
-                item.lab.kurs
-            );
-        }
-
+        let dataLengkap = item.lab && item.lab.harga;
         if (!dataLengkap) {
-            return `
-                <li>
-                    <button class="dropdown-item text-muted" disabled>
-                        <img src="{{ asset('icon/upload.svg') }}" width="16"> Upload Invoice (Data belum lengkap)
-                    </button>
-                </li>
-            `;
+            return `<li><button class="dropdown-item text-muted" disabled><img src="{{ asset('icon/upload.svg') }}" width="16" class="me-1"> Upload Invoice (Tunggu Data Teknis)</button></li>`;
         }
-
         if (invoice) {
-            return `
-                <li>
-                    <a class="dropdown-item" href="/storage/pengajuanlabsubs/${invoice}" target="_blank">
-                        <img src="{{ asset('icon/eye.svg') }}" width="16"> Lihat Invoice
-                    </a>
-                </li>
-            `;
+            return `<li><a class="dropdown-item" href="/storage/pengajuanlabsubs/${invoice}" target="_blank"><img src="{{ asset('icon/eye.svg') }}" width="16" class="me-1"> Lihat Invoice</a></li>`;
         } else {
-            return `
-                <li>
-                    <button class="dropdown-item" onclick="openUploadInvoiceModal(${id})">
-                        <img src="{{ asset('icon/upload.svg') }}" width="16"> Upload Invoice
-                    </button>
-                </li>
-            `;
+            return `<li><button class="dropdown-item" onclick="openUploadInvoiceModal(${id})"><img src="{{ asset('icon/upload.svg') }}" width="16" class="me-1"> Upload Invoice</button></li>`;
         }
-    }
-
-
-    // === Helper lainnya ===
-    function formatDate(dateString) {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
     }
 
     function formatStatus(status) {
-        if (!status || typeof status !== 'string') {
-            return `<span class="badge bg-secondary">Belum Ada Tracking</span>`;
-        }
-        if (status.includes('Diajukan')) {
-            return `<span class="badge bg-warning text-dark">${status}</span>`;
-        } else if (status.includes('disetujui')) {
-            return `<span class="badge bg-success">${status}</span>`;
-        } else if (status.includes('ditolak')) {
-            return `<span class="badge bg-danger">${status}</span>`;
-        }
-        return `<span class="badge bg-info text-dark">${status}</span>`;
+        if (!status) return '<span class="fw-bold">Draft</span>';
+        return `<span class="fw-bold text-dark">${status}</span>`;
     }
 
-    function openApproveRejectModal(id, action) {
-        const userRole = '{{ auth()->user()->karyawan->jabatan ?? "" }}';
-
+    function openApproveRejectModal(id, type) {
         $('#modalId').val(id);
         $('#modalApproval').val('');
         $('#alasan').val('');
-        $('#reasonContainer').hide();
-        $('#financeStatusContainer').hide();
+        $('#reasonContainer').addClass('d-none');
+        $('#financeStatusContainer').addClass('d-none');
 
-        if (userRole === 'Finance &amp; Accounting' && action === 'finance-update') {
-            $('#financeStatusContainer').show();
-            $('#actionLabel').text('Pilih status proses pencairan pengajuan ini.');
-        } else if (action === 'approve') {
+        if (type === 'approve') {
+            $('#actionLabel').text('Anda yakin ingin MENYETUJUI pengajuan ini?');
             $('#modalApproval').val('1');
-            $('#actionLabel').text('Anda akan menyetujui pengajuan ini.');
-        } else if (action === 'reject') {
+        } else if (type === 'reject') {
+            $('#actionLabel').text('Anda yakin ingin MENOLAK pengajuan ini?');
             $('#modalApproval').val('2');
-            $('#reasonContainer').show();
-            $('#actionLabel').text('Anda akan menolak pengajuan ini. Harap isi alasan.');
+            $('#reasonContainer').removeClass('d-none');
+        } else if (type === 'finance-update') {
+            $('#actionLabel').text('Pilih status proses pencairan:');
+            $('#financeStatusContainer').removeClass('d-none');
         }
-
         new bootstrap.Modal(document.getElementById('approveRejectModal')).show();
     }
 
-    // === Submit form approve/reject ===
+    function openUploadInvoiceModal(id) {
+        $('#uploadInvoiceId').val(id);
+        new bootstrap.Modal(document.getElementById('uploadInvoiceModal')).show();
+    }
+
     $('#approvalForm').on('submit', function(e) {
         e.preventDefault();
-        const form = $(this);
-        const url = `/pengajuanlabsdansubs/${form.find('#modalId').val()}`;
-        const userRole = '{{ auth()->user()->karyawan->jabatan ?? "" }}';
-        let formData = form.serializeArray();
+        let id = $('#modalId').val();
+        let formData = $(this).serialize();
 
-        if (userRole === 'Finance &amp; Accounting') {
-            const financeStatus = $('#finance_status').val();
-            formData = formData.filter(f => f.name !== 'approval');
-            formData.push({ name: 'approval', value: financeStatus });
+        if ($('#financeStatusContainer').is(':visible')) {
+             formData = formData.replace('approval=', '') + '&approval=' + $('#finance_status').val();
         }
 
         $.ajax({
-            url,
-            method: 'POST',
-            data: $.param(formData),
+            url: `/pengajuanlabsdansubs/${id}`,
+            type: 'POST',
+            data: formData,
             success: function(res) {
-                if (res.success) {
-                    bootstrap.Modal.getInstance(document.getElementById('approveRejectModal')).hide();
-                    loadPengajuan();
-                    Swal.fire('Berhasil!', res.message, 'success');
-                } else {
-                    Swal.fire('Gagal!', res.message, 'error');
-                }
+                bootstrap.Modal.getInstance(document.getElementById('approveRejectModal')).hide();
+                Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1500, showConfirmButton: false }).then(() => {
+                    window.location.reload();
+                });
             },
-            error: function() {
-                Swal.fire('Oops!', 'Terjadi kesalahan saat mengirim permintaan.', 'error');
+            error: function(err) {
+                Swal.fire('Gagal', err.responseJSON?.message || 'Terjadi kesalahan sistem', 'error');
             }
         });
     });
-
-    // === Upload Invoice ===
-    function openUploadInvoiceModal(id) {
-        $('#uploadInvoiceId').val(id);
-        $('#invoice').val('');
-        new bootstrap.Modal(document.getElementById('uploadInvoiceModal')).show();
-    }
 
     $('#uploadInvoiceForm').on('submit', function(e) {
         e.preventDefault();
@@ -607,50 +696,230 @@
 
         $.ajax({
             url: `/pengajuanlabsdansubs/${id}/upload-invoice`,
-            method: 'POST',
+            type: 'POST',
             data: formData,
             processData: false,
             contentType: false,
             success: function(res) {
-                if (res.success) {
-                    bootstrap.Modal.getInstance(document.getElementById('uploadInvoiceModal')).hide();
-                    Swal.fire('Berhasil!', res.message, 'success');
-                    loadPengajuan();
-                } else {
-                    Swal.fire('Gagal!', res.message, 'error');
-                }
-            },
-            error: function() {
-                Swal.fire('Oops!', 'Terjadi kesalahan saat upload invoice.', 'error');
+                bootstrap.Modal.getInstance(document.getElementById('uploadInvoiceModal')).hide();
+                Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Invoice berhasil diupload', timer: 1500, showConfirmButton: false }).then(() => {
+                    window.location.reload();
+                });
             }
         });
     });
 
-    // === Lain-lain ===
-    function editPengajuan(id) {
-        window.location.href = `/pengajuanlabsdansubs/${id}/edit`;
-    }
-
-    function viewDetail(id) {
-        window.location.href = `/pengajuanlabsdansubs/${id}`;
-    }
+    function viewDetail(id) { window.location.href = `/pengajuanlabsdansubs/${id}`; }
+    function editPengajuan(id) { window.location.href = `/pengajuanlabsdansubs/${id}/edit`; }
 
     function deletePengajuan(id) {
-        if (confirm('Yakin ingin menghapus pengajuan ini?')) {
+        if(confirm('Yakin ingin menghapus pengajuan ini?')) {
             $.ajax({
                 url: `/pengajuanlabsdansubs/${id}`,
                 type: 'DELETE',
                 data: { _token: '{{ csrf_token() }}' },
                 success: function() {
-                    alert('Pengajuan dihapus!');
-                    loadPengajuan();
-                },
-                error: function() {
-                    alert('Gagal menghapus pengajuan.');
+                    Swal.fire('Terhapus', 'Data berhasil dihapus', 'success').then(() => {
+                        window.location.reload();
+                    });
                 }
             });
         }
     }
+
+    let masterLabTableInit = false;
+
+    function loadMasterLabs() {
+        if (masterLabTableInit) {
+            $('#masterLabTable').DataTable().ajax.reload(null, false);
+            return;
+        }
+
+        $('#masterLabTable').DataTable({
+            processing: true,
+            serverSide: false,
+            ajax: {
+                url: "{{ route('api.master-labs') }}",
+                type: 'GET'
+            },
+            columns: [
+                { data: 'nama_labs' },
+                { data: 'merk', render: data => data || '-' },
+                {
+                    data: 'tipe',
+                    render: function(data) {
+                        return data === 'subscription' ? 'Subscription' : 'One-Time';
+                    }
+                },
+                {
+                    data: 'status',
+                    render: function(data) {
+                        let color = 'secondary';
+                        if(data === 'active') color = 'success';
+                        if(data === 'pending') color = 'warning text-dark';
+                        if(data === 'expired') color = 'danger';
+                        return `<span class="badge bg-${color}">${data}</span>`;
+                    }
+                },
+                {
+                    data: 'desc',
+                    render: function(data) {
+                        if(!data) return '-';
+                        return data.length > 20 ? data.substr(0, 20) + '...' : data;
+                    }
+                },
+                {
+                    data: 'lab_url',
+                    render: function(data) {
+                        if(!data) return '-';
+                        return `<a href="${data}" target="_blank" class="text-primary">Link</a>`;
+                    }
+                },
+                { data: 'access_code', render: data => data || '-' },
+                {
+                    data: null,
+                    render: function(data, type, row) {
+                        let start = row.start_date ? moment(row.start_date).format('DD/MM/YYYY') : '-';
+                        let end = row.end_date ? moment(row.end_date).format('DD/MM/YYYY') : '-';
+                        if(start === '-' && end === '-') return '-';
+                        return `${start} - <br>${end}`;
+                    }
+                },
+                { data: 'mata_uang', render: data => data || '-' },
+                {
+                    data: 'harga',
+                    render: function(data) {
+                        return data ? new Intl.NumberFormat('id-ID').format(data) : '0';
+                    }
+                },
+                {
+                    data: 'kurs',
+                    render: function(data) {
+                        return data ? new Intl.NumberFormat('id-ID').format(data) : '0';
+                    }
+                },
+                {
+                    data: 'harga_rupiah',
+                    render: function(data) {
+                        return data ? 'Rp ' + new Intl.NumberFormat('id-ID').format(data) : '-';
+                    }
+                },
+                {
+                    data: 'materis',
+                    render: function(data) {
+                        if(!data || data.length === 0) return '<span class="text-muted" style="font-size:0.8rem">Belum terhubung</span>';
+                        return data.map(m => `<div class="mb-1"><span class="badge bg-light text-dark border text-wrap text-start" style="line-height: 1.4;">${m.nama_materi}</span></div>`).join('');
+                    }
+                },
+                {
+                    data: null,
+                    render: function(data, type, row) {
+                        return `
+                            <div class="d-flex">
+                                <button class="btn btn-sm btn-primary me-1" onclick='openEditMasterLabModal(${JSON.stringify(row).replace(/'/g, "&#39;")})'>
+                                    Edit
+                                </button>
+                                <button class="btn btn-sm btn-success" onclick="renewLab(${row.id}, '${row.nama_labs}')" title="Perbarui/Perpanjang Lab">
+                                    Perbarui
+                                </button>
+                            </div>
+                        `;
+                    }
+                }
+            ],
+            order: [[ 3, "asc" ]]
+        });
+
+        masterLabTableInit = true;
+    }
+
+    function openEditMasterLabModal(lab) {
+        $('#edit_lab_id').val(lab.id);
+        $('#edit_nama_labs').val(lab.nama_labs);
+        $('#edit_merk').val(lab.merk);
+        $('#edit_tipe').val(lab.tipe).trigger('change');
+        $('#edit_duration_minutes').val(lab.duration_minutes);
+        $('#edit_status').val(lab.status);
+        $('#edit_deskripsi').val(lab.desc);
+        $('#edit_url_labs').val(lab.lab_url);
+        $('#edit_kode_akses').val(lab.access_code);
+
+        let startDate = lab.start_date ? lab.start_date.split(' ')[0] : '';
+        let endDate = lab.end_date ? lab.end_date.split(' ')[0] : '';
+
+        $('#edit_tanggal_mulai').val(startDate);
+        $('#edit_tanggal_berakhir').val(endDate);
+        $('#edit_mata_uang').val(lab.mata_uang || 'Dollar');
+        $('#edit_nominal_harga_asli').val(lab.harga);
+        $('#edit_kurs').val(lab.kurs);
+
+        calculateEstimasiRupiah();
+
+        let selectedMateriIds = [];
+        if (lab.materis && lab.materis.length > 0) {
+            selectedMateriIds = lab.materis.map(m => m.id);
+        }
+        $('#edit_materi').val(selectedMateriIds).trigger('change');
+
+        new bootstrap.Modal(document.getElementById('editMasterLabModal')).show();
+    }
+
+    $('#editMasterLabForm').on('submit', function(e) {
+        e.preventDefault();
+        let id = $('#edit_lab_id').val();
+        let formData = $(this).serialize();
+
+        $.ajax({
+            url: `/api/master-labs/${id}`,
+            type: 'PUT',
+            data: formData,
+            success: function(res) {
+                bootstrap.Modal.getInstance(document.getElementById('editMasterLabModal')).hide();
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil',
+                    text: 'Data lab berhasil diperbarui',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+                $('#masterLabTable').DataTable().ajax.reload(null, false);
+            },
+            error: function(err) {
+                Swal.fire('Gagal', 'Terjadi kesalahan saat menyimpan data', 'error');
+            }
+        });
+    });
+
+    // FUNGSI PEMBAHARUAN LAB OTOMATIS
+    function renewLab(id, namaLab) {
+        Swal.fire({
+            title: 'Perbarui Lab?',
+            text: `Buat pengajuan perpanjangan otomatis untuk lab: ${namaLab}`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Buat Pengajuan',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: `/api/master-labs/${id}/renew`,
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(res) {
+                        Swal.fire('Berhasil!', res.message, 'success').then(() => {
+                            window.location.reload();
+                        });
+                    },
+                    error: function(err) {
+                        Swal.fire('Gagal', err.responseJSON?.message || 'Terjadi kesalahan sistem', 'error');
+                    }
+                });
+            }
+        });
+    }
+
 </script>
 @endpush
 @endsection
