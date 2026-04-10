@@ -45,11 +45,13 @@ class RKMController extends Controller
                 $start = $startOfWeek->format('Y-m-d');
                 $end = $endOfWeek->format('Y-m-d');
                 $startOfWeek = $startOfWeek->addWeek();
-                $rows = RKM::with(['materi', 'peluang', 'rekomendasilanjutan'])
+                $rows = RKM::with(['materi', 'peluang', 'exam', 'approvalexam'])
                     ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
                     ->whereBetween('r_k_m_s.tanggal_awal', [$start, $end])
                     ->whereDoesntHave('peluang', function ($query) {
-                        $query->where('tentatif', 1); // Exclude RKM records where peluang.tentatif = 1
+                        $query->where('tentatif', 1);
+                    })->whereHas('approvalexam', function ($query) {
+                        $query->where('technical_support', 1);
                     })
                     ->select(
                         DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'), // Gabungkan semua id
