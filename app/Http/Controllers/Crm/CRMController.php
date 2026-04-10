@@ -520,12 +520,13 @@ class CRMController extends Controller
 
     public function createKoordinasi()
     {
-        $dataDriver = karyawan::where('jabatan', 'Driver')
+         $dataDriver = karyawan::where('jabatan', 'Driver')
             ->where('status_aktif', '1')
             ->where(function ($query) {
-                $query->whereDoesntHave('pickupDriver')->orWhereHas('pickupDriver', function ($q) {
-                    $q->where('status_driver', 'Selesai, Driver Ready');
-                });
+                $query->whereDoesntHave('pickupDriver')
+                    ->orWhereHas('pickupDriver', function ($q) {
+                        $q->where('status_driver', 'Selesai, Driver Ready');
+                    });
             })
             ->get();
 
@@ -545,27 +546,18 @@ class CRMController extends Controller
                 return $item;
             });
 
-        $kendaraanSedangDipakai = pickupDriver::where('status_apply', 1)->whereNotNull('kendaraan')->where('kendaraan', '!=', '')->pluck('kendaraan')->unique();
-
-        $latestPerKendaraan = PerbaikanKendaraan::select('kendaraan')->selectRaw('MAX(id) as max_id')->groupBy('kendaraan');
-
-        $kendaraanTersedia = PerbaikanKendaraan::joinSub($latestPerKendaraan, 'latest', function ($join) {
-            $join->on('perbaikan_kendaraans.id', '=', 'latest.max_id');
-        })
-            ->where(function ($query) {
-                $query->where('type_condition', '!=', 'Kecelakaan')->orWhere('status', 'Selesai');
-            })
-            ->where(function ($query) {
-                $query->whereNotIn('type_vehicle_condition', ['Kerusakan Berat', 'Kerusakan Total'])->orWhere('status', 'Selesai');
-            })
-            ->pluck('perbaikan_kendaraans.kendaraan')
+        $kendaraanSedangDipakai = pickupDriver::where('status_apply', 1)
+            ->whereNotNull('kendaraan')
+            ->where('kendaraan', '!=', '')
+            ->pluck('kendaraan')
             ->unique();
 
-        $kendaraanTersedia = $kendaraanTersedia->diff($kendaraanSedangDipakai);
+        $allKendaraan = collect(['H1', 'Innova']);
+
+        $kendaraanTersedia = $allKendaraan->diff($kendaraanSedangDipakai);
 
         if ($kendaraanTersedia->isEmpty()) {
-            $defaultKendaraan = collect(['H1', 'Innova'])->diff($kendaraanSedangDipakai);
-            $kendaraanTersedia = $defaultKendaraan;
+            $kendaraanTersedia = $allKendaraan;
         }
 
         if ($kendaraanTersedia->contains('Innova')) {
