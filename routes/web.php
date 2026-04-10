@@ -22,7 +22,6 @@ use App\Http\Controllers\Webinar\CalendarController;
 use App\Http\Controllers\PenukaranSouvenirController;
 use App\Http\Controllers\Webinar\ChecklistController;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
-use App\Http\Controllers\AdministrasiKaryawanController;
 use App\Http\Controllers\Office\CertificateController;
 use App\Http\Controllers\office\vendorOfficeController;
 use App\Http\Controllers\RekomendasiLanjutanController;
