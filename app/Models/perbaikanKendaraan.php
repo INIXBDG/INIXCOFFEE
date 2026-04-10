@@ -26,11 +26,19 @@ class PerbaikanKendaraan extends Model
         'tanggal_perbaikan',
         'selesai_perbaikan',
         'detail_perbaikan',
-        'document'
+        'document',
+        'invoice',
+        'tanggal_perbaikan',
+        'deskripsi_perbaikan'
     ];
 
     public function user()
     {
         return $this->belongsTo(User::class, 'id_user', 'id');
+    }
+
+    public function pengajuanBarang()
+    {
+        return $this->belongTo(PengajuanBarang::class, 'pengajuanbarangs_id');
     }
 }

@@ -18,6 +18,7 @@ use App\Services\WebPushService;
 use App\Models\PushSubscription;
 use App\Models\JurnalAkuntansi;
 use App\Models\HistoriPerubahanBarang;
+use App\Models\PerbaikanKendaraan;
 
 class PengajuanBarangController extends Controller
 {
@@ -312,6 +313,7 @@ class PengajuanBarangController extends Controller
         $tracking = tracking_pengajuan_barang::where('id_pengajuan_barang', $id)->latest()->first();
         $totalHarga = 0;
         $jabatan = auth()->user()->jabatan;
+        $perbaikanKendaraan = PerbaikanKendaraan::where('pengajuanbarangs_id', $id)->first(); // untuk update perbaikan kendaraan
 
         if ($request->approval == '1' && $jabatan == 'Finance & Accounting') {
             $status = $request->status;
@@ -323,6 +325,9 @@ class PengajuanBarangController extends Controller
             ]);
             $data->update([
                 'id_tracking' => $e->id,
+            ]);
+            $perbaikanKendaraan->update([
+                'status' => $status
             ]);
             $users = [$data->karyawan->kode_karyawan];
 
@@ -339,6 +344,9 @@ class PengajuanBarangController extends Controller
                     ]);
                     $data->update([
                         'id_tracking' => $e2->id,
+                    ]);
+                    $perbaikanKendaraan->update([
+                        'status' => $status
                     ]);
 
                     $totalPengeluaran = 0;
@@ -433,6 +441,9 @@ class PengajuanBarangController extends Controller
             ]);
             $data->update([
                 'id_tracking' => $e->id,
+            ]);
+            $perbaikanKendaraan->update([
+                'status' => $status
             ]);
             $users = [$data->karyawan->kode_karyawan];
             $userObjs = User::whereHas('karyawan', function ($query) use ($users) {

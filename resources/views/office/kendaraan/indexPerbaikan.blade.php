@@ -99,7 +99,7 @@
                                                     onsubmit="return confirm('Apakah Anda yakin ingin menghapus data ini?')">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="btn btn-sm btn-danger">
+                                                    <button type="submit" class="btn btn-danger me-1">
                                                         Hapus
                                                     </button>
                                                 </form>
@@ -118,6 +118,18 @@
                                                     data-bs-toggle="modal" data-bs-target="#ModalUpdateStatus"
                                                     data-id="{{ $item->id }}">
                                                     Update
+                                                </button>
+                                            @elseif ($item->status ==='Selesai' && $item->invoice)
+                                                <button type="button" class="btn btn-primary btnViewInvoice"
+                                                    data-bs-toggle="modal" data-bs-target="#ModalViewInvoice"
+                                                    data-id="{{ $item->id }}">
+                                                    Invoice
+                                                </button>
+                                            @elseif (in_array(Auth::user()->jabatan, ['Driver']) && $item->status != 'Ditolak Oleh GM')
+                                                <button type="button" class="btn btn-success btnSelesaiPerbaikan" {{ in_array($item->status, ['Diajukan', 'Selesai', 'Ditolak Oleh GM']) ? 'disabled' : '' }}
+                                                    data-bs-toggle="modal" data-bs-target="#modalSelesaiPerbaikan"
+                                                    data-id="{{ $item->id }}">
+                                                    Selesaikan
                                                 </button>
                                             @endif
                                         </div>
@@ -250,6 +262,133 @@
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="modalSelesaiPerbaikan" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content shadow">
+                <div class="modal-header">
+                    <h5 class="modal-title">Selesai Perbaikan Kendaraan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <form action="{{ route('office.selesaiPerbaikanKendaraan') }}" method="POST" id="formSelesaiPerbaikan"
+                        enctype="multipart/form-data">
+                        @csrf
+
+                        <input type="hidden" name="id" id="modal_selesai_id">
+                        <input type="hidden" name="id_user" value="{{ Auth::user()->id }}">
+
+                        <div class="row g-4">
+
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Tanggal Perbaikan</label>
+                                <input type="date" name="tanggal_perbaikan" class="form-control" required>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Deskripsi Perbaikan</label>
+                                <textarea name="deskripsi_perbaikan" class="form-control" rows="4" placeholder="Jelaskan perbaikan kendaraan..."></textarea required>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Invoice<span
+                                        style="text-danger">*</span></label>
+                                <input type="file" name="invoice" class="form-control" required>
+                            </div>
+
+                        </div>
+                    </form>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" form="formSelesaiPerbaikan" class="btn btn-primary">Simpan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (count($perbaikan) > 0)
+    <div class="modal fade" id="ModalViewInvoice" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content shadow">
+                <div class="modal-header">
+                    <h5 class="modal-title">Invoice Perbaikan Kendaraan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                
+                    <div class="row g-4">
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Tanggal Perbaikan</label>
+                            <input type="date" name="tanggal_perbaikan" class="form-control" disabled value="{{ $item?->tanggal_perbaikan }}">
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Deskripsi Perbaikan</label>
+                            <textarea name="deskripsi_perbaikan" class="form-control" rows="4" disabled>{{ $item?->deskripsi_perbaikan }}</textarea>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Invoice<span
+                                    style="text-danger">*</span></label>
+                            @php
+                                $extension = strtolower(pathinfo($item?->invoice, PATHINFO_EXTENSION));
+                                $fileUrl = asset('storage/' . $item?->invoice);
+                            @endphp
+
+                            <div class="mb-3">
+
+                                @if (in_array($extension, ['jpg', 'jpeg', 'png', 'webp']))
+                                    <img src="{{ $fileUrl }}" class="img-fluid rounded shadow-sm border"
+                                        style="max-height:250px;">
+
+                                @elseif (in_array($extension, ['mp4', 'mov', 'avi', 'webm']))
+                                    <video class="rounded shadow-sm border" style="max-height:250px;" controls>
+                                        <source src="{{ $fileUrl }}">
+                                        Browser tidak mendukung video.
+                                    </video>
+
+                                @elseif ($extension === 'pdf')
+                                    <iframe src="{{ $fileUrl }}" class="w-100 border rounded"
+                                        style="height:400px;"></iframe>
+
+                                @elseif (in_array($extension, ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx']))
+                                    <div class="alert alert-info">
+                                        File dokumen tidak bisa ditampilkan langsung.<br>
+                                        <a href="{{ $fileUrl }}" target="_blank" class="btn btn-sm btn-primary mt-2">
+                                            Download / Buka File
+                                        </a>
+                                    </div>
+
+                                @else
+                                    <div class="alert alert-warning">
+                                        File tidak dapat ditampilkan.<br>
+                                        <a href="{{ $fileUrl }}" target="_blank" class="btn btn-sm btn-secondary mt-2">
+                                            Download File
+                                        </a>
+                                    </div>
+                                @endif
+
+                                <div class="mt-2">
+                                    <a href="{{ $fileUrl }}" class="btn btn-sm btn-outline-primary"
+                                        target="_blank">
+                                        <i class="fas fa-download"></i> Download Invoice
+                                    </a>
+                                </div>
+
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 
     <div class="modal fade" id="ModalUpdateStatus" tabindex="-1" role="dialog"
         aria-labelledby="ModalUpdateStatusLabel" aria-hidden="true">
@@ -390,6 +529,11 @@
         $(document).on('click', '.btnUpdateStatus', function() {
             let id = $(this).data('id');
             $('#modal_id').val(id);
+        });
+
+        $(document).on('click', '.btnSelesaiPerbaikan', function() {
+            let id = $(this).data('id');
+            $('#modal_selesai_id').val(id);
         });
 
         document.addEventListener("DOMContentLoaded", function() {

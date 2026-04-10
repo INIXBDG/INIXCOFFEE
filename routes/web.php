@@ -352,6 +352,7 @@ Route::post('/daftar-peserta-exam/store', [App\Http\Controllers\DaftarPesertaExa
 Route::get('/daftar-peserta-exam/get-data', [App\Http\Controllers\DaftarPesertaExamController::class, 'getData'])->name('daftar-peserta-exam.get-data');
 Route::get('/daftar-peserta-exam/{id}/edit', [App\Http\Controllers\DaftarPesertaExamController::class, 'edit'])->name('daftar-peserta-exam.edit');
 Route::put('/daftar-peserta-exam/{id}', [App\Http\Controllers\DaftarPesertaExamController::class, 'update'])->name('daftar-peserta-exam.update');
+Route::post('/listexam/delete/{id}', [App\Http\Controllers\ListExamController::class, 'destroy']);
 
 Route::get('/feedbackPelayanan', [App\Http\Controllers\feedbackController::class, 'pelayananFeedbackShow'])->name('feedbackPelayanan');
 Route::get('/pengajuanExam/{id}', [App\Http\Controllers\examController::class, 'create'])->name('pengajuanExam');
@@ -1034,6 +1035,7 @@ Route::prefix('office')
             Route::put('/update/perbaikan/{id}', [KendaraanController::class, 'updatePerbaikan'])->name('updatePerbaikanKendaraan');
             Route::delete('/delete/perbaikan/{id}', [KendaraanController::class, 'deletePerbaikan'])->name('deletePerbaikanKendaraan');
             Route::post('/update/status/perbaikan', [KendaraanController::class, 'updateStatusPerbaikan'])->name('updateStatusPerbaikanKendaraan');
+            Route::post('/update/selesai/perbaikan', [KendaraanController::class, 'SelesaiPerbaikan'])->name('selesaiPerbaikanKendaraan');
         });
 
         //To Do list OB
