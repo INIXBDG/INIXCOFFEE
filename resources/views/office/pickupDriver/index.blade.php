@@ -380,14 +380,14 @@
 
         const VEHICLE_CONFIG = {
             'Innova': {
-                fuelPrice: 14000,
+                fuelPrice: 14500,
                 tankCapacity: 55,
-                kmPerLiter: 10
+                kmPerLiter: 8
             },
             'H1': {
                 fuelPrice: 12500,
                 tankCapacity: 75,
-                kmPerLiter: 8
+                kmPerLiter: 5
             }
         };
 
