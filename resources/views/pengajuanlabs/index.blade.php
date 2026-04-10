@@ -28,7 +28,6 @@
 
             <div class="tab-content" id="labTabsContent">
 
-
                 <div class="tab-pane fade show active" id="pengajuan-pane" role="tabpanel">
                     @if($bolehMengajukan)
                         <div class="d-flex justify-content-end">
@@ -134,7 +133,7 @@
                                     </select>
                                 </div>
                                 <div class="col-md-4 mx-1">
-                                    <button onclick="loadPengajuan()" class="btn click-primary w-100" style="margin-top: 32px">Cari Data</button>
+                                    <button onclick="loadAllTables()" class="btn click-primary w-100" style="margin-top: 32px">Cari Data</button>
                                 </div>
                             </div>
                         </div>
@@ -164,7 +163,7 @@
 
                     <div class="card m-4">
                         <div class="card-body table-responsive">
-                            <h3 class="card-title text-center my-1">Data Permitaan Lab Existing</h3>
+                            <h3 class="card-title text-center my-1 text-primary">Data Permintaan Lab Existing</h3>
                             <table class="table table-striped" id="pengajuanExistingTable">
                                 <thead>
                                     <tr>
@@ -409,12 +408,20 @@
         $('.calculate-harga').on('input', calculateEstimasiRupiah);
         $('#edit_mata_uang').on('change', calculateEstimasiRupiah);
 
-        // --- INISIALISASI SELECT2 ---
         $('#edit_materi').select2({
             theme: 'bootstrap-5',
             placeholder: "Pilih Materi Terkait...",
             allowClear: true,
             dropdownParent: $('#editMasterLabModal')
+        });
+
+        $('#edit_tipe').on('change', function() {
+            if ($(this).val() === 'one-time') {
+                $('#row_edit_duration').slideDown();
+            } else {
+                $('#row_edit_duration').slideUp();
+                $('#edit_duration_minutes').val('');
+            }
         });
     });
 
@@ -446,17 +453,14 @@
                     let rowsSelesai = '';
 
                     $.each(res.data, function(index, item) {
-                        // Amankan agar tidak error jika tracking kosong
                         let trackTexts = (item.tracking || []).map(t => t.tracking || '');
                         let lastTrack = trackTexts.length > 0 ? trackTexts[trackTexts.length - 1] : '';
 
                         let isSelesai = lastTrack && (lastTrack.includes('Selesai') || lastTrack.includes('Siap Digunakan'));
 
-                        // Cek existing dengan aman (t && t.toLowerCase())
                         let isExistingApproved = item.jenis_transaksi === 'existing' &&
                                                  trackTexts.some(t => t && t.toLowerCase().includes('telah disetujui oleh koordinator itsm dan lihat akses nya di detail'));
 
-                        // DISTRIBUSI KE TABEL MASING-MASING
                         if (isExistingApproved) {
                             rowsExisting += renderRowSelesai(item, lastTrack);
                         } else if (isSelesai) {
@@ -500,9 +504,9 @@
 
     // --- RENDER ROW ---
     function renderRow(item, status) {
-        let kategori = item.jenis_transaksi === 'baru'
-            ? '<span class="badge bg-info">Pengadaan Baru</span>'
-            : '<span class="badge bg-success">Lab Existing</span>';
+        let kategori = item.jenis_transaksi === 'baru' ? '<span class="badge bg-info">Pengadaan Baru</span>' :
+                      (item.jenis_transaksi === 'pembaharuan' ? '<span class="badge bg-warning text-dark">Pembaharuan</span>' :
+                      '<span class="badge bg-success">Lab Existing</span>');
 
         let labName = item.lab ? item.lab.nama_labs : '-';
         let rkmInfo = item.rkm ? `${item.rkm.materi?.nama_materi ?? '-'} <br><small class="text-muted">(${item.rkm.perusahaan?.nama_perusahaan ?? '-'})</small>` : '-';
@@ -524,12 +528,14 @@
     }
 
     function renderRowSelesai(item, status) {
-        let kategori = item.jenis_transaksi === 'baru' ? '<span class="badge bg-danger">Baru</span>' : '<span class="badge bg-success">Existing</span>';
+        let kategori = item.jenis_transaksi === 'baru' ? '<span class="badge bg-danger">Baru</span>' :
+                      (item.jenis_transaksi === 'pembaharuan' ? '<span class="badge bg-warning text-dark">Pembaharuan</span>' :
+                      '<span class="badge bg-success">Existing</span>');
+
         let labName = item.lab ? item.lab.nama_labs : '-';
         let rkmInfo = item.rkm ? (item.rkm.materi?.nama_materi ?? '-') : '-';
 
-        // Sembunyikan tombol upload invoice jika kategorinya existing
-        let invoiceBtn = item.jenis_transaksi === 'baru' ? invoiceAction(item.id, item.invoice, item) : '';
+        let invoiceBtn = (item.jenis_transaksi === 'baru' || item.jenis_transaksi === 'pembaharuan') ? invoiceAction(item.id, item.invoice, item) : '';
 
         let btns = `
             <div class="dropdown">
@@ -563,7 +569,6 @@
             <ul class="dropdown-menu shadow">
                 <li><button class="dropdown-item" onclick="viewDetail(${item.id})"><img src="{{ asset('icon/clipboard-primary.svg') }}" width="16" class="me-1"> Detail</button></li>`;
 
-        // Ubah string status ke huruf kecil untuk keamanan pencocokan, amankan jika status null
         let statusLower = status ? status.toLowerCase() : '';
 
         if (isOwner && statusLower.includes('diajukan') && !statusLower.includes('ditolak')) {
@@ -591,7 +596,7 @@
              btns += `<li><button class="dropdown-item" onclick="editPengajuan(${item.id})"><img src="{{ asset('icon/edit-warning.svg') }}" width="16" class="me-1"> Edit Teknis</button></li>`;
         }
 
-        if ((userRole === 'Finance & Accounting' || userRole === 'Finance &amp; Accounting') && item.jenis_transaksi === 'baru') {
+        if ((userRole === 'Finance & Accounting' || userRole === 'Finance &amp; Accounting') && (item.jenis_transaksi === 'baru' || item.jenis_transaksi === 'pembaharuan')) {
              const financeStatuses = [
                 'diproses oleh finance',
                 'sedang dikonfirmasi oleh bagian finance kepada general manager',
@@ -608,7 +613,7 @@
              }
         }
 
-        if (item.jenis_transaksi === 'baru') {
+        if (item.jenis_transaksi === 'baru' || item.jenis_transaksi === 'pembaharuan') {
             btns += invoiceAction(item.id, item.invoice, item);
         }
 
@@ -777,7 +782,7 @@
                         let start = row.start_date ? moment(row.start_date).format('DD/MM/YYYY') : '-';
                         let end = row.end_date ? moment(row.end_date).format('DD/MM/YYYY') : '-';
                         if(start === '-' && end === '-') return '-';
-                        return `${start} - <br>${end}`; // Dibuat turun ke bawah juga untuk tanggal
+                        return `${start} - <br>${end}`;
                     }
                 },
                 { data: 'mata_uang', render: data => data || '-' },
@@ -810,9 +815,14 @@
                     data: null,
                     render: function(data, type, row) {
                         return `
-                            <button class="btn btn-sm btn-primary" onclick='openEditMasterLabModal(${JSON.stringify(row).replace(/'/g, "&#39;")})'>
-                                Edit
-                            </button>
+                            <div class="d-flex">
+                                <button class="btn btn-sm btn-primary me-1" onclick='openEditMasterLabModal(${JSON.stringify(row).replace(/'/g, "&#39;")})'>
+                                    Edit
+                                </button>
+                                <button class="btn btn-sm btn-success" onclick="renewLab(${row.id}, '${row.nama_labs}')" title="Perbarui/Perpanjang Lab">
+                                    Perbarui
+                                </button>
+                            </div>
                         `;
                     }
                 }
@@ -854,7 +864,6 @@
         new bootstrap.Modal(document.getElementById('editMasterLabModal')).show();
     }
 
-    // Submit Edit Master Lab
     $('#editMasterLabForm').on('submit', function(e) {
         e.preventDefault();
         let id = $('#edit_lab_id').val();
@@ -880,6 +889,37 @@
             }
         });
     });
+
+    // FUNGSI PEMBAHARUAN LAB OTOMATIS
+    function renewLab(id, namaLab) {
+        Swal.fire({
+            title: 'Perbarui Lab?',
+            text: `Buat pengajuan perpanjangan otomatis untuk lab: ${namaLab}`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Buat Pengajuan',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: `/api/master-labs/${id}/renew`,
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(res) {
+                        Swal.fire('Berhasil!', res.message, 'success').then(() => {
+                            window.location.reload();
+                        });
+                    },
+                    error: function(err) {
+                        Swal.fire('Gagal', err.responseJSON?.message || 'Terjadi kesalahan sistem', 'error');
+                    }
+                });
+            }
+        });
+    }
+
 </script>
 @endpush
 @endsection

@@ -37,10 +37,10 @@ return new class extends Migration
             $table->dropColumn('subs_snapshot');
 
             // Tambah penanda apakah ini pengadaan baru atau pakai aset lama
-            $table->enum('jenis_transaksi', ['baru', 'existing'])
+            $table->enum('jenis_transaksi', ['baru', 'existing', 'pembaharuan'])
                   ->default('baru')
                   ->after('id_labs')
-                  ->comment('Baru: Beli dari vendor. Existing: Pakai lab langganan kantor.');
+                  ->comment('Baru: Beli dari vendor. Existing: Pakai lab langganan kantor. Pembaharuan: Pembaruan lab yang sudah ada.');
         });
 
         // 3. Hapus Tabel Subscriptions (Karena sudah tidak dipakai)

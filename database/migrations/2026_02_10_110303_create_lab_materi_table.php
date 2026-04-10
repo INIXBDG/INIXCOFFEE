@@ -12,8 +12,6 @@ return new class extends Migration
         Schema::create('lab_materi', function (Blueprint $table) {
             $table->id();
             $table->foreignId('lab_id')->constrained('labs')->onDelete('cascade');
-
-            // Pastikan nama tabel materi Anda benar ('materis' atau 'materi')
             $table->foreignId('materi_id')->constrained('materis')->onDelete('cascade');
 
             $table->timestamps();

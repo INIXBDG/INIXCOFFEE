@@ -576,9 +576,23 @@ class PengajuanLabdanSubsController extends Controller
 
     public function exportPDF($id)
     {
-        $data = PengajuanLabSubs::with(['lab', 'subs', 'karyawan', 'tracking'])->findOrFail($id);
+        $data = PengajuanLabSubs::with(['lab', 'karyawan', 'tracking'])->findOrFail($id);
 
-        // 🔹 Tentukan siapa yang "menyetujui" berdasarkan divisi
+        $labSnapshot = null;
+        if (!empty($data->lab_snapshot)) {
+            $labSnapshot = is_string($data->lab_snapshot) ? json_decode($data->lab_snapshot) : (object) $data->lab_snapshot;
+        } elseif ($data->lab) {
+            $labSnapshot = (object) $data->lab->toArray();
+        }
+
+        $subsSnapshot = null;
+        if (!empty($data->subs_snapshot)) {
+            $subsSnapshot = is_string($data->subs_snapshot) ? json_decode($data->subs_snapshot) : (object) $data->subs_snapshot;
+        } elseif ($data->subs) {
+            $subsSnapshot = (object) $data->subs->toArray();
+        }
+
+        // 2. Tentukan siapa yang "menyetujui" berdasarkan divisi
         if ($data->karyawan->divisi == 'Education') {
             $finance = Karyawan::where('jabatan', 'Education Manager')->latest()->first();
         } elseif ($data->karyawan->divisi == 'Sales & Marketing') {
@@ -593,7 +607,8 @@ class PengajuanLabdanSubsController extends Controller
 
         $gm = Karyawan::where('jabatan', 'GM')->latest()->first();
 
-        return view('exports.pengajuan_labsubs-pdf', compact('data', 'finance', 'gm'));
+        // 3. Kirim variabel snapshot ke view
+        return view('exports.pengajuan_labsubs-pdf', compact('data', 'finance', 'gm', 'labSnapshot', 'subsSnapshot'));
     }
 
     public function updateMasterLab(Request $request, $id)
@@ -602,7 +617,8 @@ class PengajuanLabdanSubsController extends Controller
             'nama_labs' => 'required|string|max:255',
             'merk' => 'nullable|string|max:255',
             'tipe' => 'nullable|in:subscription,one-time',
-            'status' => 'nullable|in:Active,Pending,Expired',
+            // Koreksi nilai parameter in menjadi huruf kecil sesuai dengan value HTML
+            'status' => 'nullable|in:active,pending,expired',
             'harga_rupiah' => 'nullable|numeric',
             'materi_ids' => 'nullable|array',
             'materi_ids.*' => 'exists:materis,id'
@@ -622,6 +638,57 @@ class PengajuanLabdanSubsController extends Controller
             'success' => true,
             'message' => 'Data lab dan materi berhasil diperbarui',
             'data' => $lab
+        ]);
+    }
+
+    public function renewLab($id)
+    {
+        $user = auth()->user();
+        $karyawan = $user->karyawan;
+
+        $lab = Lab::findOrFail($id);
+
+        $pengajuan = PengajuanLabSubs::create([
+            'kode_karyawan'   => $karyawan->kode_karyawan,
+            'id_labs'         => $lab->id,
+            'id_rkm'          => null,
+            'jenis_transaksi' => 'pembaharuan',
+        ]);
+
+        $trackingText = 'Pengajuan Pembaharuan Lab Diajukan dan Sedang Ditinjau oleh Koordinator ITSM';
+
+        $trackingModel = TrackingPengajuanLabSubs::create([
+            'id_pengajuan_lab_subs' => $pengajuan->id,
+            'tracking'              => $trackingText,
+            'tanggal'               => now(),
+        ]);
+
+        $pengajuan->update(['id_tracking' => $trackingModel->id]);
+
+        $koor = User::whereHas('karyawan', function($q) {
+            $q->where('jabatan', 'Koordinator ITSM');
+        })->first();
+
+        if ($koor) {
+            $notifData = [
+                'tanggal' => now(),
+                'status'  => $trackingText,
+            ];
+            NotificationFacade::send(
+                $koor,
+                new ApprovalLabSubsNotification(
+                    $notifData,
+                    '/pengajuanlabsdansubs',
+                    $karyawan->nama_lengkap,
+                    'Pengajuan Pembaharuan Lab: ' . $lab->nama_labs,
+                    $koor->id
+                )
+            );
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pengajuan pembaharuan untuk lab ' . $lab->nama_labs . ' berhasil dibuat!'
         ]);
     }
 
