@@ -211,7 +211,7 @@
             </li>
         @endif
 
-        @if(auth()->check() && isset(auth()->user()->karyawan) && in_array(auth()->user()->karyawan->jabatan, ['Finance & Accounting', 'GM', 'HRD']))
+        @if(auth()->check() && isset(auth()->user()->karyawan) && in_array(auth()->user()->karyawan->jabatan, ['Finance & Accounting', 'GM']))
 
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Finance</span>
