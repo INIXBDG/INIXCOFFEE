@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\OutstandingReportExport;
 use App\Exports\RkmExport;
 use App\Models\AbsensiPDF;
 use App\Models\Certificate;
@@ -23,6 +24,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
@@ -34,6 +36,7 @@ use Mostafaznv\PdfOptimizer\Enums\ColorConversionStrategy;
 use Mostafaznv\PdfOptimizer\Laravel\Facade\PdfOptimizer as FacadePdfOptimizer;
 use Mostafaznv\PdfOptimizer\PdfOptimizer as PdfOptimizerPdfOptimizer;
 use Spatie\Browsershot\Browsershot;
+use Maatwebsite\Excel\Facades\Excel;
 
 class OutstandingController extends Controller
 {
@@ -971,5 +974,93 @@ class OutstandingController extends Controller
         $post->delete();
 
         return redirect()->route('outstanding.index')->with(['success' => 'Data Berhasil Dihapus!']);
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $request->validate([
+            'start_date'         => 'nullable|date',
+            'end_date'           => 'nullable|date|after_or_equal:start_date',
+            'tipe_outstanding'   => 'nullable|string|in:Outstanding,Outstanding PA,Lunas',
+        ]);
+
+        $filename = 'Laporan_Outstanding_' . date('Y-m-d_His') . '.xlsx';
+
+        $export = new OutstandingReportExport(
+            'tugas', 
+            $request->start_date, 
+            $request->end_date, 
+            $request->tipe_outstanding, 
+            $request->status ?? null, 
+            $request->karyawan ?? null
+        );
+
+        return Excel::download($export, $filename);
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $request->validate([
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'tipe' => 'nullable|string|in:Outstanding PA,Lunas',
+            'status' => 'nullable|string',
+            'karyawan' => 'nullable|integer',
+        ]);
+
+        $query = outstanding::with(['rkm.perusahaan', 'rkm.materi', 'rkm.sales', 'tracking_outstanding']);
+
+        if ($request->start_date) {
+            $query->whereDate('created_at', '>=', $request->start_date);
+        }
+
+        if ($request->end_date) {
+            $query->whereDate('created_at', '<=', $request->end_date);
+        }
+
+        if ($request->tipe === 'Outstanding PA') {
+            $query->where(function ($q) {
+                $q->whereNotNull('net_sales')
+                ->where('net_sales', '!=', 0)
+                ->where('net_sales', '!=', '0.00');
+            });
+        } elseif ($request->tipe === 'Lunas') {
+            $query->where('status_pembayaran', 1);
+        }
+
+        if ($request->karyawan) {
+            $query->whereHas('rkm.sales', function ($q) use ($request) {
+                $q->where('id', $request->karyawan);
+            });
+        }
+
+        $data = $query->orderBy('due_date')
+            ->orderBy('created_at', 'desc')
+            ->get() ?? collect();
+
+        $title = match ($request->tipe) {
+            'Outstanding PA' => 'LAPORAN OUTSTANDING PA',
+            'Lunas' => 'LAPORAN OUTSTANDING LUNAS',
+            default => 'LAPORAN OUTSTANDING',
+        };
+
+        $user = Auth::check()
+            ? (optional(Auth::user()->karyawan)->nama_lengkap ?? Auth::user()->username)
+            : 'System';
+
+        return Pdf::loadView('office.reports.outstanding_pdf', [
+            'data' => $data,
+            'title' => $title,
+            'startDate' => $request->start_date,
+            'endDate' => $request->end_date,
+            'filterTipe' => $request->tipe,
+            'user' => $user,
+            'generatedAt' => Carbon::now()->format('d M Y H:i:s'),
+        ])
+            ->setPaper('A4', 'landscape')
+            ->setOption('defaultFont', 'DejaVu Sans')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', true)
+            ->stream('Laporan_Outstanding_' . date('Y-m-d_His') . '.pdf');
     }
 }

@@ -121,7 +121,7 @@ class PeluangController extends Controller
     public function detail($id)
     {
         // Ambil peluang dan relasi terkait
-        $peluang = Peluang::with(['materiRelation', 'rkm'])
+        $peluang = Peluang::with(['materiRelation', 'rkm', 'aktivitas'])
             ->where('id', $id)
             ->firstOrFail();
 
@@ -178,6 +178,8 @@ class PeluangController extends Controller
         usort($items, function ($a, $b) {
             return strcasecmp($a['label'], $b['label']);
         });
+
+        // dd($peluang);
         return view('crm.peluang.detail', compact(
             'peluang',
             'aktivitass',
@@ -500,6 +502,7 @@ class PeluangController extends Controller
 
         DB::transaction(function () use ($peluang, $request) {
             $now = Carbon::now();
+            $deletedBy = Auth::user()->karyawan->kode_karyawan ?? null;
 
             // Reset kolom-kolom waktu yang relevan apabila perlu (optional)
             // $peluang->biru = null; $peluang->merah = null; $peluang->lost = null;
@@ -522,7 +525,10 @@ class PeluangController extends Controller
                 $peluang->desc_lost = $request->input('desc_lost');
 
                 if ($peluang->rkm) {
-                    $peluang->rkm->status = '3'; // lost -> status '3'
+                    $peluang->rkm->status = '2'; // lost -> status '2'
+
+                    $peluang->rkm->deleted_at = $now;
+                    $peluang->rkm->deleted_by = $deletedBy;
                     $peluang->rkm->save();
                 }
             }

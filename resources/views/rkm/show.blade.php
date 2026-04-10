@@ -290,6 +290,8 @@
                                                         <p>Merah</p>
                                                         @elseif ($post->status == '1')
                                                         <p>Biru</p>
+                                                        @elseif ($post->status == '3')
+                                                        <p>Hijau</p>
                                                         @else
                                                         <p>Hitam</p>
                                                         @endif

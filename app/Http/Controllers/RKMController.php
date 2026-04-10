@@ -30,6 +30,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\RKMExport;
 use App\Models\Peluang;
 use App\Models\ChecklistKeperluan;
+use App\Models\SubChecklistKeperluan;
 // use Carbon\CarbonImmutable;
 use Carbon\Carbon;
 
@@ -1382,14 +1383,51 @@ class RKMController extends Controller
           
     public function getChecklist($id)
     {
-        $singleId = explode(',', $id)[0];
-        $singleId = trim($singleId);
+        $singleId = trim(explode(',', $id)[0]);
 
-        $checklist = ChecklistKeperluan::where('id_rkm', $singleId)->first();
+        $rkm = RKM::findOrFail($singleId);
+        $checklists = ChecklistKeperluan::with('subChecklistKeperluans')
+            ->where('id_rkm', $id)
+            ->whereNotNull('tanggal_keperluan')
+            ->get()
+            ->keyBy('tanggal_keperluan');
+
+        $result = [];
+
+        foreach ($checklists as $tanggal_keperluan => $item) {
+            $result[$tanggal_keperluan] = [
+                'tanggal' => $tanggal_keperluan,
+                'kelas' => $item->kelas,
+                'materi' => $item->materi,
+                'cb' => $item->cb,
+                'maksi' => $item->maksi,
+                'keperluan_kelas' => $item->keperluan_kelas,
+                'sub' => [
+                    'materi_module' => $item->subChecklistKeperluans->materi_module ?? 0,
+                    'materi_elearning' => $item->subChecklistKeperluans->materi_elearning ?? 0,
+                    'cb_instruktur' => $item->subChecklistKeperluans->cb_instruktur ?? 0,
+                    'cb_peserta' => $item->subChecklistKeperluans->cb_peserta ?? 0,
+                    'maksi_instruktur' => $item->subChecklistKeperluans->maksi_instruktur ?? 0,
+                    'maksi_peserta' => $item->subChecklistKeperluans->maksi_peserta ?? 0,
+                    'kelas_ac' => $item->subChecklistKeperluans->kelas_ac ?? 0,
+                    'kelas_jam' => $item->subChecklistKeperluans->kelas_jam ?? 0,
+                    'kelas_buku' => $item->subChecklistKeperluans->kelas_buku ?? 0,
+                    'kelas_pulpen' => $item->subChecklistKeperluans->kelas_pulpen ?? 0,
+                    'kelas_permen' => $item->subChecklistKeperluans->kelas_permen ?? 0,
+                    'kelas_camilan' => $item->subChecklistKeperluans->kelas_camilan ?? 0,
+                    'kelas_minuman' => $item->subChecklistKeperluans->kelas_minuman ?? 0,
+                    'kelas_lampu' => $item->subChecklistKeperluans->kelas_lampu ?? 0,
+                    'kelas_kondisi_kebersihan' => $item->subChecklistKeperluans->kelas_kondisi_kebersihan ?? 0,
+                ]
+            ];
+        }
 
         return response()->json([
             'status' => true,
-            'data' => $checklist
+            'tanggal_awal' => $rkm->tanggal_awal,
+            'tanggal_akhir' => $rkm->tanggal_akhir,
+            'metode_kelas' => $rkm->metode_kelas,
+            'data' => $result
         ]);
     }
 
@@ -1397,22 +1435,59 @@ class RKMController extends Controller
     {
         $request->validate([
             'id_rkm' => 'required',
-            'checklist' => 'nullable|array'
+            'tanggal' => 'required|date',
+            'checklist' => 'nullable|array',
+            'checklistSubMateri' => 'nullable|array',
+            'checklistSubCb' => 'nullable|array',
+            'checklistSubMaksi' => 'nullable|array',
+            'checklistSubKeperluanKelas' => 'nullable|array',
         ]);
 
-        $singleId = explode(',', $request->id_rkm)[0];
-        $singleId = trim($singleId);
+        $singleId = trim(explode(',', $request->id_rkm)[0]);
 
         $checklists = $request->input('checklist', []);
 
         $checklistKeperluan = ChecklistKeperluan::updateOrCreate(
-            ['id_rkm' => $singleId],
+            ['id_rkm' => $singleId, 'tanggal_keperluan' => $request->tanggal],
             [
                 'materi' => in_array('Materi', $checklists),
                 'kelas' => in_array('Kelas', $checklists),
                 'cb' => in_array('Cb', $checklists),
                 'maksi' => in_array('Maksi', $checklists),
                 'keperluan_kelas' => in_array('Keperluan Kelas', $checklists),
+            ]
+        );
+
+        $materi = $request->input('checklistSubMateri', []);
+        $cb = $request->input('checklistSubCb', []);
+        $maksi = $request->input('checklistSubMaksi', []);
+        $kelas = $request->input('checklistSubKeperluanKelas', []);
+        
+        SubChecklistKeperluan::updateOrCreate(
+            ['checklist_keperluan_id' => $checklistKeperluan->id],
+            [
+                // Materi
+                'materi_module' => in_array('Module', $materi),
+                'materi_elearning' => in_array('E-Learning', $materi),
+
+                // CB
+                'cb_instruktur' => in_array('Instruktur', $cb),
+                'cb_peserta' => in_array('Peserta', $cb),
+
+                // Maksi
+                'maksi_instruktur' => in_array('Instruktur', $maksi),
+                'maksi_peserta' => in_array('Peserta', $maksi),
+
+                // Keperluan Kelas
+                'kelas_ac' => in_array('AC', $kelas),
+                'kelas_jam' => in_array('Jam', $kelas),
+                'kelas_buku' => in_array('Buku', $kelas),
+                'kelas_pulpen' => in_array('Pulpen', $kelas),
+                'kelas_permen' => in_array('Permen', $kelas),
+                'kelas_camilan' => in_array('Camilan', $kelas),
+                'kelas_minuman' => in_array('Minuman', $kelas),
+                'kelas_lampu' => in_array('Lampu', $kelas),
+                'kelas_kondisi_kebersihan' => in_array('Kondisi Kebersihan', $kelas),
             ]
         );
 

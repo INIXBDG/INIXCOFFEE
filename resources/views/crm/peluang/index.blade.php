@@ -289,7 +289,6 @@
                         `;
                     }}
                 ],
-                order: [[7, 'desc']]
             });
 
             // 🔹 Callback untuk nomor urut tetap mengikuti tampilan

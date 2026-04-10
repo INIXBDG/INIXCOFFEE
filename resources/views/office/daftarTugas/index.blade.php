@@ -58,7 +58,7 @@
                 <h4 class="mb-1 fw-bold text-dark">Daftar Tugas Office Boy</h4>
                 <p class="text-muted small mb-0">Pilih dan kelola tugas kebersihan serta pekerjaan harian.</p>
             </div>
-            <div class="d-flex gap-2">
+            <div class="d-flex flex-wrap gap-2">
                 @if (Auth::user()->jabatan === 'Office Boy')
                     <button class="btn btn-success px-4 shadow-sm d-flex align-items-center gap-2" data-bs-toggle="modal"
                         data-bs-target="#pilihTugasModal">
@@ -69,6 +69,52 @@
                     data-bs-target="#createModal">
                     <i class="bx bx-plus"></i>Buat Kategori Baru
                 </button>
+                <div class="btn-group">
+                    <button class="btn btn-outline-success px-3 shadow-sm d-flex align-items-center gap-2" type="button"
+                        data-bs-toggle="dropdown">
+                        <i class="bx bx-file-export"></i> Export
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <h6 class="dropdown-header">Tipe Laporan</h6>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#modalExport">
+                                <i class="bx bx-cog me-2"></i> Export dengan Filter
+                            </a>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li>
+                            <a class="dropdown-item"
+                                href="{{ route('office.DaftarTugas.export.excel', ['report_type' => 'tugas']) }}">
+                                <i class="bx bx-file-excel text-success me-2"></i> Excel - Tugas
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item"
+                                href="{{ route('office.DaftarTugas.export.pdf', ['report_type' => 'tugas']) }}">
+                                <i class="bx bx-file-pdf text-danger me-2"></i> PDF - Tugas
+                            </a>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li>
+                            <a class="dropdown-item"
+                                href="{{ route('office.DaftarTugas.export.excel', ['report_type' => 'kategori']) }}">
+                                <i class="bx bx-file-excel text-success me-2"></i> Excel - Kategori
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item"
+                                href="{{ route('office.DaftarTugas.export.pdf', ['report_type' => 'kategori']) }}">
+                                <i class="bx bx-file-pdf text-danger me-2"></i> PDF - Kategori
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
@@ -364,6 +410,98 @@
         </div>
     </div>
 
+    <div class="modal fade" id="modalExport" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form id="formExport" method="GET">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title small fw-bold"><i class="bx bx-filter me-2"></i>Filter Export Laporan</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Tipe Laporan</label>
+                            <select name="report_type" class="form-select form-select-sm" id="exportReportType">
+                                <option value="tugas">Pelaksanaan Tugas</option>
+                                <option value="kategori">Kategori Tugas</option>
+                            </select>
+                        </div>
+                        <div id="filterTugasSection">
+                            <div class="row g-2 mb-2">
+                                <div class="col-6">
+                                    <label class="form-label small">Tanggal Mulai</label>
+                                    <input type="date" name="start_date" class="form-control form-control-sm">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small">Tanggal Akhir</label>
+                                    <input type="date" name="end_date" class="form-control form-control-sm">
+                                </div>
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <label class="form-label small">Tipe Frekuensi</label>
+                                    <select name="tipe" class="form-select form-select-sm">
+                                        <option value="">Semua</option>
+                                        <option value="Harian">Harian</option>
+                                        <option value="Mingguan">Mingguan</option>
+                                        <option value="Bulanan">Bulanan</option>
+                                        <option value="Quartal">Quartal</option>
+                                        <option value="Semester">Semester</option>
+                                        <option value="Tahunan">Tahunan</option>
+                                    </select>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small">Status</label>
+                                    <select name="status" class="form-select form-select-sm">
+                                        <option value="">Semua</option>
+                                        <option value="1">Selesai</option>
+                                        <option value="0">Pending</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="filterKategoriSection" class="d-none">
+                            <div class="mb-2">
+                                <label class="form-label small">Tipe Frekuensi</label>
+                                <select name="tipe" class="form-select form-select-sm">
+                                    <option value="">Semua</option>
+                                    <option value="Harian">Harian</option>
+                                    <option value="Mingguan">Mingguan</option>
+                                    <option value="Bulanan">Bulanan</option>
+                                    <option value="Quartal">Quartal</option>
+                                    <option value="Semester">Semester</option>
+                                    <option value="Tahunan">Tahunan</option>
+                                </select>
+                            </div>
+                        </div>
+                        @if (Auth::user()->jabatan === 'HRD')
+                            <div class="mb-2">
+                                <label class="form-label small">Filter Office Boy</label>
+                                <select name="karyawan" class="form-select form-select-sm">
+                                    <option value="">Semua Office Boy</option>
+                                    @foreach ($officeBoy as $ob)
+                                        <option value="{{ $ob->id }}">{{ $ob->nama_lengkap }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-success btn-sm"
+                            formaction="{{ route('office.DaftarTugas.export.excel') }}" formtarget="_blank">
+                            <i class="bx bx-file-excel me-1"></i> Excel
+                        </button>
+                        <button type="submit" class="btn btn-danger btn-sm"
+                            formaction="{{ route('office.DaftarTugas.export.pdf') }}" formtarget="_blank">
+                            <i class="bx bx-file-pdf me-1"></i> PDF
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         $(document).ready(function() {
@@ -378,7 +516,7 @@
                 const tipeText = t === 'all' ? 'Semua Tipe' : t;
                 $('#dynamicTitle').text(
                     `Tugas Aktif ${tipeText} - ${dt.toLocaleDateString('id-ID', {weekday:'long',year:'numeric',month:'long',day:'numeric'})}`
-                    );
+                );
             }
 
             function loadData() {
@@ -395,7 +533,7 @@
                         if (!r.data || !r.data.length) {
                             tb.append(
                                 `<tr><td colspan="5" class="text-center py-5"><div class="d-flex flex-column align-items-center gap-3"><div class="bg-light rounded-circle p-4"><i class="bx bx-clipboard text-muted" style="font-size:3rem"></i></div><h5 class="text-muted mb-1">Belum ada Tugas Aktif</h5><p class="text-muted small mb-3">Pilih tugas dari kategori yang tersedia untuk mulai mengerjakan</p><button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#pilihTugasModal"><i class="bx bx-list-plus me-1"></i>Pilih Tugas</button></div></td></tr>`
-                                );
+                            );
                             return;
                         }
                         r.data.forEach(function(it) {
@@ -411,7 +549,7 @@
                                 `<button class="btn btn-primary btn-sm btn-uploadBukti" data-id="${it.id}" data-judul="${kat.replace(/"/g,'&quot;')}"><i class="bx bx-upload"></i>Bukti</button>`;
                             tb.append(
                                 `<tr class="${done?'bg-light':''}"><td class="ps-4"><div class="form-check"><input class="form-check-input checkStatus" type="checkbox" data-id="${it.id}" ${chk}></div></td><td class="task-text ${done} fw-medium">${kat}</td><td class="task-text ${done}"><span class="badge bg-secondary">${tipe}</span></td><td class="task-text ${done} small">${dl}</td><td class="text-center"><div class="btn-group"><button class="btn btn-outline-danger btn-sm btn-hapus" data-id="${it.id}"><i class="bx bx-trash"></i></button>${bukti}</div></td></tr>`
-                                );
+                            );
                         });
                     }
                 });
@@ -436,7 +574,7 @@
                             const isSelected = selectedCategories.includes(it.id);
                             container.append(
                                 `<div class="col-md-6 col-lg-4"><div class="card category-card ${isSelected?'selected':''}" data-id="${it.id}"><div class="card-body p-3"><div class="d-flex justify-content-between align-items-start"><div><h6 class="card-title mb-1 fw-semibold">${it.judul_kategori}</h6><span class="badge bg-info text-dark">${it.Tipe}</span></div><div class="form-check"><input class="form-check-input chk-kategori" type="checkbox" data-id="${it.id}" ${isSelected?'checked':''}></div></div><div class="mt-2 small text-muted">${it.karyawan?.nama_lengkap||'-'}</div></div></div></div>`
-                                );
+                            );
                         });
                     }
                 });
@@ -458,7 +596,7 @@
                         d.forEach(function(it) {
                             tb.append(
                                 `<tr data-id="${it.id}"><td>${it.judul_kategori}</td><td><span class="badge bg-info text-dark">${it.Tipe}</span></td><td>${it.karyawan?.nama_lengkap||'-'}</td><td><div class="btn-group btn-group-sm w-100"><button class="btn btn-outline-primary btn-edit-kategori" data-id="${it.id}" data-judul="${it.judul_kategori}" data-tipe="${it.Tipe}" data-user="${it.karyawan?.nama_lengkap||'N/A'}"><i class="bx bx-edit"></i></button><button class="btn btn-outline-danger btn-delete-kategori" data-id="${it.id}" data-judul="${it.judul_kategori}"><i class="bx bx-trash"></i></button></div></td></tr>`
-                                );
+                            );
                         });
                     }
                 });
@@ -847,6 +985,25 @@
                     });
                 }, 3500);
             }
+
+            $('#exportReportType').on('change', function() {
+                const type = $(this).val();
+                if (type === 'kategori') {
+                    $('#filterTugasSection').addClass('d-none');
+                    $('#filterKategoriSection').removeClass('d-none');
+                } else {
+                    $('#filterTugasSection').removeClass('d-none');
+                    $('#filterKategoriSection').addClass('d-none');
+                }
+            });
+
+            $('#modalExport').on('show.bs.modal', function() {
+                const today = new Date().toISOString().split('T')[0];
+                const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+                    .toISOString().split('T')[0];
+                $('input[name="start_date"]').val(startOfMonth);
+                $('input[name="end_date"]').val(today);
+            });
         });
     </script>
 @endsection

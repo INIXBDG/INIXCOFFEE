@@ -35,6 +35,7 @@ use App\Models\SuratPerjalanan;
 use App\Models\targetKPI;
 use Illuminate\Support\Facades\Mail;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 use function Laravel\Prompts\error;
@@ -101,6 +102,103 @@ class DatabaseKPIController extends Controller
             'dataUptimeClientError',
             'dataUptimeServerError'
         ));
+    }
+
+    public function UptimePresentase()
+    {
+        $now = Carbon::now();
+        
+        $weekStart = $now->copy()->startOfWeek();
+        $weekEnd = $now->copy()->endOfWeek();
+        $monthStart = $now->copy()->startOfMonth();
+        $monthEnd = $now->copy()->endOfMonth();
+
+        // Pengambilan data dari server cctv
+        $response = Http::get('http://192.168.95.173:8000/uptime.php', [
+            'password' => env('UPTIME_PASSWORD')
+        ]);
+
+        if ($response->failed() || $response->body() === 'FILE_NOT_FOUND') {
+            return response()->json(['error' => 'Tidak bisa mengambil file dari Server CCTV'], 404);
+        }
+        
+        $content = $response->body();
+        $lines   = array_filter(explode("\n", $content));
+
+        // Trim dulu data yg didapat agar terbaca
+        $records = [];
+        foreach ($lines as $index => $line) {
+            if ($index === 0) continue;
+            if (preg_match('/^(.*?)\s*,\s*(.*?)\s*,\s*(.*?)\s*,\s*(.*?)\s*,\s*(.*)$/', $line, $matches)) {
+                $records[] = [
+                    'timestamp' => $matches[1],
+                    'server'    => $matches[2],
+                    'ip'        => $matches[3],
+                    'status'    => strtoupper(trim($matches[4])),
+                    'downtime'  => trim($matches[5]),
+                ];
+            }
+        }
+
+        // Kondisi hanya untuk "Server APK"
+        $apkRecords = array_filter($records, function($r) {
+            return stripos($r['server'], 'APK') !== false;
+        });
+
+        $filterByRange = function($arr, $start, $end) {
+            return array_filter($arr, function($r) use ($start, $end) {
+                $ts = Carbon::parse($r['timestamp']);
+                return $ts >= $start && $ts <= $end;
+            });
+        };
+
+        $apkWeek = $filterByRange($apkRecords, $weekStart, $weekEnd);
+        $apkWeekDowntime = array_sum(array_map(function($r) {
+            if ($r['status'] === 'RECOVERY' && preg_match('/(\d+):(\d+):(\d+)/', $r['downtime'], $m)) {
+                return ((int)$m[1]) * 60 + (int)$m[2] + ((int)$m[3] > 0 ? 1 : 0);
+            }
+            return 0;
+        }, $apkWeek));
+        $totalWeekMinutes = $weekStart->diffInMinutes($weekEnd) + 1;
+        $apkWeekPercent = $totalWeekMinutes > 0 ? (($totalWeekMinutes - $apkWeekDowntime) / $totalWeekMinutes) * 100 : 0;
+
+        $apkMonth = $filterByRange($apkRecords, $monthStart, $monthEnd);
+        $apkMonthDowntime = array_sum(array_map(function($r) {
+            if ($r['status'] === 'RECOVERY' && preg_match('/(\d+):(\d+):(\d+)/', $r['downtime'], $m)) {
+                return ((int)$m[1]) * 60 + (int)$m[2] + ((int)$m[3] > 0 ? 1 : 0);
+            }
+            return 0;
+        }, $apkMonth));
+        $totalMonthMinutes = $monthStart->diffInMinutes($monthEnd) + 1;
+        $apkMonthPercent = $totalMonthMinutes > 0 ? (($totalMonthMinutes - $apkMonthDowntime) / $totalMonthMinutes) * 100 : 0;
+
+        
+        $latteWeekTotal = activityLog::where('url', 'https://192.168.95.60:8002/')
+            ->whereBetween('created_at', [$weekStart, $weekEnd])
+            ->count();
+        $latteWeekUp = activityLog::where('status', '200')
+            ->where('url', 'https://192.168.95.60:8002/')
+            ->whereBetween('created_at', [$weekStart, $weekEnd])
+            ->count();
+        $latteWeekPercent = $latteWeekTotal > 0 ? ($latteWeekUp / $latteWeekTotal) * 100 : 0;
+
+        $latteMonthTotal = activityLog::where('url', 'https://192.168.95.60:8002/')
+            ->whereBetween('created_at', [$monthStart, $monthEnd])
+            ->count();
+        $latteMonthUp = activityLog::where('status', '200')
+            ->where('url', 'https://192.168.95.60:8002/')
+            ->whereBetween('created_at', [$monthStart, $monthEnd])
+            ->count();
+        $latteMonthPercent = $latteMonthTotal > 0 ? ($latteMonthUp / $latteMonthTotal) * 100 : 0;
+
+        return response()->json([
+            'coffee_week' => round($apkWeekPercent, 2),
+            'coffee_week_downtime' => $apkWeekDowntime,
+            'coffee_month' => round($apkMonthPercent, 2),
+            'coffee_month_downtime' => $apkMonthDowntime,
+            'latte_week' => round($latteWeekPercent, 2),
+            'latte_month' => round($latteMonthPercent, 2),
+        ]);
     }
 
     public function getActivityChart()
