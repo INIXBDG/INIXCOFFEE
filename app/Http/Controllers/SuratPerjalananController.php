@@ -320,8 +320,8 @@ class SuratPerjalananController extends Controller
 
         // $hrd = karyawan::where('jabatan', 'HRD')->first();
         // $office_manager = karyawan::where('jabatan', 'Office Manager')->first();
-        $office_manager = karyawan::where('jabatan', 'Finance & Accounting')->first();
-        $hrd = karyawan::where('jabatan', 'Koordinator Office')->first();
+        $office_manager = karyawan::where('jabatan', 'Finance & Accounting')->where('status_aktif', '1')->skip(1)->first();
+        $hrd = karyawan::where('jabatan', 'HRD')->where('status_aktif', '1')->skip(1)->first();
 
 
         return view('suratperjalanan.form', compact('suratperjalanan', 'manager', 'hrd', 'office_manager'));
