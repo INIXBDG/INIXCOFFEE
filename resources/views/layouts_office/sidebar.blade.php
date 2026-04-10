@@ -202,12 +202,14 @@
             </a>
         </li>
 
-        <li class="menu-item {{ request()->routeIs('office.indexPerbaikanKendaraan') ? 'active open' : '' }}">
-            <a href="{{ route('office.indexPerbaikanKendaraan') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-wrench"></i>
-                <div class="text-truncate" data-i18n="contact">Perbaikan Kendaraan</div>
-            </a>
-        </li>
+        @if(auth()->check() && isset(auth()->user()->karyawan) && in_array(auth()->user()->karyawan->jabatan, ['Finance & Accounting', 'GM', 'HRD', 'Driver']))
+            <li class="menu-item {{ request()->routeIs('office.indexPerbaikanKendaraan') ? 'active open' : '' }}">
+                <a href="{{ route('office.indexPerbaikanKendaraan') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-wrench"></i>
+                    <div class="text-truncate" data-i18n="contact">Perbaikan Kendaraan</div>
+                </a>
+            </li>
+        @endif
 
         @if(auth()->check() && isset(auth()->user()->karyawan) && in_array(auth()->user()->karyawan->jabatan, ['Finance & Accounting', 'GM', 'HRD']))
 

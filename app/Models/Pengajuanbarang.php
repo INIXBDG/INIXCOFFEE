@@ -70,4 +70,9 @@ class PengajuanBarang extends Model
         return $this->hasOne(JurnalAkuntansi::class, 'id_pengajuan_barang', 'id');
     }
 
+    public function perbaikanKendaraan()
+    {
+        return $this->hasOne(perbaikanKendaraan::class, 'pengajuanbarangs_id');
+    }
+
 }

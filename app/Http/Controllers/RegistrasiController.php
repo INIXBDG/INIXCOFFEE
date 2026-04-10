@@ -216,7 +216,7 @@ class RegistrasiController extends Controller
             $post->delete();
         }
 
-        return redirect()->route('registrasi.index')->with(['success' => 'Data Berhasil Dihapus!']);
+        return redirect()->back()->with(['success' => 'Data Berhasil Dihapus!']);
     }
 
     public function exportExcel()

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\office;
 
+use App\Exports\ChecklistRkmExport;
 use App\Http\Controllers\Controller;
 use App\Models\AbsensiKaryawan;
 use App\Models\AdministrasiKaryawan;
@@ -14,13 +15,14 @@ use App\Models\pengajuancuti;
 use App\Models\Perusahaan;
 use App\Models\RKM;
 use App\Models\tagihanPerusahaan;
-use App\Models\trackingTagihanPerusahaan;
 use App\Models\Tickets;
+use App\Models\trackingTagihanPerusahaan;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Maatwebsite\Excel\Facades\Excel;
 
 use function PHPUnit\Framework\matches;
 
@@ -157,69 +159,142 @@ class OfficeController extends Controller
         $startDate = $startOfLastWeek;
         $endDate = $endOfThisWeek;
 
-        $rkms = RKM::with(['materi', 'peluang', 'rekomendasilanjutan'])
-            ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
-            ->whereBetween('r_k_m_s.tanggal_awal', [$startDate, $endDate])
-            ->whereDoesntHave('peluang', function ($query) {
-                $query->where('tentatif', 1); // Exclude RKM records where peluang.tentatif = 1
-            })
-            ->select(
-                DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'), // Gabungkan semua id
-                DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id_all'), // Gabungkan semua id
-                'r_k_m_s.materi_key',
-                'r_k_m_s.ruang',
-                'r_k_m_s.metode_kelas',
-                'r_k_m_s.event',
-                DB::raw('GROUP_CONCAT(r_k_m_s.exam SEPARATOR ", ") AS exam'), // Gabungkan semua exam
-                DB::raw('GROUP_CONCAT(r_k_m_s.makanan SEPARATOR ", ") AS makanan'), // Gabungkan semua makanan
-                DB::raw('GROUP_CONCAT(r_k_m_s.instruktur_key SEPARATOR ", ") AS instruktur_all'),
-                DB::raw('GROUP_CONCAT(r_k_m_s.perusahaan_key SEPARATOR ", ") AS perusahaan_all'),
-                DB::raw('GROUP_CONCAT(r_k_m_s.sales_key SEPARATOR ", ") AS sales_all'),
-                DB::raw('CASE WHEN SUM(r_k_m_s.status = 0) > 0 THEN 0 ELSE MIN(r_k_m_s.status) END AS status_all'),
-                DB::raw('SUM(r_k_m_s.pax) AS total_pax'),
-                'r_k_m_s.tanggal_awal',
-                DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir')
-            )
-            ->groupBy(
-                'r_k_m_s.materi_key',
-                'r_k_m_s.ruang',
-                'r_k_m_s.metode_kelas',
-                'r_k_m_s.event',
-                'r_k_m_s.tanggal_awal'
-            )
-            ->orderBy('status_all', 'asc')
-            ->orderBy('r_k_m_s.tanggal_awal', 'asc')
-            ->get();
-        $rkms->each(function ($row) {
-            if ($row->perusahaan_all) {
-                $perusahaan_ids = explode(', ', $row->perusahaan_all);
+        $rkms = RKM::with([
+            'materi',
+            'peluang',
+            'rekomendasilanjutan',
+            'perusahaan',
+            'instruktur',
+            'sales'
+        ])
+        ->whereBetween('tanggal_awal', [$startDate, $endDate])
+        ->whereDoesntHave('peluang', function ($query) {
+            $query->where('tentatif', 1);
+        })
+        ->orderBy('status', 'asc')
+        ->orderBy('tanggal_awal', 'asc')
+        ->get()
+        ->groupBy(function ($item) {
+            return $item->materi_key . '|' .
+                $item->ruang . '|' .
+                $item->metode_kelas . '|' .
+                $item->event . '|' .
+                $item->tanggal_awal;
+        })
 
-                $row->perusahaan = Perusahaan::whereIn('id', $perusahaan_ids)->get();
-            } else {
-                $row->perusahaan = collect();
-            }
-        });
+        ->map(function ($items) {
+
+            $first = $items->first();
+
+            return (object) [
+                'id' => $items->pluck('id')->implode(', '),
+                'id_all' => $items->pluck('id')->implode(', '),
+                'materi_key' => $first->materi_key,
+                'ruang' => $first->ruang,
+                'metode_kelas' => $first->metode_kelas,
+                'event' => $first->event,
+                'exam' => $items->pluck('exam')->implode(', '),
+                'makanan' => $items->pluck('makanan')->implode(', '),
+                'instruktur_all' => $items->pluck('instruktur_key')->implode(', '),
+                'perusahaan_all' => $items->pluck('perusahaan_key')->implode(', '),
+                'sales_all' => $items->pluck('sales_key')->implode(', '),
+                'status_all' => $items->contains('status', 0)
+                    ? 0
+                    : $items->min('status'),
+                'total_pax' => $items->sum('pax'),
+                'tanggal_awal' => $first->tanggal_awal,
+                'tanggal_akhir' => $items->max('tanggal_akhir'),
+                'materi' => $first->materi,
+                'peluang' => $first->peluang,
+                'rekomendasilanjutan' => $first->rekomendasilanjutan,
+                'perusahaan' => $items->pluck('perusahaan')
+                    ->filter()
+                    ->unique('id')
+                    ->values(),
+            ];
+        })
+
+        ->values(); 
 
         foreach ($rkms as $detail_rkm) {
-            $singleId = explode(',', $detail_rkm->id)[0];
-            $singleId = trim($singleId);
-            
-            $checklist = ChecklistKeperluan::where('id_rkm', $singleId)->first();
-            $detail_rkm->checklist = $checklist;
 
-            if ($checklist) {
-                $totalItem = 5;
+            $singleId = trim(explode(',', $detail_rkm->id)[0]);
 
-                $checked = 
-                    ($checklist->materi ? 1 : 0) +
-                    ($checklist->kelas ? 1 : 0) +
-                    ($checklist->cb ? 1 : 0) +
-                    ($checklist->maksi ? 1 : 0) +
-                    ($checklist->keperluan_kelas ? 1 : 0);
+            $checklists = ChecklistKeperluan::where('id_rkm', $singleId)
+                ->with('subChecklistKeperluans')
+                ->whereNotNull('tanggal_keperluan')
+                ->orderBy('tanggal_keperluan', 'asc')
+                ->get()
+                ->keyBy('tanggal_keperluan');
 
-                $detail_rkm->checklist_status = round(($checked / $totalItem) * 100);
-            } else {
-                $detail_rkm->checklist_status = 0;
+            $detail_rkm->checklists = $checklists;
+
+            foreach ($checklists as $checklist => $item) {
+
+                $progress = 0;
+
+                if ($detail_rkm->metode_kelas === 'Offline') {
+                    // ===== Materi =====
+                    $materiChecked =
+                        ($item->subChecklistKeperluans?->materi_module ? 1 : 0) +
+                        ($item->subChecklistKeperluans?->materi_elearning ? 1 : 0);
+    
+                    $progress += ($materiChecked / 2) * 20;
+    
+                    // ===== Kelas =====
+                    if ($item->kelas) {
+                        $progress += 20;
+                    }
+    
+                    // ===== CB =====
+                    $cbChecked =
+                        ($item->subChecklistKeperluans?->cb_instruktur ? 1 : 0) +
+                        ($item->subChecklistKeperluans?->cb_peserta ? 1 : 0);
+    
+                    $progress += ($cbChecked / 2) * 20;
+    
+                    // ===== Maksi =====
+                    $maksiChecked =
+                        ($item->subChecklistKeperluans?->maksi_instruktur ? 1 : 0) +
+                        ($item->subChecklistKeperluans?->maksi_peserta ? 1 : 0);
+    
+                    $progress += ($maksiChecked / 2) * 20;
+    
+                    // ===== Keperluan Kelas =====
+                    $kelasChecked =
+                        ($item->subChecklistKeperluans?->kelas_ac ? 1 : 0) +
+                        ($item->subChecklistKeperluans?->kelas_jam ? 1 : 0) +
+                        ($item->subChecklistKeperluans?->kelas_buku ? 1 : 0) +
+                        ($item->subChecklistKeperluans?->kelas_pulpen ? 1 : 0) +
+                        ($item->subChecklistKeperluans?->kelas_permen ? 1 : 0) +
+                        ($item->subChecklistKeperluans?->kelas_camilan ? 1 : 0) +
+                        ($item->subChecklistKeperluans?->kelas_minuman ? 1 : 0) +
+                        ($item->subChecklistKeperluans?->kelas_lampu ? 1 : 0) +
+                        ($item->subChecklistKeperluans?->kelas_kondisi_kebersihan ? 1 : 0);
+    
+                    $progress += ($kelasChecked / 9) * 20;
+
+                    $item->progress = round($progress);
+                } else {
+                    $totalKategori = 3;
+                    $kategoriSelesai = 0;
+
+                    // ===== Materi =====
+                    $totalMateri = 2;
+                    $materiChecked =
+                        ($item->subChecklistKeperluans?->materi_module ? 1 : 0) +
+                        ($item->subChecklistKeperluans?->materi_elearning ? 1 : 0);
+    
+                    $kategoriSelesai += $materiChecked / $totalMateri;
+
+                    // ===== CB =====
+                    $kategoriSelesai += ($item->subChecklistKeperluans?->cb_instruktur ? 1 : 0);
+    
+                    // ===== Maksi =====
+                    $kategoriSelesai += ($item->subChecklistKeperluans?->maksi_instruktur ? 1 : 0);
+
+                    $item->progress = round(($kategoriSelesai / $totalKategori) * 100);
+                }
             }
         }
 
@@ -574,4 +649,21 @@ class OfficeController extends Controller
     }
 
     // End hari libur
+
+    // Export checklist
+    public function exportChecklistPdf($id)
+    {
+        $rkm = RKM::with('materi', 'perusahaan', 'peluang')
+            ->where('id', $id)
+            ->firstOrFail();
+
+        $pdf = Pdf::loadView('office.checklistRkmPdf', compact('rkm'));
+
+        return $pdf->download("Checklist_Keperluan.pdf");
+    }
+
+    public function exportChecklistExcel($id)
+    {
+        return Excel::download(new ChecklistRkmExport($id), 'Checklist_Keperluan.xlsx');
+    }
 }
