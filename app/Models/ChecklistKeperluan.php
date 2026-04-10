@@ -13,6 +13,7 @@ class ChecklistKeperluan extends Model
 
     protected $fillable = [
         'id_rkm',
+        'tanggal_keperluan',
         'materi',
         'kelas',
         'cb',
@@ -23,5 +24,10 @@ class ChecklistKeperluan extends Model
     public function rkm()
     {
         return $this->belongsTo(RKM::class, 'id_rkm', 'id');
+    }
+
+    public function subChecklistKeperluans()
+    {
+        return $this->hasOne(SubChecklistKeperluan::class, 'checklist_keperluan_id');
     }
 }
