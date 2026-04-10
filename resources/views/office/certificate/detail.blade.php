@@ -156,6 +156,10 @@
                                            class="btn btn-sm btn-success shadow-sm hover-scale">
                                             <i class="bx bx-download me-1"></i>Download PDF
                                         </a>
+                                        <a href="{{ route('office.certificate.create', ['rkm_id' => $rkm->id, 'peserta_id' => $p->id_peserta]) }}" 
+                                           class="btn btn-sm btn-primary shadow-sm hover-scale">
+                                            <i class="bx bx-file-blank me-1"></i>Generate +
+                                        </a>
                                         @else
                                         <!-- Tombol Generate -->
                                         <a href="{{ route('office.certificate.create', ['rkm_id' => $rkm->id, 'peserta_id' => $p->id_peserta]) }}" 

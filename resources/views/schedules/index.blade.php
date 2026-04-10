@@ -10,14 +10,11 @@
         <h4 class="fw-bold mb-0">
             <i class="fas fa-video me-2 text-primary"></i> Jadwal Konten Kreatif
         </h4>
-
-        {{-- Tombol Tambah (Memicu Modal Create) --}}
         <button type="button" class="btn btn-primary btn-sm shadow-sm" data-bs-toggle="modal" data-bs-target="#createModal">
             <i class="fas fa-plus-circle me-1"></i> Tambah Jadwal
         </button>
     </div>
 
-    {{-- Alert Sukses --}}
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             {{ session('success') }}
@@ -25,7 +22,6 @@
         </div>
     @endif
 
-    {{-- Error Validation --}}
     @if ($errors->any())
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             <ul class="mb-0">
@@ -37,7 +33,6 @@
         </div>
     @endif
 
-    {{-- Tabel Data --}}
     <div class="card shadow-sm border-0">
         <div class="card-body">
             <table id="schedulesTable" class="table table-striped table-hover w-100 align-middle">
@@ -60,10 +55,10 @@
                             <td>
                                 @php
                                     $badgeClass = match($item->content_form) {
-                                        'Reels' => 'bg-warning text-dark', // Orange-ish
-                                        'Youtube' => 'bg-danger',          // Red
-                                        'Story' => 'bg-info text-dark',    // Light Blue/Purple equivalent
-                                        'Feed' => 'bg-success',            // Green
+                                        'Reels' => 'bg-warning text-dark',
+                                        'Youtube' => 'bg-danger',
+                                        'Story' => 'bg-info text-dark',
+                                        'Feed' => 'bg-success',
                                         default => 'bg-secondary'
                                     };
                                 @endphp
@@ -71,14 +66,12 @@
                                     {{ $item->content_form }}
                                 </span>
                             </td>
-                            <td class="text-center">
+                            <td class="text-center" data-sort="{{ $item->upload_date ? $item->upload_date->format('Y-m-d') : '9999-12-31' }}">
                                 @if($item->upload_date)
-                                    {{-- Jika sudah ada tanggal, tampilkan tanggalnya --}}
                                     <span class="text-success fw-bold">
                                         {{ $item->upload_date->format('d M Y') }}
                                     </span>
                                 @else
-                                    {{-- Jika belum ada tanggal, tampilkan tombol --}}
                                     <form action="{{ route('content-schedules.mark-uploaded', $item->id) }}" method="POST">
                                         @csrf
                                         @method('PATCH')
@@ -183,6 +176,7 @@
                                 <option value="Feed">Feed</option>
                                 <option value="Reels">Reels</option>
                                 <option value="Youtube">Youtube</option>
+                                <option value="Tiktok">Tiktod</option>
                             </select>
                         </div>
 
@@ -190,7 +184,7 @@
 
                         <div class="col-12">
                             <label class="form-label">Talent (Pilih Multiple)</label>
-                            <select name="talents[]" class="form-select" multiple required style="height: 100px;">
+                            <select name="talents[]" class="form-select" multiple style="height: 100px;">
                                 <option value="Hera">Hera</option>
                                 <option value="Savanna">Savanna</option>
                                 <option value="Reni">Reni</option>
@@ -273,6 +267,7 @@
                                 <option value="Feed">Feed</option>
                                 <option value="Reels">Reels</option>
                                 <option value="Youtube">Youtube</option>
+                                <option value="Tiktok">Tiktod</option>
                             </select>
                         </div>
                         <div class="col-md-6">
@@ -281,7 +276,7 @@
                         </div>
                         <div class="col-12">
                             <label class="form-label">Talent</label>
-                            <select name="talents[]" id="edit_talents" class="form-select" multiple required style="height: 100px;">
+                            <select name="talents[]" id="edit_talents" class="form-select" multiple style="height: 100px;">
                                 <option value="Hera">Hera</option>
                                 <option value="Savanna">Savanna</option>
                                 <option value="Reni">Reni</option>
@@ -375,38 +370,30 @@
 
 <script>
     $(document).ready(function() {
-        // 1. Inisialisasi DataTable
         $('#schedulesTable').DataTable({
-            order: [[ 2, "desc" ]], // Urutkan berdasarkan Tanggal Upload (Kolom index 2)
+            order: [[ 2, "desc" ]],
             pageLength: 10,
-            columnDefs: [ { orderable: false, targets: [6, 7] } ] // Matikan sort di Bukti & Aksi
+            columnDefs: [ { orderable: false, targets: [6, 7] } ]
         });
 
-        // 2. Logic Modal Edit
-        $('.edit-btn').on('click', function() {
+        $('#schedulesTable tbody').on('click', '.edit-btn', function() {
             let id = $(this).data('id');
             let formUrl = $(this).data('route');
 
-            // Isi Form
             $('#editForm').attr('action', formUrl);
             $('#edit_content_form').val($(this).data('form'));
             $('#edit_upload_date').val($(this).data('date'));
             $('#edit_description').val($(this).data('desc'));
             $('#edit_proof_script').val($(this).data('script'));
-
-            // Handle Checkbox
             let isTiktok = $(this).data('tiktok');
             $('#edit_is_tiktok').prop('checked', isTiktok == 1);
-
-            // Handle Multi Select (Split string by comma)
             let talents = $(this).data('talents').toString().split(',');
             $('#edit_talents').val(talents);
 
             $('#editModal').modal('show');
         });
 
-        // 3. Logic Modal View Proof
-        $('.show-proof-btn').on('click', function() {
+        $('#schedulesTable tbody').on('click', '.show-proof-btn', function() {
             let script = $(this).data('script') || 'Tidak ada script.';
             let imageUrl = $(this).data('image');
 

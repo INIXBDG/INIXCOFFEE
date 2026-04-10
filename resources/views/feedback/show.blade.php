@@ -13,7 +13,6 @@
                     @endif
                 <h5 class="card-title">Detail Feedbacks</h5>
                     {{-- {{ $post }} --}}
-                        @foreach($post as $groupIndex => $group)
                         <div class="row" style="height: 500px">
                             <div class="col-lg-5 col-md-12 col-sm-12">
                                 <!-- Data Materi dan Pelaksanaan -->
@@ -25,7 +24,7 @@
                                         <p>:</p>
                                     </div>
                                     <div class="col-md-7 col-sm-7 col-xs-7">
-                                        <p>{{ $group['data'][0]['nama_materi'] }}</p>
+                                        <p>{{ $post['data'][0]['nama_materi'] }}</p>
                                     </div>
                                 </div>
                                 <div class="row">
@@ -36,7 +35,7 @@
                                         <p>:</p>
                                     </div>
                                     <div class="col-md-7 col-sm-7 col-xs-7">
-                                        <p>{{ \Carbon\Carbon::parse($group['data'][0]['tanggal_awal'])->translatedFormat('d F Y') }} s/d {{ \Carbon\Carbon::parse($group['data'][0]['tanggal_akhir'])->translatedFormat('d F Y') }}</p>
+                                        <p>{{ \Carbon\Carbon::parse($post['data'][0]['tanggal_awal'])->translatedFormat('d F Y') }} s/d {{ \Carbon\Carbon::parse($post['data'][0]['tanggal_akhir'])->translatedFormat('d F Y') }}</p>
                                     </div>
                                 </div>
                                 <!-- Instruktur dan Asisten -->
@@ -48,7 +47,7 @@
                                         <p>:</p>
                                     </div>
                                     <div class="col-md-7 col-sm-7 col-xs-7">
-                                        <p>{{ $group['data'][0]['instruktur_key'] }}</p>
+                                        <p>{{ $post['data'][0]['instruktur_key'] }}</p>
                                     </div>
                                 </div>
                                 <div class="row">
@@ -59,7 +58,7 @@
                                         <p>:</p>
                                     </div>
                                     <div class="col-md-7 col-sm-7 col-xs-7">
-                                        <p>{{ $group['data'][0]['instruktur_key2'] }}</p>
+                                        <p>{{ $post['data'][0]['instruktur_key2'] }}</p>
                                     </div>
                                 </div>
                                 <div class="row">
@@ -70,7 +69,7 @@
                                         <p>:</p>
                                     </div>
                                     <div class="col-md-7 col-sm-7 col-xs-7">
-                                        <p>{{ $group['data'][0]['asisten_key'] }}</p>
+                                        <p>{{ $post['data'][0]['asisten_key'] }}</p>
                                     </div>
                                 </div>
                                 <!-- Perusahaan dan Sales -->
@@ -82,7 +81,7 @@
                                         <p>:</p>
                                     </div>
                                     <div class="col-md-7 col-sm-7 col-xs-7">
-                                        <p>{{ $group['nama_perusahaan'] }}</p>
+                                        <p>{{ $post['data'][0]['nama_perusahaan'] }}</p>
                                     </div>
                                 </div>
                                 <div class="row">
@@ -93,7 +92,7 @@
                                         <p>:</p>
                                     </div>
                                     <div class="col-md-7 col-sm-7 col-xs-7">
-                                        <p>{{ $group['data'][0]['sales_key'] }}</p>
+                                        <p>{{ $post['data'][0]['sales_key'] }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -102,39 +101,39 @@
                                 <div class="card" style="height: 500px">
                                     <div class="card-body" style="overflow-y: auto">
                                         <nav>
-                                            <div class="nav nav-tabs" id="nav-tab-{{ $groupIndex }}" role="tablist">
+                                            <div class="nav nav-tabs" id="nav-tab-main" role="tablist">
                                                 <!-- Tab Nilai Keseluruhan -->
                                                 <button class="nav-link active" 
-                                                        id="nav-nilai-tab-{{ $groupIndex }}" 
+                                                        id="nav-nilai-tab-main" 
                                                         data-bs-toggle="tab" 
-                                                        data-bs-target="#nav-nilai-{{ $groupIndex }}" 
+                                                        data-bs-target="#nav-nilai-main" 
                                                         type="button" 
                                                         role="tab" 
-                                                        aria-controls="nav-nilai-{{ $groupIndex }}" 
+                                                        aria-controls="nav-nilai-main" 
                                                         aria-selected="true">
                                                     Nilai Keseluruhan
                                                 </button>
                                                 <!-- Tab Detail Peserta -->
-                                                @foreach($group['data'] as $key => $feedback)
+                                                @foreach($post['data'] as $key => $feedback)
                                                     <button class="nav-link" 
-                                                            id="nav-detail-tab-{{ $groupIndex }}-{{ $loop->iteration }}" 
+                                                            id="nav-detail-tab-main-{{ $loop->iteration }}" 
                                                             data-bs-toggle="tab" 
-                                                            data-bs-target="#nav-detail-{{ $groupIndex }}-{{ $loop->iteration }}" 
+                                                            data-bs-target="#nav-detail-main-{{ $loop->iteration }}" 
                                                             type="button" 
                                                             role="tab" 
-                                                            aria-controls="nav-detail-{{ $groupIndex }}-{{ $loop->iteration }}" 
+                                                            aria-controls="nav-detail-main-{{ $loop->iteration }}" 
                                                             aria-selected="false">
                                                         Peserta {{ $loop->iteration }}
                                                     </button>
                                                 @endforeach
                                             </div>
                                         </nav>
-                                        <div class="tab-content" id="nav-tabContent-{{ $groupIndex }}">
+                                        <div class="tab-content" id="nav-tabContent-main">
                                             <!-- Tab Nilai Keseluruhan Content -->
                                             <div class="tab-pane fade show active" 
-                                                id="nav-nilai-{{ $groupIndex }}" 
+                                                id="nav-nilai-main" 
                                                 role="tabpanel" 
-                                                aria-labelledby="nav-nilai-tab-{{ $groupIndex }}">
+                                                aria-labelledby="nav-nilai-tab-main">
                                                 <div class="card">
                                                     <div class="card-body" style="overflow-y: auto">
                                                         <div class="table-responsive">
@@ -153,7 +152,7 @@
                                                                     </tr>
                                                                 </thead>
                                                                 <tbody>
-                                                                    @foreach($group['data'] as $feedback)
+                                                                    @foreach($post['data'] as $feedback)
                                                                         <tr>
                                                                             <td>{{ $loop->iteration }}</td>
                                                                             <td>{{ $feedback['materi'] }}</td>
@@ -173,12 +172,12 @@
                                                 </div>
                                             </div>
                                             <!-- Tab Detail Peserta Content -->
-                                            @foreach($group['data'] as $key => $feedback)
+                                            @foreach($post['data'] as $key => $feedback)
                                             
                                                 <div class="tab-pane fade" 
-                                                    id="nav-detail-{{ $groupIndex }}-{{ $loop->iteration }}" 
+                                                    id="nav-detail-main-{{ $loop->iteration }}" 
                                                     role="tabpanel" 
-                                                    aria-labelledby="nav-detail-tab-{{ $groupIndex }}-{{ $loop->iteration }}">
+                                                    aria-labelledby="nav-detail-tab-main-{{ $loop->iteration }}">
                                                     <div class="card">
                                                         <div class="card-body">
                                                            <div class="d-flex justify-content-between">
@@ -187,6 +186,9 @@
                                                                     <a href="/nilaifeedback/{{$feedback['datafeedbacks']['id']}}/edit" class="btn click-primary my-2"> Edit</a>  
                                                                 @endif
                                                            </div>
+                                                           {{-- @php
+                                                               dump($feedbacks->first()->rkm->metode_kelas)
+                                                           @endphp --}}
                                                             <table class="table table-bordered table-responsive">
                                                                 <tbody>
                                                                     <tr>
@@ -205,10 +207,12 @@
                                                                         <td style="text-align: left;">Mutu Materi</td>
                                                                         <td>{{ $feedback['datafeedbacks']['M3'] }}</td>
                                                                     </tr>
+                                                                    @if ($feedbacks->first()->rkm->metode_kelas == "Offline")
                                                                     <tr>
                                                                         <td style="text-align: left;">Hasil cetakan materi</td>
                                                                         <td>{{ $feedback['datafeedbacks']['M4'] }}</td>
                                                                     </tr>
+                                                                    @endif
                                                                     <tr>
                                                                         <td style="text-align: left;"><h5>Pelayanan</h5></td>
                                                                         <td></td>
@@ -237,10 +241,12 @@
                                                                         <td style="text-align: left;">Registrasi dan administrasi training</td>
                                                                         <td>{{ $feedback['datafeedbacks']['P6'] }}</td>
                                                                     </tr>
+                                                                    @if ($feedbacks->first()->rkm->metode_kelas == "Offline")                                                                        
                                                                     <tr>
                                                                         <td style="text-align: left;">Kualitas makanan dan minuman</td>
                                                                         <td>{{ $feedback['datafeedbacks']['P7'] }}</td>
                                                                     </tr>
+                                                                    @endif
                                                                     <tr>
                                                                         <td style="text-align: left;"><h5>Fasilitas Laboratorium</h5></td>
                                                                         <td></td>
@@ -401,7 +407,6 @@
                                 </div>
                             </div>
                         </div>
-                    @endforeach
                 
                 </div>
             </div>

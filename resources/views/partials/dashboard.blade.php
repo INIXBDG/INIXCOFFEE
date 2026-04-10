@@ -5,12 +5,12 @@
             <select id="tahun" class="form-select" aria-label="tahun">
                 <option disabled selected>Pilih Tahun</option>
                 @php
-                $tahun_sekarang = now()->year;
-                for ($tahun = 2020; $tahun <= $tahun_sekarang + 2; $tahun++) {
-                    $selected=$tahun==$tahun_sekarang ? 'selected' : '' ;
-                    echo "<option value=\" $tahun\" $selected>$tahun</option>";
+                    $tahun_sekarang = now()->year;
+                    for ($tahun = 2020; $tahun <= $tahun_sekarang + 2; $tahun++) {
+                        $selected = $tahun == $tahun_sekarang ? 'selected' : '';
+                        echo "<option value=\"$tahun\" $selected>$tahun</option>";
                     }
-                    @endphp
+                @endphp
             </select>
         </div>
     </div>
@@ -78,23 +78,25 @@
         @endphp
         <ul class="nav nav-tabs" id="chart" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="inix-tab" data-bs-toggle="tab" data-bs-target="#inix-tab-pane" type="button" role="tab" aria-controls="inix-tab-pane" aria-selected="true">Inixindo Dalam Angka</button>
+                <button class="nav-link" id="inix-tab" data-bs-toggle="tab" data-bs-target="#inix-tab-pane"
+                    type="button" role="tab" aria-controls="inix-tab-pane" aria-selected="true">Inixindo Dalam
+                    Angka</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="sales-tab" data-bs-toggle="tab" data-bs-target="#sales-tab-pane" type="button" role="tab" aria-controls="sales-tab-pane" aria-selected="true"
-                    {{ $salesDisabled ? '' : 'disabled' }}>Sales</button>
+                <button class="nav-link" id="sales-tab" data-bs-toggle="tab" data-bs-target="#sales-tab-pane"
+                    type="button" role="tab" aria-controls="sales-tab-pane" aria-selected="true" {{ $salesDisabled ? '' : 'disabled' }}>Sales</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="office-tab" data-bs-toggle="tab" data-bs-target="#office-tab-pane" type="button" role="tab" aria-controls="office-tab-pane" aria-selected="false"
-                    {{ $officeDisabled ? '' : 'disabled' }}>Office</button>
+                <button class="nav-link" id="office-tab" data-bs-toggle="tab" data-bs-target="#office-tab-pane"
+                    type="button" role="tab" aria-controls="office-tab-pane" aria-selected="false" {{ $officeDisabled ? '' : 'disabled' }}>Office</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="instruktur-tab" data-bs-toggle="tab" data-bs-target="#instruktur-tab-pane" type="button" role="tab" aria-controls="instruktur-tab-pane" aria-selected="false"
-                    {{ $instrukturDisabled ? '' : 'disabled' }}>Instruktur</button>
+                <button class="nav-link" id="instruktur-tab" data-bs-toggle="tab" data-bs-target="#instruktur-tab-pane"
+                    type="button" role="tab" aria-controls="instruktur-tab-pane" aria-selected="false" {{ $instrukturDisabled ? '' : 'disabled' }}>Instruktur</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="itsm-tab" data-bs-toggle="tab" data-bs-target="#itsm-tab-pane" type="button" role="tab" aria-controls="itsm-tab-pane" aria-selected="false"
-                    {{ $itsmDisable ? '' : 'disabled' }}>ITSM</button>
+                <button class="nav-link" id="itsm-tab" data-bs-toggle="tab" data-bs-target="#itsm-tab-pane"
+                    type="button" role="tab" aria-controls="itsm-tab-pane" aria-selected="false" {{ $itsmDisable ? '' : 'disabled' }}>ITSM</button>
             </li>
         </ul>
         <div class="tab-content" id="chartContent" style="">
@@ -110,35 +112,49 @@
                                     <div class="row justify-content-center align-items-end modern-ranking">
 
                                         <!-- First Place -->
-                                        <div class="col-12 col-md-4 d-flex flex-column align-items-center justify-content-center text-center podium-card mb-3 order-1 order-md-2">
+                                        <div
+                                            class="col-12 col-md-4 d-flex flex-column align-items-center justify-content-center text-center podium-card mb-3 order-1 order-md-2">
                                             <div class="card-podium rank-1">
                                                 <div class="circle-satu first-position shadow">
-                                                    <img src="{{ asset('css/b1.png') }}" alt="Keterlambatan ke-1" class="present-photo-satu rounded-circle border border-white" id="present-photo-satu">
+                                                    <img src="{{ asset('css/b1.png') }}" alt="Keterlambatan ke-1"
+                                                        class="present-photo-satu rounded-circle border border-white"
+                                                        id="present-photo-satu">
                                                 </div>
                                                 <p class="position-label">Peringkat 1</p>
-                                                <img src="{{ asset('images/medal-1.png') }}" class="medal-bawah" alt="Medal">
+                                                <img src="{{ asset('images/medal-1.png') }}" class="medal-bawah"
+                                                    alt="Medal">
                                             </div>
                                         </div>
 
                                         <!-- Second Place -->
-                                        <div class="col-12 col-md-4 d-flex flex-column align-items-center justify-content-center text-center podium-card mb-3 order-2 order-md-1">
+                                        <div
+                                            class="col-12 col-md-4 d-flex flex-column align-items-center justify-content-center text-center podium-card mb-3 order-2 order-md-1">
                                             <div class="card-podium rank-2">
                                                 <div class="circle second-position shadow-sm">
-                                                    <img src="{{ asset('storage/photos/pemain2.jpg') }}" alt="Keterlambatan ke-2" class="present-photo rounded-circle border border-white" id="present-photo-dua">
+                                                    <img src="{{ asset('storage/photos/pemain2.jpg') }}"
+                                                        alt="Keterlambatan ke-2"
+                                                        class="present-photo rounded-circle border border-white"
+                                                        id="present-photo-dua">
                                                 </div>
                                                 <p class="position-label">Peringkat 2</p>
-                                                <img src="{{ asset('images/medal-2.png') }}" alt="Medali Perak" class="medal-bawah">
+                                                <img src="{{ asset('images/medal-2.png') }}" alt="Medali Perak"
+                                                    class="medal-bawah">
                                             </div>
                                         </div>
 
                                         <!-- Third Place -->
-                                        <div class="col-12 col-md-4 d-flex flex-column align-items-center justify-content-center text-center podium-card mb-3 order-3 order-md-3">
+                                        <div
+                                            class="col-12 col-md-4 d-flex flex-column align-items-center justify-content-center text-center podium-card mb-3 order-3 order-md-3">
                                             <div class="card-podium rank-3">
                                                 <div class="circle third-position shadow-sm">
-                                                    <img src="{{ asset('storage/photos/pemain3.jpg') }}" alt="Keterlambatan ke-3" class="present-photo rounded-circle border border-white" id="present-photo-tiga">
+                                                    <img src="{{ asset('storage/photos/pemain3.jpg') }}"
+                                                        alt="Keterlambatan ke-3"
+                                                        class="present-photo rounded-circle border border-white"
+                                                        id="present-photo-tiga">
                                                 </div>
                                                 <p class="position-label">Peringkat 3</p>
-                                                <img src="{{ asset('images/medal-3.png') }}" alt="Medali Perunggu" class="medal-bawah">
+                                                <img src="{{ asset('images/medal-3.png') }}" alt="Medali Perunggu"
+                                                    class="medal-bawah">
                                             </div>
                                         </div>
                                     </div>
@@ -155,10 +171,12 @@
                                     </div>
                                     <div class="row">
                                         <!-- SALES TERBAIK -->
-                                        <div class="col-12 col-sm-6 col-md-3 col-lg-3 text-center d-flex justify-content-center mb-4">
+                                        <div
+                                            class="col-12 col-sm-6 col-md-3 col-lg-3 text-center d-flex justify-content-center mb-4">
                                             <div class="card_foto">
                                                 <div class="imgbox">
-                                                    <img src="{{ asset('images/download.png') }}" alt="Sales Image" class="dynamic-image" id="foto_sales">
+                                                    <img src="{{ asset('images/download.png') }}" alt="Sales Image"
+                                                        class="dynamic-image" id="foto_sales">
                                                 </div>
                                                 <div class="details">
                                                     <span class="caption">Sales Terbaik</span>
@@ -168,10 +186,12 @@
                                         </div>
 
                                         <!-- INSTRUKTUR TERBAIK -->
-                                        <div class="col-12 col-sm-6 col-md-3 col-lg-3 text-center d-flex justify-content-center mb-4">
+                                        <div
+                                            class="col-12 col-sm-6 col-md-3 col-lg-3 text-center d-flex justify-content-center mb-4">
                                             <div class="card_foto">
                                                 <div class="imgbox">
-                                                    <img src="{{ asset('images/download.png') }}" alt="Instruktur Image" class="dynamic-image" id="foto_instruktur">
+                                                    <img src="{{ asset('images/download.png') }}" alt="Instruktur Image"
+                                                        class="dynamic-image" id="foto_instruktur">
                                                 </div>
                                                 <div class="details">
                                                     <span class="caption mb-30">Instruktur Terbaik</span>
@@ -181,10 +201,12 @@
                                         </div>
 
                                         <!-- OFFICE TERBAIK -->
-                                        <div class="col-12 col-sm-6 col-md-3 col-lg-3 text-center d-flex justify-content-center mb-4">
+                                        <div
+                                            class="col-12 col-sm-6 col-md-3 col-lg-3 text-center d-flex justify-content-center mb-4">
                                             <div class="card_foto">
                                                 <div class="imgbox">
-                                                    <img src="{{ asset('images/download.png') }}" alt="Office Image" class="dynamic-image" id="foto_office">
+                                                    <img src="{{ asset('images/download.png') }}" alt="Office Image"
+                                                        class="dynamic-image" id="foto_office">
                                                 </div>
                                                 <div class="details">
                                                     <span class="caption">Office Terbaik</span>
@@ -194,10 +216,12 @@
                                         </div>
 
                                         <!-- ITSM TERBAIK -->
-                                        <div class="col-12 col-sm-6 col-md-3 col-lg-3 text-center d-flex justify-content-center mb-4">
+                                        <div
+                                            class="col-12 col-sm-6 col-md-3 col-lg-3 text-center d-flex justify-content-center mb-4">
                                             <div class="card_foto">
                                                 <div class="imgbox">
-                                                    <img src="{{ asset('images/download.png') }}" alt="ITSM Image" class="dynamic-image" id="foto_itsm">
+                                                    <img src="{{ asset('images/download.png') }}" alt="ITSM Image"
+                                                        class="dynamic-image" id="foto_itsm">
                                                 </div>
                                                 <div class="details">
                                                     <span class="caption">ITSM Terbaik</span>
@@ -306,25 +330,33 @@
                     </div>
                 </div>
             </div>
-            <div class="tab-pane fade show " id="sales-tab-pane" role="tabpanel" aria-labelledby="sales-tab" tabindex="0" style="height: auto">
+            <div class="tab-pane fade show " id="sales-tab-pane" role="tabpanel" aria-labelledby="sales-tab"
+                tabindex="0" style="height: auto">
                 <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
                     <li class="nav-item mx-1" role="presentation">
-                        <button class="nav-link" id="pills-perquartal-tab" data-bs-toggle="pill" data-bs-target="#pills-perquartal" type="button" role="tab" aria-controls="pills-perquartal" aria-selected="true">Penjualan Per Sales Per Triwulan</button>
+                        <button class="nav-link" id="pills-perquartal-tab" data-bs-toggle="pill"
+                            data-bs-target="#pills-perquartal" type="button" role="tab" aria-controls="pills-perquartal"
+                            aria-selected="true">Penjualan Per Sales Per Triwulan</button>
                     </li>
                     <li class="nav-item mx-1" role="presentation">
-                        <button class="nav-link" id="pills-bulan-tab" data-bs-toggle="pill" data-bs-target="#pills-bulan" type="button" role="tab" aria-controls="pills-bulan" aria-selected="false">Penjualan Per Sales Per Tahun</button>
+                        <button class="nav-link" id="pills-bulan-tab" data-bs-toggle="pill"
+                            data-bs-target="#pills-bulan" type="button" role="tab" aria-controls="pills-bulan"
+                            aria-selected="false">Penjualan Per Sales Per Tahun</button>
                     </li>
                 </ul>
                 <div class="tab-content" id="pills-tabContent">
-                    <div class="tab-pane fade show" style="height:auto;" id="pills-perquartal" role="tabpanel" aria-labelledby="pills-perquartal-tab" tabindex="0">
+                    <div class="tab-pane fade show" style="height:auto;" id="pills-perquartal" role="tabpanel"
+                        aria-labelledby="pills-perquartal-tab" tabindex="0">
                         <div class="col-12" id="chartjs">
                             <label for="salesKeySelect">Pilih Sales:</label>
-                            <select id="salesKeySelect" class="form-select" style="width: 100px" onchange="updateChart()">
+                            <select id="salesKeySelect" class="form-select" style="width: 100px"
+                                onchange="updateChart()">
                             </select>
                             <canvas id="PenjualanPerSalesPerQuartalChart"></canvas>
                         </div>
                     </div>
-                    <div class="tab-pane fade show" style="height:auto;" id="pills-bulan" role="tabpanel" aria-labelledby="pills-bulan-tab" tabindex="0">
+                    <div class="tab-pane fade show" style="height:auto;" id="pills-bulan" role="tabpanel"
+                        aria-labelledby="pills-bulan-tab" tabindex="0">
                         <div class="row justify-content-center">
                             <div class="col-12" id="containerCanvasPenjualanPerSalesPerTahun">
                                 <canvas id="PenjualanPerSalesPerTahunChart"></canvas>
@@ -336,38 +368,50 @@
             <div class="tab-pane fade" id="office-tab-pane" role="tabpanel" aria-labelledby="office-tab" tabindex="0">
                 <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
                     <li class="nav-item mx-1" role="presentation">
-                        <button class="nav-link" id="pills-analisiskelas-tab" data-bs-toggle="pill" data-bs-target="#pills-analisiskelas" type="button" role="tab" aria-controls="pills-analisiskelas" aria-selected="true">Rekap Analisa Margin</button>
+                        <button class="nav-link" id="pills-analisiskelas-tab" data-bs-toggle="pill"
+                            data-bs-target="#pills-analisiskelas" type="button" role="tab"
+                            aria-controls="pills-analisiskelas" aria-selected="true">Rekap Analisa Margin</button>
                     </li>
                     <li class="nav-item mx-1" role="presentation">
-                        <button class="nav-link" id="pills-absen-tab" data-bs-toggle="pill" data-bs-target="#pills-absen" type="button" role="tab" aria-controls="pills-absen" aria-selected="false">Rekap Absen</button>
+                        <button class="nav-link" id="pills-absen-tab" data-bs-toggle="pill"
+                            data-bs-target="#pills-absen" type="button" role="tab" aria-controls="pills-absen"
+                            aria-selected="false">Rekap Absen</button>
                     </li>
                     <li class="nav-item mx-1" role="presentation">
-                        <button class="nav-link" id="pills-absenperbulan-tab" data-bs-toggle="pill" data-bs-target="#pills-absenperbulan" type="button" role="tab" aria-controls="pills-absenperbulan" aria-selected="false">Rekap Absen Per Bulan</button>
+                        <button class="nav-link" id="pills-absenperbulan-tab" data-bs-toggle="pill"
+                            data-bs-target="#pills-absenperbulan" type="button" role="tab"
+                            aria-controls="pills-absenperbulan" aria-selected="false">Rekap Absen Per Bulan</button>
                     </li>
                     <li class="nav-item mx-1" role="presentation">
-                        <button class="nav-link" id="pills-souvenir-tab" data-bs-toggle="pill" data-bs-target="#pills-souvenir" type="button" role="tab" aria-controls="pills-souvenir" aria-selected="false">Rekap Souvenir</button>
+                        <button class="nav-link" id="pills-souvenir-tab" data-bs-toggle="pill"
+                            data-bs-target="#pills-souvenir" type="button" role="tab" aria-controls="pills-souvenir"
+                            aria-selected="false">Rekap Souvenir</button>
                     </li>
                 </ul>
                 <div class="tab-content" id="pills-tabContent">
-                    <div class="tab-pane fade show" style="height:auto;" id="pills-analisiskelas" role="tabpanel" aria-labelledby="pills-analisiskelas-tab" tabindex="0">
+                    <div class="tab-pane fade show" style="height:auto;" id="pills-analisiskelas" role="tabpanel"
+                        aria-labelledby="pills-analisiskelas-tab" tabindex="0">
                         <div class="row justify-content-center">
                             <div class="col-12" id="containerCanvasKelasAnalisisChart">
                                 <canvas id="KelasAnalisisChart"></canvas>
                             </div>
                         </div>
                     </div>
-                    <div class="tab-pane fade show" style="height:auto;" id="pills-absen" role="tabpanel" aria-labelledby="pills-absen-tab" tabindex="0">
+                    <div class="tab-pane fade show" style="height:auto;" id="pills-absen" role="tabpanel"
+                        aria-labelledby="pills-absen-tab" tabindex="0">
                         <div class="row justify-content-center">
                             <div class="col-12" id="containerCanvasAbsenChart">
                                 <canvas id="AbsenChart"></canvas>
                             </div>
                         </div>
                     </div>
-                    <div class="tab-pane fade show" style="height:auto;" id="pills-absenperbulan" role="tabpanel" aria-labelledby="pills-absenperbulan-tab" tabindex="0">
+                    <div class="tab-pane fade show" style="height:auto;" id="pills-absenperbulan" role="tabpanel"
+                        aria-labelledby="pills-absenperbulan-tab" tabindex="0">
                         <div class="row justify-content-center">
                             <div class="col-12" id="ContainerCanvasAbsenPerBulan">
                                 <label for="monthSelect_absenperbulan" class="form-label">Pilih Bulan:</label>
-                                <select class="form-select" id="monthSelect_absenperbulan" onchange="updateChartAbsenPerbulan(this.value)">
+                                <select class="form-select" id="monthSelect_absenperbulan"
+                                    onchange="updateChartAbsenPerbulan(this.value)">
                                     <option value="All">Semua</option>
                                     <option value="1">Januari</option>
                                     <option value="2">Februari</option>
@@ -386,7 +430,8 @@
                             </div>
                         </div>
                     </div>
-                    <div class="tab-pane fade show" style="height:auto;" id="pills-souvenir" role="tabpanel" aria-labelledby="pills-souvenir-tab" tabindex="0">
+                    <div class="tab-pane fade show" style="height:auto;" id="pills-souvenir" role="tabpanel"
+                        aria-labelledby="pills-souvenir-tab" tabindex="0">
                         <div class="row justify-content-center">
                             <div class="col-12" id="SouvenirChartContainerCanvas">
                                 <canvas id="SouvenirChart"></canvas>
@@ -444,7 +489,7 @@
                                 <div class="data-dash">
                                     <p class="datacsat" id="sharingValue">-</p>
                                     <div class="range-dash">
-                                        <div class="fill-dash">
+                                        <div class="fill-dash" id="sharingBar">
                                         </div>
                                     </div>
                                 </div>
@@ -461,32 +506,87 @@
                                 <div class="data-dash">
                                     <p class="datacsat" id="materiValue">-</p>
                                     <div class="range-dash">
-                                        <div class="fill-dash">
+                                        <div class="fill-dash" id="materiBar">
+                                            
                                         </div>
                                     </div>
                                 </div>
                             </div>
-
-
+                            <div class="card-dash">
+                                <div class="title-dash">
+                                    <span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512">
+                                            <path
+                                                d="M96 64c-35.3 0-64 28.7-64 64l0 256c-17.7 0-32 14.3-32 32s14.3 32 32 32l512 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l0-256c0-35.3-28.7-64-64-64L96 64zM480 384l-64 0 0-32c0-17.7-14.3-32-32-32l-96 0c-17.7 0-32 14.3-32 32l0 32-160 0 0-256 384 0 0 256z" />
+                                        </svg>
+                                    </span>
+                                    <p class="title-text-dash">Silabus Baru</p>
+                                </div>
+                                <div class="data-dash">
+                                    <p class="datacsat" id="silabusValue">-</p>
+                                    <div class="range-dash">
+                                        <div class="fill-dash" id="silabusBar"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            {{--
+                        </div> --}}
                         {{-- </div> --}}
-                    {{-- </div> --}}
                 </div>
                 <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
                     <li class="nav-item mx-1" role="presentation">
-                        <button class="nav-link" id="pills-nilaifeedbackperbulan-tab" data-bs-toggle="pill" data-bs-target="#pills-nilaifeedbackperbulan" type="button" role="tab" aria-controls="pills-nilaifeedbackperbulan" aria-selected="true">Nilai Feedback Per Bulan</button>
+                        <button class="nav-link" id="pills-nilaifeedbackperbulan-tab" data-bs-toggle="pill"
+                            data-bs-target="#pills-nilaifeedbackperbulan" type="button" role="tab"
+                            aria-controls="pills-nilaifeedbackperbulan" aria-selected="true">Nilai Feedback Per
+                            Bulan</button>
                     </li>
                     <li class="nav-item mx-1" role="presentation">
-                        <button class="nav-link" id="pills-totalmengajar-tab" data-bs-toggle="pill" data-bs-target="#pills-totalmengajar" type="button" role="tab" aria-controls="pills-totalmengajar" aria-selected="false">Total Mengajar Per Bulan</button>
+                        <button class="nav-link" id="pills-totalmengajar-tab" data-bs-toggle="pill"
+                            data-bs-target="#pills-totalmengajar" type="button" role="tab"
+                            aria-controls="pills-totalmengajar" aria-selected="false">Total Mengajar Per Bulan</button>
                     </li>
                     <li class="nav-item mx-1" role="presentation">
-                        <button class="nav-link" id="pills-totalMateri-tab" data-bs-toggle="pill" data-bs-target="#pills-totalMateri" type="button" role="tab" aria-controls="pills-totalMateri" aria-selected="false">Total Materi Per Bulan</button>
+                        <button class="nav-link" id="pills-totalMateri-tab" data-bs-toggle="pill"
+                            data-bs-target="#pills-totalMateri" type="button" role="tab"
+                            aria-controls="pills-totalMateri" aria-selected="false">Total Materi Per Bulan</button>
                     </li>
                     <li class="nav-item mx-1" role="presentation">
-                        <button class="nav-link" id="pills-totalMengajarPerMateri-tab" data-bs-toggle="pill" data-bs-target="#pills-totalMengajarPerMateri" type="button" role="tab" aria-controls="pills-totalMengajarPerMateri" aria-selected="false">Total Mengajar Per Materi Per Bulan</button>
+                        <button class="nav-link" id="pills-totalMengajarPerMateri-tab" data-bs-toggle="pill"
+                            data-bs-target="#pills-totalMengajarPerMateri" type="button" role="tab"
+                            aria-controls="pills-totalMengajarPerMateri" aria-selected="false">Total Mengajar Per Materi
+                            Per Bulan</button>
+                    <li class="nav-item mx-1" role="presentation">
+                        <button class="nav-link" id="pills-jumlahUpdateMateriPerbulan-tab" data-bs-toggle="pill"
+                            data-bs-target="#pills-jumlahUpdateMateriPerbulan" type="button" role="tab"
+                            aria-controls="pills-jumlahUpdateMateriPerbulan" aria-selected="false">
+                            Jumlah Update Materi Perbulan
+                        </button>
+                    </li>
+                    <li class="nav-item mx-1" role="presentation">
+                        <button class="nav-link" id="pills-silabusPerInstrukturPerTahun-tab" data-bs-toggle="pill"
+                            data-bs-target="#pills-silabusPerInstrukturPerTahun" type="button" role="tab"
+                            aria-controls="pills-silabusPerInstrukturPerTahun" aria-selected="false"
+                            onclick="loadSilabusPerInstrukturPerTahunChart()">
+                            Silabus Per Instruktur Per Tahun
+                        </button>
+                    </li>
+                    <li class="nav-item mx-1" role="presentation">
+                        <button class="nav-link" id="pills-feedbackInstrukturPerTahun-tab" data-bs-toggle="pill"
+                            data-bs-target="#pills-feedbackInstrukturPerTahun" type="button" role="tab">
+                            Feedback Instruktur Per Tahun
+                        </button>
+                    </li>
+                    <li class="nav-item mx-1" role="presentation">
+                        <button class="nav-link" id="pills-hariMengajarInstrukturPerTahun-tab" data-bs-toggle="pill"
+                            data-bs-target="#pills-hariMengajarInstrukturPerTahun" type="button" role="tab"
+                            aria-controls="pills-hariMengajarInstrukturPerTahun" aria-selected="false">
+                            Hari Mengajar Instruktur per tahun
+                        </button>
                     </li>
                 </ul>
                 <div class="tab-content" id="pills-tabContent">
-                    <div class="tab-pane fade show" style="height:auto;" id="pills-nilaifeedbackperbulan" role="tabpanel" aria-labelledby="pills-nilaifeedbackperbulan-tab" tabindex="0">
+                    <div class="tab-pane fade show" style="height:auto;" id="pills-nilaifeedbackperbulan"
+                        role="tabpanel" aria-labelledby="pills-nilaifeedbackperbulan-tab" tabindex="0">
                         <div class="row justify-content-center">
                             <div class="col-12" id="containerCanvasNilaiFeedback">
                                 <label for="bulan" class="form-label">Pilih Bulan:</label>
@@ -509,11 +609,13 @@
                             </div>
                         </div>
                     </div>
-                    <div class="tab-pane fade show" style="height:auto;" id="pills-totalmengajar" role="tabpanel" aria-labelledby="pills-totalmengajar-tab" tabindex="0">
+                    <div class="tab-pane fade show" style="height:auto;" id="pills-totalmengajar" role="tabpanel"
+                        aria-labelledby="pills-totalmengajar-tab" tabindex="0">
                         <div class="row justify-content-center">
                             <div class="col-12" id="containerCanvasTotalMengajarChart">
                                 <label for="monthSelect" class="form-label">Pilih Bulan:</label>
-                                <select class="form-select" id="monthSelect_totalmengajar" onchange="updateChartTotalMengajar(this.value)">
+                                <select class="form-select" id="monthSelect_totalmengajar"
+                                    onchange="updateChartTotalMengajar(this.value)">
                                     <option value="1">Januari</option>
                                     <option value="2">Februari</option>
                                     <option value="3">Maret</option>
@@ -532,11 +634,13 @@
                             </div>
                         </div>
                     </div>
-                    <div class="tab-pane fade show" style="height:auto;" id="pills-totalMateri" role="tabpanel" aria-labelledby="pills-totalMateri-tab" tabindex="0">
+                    <div class="tab-pane fade show" style="height:auto;" id="pills-totalMateri" role="tabpanel"
+                        aria-labelledby="pills-totalMateri-tab" tabindex="0">
                         <div class="row justify-content-center">
                             <div class="col-12" id="containerCanvasTotalMateri">
                                 <label for="monthSelect" class="form-label">Pilih Bulan:</label>
-                                <select class="form-select" id="monthSelect_totalMateri" onchange="updateChartTotalMateri(this.value)">
+                                <select class="form-select" id="monthSelect_totalMateri"
+                                    onchange="updateChartTotalMateri(this.value)">
                                     <option value="All">Semua</option>
                                     <option value="1">Januari</option>
                                     <option value="2">Februari</option>
@@ -556,11 +660,13 @@
                             </div>
                         </div>
                     </div>
-                    <div class="tab-pane fade show" style="height:auto;" id="pills-totalMateri" role="tabpanel" aria-labelledby="pills-totalMateri-tab" tabindex="0">
+                    <div class="tab-pane fade show" style="height:auto;" id="pills-totalMateri" role="tabpanel"
+                        aria-labelledby="pills-totalMateri-tab" tabindex="0">
                         <div class="row justify-content-center">
                             <div class="col-12" id="containerCanvasTotalMateri">
                                 <label for="monthSelect" class="form-label">Pilih Bulan:</label>
-                                <select class="form-select" id="monthSelect_totalMateri" onchange="updateChartTotalMateri(this.value)">
+                                <select class="form-select" id="monthSelect_totalMateri"
+                                    onchange="updateChartTotalMateri(this.value)">
                                     <option value="All">Semua</option>
                                     <option value="1">Januari</option>
                                     <option value="2">Februari</option>
@@ -580,11 +686,13 @@
                             </div>
                         </div>
                     </div>
-                    <div class="tab-pane fade show" style="height:auto;" id="pills-totalMengajarPerMateri" role="tabpanel" aria-labelledby="pills-totalMengajarPerMateri-tab" tabindex="0">
+                    <div class="tab-pane fade show" style="height:auto;" id="pills-totalMengajarPerMateri"
+                        role="tabpanel" aria-labelledby="pills-totalMengajarPerMateri-tab" tabindex="0">
                         <div class="row justify-content-center">
                             <div class="col-12" id="containerCanvasTotalMengajarPerMateri">
                                 <label for="monthSelect" class="form-label">Pilih Bulan:</label>
-                                <select class="form-select" id="monthSelect_totalMengajarPerMateri" onchange="updateChartTotalMengajarPerMateri(this.value)">
+                                <select class="form-select" id="monthSelect_totalMengajarPerMateri"
+                                    onchange="updateChartTotalMengajarPerMateri(this.value)">
                                     <option value="All">Semua</option>
                                     <option value="1">Januari</option>
                                     <option value="2">Februari</option>
@@ -603,6 +711,89 @@
                             </div>
                         </div>
                     </div>
+                    <div class="tab-pane fade" id="pills-jumlahUpdateMateriPerbulan" role="tabpanel"
+                        aria-labelledby="pills-jumlahUpdateMateriPerbulan-tab">
+                        <div
+                            class="card shadow-sm p-4 position-relatived-flex flex-column align-items-center text-center">
+                            <label for="monthSelect_JumlahUpdateMateriPerbulan" class="form-label fw-medium mb-2">
+                                Pilih Bulan
+                            </label>
+
+                            <select class="form-select shadow-sm mb-4" id="monthSelect_JumlahUpdateMateriPerbulan"
+                                style="max-width: 260px;">
+                                <option value="All">Semua Bulan</option>
+                                <option value="1">Januari</option>
+                                <option value="2">Februari</option>
+                                <option value="3">Maret</option>
+                                <option value="4">April</option>
+                                <option value="5">Mei</option>
+                                <option value="6">Juni</option>
+                                <option value="7">Juli</option>
+                                <option value="8">Agustus</option>
+                                <option value="9">September</option>
+                                <option value="10">Oktober</option>
+                                <option value="11">November</option>
+                                <option value="12">Desember</option>
+                            </select>
+                            <div class="position-relative w-100 d-flex justify-content-center"
+                                style="min-height: 500px;">
+                                <canvas id="jumlahUpdateMateriPerbulanChart" style="max-width: 1500px;"></canvas>
+                                <div id="chartLoading_JumlahUpdateMateriPerbulan"
+                                    class="position-absolute top-50 start-50 translate-middle text-center d-none">
+                                    <div class="spinner-border text-primary" style="width:3rem;height:3rem;"></div>
+                                    <p class="mt-2 text-muted fw-medium">Memuat data chart...</p>
+                                </div>
+                                <div id="chartEmpty_JumlahUpdateMateriPerbulan"
+                                    class="position-absolute top-50 start-50 translate-middle text-center text-muted d-none">
+                                    <p class="fw-medium mt-2 mb-0">
+                                        Tidak ada data update materi pada periode ini
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="pills-silabusPerInstrukturPerTahun" role="tabpanel"
+                        aria-labelledby="pills-silabusPerInstrukturPerTahun-tab">
+                        <div class="card d-flex flex-column p-3">
+                            <h5 class="text-center mb-3">Silabus Per Instruktur Per Tahun</h5>
+
+                            <div style="height: 500px">
+                                <canvas id="silabusPerInstrukturPerTahunChart"></canvas>
+                            </div>
+
+                            <div id="silabusPerInstrukturPerTahunEmpty" class="d-none text-center text-muted mt-3">
+                                Tidak ada data silabus per instruktur
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="pills-feedbackInstrukturPerTahun" role="tabpanel">
+                        <div class="card d-flex flex-column p-3">
+                            <h5 class="text-center mb-3">Rata-Rata Feedback Instruktur</h5>
+
+                            <div style="height: 450px">
+                                <canvas id="feedbackChart"></canvas>
+                            </div>
+
+                            <div id="nilaiInstrukturEmpty" class="d-none text-center text-muted mt-3">
+                                Tidak ada data feedback
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="pills-hariMengajarInstrukturPerTahun" role="tabpanel"
+                        aria-labelledby="pills-hariMengajarInstrukturPerTahun-tab">
+                        <div class="card d-flex flex-column p-3">
+                            <h5 class="text-center mb-3">Hari Mengajar Instruktur Per Tahun</h5>
+
+                            <div style="height: 500px; position: relative;">
+                                <canvas id="hariMengajarInstrukturPerTahunChart"></canvas>
+                            </div>
+
+                            <div id="hariMengajarInstrukturPerTahunEmpty" class="d-none text-center text-muted mt-3">
+                                Tidak ada data hari mengajar instruktur
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
             </div>
@@ -610,22 +801,38 @@
                 <ul class="nav nav-pills mb-3" id="itsm-pills-tab" role="tablist">
 
                     <li class="nav-item mx-1" role="presentation">
-                        <button class="nav-link" id="pills-jumlah-pic-tab" data-bs-toggle="pill" data-bs-target="#pills-jumlah-pic" type="button" role="tab" aria-controls="pills-jumlah-pic" aria-selected="false">Jumlah PIC</button>
+                        <button class="nav-link" id="pills-jumlah-pic-tab" data-bs-toggle="pill"
+                            data-bs-target="#pills-jumlah-pic" type="button" role="tab" aria-controls="pills-jumlah-pic"
+                            aria-selected="false">Jumlah PIC</button>
                     </li>
                     <li class="nav-item mx-1" role="presentation">
-                        <button class="nav-link" id="pills-jumlah-ticketing-tab" data-bs-toggle="pill" data-bs-target="#pills-jumlah-ticketing" type="button" role="tab" aria-controls="pills-jumlah-ticketing" aria-selected="true">Jumlah Ticketing</button>
+                        <button class="nav-link" id="pills-jumlah-ticketing-tab" data-bs-toggle="pill"
+                            data-bs-target="#pills-jumlah-ticketing" type="button" role="tab"
+                            aria-controls="pills-jumlah-ticketing" aria-selected="true">Jumlah Ticketing</button>
                     </li>
                     <li class="nav-item mx-1" role="presentation">
-                        <button class="nav-link" id="pills-rerata-durasi-tab" data-bs-toggle="pill" data-bs-target="#pills-rerata-durasi" type="button" role="tab" aria-controls="pills-rerata-durasi" aria-selected="false">Rata-rata Durasi Pengerjaan</button>
+                        <button class="nav-link" id="pills-rerata-durasi-tab" data-bs-toggle="pill"
+                            data-bs-target="#pills-rerata-durasi" type="button" role="tab"
+                            aria-controls="pills-rerata-durasi" aria-selected="false">Rata-rata Durasi
+                            Pengerjaan</button>
                     </li>
                     <li class="nav-item mx-1" role="presentation">
-                        <button class="nav-link" id="pills-rerata-ketepatan-response-tab" data-bs-toggle="pill" data-bs-target="#pills-rerata-ketepatan-response" type="button" role="tab" aria-controls="pills-rerata-ketepatan-response" aria-selected="false">Rata-rata Kecepatan Respon</button>
+                        <button class="nav-link" id="pills-rerata-ketepatan-response-tab" data-bs-toggle="pill"
+                            data-bs-target="#pills-rerata-ketepatan-response" type="button" role="tab"
+                            aria-controls="pills-rerata-ketepatan-response" aria-selected="false">Rata-rata Kecepatan
+                            Respon</button>
                     </li>
                     <li class="nav-item mx-1" role="presentation">
-                        <button class="nav-link" id="pills-jumlah-permintaan-tab" data-bs-toggle="pill" data-bs-target="#pills-jumlah-permintaan" type="button" role="tab" aria-controls="pills-jumlah-permintaan" aria-selected="false">Jumlah Permintaan Per Bulan</button>
+                        <button class="nav-link" id="pills-jumlah-permintaan-tab" data-bs-toggle="pill"
+                            data-bs-target="#pills-jumlah-permintaan" type="button" role="tab"
+                            aria-controls="pills-jumlah-permintaan" aria-selected="false">Jumlah Permintaan Per
+                            Bulan</button>
                     </li>
                     <li class="nav-item mx-1" role="presentation">
-                        <button class="nav-link" id="pills-permintaan-sering-diajukan-tab" data-bs-toggle="pill" data-bs-target="#pills-permintaan-sering-diajukan" type="button" role="tab" aria-controls="pills-permintaan-sering-diajukan" aria-selected="false">Permintaan Sering Diajukan</button>
+                        <button class="nav-link" id="pills-permintaan-sering-diajukan-tab" data-bs-toggle="pill"
+                            data-bs-target="#pills-permintaan-sering-diajukan" type="button" role="tab"
+                            aria-controls="pills-permintaan-sering-diajukan" aria-selected="false">Permintaan Sering
+                            Diajukan</button>
                     </li>
                     <li class="nav-item mx-1" role="presentation">
                         <button class="nav-link sla-tab-trigger" id="pills-sla-programmer-tab"
@@ -688,7 +895,8 @@
                 </ul>
 
                 <div class="tab-content" id="pills-tabContent">
-                    <div class="tab-pane fade show" style="height:auto;" id="pills-jumlah-pic" role="tabpanel" aria-labelledby="pills-jumlah-pic-tab" tabindex="0">
+                    <div class="tab-pane fade show" style="height:auto;" id="pills-jumlah-pic" role="tabpanel"
+                        aria-labelledby="pills-jumlah-pic-tab" tabindex="0">
                         <div class="row justify-content-center">
                             <div class="col-12" id="containerCanvasPicChart">
                                 <label for="filterMonthPIC" class="form-label">Pilih Bulan:</label>
@@ -699,7 +907,8 @@
                             </div>
                         </div>
                     </div>
-                    <div class="tab-pane fade show" style="height:auto;" id="pills-jumlah-ticketing" role="tabpanel" aria-labelledby="pills-jumlah-ticketing-tab" tabindex="0">
+                    <div class="tab-pane fade show" style="height:auto;" id="pills-jumlah-ticketing" role="tabpanel"
+                        aria-labelledby="pills-jumlah-ticketing-tab" tabindex="0">
                         <div class="row justify-content-center">
                             <div class="col-12" id="containerCanvasjumlahTicketing">
                                 <label for="filterBulan" class="form-label">Pilih Bulan:</label>
@@ -710,7 +919,8 @@
                             </div>
                         </div>
                     </div>
-                    <div class="tab-pane fade show" style="height:auto;" id="pills-rerata-durasi" role="tabpanel" aria-labelledby="pills-rerata-durasi-tab" tabindex="0">
+                    <div class="tab-pane fade show" style="height:auto;" id="pills-rerata-durasi" role="tabpanel"
+                        aria-labelledby="pills-rerata-durasi-tab" tabindex="0">
                         <div class="row justify-content-center">
                             <div class="col-12" id="containerCanvasRerataDurasi">
                                 <label for="filterMonth" class="form-label">Pilih Bulan:</label>
@@ -721,7 +931,8 @@
                             </div>
                         </div>
                     </div>
-                    <div class="tab-pane fade show" style="height:auto;" id="pills-rerata-ketepatan-response" role="tabpanel" aria-labelledby="pills-rerata-ketepatan-response-tab" tabindex="0">
+                    <div class="tab-pane fade show" style="height:auto;" id="pills-rerata-ketepatan-response"
+                        role="tabpanel" aria-labelledby="pills-rerata-ketepatan-response-tab" tabindex="0">
                         <div class="row justify-content-center">
                             <div class="col-12" id="containerCanvasKetepatanRespond">
                                 <label for="filterMonthKetepatan" class="form-label">Pilih Bulan:</label>
@@ -732,7 +943,8 @@
                             </div>
                         </div>
                     </div>
-                    <div class="tab-pane fade show" style="height:auto;" id="pills-jumlah-permintaan" role="tabpanel" aria-labelledby="pills-jumlah-permintaan" tabindex="0">
+                    <div class="tab-pane fade show" style="height:auto;" id="pills-jumlah-permintaan" role="tabpanel"
+                        aria-labelledby="pills-jumlah-permintaan" tabindex="0">
                         <div class="row justify-content-center">
                             <div class="col-12" id="containerCanvasPermintaanPerbulan">
                                 <h3>Jumlah Permintaan Per Bulan</h3>
@@ -740,7 +952,8 @@
                             </div>
                         </div>
                     </div>
-                    <div class="tab-pane fade show" style="height:auto;" id="pills-permintaan-sering-diajukan" role="tabpanel" aria-labelledby="pills-permintaan-sering-tab" tabindex="0">
+                    <div class="tab-pane fade show" style="height:auto;" id="pills-permintaan-sering-diajukan"
+                        role="tabpanel" aria-labelledby="pills-permintaan-sering-tab" tabindex="0">
                         <div class="row justify-content-center">
                             <div class="col-12" id="containerCanvasPermintaanSering">
                                 <h3>Permintaan Yang Sering Diajukan</h3>
@@ -748,7 +961,8 @@
                             </div>
                         </div>
                     </div>
-                    <div class="tab-pane fade" style="height:auto;" id="pills-sla-programmer" role="tabpanel" aria-labelledby="pills-sla-programmer-tab" tabindex="0">
+                    <div class="tab-pane fade" style="height:auto;" id="pills-sla-programmer" role="tabpanel"
+                        aria-labelledby="pills-sla-programmer-tab" tabindex="0">
                         <div class="container-fluid" id="sla-programmer-container">
 
                             <div id="sla-period-display" class="row mb-3">
@@ -773,25 +987,29 @@
                                             <div class="row mb-4">
                                                 <div class="col-lg-3 col-md-6 mb-3">
                                                     <div class="card card-body text-center h-100 shadow-sm">
-                                                        <h6 class="card-title text-muted text-uppercase small">SLA Resolusi</h6>
+                                                        <h6 class="card-title text-muted text-uppercase small">SLA
+                                                            Resolusi</h6>
                                                         <div class="fs-2 fw-bold" id="tim-sla-resolution">...</div>
                                                     </div>
                                                 </div>
                                                 <div class="col-lg-3 col-md-6 mb-3">
                                                     <div class="card card-body text-center h-100 shadow-sm">
-                                                        <h6 class="card-title text-muted text-uppercase small">SLA Respon</h6>
+                                                        <h6 class="card-title text-muted text-uppercase small">SLA
+                                                            Respon</h6>
                                                         <div class="fs-2 fw-bold" id="tim-sla-response">...</div>
                                                     </div>
                                                 </div>
                                                 <div class="col-lg-3 col-md-6 mb-3">
                                                     <div class="card card-body text-center h-100 shadow-sm">
-                                                        <h6 class="card-title text-muted text-uppercase small">Avg. Waktu Resolusi</h6>
+                                                        <h6 class="card-title text-muted text-uppercase small">Avg.
+                                                            Waktu Resolusi</h6>
                                                         <div class="fs-2 fw-bold" id="tim-avg-resolution">...</div>
                                                     </div>
                                                 </div>
                                                 <div class="col-lg-3 col-md-6 mb-3">
                                                     <div class="card card-body text-center h-100 shadow-sm">
-                                                        <h6 class="card-title text-muted text-uppercase small">Total Tiket</h6>
+                                                        <h6 class="card-title text-muted text-uppercase small">Total
+                                                            Tiket</h6>
                                                         <div class="fs-2 fw-bold" id="tim-total-tickets">...</div>
                                                     </div>
                                                 </div>
@@ -799,7 +1017,8 @@
 
                                             <div class="row">
                                                 <div class="col-12">
-                                                    <canvas id="slaTimPriorityChart" style="width: 100%; height: 300px;"></canvas>
+                                                    <canvas id="slaTimPriorityChart"
+                                                        style="width: 100%; height: 300px;"></canvas>
                                                 </div>
                                             </div>
                                         </div>
@@ -846,25 +1065,29 @@
                                             <div class="row mb-4">
                                                 <div class="col-lg-3 col-md-6 mb-3">
                                                     <div class="card card-body text-center h-100 shadow-sm">
-                                                        <h6 class="card-title text-muted text-uppercase small">SLA Resolusi Kritis</h6>
+                                                        <h6 class="card-title text-muted text-uppercase small">SLA
+                                                            Resolusi Kritis</h6>
                                                         <div class="fs-2 fw-bold" id="kritis-sla-resolution">...</div>
                                                     </div>
                                                 </div>
                                                 <div class="col-lg-3 col-md-6 mb-3">
                                                     <div class="card card-body text-center h-100 shadow-sm">
-                                                        <h6 class="card-title text-muted text-uppercase small">SLA Respon Kritis</h6>
+                                                        <h6 class="card-title text-muted text-uppercase small">SLA
+                                                            Respon Kritis</h6>
                                                         <div class="fs-2 fw-bold" id="kritis-sla-response">...</div>
                                                     </div>
                                                 </div>
                                                 <div class="col-lg-3 col-md-6 mb-3">
                                                     <div class="card card-body text-center h-100 shadow-sm">
-                                                        <h6 class="card-title text-muted text-uppercase small">Avg. Waktu Resolusi</h6>
+                                                        <h6 class="card-title text-muted text-uppercase small">Avg.
+                                                            Waktu Resolusi</h6>
                                                         <div class="fs-2 fw-bold" id="kritis-avg-resolution">...</div>
                                                     </div>
                                                 </div>
                                                 <div class="col-lg-3 col-md-6 mb-3">
                                                     <div class="card card-body text-center h-100 shadow-sm">
-                                                        <h6 class="card-title text-muted text-uppercase small">Total Insiden</h6>
+                                                        <h6 class="card-title text-muted text-uppercase small">Total
+                                                            Insiden</h6>
                                                         <div class="fs-2 fw-bold" id="kritis-total-insiden">...</div>
                                                     </div>
                                                 </div>
@@ -896,7 +1119,8 @@
                             </div>
                         </div>
                     </div>
-                    <div class="tab-pane fade" style="height:auto;" id="pills-sla-tech-support" role="tabpanel" aria-labelledby="pills-sla-tech-support-tab" tabindex="0">
+                    <div class="tab-pane fade" style="height:auto;" id="pills-sla-tech-support" role="tabpanel"
+                        aria-labelledby="pills-sla-tech-support-tab" tabindex="0">
                         <div class="container-fluid" id="sla-tech-support-container">
 
                             <div id="sla-period-display-ts" class="row mb-3">
@@ -920,32 +1144,37 @@
                                             <div class="row mb-4">
                                                 <div class="col-lg-3 col-md-6 mb-3">
                                                     <div class="card card-body text-center h-100 shadow-sm">
-                                                        <h6 class="card-title text-muted text-uppercase small">SLA Resolusi</h6>
+                                                        <h6 class="card-title text-muted text-uppercase small">SLA
+                                                            Resolusi</h6>
                                                         <div class="fs-2 fw-bold" id="ts-tim-sla-resolution">...</div>
                                                     </div>
                                                 </div>
                                                 <div class="col-lg-3 col-md-6 mb-3">
                                                     <div class="card card-body text-center h-100 shadow-sm">
-                                                        <h6 class="card-title text-muted text-uppercase small">SLA Respon</h6>
+                                                        <h6 class="card-title text-muted text-uppercase small">SLA
+                                                            Respon</h6>
                                                         <div class="fs-2 fw-bold" id="ts-tim-sla-response">...</div>
                                                     </div>
                                                 </div>
                                                 <div class="col-lg-3 col-md-6 mb-3">
                                                     <div class="card card-body text-center h-100 shadow-sm">
-                                                        <h6 class="card-title text-muted text-uppercase small">Avg. Waktu Resolusi</h6>
+                                                        <h6 class="card-title text-muted text-uppercase small">Avg.
+                                                            Waktu Resolusi</h6>
                                                         <div class="fs-2 fw-bold" id="ts-tim-avg-resolution">...</div>
                                                     </div>
                                                 </div>
                                                 <div class="col-lg-3 col-md-6 mb-3">
                                                     <div class="card card-body text-center h-100 shadow-sm">
-                                                        <h6 class="card-title text-muted text-uppercase small">Total Tiket</h6>
+                                                        <h6 class="card-title text-muted text-uppercase small">Total
+                                                            Tiket</h6>
                                                         <div class="fs-2 fw-bold" id="ts-tim-total-tickets">...</div>
                                                     </div>
                                                 </div>
                                             </div>
                                             <div class="row">
                                                 <div class="col-12">
-                                                    <canvas id="tsSlaTimPriorityChart" style="width: 100%; height: 300px;"></canvas>
+                                                    <canvas id="tsSlaTimPriorityChart"
+                                                        style="width: 100%; height: 300px;"></canvas>
                                                 </div>
                                             </div>
                                         </div>
@@ -992,25 +1221,31 @@
                                             <div class="row mb-4">
                                                 <div class="col-lg-3 col-md-6 mb-3">
                                                     <div class="card card-body text-center h-100 shadow-sm">
-                                                        <h6 class="card-title text-muted text-uppercase small">SLA Resolusi Kritis</h6>
-                                                        <div class="fs-2 fw-bold" id="ts-kritis-sla-resolution">...</div>
+                                                        <h6 class="card-title text-muted text-uppercase small">SLA
+                                                            Resolusi Kritis</h6>
+                                                        <div class="fs-2 fw-bold" id="ts-kritis-sla-resolution">...
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div class="col-lg-3 col-md-6 mb-3">
                                                     <div class="card card-body text-center h-100 shadow-sm">
-                                                        <h6 class="card-title text-muted text-uppercase small">SLA Respon Kritis</h6>
+                                                        <h6 class="card-title text-muted text-uppercase small">SLA
+                                                            Respon Kritis</h6>
                                                         <div class="fs-2 fw-bold" id="ts-kritis-sla-response">...</div>
                                                     </div>
                                                 </div>
                                                 <div class="col-lg-3 col-md-6 mb-3">
                                                     <div class="card card-body text-center h-100 shadow-sm">
-                                                        <h6 class="card-title text-muted text-uppercase small">Avg. Waktu Resolusi</h6>
-                                                        <div class="fs-2 fw-bold" id="ts-kritis-avg-resolution">...</div>
+                                                        <h6 class="card-title text-muted text-uppercase small">Avg.
+                                                            Waktu Resolusi</h6>
+                                                        <div class="fs-2 fw-bold" id="ts-kritis-avg-resolution">...
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div class="col-lg-3 col-md-6 mb-3">
                                                     <div class="card card-body text-center h-100 shadow-sm">
-                                                        <h6 class="card-title text-muted text-uppercase small">Total Insiden</h6>
+                                                        <h6 class="card-title text-muted text-uppercase small">Total
+                                                            Insiden</h6>
                                                         <div class="fs-2 fw-bold" id="ts-kritis-total-insiden">...</div>
                                                     </div>
                                                 </div>
@@ -1041,7 +1276,8 @@
                             </div>
                         </div>
                     </div>
-                    <div class="tab-pane fade" id="pills-sla-event" role="tabpanel" aria-labelledby="pills-sla-event-tab" tabindex="0">
+                    <div class="tab-pane fade" id="pills-sla-event" role="tabpanel"
+                        aria-labelledby="pills-sla-event-tab" tabindex="0">
                         <div class="container-fluid">
 
                             <div class="row mb-4 mt-3">
@@ -1067,7 +1303,8 @@
 
                                 <div class="row mb-3">
                                     <div class="col-md-12">
-                                        <div class="alert alert-info d-flex justify-content-between align-items-center" role="alert">
+                                        <div class="alert alert-info d-flex justify-content-between align-items-center"
+                                            role="alert">
                                             <div>
                                                 <h4 class="alert-heading mb-0 fs-5" id="event-title">...</h4>
                                                 <small id="event-date" class="font-monospace">...</small>
@@ -1079,28 +1316,32 @@
 
                                 <div class="row mb-4">
                                     <div class="col-lg-3 col-md-6 mb-3">
-                                        <div class="card card-body text-center h-100 shadow-sm border-start border-4 border-primary">
+                                        <div
+                                            class="card card-body text-center h-100 shadow-sm border-start border-4 border-primary">
                                             <h6 class="text-muted text-uppercase small">Kelengkapan</h6>
                                             <div class="fs-2 fw-bold" id="event-kpi-completion">0%</div>
                                             <small class="text-muted">Item Selesai / Total</small>
                                         </div>
                                     </div>
                                     <div class="col-lg-3 col-md-6 mb-3">
-                                        <div class="card card-body text-center h-100 shadow-sm border-start border-4 border-success">
+                                        <div
+                                            class="card card-body text-center h-100 shadow-sm border-start border-4 border-success">
                                             <h6 class="text-muted text-uppercase small">Tepat Waktu (SLA)</h6>
                                             <div class="fs-2 fw-bold" id="event-kpi-compliance">0%</div>
                                             <small class="text-muted">Dari item yang selesai</small>
                                         </div>
                                     </div>
                                     <div class="col-lg-3 col-md-6 mb-3">
-                                        <div class="card card-body text-center h-100 shadow-sm border-start border-4 border-warning">
+                                        <div
+                                            class="card card-body text-center h-100 shadow-sm border-start border-4 border-warning">
                                             <h6 class="text-muted text-uppercase small">Terlambat</h6>
                                             <div class="fs-2 fw-bold text-warning" id="event-kpi-late">0</div>
                                             <small class="text-muted">Selesai tapi lewat deadline</small>
                                         </div>
                                     </div>
                                     <div class="col-lg-3 col-md-6 mb-3">
-                                        <div class="card card-body text-center h-100 shadow-sm border-start border-4 border-danger">
+                                        <div
+                                            class="card card-body text-center h-100 shadow-sm border-start border-4 border-danger">
                                             <h6 class="text-muted text-uppercase small">Overdue</h6>
                                             <div class="fs-2 fw-bold text-danger" id="event-kpi-overdue">0</div>
                                             <small class="text-muted">Belum selesai & lewat deadline</small>
@@ -2151,6 +2392,14 @@
         bottom: 20px;
     }
 
+    .chart-wrapper {
+        position: relative;
+        height: 500px;
+        /* 🔥 FIXED, TIDAK NGE-GROW */
+        width: 100%;
+    }
+
+
     /* Responsive adjustments for mobile screens */
     @media (max-width: 576px) {
         .card {
@@ -2274,6 +2523,87 @@
             font-size: 0.7rem;
         }
     }
+
+    /* From Uiverse.io by Yaya12085 */
+    .card-dash {
+        padding: 1rem;
+        margin: 1rem;
+        background-color: #fff;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        max-width: 320px;
+        border-radius: 20px;
+    }
+
+    .title-dash {
+        display: flex;
+        align-items: center;
+    }
+
+    .title-dash span {
+        position: relative;
+        padding: 0.5rem;
+        background-color: #10B981;
+        width: 1.5rem;
+        height: 1.5rem;
+        border-radius: 9999px;
+    }
+
+    .title-dash span svg {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #ffffff;
+        height: 1rem;
+    }
+
+    .title-text-dash {
+        margin-left: 0.5rem;
+        color: #374151;
+        margin-bottom: 0px;
+        font-size: 18px;
+    }
+
+    .percent-dash {
+        margin-left: 0.5rem;
+        color: #02972f;
+        font-weight: 600;
+        display: flex;
+    }
+
+    .data-dash {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+    }
+
+    .data-dash p {
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+        color: #1F2937;
+        font-size: 2.25rem;
+        line-height: 2.5rem;
+        font-weight: 700;
+        text-align: left;
+    }
+
+    .data-dash .range-dash {
+        position: relative;
+        background-color: #E5E7EB;
+        width: 100%;
+        height: 0.5rem;
+        border-radius: 0.25rem;
+    }
+
+    .data-dash .range-dash .fill-dash {
+        position: absolute;
+        top: 0;
+        left: 0;
+        background-color: #10B981;
+        width: 76%;
+        height: 100%;
+        border-radius: 0.25rem;
+    }
 </style>
 <style>
     @media (max-width: 576px) {
@@ -2288,84 +2618,11 @@
             overflow: hidden !important;
         }
     }
-    /* From Uiverse.io by Yaya12085 */ 
-    .card-dash {
-    padding: 1rem;
-    margin: 1rem;
-    background-color: #fff;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    max-width: 320px;
-    border-radius: 20px;
-    }
-
-    .title-dash {
-    display: flex;
-    align-items: center;
-    }
-
-    .title-dash span {
-    position: relative;
-    padding: 0.5rem;
-    background-color: #10B981;
-    width: 1.5rem;
-    height: 1.5rem;
-    border-radius: 9999px;
-    }
-
-    .title-dash span svg {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: #ffffff;
-    height: 1rem;
-    }
-
-    .title-text-dash {
-    margin-left: 0.5rem;
-    color: #374151;
-    margin-bottom: 0px;
-    font-size: 18px;
-    }
-
-    .percent-dash {
-    margin-left: 0.5rem;
-    color: #02972f;
-    font-weight: 600;
-    display: flex;
-    }
-
-    .data-dash {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    }
-
-    .data-dash p {
-    margin-top: 1rem;
-    margin-bottom: 1rem;
-    color: #1F2937;
-    font-size: 2.25rem;
-    line-height: 2.5rem;
-    font-weight: 700;
-    text-align: left;
-    }
-
-    .data-dash .range-dash {
-    position: relative;
-    background-color: #E5E7EB;
-    width: 100%;
-    height: 0.5rem;
-    border-radius: 0.25rem;
-    }
-
-    .data-dash .range-dash .fill-dash {
-    position: absolute;
-    top: 0;
-    left: 0;
-    background-color: #10B981;
-    width: 76%;
-    height: 100%;
-    border-radius: 0.25rem;
-    }
 </style>
+@push('scripts')
+    <script>
+        // Variable global untuk API URL Feedback Instruktur
+        window.FEEDBACK_API_URL = "{{ route('office.feedback.get') }}";
+    </script>
+    <script src="{{ asset('js/dashboard .js') }}"></script>
+@endpush

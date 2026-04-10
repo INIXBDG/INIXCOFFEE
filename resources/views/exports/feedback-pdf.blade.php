@@ -1,243 +1,242 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Overtime Claim | INIXINDO Bandung</title>
-    <link rel="apple-touch-icon" sizes="180x180" href="https://inixindobdg.co.id/images/logoinix.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="https://inixindobdg.co.id/images/logoinix.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="https://inixindobdg.co.id/images/logoinix.png">
-    <!-- Fonts -->
-    <link rel="dns-prefetch" href="//fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
-    <link rel="stylesheet" href="path/to/font-awesome/css/font-awesome.min.css">
-    {{-- <link rel="stylesheet" href="css/app.css"> --}}
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <title>Feedback Report</title>
+    <!-- Include Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .table-outer-border {
-            border: 1px solid black;
-            /* Border di luar tabel */
+        /* Custom CSS for better readability */
+        table th, table td {
+            text-align: center;
+            vertical-align: middle;
+            padding: 10px;
         }
-
-        .table-outer-border tbody tr,
-        .table-outer-border tbody td {
-            border: none;
-            /* Menghapus border dalam tabel */
+        .table-category {
+            margin-bottom: 20px;
+        }
+        .category-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
         }
     </style>
 </head>
-
 <body>
     <div class="container">
-        <div class="row">
-            <div class="col-md-6 col-sm-6 text-left">
-                <div class="row">
-                    <div class="col-xs-12">
-                        <img src="{{ asset('css/logo.png') }}" class="img-responsive" width="100px">
-                        <h5 class="m-0">INIXINDO BANDUNG<br></h5>
-                        <span class="small">Jl. Cipaganti no.95 Bandung</span>
-                    </div>
-                </div>
+        @foreach ($post as $item)
+            <div class="company-info mb-4">
+                <h3>Nama Perusahaan: <span class="text-primary">{{ $item['nama_perusahaan'] }}</span></h3>
+                <h3>Nama Materi: <span class="text-primary">{{ $item['data'][0]['nama_materi'] }}</span></h3>
+                <h3>Tanggal: <span class="text-primary">{{ $item['data'][0]['tanggal_awal'] }} - {{ $item['data'][0]['tanggal_akhir'] }}</span></h3>
+                <h3>Sales: <span class="text-primary">{{ $item['data'][0]['sales_key'] }}</span></h3>
+                <h3>
+                    Instruktur: 
+                    <span class="text-primary">
+                        {{ $item['data'][0]['instruktur_key'] ?? '-' }}, 
+                        {{ $item['data'][0]['instruktur_key2'] ?? '-' }}, 
+                        {{ $item['data'][0]['asisten_key'] ?? '-' }}
+                    </span>
+                </h3>
             </div>
-            <div class="col-md-6 col-sm-6 d-flex justify-content-end">
-                <div class="panel panel-default text-right">
-                    <div class="panel-body d-print-none mt-4">
-                        {{-- <a href="javascript:window.print()" class="btn btn-success me-1"><i class="fa fa-print"></i> Print Invoice</a> --}}
-                        {{-- <button id="printInvoice" class="btn btn-success"><i class="fa fa-print"></i> PRINT INVOICE</button> --}}
-                        <a href="javascript:void(0);" class="btn btn-success me-1" id="printInvoiceBTN"><i class="fa fa-print"></i> Print Invoice</a>
 
-                    </div>
-                </div>
-            </div>
-            <div class="row mt-4">
-                <h4 class="text-center mb-4">OVERTIME CLAIM</h4>
-                <div class="col-md-6">
-                    <div class="row">
-                        <div class="col-md-4">Nama</div>
-                        <div class="col-md-1">:</div>
-                        <div class="col-md-4">{{$data[0]->karyawan->nama_lengkap}}</div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-4">Divisi</div>
-                        <div class="col-md-1">:</div>
-                        <div class="col-md-4">{{$data[0]->karyawan->divisi}}</div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="row">
-                        <div class="col-md-4">Tahun</div>
-                        <div class="col-md-1">:</div>
-                        <div class="col-md-4">{{ \Carbon\Carbon::parse($data[0]->tanggal_lembur)->translatedFormat('Y') }}</div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-4">Bulan</div>
-                        <div class="col-md-1">:</div>
-                        <div class="col-md-4">{{ \Carbon\Carbon::parse($data[0]->tanggal_lembur)->translatedFormat('F') }}</div>
-                    </div>
-                </div>
-            </div>
-            <div class="row mt-4">
-                <div class="col-md-12">
-                    <table class="table table-bordered table-striped table-sm text-center align-center">
-                        <thead>
-                            <tr>
-                                <th rowspan="2">No</th>
-                                <th rowspan="2">Tanggal</th>
-                                <th rowspan="2">Hari Biasa dan Libur</th>
-                                <th rowspan="2">Keperluan</th>
-                                <th colspan="2">Waktu Lembur</th>
-                                <th colspan="1">Jumlah</th>
-                                <th colspan="1">Nilai Lembur</th>
-                                <th rowspan="2">Total Nilai Lembur</th>
-                            </tr>
-                            <tr>
-                                <th>Jam Awal</th>
-                                <th>Jam Akhir</th>
-                                <th>Jam Lembur</th>
-                                <th>Per Jam</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-							@php
-								// Inisialisasi variabel total di luar loop, agar tidak error undefined
-								$totalJamNumerik = 0;
-								$totalkeseluruhanjam = 0;
-								$totalkeseluruhanclaim = 0;
-							@endphp
-                            @foreach ($data as $item)
-                            @php
-								$start = DateTime::createFromFormat('H:i', $item->jam_mulai);
-								$end = DateTime::createFromFormat('H:i', $item->jam_selesai);
-
-								if ($end < $start) {
-									$end->modify('+1 day');
-								}
-
-								$interval = $end->diff($start);
-								$totalHours = round($interval->h + ($interval->i / 60) + ($interval->s / 3600), 2);
-								
-								// Penjumlahan tanpa number_format, agar tetap float
-								$totalJamNumerik += $totalHours;
-								
-								// Number format untuk tampilan jam lembur per baris
-								$totaljam = number_format($totalHours, 2, '.', '');
-
-								// Hitung lembur per baris, berdasarkan jam yang baru dihitung
-								$nilaiLembur = (float) $item->hitunglembur->nilai_lembur;
-								$totalLembur = $nilaiLembur * $totalHours;
-
-								// Akumulasi total keseluruhan
-								$totalkeseluruhanjam += $totalHours;
-								$totalkeseluruhanclaim += $totalLembur;
-								//dd($totalkeseluruhanjam);
-							@endphp
-
+            <!-- Materi Table -->
+            <div class="table-category">
+                <h4 class="category-title">Materi</h4>
+                <table class="table table-bordered table-striped">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>No</th>
+                            <th>M 1</th>
+                            <th>M 2</th>
+                            <th>M 3</th>
+                            <th>M 4</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($item['data'] as $feedback)
                             <tr>
                                 <td>{{ $loop->iteration }}</td>
-                                <td>{{ $item->tanggal_lembur }}</td>
-                                <td>Hari {{ $item->waktu_lembur }}</td>
-                                <td>{{ $item->uraian_tugas }}</td>
-                                <td>{{ $item->jam_mulai }}</td>
-                                <td>{{ $item->jam_selesai }}</td>
-                                <td>{{ $totaljam }}</td>
-                                <td>{{ $item->hitunglembur->nilai_lembur }}</td>
-                                <td>Rp. {{ number_format($totalLembur, 2, '.', '') }}</td>
+                                <td>{{ $feedback['datafeedbacks']->M1 }}</td>
+                                <td>{{ $feedback['datafeedbacks']->M2 }}</td>
+                                <td>{{ $feedback['datafeedbacks']->M3 }}</td>
+                                <td>{{ $feedback['datafeedbacks']->M4 }}</td>
                             </tr>
-                            @endforeach
-                        </tbody>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
 
-                        <tfoot>
+            <!-- Pelayanan Table -->
+            <div class="table-category">
+                <h4 class="category-title">Pelayanan</h4>
+                <table class="table table-bordered table-striped">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>No</th>
+                            <th>P 1</th>
+                            <th>P 2</th>
+                            <th>P 3</th>
+                            <th>P 4</th>
+                            <th>P 5</th>
+                            <th>P 6</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($item['data'] as $feedback)
                             <tr>
-                                <th colspan="6">Total Jam Lembur</th>
-                                <th>{{ $totalkeseluruhanjam }}</th>
-                                <th>Total Claim</th>
-                                <th>Rp. {{ number_format($totalkeseluruhanclaim, 2, '.', '') }}</th>
+                                <td>{{ $loop->iteration }}</td>
+                                <td>{{ $feedback['datafeedbacks']->P1 }}</td>
+                                <td>{{ $feedback['datafeedbacks']->P2 }}</td>
+                                <td>{{ $feedback['datafeedbacks']->P3 }}</td>
+                                <td>{{ $feedback['datafeedbacks']->P4 }}</td>
+                                <td>{{ $feedback['datafeedbacks']->P5 }}</td>
+                                <td>{{ $feedback['datafeedbacks']->P6 }}</td>
                             </tr>
-                        </tfoot>
-
-                    </table>
-                </div>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
 
-            <div class="row text-center">
-                <div class="col-12">
-                    <div class="row">
-                        <div class="col-sm-3">
-                            <p style="margin-bottom: 4px">Membuat :</p>
-                        </div>
-                        <div class="col-sm-3">
-                            <p style="margin-bottom: 4px">Dibukukan :</p>
-                        </div>
-                        <div class="col-sm-3">
-                            <p style="margin-bottom: 4px">Mengajukan :</p>
-                        </div>
-                        <div class="col-sm-3">
-                            <p style="margin-bottom: 4px">Menyetujui :</p>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-sm-3">
-                            @if ($hrd->ttd)
-                            <div class="row justify-content-center">
-                                <img src="{{ asset('storage/ttd/' . $hrd->ttd) }}" alt="{{ $hrd->name }}" style="width: 110px">
-                            </div>
-                            @else
-                            <br><br><br>
-                            @endif
-                        </div>
-                        <div class="col-sm-3">
-                            @if ($finance->ttd)
-                            <div class="row justify-content-center">
-                                <img src="{{ asset('storage/ttd/' . $finance->ttd) }}" alt="{{ $finance->name }}" style="width: 110px">
-                            </div>
-                            @else
-                            <br><br><br>
-                            @endif
-                        </div>
-                        <div class="col-sm-3">
-                            @if ($data[0]->karyawan->ttd)
-                            <div class="row justify-content-center">
-                                <img src="{{ asset('storage/ttd/' . $data[0]->karyawan->ttd) }}" alt="{{ $data[0]->karyawan->name }}" style="width: 110px">
-                            </div>
-                            @else
-                            <br><br><br>
-                            @endif
-                        </div>
-                        <div class="col-sm-3">
-                            @if ($gm->ttd)
-                            <div class="row justify-content-center">
-                                <img src="{{ asset('storage/ttd/' . $gm->ttd) }}" alt="{{ $gm->name }}" style="width: 110px">
-                            </div>
-                            @else
-                            <br><br><br>
-                            @endif
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-sm-3">{{ $hrd->nama_lengkap }}</div>
-                        <div class="col-sm-3">{{ $finance->nama_lengkap }}</div>
-                        <div class="col-sm-3">{{ $data[0]->karyawan->nama_lengkap }}</div>
-                        <div class="col-sm-3">{{ $gm->nama_lengkap }}</div>
-                    </div>
-                </div>
-
+            <!-- Fasilitas Table -->
+            <div class="table-category">
+                <h4 class="category-title">Fasilitas</h4>
+                <table class="table table-bordered table-striped">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>No</th>
+                            <th>F 1</th>
+                            <th>F 2</th>
+                            <th>F 3</th>
+                            <th>F 4</th>
+                            <th>F 5</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($item['data'] as $feedback)
+                            <tr>
+                                <td>{{ $loop->iteration }}</td>
+                                <td>{{ $feedback['datafeedbacks']->F1 }}</td>
+                                <td>{{ $feedback['datafeedbacks']->F2 }}</td>
+                                <td>{{ $feedback['datafeedbacks']->F3 }}</td>
+                                <td>{{ $feedback['datafeedbacks']->F4 }}</td>
+                                <td>{{ $feedback['datafeedbacks']->F5 }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
-        </div>
+
+            <!-- Instruktur Table -->
+            <div class="table-category">
+                <h4 class="category-title">Instruktur</h4>
+                <table class="table table-bordered table-striped">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>No</th>
+                            <th>I 1</th>
+                            <th>I 2</th>
+                            <th>I 3</th>
+                            <th>I 4</th>
+                            <th>I 5</th>
+                            <th>I 6</th>
+                            <th>I 7</th>
+                            <th>I 8</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($item['data'] as $feedback)
+                            <tr>
+                                <td>{{ $loop->iteration }}</td>
+                                <td>{{ $feedback['datafeedbacks']->I1 }}</td>
+                                <td>{{ $feedback['datafeedbacks']->I2 }}</td>
+                                <td>{{ $feedback['datafeedbacks']->I3 }}</td>
+                                <td>{{ $feedback['datafeedbacks']->I4 }}</td>
+                                <td>{{ $feedback['datafeedbacks']->I5 }}</td>
+                                <td>{{ $feedback['datafeedbacks']->I6 }}</td>
+                                <td>{{ $feedback['datafeedbacks']->I7 }}</td>
+                                <td>{{ $feedback['datafeedbacks']->I8 }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Instruktur 2 Table -->
+            <div class="table-category">
+                <h4 class="category-title">Instruktur 2</h4>
+                <table class="table table-bordered table-striped">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>No</th>
+                            <th>I#2 1</th>
+                            <th>I#2 2</th>
+                            <th>I#2 3</th>
+                            <th>I#2 4</th>
+                            <th>I#2 5</th>
+                            <th>I#2 6</th>
+                            <th>I#2 7</th>
+                            <th>I#2 8</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($item['data'] as $feedback)
+                            <tr>
+                                <td>{{ $loop->iteration }}</td>
+                                <td>{{ $feedback['datafeedbacks']->I1b }}</td>
+                                <td>{{ $feedback['datafeedbacks']->I2b }}</td>
+                                <td>{{ $feedback['datafeedbacks']->I3b }}</td>
+                                <td>{{ $feedback['datafeedbacks']->I4b }}</td>
+                                <td>{{ $feedback['datafeedbacks']->I5b }}</td>
+                                <td>{{ $feedback['datafeedbacks']->I6b }}</td>
+                                <td>{{ $feedback['datafeedbacks']->I7b }}</td>
+                                <td>{{ $feedback['datafeedbacks']->I8b }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Asisten Table -->
+            <div class="table-category">
+                <h4 class="category-title">Asisten</h4>
+                <table class="table table-bordered table-striped">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>No</th>
+                            <th>AS 1</th>
+                            <th>AS 2</th>
+                            <th>AS 3</th>
+                            <th>AS 4</th>
+                            <th>AS 5</th>
+                            <th>AS 6</th>
+                            <th>AS 7</th>
+                            <th>AS 8</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($item['data'] as $feedback)
+                            <tr>
+                                <td>{{ $loop->iteration }}</td>
+                                <td>{{ $feedback['datafeedbacks']->I1as }}</td>
+                                <td>{{ $feedback['datafeedbacks']->I2as }}</td>
+                                <td>{{ $feedback['datafeedbacks']->I3as }}</td>
+                                <td>{{ $feedback['datafeedbacks']->I4as }}</td>
+                                <td>{{ $feedback['datafeedbacks']->I5as }}</td>
+                                <td>{{ $feedback['datafeedbacks']->I6as }}</td>
+                                <td>{{ $feedback['datafeedbacks']->I7as }}</td>
+                                <td>{{ $feedback['datafeedbacks']->I8as }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endforeach
     </div>
 
-    <script src="https://kit.fontawesome.com/85b3409c34.js" crossorigin="anonymous"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
-
-    <script>
-        $(document).ready(function() {
-            $('#printInvoiceBTN ').on('click', function() {
-                window.print();
-            });
-        });
-    </script>
+    <!-- Include Bootstrap JS (optional) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
-
 </html>

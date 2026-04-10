@@ -1,6 +1,5 @@
-<aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme"
-    style="display: flex; flex-direction: column; height: 100vh;">
-    <div class="app-brand demo" style="flex-shrink: 0;">
+<aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
+    <div class="app-brand demo">
         <a href="{{ route('office.dashboard') }}" class="app-brand-link">
             <span class="app-brand-logo demo text-primary">
                 {{-- Logo SVG atau Image --}}
@@ -14,7 +13,7 @@
 
     <div class="menu-inner-shadow"></div>
 
-    <ul class="menu-inner py-1" style="flex-grow: 1; overflow-y: auto; overflow-x: hidden; height: 100%;">
+    <ul class="menu-inner py-1">
         @php
             $user = Auth::user();
             $allowedRoles = [
@@ -30,6 +29,22 @@
                 'Admin Holding',
             ];
         @endphp
+
+        <li class="menu-header small text-uppercase">
+            <span class="menu-header-text"></span>
+        </li>
+
+        <li class="menu-item mt-4 pb-3" style="padding-left: 12px; padding-right: 12px;">
+            <a href="{{ route('home') }}"
+                class="btn btn-primary d-flex align-items-center justify-content-center w-100">
+                <i class="bx bx-home me-2"></i>BACK TO INIXCOFFE
+            </a>
+        </li>
+
+        <li class="menu-header small text-uppercase">
+            <span class="menu-header-text">Office</span>
+        </li>
+
 
         <li class="menu-item {{ request()->is('office/dashboard') ? 'active' : '' }}">
             <a href="{{ route('office.dashboard') }}" class="menu-link">
@@ -58,11 +73,27 @@
             </a>
         </li>
 
+        @if (Auth::user()->jabatan === 'Finance & Accounting')
+        <li class="menu-item {{ request()->routeIs('office.tagihanPerusahaan.index') ? 'active open' : '' }}">
+            <a href="{{ route('office.tagihanPerusahaan.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-dollar-circle"></i>
+                <div class="text-truncate" data-i18n="contact">Tagihan Perusahaan</div>
+            </a>
+        </li>
+        @endif
+
         @if (Auth::user()->jabatan === 'HRD')
             <li class="menu-item {{ request()->routeIs('office.indexKegiatan') ? 'active open' : '' }}">
                 <a href="{{ route('office.indexKegiatan') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-group"></i>
                     <div class="text-truncate" data-i18n="contact">Pengajuan Kegiatan</div>
+                </a>
+            </li>
+
+            <li class="menu-item {{ request()->routeIs('administrasi.karyawan') ? 'active open' : '' }}">
+                <a href="{{ route('administrasi.karyawan') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-receipt"></i>
+                    <div class="text-truncate" data-i18n="contact">Administrasi Karyawan</div>
                 </a>
             </li>
         @endif
@@ -133,15 +164,66 @@
                 <div class="text-truncate" data-i18n="contact">Dashboard Souvenir</div>
             </a>
         </li>
+        @if (Auth::user()->jabatan === 'HRD' || Auth::user()->jabatan === 'Office Boy')
+            <li class="menu-header small text-uppercase">
+                <span class="menu-header-text">Office Boy</span>
+            </li>
 
-        <li class="menu-item mb-4"></li>
+            <li class="menu-item {{ request()->routeIs('office.DaftarTugas.index') ? 'active open' : '' }}">
+                <a href="{{ route('office.DaftarTugas.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-group"></i>
+                    <div class="text-truncate" data-i18n="contact">Daftar Tugas</div>
+                </a>
+            </li>
+        @endif
+
+        <li class="menu-header small text-uppercase">
+            <span class="menu-header-text">Driver</span>
+        </li>
+
+        <li class="menu-item {{ request()->routeIs('office.pickupDriver.index') ? 'active open' : '' }}">
+            <a href="{{ route('office.pickupDriver.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-car"></i>
+                <div class="text-truncate" data-i18n="contact">Koordinasi Driver</div>
+            </a>
+        </li>
+
+        <li class="menu-item {{ request()->routeIs('office.biayaTransportasi.index') ? 'active open' : '' }}">
+            <a href="{{ route('office.biayaTransportasi.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-receipt"></i>
+                <div class="text-truncate" data-i18n="contact">Biaya Transportasi</div>
+            </a>
+        </li>
+
+        <li class="menu-item {{ request()->routeIs('office.indexKondisiKendaraan') ? 'active open' : '' }}">
+            <a href="{{ route('office.indexKondisiKendaraan') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-clipboard"></i>
+                <div class="text-truncate" data-i18n="contact">Kondisi Kendaraan</div>
+            </a>
+        </li>
+
+        @if(auth()->check() && isset(auth()->user()->karyawan) && in_array(auth()->user()->karyawan->jabatan, ['Finance & Accounting', 'GM', 'HRD', 'Driver']))
+            <li class="menu-item {{ request()->routeIs('office.indexPerbaikanKendaraan') ? 'active open' : '' }}">
+                <a href="{{ route('office.indexPerbaikanKendaraan') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-wrench"></i>
+                    <div class="text-truncate" data-i18n="contact">Perbaikan Kendaraan</div>
+                </a>
+            </li>
+        @endif
+
+        @if(auth()->check() && isset(auth()->user()->karyawan) && in_array(auth()->user()->karyawan->jabatan, ['Finance & Accounting', 'GM', 'HRD']))
+
+            <li class="menu-header small text-uppercase">
+                <span class="menu-header-text">Finance</span>
+            </li>
+
+            <li class="menu-item {{ request()->routeIs('index.analysis') ? 'active open' : '' }}">
+                <a href="{{ route('index.analysis') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-wrench"></i>
+                    <div class="text-truncate" data-i18n="contact">Jumlah laporan Analisis</div>
+                </a>
+            </li>
+
+        @endif
     </ul>
-
-    <div class="sidebar-footer p-3 bg-menu-theme" style="flex-shrink: 0; border-top: 1px solid rgba(0,0,0,0.05);">
-        <a href="{{ route('home') }}"
-            class="btn btn-primary w-100 d-flex align-items-center justify-content-center shadow-sm">
-            <i class="bx bx-home me-2"></i>
-            <span>BACK TO INIXCOFFE</span>
-        </a>
-    </div>
 </aside>

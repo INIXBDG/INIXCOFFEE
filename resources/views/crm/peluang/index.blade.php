@@ -221,42 +221,74 @@
                 },
                 columns: [
                     { data: null, className: "text-center", orderable: false, searchable: false }, // nomor urut
-                    { data: 'materi_relation.nama_materi', render: d => d || '-' },
                     {
-                        data: 'rkm_data.perusahaan.nama_perusahaan',
+                        data: null,
                         render: function(data, type, row) {
-                            var namaPerusahaan = data || '-';
-                            var cp = row.rkm_data.perusahaan.cp;
+                            return row.materi_relation?.nama_materi || '-';
+                        }
+                    },
+                    {
+                        data: null,
+                        render: function(data, type, row) {
+                            const namaPerusahaan = row.rkm_data?.perusahaan?.nama_perusahaan || '-';
+                            const cp = row.rkm_data?.perusahaan?.cp;
                             return cp ? namaPerusahaan + ' (' + cp + ')' : namaPerusahaan;
                         }
                     },
-                    { data: 'harga', render: d => 'Rp ' + parseInt(d).toLocaleString('id-ID') },
-                    { data: 'netsales', render: d => d ? 'Rp ' + parseInt(d).toLocaleString('id-ID') : 'Rp 0,00' },
+                    {
+                        data: 'harga',
+                        render: function(data, type, row) {
+                            return data ? 'Rp ' + parseInt(data).toLocaleString('id-ID') : 'Rp 0';
+                        }
+                    },
+                    {
+                        data: 'netsales',
+                        render: function(data, type, row) {
+                            return data ? 'Rp ' + parseInt(data).toLocaleString('id-ID') : 'Rp 0,00';
+                        }
+                    },
                     { data: 'pax' },
-                    { data: null, render: function(data) {
-                        const startDate = data.periode_mulai ? moment(data.periode_mulai).format('DD-MM-YYYY') : '';
-                        const endDate = data.periode_selesai ? moment(data.periode_selesai).format('DD-MM-YYYY') : '';
-                        return startDate && endDate ? `${startDate} s/d ${endDate}` : 'Tentatif';
-                    }},
-                    { data: 'tahap', render: d => d.charAt(0).toUpperCase() + d.slice(1) },
+                    {
+                        data: null,
+                        render: function(data, type, row) {
+                            const startDate = data.periode_mulai ? moment(data.periode_mulai).format('DD-MM-YYYY') : '';
+                            const endDate = data.periode_selesai ? moment(data.periode_selesai).format('DD-MM-YYYY') : '';
+                            return startDate && endDate ? `${startDate} s/d ${endDate}` : 'Tentatif';
+                        }
+                    },
+                    {
+                        data: 'tahap',
+                        render: function(data, type, row) {
+                            return data ? data.charAt(0).toUpperCase() + data.slice(1) : '-';
+                        }
+                    },
                     { data: 'id_sales' },
-                    { data: 'created_at', render: d => moment(d).format('DD-MM-YYYY') },
+                    {
+                        data: 'created_at',
+                        render: function(data, type, row) {
+                            return data ? moment(data).format('DD-MM-YYYY') : '-';
+                        }
+                    },
                     { data: 'id', render: function(id, type, data) {
                         const rkm = data.rkm_formatted;
-                        const isLost = data.tahap.toLowerCase() === 'lost';
-                        const rkmButton = isLost
-                            ? `<span class="btn btn-sm btn-info disabled w-100" style="pointer-events: none; opacity: 0.5;">RKM</span>`
-                            : `<a class="btn btn-sm btn-info w-100" target="_blank" href="/rkm/${rkm.materi_key}ixb${rkm.tanggal_awal_day}ie${rkm.tanggal_awal_year}ie${rkm.tanggal_awal_month}ixb${rkm.metode_kelas}">RKM</a>`;
+                        const isLost = data.tahap?.toLowerCase() === 'lost';
+                        let rkmButton = '';
+
+                        if (isLost || !rkm) {
+                            rkmButton = `<span class="btn btn-sm btn-info disabled w-100" style="pointer-events: none; opacity: 0.5;">RKM</span>`;
+                        } else {
+                            rkmButton = `<a class="btn btn-sm btn-info w-100" target="_blank" href="/rkm/${rkm.materi_key}ixb${rkm.tanggal_awal_day}ie${rkm.tanggal_awal_year}ie${rkm.tanggal_awal_month}ixb${rkm.metode_kelas}">RKM</a>`;
+                        }
+
                         return `
                             <div class="d-flex flex-column gap-2" style="min-width: 80px;">
                                 <a href="/crm/peluang/detail/${id}" class="btn btn-sm btn-warning w-100">Detail</a>
                                 ${rkmButton}
-                                <button onclick="hapusPeluang(${id})" class="btn btn-sm btn-danger w-100">Hapus</button>
+                                <button onclick="hapusPeluang(${id})" class="btn btn-sm btn-danger w-100">LOST</button>
                             </div>
                         `;
                     }}
                 ],
-                order: [[7, 'desc']]
             });
 
             // 🔹 Callback untuk nomor urut tetap mengikuti tampilan
@@ -265,7 +297,7 @@
                     cell.innerHTML = i + 1;
                 });
             }).draw();
-            
+
             initPerusahaanSelect2();
             initMateriSelect2();
 
@@ -391,7 +423,7 @@
             if (!confirm("Yakin ingin menghapus peluang ini?")) return;
 
             fetch(`/crm/peluang/delete/${id}`, {
-                    method: 'DELETE',
+                    method: 'put',
                     headers: {
                         'X-CSRF-TOKEN': '{{ csrf_token() }}',
                         'Accept': 'application/json',
@@ -402,16 +434,16 @@
                     if (response.ok) {
                         return response.json(); // Parse JSON response
                     } else {
-                        throw new Error('Gagal menghapus data.');
+                        throw new Error('Gagal mengubah status.');
                     }
                 })
                 .then(data => {
-                    alert(data.message || 'Peluang berhasil dihapus.'); // Show success message
+                    alert(data.message || 'Peluang berhasil diubah statusnya.'); // Show success message
                     $('#peluangTable').DataTable().ajax.reload(); // Refresh DataTable
                 })
                 .catch(error => {
                     console.error("Error:", error);
-                    alert(error.message || 'Terjadi kesalahan saat menghapus data.');
+                    alert(error.message || 'Terjadi kesalahan saat mengubah status data.');
                 });
         }
 
@@ -439,19 +471,30 @@
         const netsalesInput = document.getElementById('netsales');
 
         [hargaInput, netsalesInput].forEach(input => {
-            input.addEventListener('input', function() {
-                this.value = formatRupiah(this.value);
-            });
+            if (input !== null) {
+                input.addEventListener('input', function() {
+                    this.value = formatRupiah(this.value);
+                });
+            }
         });
 
-        document.getElementById('form-data').addEventListener('submit', function(e) {
-            if (!this.checkValidity()) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-            this.classList.add('was-validated');
-            hargaInput.value = unformatRupiah(hargaInput.value);
-            netsalesInput.value = unformatRupiah(netsalesInput.value);
-        });
+        const formData = document.getElementById('form-data');
+
+        if (formData !== null) {
+            formData.addEventListener('submit', function(e) {
+                if (!this.checkValidity()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                this.classList.add('was-validated');
+
+                if (hargaInput !== null) {
+                    hargaInput.value = unformatRupiah(hargaInput.value);
+                }
+                if (netsalesInput !== null) {
+                    netsalesInput.value = unformatRupiah(netsalesInput.value);
+                }
+            });
+        }
     </script>
 @endsection

@@ -18,33 +18,18 @@ class penilaianExcangheNotifikasi extends Notification implements ShouldBroadcas
     protected $path;
     protected $receiverId;
 
-    /**
-     * Create a new notification instance.
-     *
-     * @param  mixed  $comment
-     * @param  string  $path
-     * @param  int  $receiverId
-     */
-    public function __construct($comment, string $path, int $receiverId)
+    public function __construct($comment, $path, $receiverId)
     {
-        $this->comment     = $comment;
-        $this->path        = $path;
-        $this->receiverId  = $receiverId;
+        $this->comment = $comment;
+        $this->path = $path;
+        $this->receiverId = $receiverId;
     }
 
-    /**
-     * Get the notification's delivery channels.
-     *
-     * @return array<int, string>
-     */
     public function via($notifiable): array
     {
         return ['database', 'broadcast'];
     }
 
-    /**
-     * Get the broadcastable representation of the notification.
-     */
     public function toBroadcast($notifiable): BroadcastMessage
     {
         $user = auth()->user();
@@ -52,22 +37,17 @@ class penilaianExcangheNotifikasi extends Notification implements ShouldBroadcas
         return new BroadcastMessage([
             'user' => $user?->username ?? 'System',
             'message' => [
-                'tipe'          => 'Penilaian 360',
-                'karyawan_key'  => $this->comment->karyawan_key,
-                'content'       => $this->comment->content,
-                'pengirim'      => $user?->nama_lengkap ?? 'Sistem',
-                'jabatan'       => $user?->jabatan ?? null,
+                'tipe' => 'Penilaian 360',
+                'karyawan_key' => $this->comment->karyawan_key,
+                'content' => $this->comment->content,
+                'pengirim' => $user?->nama_lengkap ?? 'Sistem',
+                'jabatan' => $user?->jabatan ?? null,
             ],
-            'path'   => $this->path ?? '#',
+            'path' => $this->path ?? '#',
             'status' => 'unread',
         ]);
     }
 
-    /**
-     * Get the array representation of the notification.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray($notifiable): array
     {
         $user = auth()->user();
@@ -75,30 +55,22 @@ class penilaianExcangheNotifikasi extends Notification implements ShouldBroadcas
         return [
             'user' => $user?->username ?? 'System',
             'message' => [
-                'tipe'          => 'Penilaian 360',
-                'karyawan_key'  => $this->comment->karyawan_key,
-                'content'       => $this->comment->content,
-                'pengirim'      => $user?->nama_lengkap ?? 'Sistem',
-                'jabatan'       => $user?->jabatan ?? null,
+                'tipe' => 'Penilaian 360',
+                'karyawan_key' => $this->comment->karyawan_key,
+                'content' => $this->comment->content,
+                'pengirim' => $user?->nama_lengkap ?? 'Sistem',
+                'jabatan' => $user?->jabatan ?? null,
             ],
-            'path'   => $this->path ?? '#',
+            'path' => $this->path ?? '#',
             'status' => 'unread',
         ];
     }
 
-    /**
-     * Get the channels the event should broadcast on.
-     *
-     * @return \Illuminate\Broadcasting\PrivateChannel
-     */
     public function broadcastOn(): PrivateChannel
     {
         return new PrivateChannel('notifikasi.' . $this->receiverId);
     }
 
-    /**
-     * The event's broadcast name.
-     */
     public function broadcastAs(): string
     {
         return 'notifikasi-event';

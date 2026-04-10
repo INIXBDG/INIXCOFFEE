@@ -208,6 +208,9 @@
                             actions += '@else';
                             actions += '<a href="/pengajuanExam/' + data.id + '" class="btn disabled btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Pengajuan Exam"> Ajukan Exam</a>';
                             actions += '@endif';
+                            actions += '@if (auth()->user()->can('Daftar Peserta Exam'))'
+                            actions += '<a href="/daftar-peserta-exam/create/' + data.id + '" class="btn btn-md click-primary mx-4">Assign</a>';
+                            actions += '@endif';
                         return actions;
                     }
                 },
@@ -287,8 +290,20 @@
                         return statusBadge;
                     }
                 },
-                { "data": "rkm.sales_key", "visible": true },
-                { "data": "rkm.instruktur_key", "visible": false },
+                {
+                    "data": null,
+                    "visible": true,
+                    "render": function(data) {
+                        return data.rkm?.sales_key ?? '-';
+                    }
+                },
+                {
+                    "data": null,
+                    "visible": false,
+                    "render": function(data) {
+                        return data.rkm?.instruktur_key ?? '';
+                    }
+                },
                 {
                     "data": null,
                     "render": function(data, type, row) {

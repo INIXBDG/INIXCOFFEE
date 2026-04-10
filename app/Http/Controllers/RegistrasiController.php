@@ -45,7 +45,7 @@ class RegistrasiController extends Controller
 
             // Cek jabatan user untuk menentukan respons yang sesuai
             $jabatan = Auth::user()->jabatan;
-            if (in_array($jabatan, ['Sales', 'Adm Sales', 'GM', 'SPV Sales', 'Instruktur', 'Education Manager', 'Office Manager', 'Customer Care', 'Customer Service', 'Admin Holding', 'Finance & Accounting', 'HRD', 'Koordinator Office', 'Programmer', 'Direktur Utama', 'Direktur'])) {
+            if (in_array($jabatan, ['Sales', 'Adm Sales', 'GM', 'SPV Sales', 'Instruktur', 'Education Manager', 'Office Manager', 'Customer Care', 'Customer Service', 'Admin Holding', 'Finance & Accounting', 'HRD', 'Koordinator Office', 'Programmer', 'Direktur Utama', 'Direktur', 'Technical Support'])) {
                 return response()->json([
                     'success' => true,
                     'message' => 'List Registrasi',
@@ -216,7 +216,7 @@ class RegistrasiController extends Controller
             $post->delete();
         }
 
-        return redirect()->route('registrasi.index')->with(['success' => 'Data Berhasil Dihapus!']);
+        return redirect()->back()->with(['success' => 'Data Berhasil Dihapus!']);
     }
 
     public function exportExcel()

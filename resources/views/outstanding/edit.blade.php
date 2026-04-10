@@ -88,6 +88,13 @@
                             </div>
                         </div>
 
+                        <div class="row mb-3" id="jumlah_pembayaran_row" style="display: none;">
+                            <label for="jumlah_pembayaran" class="col-md-4 col-form-label text-md-start">{{ __('Jumlah Pembayaran') }}</label>
+                            <div class="col-md-6">
+                                <input type="text" name="jumlah_pembayaran" id="jumlah_pembayaran" class="form-control" placeholder="Masukkan Jumlah Pembayaran">
+                            </div>
+                        </div>
+
                         <!-- Tenggat Waktu -->
                         <div class="row mb-3">
                             <label for="due_date" class="col-md-4 col-form-label text-md-start">{{ __('Tenggat Waktu') }}</label>
@@ -219,7 +226,7 @@
     $(document).ready(function() {
         $('#btnsubmit').on('click', function () {
             const net_sales = parseFloat(removeRupiahFormat($('#net_sales').val())) || 0;
-            $('#net_sales').val(net_sales); // Mengisi input dengan nilai numerik tanpa format Rupiah
+            $('#net_sales').val(net_sales);
             $('#btnsubmit').prop('disabled', true);
             $('#formOutstanding').submit();
         });
@@ -231,7 +238,22 @@
             $(this).val(formatRupiah(inputVal));
         });
         optionDisabled();
+
+        toggleJumlahPembayaran();
+
+        $('input[name="status_pembayaran"]').on('change', toggleJumlahPembayaran);
+
+        function toggleJumlahPembayaran() {
+            const status = $('input[name="status_pembayaran"]:checked').val();
+            if (status === '1') { // Sudah
+                $('#jumlah_pembayaran_row').show();
+            } else {
+                $('#jumlah_pembayaran_row').hide();
+                $('#jumlah_pembayaran').val(''); // reset nilai
+            }
+        }
     });
+    
     function optionDisabled() {  
         // Mengubah data menjadi objek JavaScript  
         var trackingOutstanding = @json($tracking_outstanding);  

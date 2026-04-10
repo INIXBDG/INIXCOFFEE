@@ -201,6 +201,9 @@
                                                 <strong>{{ $message }}</strong>
                                             </span>
                                         @enderror
+                                        <div class="mt-2">
+                                            <input type="text" id="total_transportasi" class="form-control" value="0" readonly>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -549,7 +552,21 @@
         $('#transportasi').on('input', function () {
             let inputVal = $(this).val().replace(/[^,\d]/g, '');
             $(this).val(formatRupiah(inputVal));
+            updateTotalTransportasi();
         });
+
+        $('#durasi, #pax').on('input', function () {
+            updateTotalTransportasi();
+        });
+
+        function updateTotalTransportasi() {
+            const transportasi = parseFloat(removeRupiahFormat($('#transportasi').val())) || 0;
+            const durasi = parseInt($('#durasi').val(), 10) || 0;
+            const pax = parseInt($('#pax').val(), 10) || 0;
+            const total = transportasi * durasi * pax;
+            $('#total_transportasi').val(formatRupiah(total.toString()));
+        }
+
         $('#pc_pax, #pc_instruktur, #pc_peserta' ).on('input', function () {
             let inputVal = $(this).val().replace(/[^,\d]/g, '');
             $(this).val(formatRupiah(inputVal));
@@ -689,7 +706,9 @@
         const alat = parseFloat(removeRupiahFormat($('#alat').val())) || 0;
         const pa_hotel = parseFloat(removeRupiahFormat($('#pa_hotel').val())) || 0;
         const total_harga_jual = parseFloat(removeRupiahFormat($('#total_harga_jual').val())) || 0;
-        var nett_penjualan = total_harga_jual - (total_fee_instruktur + pc + souvenir + transportasi + konsumsi + biaya_modul_regular + biaya_modul_regular_dollar + alat + pa_hotel + exam);
+        const durasi = parseInt($('#durasi').val(), 10) || 0;
+        const pax = parseInt($('#pax').val(), 10) || 0;
+        var nett_penjualan = total_harga_jual - (total_fee_instruktur + pc + souvenir + (transportasi * durasi * pax) + konsumsi + biaya_modul_regular + biaya_modul_regular_dollar + alat + pa_hotel + exam);
 
         // Debugging check to see the raw value of nett_penjualan
         console.log('Nett Penjualan before formatting:', nett_penjualan);

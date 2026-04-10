@@ -15,5 +15,6 @@ class VerifyCsrfToken extends Middleware
         '/pusher/auth',
         '/telegram/webhook',
         'telegram/*',
+		'internal/*',
     ];
 }

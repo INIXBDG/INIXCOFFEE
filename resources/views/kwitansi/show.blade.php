@@ -231,9 +231,9 @@
         </tr>
     </table>
     <div class="no-print" style="text-align: center;">
-        <button onclick="window.print()" class="btn btn-primary">
-            <i class="bi bi-printer"></i> Print
-        </button>
+        <a href="{{ route('kwitansi.pdf', $kwitansi->id) }}" class="btn btn-primary">
+            <i class="bi bi-printer"></i> Pdf
+        </a>
     </div>
 </body>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>

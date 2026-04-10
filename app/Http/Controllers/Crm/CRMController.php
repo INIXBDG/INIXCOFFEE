@@ -4,13 +4,18 @@ namespace App\Http\Controllers\Crm;
 
 use App\Http\Controllers\Controller;
 use App\Models\Aktivitas;
+use App\Models\checklistRKM;
 use App\Models\Contact;
 use App\Models\Feedback;
+use App\Models\karyawan;
 use App\Models\Materi;
 use App\Models\Nilaifeedback;
 use App\Models\Peluang;
+use App\Models\PerbaikanKendaraan;
+use App\Models\perhitunganNetSales;
 use App\Models\Perusahaan;
 use App\Models\Peserta;
+use App\Models\pickupDriver;
 use App\Models\RKM;
 use App\Models\TargetActivity;
 use App\Models\User;
@@ -37,11 +42,8 @@ class CRMController extends Controller
         $mingguKeBulan = ceil(($today->day + $firstDayOfMonth->dayOfWeek) / 7);
 
         if (in_array($user->jabatan, $allowedUser)) {
-
             // 1. Kategori perusahaan chart
-            $data = Perusahaan::select('kategori_perusahaan', DB::raw('count(*) as total'))
-                ->groupBy('kategori_perusahaan')
-                ->get();
+            $data = Perusahaan::select('kategori_perusahaan', DB::raw('count(*) as total'))->groupBy('kategori_perusahaan')->get();
 
             $total = $data->sum('total') ?: 1; // Prevent division by zero
 
@@ -51,7 +53,6 @@ class CRMController extends Controller
                     'persen' => round(($item->total / $total) * 100, 2),
                 ];
             });
-
 
             // 2. Target dan aktivitas
             // 1. Ambil Input Filter
@@ -65,23 +66,17 @@ class CRMController extends Controller
 
             // 3. Logika Penentuan Rentang Waktu (Filter Waktu)
             if ($mingguKe) {
-                // KASUS A: Filter Minggu Spesifik
-                // Hitung awal minggu berdasarkan offset minggu ke-n
                 $startOfWeek = (clone $monthStart)->addWeeks($mingguKe - 1)->startOfWeek(Carbon::MONDAY);
                 $endOfWeek = (clone $startOfWeek)->endOfWeek(Carbon::SUNDAY);
 
-                // Clamping: Potong tanggal jika minggu dimulai sebelum bulan berjalan
                 if ($startOfWeek->lt($monthStart)) {
                     $startOfWeek = $monthStart;
                 }
 
-                // Clamping: Potong tanggal jika minggu berakhir setelah bulan berjalan
                 if ($endOfWeek->gt($monthEnd)) {
                     $endOfWeek = $monthEnd;
                 }
             } else {
-                // KASUS B: Filter "Semua" (Minggu Kosong)
-                // Gunakan rentang Full 1 Bulan sesuai tahun & bulan yang dipilih
                 $startOfWeek = $monthStart;
                 $endOfWeek = $monthEnd;
             }
@@ -96,22 +91,17 @@ class CRMController extends Controller
             // 6. Ambil Aktivitas Berdasarkan Rentang Waktu yang Sudah Dihitung
             $aktivitas = Aktivitas::with(['contact.perusahaan', 'peserta'])
                 ->whereBetween('waktu_aktivitas', [$startOfWeek, $endOfWeek])
-                ->get(); // whereYear tidak diperlukan lagi karena whereBetween sudah spesifik tanggal & tahun
+                ->get();
 
             // 7. Ambil Daftar Sales Aktif
-            $sales = User::where('jabatan', 'Sales')
-                ->where('status_akun', '1')
-                ->pluck('id_sales')
-                ->toArray();
+            $sales = User::where('jabatan', 'Sales')->where('status_akun', '1')->pluck('id_sales')->toArray();
 
             // 8. Hitung Aktivitas Per Sales (Looping Data)
             $activitysales = [];
 
             foreach ($sales as $id_sales) {
-                // Filter koleksi aktivitas milik sales ini
                 $userAktivitas = $aktivitas->where('id_sales', $id_sales);
 
-                // Kelompokkan data berdasarkan jenis aktivitas
                 $contactData = $userAktivitas->where('aktivitas', 'Contact');
                 $callData = $userAktivitas->where('aktivitas', 'Call');
                 $emailData = $userAktivitas->where('aktivitas', 'Email');
@@ -125,10 +115,8 @@ class CRMController extends Controller
                 $formKeluarData = $userAktivitas->where('aktivitas', 'Form_Keluar');
                 $dbData = $userAktivitas->where('aktivitas', 'DB');
 
-                // Ambil target spesifik sales
                 $salesTarget = $target[$id_sales] ?? null;
 
-                // Masukkan ke array hasil
                 $activitysales[] = [
                     'id_sales' => $id_sales,
 
@@ -181,23 +169,13 @@ class CRMController extends Controller
                 ];
             }
 
+            // dd($activitysales);
+
             // 3. Top 5 produk paling banyak terjual
-            $best = RKM::with('materi')
-                ->select('materi_key', DB::raw('SUM(pax) as total_pax'))
-                ->where('status', '0')
-                ->groupBy('materi_key')
-                ->orderByDesc('total_pax')
-                ->limit(5)
-                ->get();
+            $best = RKM::with('materi')->select('materi_key', DB::raw('SUM(pax) as total_pax'))->where('status', '0')->groupBy('materi_key')->orderByDesc('total_pax')->limit(5)->get();
 
             // 4. Top 5 produk paling menguntungkan
-            $profit = RKM::with('materi')
-                ->select('materi_key', DB::raw('SUM(COALESCE(harga_jual, 0) * COALESCE(pax, 0)) as total_revenue'))
-                ->where('status', '0')
-                ->groupBy('materi_key')
-                ->orderByDesc('total_revenue')
-                ->limit(5)
-                ->get();
+            $profit = RKM::with('materi')->select('materi_key', DB::raw('SUM(COALESCE(harga_jual, 0) * COALESCE(pax, 0)) as total_revenue'))->where('status', '0')->groupBy('materi_key')->orderByDesc('total_revenue')->limit(5)->get();
 
             // 5. Total Win
             $tahunDipilih = $request->query('tahun', now()->year);
@@ -212,14 +190,15 @@ class CRMController extends Controller
                 WHEN MONTH(merah) BETWEEN 7 AND 9 THEN "TR3"
                 WHEN MONTH(merah) BETWEEN 10 AND 12 THEN "TR4"
             END as triwulan'),
-                    DB::raw('SUM(netsales * pax) as total_jumlah')
+                    DB::raw('SUM(netsales * pax) as total_jumlah'),
                 )
                 ->groupBy('id_sales', 'triwulan')
                 ->get()
                 ->groupBy('id_sales')
                 ->map(function ($grup) {
                     return $grup->pluck('total_jumlah', 'triwulan')->toArray();
-                })->toArray();
+                })
+                ->toArray();
 
             // 6. Total Lost
             $dataRingkasanLost = Peluang::whereNotNull('lost')
@@ -232,20 +211,17 @@ class CRMController extends Controller
                 WHEN MONTH(lost) BETWEEN 7 AND 9 THEN "TR3"
                 WHEN MONTH(lost) BETWEEN 10 AND 12 THEN "TR4"
             END as triwulan'),
-                    DB::raw('SUM(COALESCE(harga, 0) * COALESCE(pax, 0)) as total_jumlah')
+                    DB::raw('SUM(COALESCE(harga, 0) * COALESCE(pax, 0)) as total_jumlah'),
                 )
                 ->groupBy('id_sales', 'triwulan')
                 ->get()
                 ->groupBy('id_sales')
                 ->map(function ($grup) {
                     return $grup->pluck('total_jumlah', 'triwulan')->toArray();
-                })->toArray();
-
-            $pengguna = User::where('status_akun', '1')
-                ->select('id_sales', 'username')
-                ->get()
-                ->values()
+                })
                 ->toArray();
+
+            $pengguna = User::where('status_akun', '1')->select('id_sales', 'username')->get()->values()->toArray();
 
             // Ensure all sales users are included for both win and lost
             $triwulanList = ['TR1', 'TR2', 'TR3', 'TR4'];
@@ -273,23 +249,12 @@ class CRMController extends Controller
             $totalStatus = Perusahaan::select('status', 'sales_key', DB::raw('count(*) as total'))->groupBy('status', 'sales_key')->get();
 
             // 8. Segmentasi Daerah per sales
-            $lokasi = Perusahaan::select('sales_key', 'lokasi', DB::raw('count(*) as total'))
-                ->whereNotNull('sales_key')
-                ->whereNotNull('lokasi')
-                ->groupBy('sales_key', 'lokasi')
-                ->get();
+            $lokasi = Perusahaan::select('sales_key', 'lokasi', DB::raw('count(*) as total'))->whereNotNull('sales_key')->whereNotNull('lokasi')->groupBy('sales_key', 'lokasi')->get();
 
             // Fetch unique sales_key values (no totaling)
-            $salesKeys = Perusahaan::select('sales_key')
-                ->whereNotNull('sales_key')
-                ->distinct()
-                ->pluck('sales_key');
+            $salesKeys = Perusahaan::select('sales_key')->whereNotNull('sales_key')->distinct()->pluck('sales_key');
 
-            $salesTotals = Perusahaan::select('sales_key', DB::raw('count(*) as total'))
-                ->whereNotNull('sales_key')
-                ->groupBy('sales_key')
-                ->pluck('total', 'sales_key')
-                ->toArray();
+            $salesTotals = Perusahaan::select('sales_key', DB::raw('count(*) as total'))->whereNotNull('sales_key')->groupBy('sales_key')->pluck('total', 'sales_key')->toArray();
 
             $totalDaerah = [];
             foreach ($lokasi as $row) {
@@ -309,116 +274,24 @@ class CRMController extends Controller
             $sales = $salesKeys;
 
             // 10. Prospek terbuat minggu ini
-            $prospek = Peluang::with('materiRelation')->whereBetween('created_at', [
-                Carbon::now()->startOfWeek(),
-                Carbon::now()->endOfWeek(),
-            ])->get();
+            $prospek = Peluang::with('materiRelation')
+                ->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])
+                ->get();
 
             // 11. Map Perusahaan
-            $map = DB::table('lokasis')
-                ->leftJoin('perusahaans', 'lokasis.lokasi', '=', 'perusahaans.lokasi')
-                ->select(
-                    'lokasis.lokasi',
-                    'lokasis.latitude',
-                    'lokasis.longitude',
-                    DB::raw('COUNT(perusahaans.id) as company_count')
-                )
-                ->groupBy('lokasis.id', 'lokasis.lokasi', 'lokasis.latitude', 'lokasis.longitude')
-                ->get();
+            $map = DB::table('lokasis')->leftJoin('perusahaans', 'lokasis.lokasi', '=', 'perusahaans.lokasi')->select('lokasis.lokasi', 'lokasis.latitude', 'lokasis.longitude', DB::raw('COUNT(perusahaans.id) as company_count'))->groupBy('lokasis.id', 'lokasis.lokasi', 'lokasis.latitude', 'lokasis.longitude')->get();
 
             // 12. Total Pesert Terdaftar
             $TotalPeserta = Peserta::all()->count();
 
             // 13. Rata" Feedback Peserta
-            $feedbacks = Nilaifeedback::all([
-                'M1',
-                'M2',
-                'M3',
-                'M4',
-                'P1',
-                'P2',
-                'P3',
-                'P4',
-                'P5',
-                'P6',
-                'P7',
-                'F1',
-                'F2',
-                'F3',
-                'F4',
-                'F5',
-                'I1',
-                'I2',
-                'I3',
-                'I4',
-                'I5',
-                'I6',
-                'I7',
-                'I8',
-                'I1b',
-                'I2b',
-                'I3b',
-                'I4b',
-                'I5b',
-                'I6b',
-                'I7b',
-                'I8b',
-                'I1as',
-                'I2as',
-                'I3as',
-                'I4as',
-                'I5as',
-                'I6as',
-                'I7as',
-                'I8as',
-            ]);
+            $feedbacks = Nilaifeedback::all(['M1', 'M2', 'M3', 'M4', 'P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'F1', 'F2', 'F3', 'F4', 'F5', 'I1', 'I2', 'I3', 'I4', 'I5', 'I6', 'I7', 'I8', 'I1b', 'I2b', 'I3b', 'I4b', 'I5b', 'I6b', 'I7b', 'I8b', 'I1as', 'I2as', 'I3as', 'I4as', 'I5as', 'I6as', 'I7as', 'I8as']);
 
             // Kumpulkan semua nilai dari setiap baris & kolom
             $allValues = collect();
 
             foreach ($feedbacks as $feedback) {
-                $values = [
-                    $feedback->M1,
-                    $feedback->M2,
-                    $feedback->M3,
-                    $feedback->M4,
-                    $feedback->P1,
-                    $feedback->P2,
-                    $feedback->P3,
-                    $feedback->P4,
-                    $feedback->P5,
-                    $feedback->P6,
-                    $feedback->P7,
-                    $feedback->F1,
-                    $feedback->F2,
-                    $feedback->F3,
-                    $feedback->F4,
-                    $feedback->F5,
-                    $feedback->I1,
-                    $feedback->I2,
-                    $feedback->I3,
-                    $feedback->I4,
-                    $feedback->I5,
-                    $feedback->I6,
-                    $feedback->I7,
-                    $feedback->I8,
-                    $feedback->I1b,
-                    $feedback->I2b,
-                    $feedback->I3b,
-                    $feedback->I4b,
-                    $feedback->I5b,
-                    $feedback->I6b,
-                    $feedback->I7b,
-                    $feedback->I8b,
-                    $feedback->I1as,
-                    $feedback->I2as,
-                    $feedback->I3as,
-                    $feedback->I4as,
-                    $feedback->I5as,
-                    $feedback->I6as,
-                    $feedback->I7as,
-                    $feedback->I8as,
-                ];
+                $values = [$feedback->M1, $feedback->M2, $feedback->M3, $feedback->M4, $feedback->P1, $feedback->P2, $feedback->P3, $feedback->P4, $feedback->P5, $feedback->P6, $feedback->P7, $feedback->F1, $feedback->F2, $feedback->F3, $feedback->F4, $feedback->F5, $feedback->I1, $feedback->I2, $feedback->I3, $feedback->I4, $feedback->I5, $feedback->I6, $feedback->I7, $feedback->I8, $feedback->I1b, $feedback->I2b, $feedback->I3b, $feedback->I4b, $feedback->I5b, $feedback->I6b, $feedback->I7b, $feedback->I8b, $feedback->I1as, $feedback->I2as, $feedback->I3as, $feedback->I4as, $feedback->I5as, $feedback->I6as, $feedback->I7as, $feedback->I8as];
 
                 // Masukkan semua nilai ke collection utama
                 $allValues = $allValues->merge($values);
@@ -430,7 +303,6 @@ class CRMController extends Controller
             // Hitung rata-rata keseluruhan
             $AvgFeedback = $numericValues->avg();
 
-
             // 14. Jumlah Materi
             $TotalMateri = Materi::all()->count();
 
@@ -438,38 +310,49 @@ class CRMController extends Controller
             $TotalVendor = vendor::all()->count();
 
             // 16. Top 5 Vendor Terjual
-            $topVendors = DB::table('r_k_m_s')
-                ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
-                ->where('r_k_m_s.status', '0')
-                ->select('materis.vendor', DB::raw('count(*) as total'))
-                ->groupBy('materis.vendor')
-                ->orderBy('total', 'desc')
-                ->limit(5)
-                ->get();
+            $topVendors = DB::table('r_k_m_s')->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')->where('r_k_m_s.status', '0')->select('materis.vendor', DB::raw('count(*) as total'))->groupBy('materis.vendor')->orderBy('total', 'desc')->get();
 
             // 17. Top 5 Kategori Materi Terjual
-            $topKategoriMateri = DB::table('r_k_m_s')
-                ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
-                ->where('r_k_m_s.status', '0')
-                ->select('materis.kategori_materi', DB::raw('count(*) as total'))
-                ->groupBy('materis.kategori_materi')
-                ->orderBy('total', 'desc')
-                ->limit(5)
-                ->get();
+            $topKategoriMateri = DB::table('r_k_m_s')->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')->where('r_k_m_s.status', '0')->select('materis.kategori_materi', DB::raw('count(*) as total'))->groupBy('materis.kategori_materi')->orderBy('total', 'desc')->get();
 
             // 18. Top 5 Spend Perusahaan per Segmentasi
-            $topSpendSeg = DB::table('r_k_m_s')
-                ->join('perusahaans', 'r_k_m_s.perusahaan_key', '=', 'perusahaans.id')
-                ->where('r_k_m_s.status', '0')
-                ->select(
-                    'perusahaans.kategori_perusahaan',
-                    DB::raw('COUNT(*) as total'),
-                    DB::raw('SUM(r_k_m_s.harga_jual) as spend')
-                )
-                ->groupBy('perusahaans.kategori_perusahaan')
-                ->orderByDesc('total')
-                ->limit(5)
-                ->get();
+            $topSpendSeg = DB::table('r_k_m_s')->join('perusahaans', 'r_k_m_s.perusahaan_key', '=', 'perusahaans.id')->where('r_k_m_s.status', '0')->select('perusahaans.kategori_perusahaan', DB::raw('COUNT(*) as total'), DB::raw('SUM(r_k_m_s.harga_jual) as spend'))->groupBy('perusahaans.kategori_perusahaan')->orderByDesc('total')->get();
+
+            // dd($topSpendSeg, $topKategoriMateri, $topVendors);
+
+            // 19 PA yg belum di approve
+            $PA = perhitunganNetSales::with(['rkm.materi', 'rkm.perusahaan', 'trackingNetSales', 'rkm.peluang'])
+                ->whereHas('trackingNetSales', function ($query) {
+                    $query->where('tracking', '!=', 'Selesai');
+                })->paginate(10);
+          
+            // 20. Data Checklist Milik Adm Sales
+            $query = RKM::with(['checklist', 'materi', 'perusahaan', 'instruktur', 'sales']);
+
+            // 🔍 SEARCH
+            if ($request->search) {
+                $query->whereHas('materi', function ($q) use ($request) {
+                    $q->where('nama_materi', 'like', '%' . $request->search . '%');
+                });
+            }
+
+            // 📅 BULAN
+            if ($request->bulan) {
+                $query->whereMonth('created_at', $request->bulan);
+            }
+
+            // 📅 TAHUN
+            if ($request->tahun) {
+                $query->whereYear('created_at', $request->tahun);
+            }
+
+            // 📅 MINGGU
+            if ($request->minggu) {
+                $query->whereRaw('CEIL(DAY(created_at)/7) = ?', [$request->minggu]);
+            }
+
+            // ✅ PAGINATION (baru di sini)
+            $dataRKM = $query->paginate(10);
 
             return view('crm.dashboard', compact(
                 'chartData',
@@ -491,12 +374,98 @@ class CRMController extends Controller
                 'mingguKe',
                 'bulanTahun',
                 'tanggalRange',
+                'topSpendSeg',
+                'topKategoriMateri',
+                'topVendors',
+                'PA',
+                'dataRKM'
             ));
         } else {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
     }
 
+    public function updateChecklist(Request $request)
+    {
+        $checklist = checklistRKM::where('id_rkm', $request->rkm_id)->first();
+
+        if (!$checklist) {
+            $checklist = checklistRKM::create([
+                'id_rkm' => $request->rkm_id,
+                'registrasi_form' => 0,
+                'surat_kontrak' => 0,
+                'PA' => 0,
+                'PO' => 0,
+            ]);
+        }
+
+        $checklist->update([
+            $request->field => (bool) $request->value,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'updated_field' => $request->field,
+            'value' => (bool) $request->value,
+        ]);
+    }
+
+    public function chartRKM(Request $request)
+    {
+        $key = $request->input('key');
+        $type = $request->input('type');
+
+        $query = DB::table('r_k_m_s')->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')->join('perusahaans', 'r_k_m_s.perusahaan_key', '=', 'perusahaans.id')->where('r_k_m_s.status', '0');
+
+        if ($type === 'vendor') {
+            $query->where('materis.vendor', $key);
+        } elseif ($type === 'materi') {
+            $query->where('materis.kategori_materi', $key);
+        } elseif ($type === 'spend') {
+            $query->where('perusahaans.kategori_perusahaan', $key);
+        }
+
+        $data = $query->select('materis.nama_materi', 'perusahaans.nama_perusahaan', 'r_k_m_s.sales_key', 'r_k_m_s.harga_jual', 'r_k_m_s.created_at')->get();
+
+        return response()->json($data);
+    }
+
+    public function chartPerusahaan(Request $request)
+    {
+        $key = $request->input('key');
+
+        $query = DB::table('perusahaans')->where('kategori_perusahaan', $key);
+
+        $data = $query->select('nama_perusahaan', 'sales_key', 'status')->get();
+
+        return response()->json($data);
+    }
+
+    public function chartClosed(Request $request)
+    {
+        $id_sales = $request->id_sales;
+        $triwulan = $request->triwulan;
+        $tahun = $request->tahun ?? now()->year;
+        $status = $request->status ?? 'win';
+
+        $dateColumn = $status === 'lost' ? 'lost' : 'merah';
+
+        $query = Peluang::with('materiRelation', 'perusahaan')->where('id_sales', $id_sales)->whereNotNull($dateColumn)->whereYear($dateColumn, $tahun);
+        $range = [
+            'TR1' => [1, 3],
+            'TR2' => [4, 6],
+            'TR3' => [7, 9],
+            'TR4' => [10, 12],
+        ];
+
+        if (isset($range[$triwulan])) {
+            $query->whereBetween(DB::raw("MONTH($dateColumn)"), $range[$triwulan]);
+        }
+
+        $data = $query->select('materi', 'id_contact', 'netsales', 'pax', DB::raw('(netsales * pax) as total'), 'merah')->get();
+
+        return response()->json($data);
+    }
 
     public function getProfile()
     {
@@ -514,5 +483,94 @@ class CRMController extends Controller
             'foto' => $profile->karyawan->foto ? asset('storage/posts/' . $profile->karyawan->foto) : null,
             'ttd' => $profile->karyawan->ttd ? asset('storage/ttd/' . $profile->karyawan->ttd) : null,
         ]);
+    }
+
+    public function indexKoordinasi()
+    {
+        $latestPerKendaraan = PerbaikanKendaraan::select('kendaraan')->selectRaw('MAX(id) as max_id')->groupBy('kendaraan');
+
+        $kendaraan = PerbaikanKendaraan::joinSub($latestPerKendaraan, 'latest', function ($join) {
+            $join->on('perbaikan_kendaraans.id', '=', 'latest.max_id');
+        })
+            ->where(function ($query) {
+                $query->where('type_condition', '!=', 'Kecelakaan')->orWhere('status', 'Selesai');
+            })
+            ->where(function ($query) {
+                $query->where('type_vehicle_condition', '!=', ['Kerusakan Berat', 'Kerusakan Total'])->orWhere('status', 'Selesai');
+            })
+            ->pluck('perbaikan_kendaraans.kendaraan');
+
+        if ($kendaraan->isEmpty()) {
+            $kendaraan = collect(['H1', 'Innova']);
+        }
+
+        if ($kendaraan->contains('Innova')) {
+            $kendaraan = $kendaraan->map(function ($item) {
+                return $item === 'Innova' ? 'Inova' : $item;
+            });
+        }
+
+        $dataDriver = karyawan::where('jabatan', 'Driver')->get();
+
+        $extends = 'layouts_crm.app';
+        $section = 'crm_contents';
+
+        return view('office.pickupdriver.index', compact('dataDriver', 'kendaraan', 'extends', 'section'));
+    }
+
+    public function createKoordinasi()
+    {
+         $dataDriver = karyawan::where('jabatan', 'Driver')
+            ->where('status_aktif', '1')
+            ->where(function ($query) {
+                $query->whereDoesntHave('pickupDriver')
+                    ->orWhereHas('pickupDriver', function ($q) {
+                        $q->where('status_driver', 'Selesai, Driver Ready');
+                    });
+            })
+            ->get();
+
+        $startOfWeek = Carbon::now()->startOfWeek();
+        $endOfWeek = Carbon::now()->endOfWeek();
+
+        $budgetPerjalanan = pickupDriver::select('kendaraan')
+            ->selectRaw('COALESCE(SUM(pickup_drivers.budget), 0) as total_budget')
+            ->where('tipe_perjalanan', 'Operasional Kantor')
+            ->whereHas('detailPickupDriver', function ($q) use ($startOfWeek, $endOfWeek) {
+                $q->whereBetween('tanggal_keberangkatan', [$startOfWeek, $endOfWeek]);
+            })
+            ->groupBy('kendaraan')
+            ->get()
+            ->map(function ($item) {
+                $item->sisa_budget = 1000000 - $item->total_budget;
+                return $item;
+            });
+
+        $kendaraanSedangDipakai = pickupDriver::where('status_apply', 1)
+            ->whereNotNull('kendaraan')
+            ->where('kendaraan', '!=', '')
+            ->pluck('kendaraan')
+            ->unique();
+
+        $allKendaraan = collect(['H1', 'Innova']);
+
+        $kendaraanTersedia = $allKendaraan->diff($kendaraanSedangDipakai);
+
+        if ($kendaraanTersedia->isEmpty()) {
+            $kendaraanTersedia = $allKendaraan;
+        }
+
+        if ($kendaraanTersedia->contains('Innova')) {
+            $kendaraanTersedia = $kendaraanTersedia->map(function ($item) {
+                return $item === 'Innova' ? 'Inova' : $item;
+            });
+        }
+
+        $kendaraan = $kendaraanTersedia->values()->all();
+
+        $extends = 'layouts_crm.app';
+        $section = 'crm_contents';
+
+        return view('office.pickupdriver.create', compact('dataDriver', 'budgetPerjalanan', 'kendaraan', 'extends', 'section'));
     }
 }

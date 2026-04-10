@@ -87,9 +87,7 @@ class karyawan extends Model
     }
     protected function image(): Attribute
     {
-        return Attribute::make(
-            get: fn($foto) => url('/storage/posts/' . $foto),
-        );
+        return Attribute::make(get: fn($foto) => url('/storage/posts/' . $foto));
     }
 
     public function tunjangankaryawan()
@@ -107,8 +105,22 @@ class karyawan extends Model
         return Hashids::encode($this->id);
     }
 
+    public function pickupDriver()
+    {
+        return $this->hasMany(pickupDriver::class, 'id_karyawan');
+    }
+
     public function educations()
     {
         return $this->hasMany(EducationalBackground::class, 'kode_karyawan', 'kode_karyawan');
+    }
+
+    public function laporanSales()
+    {
+        return $this->hasMany(LaporanHarianSales::class);
+    }
+    public function catatanMeetingSales()
+    {
+        return $this->hasMany(CatatanMeetingSales::class);
     }
 }

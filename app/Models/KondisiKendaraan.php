@@ -50,7 +50,10 @@ class KondisiKendaraan extends Model
         // BBM & Tol
         'bbm_cukup',
         'etol_aktif',
-        'tanggal_pemeriksaan'
+        'tanggal_pemeriksaan',
+
+        // keluhan
+        'keluhan'
     ];
 
     protected $casts = [

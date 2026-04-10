@@ -21,7 +21,7 @@ class TicketController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth');
+        $this->middleware('auth')->except(['handleInternalUpdate', 'getOpenTickets']);
     }
 
     private function normalizeTimestamp($timestamp)
@@ -100,12 +100,12 @@ class TicketController extends Controller
         $detail_kendala_pr = '';
         $detail_kendala_td = '';
 
-        $response = Http::withHeaders([
-            'Authorization' => 'eGKWto6VRxd93cPSf9JZ',
-        ])->post('https://api.fonnte.com/send', [
-            'target'  => '120363418574215044@g.us', // pakai Group ID
-            'message' => $message,
-        ]);
+        // $response = Http::withHeaders([
+        //     'Authorization' => 'HmqnkbnayTamYJSL1BKc',
+        // ])->post('https://api.fonnte.com/send', [
+        //     'target'  => '120363418574215044@g.us', // pakai Group ID
+        //     'message' => $message,
+        // ]);
 
         if ($ticket->keperluan == 'Technical Support') {
             $detail_kendala_ts = $ticket->detail_kendala;
@@ -126,10 +126,10 @@ class TicketController extends Controller
                 $detail_kendala_td,
             ]
         ];
-        $message = $this->appendValues($spreadsheetId, $range, $values);
-        $ticket->update([
-            'row' => $message
-        ]);
+        // $message = $this->appendValues($spreadsheetId, $range, $values);
+        // $ticket->update([
+        //     'row' => $message
+        // ]);
         $itsm = karyawan::where('divisi', 'IT Service Management')->get();
 
         // Ambil array kode_karyawan
@@ -152,49 +152,82 @@ class TicketController extends Controller
             $receiverId = $user->id;
             NotificationFacade::send($user, new TicketNotification($ticket, $path, $status, $receiverId));
         }
+		
+		try {
+            Http::withHeaders([
+                'Accept' => 'application/json',
+                'X-Webhook-Secret' => 'RAHASIA_KITA' // Opsional: Untuk keamanan
+            ])->post('https://inixindobdg.co.id/api/new-ticket-notification', [
+                'ticket_id'      => $ticket->ticket_id,
+                'nama_karyawan'  => $ticket->nama_karyawan,
+                'divisi'         => $ticket->divisi,
+                'kategori'       => $ticket->kategori,
+                'keperluan'      => $ticket->keperluan,
+                'detail_kendala' => $ticket->detail_kendala,
+            ]);
+            
+        } catch (\Exception $e) {
+            // Log error jika Laravel A down
+            Log::error("Gagal mengirim webhook: " . $e->getMessage());
+        }
 
         return redirect()->route('tickets.index')->with('success', 'Tiket berhasil dibuat, akan segera diprovide. Terimakasih!');
-
-        // return response()->json(['message' => 'Tiket berhasil dibuat, notifikasi terkirim, dan data disimpan di Google Sheets.']);
-        // return response()->json(['message' => 'Tiket berhasil dibuat, akan segera diprovide. Terimakasih']);
     }
+	
+	private function notifyTelegram($action, $ticket, $pic = null, $keterangan = null)
+	{
+		try {
+			Http::withHeaders([
+				'Accept' => 'application/json',
+				'X-Webhook-Secret' => 'RAHASIA_KITA'
+			])->post('https://inixindobdg.co.id/api/ticket-status-update', [
+				'action'    => $action,
+				'ticket_id' => $ticket->ticket_id,
+				'pic'       => $pic ?? $ticket->pic,
+				'keterangan'=> $keterangan,
+				'status'    => $ticket->status
+			]);
+		} catch (\Exception $e) {
+			Log::error("Gagal kirim update ke Telegram: " . $e->getMessage());
+		}
+	}
 
-    private function appendValues($spreadsheetId, $range, $values, $valueInputOption = 'RAW')
-    {
-        $client = new Client();
-        $client->setAuthConfig(storage_path('app/google/chart-spreadsheet-api.json'));
-        $client->addScope(Sheets::SPREADSHEETS);
+    // private function appendValues($spreadsheetId, $range, $values, $valueInputOption = 'RAW')
+    // {
+    //     $client = new Client();
+    //     $client->setAuthConfig(storage_path('app/google/chart-spreadsheet-api.json'));
+    //     $client->addScope(Sheets::SPREADSHEETS);
 
-        $service = new Sheets($client);
+    //     $service = new Sheets($client);
 
-        try {
-            $body = new \Google\Service\Sheets\ValueRange();
-            $body->setValues($values);
+    //     try {
+    //         $body = new \Google\Service\Sheets\ValueRange();
+    //         $body->setValues($values);
 
-            $params = ['valueInputOption' => $valueInputOption];
+    //         $params = ['valueInputOption' => $valueInputOption];
 
-            $result = $service->spreadsheets_values->append(
-                $spreadsheetId,
-                $range,
-                $body,
-                $params
-            );
+    //         $result = $service->spreadsheets_values->append(
+    //             $spreadsheetId,
+    //             $range,
+    //             $body,
+    //             $params
+    //         );
 
-            $updatedRange = $result->getUpdates()->getUpdatedRange();
+    //         $updatedRange = $result->getUpdates()->getUpdatedRange();
 
-            if (preg_match('/![A-Z]+(\d+):[A-Z]+\d+$/', $updatedRange, $matches)) {
-                $startRow = intval($matches[1]);
-                printf("%d.", $result->getUpdates()->getUpdatedCells(), $startRow);
-                return $startRow;
-            } else {
-                printf("%d cells appended. Namun gagal mengambil baris ID.", $result->getUpdates()->getUpdatedCells());
-                return 500;
-            }
-        } catch (\Exception $e) {
-            echo 'Message: ' . $e->getMessage();
-            return 500;
-        }
-    }
+    //         if (preg_match('/![A-Z]+(\d+):[A-Z]+\d+$/', $updatedRange, $matches)) {
+    //             $startRow = intval($matches[1]);
+    //             printf("%d.", $result->getUpdates()->getUpdatedCells(), $startRow);
+    //             return $startRow;
+    //         } else {
+    //             printf("%d cells appended. Namun gagal mengambil baris ID.", $result->getUpdates()->getUpdatedCells());
+    //             return 500;
+    //         }
+    //     } catch (\Exception $e) {
+    //         echo 'Message: ' . $e->getMessage();
+    //         return 500;
+    //     }
+    // }
 
     public function index()
     {
@@ -254,7 +287,7 @@ class TicketController extends Controller
                 $ticket->status,
             ]
         ];
-        $data = $this->updatedValues($spreadsheetId, $range, $values);
+        // $data = $this->updatedValues($spreadsheetId, $range, $values);
 
         $message = "Ticket Sedang Ditangani Oleh:\n"
             . "Nama Karyawan: {$request->pic}\n"
@@ -263,12 +296,19 @@ class TicketController extends Controller
             . "Waktu Response: {$tanggal_response} {$jam_response}\n"
             . "Mohon tunggu. Terimakasih!";
 
-        $response = Http::withHeaders([
-            'Authorization' => 'eGKWto6VRxd93cPSf9JZ',
-        ])->post('https://api.fonnte.com/send', [
-            'target'  => '120363418574215044@g.us', // pakai Group ID
-            'message' => $message,
-        ]);
+        // $response = Http::withHeaders([
+        //     'Authorization' => 'HmqnkbnayTamYJSL1BKc',
+        // ])->post('https://api.fonnte.com/send', [
+        //     'target'  => '120363418574215044@g.us', // pakai Group ID
+        //     'message' => $message,
+        // ]);
+		$this->notifyTelegram('accepted', $ticket, $request->pic);
+		if ($request->expectsJson() || $request->is('api/*')) {
+			return response()->json([
+				'status' => 'success',
+				'message' => 'Ticket processed via API'
+			], 200);
+		}
 
         return redirect()->route('tickets.index')->with('success', 'Tiket diterima.');
     }
@@ -301,7 +341,7 @@ class TicketController extends Controller
                 $ticket->tingkat_kesulitan,
             ]
         ];
-        $data = $this->updatedValues($spreadsheetId, $range, $values);
+        // $data = $this->updatedValues($spreadsheetId, $range, $values);
         $message = "Ticket Sudah Selesai:\n"
             . "Nama Karyawan: {$ticket->nama_karyawan}\n"
             . "Divisi: {$ticket->divisi}\n"
@@ -309,12 +349,29 @@ class TicketController extends Controller
             . "Waktu Selesai: {$tanggal_selesai} {$jam_selesai}\n"
             . "Terimakasih!";
 
-        $response = Http::withHeaders([
-            'Authorization' => 'eGKWto6VRxd93cPSf9JZ',
-        ])->post('https://api.fonnte.com/send', [
-            'target'  => '120363418574215044@g.us', // pakai Group ID
-            'message' => $message,
-        ]);
+        // $response = Http::withHeaders([
+        //     'Authorization' => 'HmqnkbnayTamYJSL1BKc',
+        // ])->post('https://api.fonnte.com/send', [
+        //     'target'  => '120363418574215044@g.us', // pakai Group ID
+        //     'message' => $message,
+        // ]);
+		// ... kode update DB, Sheets, Fonnte Anda ...
+        $pembuatTiket = \App\Models\User::whereHas('karyawan', function ($query) use ($ticket) {
+            $query->where('nama_lengkap', $ticket->nama_karyawan);
+        })->first();
+
+        // Pengiriman notifikasi sistem jika pengguna ditemukan
+        if ($pembuatTiket) {
+            \Illuminate\Support\Facades\Notification::send($pembuatTiket, new \App\Notifications\SurveyReminderNotification($ticket));
+        }
+		$this->notifyTelegram('finished', $ticket, $ticket->pic, $request->keterangan);
+		if (request()->expectsJson() || request()->is('api/*')) {
+			return response()->json([
+				'status' => 'success',
+				'message' => 'Ticket Finished via API'
+			], 200);
+		}
+
         return redirect()->route('tickets.index')->with('success', 'Tiket selesai.');
     }
 
@@ -346,7 +403,7 @@ class TicketController extends Controller
                 $ticket->kesulitan,
             ]
         ];
-        $data = $this->updatedValues($spreadsheetId, $range, $values);
+        // $data = $this->updatedValues($spreadsheetId, $range, $values);
         $message = "Ticket Terkendala:\n"
             . "Nama Karyawan: {$ticket->nama_karyawan}\n"
             . "Divisi: {$ticket->divisi}\n"
@@ -355,12 +412,21 @@ class TicketController extends Controller
             . "Waktu Selesai: {$tanggal_selesai} {$jam_selesai}\n"
             . "Terimakasih!";
 
-        $response = Http::withHeaders([
-            'Authorization' => 'eGKWto6VRxd93cPSf9JZ',
-        ])->post('https://api.fonnte.com/send', [
-            'target'  => '120363418574215044@g.us', // pakai Group ID
-            'message' => $message,
-        ]);
+        // $response = Http::withHeaders([
+        //     'Authorization' => 'HmqnkbnayTamYJSL1BKc',
+        // ])->post('https://api.fonnte.com/send', [
+        //     'target'  => '120363418574215044@g.us', // pakai Group ID
+        //     'message' => $message,
+        // ]);
+		$this->notifyTelegram('rejected', $ticket, null, $request->keterangan);
+		
+		if (request()->expectsJson() || request()->is('api/*')) {
+			return response()->json([
+				'status' => 'success',
+				'message' => 'Ticket processed via API'
+			], 200);
+		}
+
         return redirect()->route('tickets.index')->with('success', 'Tiket ditandai sebagai terkendala.');
     }
     public function show(Tickets $ticket)
@@ -368,34 +434,110 @@ class TicketController extends Controller
         return view('ticket.detail', compact('ticket'));
     }
 
-    private function updatedValues($spreadsheetId, $range, $values, $valueInputOption = 'RAW')
-    {
-        $client = new Client();
-        $client->setAuthConfig(storage_path('app/google/chart-spreadsheet-api.json'));
-        $client->addScope(Sheets::SPREADSHEETS);
+    // private function updatedValues($spreadsheetId, $range, $values, $valueInputOption = 'RAW')
+    // {
+    //     $client = new Client();
+    //     $client->setAuthConfig(storage_path('app/google/chart-spreadsheet-api.json'));
+    //     $client->addScope(Sheets::SPREADSHEETS);
 
-        $service = new Sheets($client);
+    //     $service = new Sheets($client);
 
-        try {
-            // Gunakan nama class yang benar sesuai namespace
-            $body = new \Google\Service\Sheets\ValueRange();
-            $body->setValues($values);
+    //     try {
+    //         // Gunakan nama class yang benar sesuai namespace
+    //         $body = new \Google\Service\Sheets\ValueRange();
+    //         $body->setValues($values);
 
 
-            $params = ['valueInputOption' => $valueInputOption];
+    //         $params = ['valueInputOption' => $valueInputOption];
 
-            $result = $service->spreadsheets_values->update(
-                $spreadsheetId,
-                $range,
-                $body,
-                $params
-            );
+    //         $result = $service->spreadsheets_values->update(
+    //             $spreadsheetId,
+    //             $range,
+    //             $body,
+    //             $params
+    //         );
 
-            printf("%d cells updated.", $result->getUpdatedCells());
-            return $result;
-        } catch (\Exception $e) {
-            echo 'Message: ' . $e->getMessage();
-            return null;
-        }
-    }
+    //         printf("%d cells updated.", $result->getUpdatedCells());
+    //         return $result;
+    //     } catch (\Exception $e) {
+    //         echo 'Message: ' . $e->getMessage();
+    //         return null;
+    //     }
+    // }
+	
+	public function handleInternalUpdate(Request $request)
+	{
+		$request->headers->set('Accept', 'application/json');
+		// Validasi Token Rahasia agar aman
+		if ($request->header('X-Internal-Token') !== 'TOKEN_RAHASIA_KITA_123') {
+			return response()->json(['message' => 'Unauthorized Access'], 401);
+		}
+		Log::info('Laravel B: Internal Update Request Received', [
+            'ip_pengirim' => $request->ip(),
+            'ticket_id'   => $request->ticket_id,
+            'action'      => $request->action,
+            'pic_name'    => $request->pic_name,
+            'full_payload'=> $request->all()
+        ]);
+
+		$ticket = Tickets::where('ticket_id', $request->ticket_id)->first();
+		if (!$ticket) {
+			return response()->json(['message' => 'Tiket tidak ditemukan'], 404);
+		}
+
+		$action = $request->action;
+
+		// --- LOGIC ACCEPT ---
+		if ($action === 'accept') {
+			$fakeRequest = new Request([
+				'pic' => $request->pic_name,
+				'tanggal_response' => now()->format('Y-m-d'),
+				'jam_response' => now()->format('H:i:s'),
+			]);
+			return $this->accept($fakeRequest, $ticket);
+		}
+
+		// --- LOGIC FINISH ---
+		if ($action === 'finish') {
+			$fakeRequest = new Request([
+				'penanganan' => 'Selesai via Telegram',
+				'keterangan' => $request->keterangan ?? 'Selesai', // Diambil dari pesan telegram
+				'kesulitan' => 'Normal',
+				'tanggal_selesai' => now()->format('Y-m-d'),
+				'jam_selesai' => now()->format('H:i:s'),
+			]);
+			return $this->finish($fakeRequest, $ticket);
+		}
+
+		// --- LOGIC REJECT (BLOCK) ---
+		if ($action === 'reject') {
+			$fakeRequest = new Request([
+				'penanganan' => 'Terkendala/Ditolak via Telegram',
+				'keterangan' => 'Dibatalkan oleh ' . ($request->pic_name ?? 'IT'),
+				'tanggal_selesai' => now()->format('Y-m-d'),
+				'jam_selesai' => now()->format('H:i:s'),
+			]);
+			return $this->block($fakeRequest, $ticket);
+		}
+
+		return response()->json(['message' => 'Action tidak dikenali'], 400);
+	}
+	
+	public function getOpenTickets(Request $request)
+	{
+		// Validasi Token
+		if ($request->header('X-Internal-Token') !== 'TOKEN_RAHASIA_KITA_123') {
+			return response()->json(['message' => 'Unauthorized'], 401);
+		}
+
+		// Ambil tiket yang statusnya bukan 'Selesai'
+		$tickets = Tickets::where('status', '!=', 'Selesai')
+            ->select('ticket_id', 'nama_karyawan', 'detail_kendala', 'created_at')
+            ->whereYear('created_at', now()->year) // Sebutkan kolom 'created_at'
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get();
+
+		return response()->json($tickets);
+	}
 }

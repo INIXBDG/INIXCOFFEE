@@ -883,6 +883,8 @@
                         <strong>{{ $rkm['nama_materi'] ?? '-' }}</strong>
                         di perusahaan <strong>{{ $rkm['nama_perusahaan'] ?? '-' }}</strong>
                     </p>
+                </div>
+            @endif
 
                     <p class="mb-0">
                         @if (!empty($rkm['tanggal_awal']))
@@ -1773,6 +1775,43 @@
                         </button>
                     </form>
                 </div>
+            </div>
+        </div>
+    @endif
+    
+        @if (in_array($tipePesan, ['Menyetujui Pengajuan Lab/Subscription', 'Menolak Pengajuan Lab/Subscription', 'Update Status Pencairan oleh Finance']))
+        <div class="notification mb-3 p-3 border rounded bg-light">
+            <p>
+                <strong style="text-transform: capitalize;">
+                    {{ $notification->data['user'] ?? '-' }}
+                </strong>
+                @if ($tipePesan == 'Menyetujui Pengajuan Lab/Subscription')
+                    telah <strong>menyetujui</strong> pengajuan
+                @elseif ($tipePesan == 'Menolak Pengajuan Lab/Subscription')
+                    telah <strong>menolak</strong> pengajuan
+                @elseif ($tipePesan == 'Update Status Pencairan oleh Finance')
+                    telah melakukan <strong>update status pencairan</strong> pada pengajuan
+                @endif
+                milik <strong>{{ $notification->data['message']['nama_lengkap'] ?? '-' }}</strong>.
+            </p>
+            <p>
+                <em>{{ $notification->data['message']['status'] ?? '-' }}</em><br>
+                <small>Pada
+                    {{ \Carbon\Carbon::parse($notification->data['message']['tanggal'] ?? now())->translatedFormat('d F Y H:i') }}</small>
+            </p>
+
+            <div class="d-flex">
+                <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm me-2">
+                    Lihat Detail Pengajuan
+                </a>
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST"
+                    class="d-inline">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                        Tandai sebagai Dibaca
+                    </button>
+                </form>
             </div>
         </div>
     @endif

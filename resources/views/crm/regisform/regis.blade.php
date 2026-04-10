@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Registration Form</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -494,10 +495,12 @@
     <form id="regis-form">
         <h3>Data Perusahaan</h3>
         <label>Nama Perusahaan:</label>
+        <input type="text" name="id_peluang" id="id_peluang" value="{{ $lead->id }}" hidden>
+        <input type="text" name="id_perusahaan" id="id_perusahaan" value="{{ $lead->perusahaan->id }}" hidden>
         <input type="text" id="nama-perusahaan" class="readonly" value="{{ $lead->perusahaan->nama_perusahaan ?? '-' }}"
             readonly>
         <label>Alamat:</label>
-        <input type="text" id="alamat" class="readonly" value="{{ $lead->perusahaan->alamat ?? '-' }}" readonly>
+        <input type="text" id="alamat" value="{{ $lead->perusahaan->alamat ?? '-' }}">
         <label>PIC Penagihan:</label>
         <input type="text" id="pic">
         <label>Telepon:</label>
@@ -505,7 +508,7 @@
         <label>Email:</label>
         <input type="text" id="email">
         <label>NPWP:</label>
-        <input type="text" id="npwp" class="readonly" value="{{ $lead->perusahaan->npwp ?? '-' }}" readonly>
+        <input type="text" id="npwp" value="{{ $lead->perusahaan->npwp ?? '-' }}">
 
         <label>Materi dan Tanggal Pelatihan:</label>
         <input type="text" class="readonly" id="materi"
@@ -518,12 +521,17 @@
 
         <h3>Syarat & Ketentuan</h3>
         <label>Pilih Syarat (bisa lebih dari satu):</label>
-        <select id="syarat-select" multiple required>
+        <div id="syarat-checkbox-list"
+            style="border: 1px solid #ccc; padding: 10px; max-height: 200px; overflow-y: auto;">
             @foreach ($ketentuan as $ket)
-                <option value="{{ $ket->id }}" data-content="{{ $ket->ketentuan }}">{{ $ket->ketentuan }}
-                </option>
+                <div style="display: flex; align-items: flex-start; gap: 8px; margin-bottom: 5px;">
+                    <input type="checkbox" class="syarat-checkbox" id="syarat-{{ $ket->id }}"
+                        data-content="{{ $ket->ketentuan }}" style="width: auto; margin-top: 4px;">
+                    <label for="syarat-{{ $ket->id }}"
+                        style="cursor: pointer; font-size: 13px;">{{ $ket->ketentuan }}</label>
+                </div>
             @endforeach
-        </select>
+        </div>
 
         @php
             use App\Models\Karyawan;
@@ -600,6 +608,8 @@
         });
 
         document.getElementById('preview-btn').addEventListener('click', () => {
+            const idPerusahaan = document.getElementById('id_perusahaan').value;
+            const idPeluang = document.getElementById('id_peluang').value;
             const namaPerusahaan = document.getElementById('nama-perusahaan').value;
             const alamat = document.getElementById('alamat').value;
             const pic = document.getElementById('pic').value;
@@ -633,6 +643,45 @@
                     </tr>
                 `;
             });
+
+            let deskripsiPeserta = pesertaRows.length > 0 
+            ? [...pesertaRows].map((row, index) => {
+                const nama = row.querySelector('.nama-peserta').value;
+                const kontak = row.querySelector('.kontak-peserta').value;
+                const harga = row.querySelector('.harga-peserta').value;
+
+                return `${index + 1}. ${nama} | ${kontak} | Rp ${parseInt(harga || 0).toLocaleString('id-ID')} ,`;
+            }).join('\n')
+            : 'Tidak ada peserta';
+
+            fetch('/crm/aktivitas/store/new', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
+                },
+                body: JSON.stringify({
+                    id_perusahaan: idPerusahaan,
+                    id_peluang: idPeluang,
+                    aktivitas: 'Form_Keluar',
+                    deskripsi: deskripsiPeserta,
+                    waktu_aktivitas: new Date().toISOString().split('T')[0],
+                    total: totalHarga,
+                })
+            })
+            .then(async res => {
+                const text = await res.text(); // ⬅️ ubah dulu ke text
+                console.log('RAW RESPONSE:', text);
+
+                try {
+                    const json = JSON.parse(text);
+                    console.log('JSON:', json);
+                } catch (e) {
+                    console.error('Bukan JSON, kemungkinan error Laravel');
+                }
+            })
+            .catch(err => console.error(err));
+
             pesertaHTML += `
                 <tr><th colspan="3">Total</th><td class="price-column">${totalHarga ? `Rp ${totalHarga.toLocaleString('id-ID')},00` : ''}</td></tr>
             `;
@@ -645,14 +694,18 @@
             }
 
             // Proses syarat dan ketentuan
-            const select = document.getElementById('syarat-select');
-            const selectedOptions = Array.from(select.selectedOptions);
+            const selectedCheckboxes = document.querySelectorAll('.syarat-checkbox:checked');
             let syaratList = '';
-            if (selectedOptions.length === 0) {
-                syaratList = '<li>Tidak ada syarat yang dipilih.</li>';
+
+            if (selectedCheckboxes.length === 0) {
+                syaratList = `
+                    <li>Harga penawaran di atas sudah termasuk PPN ${ppnRate}%.</li>
+                    <li>Form pendaftaran harus dikirim paling lambat 14 hari sebelum pelaksanaan pelatihan.</li>
+                    <li>Pelatihan berlangsung pukul 09.00 hingga selesai.</li>
+                    <li>Pelatihan diselenggarakan di Kantor Inixindo Bandung, Jalan Cipaganti No 95, Bandung.</li>`;
             } else {
-                selectedOptions.forEach(option => {
-                    const content = option.dataset.content || '';
+                selectedCheckboxes.forEach(cb => {
+                    const content = cb.getAttribute('data-content') || '';
                     syaratList += `<li>${content}</li>`;
                 });
             }

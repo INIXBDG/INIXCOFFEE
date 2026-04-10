@@ -135,6 +135,7 @@ $canSurvey = !$latestSurvey || Carbon::parse($latestSurvey->created_at)->diffInM
         <div class="card-body p-4">
             <form id="surveyForm" action="{{ route('surveykepuasan.store') }}" method="post">
                 @csrf
+                <input type="hidden" name="ticket_id" value="{{ $ticket->ticket_id }}">
                 <div class="mb-5">
                     <label class="form-label fw-semibold">
                         1. Bagaimana Anda menilai kecepatan respon tim ITSM dalam menangani insiden Anda?
@@ -144,7 +145,6 @@ $canSurvey = !$latestSurvey || Carbon::parse($latestSurvey->created_at)->diffInM
                         <i class="fas fa-star" data-rating="2"></i>
                         <i class="fas fa-star" data-rating="3"></i>
                         <i class="fas fa-star" data-rating="4"></i>
-                        <i class="fas fa-star" data-rating="5"></i>
                     </div>
                     <input type="hidden" name="q1" id="q1" value="0">
                 </div>
@@ -182,7 +182,6 @@ $canSurvey = !$latestSurvey || Carbon::parse($latestSurvey->created_at)->diffInM
                         <i class="fas fa-star" data-rating="2"></i>
                         <i class="fas fa-star" data-rating="3"></i>
                         <i class="fas fa-star" data-rating="4"></i>
-                        <i class="fas fa-star" data-rating="5"></i>
                     </div>
                     <input type="hidden" name="q4" id="q4" value="0">
                 </div>

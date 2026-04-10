@@ -145,7 +145,7 @@
                     </div>
 
                     <!-- SUMMARY WIN -->
-                    <div id="summaryWin" class="mt-4 p-3 rounded d-none">
+                    <div id="summaryWin" class="mt-4 p-3 rounded d-none" style="border: 1px solid #e3e6f0; background-color: #f8f9fc;">
                         <h6 class="fw-bold text-success">Ringkasan Win</h6>
                         <div class="row text-center">
                             <div class="col-md-3">
@@ -153,7 +153,7 @@
                                 <p class="fw-bold text-primary mb-0" id="winHargaJual">Rp 0</p>
                             </div>
                             <div class="col-md-3">
-                                <small class="text-muted">Total P</small>
+                                <small class="text-muted">Total PA (Actual CAC)</small>
                                 <p class="fw-bold text-warning mb-0" id="winNetSales">Rp 0</p>
                             </div>
                             <div class="col-md-3">
@@ -163,6 +163,22 @@
                             <div class="col-md-3">
                                 <small class="text-muted">Grand Total</small>
                                 <p class="fw-bold text-success mb-0" id="winGrandTotal">Rp 0</p>
+                            </div>
+                        </div>
+
+                        <hr class="my-2">
+                        <div class="row text-center mt-2">
+                            <div class="col-md-4">
+                                <small class="text-muted">Target Budget CAC (10%)</small>
+                                <p class="fw-bold mb-0" id="winTargetCAC">Rp 0</p>
+                            </div>
+                            <div class="col-md-4">
+                                <small class="text-muted">Selisih Budget</small>
+                                <p class="fw-bold mb-0" id="winSelisihCAC">Rp 0</p>
+                            </div>
+                            <div class="col-md-4">
+                                <small class="text-muted">Status Efisiensi</small>
+                                <div id="winStatusEfisiensi" class="fw-bold">-</div>
                             </div>
                         </div>
                     </div>
@@ -452,6 +468,30 @@
                                     0));
                                 $(`#${prefix}GrandTotal`).text(formatRupiah(summary
                                     .total_grand || 0));
+
+                                if (summary.target_cac_periode) {
+                                    // Tampilkan Target & Selisih
+                                    $(`#${prefix}TargetCAC`).text(formatRupiah(summary.target_cac_periode));
+                                    
+                                    let selisih = summary.selisih_cac;
+                                    let textSelisih = formatRupiah(Math.abs(selisih));
+                                    
+                                    $(`#${prefix}SelisihCAC`)
+                                        .text((selisih >= 0 ? '+ ' : '- ') + textSelisih)
+                                        .removeClass('text-success text-danger')
+                                        .addClass(selisih >= 0 ? 'text-success' : 'text-danger');
+
+                                    // Update Badge Status Efisiensi
+                                    let statusEl = $(`#${prefix}StatusEfisiensi`);
+                                    if (summary.is_overbudget) {
+                                        statusEl.html(`<span class="badge bg-danger">Overbudget (${summary.persentase_pemakaian}%)</span>`);
+                                        $(`#${prefix}NetSales`).removeClass('text-warning').addClass('text-danger');
+                                    } else {
+                                        statusEl.html(`<span class="badge bg-success">Efisien (${summary.persentase_pemakaian}%)</span>`);
+                                        $(`#${prefix}NetSales`).removeClass('text-danger').addClass('text-warning');
+                                    }
+                                }
+
                                 $(summaryId).removeClass('d-none');
 
                                 // Row Click
@@ -496,7 +536,9 @@
                                             <p><strong>NetSales:</strong> ${formatRupiah(rowData.netsales)}</p>
                                             <p><strong>Grand Total:</strong> ${formatRupiah(rowData.grandtotal)}</p>
                                         </div>
-</div>
+
+                                        <a href="/storage/${rowData.path_regis}" target="_blank">PDF E-regis</a>
+                                    </div>
 
                                     <hr class="my-3">
                                     <h6 class="mb-3">Informasi Invoice</h6>
@@ -537,23 +579,20 @@
                                         <table class="table table-bordered table-striped">
                                             <thead>
                                                 <tr>
-                                                    <th>Nama</th>
-                                                    <th>Harga Penawaran</th>
                                                     <th>Transportasi</th>
                                                     <th>Jenis Transportasi</th>
                                                     <th>Akomodasi Peserta</th>
-                                                    <th>Meeting Room / Penginapan</th>
-                                                    <th>Akomodasi</th>
-                                                    <th>Reimburse Transport</th>
-                                                    <th>Sewa Laptop</th>
+                                                    <th>Akomodasi Tim</th>
+                                                    <th>Keterangan Akomodasi Tim</th>
                                                     <th>Fresh Money</th>
                                                     <th>Entertaint</th>
-                                                    <th>Deskripsi Entertaint</th>
+                                                    <th>Keterangan Entertaint</th>
                                                     <th>Souvenir</th>
                                                     <th>Cashback</th>
+                                                    <th>Sewa Laptop</th>
+                                                    <th>Deskripsi Tambahan</th>
                                                     <th>Tanggal PA</th>
                                                     <th>Tipe Pembayaran</th>
-                                                    <th>Deskripsi Tambahan</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -562,23 +601,20 @@
                                             rowData.perhitungannet.forEach(item => {
                                                 html += `
                                         <tr>
-                                            <td>${item.peserta?.nama ?? '-'}</td>
-                                            <td>${formatRupiah(item.harga_penawaran)}</td>
                                             <td>${formatRupiah(item.transportasi)}</td>
                                             <td>${item.jenis_transportasi ?? '-'}</td>
                                             <td>${formatRupiah(item.akomodasi_peserta)}</td>
-                                            <td>${formatRupiah(item.penginapan_meeting_room)}</td>
-                                            <td>${formatRupiah(item.akomodasi_sales_instruktur)}</td>
-                                            <td>${formatRupiah(item.reimburse_transport_sales_instruktur)}</td>
-                                            <td>${item.sewa_laptop ? formatRupiah(item.sewa_laptop) : '-'}</td>
+                                            <td>${formatRupiah(item.akomodasi_tim)}</td>
+                                            <td>${item.keterangan_akomodasi_tim ?? '-'}</td>
                                             <td>${item.fresh_money ? formatRupiah(item.fresh_money) : '-'}</td>
                                             <td>${item.entertaint ? formatRupiah(item.entertaint) : '-'}</td>
-                                            <td>${item.deskripsi_entertaint ?? '-'}</td>
+                                            <td>${item.keterangan_entertaint ?? '-'}</td>
                                             <td>${item.souvenir ? formatRupiah(item.souvenir) : '-'}</td>
                                             <td>${item.cashback ? formatRupiah(item.cashback) : '-'}</td>
+                                            <td>${item.sewa_laptop ? formatRupiah(item.sewa_laptop) : '-'}</td>
+                                            <td>${item.deskripsi_tambahan ?? '-'}</td>
                                             <td>${item.tgl_pa ? moment(item.tgl_pa).format('DD MMMM YYYY') : '-'}</td>
                                             <td>${item.tipe_pembayaran ? item.tipe_pembayaran.toUpperCase() : '-'}</td>
-                                            <td>${item.desc ?? '-'}</td>
                                         </tr>`;
                                             });
 

@@ -1,15 +1,18 @@
 <?php
 
-use App\Http\Controllers\TicketController;
 use App\Http\Controllers\AktivitasController;
 use App\Http\Controllers\Api\apiController;
 use App\Http\Controllers\CatatanSalesController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\PeluangController;
+use App\Http\Controllers\TelegramController;
+use App\Http\Controllers\TicketController;
+use App\Http\Controllers\WebhookController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\WebhookController;
-use App\Http\Controllers\TelegramController;
+use App\Http\Controllers\WebPushController;
+use App\Http\Controllers\MoodleApiController;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -20,6 +23,13 @@ use App\Http\Controllers\TelegramController;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+
+Route::middleware('auth:api')->group(function () {
+    Route::post('/webpush/subscribe', [WebPushController::class, 'subscribe'])->name('webpush.subscribe');
+    Route::post('/webpush/unsubscribe', [WebPushController::class, 'unsubscribe'])->name('webpush.unsubscribe');
+    Route::get('/webpush/vapid-key', [WebPushController::class, 'getVapidKey'])->name('webpush.vapid-key');
+    Route::post('/webpush/test', [WebPushController::class, 'testNotification'])->name('webpush.test');
+});
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -40,6 +50,7 @@ Route::get('getFeedbacks', [App\Http\Controllers\Api\apiController::class, 'getF
 Route::get('getMateri', [App\Http\Controllers\Api\apiController::class, 'getMateri'])->name('getMateri');
 Route::get('getPerusahaanall', [App\Http\Controllers\Api\apiController::class, 'getPerusahaanall'])->name('getPerusahaanall');
 Route::get('getUserall', [App\Http\Controllers\Api\apiController::class, 'getUserall'])->name('getUserall');
+Route::get('getUserProject', [App\Http\Controllers\Api\apiController::class, 'getUserProject'])->name('getUserProject');
 Route::get('getJabatan', [App\Http\Controllers\Api\apiController::class, 'getJabatan'])->name('getJabatan');
 Route::get('getMateris', [App\Http\Controllers\Api\apiController::class, 'getMateris'])->name('getMateris');
 Route::get('getRegistrasi', [App\Http\Controllers\Api\apiController::class, 'getRegistrasi'])->name('getRegistrasi');
@@ -52,6 +63,7 @@ Route::get('getInventaris', [App\Http\Controllers\Api\apiController::class, 'get
 Route::get('/dashboard/csat-instruktur', [apiController::class, 'CSATinstruktur'])->name('CSATinstruktur');
 Route::get('/dashboard/aktivitas-instruktur', [apiController::class, 'AktivitasInstruktur'])->name('AktivitasInstruktur');
 Route::get('/dashboard/rekomendasi-materi', [apiController::class, 'RekomendasiMateri'])->name('RekomendasiMateri');
+Route::get('getDBKlien', [App\Http\Controllers\Api\apiController::class, 'getDBKlien'])->name('getDBKlien');
 
 
 
@@ -61,3 +73,9 @@ Route::match(['get', 'post'], '/webhook/fonnte', [WebhookController::class, 'han
 
 Route::get('/telegram/setwebhook', [TelegramController::class, 'setWebhook'])->name('telegram.setwebhook');
 Route::post('/telegram/webhook', [TelegramController::class, 'webhook'])->name('telegram.webhook');
+Route::get('/dashboard/csat-instruktur', [apiController::class, 'CSATinstruktur'])->name('CSATinstruktur');
+Route::get('/dashboard/aktivitas-instruktur', [apiController::class, 'AktivitasInstruktur'])->name('AktivitasInstruktur');
+Route::get('/dashboard/rekomendasi-materi', [apiController::class, 'RekomendasiMateri'])->name('RekomendasiMateri');
+
+
+Route::get('/moodle-grades-sharingknowledge', [MoodleApiController::class, 'fetchGradesSharingKnowledge']);

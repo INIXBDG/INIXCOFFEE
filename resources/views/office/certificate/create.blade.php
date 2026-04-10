@@ -87,7 +87,8 @@
                     </div>
                     <div class="card-body p-4">
                         @if ($errors->any())
-                            <div class="alert alert-danger alert-dismissible fade show shadow-sm rounded-3 mb-4" role="alert">
+                            <div class="alert alert-danger alert-dismissible fade show shadow-sm rounded-3 mb-4"
+                                role="alert">
                                 <div class="d-flex align-items-center">
                                     <i class="bx bx-error-circle me-2" style="font-size: 1.5rem;"></i>
                                     <div>
@@ -122,14 +123,12 @@
                                     <span class="input-group-text bg-light border-end-0">
                                         <i class="bx bx-user text-primary"></i>
                                     </span>
-                                        <input type="text" 
-                                            name="nomor_sertifikat" 
-                                            class="form-control border-start-0 @error('nomor_sertifikat') is-invalid @enderror" 
-                                            value="{{ old('nomor_sertifikat', $nomorSertifikatBaru) }}"
-                                            readonly>
+                                    <input type="text" name="nomor_sertifikat"
+                                        class="form-control border-start-0 @error('nomor_sertifikat') is-invalid @enderror"
+                                        value="{{ old('nomor_sertifikat', $nomorSertifikatBaru) }}">
 
                                     @error('nama')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                        <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
                             </div>
@@ -143,14 +142,12 @@
                                     <span class="input-group-text bg-light border-end-0">
                                         <i class="bx bx-user text-primary"></i>
                                     </span>
-                                        <input type="text" 
-                                            name="nama_peserta" 
-                                            class="form-control border-start-0 @error('nama_peserta') is-invalid @enderror" 
-                                            value="{{ old('nama_peserta', $peserta->nama) }}"
-                                            readonly>
+                                    <input type="text" name="nama_peserta"
+                                        class="form-control border-start-0 @error('nama_peserta') is-invalid @enderror"
+                                        value="{{ old('nama_peserta', $peserta->nama) }}">
 
                                     @error('nama')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                        <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
                             </div>
@@ -164,13 +161,12 @@
                                     <span class="input-group-text bg-light border-end-0">
                                         <i class="bx bx-book-open text-primary"></i>
                                     </span>
-                                    <input type="text" 
-                                           name="nama_materi" 
-                                           class="form-control border-start-0 @error('nama_materi') is-invalid @enderror" 
-                                           value="{{ old('nama_materi', $rkm->materi->nama_materi ?? '') }}"
-                                           placeholder="Masukkan nama materi">
+                                    <input type="text" name="nama_materi"
+                                        class="form-control border-start-0 @error('nama_materi') is-invalid @enderror"
+                                        value="{{ old('nama_materi', $rkm->materi->nama_materi ?? '') }}"
+                                        placeholder="Masukkan nama materi">
                                     @error('nama_materi')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                        <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
                                 <small class="text-muted">
@@ -179,40 +175,84 @@
                                 </small>
                             </div>
 
-                            <!-- Periode Pelatihan (Editable) -->
-                            <div class="row mb-4">
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">
-                                        Tanggal Mulai <span class="text-danger">*</span>
-                                    </label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-light border-end-0">
-                                            <i class="bx bx-calendar text-primary"></i>
-                                        </span> 
-                                        <input type="date" 
-                                               name="tanggal_awal" 
-                                               class="form-control border-start-0 @error('tanggal_awal') is-invalid @enderror" 
-                                               value="{{ old('tanggal_awal', $rkm->tanggal_awal ? \Carbon\Carbon::parse($rkm->tanggal_awal)->format('Y-m-d') : '') }}">
-                                        @error('tanggal_awal')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
+                            {{-- Periode Pelatihan 1 (Editable) --}}
+                            <div class="mb-4">
+                                <span class="fw-bold fs-5 d-block mb-3">
+                                    Periode 1
+                                </span>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            Tanggal Mulai <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light border-end-0">
+                                                <i class="bx bx-calendar text-primary"></i>
+                                            </span>
+                                            <input type="date" name="tanggal_awal"
+                                                class="form-control border-start-0 @error('tanggal_awal') is-invalid @enderror"
+                                                value="{{ old('tanggal_awal', $rkm->tanggal_awal ? \Carbon\Carbon::parse($rkm->tanggal_awal)->format('Y-m-d') : '') }}">
+                                            @error('tanggal_awal')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            Tanggal Selesai <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light border-end-0">
+                                                <i class="bx bx-calendar text-primary"></i>
+                                            </span>
+                                            <input type="date" name="tanggal_akhir"
+                                                class="form-control border-start-0 @error('tanggal_akhir') is-invalid @enderror"
+                                                value="{{ old('tanggal_akhir', $rkm->tanggal_akhir ? \Carbon\Carbon::parse($rkm->tanggal_akhir)->format('Y-m-d') : '') }}">
+                                            @error('tanggal_akhir')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">
-                                        Tanggal Selesai <span class="text-danger">*</span>
-                                    </label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-light border-end-0">
-                                            <i class="bx bx-calendar text-primary"></i>
-                                        </span>
-                                        <input type="date" 
-                                               name="tanggal_akhir" 
-                                               class="form-control border-start-0 @error('tanggal_akhir') is-invalid @enderror" 
-                                              value="{{ old('tanggal_akhir', $rkm->tanggal_akhir ? \Carbon\Carbon::parse($rkm->tanggal_akhir)->format('Y-m-d') : '') }}">
-                                        @error('tanggal_akhir')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
+                            </div>
+
+                            {{-- Periode Pelatihan 2 (Opsional) --}}
+                            <div class="mb-4">
+                                <span class="fw-bold fs-5 d-block mb-3">
+                                    Periode 2
+                                </span>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            Tanggal Mulai <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light border-end-0">
+                                                <i class="bx bx-calendar text-primary"></i>
+                                            </span>
+                                            <input type="date" name="tanggal_awal2"
+                                                class="form-control border-start-0 @error('tanggal_awal2') is-invalid @enderror">
+                                            @error('tanggal_awal2')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">
+                                            Tanggal Selesai <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light border-end-0">
+                                                <i class="bx bx-calendar text-primary"></i>
+                                            </span>
+                                            <input type="date" name="tanggal_akhir2"
+                                                class="form-control border-start-0 @error('tanggal_akhir2') is-invalid @enderror">
+                                            @error('tanggal_akhir2')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -235,7 +275,8 @@
                                 <button type="submit" class="btn btn-primary shadow-sm hover-scale">
                                     <i class="bx bx-file-blank me-1"></i>Generate Sertifikat
                                 </button>
-                                <a href="{{ route('office.certificate.detail', $rkm->id) }}" class="btn btn-light shadow-sm">
+                                <a href="{{ route('office.certificate.detail', $rkm->id) }}"
+                                    class="btn btn-light shadow-sm">
                                     <i class="bx bx-arrow-back me-1"></i>Kembali
                                 </a>
                             </div>
@@ -264,11 +305,13 @@
             border: 1px solid #dee2e6;
         }
 
-        .form-control, .form-select {
+        .form-control,
+        .form-select {
             border: 1px solid #dee2e6;
         }
 
-        .form-control:focus, .form-select:focus {
+        .form-control:focus,
+        .form-select:focus {
             border-color: #5b73e8;
             box-shadow: 0 0 0 0.2rem rgba(91, 115, 232, 0.25);
         }
@@ -289,7 +332,9 @@
         }
 
         @media (max-width: 991px) {
-            .col-lg-4, .col-lg-8 {
+
+            .col-lg-4,
+            .col-lg-8 {
                 margin-bottom: 1rem;
             }
         }

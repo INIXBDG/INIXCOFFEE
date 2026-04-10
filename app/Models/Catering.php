@@ -9,7 +9,7 @@ class Catering extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['id_karyawan', 'tipe', 'invoice'];
+    protected $fillable = ['id_karyawan', 'tipe', 'invoice', 'status_pembelian', 'tanggal_pembelian'];
 
     public function karyawan()
     {

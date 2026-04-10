@@ -23,10 +23,16 @@ class Kegiatan extends Model
         'pencairan',
         'selesai',
         'tipe',
+        'realisasi',
     ];
 
     public function rincian()
     {
         return $this->hasMany(RincianKegiatan::class, 'id_kegiatan', 'id');
+    }
+
+    public function pengajuan_barang()
+    {
+        return $this->hasMany(PengajuanBarang::class, 'id_kegiatan', 'id');
     }
 }

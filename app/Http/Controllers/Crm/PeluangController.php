@@ -31,7 +31,7 @@ class PeluangController extends Controller
     {
         $user = Auth::user();
         $allowedJabatan = ['Adm Sales', 'SPV Sales', 'HRD', 'Finance & Accounting', 'GM', 'Direktur Utama', 'Direktur'];
-        $materi = Materi::all();
+        $materi = Materi::where('status', '!=', 'Nonaktif')->get();
         $aktivitas = Aktivitas::where('id_sales', $user->id_sales)->whereNull('id_peluang')->get();
 
         if ($user->jabatan === 'Sales') {
@@ -121,7 +121,7 @@ class PeluangController extends Controller
     public function detail($id)
     {
         // Ambil peluang dan relasi terkait
-        $peluang = Peluang::with(['materiRelation', 'rkm'])
+        $peluang = Peluang::with(['materiRelation', 'rkm', 'aktivitas'])
             ->where('id', $id)
             ->firstOrFail();
 
@@ -134,20 +134,13 @@ class PeluangController extends Controller
             $peluang->rkm->tanggal_awal_year = $peluang->rkm->tanggal_awal ? date('Y', strtotime($peluang->rkm->tanggal_awal)) : null;
         }
 
-        $materi = Materi::all();
+        $materi = Materi::where('status', '!=', 'Nonaktif')->get();
 
         $netsales = perhitunganNetSales::with('trackingNetSales', 'approvedNetSales', 'peserta')
             ->where('id_rkm', $peluang->id_rkm)
-            ->get();
+            ->first();
 
         $regis = Regisform::where('id_peluang', $id)->first();
-
-        $ids_peserta_yang_sudah_ada = perhitunganNetSales::where('id_rkm', $peluang->rkm->id)->pluck('id_peserta');
-
-        $regisuser = Registrasi::with('peserta')
-            ->where('id_rkm', $peluang->rkm->id)
-            ->whereNotIn('id_peserta', $ids_peserta_yang_sudah_ada)
-            ->get();
 
         // 🔹 Ambil semua aktivitas seperti $aktivitass
         $perusahaan = $peluang->perusahaan;
@@ -185,6 +178,8 @@ class PeluangController extends Controller
         usort($items, function ($a, $b) {
             return strcasecmp($a['label'], $b['label']);
         });
+
+        // dd($peluang);
         return view('crm.peluang.detail', compact(
             'peluang',
             'aktivitass',
@@ -192,7 +187,6 @@ class PeluangController extends Controller
             'netsales',
             'regis',
             'items',
-            'regisuser',
             'aktivitasTambahan'
         ));
     }
@@ -378,16 +372,30 @@ class PeluangController extends Controller
     public function delete($id)
     {
         try {
-            $peluang = Peluang::findOrFail($id);
+            $peluang = Peluang::with('rkm')->findOrFail($id);
 
-            $rkm = RKM::where('id', $peluang->id_rkm)->first();
-            if ($rkm) {
-                $rkm->delete();
+            $deletedBy = Auth::user()->karyawan->kode_karyawan ?? null;
+            $now = Carbon::now();
+
+            if ($peluang->rkm) {
+                $peluang->rkm->update([
+                    'deleted_at' => $now,
+                    'deleted_by' => $deletedBy,
+                ]);
             }
 
-            $peluang->delete();
+            $peluang->update([
+                'lost' => $now,
+                'tahap' => 'lost',
+                'deleted_at' => $now,
+                'deleted_by' => $deletedBy,
+            ]);
 
-            Aktivitas::where('id_peluang', $id)->delete();
+            Aktivitas::where('id_peluang', $id)
+                ->update([
+                    'deleted_at' => $now,
+                    'deleted_by' => $deletedBy,
+                ]);
 
             return response()->json([
                 'success' => true,
@@ -396,7 +404,8 @@ class PeluangController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menghapus peluang atau aktivitas terkait.'
+                'message' => 'Gagal menghapus peluang atau aktivitas terkait.',
+                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -409,6 +418,7 @@ class PeluangController extends Controller
                 'materi' => 'required|string|max:255',
                 'catatan' => 'nullable|string|max:255',
                 'harga' => 'required|numeric|min:0',
+                'final' => 'required|numeric|min:0',
                 'pax' => 'required|integer|min:1',
                 'periode_mulai' => 'required|date',
                 'periode_selesai' => 'required|date|after_or_equal:periode_mulai',
@@ -437,12 +447,16 @@ class PeluangController extends Controller
             $rkm->pax = $request->pax;
             $rkm->isi_pax = $request->pax;
             $rkm->save();
+            
+            $final = $validated['final'] - ($validated['final'] * 11 / 100);
 
             // Update Peluang
             $peluang->update([
                 'materi' => $validated['materi'],
                 'catatan' => $validated['catatan'],
                 'harga' => $validated['harga'],
+                'final' => $final,
+                'netsales' => $final,
                 'pax' => $validated['pax'],
                 'periode_mulai' => $validated['periode_mulai'],
                 'periode_selesai' => $validated['periode_selesai'],
@@ -488,6 +502,7 @@ class PeluangController extends Controller
 
         DB::transaction(function () use ($peluang, $request) {
             $now = Carbon::now();
+            $deletedBy = Auth::user()->karyawan->kode_karyawan ?? null;
 
             // Reset kolom-kolom waktu yang relevan apabila perlu (optional)
             // $peluang->biru = null; $peluang->merah = null; $peluang->lost = null;
@@ -510,7 +525,10 @@ class PeluangController extends Controller
                 $peluang->desc_lost = $request->input('desc_lost');
 
                 if ($peluang->rkm) {
-                    $peluang->rkm->status = '3'; // lost -> status '3'
+                    $peluang->rkm->status = '2'; // lost -> status '2'
+
+                    $peluang->rkm->deleted_at = $now;
+                    $peluang->rkm->deleted_by = $deletedBy;
                     $peluang->rkm->save();
                 }
             }
@@ -519,11 +537,11 @@ class PeluangController extends Controller
                 $peluang->tahap = 'merah';
 
                 $inputFinal = $request->input('final');
-                $pax = $peluang->pax ?? 1;
+                $final = $inputFinal - ($inputFinal * 11 / 100);
 
-                $peluang->final = $inputFinal;
+                $peluang->final = $final;
 
-                $peluang->netsales = $inputFinal;
+                $peluang->netsales = $final;
 
                 $peluang->merah = $now;
                 $peluang->desc_lost = null;
@@ -555,7 +573,7 @@ class PeluangController extends Controller
                 WHEN MONTH(merah) BETWEEN 4 AND 6 THEN "TR2"
                 WHEN MONTH(merah) BETWEEN 7 AND 9 THEN "TR3"
                 WHEN MONTH(merah) BETWEEN 10 AND 12 THEN "TR4"
-            END as triwulan'),
+                END as triwulan'),
                 DB::raw('SUM(netsales * pax) as total_jumlah'),
             )
             ->groupBy('id_sales', 'triwulan')
@@ -634,25 +652,25 @@ class PeluangController extends Controller
 
         $request->validate([
             'id_rkm' => 'required|numeric',
-            'id_peserta' => 'required|numeric',
+            'id_peluang' => 'required|numeric',
 
             'transportasi' => 'nullable|numeric',
             'jenis_transportasi' => 'nullable|string',
-            'desc' => 'nullable|string',
 
             'akomodasi_peserta' => 'nullable|numeric',
-            'penginapan_meeting_room' => 'nullable|numeric',
-            'akomodasi_sales_instruktur' => 'nullable|numeric',
-            'reimburse_transport_sales_instruktur' => 'nullable|numeric',
-            'sewa_laptop' => 'nullable|numeric',
-
+            'akomodasi_tim' => 'nullable|numeric',
+            'keterangan_akomodasi_tim' => 'nullable|string',
+            
             'fresh_money' => 'nullable|numeric',
-            'diskon' => 'nullable|numeric',
             'entertaint' => 'nullable|numeric',
-            'deskripsi_entertaint' => 'nullable|string',
-
+            'keterangan_entertaint' => 'nullable|string',
+            'souvenir' => 'nullable|numeric',
+            'cashback' => 'nullable|numeric',
+            
+            'sewa_laptop' => 'nullable|numeric',
+            'tgl_pa' => 'required|date',
             'tipe_pembayaran' => 'required|string',
-            'tanggalPayment' => 'required|date',
+            'deskripsi_tambahan' => 'nullable|string',
         ]);
 
         Log::info("[PA] Validation passed");
@@ -688,26 +706,24 @@ class PeluangController extends Controller
 
         $netSales = new perhitunganNetSales();
         $netSales->id_rkm = $request->id_rkm;
-        $netSales->id_peserta = $request->id_peserta;
-
-        $netSales->harga_penawaran = $request->harga_penawaran;
+        
         $netSales->transportasi = $request->transportasi;
         $netSales->jenis_transportasi = $request->jenis_transportasi;
-        $netSales->desc = $request->desc;
 
         $netSales->akomodasi_peserta = $request->akomodasi_peserta;
-        $netSales->penginapan_meeting_room = $request->penginapan_meeting_room;
-        $netSales->akomodasi_sales_instruktur = $request->akomodasi_sales_instruktur;
-        $netSales->reimburse_transport_sales_instruktur = $request->reimburse_transport_sales_instruktur;
-        $netSales->sewa_laptop = $request->sewa_laptop;
-
+        $netSales->akomodasi_tim = $request->akomodasi_tim;
+        $netSales->keterangan_akomodasi_tim = $request->keterangan_akomodasi_tim;
+        
         $netSales->fresh_money = $request->fresh_money;
-        $netSales->diskon = $request->diskon;
         $netSales->entertaint = $request->entertaint;
-        $netSales->deskripsi_entertaint = $request->deskripsi_entertaint;
-
+        $netSales->keterangan_entertaint = $request->keterangan_entertaint;
+        $netSales->souvenir = $request->souvenir;
+        $netSales->cashback = $request->cashback;
+        
+        $netSales->sewa_laptop = $request->sewa_laptop;
         $netSales->tipe_pembayaran = $request->tipe_pembayaran;
-        $netSales->tgl_pa = $request->tanggalPayment;
+        $netSales->tgl_pa = $request->tgl_pa;
+        $netSales->deskripsi_tambahan = $request->deskripsi_tambahan;
 
         $netSales->id_tracking = $idTracking;
         $netSales->save();
@@ -739,9 +755,11 @@ class PeluangController extends Controller
                 Log::info("[PA] Sending notification");
 
                 $url = url('paymentAdvance.index');
-                $path = request()->path();
+                $path = "/crm/peluang/detail/" . $request->id_peluang;
                 $receiverUsers = $user->id;
                 Notification::send($user, new CommentNotification($dummyComment, $url, $path, $receiverUsers));
+
+                Log::info("[PA] Path ($path) and URL ($url) included in notification");
             }
         } else {
             Log::warning("[PA] No SPV Sales found");

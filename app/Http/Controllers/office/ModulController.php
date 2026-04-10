@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Notifications\PersetujuanPreorder;
 use App\Notifications\PreorderNotification;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -26,42 +27,27 @@ class ModulController extends Controller
     public function indexNomor()
     {
         $nomor = NomorModul::all();
-        $romanMonths = [
-            1 => 'I',
-            2 => 'II',
-            3 => 'III',
-            4 => 'IV',
-            5 => 'V',
-            6 => 'VI',
-            7 => 'VII',
-            8 => 'VIII',
-            9 => 'IX',
-            10 => 'X',
-            11 => 'XI',
-            12 => 'XII'
-        ];
-
-        $monthNumber   = now()->format('n');
-        $romanMonth    = $romanMonths[$monthNumber];
+        $monthNumber   = now()->format('m');
         $yearTwoDigit  = now()->format('y');
         $yearFull      = now()->year;
 
-        // Ambil nomor terakhir berdasarkan tahun
         $last = NomorModul::whereYear('created_at', $yearFull)
             ->orderBy('id', 'desc')
             ->first();
 
         if ($last) {
-            // Pecah string: M/BDG/000/XII/25 → Ambil index ke-2 (002)
-            $parts = explode('/', $last->no_modul);
-            $lastCode = intval($parts[2]); // 002 → 2
-            $newCode = str_pad($lastCode + 1, 3, '0', STR_PAD_LEFT);
+            $parts = explode('.', $last->no_modul);
+            if (count($parts) > 0 && is_numeric($parts[0])) {
+                $lastCode = intval($parts[0]);
+                $newCode = str_pad($lastCode + 1, 3, '0', STR_PAD_LEFT);
+            } else {
+                $newCode = "000";
+            }
         } else {
-            // Jika tahun baru → mulai dari 000
             $newCode = "000";
         }
 
-        $noModul = "M/BDG/$newCode/$romanMonth/$yearTwoDigit";
+        $noModul = "$newCode.M.BDG.$monthNumber.$yearTwoDigit";
 
         return view('office.nomorModul.index', compact('noModul', 'nomor'));
     }
@@ -345,6 +331,15 @@ class ModulController extends Controller
         ]);
 
         return back()->with('success', 'Data peserta berhasil diperbarui');
+    }
+
+    public function uploaded($id){
+        $nomor = NomorModul::findOrFail($id);
+        $nomor->status = 'Uploaded';
+        $nomor->uploaded = Carbon::now();
+        $nomor->save();
+
+        return back()->with('success', 'Status uploaded berhasil diupdate');
     }
 
     public function deletePeserta(Request $request, $id)

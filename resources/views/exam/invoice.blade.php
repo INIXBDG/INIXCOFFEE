@@ -131,7 +131,7 @@
                                     <div><strong>Nama Exam</strong></div>
                                 </td>
                                 <td style="border: none">:</td>
-                                <td>{{ $data->kodeeksam->nama_exam }}</td>
+                                <td>{{ $data->kodeeksam->nama_exam ?? '-' }}</td>
                                 <td style="border: none">
                                     <div><strong>Tgl Training</strong></div>
                                 </td>

@@ -72,25 +72,24 @@
             transform: translateX(-50%);
             width: 85%;
             text-align: center;
-            font-size: 36px;
+            font-size: 30px;
             font-weight: bold;
             color: black;
         }
 
         .period-section {
             position: absolute;
-            top: 470px;
+            top: 440px;
             left: 120px;
             font-size: 25px;
             color: #333;
             font-style: italic;
         }
 
-        /* Tanda Tangan – kiri bawah */
         .signature-section {
             margin-top: 25px;
             position: absolute;
-            bottom: 68px;
+            bottom: 28px;
             left: 135px;
             text-align: center;
         }
@@ -137,18 +136,38 @@
             {{ $certificate->nama_materi }}
         </div>
 
-        <div class="period-section">
+        <div class="period-section" style="margin-top: 4%">
             Period :
             @php
+                // Tanggal pertama
                 $dates = explode(' - ', $certificate->tanggal_pelatihan ?? '');
                 $awal = $dates[0] ?? null;
                 $akhir = $dates[1] ?? null;
+
+                // Tanggal kedua
+                $dates2 = explode(' - ', $certificate->tanggal_pelatihan2 ?? '');
+                $awal2 = $dates2[0] ?? null;
+                $akhir2 = $dates2[1] ?? null;
+
+                function formatPeriod($start, $end) {
+                    if (!$start) return '';
+                    $startFormatted = \Carbon\Carbon::parse($start)->format('F d, Y');
+                    if (!$end || $start === $end) return $startFormatted;
+                    $endFormatted = \Carbon\Carbon::parse($end)->format('F d, Y');
+                    return "$startFormatted - $endFormatted";
+                }
             @endphp
-            {{ $awal ? \Carbon\Carbon::parse($awal)->format('F d, Y') : '' }}
-            @if ($awal && $akhir)
-                -
+
+            @if ($awal)
+                {{ formatPeriod($awal, $akhir) }}
             @endif
-            {{ $akhir ? \Carbon\Carbon::parse($akhir)->format('F d, Y') : '' }}
+
+            @if ($awal2)
+                <br>
+                <span style="display:inline-block; margin-left: 90px;">
+                    {{ formatPeriod($awal2, $akhir2) }}
+                </span>
+            @endif
         </div>
 
         <div class="signature-section">

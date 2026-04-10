@@ -20,6 +20,11 @@ class Aktivitas extends Model
         'harga',
         'total',
         'pax',
+        'foto_lokasi',
+        'longitude',
+        'latitude',
+        'deleted_at',
+        'deleted_by',
     ];
 
     public function peluang()
@@ -36,9 +41,14 @@ class Aktivitas extends Model
     {
         return $this->belongsTo(Peserta::class, 'id_peserta');
     }
-    
+
         public function target()
     {
         return $this->belongsTo(TargetActivity::class, 'id_sales', 'id_sales');
+    }
+
+    public function perusahaanLangsung()
+    {
+        return $this->belongsTo(Perusahaan::class, 'id_contact', 'id');
     }
 }

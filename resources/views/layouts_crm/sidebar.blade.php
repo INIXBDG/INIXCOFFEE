@@ -143,6 +143,25 @@
                 </li>
             @endif
 
+            {{-- Laporan MoM --}}
+            @if (in_array($user->jabatan, ['GM', 'SPV Sales', 'Adm Sales', 'HRD']))
+                <li class="menu-item {{ request()->routeIs('laporan.harian') ? 'active open' : '' }}">
+                    <a href="{{ route('laporan.harian') }}" class="menu-link">
+                        <i class='menu-icon tf-icons bx bx-task'></i>
+                        <div class="text-truncate" data-i18n="crmLaporanHarian">Laporan MoM</div>
+                    </a>
+                </li>
+            @endif
+
+            @if (in_array($user->jabatan, ['Adm Sales']))
+                <li class="menu-item {{ request()->routeIs('todo-administrasi.index') ? 'active open' : '' }}">
+                    <a href="{{ route('todo-administrasi.index') }}" class="menu-link">
+                        <i class='menu-icon tf-icons bx bx-task'></i>
+                        <div class="text-truncate" data-i18n="crmLaporanHarian">Todo List</div>
+                    </a>
+                </li>
+            @endif
+            
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Untuk &amp; Anda</span>
             </li>
@@ -178,6 +197,15 @@
                 </a>
             </li>
 
+            @can('View DBKlien')
+                <li class="menu-item {{ request()->routeIs('dbklien.index') ? 'active open' : '' }}">
+                    <a href="{{ route('dbklien.index') }}" class="menu-link">
+                        <i class='menu-icon tf-icons bx bx-container'></i>
+                        <div class="text-truncate" data-i18n="aktivitas">Database Klien Full</div>
+                    </a>
+                </li>
+            @endcan
+
             @if ($user->jabatan == 'Sales')
                 <li class="menu-item {{ request()->routeIs('CRM.myDasboard') ? 'active open' : '' }}">
                     <a href="{{ route('CRM.myDasboard') }}" class="menu-link">
@@ -194,6 +222,13 @@
                 </a>
             </li>
         @endif
+
+        <li class="menu-item {{ request()->routeIs('CRM.index.koordinasi') ? 'active open' : '' }}">
+            <a href="{{ route('CRM.index.koordinasi') }}" class="menu-link">
+                <i class='menu-icon tf-icons bx bx-file-blank'></i>
+                <div class="text-truncate">Koordinasi Driver</div>
+            </a>
+        </li>
 
         <div style="position: absolute; bottom: 0; left: 0; width: 100%; padding: 12px;">
             <a href="{{ route('home') }}"

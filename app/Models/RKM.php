@@ -4,9 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class RKM extends Model
 {
+    use SoftDeletes;
     use HasFactory;
     protected $primaryKey = 'id';
     protected $fillable = [
@@ -32,7 +34,9 @@ class RKM extends Model
         'tahun',
         'isi_pax',
         'makanan',
-        'pdf_peserta'
+        'pdf_peserta',
+        'deleted_at',
+        'deleted_by',
     ];
     protected $dates = ['tanggal_awal', 'tanggal_akhir'];
 
@@ -41,6 +45,11 @@ class RKM extends Model
         return $this->hasMany(perhitunganNetSales::class, 'id_rkm', 'id');
     }
 
+    public function checklist()
+    {
+        return $this->hasOne(checklistRKM::class, 'id_rkm');
+    }
+    
     public function outstanding()
     {
         return $this->hasOne(outstanding::class, 'id_rkm', 'id');
@@ -124,7 +133,7 @@ class RKM extends Model
 
     public function peluang()
     {
-        return $this->hasOne(Peluang::class, 'id_rkm', 'id'); // Relasi dengan Peluang
+        return $this->hasOne(Peluang::class, 'id_rkm', 'id');
     }
 
     public function invoice()
@@ -134,5 +143,20 @@ class RKM extends Model
     public function kwitansi()
     {
         return $this->hasMany(Kwitansi::class, 'id_rkm');
+    }
+
+    public function checklistKeperluan()
+    {
+        return $this->hasOne(ChecklistKeperluan::class, 'id_rkm', 'id');
+    }
+
+    public function penilaianExam()
+    {
+        return $this->hasMany(PenilaianExam::class, 'id_rkm', 'id');
+    }
+
+        public function dataExam()
+    {
+        return $this->hasOne(eksam::class, 'id_rkm', 'id');
     }
 }

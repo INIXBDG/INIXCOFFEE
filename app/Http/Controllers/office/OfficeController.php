@@ -2,17 +2,27 @@
 
 namespace App\Http\Controllers\office;
 
-use Carbon\Carbon;
-use App\Models\RKM;
-use App\Models\Tickets;
+use App\Exports\ChecklistRkmExport;
+use App\Http\Controllers\Controller;
+use App\Models\AbsensiKaryawan;
+use App\Models\AdministrasiKaryawan;
+use App\Models\ChecklistKeperluan;
 use App\Models\Feedback;
+use App\Models\HariLibur;
+use App\Models\karyawan;
 use App\Models\Nilaifeedback;
 use App\Models\pengajuancuti;
-use App\Models\AbsensiKaryawan;
+use App\Models\Perusahaan;
+use App\Models\RKM;
+use App\Models\tagihanPerusahaan;
+use App\Models\Tickets;
+use App\Models\trackingTagihanPerusahaan;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Http;
+use Maatwebsite\Excel\Facades\Excel;
 
 use function PHPUnit\Framework\matches;
 
@@ -21,7 +31,7 @@ class OfficeController extends Controller
     public function dashboard(Request $request)
     {
         // 1. Total Karyawan & Divisi Stats
-        $total_karyawan = Karyawan::where('status_aktif', '1')
+        $total_karyawan = karyawan::where('status_aktif', '1')
             ->where('divisi', '!=', 'Direksi')
             ->where('jabatan', '!=', 'GM')
             ->where('id', '!=', ['36', '38', '45', '46', '47', '48', '49', '52', '53', '54'])
@@ -139,6 +149,165 @@ class OfficeController extends Controller
             );
 
 
+        // detail rkm
+        $now = Carbon::now();
+        $startOfThisWeek = $now->copy()->startOfWeek();
+        $endOfThisWeek = $now->copy()->endOfWeek();
+        $startOfLastWeek = $now->copy()->subWeek()->startOfWeek();
+        $endOfLastWeek = $now->copy()->subWeek()->endOfWeek();
+        
+        $startDate = $startOfLastWeek;
+        $endDate = $endOfThisWeek;
+
+        $rkms = RKM::with([
+            'materi',
+            'peluang',
+            'rekomendasilanjutan',
+            'perusahaan',
+            'instruktur',
+            'sales'
+        ])
+        ->whereBetween('tanggal_awal', [$startDate, $endDate])
+        ->whereDoesntHave('peluang', function ($query) {
+            $query->where('tentatif', 1);
+        })
+        ->orderBy('status', 'asc')
+        ->orderBy('tanggal_awal', 'asc')
+        ->get()
+        ->groupBy(function ($item) {
+            return $item->materi_key . '|' .
+                $item->ruang . '|' .
+                $item->metode_kelas . '|' .
+                $item->event . '|' .
+                $item->tanggal_awal;
+        })
+
+        ->map(function ($items) {
+
+            $first = $items->first();
+
+            return (object) [
+                'id' => $items->pluck('id')->implode(', '),
+                'id_all' => $items->pluck('id')->implode(', '),
+                'materi_key' => $first->materi_key,
+                'ruang' => $first->ruang,
+                'metode_kelas' => $first->metode_kelas,
+                'event' => $first->event,
+                'exam' => $items->pluck('exam')->implode(', '),
+                'makanan' => $items->pluck('makanan')->implode(', '),
+                'instruktur_all' => $items->pluck('instruktur_key')->implode(', '),
+                'perusahaan_all' => $items->pluck('perusahaan_key')->implode(', '),
+                'sales_all' => $items->pluck('sales_key')->implode(', '),
+                'status_all' => $items->contains('status', 0)
+                    ? 0
+                    : $items->min('status'),
+                'total_pax' => $items->sum('pax'),
+                'tanggal_awal' => $first->tanggal_awal,
+                'tanggal_akhir' => $items->max('tanggal_akhir'),
+                'materi' => $first->materi,
+                'peluang' => $first->peluang,
+                'rekomendasilanjutan' => $first->rekomendasilanjutan,
+                'perusahaan' => $items->pluck('perusahaan')
+                    ->filter()
+                    ->unique('id')
+                    ->values(),
+            ];
+        })
+
+        ->values(); 
+
+        foreach ($rkms as $detail_rkm) {
+
+            $singleId = trim(explode(',', $detail_rkm->id)[0]);
+
+            $checklists = ChecklistKeperluan::where('id_rkm', $singleId)
+                ->with('subChecklistKeperluans')
+                ->whereNotNull('tanggal_keperluan')
+                ->orderBy('tanggal_keperluan', 'asc')
+                ->get()
+                ->keyBy('tanggal_keperluan');
+
+            $detail_rkm->checklists = $checklists;
+
+            foreach ($checklists as $checklist => $item) {
+
+                $progress = 0;
+
+                if ($detail_rkm->metode_kelas === 'Offline') {
+                    // ===== Materi =====
+                    $materiChecked =
+                        ($item->subChecklistKeperluans?->materi_module ? 1 : 0) +
+                        ($item->subChecklistKeperluans?->materi_elearning ? 1 : 0);
+    
+                    $progress += ($materiChecked / 2) * 20;
+    
+                    // ===== Kelas =====
+                    if ($item->kelas) {
+                        $progress += 20;
+                    }
+    
+                    // ===== CB =====
+                    $cbChecked =
+                        ($item->subChecklistKeperluans?->cb_instruktur ? 1 : 0) +
+                        ($item->subChecklistKeperluans?->cb_peserta ? 1 : 0);
+    
+                    $progress += ($cbChecked / 2) * 20;
+    
+                    // ===== Maksi =====
+                    $maksiChecked =
+                        ($item->subChecklistKeperluans?->maksi_instruktur ? 1 : 0) +
+                        ($item->subChecklistKeperluans?->maksi_peserta ? 1 : 0);
+    
+                    $progress += ($maksiChecked / 2) * 20;
+    
+                    // ===== Keperluan Kelas =====
+                    $kelasChecked =
+                        ($item->subChecklistKeperluans?->kelas_ac ? 1 : 0) +
+                        ($item->subChecklistKeperluans?->kelas_jam ? 1 : 0) +
+                        ($item->subChecklistKeperluans?->kelas_buku ? 1 : 0) +
+                        ($item->subChecklistKeperluans?->kelas_pulpen ? 1 : 0) +
+                        ($item->subChecklistKeperluans?->kelas_permen ? 1 : 0) +
+                        ($item->subChecklistKeperluans?->kelas_camilan ? 1 : 0) +
+                        ($item->subChecklistKeperluans?->kelas_minuman ? 1 : 0) +
+                        ($item->subChecklistKeperluans?->kelas_lampu ? 1 : 0) +
+                        ($item->subChecklistKeperluans?->kelas_kondisi_kebersihan ? 1 : 0);
+    
+                    $progress += ($kelasChecked / 9) * 20;
+
+                    $item->progress = round($progress);
+                } else {
+                    $totalKategori = 3;
+                    $kategoriSelesai = 0;
+
+                    // ===== Materi =====
+                    $totalMateri = 2;
+                    $materiChecked =
+                        ($item->subChecklistKeperluans?->materi_module ? 1 : 0) +
+                        ($item->subChecklistKeperluans?->materi_elearning ? 1 : 0);
+    
+                    $kategoriSelesai += $materiChecked / $totalMateri;
+
+                    // ===== CB =====
+                    $kategoriSelesai += ($item->subChecklistKeperluans?->cb_instruktur ? 1 : 0);
+    
+                    // ===== Maksi =====
+                    $kategoriSelesai += ($item->subChecklistKeperluans?->maksi_instruktur ? 1 : 0);
+
+                    $item->progress = round(($kategoriSelesai / $totalKategori) * 100);
+                }
+            }
+        }
+
+        $endOfNextWeek = $now->copy()->addWeek()->endOfWeek();
+        // Tagihan Perusaaan
+        $trackingTagihanPerusahaans = trackingTagihanPerusahaan::with('tagihanPerusahaan')
+            ->whereBetween('tanggal_perkiraan_selesai', [$startOfThisWeek, $endOfNextWeek])
+            ->orderByDesc('created_at')
+            ->get(); 
+        
+        $administrasis = AdministrasiKaryawan::orderBy('dateline', 'desc')
+            ->where('status', '!=', 'selesai')
+            ->get();
 
         return view('office.dashboard', compact(
             'total_karyawan',
@@ -149,6 +318,9 @@ class OfficeController extends Controller
             'rkm',
             'jumlahPeserta',
             'jumlahInstruktur',
+            'rkms',
+            'trackingTagihanPerusahaans',
+            'administrasis'
         ));
     }
 
@@ -416,5 +588,82 @@ class OfficeController extends Controller
             'dataMengajar' => $dataMengajar,
             'rentangWaktu' => $rentangWaktu
             ]);
+    }
+
+    // Function hari Libur
+
+    public function dataHariLibur($year)
+    {
+        $response = HariLibur::where('year', $year)->get();
+
+        return response()->json($response);
+    }
+
+    public function storeHariLibur(Request $request)
+    {
+        $request->validate([
+            'nama' => 'required|string',
+            'tanggal' => 'required|date',
+        ]);
+
+        HariLibur::create([
+            'nama' => $request->nama,
+            'tanggal' => $request->tanggal,
+            'year' => Carbon::parse($request->tanggal)->year,
+            'tipe' => 'perusahaan',
+        ]);
+
+        return redirect()->back()->with('success_libur', 'Hari libur berhasil ditambahkan.');
+    }
+
+    public function deleteHariLibur($id)
+    {
+        $hariLibur = HariLibur::findOrFail($id);
+        $hariLibur->delete();
+
+        return redirect()->back()->with('success_libur', 'Hari libur berhasil dihapus.');
+    }
+
+    public function editHariLibur($id)
+    {
+        $hariLibur = HariLibur::findOrFail($id);
+
+        return response()->json($hariLibur);
+    }
+
+    public function updateHariLibur(Request $request, $id)
+    {
+        $request->validate([
+            'nama' => 'required|string',
+            'tanggal' => 'required|date',
+        ]);
+
+        $hariLibur = HariLibur::findOrFail($id);
+        $hariLibur->update([
+            'nama' => $request->nama ?? $hariLibur->nama,
+            'tanggal' => $request->tanggal ?? $hariLibur->tanggal,
+            'year' => Carbon::parse($request->tanggal)->year ?? $hariLibur->year,
+        ]);
+
+        return redirect()->back()->with('success_libur', 'Hari libur berhasil diperbarui.');
+    }
+
+    // End hari libur
+
+    // Export checklist
+    public function exportChecklistPdf($id)
+    {
+        $rkm = RKM::with('materi', 'perusahaan', 'peluang')
+            ->where('id', $id)
+            ->firstOrFail();
+
+        $pdf = Pdf::loadView('office.checklistRkmPdf', compact('rkm'));
+
+        return $pdf->download("Checklist_Keperluan.pdf");
+    }
+
+    public function exportChecklistExcel($id)
+    {
+        return Excel::download(new ChecklistRkmExport($id), 'Checklist_Keperluan.xlsx');
     }
 }

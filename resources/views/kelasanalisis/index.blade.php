@@ -727,7 +727,6 @@
                     }
 
                     var html = '<table class="table table-bordered">';
-
                     html += '<thead><tr>';
                     html += '<th rowspan="2" style="text-align:center;">No</th>';
                     html += '<th rowspan="2" style="text-align:center;">Kelas</th>';
@@ -746,9 +745,9 @@
                     html += '<th rowspan="2" style="text-align:center;">Alat (Rp.)</th>';
                     html += '<th rowspan="2" style="text-align:center;">Fee Instruktur / Hours (Rp.)</th>';
                     html += '<th rowspan="2" style="text-align:center;">Total (Rp.)</th>';
+                    html += '<th rowspan="2" style="text-align:center;">Persentase (%)</th>';
                     if (jabatan === 'HRD' || jabatan === 'Koordinator Office' || jabatan === 'SPV Sales') {
                         html += '<th rowspan="2" style="text-align:center;">Aksi</th>';
-
                     }
                     html += '</tr><tr>';
                     html += '<th style="text-align:center;">Harga Modul Regular (Rp.)</th>';
@@ -789,8 +788,7 @@
                             html += `<td>${formatWithoutDecimals(item.total_harga_jual || 0)}</td>`;
 
                             if (!item.analisisrkm) {
-                                let colspan = (jabatan === 'HRD' || jabatan === 'Koordinator Office' || jabatan ===
-                                    'SPV Sales') ? 13 : 12;
+                                let colspan = (jabatan === 'HRD' || jabatan === 'Koordinator Office' || jabatan === 'SPV Sales') ? 14 : 13;
                                 html += `<td colspan="${colspan}" class="text-center">Belum Diinput data</td>`;
                             } else {
                                 let a = item.analisisrkm;
@@ -800,7 +798,7 @@
                                 html += `<td>${formatWithoutDecimals(a.biaya_modul_regular || 0)}</td>`;
                                 html += `<td>${formatWithoutDecimals(a.konsumsi || 0)}</td>`;
                                 html += `<td>${formatWithoutDecimals(a.souvenir || 0)}</td>`;
-                                html += `<td>${formatWithoutDecimals(a.transportasi || 0)}</td>`;
+                                html += `<td>${formatWithoutDecimals(a.transportasi * a.pax * a.durasi || 0)}</td>`;
                                 html += `<td>${formatWithoutDecimals(a.pa_hotel || 0)}</td>`;
                                 html += `<td>${formatWithoutDecimals(a.exam || 0)}</td>`;
                                 html += `<td>${formatWithoutDecimals(a.pc || 0)}</td>`;
@@ -808,30 +806,30 @@
                                 html += `<td>${formatWithoutDecimals(a.alat || 0)}</td>`;
                                 html += `<td>${formatWithoutDecimals(a.fee_instruktur || 0)}</td>`;
                                 html += `<td>${formatWithoutDecimals(a.nett_penjualan || 0)}</td>`;
-                            }
 
+                                // Hitung persentase
+                                let persentase = 0;
+                                if (item.total_harga_jual && item.total_harga_jual > 0) {
+                                    persentase = (a.nett_penjualan / item.total_harga_jual) * 100;
+                                }
+                                let persentaseColor = persentase < 30 ? 'red' : 'green';
+                                html += `<td style="color:${persentaseColor}; font-weight:bold">${persentase.toFixed(2)}%</td>`;
+                            }
 
                             if (jabatan === 'HRD' || jabatan === 'Koordinator Office' || jabatan === 'SPV Sales') {
                                 html += `<td>
-                    <div class="btn-group dropup">
-                        <button type="button" class="btn dropdown-toggle text-white" data-bs-toggle="dropdown">
-                            Actions
-                        </button>
-                        <div class="dropdown-menu">`;
+                                    <div class="btn-group dropup">
+                                        <button type="button" class="btn dropdown-toggle text-white" data-bs-toggle="dropdown">
+                                            Actions
+                                        </button>
+                                        <div class="dropdown-menu">`;
                                 if (item.status === 'Merah') {
-                                    html +=
-                                        `<a class="dropdown-item" href="/analisisrkm/${item.id}/create">Input Data</a>`;
-
-                                    html +=
-                                        `<a class="dropdown-item" href="/kalkulator/analisis/${item.id}/kelas">Kalkulator Analisis</a>`;
+                                    html += `<a class="dropdown-item" href="/analisisrkm/${item.id}/create">Input Data</a>`;
+                                    html += `<a class="dropdown-item" href="/kalkulator/analisis/${item.id}/kelas">Kalkulator Analisis</a>`;
                                 } else {
                                     html += `<a class="dropdown-item disabled" href="#">Input Data</a>`;
-                                    html +=
-
-                                        `<a class="dropdown-item" href="/kelasanalisis/${item.id}/edit">Edit Data</a>`;
-
-                                    html +=
-                                        `<a class="dropdown-item" href="/kalkulator/analisis/${item.id}/kelas">Kalkulator Analisis</a>`;
+                                    html += `<a class="dropdown-item" href="/kelasanalisis/${item.id}/edit">Edit Data</a>`;
+                                    html += `<a class="dropdown-item" href="/kalkulator/analisis/${item.id}/kelas">Kalkulator Analisis</a>`;
                                 }
                                 html += `</div></div></td>`;
                             }
@@ -839,13 +837,12 @@
                             html += '</tr>';
                         });
 
-                        var totalNettPenjualan = group.reduce((acc, item) => acc + (parseFloat(item.analisisrkm
-                            ?.nett_penjualan || 0)), 0);
+                        var totalNettPenjualan = group.reduce((acc, item) => acc + (parseFloat(item.analisisrkm?.nett_penjualan || 0)), 0);
                         html += '<tr style="font-weight:bold; background:#f2f2f2">';
-                        let colspan = (jabatan === 'HRD' || jabatan === 'Koordinator Office' || jabatan === 'SPV Sales') ?
-                            18 : 17;
+                        let colspan = (jabatan === 'HRD' || jabatan === 'Koordinator Office' || jabatan === 'SPV Sales') ? 19 : 18;
                         html += `<td colspan="${colspan}" class="text-end">Subtotal:</td>`;
                         html += `<td>${formatWithoutDecimals(totalNettPenjualan)}</td>`;
+                        html += `<td></td>`; // Kosong untuk kolom persentase subtotal
                         if (jabatan === 'HRD' || jabatan === 'Koordinator Office' || jabatan === 'SPV Sales') {
                             html += '<td></td>';
                         }
@@ -853,7 +850,6 @@
                     });
 
                     html += '</tbody></table>';
-                    // console.log("Rendered table HTML: ", html);
                     return html;
                 }
 

@@ -7,6 +7,7 @@
     <title>Form Surat Penawaran</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -433,7 +434,7 @@
 
         <h3>Data Penerima (Klien)</h3>
         <label>Pilih Perusahaan:</label>
-        <select id="perusahaan" required>
+        <select id="perusahaan" class="select2-init" required>
             <option value="">Pilih Perusahaan</option>
             @if ($isAdmin)
                 @foreach ($perusahaans as $p)
@@ -446,10 +447,12 @@
                     </option>
                 @endforeach
             @endif
-        </select>
+        </select><br><br>
 
         <label>Nama Pimpinan/Perusahaan:</label>
-        <input type="text" id="penerima" class="readonly" readonly>
+        <input type="text" id="penerima"><br><br>
+        <label>Divisi:</label>
+        <input type="text" id="divisi">
 
         <h3>Deskripsi</h3>
         <label>Deskripsi Penawaran:</label>
@@ -460,6 +463,9 @@
         <input type="number" id="ppn-rate" value="11" min="0" max="100" step="0.1" required>
         <label><input type="checkbox" id="include-ppn" checked> Termasuk PPN</label>
         <div id="pelatihan-list"></div>
+        <div style="text-align: right; font-weight: bold; margin-top: 10px; margin-bottom: 10px; font-size: 16px;">
+            Total Keseluruhan: <span id="grand-total">Rp 0,-</span>
+        </div>
         <select name="listexam" id="exam" style="display: none">
             @foreach ($exam as $item)
                 <option value="{{ $item->nama_exam }}">{{ $item->nama_exam }}</option>
@@ -539,13 +545,31 @@
 
 
         <button type="button" id="preview-btn">Generate PDF</button>
+        <button type="button" id="download-word">Generate WORD</button>
+        <button type="button" id="btn-create-prospect" style="background: #28a745; color: white; border: none; cursor: pointer;">Buat Prospect & Aktivitas</button>
     </form>
 
     <div id="preview-modal">
         <div id="preview-content"></div>
     </div>
 
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
+        $(document).ready(function() {
+            $('#perusahaan').select2({
+                placeholder: "Pilih Perusahaan",
+                allowClear: true,
+                width: '100%'
+            });
+
+            $('#perusahaan').on('select2:select', function (e) {
+                const data = e.params.data.element;
+                const nama = data.getAttribute('data-nama') || '';
+                document.getElementById('penerima').value = nama;
+            });
+        });
+
         const {
             jsPDF
         } = window.jspdf;
@@ -648,6 +672,35 @@
             document.getElementById('penerima').value = nama;
         });
 
+        function updateFasilitasDanKeuntunganBasedOnMetode() {
+            const metodeRows = document.querySelectorAll('.pelatihan-row .metode-select');
+            let hasOnline = false;
+
+            metodeRows.forEach(select => {
+                if (select.value === 'Online') {
+                    hasOnline = true;
+                }
+            });
+
+            document.querySelectorAll('.fasilitas-row').forEach(row => row.remove());
+            document.querySelectorAll('.keuntungan-row').forEach(row => row.remove());
+
+            fasilitasKonstan.forEach(item => {
+                if (hasOnline && !['Instruktur', 'E-Modul', 'E-Lab'].includes(item)) {
+                    return;
+                }
+                addFasilitasRow(item);
+            });
+
+            keuntunganKonstan.forEach(item => {
+                // Hilangkan Souvenir jika ada kelas Online
+                if (hasOnline && item.includes('Souvenir')) {
+                    return;
+                }
+                addKeuntunganRow(item);
+            });
+        }
+
         // Fungsi untuk menambahkan baris pelatihan
         document.getElementById('add-pelatihan').addEventListener('click', () => {
             const row = document.createElement('div');
@@ -663,45 +716,108 @@
                     </select>
                     <input type="text" class="materi-text" placeholder="Nama Materi" required style="width: 70%;">
                 </div>
-                
+
                 <div style="display: flex; gap: 5px; margin-top: 5px;">
                     <select class="exam-select" style="width: 100%;">
                         <option value="-">-- Tanpa Exam --</option>
                         ${examOptions}
                     </select>
+                    <input type="text" class="harga-exam" placeholder="Harga Exam (Rp)" style="width: 45%;" inputmode="numeric">
                 </div>
 
-                <div style="display: flex; align-items: center; gap: 5px; margin-top: 5px;">
-                    <input type="number" class="durasi-pelatihan" placeholder="Durasi" min="1" required style="width: 70px;">
+                <div style="display: flex; gap: 5px; margin-top: 8px; align-items: center;">
+                    <select class="metode-select" style="width: 140px;" required>
+                        <option value="">-- Metode --</option>
+                        <option value="Online">Online</option>
+                        <option value="Offline">Offline</option>
+                        <option value="Inhouse">Inhouse</option>
+                    </select>
+                    <input type="number" class="durasi-pelatihan" placeholder="Durasi" min="1" required style="width: 80px;">
+                    <label style="font-size: 12px; display: flex; align-items: center; gap: 2px; cursor: pointer;">
+                        <input type="checkbox" class="use-pax" checked> Pax
+                    </label>
+                    <input type="number" class="pax-pelatihan" placeholder="Jml" min="1" value="" required style="width: 50px;">
                     <input type="date" class="tanggal-awal-pelatihan" required style="flex: 1;">
                 </div>
 
                 <input type="text" class="tanggal-pelatihan" readonly placeholder="Tanggal Akhir Otomatis" style="margin-top: 5px;">
                 <input type="text" class="harga-pelatihan" placeholder="Harga (Rp)" required style="margin-top: 5px;">
                 <input type="text" class="ppn-amount" readonly placeholder="PPN Amount" style="margin-top: 5px;">
-                <button type="button" onclick="this.parentElement.remove()" style="background: #ff4d4d; color: white; border: none; cursor: pointer;">Hapus Baris</button>
+                <button type="button" onclick="this.parentElement.remove(); updateGrandTotal();" style="background: #ff4d4d; color: white; border: none; cursor: pointer;">Hapus Baris</button>
             `;
+
             document.getElementById('pelatihan-list').appendChild(row);
+
+            $(row).find('.materi-select').select2({
+                placeholder: "Pilih Materi",
+                width: '50%'
+            });
+
+            $(row).find('.exam-select').select2({
+                placeholder: "Pilih Exam",
+                width: '50%'
+            });
+
+            $(row).find('.materi-select').on('select2:select', function(e) {
+                const data = e.params.data.element;
+                const nama = data.getAttribute('data-nama') || '';
+                const durasi = data.getAttribute('data-durasi') || '';
+
+                const rowElement = $(this).closest('.pelatihan-row');
+                rowElement.find('.materi-text').val(nama);
+                rowElement.find('.durasi-pelatihan').val(durasi).trigger('input');
+            });
 
             // Seleksi elemen
             const materiSelect = row.querySelector('.materi-select');
             const materiTextInput = row.querySelector(
                 '.materi-text'); // Input baru untuk nama materi yg di customize
             const durasiInput = row.querySelector('.durasi-pelatihan');
+            const paxInput = row.querySelector('.pax-pelatihan');
             const tanggalAwalInput = row.querySelector('.tanggal-awal-pelatihan');
             const tanggalPelatihanInput = row.querySelector('.tanggal-pelatihan');
             const hargaInput = row.querySelector('.harga-pelatihan');
             const ppnAmountInput = row.querySelector('.ppn-amount');
+            const hargaExamInput = row.querySelector('.harga-exam');
+
+            const metodeSelect = row.querySelector('.metode-select');
+            const usePaxCheckbox = row.querySelector('.use-pax');
+
+            metodeSelect.addEventListener('change', () => {
+                updateFasilitasDanKeuntunganBasedOnMetode();
+            });
+
+            usePaxCheckbox.addEventListener('change', function() {
+                paxInput.disabled = !this.checked;
+                if (!this.checked) {
+                    paxInput.value = ''; // Kosongkan input jika tidak menggunakan pax
+                }
+                updatePPN(); // Kalkulasi ulang total
+            });
+
+            paxInput.addEventListener('input', updatePPN); // Memicu pembaruan saat pax diketik
 
             function updatePPN() {
                 const ppnRate = parseFloat(document.getElementById('ppn-rate').value) || 0;
                 const includePPN = document.getElementById('include-ppn').checked;
-                const price = parseFloat(hargaInput.value) || 0;
+
+                const pricePelatihan = parseFloat(hargaInput.value) || 0;
+                const priceExam = parseFloat(hargaExamInput.value.replace(/[^0-9]/g, '')) || 0;
+                const totalBeforePPN = pricePelatihan + priceExam;
+
                 const {
+                    total,
                     ppnAmount
-                } = calculatePriceWithPPN(price, ppnRate, includePPN);
+                } = calculatePriceWithPPN(totalBeforePPN, ppnRate, includePPN);
+
                 ppnAmountInput.value = formatRupiah(ppnAmount);
+                updateGrandTotal(); // Memanggil pembaruan total keseluruhan
             }
+
+            hargaInput.addEventListener('input', updatePPN);
+            hargaExamInput.addEventListener('input', updatePPN); // Tambahan pemicu harga exam
+            document.getElementById('ppn-rate').addEventListener('input', updatePPN);
+            document.getElementById('include-ppn').addEventListener('change', updatePPN);
 
             function updateEndDate() {
                 const durasi = parseInt(durasiInput.value) || 0;
@@ -741,6 +857,30 @@
                 }
             });
         });
+
+        // Fungsi untuk menghitung total keseluruhan
+        function updateGrandTotal() {
+            let grandTotal = 0;
+            const ppnRate = parseFloat(document.getElementById('ppn-rate').value) || 0;
+            const includePPN = document.getElementById('include-ppn').checked;
+
+            document.querySelectorAll('.pelatihan-row').forEach(row => {
+                const hargaPelatihan = parseFloat(row.querySelector('.harga-pelatihan').value) || 0;
+                const hargaExamRaw = row.querySelector('.harga-exam').value.replace(/[^0-9]/g, '') || '0';
+                const hargaExam = parseFloat(hargaExamRaw) || 0;
+
+                const usePax = row.querySelector('.use-pax').checked;
+                const paxVal = row.querySelector('.pax-pelatihan').value;
+                const paxInt = usePax ? (parseInt(paxVal) || 1) : 1;
+
+                const totalBeforePPN = hargaPelatihan + hargaExam;
+                const { total } = calculatePriceWithPPN(totalBeforePPN, ppnRate, includePPN);
+
+                grandTotal += (total * paxInt);
+            });
+
+            document.getElementById('grand-total').innerText = formatRupiah(grandTotal);
+        }
 
         // Fungsi untuk menambahkan baris fasilitas
         function addFasilitasRow(value = '') {
@@ -800,8 +940,9 @@
         function getDeskripsi() {
             const penerima = document.getElementById('penerima').value || '';
             const deskripsi = document.getElementById('deskripsi').value || '';
+            const perusahaan = document.getElementById('perusahaan').options[document.getElementById('perusahaan').selectedIndex].getAttribute('data-nama') || '';
             const constantPart =
-                `<br><br>Kami mengundang Bapak/Ibu ${penerima}, untuk memperbarui pengetahuan dan keterampilan dalam bidang teknologi informasi, digitalisasi, serta pengembangan soft skill lainnya, melalui program-program pelatihan yang diselenggarakan oleh Inixindo Bandung. Kami menawarkan pelatihan sebagai berikut:`;
+                `<br><br>Kami mengundang Bapak/Ibu ${perusahaan}, untuk memperbarui pengetahuan dan keterampilan dalam bidang teknologi informasi, digitalisasi, serta pengembangan soft skill lainnya, melalui program-program pelatihan yang diselenggarakan oleh Inixindo Bandung. Kami menawarkan pelatihan sebagai berikut:`;
             return deskripsi + constantPart;
         }
 
@@ -810,6 +951,8 @@
             const hal = document.getElementById('hal').value || '';
             const lampiran = document.getElementById('lampiran').value || '';
             const penerima = document.getElementById('penerima').value || '';
+            const divisi = document.getElementById('divisi').value || '';
+            const perusahaan = document.getElementById('perusahaan').options[document.getElementById('perusahaan').selectedIndex].getAttribute('data-nama') || '';
             const namaSales = document.getElementById('nama-sales').value || '';
             const jabatanSales = document.getElementById('jabatan-sales').value || '';
             const waSales = document.getElementById('wa-sales').value || '';
@@ -824,32 +967,67 @@
                 return;
             }
 
-            // Proses pelatihan
             const pelatihanRows = document.querySelectorAll('.pelatihan-row');
             let pelatihanHTML = '';
             let isPelatihanValid = true;
+            let hasOnline = false;
+            let grandTotalPDF = 0;
+
+            // Pra-pengecekan: apakah ada minimal 1 baris yang menggunakan Pax
+            let showPaxColumn = false;
+            pelatihanRows.forEach(row => {
+                if (row.querySelector('.use-pax').checked) {
+                    showPaxColumn = true;
+                }
+            });
 
             pelatihanRows.forEach(row => {
                 const materi = row.querySelector('.materi-text').value || '';
-                const exam = row.querySelector('.exam-select').value || '-'; // Ambil nilai exam
+                const metode = row.querySelector('.metode-select').value || '-';
+                const examName = row.querySelector('.exam-select').value || '-';
+                const hargaExamRaw = row.querySelector('.harga-exam').value.replace(/[^0-9]/g, '') ||
+                    '0';
+                const hargaExam = parseInt(hargaExamRaw) || 0;
+                const examDisplay = examName === '-' ? '-' :
+                    `${examName} ${hargaExam > 0 ? `(${formatRupiah(hargaExam)})` : ''}`;
+
                 const durasiVal = row.querySelector('.durasi-pelatihan').value;
                 const durasi = durasiVal ? `${durasiVal} Hari` : '';
+                const usePax = row.querySelector('.use-pax').checked;
+                const paxVal = row.querySelector('.pax-pelatihan').value || '1';
+                const paxInt = usePax ? (parseInt(paxVal) || 1) : 1;
+                const pax = usePax ? `${paxVal} Orang` : `1 Orang`;
+                const paxDisplay = usePax ? `${paxVal} Orang` : '';
                 const tanggal = row.querySelector('.tanggal-pelatihan').value || '';
-                const harga = parseFloat(row.querySelector('.harga-pelatihan').value) || 0;
 
-                const { total } = calculatePriceWithPPN(harga, ppnRate, includePPN);
+                const hargaPelatihan = parseFloat(row.querySelector('.harga-pelatihan').value) || 0;
+                const totalBeforePPN = hargaPelatihan + hargaExam;
+                if (metode === 'Online') {
+                    hasOnline = true;
+                }
 
-                if (!materi || !durasi || !tanggal || !harga) {
+                const {
+                    total
+                } = calculatePriceWithPPN(totalBeforePPN, ppnRate, includePPN);
+
+                grandTotalPDF += (total * paxInt); // Akumulasi total berdasarkan jumlah pax
+
+                if (!materi || !durasi || !tanggal || !hargaPelatihan) {
                     isPelatihanValid = false;
                     return;
                 }
 
-                pelatihanHTML += `
+                const paxTd = showPaxColumn ? `<td>${paxDisplay}</td>` : '';
+
+            pelatihanHTML += `
                     <tr>
                         <td>${materi}</td>
-                        <td>${exam}</td> <td>${durasi}</td>
+                        <td>${metode}</td>
+                        <td>${examDisplay}</td>
+                        <td>${durasi}</td>
+                        ${paxTd}
                         <td>${tanggal}</td>
-                        <td>${formatRupiah(total)}</td>
+                        <td>${formatRupiah(total * paxInt)}</td>
                     </tr>
                 `;
             });
@@ -934,8 +1112,66 @@
                 <img src="${signatureUrl}" alt="Tanda Tangan ${namaSales}" class="signature-img" style="width: auto; height: 15mm; "/>
             ` : `<p>Tanda Tangan Tidak Tersedia</p>`;
 
-            // Split content into two parts for page break before keuntungan
-            const firstPageContent = `
+            const keuntunganSection = `
+                <p class="font-semibold mt-2" style="font-weight:bold;">Keuntungan yang Akan Anda Dapatkan:</p>
+                <ul class="list-disc pl-6">${keuntunganHTML}</ul>
+            `;
+
+            // --- firstPageContent ---
+            let showExamColumn = false;
+            try {
+                const parser = new DOMParser();
+                const pelatihanDoc = parser.parseFromString(`<table><tbody>${pelatihanHTML}</tbody></table>`, 'text/html');
+                const rows = pelatihanDoc.querySelectorAll('tr');
+                for (const row of rows) {
+                    const tds = row.querySelectorAll('td');
+                    if (tds.length >= 3) {
+                        const examVal = tds[2].textContent.trim();
+                        if (examVal && examVal !== '-') {
+                            showExamColumn = true;
+                            break;
+                        }
+                    }
+                }
+            } catch (e) { showExamColumn = true; }
+
+            let tableHeader = `
+                <th style="width: 25%;">Materi Pelatihan</th>
+                <th style="width: 10%;">Metode</th>
+                ${showExamColumn ? '<th style="width: 15%;">Exam</th>' : ''}
+                <th style="width: 10%;">Durasi</th>
+                ${showPaxColumn ? '<th style="width: 8%;">Pax</th>' : ''}
+                <th style="width: 15%;">Tanggal</th>
+                <th style="width: 17%;">Harga ${includePPN ? `(PPN ${ppnRate}%)` : ''}</th>
+            `;
+
+            let pelatihanHTMLMod = pelatihanHTML;
+            if (!showExamColumn) {
+                try {
+                    const parser = new DOMParser();
+                    const pelatihanDoc = parser.parseFromString(`<table><tbody>${pelatihanHTML}</tbody></table>`, 'text/html');
+                    const rows = pelatihanDoc.querySelectorAll('tr');
+                    rows.forEach(row => {
+                        const tds = row.querySelectorAll('td');
+                        if (tds.length >= 3) {
+                            tds[2].remove();
+                        }
+                    });
+                    pelatihanHTMLMod = Array.from(rows).map(r => r.outerHTML).join('');
+                } catch (e) {}
+            }
+
+            let colSpanTotal = 4;
+            if (showExamColumn) colSpanTotal++;
+            if (showPaxColumn) colSpanTotal++;
+            pelatihanHTMLMod += `
+                <tr>
+                    <td colspan="${colSpanTotal}" style="text-align: right; font-weight: bold;">Grand Total Keseluruhan</td>
+                    <td style="font-weight: bold;">${formatRupiah(grandTotalPDF)}</td>
+                </tr>
+            `;
+
+            let firstPageContent = `
                 <div class="container">
                     <img src="${backgroundUrl}" class="background-image" alt="Background">
                     <div class="header-container">
@@ -959,24 +1195,22 @@
                         </div>
                         <div class="penerima text-sm text-gray-700">
                             <p>Kepada Yth.</p>
-                            <p>Bapak/Ibu</p>
-                            <p>Pimpinan ${penerima}</p>
+                            <p>${penerima}</p>
+                            <p>${divisi}</p>
+                            <p>${perusahaan}</p>
                             <p>Di Tempat</p>
                         </div>
                         <div class="deskripsi text-sm text-gray-800">
                             <p class="font-semibold">Dengan Hormat,</p>
                             <p>${getDeskripsi()}</p>
                             <table class="training-table">
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 30%;">Materi Pelatihan</th>
-                                            <th style="width: 20%;">Exam</th> <th style="width: 15%;">Durasi</th>
-                                            <th style="width: 15%;">Tanggal</th>
-                                            <th style="width: 20%;">Harga ${includePPN ? `(Incl. PPN ${ppnRate}%)` : ''}</th>
-                                        </tr>
-                                    </thead>
+                                <thead>
+                                    <tr>
+                                        ${tableHeader}
+                                    </tr>
+                                </thead>
                                 <tbody>
-                                    ${pelatihanHTML}
+                                    ${pelatihanHTMLMod}
                                 </tbody>
                             </table>
                         </div>
@@ -986,18 +1220,20 @@
                             <p class="font-semibold mt-2" style="font-weight:bold;">Fasilitas dan Perlengkapan yang Kami Sediakan:</p>
                             <ol class="list-decimal pl-6">${fasilitasHTML}</ol>
                         </div>
-                    </div>
-                </div>
             `;
 
-            const secondPageContent = `
+            firstPageContent += `
+                                </div>
+                            </div>
+                        `;
+
+            let secondPageContent = `
                 <div class="container">
                     <div class="content-container">
                         <img src="${backgroundUrl}" class="background-image" alt="Background">
                         <div class="keuntungan-closing-container">
                             <div class="terms text-sm text-gray-800">
-                                <p class="font-semibold mt-2" style="font-weight:bold;">Keuntungan yang Akan Anda Dapatkan:</p>
-                                <ul class="list-disc pl-6">${keuntunganHTML}</ul>
+                                ${keuntunganSection}
                             </div>
                             <div class="closing text-sm text-gray-700">
                                 <p>Demikian surat penawaran ini kami sampaikan. Besar harapan kami dapat bekerja sama dengan Bapak/Ibu.</p>
@@ -1011,7 +1247,7 @@
                                 <div class="signature">
                                     ${signatureHTML}
                                     <p><strong>${namaSales}</strong></p>
-                                    <p>${jabatanSales},</p> 
+                                    <p>${jabatanSales},</p>
                                     <p>Inixindo Bandung</p>
                                 </div>
                                 ${vendorImagesHTML}
@@ -1021,7 +1257,6 @@
                 </div>
             `;
 
-            // Generate PDF
             await generatePDF(firstPageContent, secondPageContent);
         });
 
@@ -1032,22 +1267,21 @@
                 format: 'a4'
             });
 
-            // CSS styles for PDF rendering
             const styles = `
                 <style>
-                    body { 
-                        margin: 0; 
-                        padding: 0; 
-                        font-size: 9pt; 
-                        font-family: Arial, sans-serif; 
-                        position: relative; 
+                    body {
+                        margin: 0;
+                        padding: 0;
+                        font-size: 9pt;
+                        font-family: Arial, sans-serif;
+                        position: relative;
                     }
-                    .container { 
-                        max-width: 190mm; 
-                        width: 100%; 
-                        margin: 0; 
-                        padding: 5mm; 
-                        background: transparent; 
+                    .container {
+                        max-width: 190mm;
+                        width: 100%;
+                        margin: 0;
+                        padding: 5mm;
+                        background: transparent;
                     }
                     .header-container {
                         width: 183mm;
@@ -1074,18 +1308,24 @@
                     .closing p.contact-info span.label { flex: 0 0 20mm; text-align: left; }
                     .closing p.contact-info span.value { flex: 1; text-align: left; }
                     .training-table { width: 100%; margin: 1mm 0; border-collapse: collapse; }
-                    .training-table th, .training-table td { font-size: 9pt; padding: 3pt 5pt; border: 1px solid #ccc; text-align: left; word-wrap: break-word; line-height: 12pt; }
+                    .training-table th, .training-table td { font-size: 9pt; padding: 3pt 5pt; border: 1px solid #ccc; text-align: center; word-wrap: break-word; line-height: 12pt; }
                     .training-table th { background-color: #f2f2f2; }
                     .list-disc { list-style-type: disc; padding-left: 15px; }
                     .list-decimal { list-style-type: decimal; padding-left: 30px; }
                     .vendor-images {
+                        position: absolute;
+                        bottom: 0;
+                        top: 135mm;
+                        left: 15mm;
+                        right: 0;
                         display: grid;
                         grid-template-columns: repeat(5, 1fr);
                         gap: 5mm;
-                        margin-top: 80mm;
+                        margin-top: 90mm;
+                        margin-left: 10mm
                     }
                     .vendor-images img {
-                        width: 25mm;
+                        width: 20mm;
                         height: auto;
                         object-fit: contain;
                     }
@@ -1101,7 +1341,6 @@
                 </style>
             `;
 
-            // Create temporary containers for rendering
             const tempContainer = document.createElement('div');
             tempContainer.style.position = 'absolute';
             tempContainer.style.top = '-9999px';
@@ -1109,7 +1348,6 @@
             tempContainer.style.height = '297mm';
             document.body.appendChild(tempContainer);
 
-            // Render first page
             tempContainer.innerHTML = `<html><head>${styles}</head><body>${firstPageContent}</body></html>`;
             let canvas = await html2canvas(tempContainer, {
                 scale: 2,
@@ -1122,10 +1360,8 @@
             const imgData = canvas.toDataURL('image/png');
             doc.addImage(imgData, 'PNG', 0, 0, 210, 297);
 
-            // Add new page for keuntungan and closing
             doc.addPage();
 
-            // Render second page
             tempContainer.innerHTML = `<html><head>${styles}</head><body>${secondPageContent}</body></html>`;
             canvas = await html2canvas(tempContainer, {
                 scale: 2,
@@ -1138,12 +1374,168 @@
             const imgData2 = canvas.toDataURL('image/png');
             doc.addImage(imgData2, 'PNG', 0, 0, 210, 297);
 
-            // Clean up
             document.body.removeChild(tempContainer);
 
-            // Download PDF
             doc.save('Surat_Penawaran.pdf');
         }
+
+        document.getElementById('download-word').addEventListener('click', async () => {
+            const pelatihan = [];
+            document.querySelectorAll('.pelatihan-row').forEach(row => {
+                pelatihan.push({
+                    materi: row.querySelector('.materi-text').value,
+                    exam: row.querySelector('.exam-select').value,
+                    harga_exam: row.querySelector('.harga-exam').value,
+                    metode: row.querySelector('.metode-select').value,
+                    durasi: row.querySelector('.durasi-pelatihan').value,
+                    pax: row.querySelector('.pax-pelatihan').value || '1',
+                    tanggal_awal: row.querySelector('.tanggal-awal-pelatihan').value,
+                    tanggal: row.querySelector('.tanggal-pelatihan').value,
+                    harga: row.querySelector('.harga-pelatihan').value
+                });
+            });
+
+            const fasilitas = [];
+            document.querySelectorAll('.fasilitas-item').forEach(item => {
+                fasilitas.push(item.value);
+            });
+
+            const keuntungan = [];
+            document.querySelectorAll('.keuntungan-item').forEach(item => {
+                keuntungan.push(item.value);
+            });
+
+            const syarat = [];
+            document.querySelectorAll('.syarat-checkbox:checked').forEach(checkbox => {
+                syarat.push(checkbox.getAttribute('data-content'));
+            });
+
+            const data = {
+                _token: "{{ csrf_token() }}",
+                no_surat: document.getElementById('no-surat').value,
+                hal: document.getElementById('hal').value,
+                lampiran: document.getElementById('lampiran').value,
+                penerima: document.getElementById('penerima').value,
+                perusahaan_id: document.getElementById('perusahaan').value,
+                deskripsi: document.getElementById('deskripsi').value,
+                ppn_rate: document.getElementById('ppn-rate').value,
+                include_ppn: document.getElementById('include-ppn').checked,
+                pelatihan: pelatihan,
+                fasilitas: fasilitas,
+                keuntungan: keuntungan,
+                syarat: syarat,
+                nama_sales: document.getElementById('nama-sales').value,
+                jabatan_sales: document.getElementById('jabatan-sales').value,
+                wa_sales: document.getElementById('wa-sales').value,
+                telp_sales: document.getElementById('telp-sales').value,
+                email_sales: document.getElementById('email-sales').value
+            };
+
+            if (!data.no_surat || !data.penerima) {
+                alert('Harap isi No Surat dan Penerima');
+                return;
+            }
+
+            try {
+                const response = await fetch("{{ route('crm.generate.word') }}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Surat_Penawaran_${data.no_surat}.docx`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan saat generate Word: ' + error.message);
+            }
+        });
+
+        document.getElementById('btn-create-prospect').addEventListener('click', async () => {
+            const idPerusahaan = document.getElementById('perusahaan').value;
+            if (!idPerusahaan) {
+                alert('Harap pilih Perusahaan terlebih dahulu.');
+                return;
+            }
+
+            const noSurat = document.getElementById('no-surat').value || '-';
+            const ppnRate = parseFloat(document.getElementById('ppn-rate').value) || 0;
+            const includePPN = document.getElementById('include-ppn').checked;
+            const rows = document.querySelectorAll('.pelatihan-row');
+
+            const dataPelatihan = [];
+
+            rows.forEach((row) => {
+                const materiText = row.querySelector('.materi-text').value || 'Materi Tidak Diketahui';
+                const materiId = row.querySelector('.materi-select').value || null; // Ekstraksi ID Materi
+                const metode = row.querySelector('.metode-select').value || '-';
+                const pax = parseInt(row.querySelector('.pax-pelatihan').value) || 1;
+                const durasi = row.querySelector('.durasi-pelatihan').value || '-';
+                const tanggalAwal = row.querySelector('.tanggal-awal-pelatihan').value || ''; // Ekstraksi tanggal awal
+
+                const hargaPelatihan = parseFloat(row.querySelector('.harga-pelatihan').value) || 0;
+                const hargaExamRaw = row.querySelector('.harga-exam').value.replace(/[^0-9]/g, '') || '0';
+                const hargaExam = parseFloat(hargaExamRaw) || 0;
+
+                const totalBeforePPN = hargaPelatihan + hargaExam;
+                const { total } = calculatePriceWithPPN(totalBeforePPN, ppnRate, includePPN);
+                const subTotal = total * pax;
+                const examName = row.querySelector('.exam-select').value || '-'; // Ambil data exam
+
+                dataPelatihan.push({
+                    materi_id: materiId,
+                    materi_text: materiText,
+                    metode_kelas: metode,
+                    exam: examName,
+                    pax: pax,
+                    tanggal_awal: tanggalAwal,
+                    durasi: durasi,
+                    harga: subTotal
+                });
+            });
+
+            const payload = {
+                _token: "{{ csrf_token() }}",
+                id_contact: idPerusahaan,
+                no_surat: noSurat,
+                pelatihan: dataPelatihan
+            };
+
+            try {
+                const response = await fetch("{{ route('crm.store.prospect.penawaran') }}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    alert('Prospect, RKM, dan Aktivitas berhasil dibuat untuk masing-masing pelatihan!');
+                } else {
+                    alert('Gagal: ' + (result.message || 'Terjadi kesalahan pada server.'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan jaringan.');
+            }
+        });
     </script>
 </body>
 

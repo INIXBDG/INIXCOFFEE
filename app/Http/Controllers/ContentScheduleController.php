@@ -10,7 +10,7 @@ class ContentScheduleController extends Controller
 {
     public function index()
     {
-        $schedules = ContentSchedule::latest()->get();
+        $schedules = ContentSchedule::orderByRaw('upload_date IS NULL DESC, upload_date DESC')->get();
         return view('schedules.index', compact('schedules'));
     }
 
@@ -18,8 +18,8 @@ class ContentScheduleController extends Controller
     {
         // 1. Validasi Input
         $validated = $request->validate([
-            'content_form' => 'required|in:Reels,Youtube,Feed,Story',
-            'talents'      => 'required|array',
+            'content_form' => 'required|in:Reels,Youtube,Feed,Story,Tiktok',
+            'talents'      => 'nullable|array',
             'talents.*'    => 'string',
             'description'  => 'nullable|string',
             'proof_script' => 'nullable|string',
@@ -34,8 +34,9 @@ class ContentScheduleController extends Controller
             $validated['proof_image_path'] = $filePath;
         }
 
-        // 3. Konversi Array Talents menjadi String (Comma Separated)
-        $validated['talents'] = implode(',', $request->talents);
+        $validated['talents'] = isset($validated['talents'])
+            ? implode(',', $validated['talents'])
+            : null;
 
         $validated['is_tiktok'] = $request->boolean('is_tiktok');
 
@@ -58,7 +59,7 @@ class ContentScheduleController extends Controller
     {
         // 1. Validasi Input Update
         $validated = $request->validate([
-            'content_form' => 'in:Reels,Youtube,Feed,Story',
+            'content_form' => 'in:Reels,Youtube,Feed,Story,Tiktok',
             'upload_date'  => 'date',
             'talents'      => 'array',
             'description'  => 'nullable|string',

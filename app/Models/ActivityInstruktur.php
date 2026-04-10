@@ -21,7 +21,7 @@ class ActivityInstruktur extends Model
         'on_progress_at',
         'failed_at',
         'completed_at',
-        'is_locked',
+        'is_locked',    
         'id_rkm',
     ];
 
