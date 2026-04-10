@@ -419,8 +419,8 @@ function excelDownloadAdmSales() {
                                 }
                                 html += '</td>';
                                 html += '<td>';
-                                const examArray = rkm.exam.split(',').map(item => item.trim());
-                                const exam = Number(examArray[0]);
+                                const examArray = rkm.exam ? String(rkm.exam).split(',').map(item => item.trim()) : [];
+                                const exam = examArray.length > 0 ? Number(examArray[0]) : 0;
                                 if (exam == 0 || exam == '0') {
                                     html += 'Tidak';
                                 } else {
