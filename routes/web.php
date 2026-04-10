@@ -161,6 +161,21 @@ Route::get('/daily-activities-data', [DailyActivityController::class, 'activitie
 
 Route::get('/paymantAdvance/edit/{id}', [netSalesController::class, 'edit'])->name('netSales.edit.index');
 Route::get('paymantAdvance/{year}/{month}', [App\Http\Controllers\netSalesController::class, 'getRkmDataPerBulanPerMinggu']);
+
+Route::prefix('catering')->name('catering.')->group(function () {
+    Route::get('index', [CateringController::class, 'index'])->name('index');
+    Route::get('get', [CateringController::class, 'getData'])->name('get');
+    Route::post('store', [CateringController::class, 'store'])->name('store');
+    Route::post('{id}', [CateringController::class, 'update'])->name('update');
+    Route::post('{id}/upgrade', [CateringController::class, 'upgradeToCatering'])->name('upgrade');
+    Route::post('approved', [CateringController::class, 'approved'])->name('approved');
+    Route::delete('{id}', [CateringController::class, 'destroy'])->name('destroy');
+    Route::post('{id}/invoice', [CateringController::class, 'updateInvoice'])->name('updateInvoice');
+    Route::post('pdf', [CateringController::class, 'PDF'])->name('pdf');
+    Route::get('vendors', [CateringController::class, 'getVendors'])->name('getVendors');
+    Route::get('detail/{id}', [CateringController::class, 'getDetail'])->name('detail');
+});
+
 Route::resource('/comment', \App\Http\Controllers\CommentController::class);
 
 Route::resource('/perusahaan', \App\Http\Controllers\PerusahaanController::class);
@@ -1053,22 +1068,6 @@ Route::prefix('office')
             Route::post('kategori/hapus', [DaftarTugasController::class, 'deleteKategori'])->name('deleteKategori');
         });
 
-Route::prefix('/catering')
-    ->name('catering.')
-    ->group(function () {
-        Route::get('/index', [CateringController::class, 'index'])->name('index');
-        Route::get('/get', [CateringController::class, 'get'])->name('get');
-        Route::get('/create', [CateringController::class, 'create'])->name('create');
-        Route::post('/store', [CateringController::class, 'store'])->name('store');
-        Route::get('/show/{id}', [CateringController::class, 'show'])->name('show');
-        Route::post('/update/{id}', [CateringController::class, 'update'])->name('update');
-        Route::post('/export-pdf', [CateringController::class, 'PDF'])->name('pdf');
-        Route::put('/approved', [CateringController::class, 'approved'])->name('approved');
-        Route::get('/destroy/{id}', [CateringController::class, 'destroy'])->name('destroy');
-        Route::get('/invoice/{id}', [CateringController::class, 'invoice'])->name('invoice');
-        Route::put('/updateinvoice/{id}', [CateringController::class, 'updateInvoice'])->name('updateInvoice');
-    });
-
 Route::prefix('/rekomendasi-lanjutan')
     ->name('rekomendasiLanjutan.')
     ->group(function () {
@@ -1183,20 +1182,6 @@ Route::prefix('/rekomendasi-lanjutan')
         Route::get('update-tugas-semester', [DaftarTugasController::class, 'UpdateTugasSemester'])->name('UpdateTugasSemester');
         Route::get('update-tugas-tahunan', [DaftarTugasController::class, 'UpdateTugasTahunan'])->name('UpdateTugasTahunan');
     });
-});
-
-Route::prefix('/catering')->name('catering.')->group(function () {
-    Route::get('/index', [CateringController::class, 'index'])->name('index');
-    Route::get('/get', [CateringController::class, 'get'])->name('get');
-    Route::get('/create', [CateringController::class, 'create'])->name('create');
-    Route::post('/store', [CateringController::class, 'store'])->name('store');
-    Route::get('/show/{id}', [CateringController::class, 'show'])->name('show');
-    Route::post('/update/{id}', [CateringController::class, 'update'])->name('update');
-    Route::post('/export-pdf', [CateringController::class, 'PDF'])->name('pdf');
-    Route::put('/approved', [CateringController::class, 'approved'])->name('approved');
-    Route::get('/destroy/{id}', [CateringController::class, 'destroy'])->name('destroy');
-    Route::get('/invoice/{id}', [CateringController::class, 'invoice'])->name('invoice');
-    Route::put('/updateinvoice/{id}', [CateringController::class, 'updateInvoice'])->name('updateInvoice');
 });
 
 Route::prefix('/rekomendasi-lanjutan')->name('rekomendasiLanjutan.')->group(function () {
