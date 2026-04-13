@@ -10,14 +10,14 @@ return new class extends Migration
     {
         Schema::table('eksams', function (Blueprint $table) {
             // Mengubah tipe data menjadi text/json untuk menyimpan array
-            $table->text('file_invoice')->nullable()->change();
+            $table->text('file_invoice')->nullable()->after('invoice');
         });
     }
 
     public function down()
     {
         Schema::table('eksams', function (Blueprint $table) {
-            $table->string('file_invoice')->nullable()->change();
+            $table->dropColumn('file_invoice');
         });
     }
 };
