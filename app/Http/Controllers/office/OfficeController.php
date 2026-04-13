@@ -119,35 +119,6 @@ class OfficeController extends Controller
             ->take(7)
             ->get();
 
-        // 4. RKM
-        $rkm = RKM::with('materi', 'perusahaan', 'peluang')
-            ->where('tanggal_awal', '<=', Carbon::now())
-            ->where('tanggal_akhir', '>=', Carbon::now())
-            ->where('status', '0')
-            ->get();
-
-        // 5. Jumlah Peserta
-        $jumlahPeserta = RKM::where('tanggal_awal', '<=', Carbon::now())
-            ->where('tanggal_akhir', '>=', Carbon::now())
-            ->where('status', '0')
-            ->sum('pax');
-
-        // 6. Jumlah Instruktur
-        $jumlahInstruktur = RKM::where('tanggal_awal', '<=', now())
-            ->where('tanggal_akhir', '>=', now())
-            ->where('status', '0')
-            ->get()
-            ->sum(
-                fn($rkm) =>
-                collect([
-                    $rkm->instruktur_key,
-                    $rkm->instruktur_key2,
-                    $rkm->asisten_key,
-                ])
-                    ->filter(fn($v) => $v !== '-' && !is_null($v))
-                    ->count()
-            );
-
 
         // detail rkm
         $now = Carbon::now();
@@ -171,7 +142,7 @@ class OfficeController extends Controller
         ->whereDoesntHave('peluang', function ($query) {
             $query->where('tentatif', 1);
         })
-        ->orderBy('status', 'asc')
+        ->where('status', '0')
         ->orderBy('tanggal_awal', 'asc')
         ->get()
         ->groupBy(function ($item) {
@@ -193,12 +164,16 @@ class OfficeController extends Controller
                 'ruang' => $first->ruang,
                 'metode_kelas' => $first->metode_kelas,
                 'event' => $first->event,
+                'harga_jual' => $first->harga_jual,
+                'pax' => $first->pax,
                 'exam' => $items->pluck('exam')->implode(', '),
+                'instruktur_key' => $first->instruktur_key,
+                'instruktur_key2' => $first->instruktur_key2,
+                'asisten_key' => $first->asisten_key,
                 'makanan' => $items->pluck('makanan')->implode(', '),
-                'instruktur_all' => $items->pluck('instruktur_key')->implode(', '),
                 'perusahaan_all' => $items->pluck('perusahaan_key')->implode(', '),
                 'sales_all' => $items->pluck('sales_key')->implode(', '),
-                'status_all' => $items->contains('status', 0)
+                'status' => $items->contains('status', 0)
                     ? 0
                     : $items->min('status'),
                 'total_pax' => $items->sum('pax'),
@@ -298,7 +273,27 @@ class OfficeController extends Controller
             }
         }
 
+        // Jumlah Peserta
+        $jumlahPeserta = $rkms
+            ->where('status', '0')
+            ->sum('pax');
+
+        // Jumlah Instruktur
+        $jumlahInstruktur = $rkms
+            ->where('status', '0')
+            ->sum(
+                fn($rkms) =>
+                collect([
+                    $rkms->instruktur_key,
+                    $rkms->instruktur_key2,
+                    $rkms->asisten_key,
+                ])
+                    ->filter(fn($v) => $v !== '-' && !is_null($v))
+                    ->count()
+            );
+
         $endOfNextWeek = $now->copy()->addWeek()->endOfWeek();
+
         // Tagihan Perusaaan
         $trackingTagihanPerusahaans = trackingTagihanPerusahaan::with('tagihanPerusahaan')
             ->whereBetween('tanggal_perkiraan_selesai', [$startOfThisWeek, $endOfNextWeek])
@@ -315,7 +310,6 @@ class OfficeController extends Controller
             'kehadiranChart',
             'tidakHadirList',
             'ticket',
-            'rkm',
             'jumlahPeserta',
             'jumlahInstruktur',
             'rkms',
