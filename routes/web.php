@@ -1066,6 +1066,9 @@ Route::prefix('office')
             // Kategori
             Route::post('kategori/update', [DaftarTugasController::class, 'updateKategori'])->name('updateKategori');
             Route::post('kategori/hapus', [DaftarTugasController::class, 'deleteKategori'])->name('deleteKategori');
+            
+            // [TAMBAHAN] Bulk update tipe turunan (Shift)
+            Route::post('kategori/bulk-update-turunan', [DaftarTugasController::class, 'bulkUpdateTipeTurunan'])->name('bulkUpdateTipeTurunan');
         });
 
 Route::prefix('/rekomendasi-lanjutan')

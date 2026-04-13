@@ -206,8 +206,6 @@
                     <th width="5%">No</th>
                     <th width="25%">Nama Tugas</th>
                     <th width="12%">Tipe</th>
-                    <th width="20%">Penanggung Jawab</th>
-                    <th width="15%">Jabatan</th>
                     <th width="12%">Dibuat</th>
                     <th width="11%">Total</th>
                 </tr>
@@ -234,8 +232,6 @@
                         <td>{{ $item->judul_kategori }}</td>
                         <td class="text-center"><span class="badge {{ $badgeClass }}">{{ $item->Tipe }}</span>
                         </td>
-                        <td>{{ $item->karyawan->nama_lengkap ?? '-' }}</td>
-                        <td>{{ $item->jabatan_pembuat ?? '-' }}</td>
                         <td class="text-center">{{ \Carbon\Carbon::parse($item->created_at)->format('d/m/Y') }}</td>
                         <td class="text-center">{{ $totalInstance }}</td>
                     </tr>
