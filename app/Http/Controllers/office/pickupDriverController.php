@@ -406,7 +406,7 @@ class pickupDriverController extends Controller
             'waktu_kepulangan' => 'required',
             'KM_awal' => 'nullable',
             'KM_akhir' => 'nullable',
-            'total_pemakaian' => 'nullable|integer|min:0',
+            'total_pemakaian' => 'nullable',
         ]);
 
         $pickupDriver = pickupDriver::findOrFail($request->pickup_driver_id);

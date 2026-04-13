@@ -11,7 +11,7 @@
         <!-- Total Karyawan Card -->
         <div class="row mb-5">
             <div class="col-12">
-                <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="card border-0 shadow-lg rounded-4 overflow-hidden glass-force">
                     <div class="card-body p-4">
                         <div class="d-flex align-items-center">
                             <div class="flex-shrink-0">
@@ -33,7 +33,7 @@
         <div class="row mb-5 g-4">
             @foreach ($divisiStats as $index => $divisi)
                 <div class="col-xl-3 col-md-6">
-                    <div class="card border-0 shadow-sm h-100 hover-card rounded-3 overflow-hidden" data-bs-toggle="modal"
+                    <div class="card border-0 shadow-sm h-100 hover-card rounded-3 overflow-hidden glass-force" data-bs-toggle="modal"
                         data-bs-target="#modalDivisi{{ $index }}" role="button" tabindex="0">
                         <div class="card-body p-4">
                             <div class="d-flex align-items-center mb-3">
@@ -57,8 +57,8 @@
         @if (Auth::user()->jabatan === 'Finance & Accounting')
         <div class="row g-4 mb-5">
             <div class="col-12">
-                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden">
-                    <div class="card-header bg-white border-bottom-0 pb-0 d-flex justify-content-between">
+                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
+                    <div class="card-header border-bottom-0 pb-0 d-flex justify-content-between">
                         <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
                             <i class="bx bx-task text-primary me-2" style="font-size: 1.5rem;"></i>
                             Tagihan Perusahaan 
@@ -360,8 +360,8 @@
         @if (Auth::user()->jabatan === 'HRD')
         <div class="row g-4 mb-5">
             <div class="col-12">
-                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden">
-                    <div class="card-header bg-white border-bottom-0 pb-0 d-flex justify-content-between">
+                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
+                    <div class="card-header border-bottom-0 pb-0 d-flex justify-content-between">
                         <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
                             <i class="bx bx-calendar text-primary me-2" style="font-size: 1.5rem;"></i>
                             Hari Libur 
@@ -491,8 +491,8 @@
 
         <div class="row g-4 mb-5">
             <div class="col-12">
-                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden">
-                    <div class="card-header bg-white border-bottom-0 pb-0 d-flex justify-content-between">
+                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
+                    <div class="card-header border-bottom-0 pb-0 d-flex justify-content-between">
                         <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
                             <i class="bx bx-task text-primary me-2" style="font-size: 1.5rem;"></i>
                             Administrasi Karyawan 
@@ -747,8 +747,8 @@
         <div class="row g-4">
             <!-- Chart Kehadiran -->
             <div class="col-xl-8">
-                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden">
-                    <div class="card-header bg-white border-bottom-0 pb-0">
+                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
+                    <div class="card-header border-bottom-0 pb-0">
                         <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
                             <i class="bx bx-line-chart text-primary me-2" style="font-size: 1.5rem;"></i>
                             Grafik Kehadiran 7 Hari Terakhir
@@ -772,8 +772,8 @@
 
             <!-- Karyawan Tidak Hadir Hari Ini -->
             <div class="col-xl-4">
-                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden">
-                    <div class="card-header bg-white border-bottom-0 pb-0">
+                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
+                    <div class="card-header border-bottom-0 pb-0">
                         <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
                             <i class="bx bx-user-x text-danger me-2" style="font-size: 1.5rem;"></i>
                             Tidak Hadir Hari Ini
@@ -821,8 +821,8 @@
 
             <!-- Chart Cuti -->
             <div class="col-xl-12">
-                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden">
-                    <div class="card-header bg-white border-bottom-0 pb-0 d-flex justify-content-between">
+                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
+                    <div class="card-header border-bottom-0 pb-0 d-flex justify-content-between">
                         <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
                             <i class="bx bx-pie-chart-alt text-primary me-2" style="font-size: 1.5rem;"></i>
                             Grafik Cuti<span class="ms-2" id="rentangWaktu"></span>
@@ -888,8 +888,8 @@
 
             {{-- Total Mengajar Instruktur --}}
             <div class="col-xl-12">
-                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden">
-                    <div class="card-header bg-white border-bottom-0 pb-0 d-flex justify-content-between">
+                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
+                    <div class="card-header border-bottom-0 pb-0 d-flex justify-content-between">
                         <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
                             <i class="bx bx-archive text-primary me-2" style="font-size: 1.5rem;"></i>
                             Total Mengajar Instruktur <span class="ms-2" id="rentangWaktuMengajar"></span>
@@ -962,8 +962,8 @@
             {{-- End Total Mengajar Instrukrur --}}
 
             <!-- Chart nilai Feedback -->
-            <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden">
-                <div class="card-header bg-white border-bottom-0 pb-0 d-flex justify-content-between">
+            <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
+                <div class="card-header border-bottom-0 pb-0 d-flex justify-content-between">
                     <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
                         <i class="bx bx-line-chart text-primary me-2" style="font-size: 1.5rem;"></i>
                         Grafik Feedback
@@ -1036,8 +1036,8 @@
             {{-- RKM Berjalan Minggu Ini --}}
             <div class="row g-3 mb-4">
                 <div class="col-12">
-                    <div class="card h-100 shadow-sm border-0 rounded-3">
-                        <div class="card-header bg-white border-bottom py-3">
+                    <div class="card h-100 shadow-sm border-0 rounded-3 glass-force">
+                        <div class="card-header border-bottom py-3">
                             <div class="d-flex align-items-center gap-2 mb-2">
                                 <span class="badge bg-primary-subtle text-primary px-3 py-2">
                                     {{ count($rkm) }} RKM
@@ -1137,8 +1137,8 @@
                 {{-- Daftar Ticketing --}}
                 <div class="row g-3 mb-4">
                     <div class="col-12">
-                        <div class="card h-100 shadow-sm border-0 rounded-3">
-                            <div class="card-header bg-white border-bottom py-3">
+                        <div class="card h-100 shadow-sm border-0 rounded-3 glass-force">
+                            <div class="card-header border-bottom py-3">
                                 <div class="d-flex align-items-center justify-content-between">
                                     <h5 class="card-title mb-0 fw-semibold">
                                         <i class="bx bx-support text-primary me-2"></i>
@@ -1268,8 +1268,8 @@
                 {{-- Daftar RKM --}}
                 <div class="row g-3 mb-4">
                     <div class="col-12">
-                        <div class="card h-100 shadow-sm border-0 rounded-3">
-                            <div class="card-header bg-white border-bottom py-3">
+                        <div class="card h-100 shadow-sm border-0 rounded-3 glass-force">
+                            <div class="card-header border-bottom py-3">
                                 <div class="d-flex align-items-center justify-content-between">
                                     <h5 class="card-title mb-0 fw-semibold">
                                         <i class="bx bx-calendar text-primary me-2"></i>
@@ -1438,256 +1438,6 @@
         @endforeach
 
     @auth
-        <div class="web-push-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
-            <button id="webpush-btn" class="btn btn-primary btn-sm shadow-sm"
-                style="border-radius: 20px; padding: 6px 16px;">
-                <i class="fas fa-bell"></i> Aktifkan Notifikasi
-            </button>
-        </div>
-
-        <script>
-            document.addEventListener('DOMContentLoaded', async function() {
-                if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-                    document.getElementById('webpush-btn')?.remove();
-                    return;
-                }
-
-                const btn = document.getElementById('webpush-btn');
-                if (!btn) return;
-
-                let isSubscribed = false;
-                let vapidPublicKey = null;
-
-                try {
-                    const registration = await registerServiceWorker();
-                    if (!registration) {
-                        btn.style.display = 'none';
-                        return;
-                    }
-
-                    try {
-                        const response = await fetch('{{ route('webpush.vapid-key') }}', {
-                            headers: {
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                'Accept': 'application/json'
-                            }
-                        });
-                        const data = await response.json();
-                        vapidPublicKey = data.publicKey;
-                    } catch (error) {
-                        console.error('Error getting VAPID key:', error);
-                        showToast('Gagal memuat konfigurasi notifikasi', 'error');
-                        btn.disabled = true;
-                        return;
-                    }
-
-                    // Check subscription status
-                    await checkSubscriptionStatus();
-
-                } catch (error) {
-                    console.error('Service Worker registration failed:', error);
-                    btn.style.display = 'none';
-                }
-
-                function updateButtonState() {
-                    if (isSubscribed) {
-                        btn.className = 'btn btn-success btn-sm shadow-sm';
-                        btn.innerHTML = '<i class="fas fa-bell"></i> Notifikasi Aktif';
-                    } else {
-                        btn.className = 'btn btn-primary btn-sm shadow-sm';
-                        btn.innerHTML = '<i class="fas fa-bell"></i> Aktifkan Notifikasi';
-                    }
-                    btn.disabled = false;
-                }
-
-                btn.addEventListener('click', function() {
-                    if (isSubscribed) {
-                        unsubscribe();
-                    } else {
-                        subscribe();
-                    }
-                });
-
-                async function registerServiceWorker() {
-                    try {
-                        const registration = await navigator.serviceWorker.register('/service-worker.js', {
-                            scope: '/',
-                            updateViaCache: 'none'
-                        });
-                        console.log('[SW] Registered successfully:', registration.scope);
-                        return registration;
-                    } catch (error) {
-                        console.error('[SW] Registration failed:', error);
-                        showToast('Gagal registrasi Service Worker', 'error');
-                        return null;
-                    }
-                }
-
-                async function checkSubscriptionStatus() {
-                    try {
-                        const registration = await navigator.serviceWorker.ready;
-                        const subscription = await registration.pushManager.getSubscription();
-                        isSubscribed = !!subscription;
-                        updateButtonState();
-                    } catch (error) {
-                        console.error('Check subscription error:', error);
-                    }
-                }
-
-                async function subscribe() {
-                    if (!vapidPublicKey) {
-                        showToast('Konfigurasi tidak lengkap', 'error');
-                        return;
-                    }
-
-                    btn.disabled = true;
-                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengaktifkan...';
-
-                    try {
-                        // Check permission first
-                        const permission = await Notification.requestPermission();
-                        if (permission !== 'granted') {
-                            throw new Error('Izin notifikasi ditolak');
-                        }
-
-                        const registration = await navigator.serviceWorker.ready;
-                        const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
-
-                        const subscription = await registration.pushManager.subscribe({
-                            userVisibleOnly: true,
-                            applicationServerKey: convertedVapidKey
-                        });
-
-                        const response = await fetch('{{ route('webpush.subscribe') }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                'Accept': 'application/json'
-                            },
-                            body: JSON.stringify(subscription)
-                        });
-
-                        const data = await response.json();
-
-                        if (data.success) {
-                            isSubscribed = true;
-                            updateButtonState();
-                            showToast('✅ Notifikasi berhasil diaktifkan!', 'success');
-                        } else {
-                            throw new Error(data.message || 'Gagal subscribe ke server');
-                        }
-
-                    } catch (error) {
-                        console.error('Subscribe error:', error);
-                        showToast('❌ ' + getErrorMessage(error), 'error');
-                        btn.disabled = false;
-                        updateButtonState();
-                    }
-                }
-
-                async function unsubscribe() {
-                    btn.disabled = true;
-                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mematikan...';
-
-                    try {
-                        const registration = await navigator.serviceWorker.ready;
-                        const subscription = await registration.pushManager.getSubscription();
-
-                        if (subscription) {
-                            await subscription.unsubscribe();
-
-                            await fetch('{{ route('webpush.unsubscribe') }}', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                    'Accept': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    endpoint: subscription.endpoint
-                                })
-                            });
-
-                            isSubscribed = false;
-                            updateButtonState();
-                            showToast('ℹ️ Notifikasi berhasil dimatikan', 'info');
-                        }
-                    } catch (error) {
-                        console.error('Unsubscribe error:', error);
-                        showToast('❌ Gagal mematikan notifikasi', 'error');
-                        btn.disabled = false;
-                        updateButtonState();
-                    }
-                }
-
-                function getErrorMessage(error) {
-                    if (error.name === 'NotAllowedError') {
-                        return 'Izin notifikasi ditolak. Buka pengaturan browser untuk mengaktifkan.';
-                    } else if (error.name === 'InvalidStateError') {
-                        return 'Service Worker error. Silakan refresh halaman.';
-                    } else if (error.name === 'AbortError') {
-                        return 'Operasi dibatalkan.';
-                    } else if (error.message.includes('NetworkError')) {
-                        return 'Koneksi internet bermasalah.';
-                    }
-                    return error.message || 'Terjadi kesalahan';
-                }
-
-                function urlBase64ToUint8Array(base64String) {
-                    const padding = '='.repeat((4 - base64String.length % 4) % 4);
-                    const base64 = (base64String + padding)
-                        .replace(/-/g, '+')
-                        .replace(/_/g, '/');
-                    const rawData = window.atob(base64);
-                    const outputArray = new Uint8Array(rawData.length);
-                    for (let i = 0; i < rawData.length; ++i) {
-                        outputArray[i] = rawData.charCodeAt(i);
-                    }
-                    return outputArray;
-                }
-
-                function showToast(message, type = 'info') {
-                    const colors = {
-                        success: '#28a745',
-                        error: '#dc3545',
-                        warning: '#ffc107',
-                        info: '#17a2b8'
-                    };
-
-                    const icons = {
-                        success: 'check-circle',
-                        error: 'exclamation-circle',
-                        warning: 'exclamation-triangle',
-                        info: 'info-circle'
-                    };
-
-                    const toast = document.createElement('div');
-                    toast.style.cssText = `
-                                position: fixed;
-                                top: 20px;
-                                right: 20px;
-                                background: ${colors[type] || colors.info};
-                                color: white;
-                                padding: 12px 20px;
-                                border-radius: 6px;
-                                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                                z-index: 99999;
-                                animation: slideIn 0.3s, fadeOut 0.5s 2.5s forwards;
-                                font-weight: 500;
-                                display: flex;
-                                align-items: center;
-                                gap: 10px;
-                                max-width: 350px;
-                            `;
-                    toast.innerHTML = `<i class="fas fa-${icons[type] || icons.info}"></i> ${message}`;
-                    document.body.appendChild(toast);
-
-                    setTimeout(() => toast.remove(), 3000);
-                }
-            });
-        </script>
-
         <style>
             @keyframes slideIn {
                 from {

@@ -29,7 +29,7 @@
             data-redirect-url="@if ($section === 'crm_contents') {{ route('CRM.index.koordinasi') }}@else{{ route('office.pickupDriver.index') }} @endif">
             @csrf
             <div class="col-md-12">
-                <div class="card">
+                <div class="card glass-force">
                     <div class="card-body" id="card">
                         <a href="{{ url()->previous() }}" class="btn btn-danger my-2">
                             <img src="{{ asset('icon/arrow-left.svg') }}" width="20"> Back

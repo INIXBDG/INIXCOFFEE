@@ -3,7 +3,7 @@
 @section('office_contents')
 <div class="container mt-4">
 
-    <div class="card shadow-sm">
+    <div class="card shadow-sm glass-force">
         
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Detail Administrasi Karyawan</h5>

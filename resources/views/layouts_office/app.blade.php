@@ -7,7 +7,7 @@
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>INIX - OFFICE</title>
+    <title>INIXCOFFEE</title>
 
     <!-- Favicon -->
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
@@ -30,7 +30,7 @@
 
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    
+
     <!-- DataTables -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 
@@ -114,6 +114,66 @@
             height: 100%;
             object-fit: cover;
         }
+
+        .layout-menu-collapsed .layout-page {
+            margin-left: 0;
+        }
+
+        @media (max-width: 1199px) {
+            .layout-page {
+                margin-left: 0;
+            }
+        }
+
+        .layout-navbar {
+            position: sticky;
+            top: 0;
+            z-index: 1020;
+        }
+
+        .layout-wrapper {
+            min-height: 100vh;
+
+            background-image: url('/css/background inix office-02.svg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+        @media (max-width: 576px) {
+            #bgsvg {
+                background-image: url('/css/background inix office-02.svg') repeat-y;
+                overflow-y: scroll;
+            }
+        }
+
+        @media (min-width: 577px) and (max-width: 991px) {
+            #bgsvg {
+                background-image: url('/css/background inix office-02.svg') repeat-y;
+            }
+        }
+
+        @media (max-width: 400px) {
+            body {
+                overflow-y: auto;
+            }
+
+            #bgsvg {
+                background-image: url('/css/background inix office-02.svg') repeat-y;
+                overflow-y: scroll;
+            }
+        }
+
+        .glass-force {
+            background: rgba(255, 255, 255, 0.12) !important;
+            backdrop-filter: blur(12px) !important;
+            -webkit-backdrop-filter: blur(12px) !important;
+
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            border-radius: 12px;
+
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
+        }
     </style>
 </head>
 
@@ -124,34 +184,16 @@
         <div class="layout-container">
 
             <!-- Menu / Sidebar -->
-            <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme flex-column">
-                <div class="app-brand demo py-3 px-4">
-                    <a href="{{ route('office.dashboard') }}" class="app-brand-link">
-                        <span class="app-brand-logo demo me-2">
-                            <!-- Logo di sini (SVG atau img) -->
-                        </span>
-                        <span class="app-brand-text demo menu-text fw-bold">INIX OFFICE</span>
-                    </a>
 
-                    <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto d-xl-none">
-                        <i class="bx bx-chevron-left bx-sm align-middle"></i>
-                    </a>
-                </div>
+            <!-- Menu items di sini (dari partial sidebar) -->
+            @include('layouts_office.sidebar')
 
-                <div class="menu-inner flex-grow-1">
-                    <!-- Menu items di sini (dari partial sidebar) -->
-                    @include('layouts_office.sidebar')
-                </div>
-
-                <div class="sidebar-footer px-4 py-3">
-                </div>
-            </aside>
             <!-- / Sidebar -->
 
             <!-- Layout container -->
             <div class="layout-page">
-                    <!-- Navbar content (search, user dropdown, dll) -->
-                    @include('layouts_office.navbar')
+                <!-- Navbar content (search, user dropdown, dll) -->
+                @include('layouts_office.navbar')
                 </nav>
                 <!-- / Navbar -->
 

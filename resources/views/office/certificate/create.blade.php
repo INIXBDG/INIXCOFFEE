@@ -11,8 +11,8 @@
         <div class="row g-4">
             <!-- Info RKM -->
             <div class="col-lg-4">
-                <div class="card h-100 shadow-lg border-0 rounded-4 overflow-hidden">
-                    <div class="card-header bg-white border-bottom py-3">
+                <div class="card h-100 shadow-lg border-0 rounded-4 overflow-hidden glass-force">
+                    <div class="card-header border-bottom py-3">
                         <h5 class="card-title mb-0 fw-semibold">
                             <i class="bx bx-info-circle text-primary me-2" style="font-size: 1.5rem;"></i>
                             Informasi RKM
@@ -78,8 +78,8 @@
 
             <!-- Form Generate -->
             <div class="col-lg-8">
-                <div class="card h-100 shadow-lg border-0 rounded-4 overflow-hidden">
-                    <div class="card-header bg-white border-bottom py-3">
+                <div class="card h-100 shadow-lg border-0 rounded-4 overflow-hidden glass-force">
+                    <div class="card-header border-bottom py-3">
                         <h5 class="card-title mb-0 fw-semibold">
                             <i class="bx bx-edit text-primary me-2" style="font-size: 1.5rem;"></i>
                             Data Sertifikat

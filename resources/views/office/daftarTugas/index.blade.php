@@ -117,8 +117,8 @@
                 </div>
             </div>
         </div>
-        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-            <div class="card-header bg-white border-0 py-3">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden glass-force">
+            <div class="card-header border-0 py-3">
                 <div class="row align-items-center g-3">
                     <div class="col-md-5">
                         <h5 class="mb-0 fw-semibold" id="dynamicTitle">Tugas Aktif -

@@ -14,7 +14,7 @@
             </a>
         </div>
 
-        <div class="card shadow-sm">
+        <div class="card shadow-sm glass-force">
             <div class="card-body">
                 <form action="{{ route('office.updatePerbaikanKendaraan', $perbaikan->id) }}" method="POST"
                     enctype="multipart/form-data">
