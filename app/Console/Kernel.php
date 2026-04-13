@@ -225,6 +225,9 @@ class Kernel extends ConsoleKernel
 
         $schedule->command('uptime:check')->everySecond();
 
+        $schedule->command('assign:shift2')->dailyAt('15:12');
+
+
         // Di dalam method schedule(Schedule $schedule)
         $schedule->call(function () {
             // Tentukan tanggal akhir minggu yang harus dikunci (e.g., dua minggu yang lalu)

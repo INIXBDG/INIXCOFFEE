@@ -44,6 +44,16 @@
             border-color: #0d6efd;
             transform: translateY(-2px)
         }
+
+        .bulk-action-bar {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
     </style>
     <div class="container-fluid py-4">
         @if (session('success'))
@@ -59,12 +69,6 @@
                 <p class="text-muted small mb-0">Pilih dan kelola tugas kebersihan serta pekerjaan harian.</p>
             </div>
             <div class="d-flex flex-wrap gap-2">
-                @if (Auth::user()->jabatan === 'Office Boy')
-                    <button class="btn btn-success px-4 shadow-sm d-flex align-items-center gap-2" data-bs-toggle="modal"
-                        data-bs-target="#pilihTugasModal">
-                        <i class="bx bx-list-plus"></i>Pilih Tugas
-                    </button>
-                @endif
                 <button class="btn btn-primary px-4 shadow-sm d-flex align-items-center gap-2" data-bs-toggle="modal"
                     data-bs-target="#createModal">
                     <i class="bx bx-plus"></i>Buat Kategori Baru
@@ -78,41 +82,26 @@
                         <li>
                             <h6 class="dropdown-header">Tipe Laporan</h6>
                         </li>
-                        <li>
-                            <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#modalExport">
-                                <i class="bx bx-cog me-2"></i> Export dengan Filter
-                            </a>
-                        </li>
+                        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#modalExport"><i
+                                    class="bx bx-cog me-2"></i> Export dengan Filter</a></li>
                         <li>
                             <hr class="dropdown-divider">
                         </li>
-                        <li>
-                            <a class="dropdown-item"
-                                href="{{ route('office.DaftarTugas.export.excel', ['report_type' => 'tugas']) }}">
-                                <i class="bx bx-file-excel text-success me-2"></i> Excel - Tugas
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item"
-                                href="{{ route('office.DaftarTugas.export.pdf', ['report_type' => 'tugas']) }}">
-                                <i class="bx bx-file-pdf text-danger me-2"></i> PDF - Tugas
-                            </a>
-                        </li>
+                        <li><a class="dropdown-item"
+                                href="{{ route('office.DaftarTugas.export.excel', ['report_type' => 'tugas']) }}"><i
+                                    class="bx bx-file-excel text-success me-2"></i> Excel - Tugas</a></li>
+                        <li><a class="dropdown-item"
+                                href="{{ route('office.DaftarTugas.export.pdf', ['report_type' => 'tugas']) }}"><i
+                                    class="bx bx-file-pdf text-danger me-2"></i> PDF - Tugas</a></li>
                         <li>
                             <hr class="dropdown-divider">
                         </li>
-                        <li>
-                            <a class="dropdown-item"
-                                href="{{ route('office.DaftarTugas.export.excel', ['report_type' => 'kategori']) }}">
-                                <i class="bx bx-file-excel text-success me-2"></i> Excel - Kategori
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item"
-                                href="{{ route('office.DaftarTugas.export.pdf', ['report_type' => 'kategori']) }}">
-                                <i class="bx bx-file-pdf text-danger me-2"></i> PDF - Kategori
-                            </a>
-                        </li>
+                        <li><a class="dropdown-item"
+                                href="{{ route('office.DaftarTugas.export.excel', ['report_type' => 'kategori']) }}"><i
+                                    class="bx bx-file-excel text-success me-2"></i> Excel - Kategori</a></li>
+                        <li><a class="dropdown-item"
+                                href="{{ route('office.DaftarTugas.export.pdf', ['report_type' => 'kategori']) }}"><i
+                                    class="bx bx-file-pdf text-danger me-2"></i> PDF - Kategori</a></li>
                     </ul>
                 </div>
             </div>
@@ -135,6 +124,11 @@
                                 <option value="Semester">Semester</option>
                                 <option value="Tahunan">Tahunan</option>
                             </select>
+                            <select id="filterTipeTurunan" class="form-select form-select-sm" style="width:auto">
+                                <option value="all" selected>Semua Shift</option>
+                                <option value="Shift 1">Shift 1</option>
+                                <option value="Shift 2">Shift 2</option>
+                            </select>
                             <input type="date" id="filterTanggal" class="form-control form-control-sm" style="width:auto"
                                 value="{{ now()->format('Y-m-d') }}">
                             <button class="btn btn-outline-secondary btn-sm" id="btnResetFilter" title="Reset Filter"><i
@@ -150,47 +144,15 @@
                             <tr>
                                 <th class="ps-4 border-0" style="width:5%">Checklist</th>
                                 <th class="border-0" style="width:30%">Tugas</th>
-                                <th class="border-0" style="width:20%">Tipe</th>
+                                <th class="border-0" style="width:15%">Tipe</th>
+                                <th class="border-0" style="width:15%">Shift</th>
+                                <th class="border-0" style="width:15%">Karyawan</th>
                                 <th class="border-0" style="width:15%">Deadline</th>
                                 <th class="border-0 text-center" style="width:20%">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="tbody"></tbody>
                     </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="pilihTugasModal" tabindex="-1" data-bs-backdrop="static">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title fw-bold">Pilih Tugas untuk Dikerjakan</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Filter Tipe</label>
-                        <select id="filterKategoriTipe" class="form-select form-select-sm">
-                            <option value="all">Semua</option>
-                            <option value="Harian">Harian</option>
-                            <option value="Mingguan">Mingguan</option>
-                            <option value="Bulanan">Bulanan</option>
-                            <option value="Quartal">Quartal</option>
-                            <option value="Semester">Semester</option>
-                            <option value="Tahunan">Tahunan</option>
-                        </select>
-                    </div>
-                    <div id="kategoriList" class="row g-2">
-                    </div>
-                </div>
-                <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="button" class="btn btn-success" id="btnAktifkanTugas">
-                        <span class="spinner-border spinner-border-sm d-none" id="aktifkanSpinner"></span>
-                        Aktifkan Tugas Terpilih
-                    </button>
                 </div>
             </div>
         </div>
@@ -223,24 +185,54 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Tipe Frekuensi</label>
-                            <select name="Tipe" required class="form-select">
+                            <select name="Tipe" id="createTipe" required class="form-select">
                                 <option value="" disabled selected>Pilih Tipe</option>
                                 <option value="Harian">Harian</option>
                                 <option value="Mingguan">Mingguan</option>
                                 <option value="Bulanan">Bulanan</option>
-                                <option value="Quartal">Quartal</option>
+                                {{-- <option value="Quartal">Quartal</option>
                                 <option value="Semester">Semester</option>
-                                <option value="Tahunan">Tahunan</option>
+                                <option value="Tahunan">Tahunan</option> --}}
+                            </select>
+                        </div>
+                        <div class="mb-3 d-none" id="createTipeTurunanContainer">
+                            <label class="form-label fw-semibold">Tipe Turunan (Shift)</label>
+                            <select name="tipe_turunan" class="form-select">
+                                <option selected disabled>Pilih Tipe Turunan</option>
+                                <option value="Shift 1">Shift 1</option>
+                                <option value="Shift 2">Shift 2</option>
                             </select>
                         </div>
                         <hr class="my-4">
-                        <h6 class="mb-3 fw-semibold"><i class="bx bx-list-ul me-2"></i>Daftar Kategori Saat Ini</h6>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0 fw-semibold"><i class="bx bx-list-ul me-2"></i>Daftar Kategori Saat Ini</h6>
+                            @if (Auth::user()->jabatan === 'HRD' || Auth::id() == Auth::user()->id)
+                                <button type="button" class="btn btn-sm btn-warning d-none" id="btnBulkUpdate">
+                                    <i class="bx bx-edit-alt"></i> Update Shift Terpilih
+                                </button>
+                            @endif
+                        </div>
+
+                        <div id="bulkActionPanel" class="bulk-action-bar">
+                            <span class="small text-muted">Pilih Shift untuk update:</span>
+                            <select id="bulkShiftSelect" class="form-select form-select-sm" style="width:auto">
+                                <option value="">-- Kosongkan Shift --</option>
+                                <option value="Shift 1">Shift 1</option>
+                                <option value="Shift 2">Shift 2</option>
+                            </select>
+                            <button type="button" class="btn btn-primary btn-sm"
+                                id="confirmBulkUpdate">Terapkan</button>
+                            <button type="button" class="btn btn-secondary btn-sm" id="cancelBulkUpdate">Batal</button>
+                        </div>
+
                         <div style="max-height:300px;overflow-y:auto;border:1px solid #eee;border-radius:8px">
                             <table class="table table-sm table-bordered mb-0" id="tabelKategori">
                                 <thead class="table-light">
                                     <tr>
+                                        <th width="30"><input type="checkbox" id="checkAllKategori"></th>
                                         <th>Tugas</th>
                                         <th width="100">Tipe</th>
+                                        <th width="100">Shift</th>
                                         <th>PIC</th>
                                         <th width="130">Aksi</th>
                                     </tr>
@@ -248,8 +240,12 @@
                                 <tbody>
                                     @forelse($dataKategori as $data)
                                         <tr data-id="{{ $data->id }}">
+                                            <td><input type="checkbox" class="chk-bulk-kategori"
+                                                    value="{{ $data->id }}" data-tipe="{{ $data->Tipe }}"></td>
                                             <td>{{ $data->judul_kategori }}</td>
                                             <td><span class="badge bg-info text-dark">{{ $data->Tipe }}</span></td>
+                                            <td><span class="badge bg-secondary">{{ $data->tipe_turunan ?? '-' }}</span>
+                                            </td>
                                             <td>{{ $data->karyawan->nama_lengkap ?? '-' }}</td>
                                             <td>
                                                 <div class="btn-group btn-group-sm w-100">
@@ -258,6 +254,7 @@
                                                         data-id="{{ $data->id }}"
                                                         data-judul="{{ $data->judul_kategori }}"
                                                         data-tipe="{{ $data->Tipe }}"
+                                                        data-turunan="{{ $data->tipe_turunan }}"
                                                         data-user="{{ $data->karyawan->nama_lengkap ?? 'N/A' }}"><i
                                                             class="bx bx-edit"></i></button>
                                                     <button type="button"
@@ -270,7 +267,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="4" class="text-center py-3 text-muted">Belum ada kategori.
+                                            <td colspan="6" class="text-center py-3 text-muted">Belum ada kategori.
                                             </td>
                                         </tr>
                                     @endforelse
@@ -310,6 +307,14 @@
                                 <option value="Semester">Semester</option>
                                 <option value="Tahunan">Tahunan</option>
                             </select></div>
+                        <div class="mb-3" id="editTipeTurunanContainer">
+                            <label class="form-label fw-semibold">Tipe Turunan (Shift)</label>
+                            <select name="tipe_turunan" id="edit_tipe_turunan" class="form-select">
+                                <option value="">Tidak Ada / Umum</option>
+                                <option value="Shift 1">Shift 1</option>
+                                <option value="Shift 2">Shift 2</option>
+                            </select>
+                        </div>
                         @if (Auth::user()->jabatan === 'HRD')
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Penanggung Jawab</label>
@@ -414,7 +419,7 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <form id="formExport" method="GET">
-                    <div class="modal-header bg-primary text-white">
+                    <div class="modal-header text-white">
                         <h5 class="modal-title small fw-bold"><i class="bx bx-filter me-2"></i>Filter Export Laporan</h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
@@ -428,14 +433,10 @@
                         </div>
                         <div id="filterTugasSection">
                             <div class="row g-2 mb-2">
-                                <div class="col-6">
-                                    <label class="form-label small">Tanggal Mulai</label>
-                                    <input type="date" name="start_date" class="form-control form-control-sm">
-                                </div>
-                                <div class="col-6">
-                                    <label class="form-label small">Tanggal Akhir</label>
-                                    <input type="date" name="end_date" class="form-control form-control-sm">
-                                </div>
+                                <div class="col-6"><label class="form-label small">Tanggal Mulai</label><input
+                                        type="date" name="start_date" class="form-control form-control-sm"></div>
+                                <div class="col-6"><label class="form-label small">Tanggal Akhir</label><input
+                                        type="date" name="end_date" class="form-control form-control-sm"></div>
                             </div>
                             <div class="row g-2">
                                 <div class="col-6">
@@ -489,13 +490,11 @@
                     <div class="modal-footer bg-light">
                         <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
                         <button type="submit" class="btn btn-success btn-sm"
-                            formaction="{{ route('office.DaftarTugas.export.excel') }}" formtarget="_blank">
-                            <i class="bx bx-file-excel me-1"></i> Excel
-                        </button>
+                            formaction="{{ route('office.DaftarTugas.export.excel') }}" formtarget="_blank"><i
+                                class="bx bx-file-excel me-1"></i> Excel</button>
                         <button type="submit" class="btn btn-danger btn-sm"
-                            formaction="{{ route('office.DaftarTugas.export.pdf') }}" formtarget="_blank">
-                            <i class="bx bx-file-pdf me-1"></i> PDF
-                        </button>
+                            formaction="{{ route('office.DaftarTugas.export.pdf') }}" formtarget="_blank"><i
+                                class="bx bx-file-pdf me-1"></i> PDF</button>
                     </div>
                 </form>
             </div>
@@ -507,7 +506,6 @@
         $(document).ready(function() {
             const today = new Date().toISOString().split('T')[0];
             $('#filterTanggal').val(today);
-            let selectedCategories = [];
 
             function updateTitle() {
                 const t = $('#filterTipe').val();
@@ -516,7 +514,7 @@
                 const tipeText = t === 'all' ? 'Semua Tipe' : t;
                 $('#dynamicTitle').text(
                     `Tugas Aktif ${tipeText} - ${dt.toLocaleDateString('id-ID', {weekday:'long',year:'numeric',month:'long',day:'numeric'})}`
-                );
+                    );
             }
 
             function loadData() {
@@ -525,6 +523,7 @@
                     type: 'GET',
                     data: {
                         tipe: $('#filterTipe').val(),
+                        tipe_turunan: $('#filterTipeTurunan').val(),
                         tanggal: $('#filterTanggal').val()
                     },
                     success: function(r) {
@@ -532,14 +531,16 @@
                         tb.empty();
                         if (!r.data || !r.data.length) {
                             tb.append(
-                                `<tr><td colspan="5" class="text-center py-5"><div class="d-flex flex-column align-items-center gap-3"><div class="bg-light rounded-circle p-4"><i class="bx bx-clipboard text-muted" style="font-size:3rem"></i></div><h5 class="text-muted mb-1">Belum ada Tugas Aktif</h5><p class="text-muted small mb-3">Pilih tugas dari kategori yang tersedia untuk mulai mengerjakan</p><button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#pilihTugasModal"><i class="bx bx-list-plus me-1"></i>Pilih Tugas</button></div></td></tr>`
-                            );
+                                `<tr><td colspan="6" class="text-center py-5"><div class="d-flex flex-column align-items-center gap-3"><div class="bg-light rounded-circle p-4"><i class="bx bx-clipboard text-muted" style="font-size:3rem"></i></div><h5 class="text-muted mb-1">Belum ada Tugas Aktif</h5><p class="text-muted small mb-3">Pilih tugas dari kategori yang tersedia untuk mulai mengerjakan</p></div></td></tr>`
+                                );
                             return;
                         }
                         r.data.forEach(function(it) {
                             const kat = it.kategori_daftar_tugas?.judul_kategori ||
                                 'Tanpa Kategori';
                             const tipe = it.kategori_daftar_tugas?.Tipe || '-';
+                            const turunan = it.kategori_daftar_tugas?.tipe_turunan || '-';
+                            const karyawan = it.karyawan?.nama_lengkap || '-';
                             const dl = it.Deadline_Date || '-';
                             const chk = it.status == 1 ? 'checked' : '';
                             const done = it.status == 1 ?
@@ -548,33 +549,9 @@
                                 `<button class="btn btn-success btn-sm btn-viewBukti" data-bukti="/storage/${it.bukti}" data-judul="${kat.replace(/"/g,'&quot;')}"><i class="bx bx-show"></i>Lihat</button>` :
                                 `<button class="btn btn-primary btn-sm btn-uploadBukti" data-id="${it.id}" data-judul="${kat.replace(/"/g,'&quot;')}"><i class="bx bx-upload"></i>Bukti</button>`;
                             tb.append(
-                                `<tr class="${done?'bg-light':''}"><td class="ps-4"><div class="form-check"><input class="form-check-input checkStatus" type="checkbox" data-id="${it.id}" ${chk}></div></td><td class="task-text ${done} fw-medium">${kat}</td><td class="task-text ${done}"><span class="badge bg-secondary">${tipe}</span></td><td class="task-text ${done} small">${dl}</td><td class="text-center"><div class="btn-group"><button class="btn btn-outline-danger btn-sm btn-hapus" data-id="${it.id}"><i class="bx bx-trash"></i></button>${bukti}</div></td></tr>`
-                            );
-                        });
-                    }
-                });
-            }
-
-            function loadKategoriList() {
-                $.ajax({
-                    url: "{{ route('office.DaftarTugas.getKategori') }}",
-                    type: 'GET',
-                    success: function(d) {
-                        const container = $('#kategoriList');
-                        container.empty();
-                        const filtered = d.filter(it => $('#filterKategoriTipe').val() === 'all' || it
-                            .Tipe === $('#filterKategoriTipe').val());
-                        if (!filtered.length) {
-                            container.append(
-                                '<div class="col-12 text-center py-4 text-muted">Tidak ada kategori tersedia</div>'
+                                `<tr class="${done?'bg-light':''}"><td class="ps-4"><div class="form-check"><input class="form-check-input checkStatus" type="checkbox" data-id="${it.id}" ${chk}></div></td><td class="task-text ${done} fw-medium">${kat}</td><td class="task-text ${done}"><span class="badge bg-secondary">${tipe}</span></td><td class="task-text ${done}"><span class="badge bg-info text-dark">${turunan}</span></td><td class="task-text ${done} small fw-semibold">${karyawan}</td>
+                                <td class="task-text ${done} small">${dl}</td><td class="text-center"><div class="btn-group"><button class="btn btn-outline-danger btn-sm btn-hapus" data-id="${it.id}"><i class="bx bx-trash"></i></button>${bukti}</div></td></tr>`
                                 );
-                            return;
-                        }
-                        filtered.forEach(function(it) {
-                            const isSelected = selectedCategories.includes(it.id);
-                            container.append(
-                                `<div class="col-md-6 col-lg-4"><div class="card category-card ${isSelected?'selected':''}" data-id="${it.id}"><div class="card-body p-3"><div class="d-flex justify-content-between align-items-start"><div><h6 class="card-title mb-1 fw-semibold">${it.judul_kategori}</h6><span class="badge bg-info text-dark">${it.Tipe}</span></div><div class="form-check"><input class="form-check-input chk-kategori" type="checkbox" data-id="${it.id}" ${isSelected?'checked':''}></div></div><div class="mt-2 small text-muted">${it.karyawan?.nama_lengkap||'-'}</div></div></div></div>`
-                            );
                         });
                     }
                 });
@@ -589,14 +566,14 @@
                         tb.empty();
                         if (!d.length) {
                             tb.append(
-                                '<tr><td colspan="4" class="text-center py-3 text-muted">Belum ada kategori.</td></tr>'
+                                '<tr><td colspan="6" class="text-center py-3 text-muted">Belum ada kategori.</td></tr>'
                                 );
                             return;
                         }
                         d.forEach(function(it) {
                             tb.append(
-                                `<tr data-id="${it.id}"><td>${it.judul_kategori}</td><td><span class="badge bg-info text-dark">${it.Tipe}</span></td><td>${it.karyawan?.nama_lengkap||'-'}</td><td><div class="btn-group btn-group-sm w-100"><button class="btn btn-outline-primary btn-edit-kategori" data-id="${it.id}" data-judul="${it.judul_kategori}" data-tipe="${it.Tipe}" data-user="${it.karyawan?.nama_lengkap||'N/A'}"><i class="bx bx-edit"></i></button><button class="btn btn-outline-danger btn-delete-kategori" data-id="${it.id}" data-judul="${it.judul_kategori}"><i class="bx bx-trash"></i></button></div></td></tr>`
-                            );
+                                `<tr data-id="${it.id}"><td><input type="checkbox" class="chk-bulk-kategori" value="${it.id}" data-tipe="${it.Tipe}"></td><td>${it.judul_kategori}</td><td><span class="badge bg-info text-dark">${it.Tipe}</span></td><td><span class="badge bg-secondary">${it.tipe_turunan || '-'}</span></td><td>${it.karyawan?.nama_lengkap||'-'}</td><td><div class="btn-group btn-group-sm w-100"><button class="btn btn-outline-primary btn-edit-kategori" data-id="${it.id}" data-judul="${it.judul_kategori}" data-tipe="${it.Tipe}" data-turunan="${it.tipe_turunan}" data-user="${it.karyawan?.nama_lengkap||'N/A'}"><i class="bx bx-edit"></i></button><button class="btn btn-outline-danger btn-delete-kategori" data-id="${it.id}" data-judul="${it.judul_kategori}"><i class="bx bx-trash"></i></button></div></td></tr>`
+                                );
                         });
                     }
                 });
@@ -605,108 +582,21 @@
             loadData();
             updateTitle();
 
-            $('#filterTipe,#filterTanggal').on('change', function() {
+            $('#filterTipe,#filterTipeTurunan,#filterTanggal').on('change', function() {
                 updateTitle();
                 loadData();
             });
             $('#btnResetFilter').on('click', function() {
                 $('#filterTipe').val('all');
+                $('#filterTipeTurunan').val('all');
                 $('#filterTanggal').val(today);
                 updateTitle();
                 loadData();
             });
-            $('#filterKategoriTipe').on('change', loadKategoriList);
 
-            $('#pilihTugasModal').on('show.bs.modal', function() {
-                selectedCategories = [];
-                loadKategoriList();
-            });
-
-            $(document).on('click', '.category-card', function() {
-                const id = $(this).data('id');
-                const chk = $(this).find('.chk-kategori');
-                chk.prop('checked', !chk.prop('checked'));
-                $(this).toggleClass('selected', chk.prop('checked'));
-                if (chk.prop('checked')) {
-                    if (!selectedCategories.includes(id)) selectedCategories.push(id);
-                } else {
-                    selectedCategories = selectedCategories.filter(i => i !== id);
-                }
-            });
-
-            $(document).on('change', '.chk-kategori', function() {
-                const id = $(this).data('id');
-                const card = $(this).closest('.category-card');
-                card.toggleClass('selected', $(this).prop('checked'));
-                if ($(this).prop('checked')) {
-                    if (!selectedCategories.includes(id)) selectedCategories.push(id);
-                } else {
-                    selectedCategories = selectedCategories.filter(i => i !== id);
-                }
-            });
-
-            $('#btnAktifkanTugas').on('click', function() {
-                if (!selectedCategories.length) {
-                    showNotification('Peringatan', 'Pilih minimal satu kategori tugas', 'warning');
-                    return;
-                }
-                const btn = $(this);
-                const sp = $('#aktifkanSpinner');
-                btn.prop('disabled', true);
-                sp.removeClass('d-none');
-                $.ajax({
-                    url: "{{ route('office.DaftarTugas.aktifkanTugas') }}",
-                    type: 'POST',
-                    data: {
-                        _token: $('meta[name="csrf-token"]').attr('content'),
-                        kategori_ids: selectedCategories
-                    },
-                    success: function(r) {
-                        if (r.success) {
-                            showNotification('Berhasil!', r.message, 'success');
-                            bootstrap.Modal.getInstance(document.getElementById(
-                                'pilihTugasModal')).hide();
-                            loadData();
-                        } else {
-                            showNotification('Gagal', r.message, 'danger');
-                        }
-                    },
-                    error: function(xhr) {
-                        showNotification('Gagal', xhr.responseJSON?.message ||
-                            'Terjadi kesalahan', 'danger');
-                    },
-                    complete: function() {
-                        btn.prop('disabled', false);
-                        sp.addClass('d-none');
-                    }
-                });
-            });
-
-            $('#formCreateKategori').on('submit', function(e) {
-                e.preventDefault();
-                const f = $(this);
-                const btn = $('#btnSimpanKategori');
-                const sp = $('#createSpinner');
-                btn.prop('disabled', true);
-                sp.removeClass('d-none');
-                $.ajax({
-                    url: f.attr('action'),
-                    type: 'POST',
-                    data: f.serialize(),
-                    success: function(r) {
-                        if (r.success) {
-                            showNotification('Berhasil!', r.message, 'success');
-                            refreshKategoriTable();
-                            f[0].reset();
-                        } else {
-                            showNotification('Gagal', r.message, 'danger');
-                        }
-                    },
-                    complete: function() {
-                        btn.prop('disabled', false);
-                        sp.addClass('d-none');
-                    }
-                });
+            $('#createTipe').on('change', function() {
+                if ($(this).val() === 'Harian') $('#createTipeTurunanContainer').removeClass('d-none');
+                else $('#createTipeTurunanContainer').addClass('d-none');
             });
 
             let wasCreateModalOpen = false;
@@ -746,12 +636,46 @@
                 const id = $(this).data('id');
                 const judul = $(this).data('judul');
                 const tipe = $(this).data('tipe');
+                const turunan = $(this).data('turunan');
                 const user = $(this).data('user');
                 $('#edit_id').val(id);
                 $('#edit_judul').val(judul);
                 $('#edit_tipe').val(tipe);
+                $('#edit_tipe_turunan').val(turunan);
+
+                if (tipe === 'Harian') $('#editTipeTurunanContainer').removeClass('d-none');
+                else $('#editTipeTurunanContainer').addClass('d-none');
+
                 const modal = new bootstrap.Modal(document.getElementById('modalEditKategori'));
                 modal.show();
+            });
+
+            $('#formCreateKategori').on('submit', function(e) {
+                e.preventDefault();
+                const f = $(this);
+                const btn = $('#btnSimpanKategori');
+                const sp = $('#createSpinner');
+                btn.prop('disabled', true);
+                sp.removeClass('d-none');
+                $.ajax({
+                    url: f.attr('action'),
+                    type: 'POST',
+                    data: f.serialize(),
+                    success: function(r) {
+                        if (r.success) {
+                            showNotification('Berhasil!', r.message, 'success');
+                            refreshKategoriTable();
+                            f[0].reset();
+                            $('#createTipeTurunanContainer').addClass('d-none');
+                        } else {
+                            showNotification('Gagal', r.message, 'danger');
+                        }
+                    },
+                    complete: function() {
+                        btn.prop('disabled', false);
+                        sp.addClass('d-none');
+                    }
+                });
             });
 
             $('#formEditKategori').on('submit', function(e) {
@@ -1003,6 +927,93 @@
                     .toISOString().split('T')[0];
                 $('input[name="start_date"]').val(startOfMonth);
                 $('input[name="end_date"]').val(today);
+            });
+
+            $('#checkAllKategori').on('change', function() {
+                $('.chk-bulk-kategori').prop('checked', $(this).prop('checked'));
+                toggleBulkAction();
+            });
+
+            $(document).on('change', '.chk-bulk-kategori', function() {
+                toggleBulkAction();
+            });
+
+            function toggleBulkAction() {
+                const checked = $('.chk-bulk-kategori:checked').length;
+                const btn = $('#btnBulkUpdate');
+                if (checked > 0) {
+                    btn.removeClass('d-none');
+                    $('#bulkActionPanel').show();
+                } else {
+                    btn.addClass('d-none');
+                    $('#bulkActionPanel').hide();
+                }
+            }
+
+            $('#btnBulkUpdate').on('click', function() {
+                $('#bulkActionPanel').show();
+            });
+
+            $('#cancelBulkUpdate').on('click', function() {
+                $('#bulkActionPanel').hide();
+                $('#checkAllKategori').prop('checked', false);
+                $('.chk-bulk-kategori').prop('checked', false);
+                $('#btnBulkUpdate').addClass('d-none');
+            });
+
+            $('#confirmBulkUpdate').on('click', function() {
+                const ids = [];
+                $('.chk-bulk-kategori:checked').each(function() {
+                    if ($(this).data('tipe') === 'Harian') {
+                        ids.push($(this).val());
+                    }
+                });
+
+                if (ids.length === 0) {
+                    showNotification('Peringatan', 'Pilih minimal satu kategori Harian untuk diupdate',
+                        'warning');
+                    return;
+                }
+
+                const shift = $('#bulkShiftSelect').val();
+                const btn = $(this);
+                const origText = btn.text();
+
+                btn.prop('disabled', true).text('Memproses...');
+
+                $.ajax({
+                    url: "{{ route('office.DaftarTugas.bulkUpdateTipeTurunan') }}",
+                    type: 'POST',
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr('content'),
+                        ids: ids,
+                        tipe_turunan: shift
+                    },
+                    success: function(r) {
+                        if (r.success) {
+                            showNotification('Berhasil', r.message, 'success');
+                            refreshKategoriTable();
+                            $('#bulkActionPanel').hide();
+                            $('#checkAllKategori').prop('checked', false);
+                            $('.chk-bulk-kategori').prop('checked', false);
+                            $('#btnBulkUpdate').addClass('d-none');
+                        } else {
+                            showNotification('Gagal', r.message, 'danger');
+                        }
+                    },
+                    error: function(xhr) {
+                        showNotification('Gagal', xhr.responseJSON?.message ||
+                            'Terjadi kesalahan', 'danger');
+                    },
+                    complete: function() {
+                        btn.prop('disabled', false).text(origText);
+                    }
+                });
+            });
+
+            $('#edit_tipe').on('change', function() {
+                if ($(this).val() === 'Harian') $('#editTipeTurunanContainer').removeClass('d-none');
+                else $('#editTipeTurunanContainer').addClass('d-none');
             });
         });
     </script>
