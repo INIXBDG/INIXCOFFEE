@@ -342,10 +342,12 @@ class RKMController extends Controller
             $kelas = 'Offline';
         } else if ($kelas == 'vir') {
             $kelas = 'Virtual';
+        } else if($kelas = 'exam'){
+            $kelas = 'Exam Only';
         } else {
             return 404;
         }
-
+        
         // Query RKM
         $rkm = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan', 'instruktur2', 'asisten', 'rekomendasilanjutan', 'peluang'])
             ->where('materi_key', $materi_key)
