@@ -28,7 +28,8 @@ class eksam extends Model
         'status',
         'kode_karyawan',
         'mata_uang',
-        
+        'deleted_at',
+        'deleted_by',
     ];
 
     public function rkm()

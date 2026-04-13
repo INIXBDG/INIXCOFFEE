@@ -21,6 +21,8 @@ class outstanding extends Model
         'tanggal_bayar',
         'path_faktur_pajak',
         'path_dokumen_tambahan',
+        'deleted_at',
+        'deleted_by',
     ];
 
     public function rkm()
