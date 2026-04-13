@@ -578,8 +578,6 @@ class PeluangController extends Controller
                 if ($peluang->rkm) {
                     $rkm = $peluang->rkm;
 
-                    $rkm->status = '2';
-
                     if ($rkm->perhitunganNetSales && $rkm->perhitunganNetSales->isNotEmpty()) {
                         foreach ($rkm->perhitunganNetSales as $item) {
                             $item->update([
