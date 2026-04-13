@@ -10,6 +10,7 @@ class eksam extends Model
     use HasFactory;
     protected $fillable = [
         'invoice',
+        'file_invoice',
         'tanggal_pengajuan',
         'id_rkm',
         'materi',
@@ -30,6 +31,10 @@ class eksam extends Model
         'mata_uang',
         'deleted_at',
         'deleted_by',
+    ];
+
+    protected $casts = [
+        'file_invoice' => 'array',
     ];
 
     public function rkm()
@@ -58,13 +63,13 @@ class eksam extends Model
         return $this->belongsTo(approvalexam::class, 'id', 'id_exam');
     }
     public function materi()
-{
-    return $this->belongsTo(Materi::class, 'materi', 'id');
-}
+    {
+        return $this->belongsTo(Materi::class, 'materi', 'id');
+    }
 
-public function perusahaan()
-{
-    return $this->belongsTo(Perusahaan::class, 'perusahaan', 'id');
-}
+    public function perusahaan()
+    {
+        return $this->belongsTo(Perusahaan::class, 'perusahaan', 'id');
+    }
 
 }
