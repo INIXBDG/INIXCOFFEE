@@ -58,7 +58,7 @@
                                     onsubmit="return confirm('Yakin ingin menghapus peluang ini?')">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger">Hapus</button>
+                                    <button type="submit" class="btn btn-sm btn-danger" @if($peluang->tahap === 'merah') disabled @endif>Hapus</button>
                                 </form>
                             </div>
                         </div>

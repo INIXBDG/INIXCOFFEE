@@ -38,6 +38,8 @@ class kelasanalisis extends Model
         'total_fee_instruktur',
         'nett_penjualan',
         'komentar',
+        'deleted_at',
+        'deleted_by',
     ];
 
     // Relationship to `RKM`
