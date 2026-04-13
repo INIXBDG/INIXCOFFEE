@@ -12,9 +12,9 @@
             </div>
         @endif
 
-        <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+        <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden glass-force">
             {{-- Header Kartu --}}
-            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+            <div class="card-header border-bottom py-3 d-flex justify-content-between align-items-center">
                 <h5 class="mb-0 fw-bold text-primary">
                     {{ $kegiatan->nama_kegiatan }}
                 </h5>
@@ -24,7 +24,7 @@
                 </span>
             </div>
 
-            <div class="card-body p-4">
+            <div class="card-body p-4 glass-force">
                 <div class="row g-4">
 
                     @if ($kegiatan->tipe != 'pembelian')
@@ -87,7 +87,7 @@
 
                     @if ($kegiatan)
                         <div class="col border-start-md">
-                            <div class="card h-100 shadow-sm cursor-pointer" role="button" data-bs-toggle="modal"
+                            <div class="card h-100 glass-force cursor-pointer" role="button" data-bs-toggle="modal"
                                 data-bs-target="#RealisasiKegiatan">
 
                                 <div class="card-body">
@@ -109,7 +109,7 @@
                 </div>
             </div>
 
-            <div class="card-body p-4 border-top">
+            <div class="card-body p-4 border-top glass-force">
                 <div class="d-flex align-items-center mb-3">
                     <h6 class="mb-0 fw-bold text-dark">Tracking Status Kegiatan</h6>
                 </div>
@@ -282,8 +282,8 @@
 
         </div> --}}
 
-        <div class="card border-0 shadow-sm rounded-4 overflow-hidden mt-4">
-            <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden mt-4 glass-force">
+            <div class="card-header border-0 py-3 d-flex justify-content-between align-items-center">
                 <h5 class="mb-0 fw-semibold">Data Pengajuan Barang</h5>
                 <button onclick="loadPengajuanTable()" class="btn btn-sm btn-light-primary">
                     <i class="fas fa-sync-alt me-1"></i> Refresh

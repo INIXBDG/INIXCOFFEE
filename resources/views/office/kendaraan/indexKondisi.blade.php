@@ -23,7 +23,7 @@
         @endif
 
         {{-- Filter Card --}}
-        <div class="card shadow-sm mb-3">
+        <div class="card shadow-sm mb-3 glass-force">
             <div class="card-body py-3">
                 <div class="row g-3 align-items-end">
                     <div class="col-md-4">
@@ -44,7 +44,7 @@
         </div>
 
         {{-- Table Card --}}
-        <div class="card shadow-sm">
+        <div class="card shadow-sm glass-force">
             <div class="card-body">
                 <div class="table-responsive">
                     <table id="tableKondisi" class="table table-bordered table-hover align-middle w-100">

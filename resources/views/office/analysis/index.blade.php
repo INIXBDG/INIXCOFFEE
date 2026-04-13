@@ -54,11 +54,11 @@
                 <div class="row g-4">
                     @foreach ($months as $monthKey => $monthName)
                         <div class="col-12 col-md-6 col-lg-4">
-                            <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
+                            <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden glass-force">
                                 <div class="card-header bg-light border-0 py-3">
                                     <h6 class="mb-0 fw-bold text-dark">{{ $monthName }}</h6>
                                 </div>
-                                <div class="card-body bg-white p-3">
+                                <div class="card-body p-3">
                                     @php
                                         $monthReports = $reports->where('year', $year)->where('month', $monthKey);
                                     @endphp

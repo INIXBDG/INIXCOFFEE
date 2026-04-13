@@ -120,9 +120,9 @@
     </div>
 
     <div class="container-fluid px-0 px-md-3">
-        <div class="card shadow-sm border-0">
+        <div class="card shadow-sm border-0 glass-force">
             <div
-                class="card-header bg-white d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 py-3">
+                class="card-header d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 py-3">
                 <h5 class="mb-0 fw-semibold">Biaya Transportasi Driver</h5>
                 <span id="dataCountBadge" class="badge bg-primary rounded-pill px-3 py-2">0 data</span>
             </div>
@@ -591,30 +591,30 @@
                         `<a href="{{ asset('storage') }}/${i.bukti}" target="_blank" class="btn btn-sm btn-info"><i class="fas fa-eye"></i> Lihat</a>` :
                         '-';
                     rows += `<tr>
-                <td>${i.pengajuan_barang?.tipe ?? '-'}</td>
-                <td>${i.tipe}</td>
-                <td class="text-end">${currencyFormat.format(i.harga)}</td>
-                <td>${i.keterangan ?? '-'}</td>
-                <td class="text-center">${bukti}</td>
-                <td>${moment(i.created_at).format('DD MMM YYYY HH:mm')}</td>
-            </tr>`;
+                            <td>${i.pengajuan_barang?.tipe ?? '-'}</td>
+                            <td>${i.tipe}</td>
+                            <td class="text-end">${currencyFormat.format(i.harga)}</td>
+                            <td>${i.keterangan ?? '-'}</td>
+                            <td class="text-center">${bukti}</td>
+                            <td>${moment(i.created_at).format('DD MMM YYYY HH:mm')}</td>
+                        </tr>`;
                     if (i.pengajuan_barang?.tracking?.tracking) tracking = i.pengajuan_barang
                         .tracking.tracking;
                 });
 
                 $('#detailContent').html(`
-            <div class="table-responsive">
-                <table class="table table-striped table-bordered">
-                    <thead class="table-light">
-                        <tr><th>Jenis Pengajuan</th><th>Tipe</th><th>Harga</th><th>Keterangan</th><th>Bukti</th><th>Tanggal</th></tr>
-                    </thead>
-                    <tbody>${rows}</tbody>
-                    <tfoot><tr><th colspan="5" class="text-end">Total</th><th class="text-end">${currencyFormat.format(total)}</th></tr></tfoot>
-                </table>
-            </div>
-            <p class="mt-4 mb-2 fw-bold">Status Tracking</p>
-            <div class="alert alert-secondary">${tracking}</div>
-        `);
+                    <div class="table-responsive">
+                        <table class="table table-striped table-bordered">
+                            <thead class="table-light">
+                                <tr><th>Jenis Pengajuan</th><th>Tipe</th><th>Harga</th><th>Keterangan</th><th>Bukti</th><th>Tanggal</th></tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                            <tfoot><tr><th colspan="5" class="text-end">Total</th><th class="text-end">${currencyFormat.format(total)}</th></tr></tfoot>
+                        </table>
+                    </div>
+                    <p class="mt-4 mb-2 fw-bold">Status Tracking</p>
+                    <div class="alert alert-secondary">${tracking}</div>
+                `);
 
                 new bootstrap.Modal(document.getElementById('detailModal')).show();
             });
@@ -633,41 +633,41 @@
 
                 items.forEach((item, idx) => {
                     const row = `
-        <div class="edit-item-row border rounded p-3 mb-3 position-relative" data-idx="${idx}">
-            <input type="hidden" name="items[${idx}][id]" value="${item.id}">
+                        <div class="edit-item-row border rounded p-3 mb-3 position-relative" data-idx="${idx}">
+                            <input type="hidden" name="items[${idx}][id]" value="${item.id}">
 
-            <button type="button" class="btn btn-danger btn-sm btn-remove-item">
-                <i class="fas fa-trash"></i> Hapus
-            </button>
+                            <button type="button" class="btn btn-danger btn-sm btn-remove-item">
+                                <i class="fas fa-trash"></i> Hapus
+                            </button>
 
-            <div class="row g-3">
-                <div class="col-md-3">
-                    <label class="form-label fw-semibold">Tipe Biaya</label>
-                    <select class="form-select" name="items[${idx}][tipe]" required>
-                        <option value="BBM" ${item.tipe==='BBM'?'selected':''}>BBM</option>
-                        <option value="TOL" ${item.tipe==='TOL'?'selected':''}>TOL</option>
-                        <option value="Parkir" ${item.tipe==='Parkir'?'selected':''}>Parkir</option>
-                        <option value="Lainnya" ${item.tipe==='Lainnya'?'selected':''}>Lainnya</option>
-                        <option value="Budget Lebih" ${item.tipe==='Budget Lebih'?'selected':''}>Budget Lebih</option>
-                    </select>
-                </div>
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">Tipe Biaya</label>
+                                    <select class="form-select" name="items[${idx}][tipe]" required>
+                                        <option value="BBM" ${item.tipe==='BBM'?'selected':''}>BBM</option>
+                                        <option value="TOL" ${item.tipe==='TOL'?'selected':''}>TOL</option>
+                                        <option value="Parkir" ${item.tipe==='Parkir'?'selected':''}>Parkir</option>
+                                        <option value="Lainnya" ${item.tipe==='Lainnya'?'selected':''}>Lainnya</option>
+                                        <option value="Budget Lebih" ${item.tipe==='Budget Lebih'?'selected':''}>Budget Lebih</option>
+                                    </select>
+                                </div>
 
-                <div class="col-md-3">
-                    <label class="form-label fw-semibold">Harga</label>
-                    <input type="number" class="form-control" name="items[${idx}][harga]" value="${item.harga}" min="500" required>
-                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">Harga</label>
+                                    <input type="number" class="form-control" name="items[${idx}][harga]" value="${item.harga}" min="500" required>
+                                </div>
 
-                <div class="col-md-3">
-                    <label class="form-label fw-semibold">Keterangan</label>
-                    <input type="text" class="form-control" name="items[${idx}][keterangan]" value="${item.keterangan ?? ''}">
-                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">Keterangan</label>
+                                    <input type="text" class="form-control" name="items[${idx}][keterangan]" value="${item.keterangan ?? ''}">
+                                </div>
 
-                <div class="col-md-3">
-                    <label class="form-label fw-semibold">Bukti</label>
-                    <input type="file" class="form-control" name="items[${idx}][bukti]" accept="image/*">
-                </div>
-            </div>
-        </div>`;
+                                <div class="col-md-3">
+                                    <label class="form-label fw-semibold">Bukti</label>
+                                    <input type="file" class="form-control" name="items[${idx}][bukti]" accept="image/*">
+                                </div>
+                            </div>
+                        </div>`;
 
                     $('#editItemsContainer').append(row);
                 });

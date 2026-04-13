@@ -16,7 +16,7 @@
 
         <div class="row g-4 mb-5">
             <div class="col-12">
-                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden">
+                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
                     <div class="card-body p-4 mb-4 h-100 " style="height: 320px;">
 
                         <!-- Modal Edit -->
@@ -82,7 +82,7 @@
                         </div>
 
                         <div class="table-responsive mb-4" style="max-height: 400px; overflow-y: auto;">
-                            <table class="table table-hover align-middle mb-0">
+                            <table class="table align-middle mb-0">
                                 <thead class="table-light sticky-top">
                                     <tr>
                                         <th class="border-0 ps-4"></th>

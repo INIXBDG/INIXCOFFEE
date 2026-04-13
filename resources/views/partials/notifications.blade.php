@@ -60,7 +60,7 @@
                             @endif
                         @endforeach
                     </ul>
-                @endif
+                @endif  
             </p>
             <br>
             <div class="d-flex">

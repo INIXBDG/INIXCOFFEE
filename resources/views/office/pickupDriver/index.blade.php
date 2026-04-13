@@ -97,7 +97,7 @@
         </div>
     </div>
 
-    {{-- Modal Kepulangan (Updated dengan KM Awal & Akhir) --}}
+    {{-- Modal Kepulangan --}}
     <div class="modal fade" id="kepulanganModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <form id="kepulanganForm">
@@ -155,7 +155,7 @@
         </div>
     </div>
 
-    {{-- Modal Edit Koordinasi (Tetap sama) --}}
+    {{-- Modal Edit Koordinasi --}}
     <div class="modal fade" id="editKoordinasiModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-xl">
             <form id="editKoordinasiForm">
@@ -240,15 +240,15 @@
         <small class="text-muted fw-medium">{{ now()->translatedFormat('l, d F Y') }}</small>
     </div>
 
-    <div class="card shadow-lg border-0 rounded-4 mb-3">
+    <div class="card shadow-lg border-0 rounded-4 mb-3 glass-force">
         <div class="card-body px-3 py-3">
             <div id="content-person" class="d-flex gap-3 overflow-x-auto p-3">
             </div>
         </div>
     </div>
 
-    <div class="card shadow-lg border-0 rounded-4">
-        <div class="card-header bg-white">
+    <div class="card shadow-lg border-0 rounded-4 glass-force">
+        <div class="card-header">
             <div class="d-flex justify-content-between align-items-center">
                 <div class="d-flex flex-wrap gap-2 mb-4">
                     @if ($section === 'crm_contents')

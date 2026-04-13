@@ -22,7 +22,7 @@ class BiayaTransportasiController extends Controller
     public function index()
     {
         $dataPickup = pickupDriver::with(['karyawan', 'detailPickupDriver'])
-            ->where('created_at', '>=', Carbon::now()->subDays(2))
+            ->where('created_at', '>=', Carbon::now()->subDays(7))
             ->latest()
             ->get();
 
@@ -120,7 +120,7 @@ class BiayaTransportasiController extends Controller
 
     public function get()
     {
-        $data = BiayaTransportasiDriver::with(['pengajuanBarang.tracking', 'karyawan', 'pickupDriver.karyawan', 'pickupDriver.detailPickupDriver'])
+        $data = BiayaTransportasiDriver::with(['pengajuanBarang.tracking', 'karyawan', 'pickupDriver.karyawan', 'pickupDriver.detailPickupDriver', 'pickupDriver'])
             ->orderBy('id_pickup_driver')
             ->orderBy('created_at', 'desc')
             ->get();
@@ -137,7 +137,7 @@ class BiayaTransportasiController extends Controller
                 'keterangan' => $item->keterangan,
                 'created_at' => $item->created_at,
                 'updated_at' => $item->updated_at,
-
+                'pickupDriver' => $item->pickupDriver,
                 'pengajuan_barang' => $item->pengajuanBarang
                     ? [
                         'id' => $item->pengajuanBarang->id,

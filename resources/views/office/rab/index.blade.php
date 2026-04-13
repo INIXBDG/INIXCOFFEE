@@ -32,8 +32,8 @@
         </div>
 
         {{-- Card Table --}}
-        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-            <div class="card-header bg-white border-0 py-3">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden glass-force">
+            <div class="card-header border-0 py-3">
                 <div class="row align-items-center">
                     <div class="col">
                         <h5 class="mb-0 fw-semibold">Daftar Kegiatan</h5>
@@ -146,7 +146,7 @@
                 </div>
             </div>
             @if ($kegiatan->count() > 0)
-                <div class="card-footer bg-white border-0 py-3">
+                <div class="card-footer border-0 py-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <small class="text-muted">Menampilkan {{ $kegiatan->count() }} RAB</small>
                     </div>
