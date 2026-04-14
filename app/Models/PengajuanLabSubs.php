@@ -9,36 +9,32 @@ class PengajuanLabSubs extends Model
 {
     use HasFactory;
 
+    protected $table = 'pengajuan_lab_subs'; // Pastikan nama tabel sesuai
+
     protected $fillable = [
         'kode_karyawan',
         'id_labs',
-        'id_subs',
         'id_rkm',
         'id_tracking',
+        'jenis_transaksi',
         'invoice',
         'lab_snapshot',
-        'subs_snapshot',
     ];
 
     protected $casts = [
         'lab_snapshot' => 'array',
-        'subs_snapshot' => 'array',
     ];
-
-    public function tracking()
-    {
-        return $this->hasMany(TrackingPengajuanLabSubs::class, 'id_pengajuan_lab_subs');
-    }
 
     public function lab()
     {
         return $this->belongsTo(Lab::class, 'id_labs');
     }
 
-    public function subs()
+    public function tracking()
     {
-        return $this->belongsTo(Subscription::class, 'id_subs');
+        return $this->hasMany(TrackingPengajuanLabSubs::class, 'id_pengajuan_lab_subs');
     }
+
     public function rkm()
     {
         return $this->belongsTo(RKM::class, 'id_rkm');

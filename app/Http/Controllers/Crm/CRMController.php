@@ -322,10 +322,11 @@ class CRMController extends Controller
 
             // 19 PA yg belum di approve
             $PA = perhitunganNetSales::with(['rkm.materi', 'rkm.perusahaan', 'trackingNetSales', 'rkm.peluang'])
-                ->whereHas('trackingNetSales', function ($query) {
-                    $query->where('tracking', '!=', 'Selesai');
-                })->paginate(10);
-          
+            ->whereHas('trackingNetSales', function ($query) {
+                $query->where('tracking', '!=', 'Selesai')
+                    ->orWhereNull('tracking');
+            })->paginate(10);
+
             // 20. Data Checklist Milik Adm Sales
             $query = RKM::with(['checklist', 'materi', 'perusahaan', 'instruktur', 'sales']);
 

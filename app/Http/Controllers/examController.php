@@ -40,214 +40,210 @@ class examController extends Controller
         return view('exam.index');
     }
 
-public function createOnly()
-{
-    $kode_exam  = Listexam::all();
-    $materi     = Materi::all();
-    $perusahaan = Perusahaan::select('id', 'nama_perusahaan')->get();
-    $rkm        = RKM::with('perusahaan', 'materi')->get();
+    public function createOnly()
+    {
+        $kode_exam  = Listexam::all();
+        $materi     = Materi::all();
+        $perusahaan = Perusahaan::select('id', 'nama_perusahaan')->get();
+        $rkm        = RKM::with('perusahaan', 'materi')->get();
 
-    $currentUser = auth()->user();
-    $currentKaryawan = $currentUser->karyawan;
-    $isSPVSales = $currentKaryawan && $currentKaryawan->jabatan === 'SPV Sales';
+        $currentUser = auth()->user();
+        $currentKaryawan = $currentUser->karyawan;
+        $isSPVSales = $currentKaryawan && $currentKaryawan->jabatan === 'SPV Sales';
 
-    $salesEmployees = collect();
-    if ($isSPVSales) {
-        $salesEmployees = Karyawan::where('jabatan', 'like', '%Sales%')
-                                  ->where('divisi', 'like', '%Sales%')
-                                  ->get();
-    }
-
-    return view('exam.create_only', compact(
-        'kode_exam', 'materi', 'perusahaan', 'rkm',
-        'isSPVSales', 'salesEmployees'
-    ));
-}
-
-
-// Modified storeOnly method
-public function storeOnly(Request $request)
-{
-    $currentUser = auth()->user();
-    $currentKaryawan = $currentUser->karyawan;
-    $isSPVSales = $currentKaryawan && $currentKaryawan->jabatan === 'SPV Sales';
-
-    // Base validation rules
-    $validationRules = [
-        'materi'             => 'required|integer|exists:materis,id',
-        'tanggal'            => 'required|date',
-        'perusahaan'         => 'required|integer|exists:perusahaans,id',
-        'pax'                => 'required|integer|min:1',
-        'harga'              => 'required|string',
-        'kurs'               => 'nullable|string',
-        'kurs_dollar'        => 'required|string',
-        'biaya_admin'        => 'required|string',
-        'harga_rupiah'       => 'required|string',
-        'pa'                 => 'nullable|string',
-        'mata_uang'          => 'required|string|in:Rupiah,Dollar,Poundsterling,Euro,Franc Swiss',
-        'kode_exam'          => 'required|string|exists:listexams,kode_exam',
-        'diskon'             => 'nullable|numeric|min:0|max:100',
-        'harga_total_rupiah' => 'required|string',
-        'total_final'        => 'required|string',
-    ];
-
-    // Extra rule if SPV Sales
-    if ($isSPVSales) {
-        $validationRules['selected_sales'] = 'required|integer|exists:karyawans,id';
-    }
-
-    $request->validate($validationRules);
-
-    try {
-        // Parsing angka
-        $harga            = (float) str_replace('.', '', $request->harga);
-        $kurs             = (float) str_replace('.', '', $request->kurs ?? 0);
-        $kursDollar       = (float) str_replace('.', '', $request->kurs_dollar);
-        $biayaAdmin       = (float) str_replace('.', '', $request->biaya_admin);
-        $hargaRupiah      = (float) str_replace('.', '', $request->harga_rupiah);
-        $pa               = (float) str_replace('.', '', $request->pa ?? 0);
-        $diskonPersen     = (float) ($request->diskon ?? 0);
-        $pax              = (int) $request->pax;
-        $totalFinal       = (float) str_replace('.', '', $request->total_final);
-        $hargaTotalRupiah = (float) str_replace('.', '', $request->harga_total_rupiah);
-
-        // Verifikasi perhitungan
-        $totalHarga = 0;
-        switch ($request->mata_uang) {
-            case 'Rupiah':
-            case 'Dollar':
-                $totalHarga = ($harga + $biayaAdmin) * $kursDollar;
-                break;
-            case 'Poundsterling':
-            case 'Euro':
-            case 'Franc Swiss':
-                $totalHarga = ($harga * $kurs) + ($biayaAdmin * $kursDollar);
-                break;
-        }
-
-        if (abs($totalHarga * $pax - $hargaTotalRupiah) > 0.01) {
-            return redirect()->back()
-                ->withErrors(['harga_total_rupiah' => 'Total harga dalam Rupiah tidak sesuai perhitungan.'])
-                ->withInput();
-        }
-
-        // Tentukan sales key - PERBAIKAN
+        $salesEmployees = collect();
         if ($isSPVSales) {
-            $salesEmployee = Karyawan::where('jabatan', 'like', '%Sales%')
-                                     ->where('divisi', 'like', '%Sales%')
-                                     ->find($request->selected_sales);
-
-            if (!$salesEmployee) {
-                return redirect()->back()
-                    ->withErrors(['selected_sales' => 'Karyawan sales yang dipilih tidak valid.'])
-                    ->withInput();
-            }
-
-            $salesKey = $salesEmployee->kode_karyawan; // FIXED: Gunakan kode_karyawan
-        } else {
-            $salesKey = $currentUser->karyawan->kode_karyawan ?? null; // FIXED: Gunakan kode_karyawan
-            if (!$salesKey) {
-                return redirect()->back()
-                    ->withErrors(['sales_key' => 'Akun Anda belum memiliki Sales Key. Hubungi admin.'])
-                    ->withInput();
-            }
+            $salesEmployees = Karyawan::where('jabatan', 'like', '%Sales%')
+                                    ->where('divisi', 'like', '%Sales%')
+                                    ->get();
         }
 
-        $instrukturKey = $currentUser->id_instruktur ?? null;
+        return view('exam.create_only', compact(
+            'kode_exam', 'materi', 'perusahaan', 'rkm',
+            'isSPVSales', 'salesEmployees'
+        ));
+    }
 
-        // Debug logging (hapus setelah berhasil)
-        Log::info('Exam Only Debug', [
-            'isSPVSales' => $isSPVSales,
-            'selected_sales' => $request->selected_sales ?? 'N/A',
-            'salesEmployee' => $salesEmployee ?? null,
-            'salesKey' => $salesKey,
-            'currentUser' => $currentUser->username,
-        ]);
+    // Modified storeOnly method
+    public function storeOnly(Request $request)
+    {
+        $currentUser = auth()->user();
+        $currentKaryawan = $currentUser->karyawan;
+        $isSPVSales = $currentKaryawan && $currentKaryawan->jabatan === 'SPV Sales';
 
-        // DB Transaction
-        DB::transaction(function () use ($request, $harga, $pa, $biayaAdmin, $kurs, $kursDollar, $totalFinal, $hargaTotalRupiah, $salesKey, $instrukturKey) {
+        // Base validation rules
+        $validationRules = [
+            'materi'             => 'required|integer|exists:materis,id',
+            'tanggal'            => 'required|date',
+            'perusahaan'         => 'required|integer|exists:perusahaans,id',
+            'pax'                => 'required|integer|min:1',
+            'harga'              => 'required|string',
+            'kurs'               => 'nullable|string',
+            'kurs_dollar'        => 'required|string',
+            'biaya_admin'        => 'required|string',
+            'harga_rupiah'       => 'required|string',
+            'pa'                 => 'nullable|string',
+            'mata_uang'          => 'required|string|in:Rupiah,Dollar,Poundsterling,Euro,Franc Swiss',
+            'kode_exam'          => 'required|string|exists:listexams,kode_exam',
+            'diskon'             => 'nullable|numeric|min:0|max:100',
+            'harga_total_rupiah' => 'required|string',
+            'total_final'        => 'required|string',
+        ];
 
-            $year = date('Y');
-            $namaBulan = ['Januari', 'Februari', 'Maret','April', 'Mei', 'Juni','Juli', 'Agustus', 'September','Oktober', 'November', 'Desember'];
-            $kuartal = ['Q1', 'Q2', 'Q3', 'Q4'];
-            $bulanData = array_merge($namaBulan, $kuartal);
-            $index = RKM::count() % count($bulanData); 
-            $bulanValue = $bulanData[$index] . ' ' . $year;
+        // Extra rule if SPV Sales
+        if ($isSPVSales) {
+            $validationRules['selected_sales'] = 'required|integer|exists:karyawans,id';
+        }
 
-            // 1. Buat RKM untuk Exam Only
-            $rkm = RKM::create([
-                'materi_key'     => $request->materi,
-                'tanggal_awal'   => $request->tanggal,
-                'tanggal_akhir'  => $request->tanggal,
-                'perusahaan_key' => $request->perusahaan,
-                'isi_pax'        => $request->pax,
-                'pax'            => $request->pax,
-                'metode_kelas'   => 'Exam Only',
-                'status'         => '3',
-                'harga_jual'     => $totalFinal ?? 0,
-                'sales_key'      => $salesKey, // Menggunakan kode_karyawan
-                'bulan'          => $bulanValue,
-                'ruang'          => 'Exam',
-                'exam'           => '1',
-            ]);
+        $request->validate($validationRules);
 
-            if (!$rkm || !$rkm->id) {
-                throw new \Exception('Gagal membuat RKM untuk Exam Only');
+        try {
+            // Parsing angka
+            $harga            = (float) str_replace('.', '', $request->harga);
+            $kurs             = (float) str_replace('.', '', $request->kurs ?? 0);
+            $kursDollar       = (float) str_replace('.', '', $request->kurs_dollar);
+            $biayaAdmin       = (float) str_replace('.', '', $request->biaya_admin);
+            $hargaRupiah      = (float) str_replace('.', '', $request->harga_rupiah);
+            $pa               = (float) str_replace('.', '', $request->pa ?? 0);
+            $diskonPersen     = (float) ($request->diskon ?? 0);
+            $pax              = (int) $request->pax;
+            $totalFinal       = (float) str_replace('.', '', $request->total_final);
+            $hargaTotalRupiah = (float) str_replace('.', '', $request->harga_total_rupiah);
+
+            // Verifikasi perhitungan
+            $totalHarga = 0;
+            switch ($request->mata_uang) {
+                case 'Rupiah':
+                case 'Dollar':
+                    $totalHarga = ($harga + $biayaAdmin) * $kursDollar;
+                    break;
+                case 'Poundsterling':
+                case 'Euro':
+                case 'Franc Swiss':
+                    $totalHarga = ($harga * $kurs) + ($biayaAdmin * $kursDollar);
+                    break;
             }
 
-            // Log setelah RKM dibuat
-            Log::info('RKM Created', [
-                'rkm_id' => $rkm->id,
-                'sales_key' => $rkm->sales_key,
-                'metode_kelas' => $rkm->metode_kelas
+            if (abs($totalHarga * $pax - $hargaTotalRupiah) > 0.01) {
+                return redirect()->back()
+                    ->withErrors(['harga_total_rupiah' => 'Total harga dalam Rupiah tidak sesuai perhitungan.'])
+                    ->withInput();
+            }
+
+            // Tentukan sales key - PERBAIKAN
+            if ($isSPVSales) {
+                $salesEmployee = Karyawan::where('jabatan', 'like', '%Sales%')
+                                        ->where('divisi', 'like', '%Sales%')
+                                        ->find($request->selected_sales);
+
+                if (!$salesEmployee) {
+                    return redirect()->back()
+                        ->withErrors(['selected_sales' => 'Karyawan sales yang dipilih tidak valid.'])
+                        ->withInput();
+                }
+
+                $salesKey = $salesEmployee->kode_karyawan; // FIXED: Gunakan kode_karyawan
+            } else {
+                $salesKey = $currentUser->karyawan->kode_karyawan ?? null; // FIXED: Gunakan kode_karyawan
+                if (!$salesKey) {
+                    return redirect()->back()
+                        ->withErrors(['sales_key' => 'Akun Anda belum memiliki Sales Key. Hubungi admin.'])
+                        ->withInput();
+                }
+            }
+
+            $instrukturKey = $currentUser->id_instruktur ?? null;
+
+            // Debug logging (hapus setelah berhasil)
+            Log::info('Exam Only Debug', [
+                'isSPVSales' => $isSPVSales,
+                'selected_sales' => $request->selected_sales ?? 'N/A',
+                'salesEmployee' => $salesEmployee ?? null,
+                'salesKey' => $salesKey,
+                'currentUser' => $currentUser->username,
             ]);
 
-            // 2. Buat invoice
-            $invoice = 'INV-' . $this->generateInvoiceNumber();
+            // DB Transaction
+            DB::transaction(function () use ($request, $harga, $pa, $biayaAdmin, $kurs, $kursDollar, $totalFinal, $hargaTotalRupiah, $salesKey, $instrukturKey) {
 
-            // 3. Buat Exam
-            $exam = eksam::create([
-                'tanggal_pengajuan' => now(),
-                'materi'            => $request->materi,
-                'id_rkm'            => $rkm->id,
-                'perusahaan'        => $request->perusahaan,
-                'isi_pax'           => $request->pax,
-                'pax'               => $request->pax,
-                'total_pax'         => $request->pax,
-                'harga'             => $harga,
-                'kurs'              => $kurs,
-                'kurs_dollar'       => $kursDollar,
-                'biaya_admin'       => $biayaAdmin,
-                'harga_rupiah'      => $hargaTotalRupiah,
-                'pa'                => $pa,
-                'diskon'            => $request->diskon,
-                'total'             => $totalFinal,
-                'status'            => '3', // exam only
-                'invoice'           => $invoice,
-                'mata_uang'         => $request->mata_uang,
-                'kode_exam'         => $request->kode_exam,
-            ]);
+                $year = date('Y');
+                $namaBulan = ['Januari', 'Februari', 'Maret','April', 'Mei', 'Juni','Juli', 'Agustus', 'September','Oktober', 'November', 'Desember'];
+                $kuartal = ['Q1', 'Q2', 'Q3', 'Q4'];
+                $bulanData = array_merge($namaBulan, $kuartal);
+                $index = RKM::count() % count($bulanData);
+                $bulanValue = $bulanData[$index] . ' ' . $year;
 
-            // 4. Buat approval
-            approvalexam::create([
-                'id_exam'           => $exam->id,
-                'sales'             => $salesKey, // Menggunakan kode_karyawan yang sama
-                'spv_sales'         => false,
-                'technical_support' => false,
-                'office_manager'    => false,
-                'status'            => 'Belum Approval SPV Sales',
-            ]);
-        });
+                // 1. Buat RKM untuk Exam Only
+                $rkm = RKM::create([
+                    'materi_key'     => $request->materi,
+                    'tanggal_awal'   => $request->tanggal,
+                    'tanggal_akhir'  => $request->tanggal,
+                    'perusahaan_key' => $request->perusahaan,
+                    'isi_pax'        => $request->pax,
+                    'pax'            => $request->pax,
+                    'metode_kelas'   => 'Exam Only',
+                    'status'         => '3',
+                    'harga_jual'     => $totalFinal ?? 0,
+                    'sales_key'      => $salesKey, // Menggunakan kode_karyawan
+                    'bulan'          => $bulanValue,
+                    'ruang'          => 'Exam',
+                    'exam'           => '1',
+                ]);
 
-        return redirect()->route('exam.index')->with('success', 'Exam Only berhasil dibuat.');
-    } catch (\Exception $e) {
-        Log::error('Error storeOnly Exam: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
-        return redirect()->back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()]);
+                if (!$rkm || !$rkm->id) {
+                    throw new \Exception('Gagal membuat RKM untuk Exam Only');
+                }
+
+                // Log setelah RKM dibuat
+                Log::info('RKM Created', [
+                    'rkm_id' => $rkm->id,
+                    'sales_key' => $rkm->sales_key,
+                    'metode_kelas' => $rkm->metode_kelas
+                ]);
+
+                // 2. Buat invoice
+                $invoice = 'INV-' . $this->generateInvoiceNumber();
+
+                // 3. Buat Exam
+                $exam = eksam::create([
+                    'tanggal_pengajuan' => now(),
+                    'materi'            => $request->materi,
+                    'id_rkm'            => $rkm->id,
+                    'perusahaan'        => $request->perusahaan,
+                    'isi_pax'           => $request->pax,
+                    'pax'               => $request->pax,
+                    'total_pax'         => $request->pax,
+                    'harga'             => $harga,
+                    'kurs'              => $kurs,
+                    'kurs_dollar'       => $kursDollar,
+                    'biaya_admin'       => $biayaAdmin,
+                    'harga_rupiah'      => $hargaTotalRupiah,
+                    'pa'                => $pa,
+                    'diskon'            => $request->diskon,
+                    'total'             => $totalFinal,
+                    'status'            => '3', // exam only
+                    'invoice'           => $invoice,
+                    'mata_uang'         => $request->mata_uang,
+                    'kode_exam'         => $request->kode_exam,
+                ]);
+
+                // 4. Buat approval
+                approvalexam::create([
+                    'id_exam'           => $exam->id,
+                    'sales'             => $salesKey, // Menggunakan kode_karyawan yang sama
+                    'spv_sales'         => false,
+                    'technical_support' => false,
+                    'office_manager'    => false,
+                    'status'            => 'Belum Approval SPV Sales',
+                ]);
+            });
+
+            return redirect()->route('exam.index')->with('success', 'Exam Only berhasil dibuat.');
+        } catch (\Exception $e) {
+            Log::error('Error storeOnly Exam: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return redirect()->back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()]);
+        }
     }
-}
-
-
-
 
     public function getExam()
     {
@@ -268,22 +264,76 @@ public function storeOnly(Request $request)
         ]);
     }
 
+    public function getHistoriExam()
+    {
+        $rkm = eksam::with([
+            'materi',
+            'perusahaan',
+            'rkm.materi',
+            'rkm.perusahaan',
+            'approvalexam'
+        ])->orderBy('created_at', 'desc')->get();
 
-public function getHistoriExam()
-{
-    $rkm = eksam::with([
-        'materi', 
-        'perusahaan', 
-        'rkm.materi',
-        'rkm.perusahaan'
-    ])->orderBy('created_at', 'desc')->get();
+        return response()->json([
+            'success' => true,
+            'message' => 'List Registrasi',
+            'data' => $rkm,
+        ]);
+    }
 
-    return response()->json([
-        'success' => true,
-        'message' => 'List Registrasi',
-        'data' => $rkm,
-    ]);
-}
+    public function uploadInvoice(Request $request, $id)
+    {
+        $request->validate([
+            'file_invoice' => 'required|array',
+            'file_invoice.*' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
+        ]);
+
+        try {
+            $exam = eksam::findOrFail($id);
+            $existingFiles = $exam->file_invoice ?? [];
+
+            if ($request->hasFile('file_invoice')) {
+                foreach ($request->file('file_invoice') as $file) {
+                    $filename = time() . '_' . uniqid() . '_invoice_' . $exam->invoice . '.' . $file->getClientOriginalExtension();
+                    $file->move(public_path('uploads/invoices'), $filename);
+                    $existingFiles[] = $filename;
+                }
+                $exam->update([
+                    'file_invoice' => $existingFiles
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Invoice berhasil diunggah.');
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['error' => 'Gagal mengunggah invoice: ' . $e->getMessage()]);
+        }
+    }
+
+    public function deleteSpecificInvoice($id, $filename)
+    {
+        try {
+            $exam = eksam::findOrFail($id);
+            $existingFiles = $exam->file_invoice ?? [];
+
+            $newFiles = array_filter($existingFiles, function($file) use ($filename) {
+                return $file !== $filename;
+            });
+
+            $newFiles = array_values($newFiles);
+
+            if (file_exists(public_path('uploads/invoices/' . $filename))) {
+                unlink(public_path('uploads/invoices/' . $filename));
+            }
+
+            $exam->update([
+                'file_invoice' => empty($newFiles) ? null : $newFiles
+            ]);
+
+            return redirect()->back()->with('success', 'File invoice berhasil dihapus.');
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['error' => 'Gagal menghapus invoice: ' . $e->getMessage()]);
+        }
+    }
 
     /**
      * create
@@ -424,7 +474,7 @@ public function getHistoriExam()
             })->get();
 
             $path = '/exam/'. $exam->id;
-            
+
             foreach ($users as $user) {
                 $receiverId = $user->id;
                NotificationFacade::send($user, new PengajuanexamNotification($data, $path, $receiverId));
@@ -436,26 +486,24 @@ public function getHistoriExam()
         }
     }
 
-
-    //
-
     /**
      * show
      *
      * @param  mixed $id
      * @return View
      */
-public function show(string $id)
-{
-    $rkm = eksam::with('rkm')->findOrFail($id);
-    $exam = changeexam::where('id_exam', $id)->get();
-    $approvalexam = approvalexam::where('id_exam', $id)->first();
-    $biaya_admin = $rkm->biaya_admin * $rkm->kurs_dollar;
-    $harga = $rkm->harga * $rkm->kurs;
+    public function show(string $id)
+    {
+        $rkm = eksam::with('rkm')->findOrFail($id);
+        $exam = changeexam::where('id_exam', $id)->get();
+        $approvalexam = approvalexam::where('id_exam', $id)->first();
+        $biaya_admin = $rkm->biaya_admin * $rkm->kurs_dollar;
+        $harga = $rkm->harga * $rkm->kurs;
 
-    Log::info('Exam Show - ID: ' . $id . ', RKM: ' . json_encode($rkm)); // Debug
-    return view('exam.show', compact('rkm', 'exam', 'approvalexam', 'biaya_admin', 'harga'));
-}
+        Log::info('Exam Show - ID: ' . $id . ', RKM: ' . json_encode($rkm)); // Debug
+        return view('exam.show', compact('rkm', 'exam', 'approvalexam', 'biaya_admin', 'harga'));
+    }
+
     /**
      * edit
      *
@@ -541,7 +589,6 @@ public function show(string $id)
         }
     }
 
-
     /**
      * destroy
      *
@@ -610,7 +657,7 @@ public function show(string $id)
             })->get();
 
             $path = '/exam/'. $id;
-            
+
             foreach ($users as $user) {
                 $receiverId = $user->id;
                NotificationFacade::send($user, new ApprovalExamNotification($data, $path, $receiverId));
@@ -659,7 +706,7 @@ public function show(string $id)
             })->get();
 
             $path = '/exam/'. $id;
-            
+
             foreach ($users as $user) {
                 $receiverId = $user->id;
                NotificationFacade::send($user, new ApprovalExamNotification($data, $path, $receiverId));
@@ -710,7 +757,7 @@ public function show(string $id)
             })->get();
 
             $path = '/exam/'. $id;
-            
+
             foreach ($users as $user) {
                 $receiverId = $user->id;
                NotificationFacade::send($user, new ApprovalExamNotification($data, $path, $receiverId));
@@ -730,7 +777,7 @@ public function show(string $id)
             })->get();
 
             $path = '/exam/'. $id;
-            
+
             foreach ($users as $user) {
                 $receiverId = $user->id;
                NotificationFacade::send($user, new BayarExamNotification($data, $path,$receiverId));
@@ -778,31 +825,31 @@ public function show(string $id)
 
     }
 
-/**
- * Redirect to management kelas for room assignment
- */
-public function assignRoom($id)
-{
-    $exam = eksam::with(['rkm', 'materi', 'perusahaan'])->findOrFail($id);
-    
-    // Hanya exam only yang bisa assign ruangan
-    if ($exam->status != '3') {
-        return redirect()->back()->with('error', 'Hanya Exam Only yang dapat di-assign ruangan.');
+    /**
+     * Redirect to management kelas for room assignment
+     */
+    public function assignRoom($id)
+    {
+        $exam = eksam::with(['rkm', 'materi', 'perusahaan'])->findOrFail($id);
+
+        // Hanya exam only yang bisa assign ruangan
+        if ($exam->status != '3') {
+            return redirect()->back()->with('error', 'Hanya Exam Only yang dapat di-assign ruangan.');
+        }
+
+        // Store exam ID in session untuk digunakan setelah assign room
+        session(['exam_assign_id' => $id]);
+        session(['exam_assign_data' => [
+            'materi' => $exam->materi->nama_materi ?? 'N/A', // PERBAIKAN: gunakan materi bukan materis
+            'perusahaan' => $exam->perusahaan->nama_perusahaan ?? 'N/A',
+            'pax' => $exam->pax,
+            'invoice' => $exam->invoice
+        ]]);
+
+        // Redirect ke management kelas dengan parameter
+        return redirect()->route('managementKelas.index', ['assign_mode' => 'exam', 'exam_id' => $id])
+                    ->with('info', 'Pilih ruangan dan tanggal untuk exam: ' . ($exam->materi->nama_materi ?? 'N/A'));
     }
-    
-    // Store exam ID in session untuk digunakan setelah assign room
-    session(['exam_assign_id' => $id]);
-    session(['exam_assign_data' => [
-        'materi' => $exam->materi->nama_materi ?? 'N/A', // PERBAIKAN: gunakan materi bukan materis
-        'perusahaan' => $exam->perusahaan->nama_perusahaan ?? 'N/A',
-        'pax' => $exam->pax,
-        'invoice' => $exam->invoice
-    ]]);
-    
-    // Redirect ke management kelas dengan parameter
-    return redirect()->route('managementKelas.index', ['assign_mode' => 'exam', 'exam_id' => $id])
-                   ->with('info', 'Pilih ruangan dan tanggal untuk exam: ' . ($exam->materi->nama_materi ?? 'N/A'));
-}
 
     /**
      * Process room assignment from management kelas
@@ -847,10 +894,10 @@ public function assignRoom($id)
                     'tanggal' => $request->tanggal,
                     'jam_mulai' => $request->jam_mulai,
                     'jam_selesai' => $request->jam_selesai,
-                    'kebutuhan' => $request->filled('kebutuhan') ? $request->kebutuhan : 
+                    'kebutuhan' => $request->filled('kebutuhan') ? $request->kebutuhan :
                                   'Exam - ' . ($exam->materi->nama_materi ?? 'Unknown'),
-                    'keterangan' => $request->filled('keterangan') ? $request->keterangan : 
-                                   'Exam untuk ' . ($exam->perusahaan->nama_perusahaan ?? 'Unknown') . 
+                    'keterangan' => $request->filled('keterangan') ? $request->keterangan :
+                                   'Exam untuk ' . ($exam->perusahaan->nama_perusahaan ?? 'Unknown') .
                                    ' (Pax: ' . $exam->pax . ', Invoice: ' . $exam->invoice . ')',
                     'created_at' => now(),
                     'updated_at' => now()
@@ -896,7 +943,7 @@ public function assignRoom($id)
 
     public function rekapExam()
     {
-        
+
         return view('exam.rekapexam');
     }
 
@@ -951,7 +998,7 @@ public function assignRoom($id)
         return Excel::download(new rekapExamExport($data), 'Rekap Exam '.$year . '-'. $month.'.xlsx');
     }
 
-    public function hargaExam() 
+    public function hargaExam()
     {
         $exams = listexam::all();
         return view('exam.hargaExam', compact('exams'));
@@ -959,7 +1006,7 @@ public function assignRoom($id)
 
     public function detailHargaExam($id) {
         $exam = listexam::findOrFail($id);
-                
+
         return view('exam.detailHarga', compact('exam'));
     }
 

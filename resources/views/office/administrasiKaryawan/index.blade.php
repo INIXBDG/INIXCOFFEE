@@ -14,72 +14,72 @@
             <div class="alert alert-success">{{ session('success_administrasi') }}</div>
         @endif
 
+        <!-- Modal Edit -->
+        <div class="modal fade" id="modalEditAdministrasi" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5">Tambah Administrasi Karyawan</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <form method="post" id="formEditAdministrasi" enctype="multipart/form-data">
+                            @csrf
+
+                            <div class="mb-3">
+                                <label class="form-label">Nama Administrasi <span class="text-danger">*</span></label>
+                                <input type="text" name="nama_administrasi" class="form-control">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Dateline</label>
+                                <input type="date" name="dateline" class="form-control">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Status</label>
+                                <select name="status" class="form-select">
+                                    <option value="pending">Pending</option>
+                                    <option value="proses">Proses</option>
+                                    <option value="selesai" disabled hidden>Selesai</option>
+                                    <option value="terlambat" disabled hidden>Terlambat</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Bukti Transfer</label>
+                                <small id="pathBuktiTransfer" class="text-muted"></small>
+                                <input type="file" name="bukti_transfer" class="form-control">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Tanggal Selesai</label>
+                                <input type="date" name="tanggal_selesai" class="form-control">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Keterangan</label>
+                                <textarea class="form-control" name="keterangan"></textarea>
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-primary">
+                                    Simpan
+                                </button>
+                            </div>
+
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row g-4 mb-5">
             <div class="col-12">
                 <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
                     <div class="card-body p-4 mb-4 h-100 " style="height: 320px;">
-
-                        <!-- Modal Edit -->
-                        <div class="modal fade" id="modalEditAdministrasi" tabindex="-1">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-
-                                    <div class="modal-header">
-                                        <h1 class="modal-title fs-5">Tambah Administrasi Karyawan</h1>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-
-                                    <div class="modal-body">
-                                        <form method="post" id="formEditAdministrasi" enctype="multipart/form-data">
-                                            @csrf
-
-                                            <div class="mb-3">
-                                                <label class="form-label">Nama Administrasi <span class="text-danger">*</span></label>
-                                                <input type="text" name="nama_administrasi" class="form-control">
-                                            </div>
-
-                                            <div class="mb-3">
-                                                <label class="form-label">Dateline</label>
-                                                <input type="date" name="dateline" class="form-control">
-                                            </div>
-
-                                            <div class="mb-3">
-                                                <label class="form-label">Status</label>
-                                                <select name="status" class="form-select">
-                                                    <option value="pending">Pending</option>
-                                                    <option value="proses">Proses</option>
-                                                    <option value="selesai">Selesai</option>
-                                                    <option value="terlambat">Terlambat</option>
-                                                </select>
-                                            </div>
-                                            
-                                            <div class="mb-3">
-                                                <label class="form-label">Bukti Transfer</label>
-                                                <small id="pathBuktiTransfer" class="text-muted"></small>
-                                                <input type="file" name="bukti_transfer" class="form-control">
-                                            </div>
-
-                                            <div class="mb-3">
-                                                <label class="form-label">Tanggal Selesai</label>
-                                                <input type="date" name="tanggal_selesai" class="form-control">
-                                            </div>
-
-                                            <div class="mb-3">
-                                                <label class="form-label">Keterangan</label>
-                                                <textarea class="form-control" name="keterangan"></textarea>
-                                            </div>
-
-                                            <div class="modal-footer">
-                                                <button type="submit" class="btn btn-primary">
-                                                    Simpan
-                                                </button>
-                                            </div>
-
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
 
                         <div class="table-responsive mb-4" style="max-height: 400px; overflow-y: auto;">
                             <table class="table align-middle mb-0">
@@ -290,11 +290,15 @@
 
                         // isi input
                         $('#modalEditAdministrasi input[name="nama_administrasi"]').val(res.nama_administrasi);
-                        $('#modalEditAdministrasi input[name="dateline"]').val(res.dateline);
+                        $('#modalEditAdministrasi input[name="dateline"]').val(res.dateline).attr("disabled", "disabled");
                         $('#modalEditAdministrasi select[name="status"]').val(res.status);
                         $('#modalEditAdministrasi input[name="tanggal_selesai"]').val(res.tanggal_selesai);
                         $('#modalEditAdministrasi textarea[name="keterangan"]').val(res.keterangan);
 
+                        if (res.status === 'selesai' || res.status === 'terlambat' ) {
+                            $('#modalEditAdministrasi select[name="status"]').attr("disabled", "disabled");
+                        }
+                        
                         if(res.bukti_transfer){
                             $('#pathBuktiTransfer').html(
                                 `<a href="/storage/${res.bukti_transfer}" target="_blank">

@@ -55,6 +55,158 @@
         </div>
 
         @if (Auth::user()->jabatan === 'Finance & Accounting')
+         <!-- Modal Tambah -->
+        <div class="modal fade" id="modalTambahTagihan" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5">Tambah Tagihan Perusahaan</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <form method="post" action="{{ route('storeTagihanPerusahaan') }}"
+                            enctype="multipart/form-data">
+                            @csrf
+
+                            <div class="mb-3">
+                                <label class="form-label col-form-label">Kegiatan <span class="text-danger">*</span></label>
+                                <input type="text" name="kegiatan" class="form-control">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label col-form-label">Tipe <span class="text-danger">*</span></label>
+                                <select name="tipe" id="tipe" class="form-select">
+                                    <option value="tahunan">
+                                        Tahunan
+                                    </option>
+                                    <option value="bulanan">
+                                        Bulanan
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label col-form-label">Perkiraan Tanggal <span class="text-danger">*</span></label>
+                                <div class="row">
+                                    <div class="col-md-5">
+                                        <label for="tanggal_perkiraan_mulai">Mulai</label>
+                                        <input type="date" name="tanggal_perkiraan_mulai" class="form-control col-md-6 mb-2">
+                                    </div>
+                                    <div class="col-md-5">
+                                        <label for="tanggal_perkiraan_selesai">Selesai</label>
+                                        <input type="date" name="tanggal_perkiraan_selesai" class="form-control col-md-6 mb-2">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label col-form-label">Nominal <span class="text-danger">*</span></label>
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text">Rp.</span>
+                                    <input type="text" name="nominal" id="nominal" class="form-control format-rupiah">
+                                </div>
+                            </div>
+
+                            <div class="mb-3">  
+                                <label for="keterangan" class="col-md-5 col-form-label">Keterangan (Optional)</label>  
+                                <textarea class="form-control" name="keterangan"></textarea>  
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-primary">Simpan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        
+        <!-- Modal Edit -->
+        <div class="modal fade" id="modalEditTagihan" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5">Edit Tagihan Perusahaan</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <small class="text-muted">* Status selesai dan terlambat otomatis terupdate dari sistem</small>
+                        <form method="post"
+                            class="mt-5"
+                            id="formEditTagihan"
+                            enctype="multipart/form-data">
+                            @csrf
+
+                            <div class="mb-3 row">
+                                {{-- Status --}}
+                                <div class="col-md-4">
+                                    <label class="form-label text-muted small text-uppercase">
+                                        Status
+                                    </label>
+
+                                    <select name="status" id="status" class="form-select">
+                                        <option value="pending">
+                                            Pending
+                                        </option>
+                                        <option value="proses">
+                                            Proses
+                                        </option>
+                                        <option value="selesai" disabled hidden>
+                                            Selesai
+                                        </option>
+                                        <option value="telat" disabled hidden>
+                                            Terlambat
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <!-- Tanggal Perkiraan -->
+                                <div class="col-md-4">
+                                    <label class="form-label text-muted small text-uppercase">
+                                        Tracking
+                                    </label>
+
+                                    <select name="tracking" id="tracking" class="form-select">
+                                        <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager">Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager</option>
+                                        <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi">Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi</option>
+                                        <option value="Finance Menunggu Approve Direksi">Finance Menunggu Approve Direksi</option>
+                                        <option value="Diajukan dan Sedang Ditinjau oleh Finance">Diajukan dan Sedang Ditinjau oleh Finance</option>
+                                        <option value="Membuat Permintaan Ke Direktur Utama">Membuat Permintaan Ke Direktur Utama</option>
+                                        <option value="Pengajuan sedang dalam proses Pencairan">Pengajuan sedang dalam proses Pencairan</option>
+                                        <option value="Pencairan Sudah Selesai">Pencairan Sudah Selesai</option>
+                                        <option value="Selesai">Selesai</option>
+                                    </select>
+                                </div>
+
+                                <!-- Tanggal Selesai -->
+                                <div class="col-md-4">
+                                    <label class="form-label text-muted small text-uppercase">
+                                        Tanggal Realisasi
+                                    </label>
+                                    <div>
+                                        <input type="date" name="tanggal_selesai" class="form-control col-md-6">
+                                    </div>
+                                </div>
+
+                                {{-- Keterangan --}}
+                                <div class="mb-3">  
+                                <label for="keterangan" class="col-md-5 col-form-label">Keterangan (Optional)</label>  
+                                    <textarea class="form-control" name="keterangan"></textarea>  
+                                </div>
+                                
+                            </div>
+
+                            <div class="modal-footer mt-4">
+                                <button type="submit" class="btn btn-primary">Simpan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <div class="row g-4 mb-5">
             <div class="col-12">
                 <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden  glass-force">
@@ -72,148 +224,6 @@
                     @endif
                     <div class="card-body p-4 mb-4 h-100 " style="height: 320px;">
 
-                        <!-- Modal Tambah -->
-                        <div class="modal fade" id="modalTambahTagihan" tabindex="-1">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-
-                                    <div class="modal-header">
-                                        <h1 class="modal-title fs-5">Tambah Tagihan Perusahaan</h1>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-
-                                    <div class="modal-body">
-                                        <form method="post" action="{{ route('storeTagihanPerusahaan') }}"
-                                            enctype="multipart/form-data">
-                                            @csrf
-
-                                            <div class="mb-3">
-                                                <label class="form-label col-form-label">Kegiatan <span class="text-danger">*</span></label>
-                                                <input type="text" name="kegiatan" class="form-control">
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label col-form-label">Tipe <span class="text-danger">*</span></label>
-                                                <select name="tipe" id="tipe" class="form-select">
-                                                    <option value="tahunan">
-                                                        Tahunan
-                                                    </option>
-                                                    <option value="bulanan">
-                                                        Bulanan
-                                                    </option>
-                                                </select>
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label col-form-label">Perkiraan Tanggal <span class="text-danger">*</span></label>
-                                                <div class="row">
-                                                    <div class="col-md-5">
-                                                        <label for="tanggal_perkiraan_mulai">Mulai</label>
-                                                        <input type="date" name="tanggal_perkiraan_mulai" class="form-control col-md-6 mb-2">
-                                                    </div>
-                                                    <div class="col-md-5">
-                                                        <label for="tanggal_perkiraan_selesai">Selesai</label>
-                                                        <input type="date" name="tanggal_perkiraan_selesai" class="form-control col-md-6 mb-2">
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label col-form-label">Nominal <span class="text-danger">*</span></label>
-                                                <div class="input-group mb-3">
-                                                    <span class="input-group-text">Rp.</span>
-                                                    <input type="text" name="nominal" id="nominal" class="form-control format-rupiah">
-                                                </div>
-                                            </div>
-
-                                            <div class="mb-3">  
-                                                <label for="keterangan" class="col-md-5 col-form-label">Keterangan (Optional)</label>  
-                                                <textarea class="form-control" name="keterangan"></textarea>  
-                                            </div>
-
-                                            <div class="modal-footer">
-                                                <button type="submit" class="btn btn-primary">Simpan</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        
-                        <!-- Modal Edit -->
-                        <div class="modal fade" id="modalEditTagihan" tabindex="-1">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-
-                                    <div class="modal-header">
-                                        <h1 class="modal-title fs-5">Edit Tagihan Perusahaan</h1>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-
-                                    <div class="modal-body">
-                                        <form method="post"
-                                            id="formEditTagihan"
-                                            enctype="multipart/form-data">
-                                            @csrf
-
-                                            <div class="mb-3 row">
-                                                {{-- Status --}}
-                                                <div class="col-md-4">
-                                                    <label class="form-label text-muted small text-uppercase">
-                                                        Status
-                                                    </label>
-
-                                                    <select name="status" id="status" class="form-select">
-                                                        <option value="pending">
-                                                            Pending
-                                                        </option>
-                                                        <option value="proses">
-                                                            Proses
-                                                        </option>
-                                                        <option value="selesai">
-                                                            Selesai
-                                                        </option>
-                                                        <option value="telat">
-                                                            Telat
-                                                        </option>
-                                                    </select>
-                                                </div>
-
-                                                <!-- Tanggal Perkiraan -->
-                                                <div class="col-md-4">
-                                                    <label class="form-label text-muted small text-uppercase">
-                                                        Tracking
-                                                    </label>
-
-                                                    <select name="tracking" id="tracking" class="form-select">
-                                                        <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager">Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager</option>
-                                                        <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi">Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi</option>
-                                                        <option value="Finance Menunggu Approve Direksi">Finance Menunggu Approve Direksi</option>
-                                                        <option value="Diajukan dan Sedang Ditinjau oleh Finance">Diajukan dan Sedang Ditinjau oleh Finance</option>
-                                                        <option value="Membuat Permintaan Ke Direktur Utama">Membuat Permintaan Ke Direktur Utama</option>
-                                                        <option value="Pengajuan sedang dalam proses Pencairan">Pengajuan sedang dalam proses Pencairan</option>
-                                                        <option value="Pencairan Sudah Selesai">Pencairan Sudah Selesai</option>
-                                                        <option value="Selesai">Selesai</option>
-                                                    </select>
-                                                </div>
-
-                                                <!-- Tanggal Selesai -->
-                                                <div class="col-md-4">
-                                                    <label class="form-label text-muted small text-uppercase">
-                                                        Tanggal Selesai
-                                                    </label>
-                                                    <div>
-                                                        <input type="date" name="tanggal_selesai" class="form-control col-md-6">
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="modal-footer mt-4">
-                                                <button type="submit" class="btn btn-primary">Simpan</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
 
                         {{-- Table Tagihan --}}
                         <div class="table-responsive mb-4" style="max-height: 400px; overflow-y: auto;">
@@ -221,7 +231,7 @@
                                 <thead class="table-light sticky-top">
                                     <tr>
                                         <th class="border-0 ps-4"></th>
-                                        <th class="border-0" style="min-width: 160px;">Tanggal Perkiraan</th>
+                                        <th class="border-0" style="min-width: 160px;">Due Date</th>
                                         <th class="border-0" style="min-width: 180px;">Kegiatan</th>
                                         <th class="border-0" style="min-width: 150px;">Nominal</th>
                                         <th class="border-0" style="min-width: 120px;">Tracking</th>
@@ -230,7 +240,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @forelse($trackingTagihanPerusahaans as $tagihan)   
+                                    @forelse($trackingTagihanPerusahaans as $tagihan)
                                         <tr class="border-bottom ">
                                             @if ($tagihan->status === 'selesai')
                                                 <td class="text-center ps-4"><input class="custom-check" type="checkbox" checked disabled></td>
@@ -246,14 +256,14 @@
                                                     </div>
                                                 @else
                                                     <div class="small">
-                                                        {{ \Carbon\Carbon::parse($tagihan->tanggal_perkiraan_mulai)->format('d M') }} - {{ \Carbon\Carbon::parse($tagihan->tanggal_perkiraan_selesai)->format('d M') }}
+                                                        {{ \Carbon\Carbon::parse($tagihan->tanggal_perkiraan_selesai)->format('d M') }}
                                                     </div>
                                                 @endif
                                             </td>
                                             <td>
                                                 <div class="d-flex align-items-center">
                                                     <div class="text-truncate" style="max-width: 150px;">
-                                                        {{ $tagihan->tagihanPerusahaan->kegiatan }}
+                                                        {{ $tagihan->tagihanPerusahaan->kegiatan ?? $tagihan->kegiatan }}
                                                     </div>
                                                 </div>
                                             </td>
@@ -358,6 +368,75 @@
         @endif
 
         @if (Auth::user()->jabatan === 'HRD')
+        <!-- Modal Tambah -->
+        <div class="modal fade" id="modalTambahHariLibur" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5">Tambah Hari Libur</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <form method="post" action="{{ route('storeHariLibur') }}"
+                            enctype="multipart/form-data">
+                            @csrf
+
+                            <div class="mb-3">
+                                <label class="form-label col-form-label">Nama Hari Libur <span class="text-danger">*</span></label>
+                                <input type="text" name="nama" class="form-control" autocomplete="off">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label col-form-label">Tanggal <span class="text-danger">*</span></label>
+                                <input type="date" name="tanggal" class="form-control">
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-primary">Simpan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Edit -->
+        <div class="modal fade" id="modalEditHariLibur" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5">Edit Hari Libur</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <form id="formEditHariLibur" method="POST" enctype="multipart/form-data">
+                            @csrf
+
+                            <input type="hidden" id="id">
+
+                            <div class="mb-3">
+                                <label class="form-label">Nama Hari Libur <span class="text-danger">*</span></label>
+                                <input type="text" id="nama" name="nama" class="form-control">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Tanggal <span class="text-danger">*</span></label>
+                                <input type="date" id="tanggal" name="tanggal" class="form-control">
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-primary">Update</button>
+                            </div>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    
         <div class="row g-4 mb-5">
             <div class="col-12">
                 <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
@@ -369,75 +448,6 @@
                         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahHariLibur">
                             Tambah Hari Libur
                         </button>
-
-                        <!-- Modal Tambah -->
-                        <div class="modal fade" id="modalTambahHariLibur" tabindex="-1">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-
-                                    <div class="modal-header">
-                                        <h1 class="modal-title fs-5">Tambah Hari Libur</h1>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-
-                                    <div class="modal-body">
-                                        <form method="post" action="{{ route('storeHariLibur') }}"
-                                            enctype="multipart/form-data">
-                                            @csrf
-
-                                            <div class="mb-3">
-                                                <label class="form-label col-form-label">Nama Hari Libur <span class="text-danger">*</span></label>
-                                                <input type="text" name="nama" class="form-control" autocomplete="off">
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label col-form-label">Tanggal <span class="text-danger">*</span></label>
-                                                <input type="date" name="tanggal" class="form-control">
-                                            </div>
-
-                                            <div class="modal-footer">
-                                                <button type="submit" class="btn btn-primary">Simpan</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Modal Edit -->
-                        <div class="modal fade" id="modalEditHariLibur" tabindex="-1">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-
-                                    <div class="modal-header">
-                                        <h1 class="modal-title fs-5">Edit Hari Libur</h1>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-
-                                    <div class="modal-body">
-                                        <form id="formEditHariLibur" method="POST" enctype="multipart/form-data">
-                                            @csrf
-
-                                            <input type="hidden" id="id">
-
-                                            <div class="mb-3">
-                                                <label class="form-label">Nama Hari Libur <span class="text-danger">*</span></label>
-                                                <input type="text" id="nama" name="nama" class="form-control">
-                                            </div>
-
-                                            <div class="mb-3">
-                                                <label class="form-label">Tanggal <span class="text-danger">*</span></label>
-                                                <input type="date" id="tanggal" name="tanggal" class="form-control">
-                                            </div>
-
-                                            <div class="modal-footer">
-                                                <button type="submit" class="btn btn-primary">Update</button>
-                                            </div>
-                                        </form>
-                                    </div>
-
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                     @if (session('success_libur'))
@@ -457,7 +467,7 @@
                         <!-- Detail & List Hari Libur -->
                         <div class="col-xl-4">
                             <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden d-flex flex-column">
-                                <div class="card-header bg-white border-bottom-0 pb-0">
+                                <div class="card-header border-bottom-0 pb-0">
                                     <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
                                         <i class="bx bx-calendar-check text-success me-2" style="font-size: 1.5rem;"></i>
                                         Hari Libur Bulan Ini
@@ -489,6 +499,109 @@
         </div>
 
 
+        {{-- Administrasi Karyawan --}}
+        <!-- Modal Tambah -->
+        <div class="modal fade" id="modalTambahAdministrasiKaryawan" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5">Tambah Administrasi Karyawan</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <form method="post" action="{{ route('administrasi.karyawan.store') }}"
+                            enctype="multipart/form-data">
+                            @csrf
+
+                            <div class="mb-3">
+                                <label class="form-label col-form-label">Nama Administrasi <span class="text-danger">*</span></label>
+                                <input type="text" name="nama_administrasi" class="form-control">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label col-form-label">Dateline</label>
+                                <input type="date" name="dateline" class="form-control col-md-6 mb-2">
+                            </div>
+
+                            <div class="mb-3">  
+                                <label for="keterangan" class="col-md-5 col-form-label">Keterangan (Optional)</label>  
+                                <textarea class="form-control" name="keterangan"></textarea>  
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-primary">Simpan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Modal Edit -->
+        <div class="modal fade" id="modalEditAdministrasi" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5">Tambah Administrasi Karyawan</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <form method="post" id="formEditAdministrasi" enctype="multipart/form-data">
+                            @csrf
+
+                            <div class="mb-3">
+                                <label class="form-label">Nama Administrasi <span class="text-danger">*</span></label>
+                                <input type="text" name="nama_administrasi" class="form-control">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Dateline</label>
+                                <input type="date" name="dateline" class="form-control">
+                            </div>
+
+                            <div class="mb-3">
+                                <small class="text-muted">* Status selesai dan terlambat otomatis terupdate dari sistem</small>
+                                <label class="form-label">Status</label>
+                                <select name="status" class="form-select">
+                                    <option value="pending">Pending</option>
+                                    <option value="proses">Proses</option>
+                                    <option value="selesai" disabled hidden>Selesai</option>
+                                    <option value="terlambat" disabled hidden>Terlambat</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Bukti Transfer</label>
+                                <small id="pathBuktiTransfer" class="text-muted"></small>
+                                <input type="file" name="bukti_transfer" class="form-control">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Tanggal Selesai</label>
+                                <input type="date" name="tanggal_selesai" class="form-control">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Keterangan</label>
+                                <textarea class="form-control" name="keterangan"></textarea>
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-primary">
+                                    Simpan
+                                </button>
+                            </div>
+
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <div class="row g-4 mb-5">
             <div class="col-12">
                 <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
@@ -504,109 +617,7 @@
                     @if (session('success_administrasi'))
                         <div class="alert alert-success">{{ session('success_administrasi') }}</div>
                     @endif
-                    <div class="card-body p-4 mb-4 h-100 " style="height: 320px;">
-
-                        <!-- Modal Tambah -->
-                        <div class="modal fade" id="modalTambahAdministrasiKaryawan" tabindex="-1">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-
-                                    <div class="modal-header">
-                                        <h1 class="modal-title fs-5">Tambah Administrasi Karyawan</h1>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-
-                                    <div class="modal-body">
-                                        <form method="post" action="{{ route('administrasi.karyawan.store') }}"
-                                            enctype="multipart/form-data">
-                                            @csrf
-
-                                            <div class="mb-3">
-                                                <label class="form-label col-form-label">Nama Administrasi <span class="text-danger">*</span></label>
-                                                <input type="text" name="nama_administrasi" class="form-control">
-                                            </div>
-
-                                            <div class="mb-3">
-                                                <label class="form-label col-form-label">Dateline</label>
-                                                <input type="date" name="dateline" class="form-control col-md-6 mb-2">
-                                            </div>
-
-                                            <div class="mb-3">  
-                                                <label for="keterangan" class="col-md-5 col-form-label">Keterangan (Optional)</label>  
-                                                <textarea class="form-control" name="keterangan"></textarea>  
-                                            </div>
-
-                                            <div class="modal-footer">
-                                                <button type="submit" class="btn btn-primary">Simpan</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                       
-                        <!-- Modal Edit -->
-                        <div class="modal fade" id="modalEditAdministrasi" tabindex="-1">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-
-                                    <div class="modal-header">
-                                        <h1 class="modal-title fs-5">Tambah Administrasi Karyawan</h1>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-
-                                    <div class="modal-body">
-                                        <form method="post" id="formEditAdministrasi" enctype="multipart/form-data">
-                                            @csrf
-
-                                            <div class="mb-3">
-                                                <label class="form-label">Nama Administrasi <span class="text-danger">*</span></label>
-                                                <input type="text" name="nama_administrasi" class="form-control">
-                                            </div>
-
-                                            <div class="mb-3">
-                                                <label class="form-label">Dateline</label>
-                                                <input type="date" name="dateline" class="form-control">
-                                            </div>
-
-                                            <div class="mb-3">
-                                                <label class="form-label">Status</label>
-                                                <select name="status" class="form-select">
-                                                    <option value="pending">Pending</option>
-                                                    <option value="proses">Proses</option>
-                                                    <option value="selesai">Selesai</option>
-                                                    <option value="terlambat">Terlambat</option>
-                                                </select>
-                                            </div>
-                                            
-                                            <div class="mb-3">
-                                                <label class="form-label">Bukti Transfer</label>
-                                                <small id="pathBuktiTransfer" class="text-muted"></small>
-                                                <input type="file" name="bukti_transfer" class="form-control">
-                                            </div>
-
-                                            <div class="mb-3">
-                                                <label class="form-label">Tanggal Selesai</label>
-                                                <input type="date" name="tanggal_selesai" class="form-control">
-                                            </div>
-
-                                            <div class="mb-3">
-                                                <label class="form-label">Keterangan</label>
-                                                <textarea class="form-control" name="keterangan"></textarea>
-                                            </div>
-
-                                            <div class="modal-footer">
-                                                <button type="submit" class="btn btn-primary">
-                                                    Simpan
-                                                </button>
-                                            </div>
-
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
+                    <div class="card-body p-4 mb-4 h-100 " style="height: 320px;">                        
 
                         {{-- Table administrasi --}}
                         <div class="table-responsive mb-4" style="max-height: 400px; overflow-y: auto;">
@@ -1033,96 +1044,272 @@
             </div>
             {{-- End Chart nilai Feedback --}}
 
-            {{-- RKM Berjalan Minggu Ini --}}
             <div class="row g-3 mb-4">
-                <div class="col-12">
-                    <div class="card h-100 shadow-sm border-0 rounded-3 glass-force">
-                        <div class="card-header border-bottom py-3">
-                            <div class="d-flex align-items-center gap-2 mb-2">
-                                <span class="badge bg-primary-subtle text-primary px-3 py-2">
-                                    {{ count($rkm) }} RKM
-                                </span>
+                {{-- RKM Berjalan Minggu Ini --}}
+                <div class="row g-3 mb-4">
+                    <div class="col-12">
+                        <div class="card h-100 shadow-sm border-0 rounded-3 glass-force">
+                            <div class="card-header border-bottom py-3">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <h5 class="card-title mb-0 fw-semibold">
+                                        <i class="bx bx-calendar text-primary me-2"></i>
+                                        Rencana Kelas Mingguan
+                                    </h5>
 
-                                <span class="badge bg-success-subtle text-success px-3 py-2">
-                                    {{ number_format($jumlahPeserta, 0, ',', '.') }} Peserta
-                                </span>
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <span class="badge bg-primary-subtle text-primary px-3 py-2">
+                                            {{ count($rkms) }} RKM
+                                        </span>
 
-                                <span class="badge bg-success-subtle text-success px-3 py-2">
-                                    {{ number_format($jumlahInstruktur, 0, ',', '.') }} Instruktur
-                                </span>
+                                        <span class="badge bg-success-subtle text-success px-3 py-2">
+                                            {{ number_format($jumlahPeserta, 0, ',', '.') }} Peserta
+                                        </span>
+
+                                        <span class="badge bg-success-subtle text-success px-3 py-2">
+                                            {{ number_format($jumlahInstruktur, 0, ',', '.') }} Instruktur
+                                        </span>
+                                    </div>
+                                </div>
+                                
                             </div>
-
+                            
                             <div class="card-body p-0">
-                                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                                    <table class="table table-hover align-middle mb-0">
+                                <div class="table-responsive" style="max-height: 1000px; overflow-y: auto;">
+                                    <table class="table table-hover align-middle mb-0" style="table-layout: auto;">
                                         <thead class="table-light sticky-top">
                                             <tr>
-                                                <th class="border-0 ps-4" style="min-width: 70px;">Sales</th>
-                                                <th class="border-0" style="min-width: 250px;">Materi</th>
-                                                <th class="border-0" style="min-width: 120px;">Harga</th>
-                                                <th class="border-0" style="min-width: 200px;">Periode</th>
-                                                <th class="border-0 text-center" style="min-width: 80px;">Pax</th>
-                                                <th class="border-0 text-center pe-4" style="min-width: 100px;">Exam</th>
+                                                <th scope="col" rowspan="2" class="border-0 ps-4" style="min-width: 50px;">No</th>
+                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 250px;">Materi</th>
+                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 150px;">Harga</th>
+                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 170px;">Tanggal Training</th>
+                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 170px;">Perusahaan</th>
+                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 100px;">Kode Sales</th>
+                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 100px;">Instruktur</th>
+                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 150px;">Ruang</th>
+                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 100px;">Pax</th>
+                                                <th scope="col" rowspan="2" class="border-0" class="border-0 text-center pe-4" style="min-width: 100px;">Exam</th>
+                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 120px;">Makanan</th>
+                                                {{-- CheckList --}}
+                                                <th scope="col" colspan="7" class="border-bottom border-dark text-center" style="min-width: 300px;">Checklist</th>
+
+                                                <th scope="col" rowspan="2" class="border-0">Eksport</th>
+                                            </tr>
+                                            <tr class="text-center">
+                                                <th scope="col" class="border-0" style="min-width: 120px;">Tanggal Keperluan</th>
+                                                <th scope="col" class="border-0" style="min-width: 120px;">Materi</th>
+                                                <th scope="col" class="border-0" style="min-width: 120px;">Kelas</th>
+                                                <th scope="col" class="border-0" style="min-width: 120px;">Coffe Break</th>
+                                                <th scope="col" class="border-0" style="min-width: 120px;">Makan Siang</th>
+                                                <th scope="col" class="border-0" style="min-width: 120px;">Keperluan Kelas</th>
+                                                <th scope="col" class="border-0 text-center pe-4" style="min-width: 120px;">Status</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @forelse($rkm as $index => $item)
-                                                <tr class="border-bottom">
-                                                    <td class="ps-4">
-                                                        <div class="d-flex align-items-center">
-                                                            <span class="fw-medium">{{ $item->sales_key }}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <div class="text-truncate" style="max-width: 250px;"
-                                                            data-bs-toggle="tooltip"
-                                                            title="{{ $item->materi->nama_materi }}">
-                                                            {{ $item->materi->nama_materi }}
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <span class="text-success fw-semibold">
-                                                            Rp {{ number_format($item->harga_jual, 0, ',', '.') }}
-                                                        </span>
-                                                    </td>
-                                                    <td>
-                                                        <div class="d-flex flex-column small">
-                                                            <span class="text-muted">
-                                                                {{ \Carbon\Carbon::parse($item->tanggal_awal)->format('d M Y') }}
+                                            @forelse ($rkms as $detail_rkm)
+                                                @php
+                                                    $checklists = $detail_rkm->checklists ?? [];
+                                                    $rowspan = count($checklists) > 0 ? count($checklists) : 1;
+                                                @endphp
+                                                @if(count($checklists) > 0)
+                                                    @foreach ($checklists as $tanggal => $item)
+                                                        <tr class="border-bottom">
+
+                                                            @if ($loop->first)
+                                                                <td class="ps-4" rowspan="{{ $rowspan }}">{{ $loop->parent->iteration }}</td>
+
+                                                                <td rowspan="{{ $rowspan }}">
+                                                                    {{ $detail_rkm->materi->nama_materi }}
+                                                                </td>
+
+                                                                <td rowspan="{{ $rowspan }}">
+                                                                    <span class="text-success fw-semibold">
+                                                                        Rp {{ number_format($detail_rkm->harga_jual, 0, ',', '.') }}
+                                                                    </span>
+                                                                </td>
+
+                                                                <td rowspan="{{ $rowspan }}">
+                                                                    @if ($detail_rkm->tanggal_awal == $detail_rkm->tanggal_akhir)
+                                                                        {{ \Carbon\Carbon::parse($detail_rkm->tanggal_awal)->translatedFormat('d M Y') }}
+                                                                    @else
+                                                                        {{ \Carbon\Carbon::parse($detail_rkm->tanggal_awal)->translatedFormat('d M Y') }}
+                                                                        -
+                                                                        {{ \Carbon\Carbon::parse($detail_rkm->tanggal_akhir)->translatedFormat('d M Y') }}
+                                                                    @endif
+                                                                </td>
+
+                                                                <td rowspan="{{ $rowspan }}">
+                                                                    @foreach ($detail_rkm->perusahaan as $perusahaan)
+                                                                        {{ $perusahaan->nama_perusahaan }},
+                                                                    @endforeach
+                                                                </td>
+
+                                                                <td rowspan="{{ $rowspan }}">{{ $detail_rkm->sales_all }}</td>
+                                                                <td rowspan="{{ $rowspan }}"> {{ implode(', ', array_filter([$detail_rkm->instruktur_key, $detail_rkm->instruktur_key2, $detail_rkm->asisten_key])) }}</td>
+                                                                <td rowspan="{{ $rowspan }}">{{ $detail_rkm->ruang ?? 'Belum Ditentukan' }}</td>
+                                                                <td rowspan="{{ $rowspan }}">
+                                                                    <span class="badge bg-info-subtle text-info px-3 py-2">
+                                                                        {{ number_format($detail_rkm->pax, 0, ',', '.') }}
+                                                                    </span>
+                                                                </td>
+
+                                                                <td rowspan="{{ $rowspan }}">
+                                                                    @if ($detail_rkm->exam == '1')
+                                                                        <span class="badge bg-success-subtle text-success px-3 py-2">
+                                                                            Ya
+                                                                        </span>
+                                                                    @else
+                                                                        <span
+                                                                            class="badge bg-secondary-subtle text-secondary px-3 py-2">
+                                                                            Tidak
+                                                                        </span>
+                                                                    @endif
+                                                                </td>
+
+                                                                <td rowspan="{{ $rowspan }}">
+                                                                    @php
+                                                                        $makananList = $detail_rkm->makanan ? explode(', ', $detail_rkm->makanan) : [];
+                                                                        $makananValue = count($makananList) > 0 ? $makananList[0] : 'Tidak Ada';
+                                                                    @endphp
+
+                                                                    @if ($makananValue == '0' || $makananValue == 'Tidak Ada')
+                                                                        Tidak Ada
+                                                                    @elseif ($makananValue == '1' || $makananValue == 'Nasi Box')
+                                                                        Nasi Box
+                                                                    @elseif ($makananValue == '2' || $makananValue == 'Prasmanan')
+                                                                        Prasmanan
+                                                                    @else
+                                                                        Belum Ditentukan
+                                                                    @endif
+                                                                </td>
+                                                            @endif
+
+                                                            <td class="text-center">
+                                                                {{ \Carbon\Carbon::parse($tanggal)->format('d M') }}
+                                                            </td>
+
+                                                            <td class="text-center">
+                                                                <input type="checkbox" class="custom-check" {{ $item->materi ? 'checked' : '' }} disabled>
+                                                            </td>
+
+                                                            <td class="text-center">
+                                                                @if ($detail_rkm->metode_kelas === 'Offline')
+                                                                    <input type="checkbox" class="custom-check" {{ $item->kelas ? 'checked' : '' }} disabled>
+                                                                @else
+                                                                -
+                                                                @endif
+                                                            </td>
+
+                                                            <td class="text-center">
+                                                                <input type="checkbox" class="custom-check" {{ $item->cb ? 'checked' : '' }} disabled>
+                                                            </td>
+
+                                                            <td class="text-center">
+                                                                <input type="checkbox" class="custom-check" {{ $item->maksi ? 'checked' : '' }} disabled>
+                                                            </td>
+
+                                                            <td class="text-center">
+                                                                @if ($detail_rkm->metode_kelas === 'Offline')
+                                                                    <input type="checkbox" class="custom-check" {{ $item->keperluan_kelas ? 'checked' : '' }} disabled>
+                                                                @else
+                                                                -
+                                                                @endif
+                                                            </td>
+
+                                                            <td class="text-center">
+                                                                {{ $item->progress ?? 0 }}%
+                                                            </td>
+                                                            @if ($loop->first)
+                                                                <td rowspan="{{ $rowspan }}" class="text-center align-middle">
+                                                                    <a href="{{ route('export.pdf.checklist', $detail_rkm->id) }}" id="exportPdfRkm" class="btn btn-outline-danger btn-sm mb-1">
+                                                                        PDF
+                                                                    </a>
+                                                                    <a href="{{ route('export.excel.checklist', $detail_rkm->id) }}" id="exportExcelRkm" class="btn btn-outline-success btn-sm">
+                                                                        Excel
+                                                                    </a>
+                                                                </td>
+                                                            @endif
+                                                        </tr>
+                                                    @endforeach
+                                                @else
+                                                    <tr class="border-bottom">
+                                                        <td class="ps-4">{{ $loop->iteration }}</td>
+
+                                                        <td>
+                                                            {{ $detail_rkm->materi->nama_materi }}
+                                                        </td>
+
+                                                        <td>
+                                                            <span class="text-success fw-semibold">
+                                                                Rp {{ number_format($detail_rkm->harga_jual, 0, ',', '.') }}
                                                             </span>
-                                                            <span class="text-muted">
-                                                                <i class="bx bx-right-arrow-alt me-1"></i>
-                                                                {{ \Carbon\Carbon::parse($item->tanggal_akhir)->format('d M Y') }}
+                                                        </td>
+
+                                                        <td>
+                                                            @if ($detail_rkm->tanggal_awal == $detail_rkm->tanggal_akhir)
+                                                                {{ \Carbon\Carbon::parse($detail_rkm->tanggal_awal)->translatedFormat('d M Y') }}
+                                                            @else
+                                                                {{ \Carbon\Carbon::parse($detail_rkm->tanggal_awal)->translatedFormat('d M Y') }}
+                                                                -
+                                                                {{ \Carbon\Carbon::parse($detail_rkm->tanggal_akhir)->translatedFormat('d M Y') }}
+                                                            @endif
+                                                        </td>
+
+                                                        <td>
+                                                            @foreach ($detail_rkm->perusahaan as $perusahaan)
+                                                                {{ $perusahaan->nama_perusahaan }},
+                                                            @endforeach
+                                                        </td>
+
+                                                        <td>{{ $detail_rkm->sales_all }}</td>
+                                                        <td> {{ implode(', ', array_filter([$detail_rkm->instruktur_key, $detail_rkm->instruktur_key2, $detail_rkm->asisten_key])) }}</td>
+                                                        <td>{{ $detail_rkm->ruang ?? 'Belum Ditentukan' }}</td>
+                                                        <td>
+                                                            <span class="badge bg-info-subtle text-info px-3 py-2">
+                                                                {{ number_format($detail_rkm->pax, 0, ',', '.') }}
                                                             </span>
-                                                        </div>
-                                                    </td>
-                                                    <td class="text-center">
-                                                        <span class="badge bg-info-subtle text-info px-3 py-2">
-                                                            {{ number_format($item->pax, 0, ',', '.') }}
-                                                        </span>
-                                                    </td>
-                                                    <td class="text-center pe-4">
-                                                        @if ($item->exam == '1')
-                                                            <span class="badge bg-success-subtle text-success px-3 py-2">
-                                                                Ya
-                                                            </span>
-                                                        @else
-                                                            <span
-                                                                class="badge bg-secondary-subtle text-secondary px-3 py-2">
-                                                                Tidak
-                                                            </span>
-                                                        @endif
-                                                    </td>
-                                                </tr>
+                                                        </td>
+
+                                                        <td>
+                                                            @if ($detail_rkm->exam == '1')
+                                                                <span class="badge bg-success-subtle text-success px-3 py-2">
+                                                                    Ya
+                                                                </span>
+                                                            @else
+                                                                <span
+                                                                    class="badge bg-secondary-subtle text-secondary px-3 py-2">
+                                                                    Tidak
+                                                                </span>
+                                                            @endif
+                                                        </td>
+
+                                                        <td>
+                                                            @php
+                                                                $makananList = $detail_rkm->makanan ? explode(', ', $detail_rkm->makanan) : [];
+                                                                $makananValue = count($makananList) > 0 ? $makananList[0] : 'Tidak Ada';
+                                                            @endphp
+
+                                                            @if ($makananValue == '0' || $makananValue == 'Tidak Ada')
+                                                                Tidak Ada
+                                                            @elseif ($makananValue == '1' || $makananValue == 'Nasi Box')
+                                                                Nasi Box
+                                                            @elseif ($makananValue == '2' || $makananValue == 'Prasmanan')
+                                                                Prasmanan
+                                                            @else
+                                                                Belum Ditentukan
+                                                            @endif
+                                                        </td>
+
+                                                        {{-- Kolom checklist kosong --}}
+                                                        <td colspan="8" class="text-center text-muted">
+                                                            Tidak ada checklist
+                                                        </td>
+                                                    </tr>
+                                                    @endif
+
                                             @empty
                                                 <tr>
-                                                    <td colspan="7" class="text-center py-5">
-                                                        <div class="d-flex flex-column align-items-center">
-                                                            <i class="bx bx-calendar-x text-muted"
-                                                                style="font-size: 3rem;"></i>
-                                                            <p class="text-muted mt-3 mb-0">Tidak ada data RKM minggu ini
-                                                            </p>
-                                                        </div>
+                                                    <td colspan="12" class="text-center py-5">
+                                                        Tidak ada data
                                                     </td>
                                                 </tr>
                                             @endforelse
@@ -1265,100 +1452,6 @@
                     </div>
                 </div>
 
-                {{-- Daftar RKM --}}
-                <div class="row g-3 mb-4">
-                    <div class="col-12">
-                        <div class="card h-100 shadow-sm border-0 rounded-3 glass-force">
-                            <div class="card-header border-bottom py-3">
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <h5 class="card-title mb-0 fw-semibold">
-                                        <i class="bx bx-calendar text-primary me-2"></i>
-                                        Rencana Kelas Mingguan
-                                    </h5>
-                                </div>
-                            </div>
-                            <div class="card-body p-0">
-                                <div class="table-responsive" style="max-height: 1000px; overflow-y: auto;">
-                                    <table class="table table-hover align-middle mb-0" style="table-layout: auto;">
-                                        <thead class="table-light sticky-top">
-                                            <tr>
-                                                <th scope="col" rowspan="2" class="border-0 ps-4" style="min-width: 50px;">No</th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 250px;">Materi</th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 170px;">Tanggal Training</th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 170px;">Perusahaan</th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 100px;">Kode Sales</th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 100px;">Instruktur</th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 150px;">Ruang</th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 100px;">Pax</th>
-                                                <th scope="col" rowspan="2" class="border-0" style="min-width: 120px;">Makanan</th>
-                                                <th scope="col" colspan="6" class="border-bottom border-dark text-center" style="min-width: 300px;">Checklist</th>
-                                                {{-- CheckList --}}
-                                            </tr>
-                                            <tr class="text-center">
-                                                <th scope="col" class="border-0" style="min-width: 120px;">Materi</th>
-                                                <th scope="col" class="border-0" style="min-width: 120px;">Kelas</th>
-                                                <th scope="col" class="border-0" style="min-width: 120px;">Coffe Break</th>
-                                                <th scope="col" class="border-0" style="min-width: 120px;">Makan Siang</th>
-                                                <th scope="col" class="border-0" style="min-width: 120px;">Keperluan Kelas</th>
-                                                <th scope="col" class="border-0 text-center pe-4" style="min-width: 120px;">Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @forelse ($rkms as $detail_rkm)
-                                                <tr class="border-bottom">
-                                                    <td class="ps-4">{{ $loop->iteration }}</td>
-                                                    <td>{{ $detail_rkm->materi->nama_materi }}</td>
-                                                    <td>{{ \Carbon\Carbon::parse($detail_rkm->tanggal_awal)->translatedFormat('d M Y') }} - {{ \Carbon\Carbon::parse($detail_rkm->tanggal_akhir)->translatedFormat('d M Y') }}</td>
-                                                    <td>
-                                                        @foreach ($detail_rkm->perusahaan as $perusahaan)
-                                                            {{ $perusahaan->nama_perusahaan }} ,
-                                                        @endforeach
-                                                    </td>
-                                                    <td>{{ $detail_rkm->sales_all }}</td>
-                                                    <td>{{ $detail_rkm->instruktur_all }}</td>
-                                                    <td>{{ $detail_rkm->ruang ? $detail_rkm->ruang : 'Belum Ditentukan' }}</td>
-                                                    <td>{{ $detail_rkm->total_pax }}</td>
-                                                    <td>
-                                                        @php
-                                                            $makananList = $detail_rkm->makanan ? explode(', ', $detail_rkm->makanan) : [];
-                                                            $makananValue = count($makananList) > 0 ? $makananList[0] : 'Tidak Ada';
-                                                        @endphp
-
-                                                        @if ($makananValue == '0' || $makananValue == 'Tidak Ada')
-                                                            Tidak Ada
-                                                        @elseif ($makananValue == '1' || $makananValue == 'Nasi Box')
-                                                            Nasi Box
-                                                        @elseif ($makananValue == '2' || $makananValue == 'Prasmanan')
-                                                            Prasmanan
-                                                        @else
-                                                            Belum Ditentukan
-                                                        @endif
-                                                    </td>
-                                                    <td class="text-center"><input class="custom-check" type="checkbox" {{ $detail_rkm->checklist ? ($detail_rkm->checklist->materi == 1 ? 'checked' : '') : '' }} disabled></td> 
-                                                    <td class="text-center"><input class="custom-check" type="checkbox" {{ $detail_rkm->checklist ? ($detail_rkm->checklist->kelas == 1 ? 'checked' : '') : '' }} disabled></td>
-                                                    <td class="text-center"><input class="custom-check" type="checkbox" {{ $detail_rkm->checklist ? ($detail_rkm->checklist->cb == 1 ? 'checked' : '') : '' }} disabled></td> 
-                                                    <td class="text-center"><input class="custom-check" type="checkbox" {{ $detail_rkm->checklist ? ($detail_rkm->checklist->maksi == 1 ? 'checked' : '') : '' }} disabled></td> 
-                                                    <td class="text-center"><input class="custom-check" type="checkbox" {{ $detail_rkm->checklist ? ($detail_rkm->checklist->keperluan_kelas == 1 ? 'checked' : '') : '' }} disabled></td>
-                                                    <td class="text-center">{{ $detail_rkm->checklist_status ?? 0 }}%</td>
-                                                </tr>
-                                            @empty
-                                                <tr>
-                                                    <td colspan="8" class="text-center py-5">
-                                                        <div class="d-flex flex-column align-items-center">
-                                                            <i class="bx bx-message-square-x text-muted"
-                                                                style="font-size: 3rem;"></i>
-                                                            <p class="text-muted mt-3 mb-0">Tidak ada RKM untuk ditampilkan</p>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            @endforelse
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -2339,6 +2432,13 @@
                         $('#modalEditTagihan select[name="status"]').val(res.data.status);
                         $('#modalEditTagihan select[name="tracking"]').val(res.data.tracking);
                         $('#modalEditTagihan input[name="tanggal_selesai"]').val(res.data.tanggal_selesai);
+                        $('#modalEditTagihan textarea[name="keterangan"]').val(res.data.keterangan);
+
+                        if (res.data.status === 'selesai' || res.data.status === 'telat') {
+                            $('#modalEditTagihan select[name="status"]').attr('disabled', 'disabled');
+                        }
+
+
 
                         // format rupiah jika ada function
                         $('.format-rupiah').trigger('keyup');
@@ -2368,10 +2468,14 @@
 
                         // isi input
                         $('#modalEditAdministrasi input[name="nama_administrasi"]').val(res.nama_administrasi);
-                        $('#modalEditAdministrasi input[name="dateline"]').val(res.dateline);
+                        $('#modalEditAdministrasi input[name="dateline"]').val(res.dateline).attr("disabled", "disabled");
                         $('#modalEditAdministrasi select[name="status"]').val(res.status);
                         $('#modalEditAdministrasi input[name="tanggal_selesai"]').val(res.tanggal_selesai);
                         $('#modalEditAdministrasi textarea[name="keterangan"]').val(res.keterangan);
+
+                        if (res.status === 'selesai' || res.status === 'terlambat' ) {
+                            $('#modalEditAdministrasi select[name="status"]').attr("disabled", "disabled");
+                        }
 
                         if(res.bukti_transfer){
                             $('#pathBuktiTransfer').html(

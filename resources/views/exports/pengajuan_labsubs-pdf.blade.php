@@ -28,7 +28,7 @@
     </div>
 
     <h4 class="text-center mb-3">
-        Form Pengajuan {{ $data->lab ? 'Laboratorium' : 'Subscription' }}
+        Form Pengajuan {{ $labSnapshot ? 'Laboratorium' : 'Subscription' }}
     </h4>
 
     {{-- ================== DATA UMUM ================== --}}
@@ -48,27 +48,27 @@
             </tr>
             <tr>
                 <td>Jenis Pengajuan</td>
-                <td>{{ $data->lab ? 'Lab' : 'Subscription' }}</td>
+                <td>{{ $labSnapshot ? 'Lab' : 'Subscription' }}</td>
             </tr>
             <tr>
                 <td>Nama Lab / Subscription</td>
-                <td>{{ $data->lab->nama_labs ?? $data->subs->nama_subs ?? '-' }}</td>
+                <td>{{ $labSnapshot->nama_labs ?? $subsSnapshot->nama_subs ?? '-' }}</td>
             </tr>
             <tr>
                 <td>Keterangan</td>
-                <td>{{ $data->lab->desc ?? $data->subs->desc ?? '-' }}</td>
+                <td>{{ $labSnapshot->desc ?? $subsSnapshot->desc ?? '-' }}</td>
             </tr>
         </tbody>
     </table>
 
     {{-- ================== DETAIL LAB ================== --}}
-    @if ($data->lab)
+    @if ($labSnapshot)
         <table class="table table-bordered mb-3">
             <thead class="table-light">
                 <tr>
                     <th>Nama Lab</th>
-                    <th>Harga Asli ({{ $data->lab->mata_uang ?? '-' }})</th>
-                    @if ($data->lab->mata_uang !== 'Rupiah')
+                    <th>Harga Asli ({{ $labSnapshot->mata_uang ?? '-' }})</th>
+                    @if (($labSnapshot->mata_uang ?? '') !== 'Rupiah')
                         <th>Kurs</th>
                     @endif
                     <th>Harga (Rupiah)</th>
@@ -78,22 +78,22 @@
             </thead>
             <tbody>
                 <tr>
-                    <td>{{ $data->lab->nama_labs ?? '-' }}</td>
+                    <td>{{ $labSnapshot->nama_labs ?? '-' }}</td>
                     <td>
-                        {{ $data->lab->harga ? number_format($data->lab->harga, 2, ',', '.') : '-' }}
-                        {{ $data->lab->mata_uang ?? '' }}
+                        {{ isset($labSnapshot->harga) ? number_format($labSnapshot->harga, 2, ',', '.') : '-' }}
+                        {{ $labSnapshot->mata_uang ?? '' }}
                     </td>
-                    @if ($data->lab->mata_uang !== 'Rupiah')
-                        <td>{{ $data->lab->kurs ? 'Rp ' . number_format($data->lab->kurs, 2, ',', '.') : '-' }}</td>
+                    @if (($labSnapshot->mata_uang ?? '') !== 'Rupiah')
+                        <td>{{ isset($labSnapshot->kurs) ? 'Rp ' . number_format($labSnapshot->kurs, 2, ',', '.') : '-' }}</td>
                     @endif
                     <td>
-                        {{ $data->lab->harga_rupiah ? 'Rp ' . number_format($data->lab->harga_rupiah, 0, ',', '.') : '-' }}
+                        {{ isset($labSnapshot->harga_rupiah) ? 'Rp ' . number_format($labSnapshot->harga_rupiah, 0, ',', '.') : '-' }}
                     </td>
                     <td>
-                        {{ $data->lab->start_date ? \Carbon\Carbon::parse($data->lab->start_date)->translatedFormat('d F Y') : '-' }}
+                        {{ !empty($labSnapshot->start_date) ? \Carbon\Carbon::parse($labSnapshot->start_date)->translatedFormat('d F Y') : '-' }}
                     </td>
                     <td>
-                        {{ $data->lab->end_date ? \Carbon\Carbon::parse($data->lab->end_date)->translatedFormat('d F Y') : '-' }}
+                        {{ !empty($labSnapshot->end_date) ? \Carbon\Carbon::parse($labSnapshot->end_date)->translatedFormat('d F Y') : '-' }}
                     </td>
                 </tr>
             </tbody>
@@ -101,13 +101,13 @@
     @endif
 
     {{-- ================== DETAIL SUBSCRIPTION ================== --}}
-    @if ($data->subs)
+    @if ($subsSnapshot)
         <table class="table table-bordered mb-3">
             <thead class="table-light">
                 <tr>
                     <th>Nama Subscription</th>
-                    <th>Harga Asli ({{ $data->subs->mata_uang ?? '-' }})</th>
-                    @if ($data->subs->mata_uang !== 'Rupiah')
+                    <th>Harga Asli ({{ $subsSnapshot->mata_uang ?? '-' }})</th>
+                    @if (($subsSnapshot->mata_uang ?? '') !== 'Rupiah')
                         <th>Kurs</th>
                     @endif
                     <th>Harga (Rupiah)</th>
@@ -117,22 +117,22 @@
             </thead>
             <tbody>
                 <tr>
-                    <td>{{ $data->subs->nama_subs ?? '-' }}</td>
+                    <td>{{ $subsSnapshot->nama_subs ?? '-' }}</td>
                     <td>
-                        {{ $data->subs->harga ? number_format($data->subs->harga, 2, ',', '.') : '-' }}
-                        {{ $data->subs->mata_uang ?? '' }}
+                        {{ isset($subsSnapshot->harga) ? number_format($subsSnapshot->harga, 2, ',', '.') : '-' }}
+                        {{ $subsSnapshot->mata_uang ?? '' }}
                     </td>
-                    @if ($data->subs->mata_uang !== 'Rupiah')
-                        <td>{{ $data->subs->kurs ? 'Rp ' . number_format($data->subs->kurs, 2, ',', '.') : '-' }}</td>
+                    @if (($subsSnapshot->mata_uang ?? '') !== 'Rupiah')
+                        <td>{{ isset($subsSnapshot->kurs) ? 'Rp ' . number_format($subsSnapshot->kurs, 2, ',', '.') : '-' }}</td>
                     @endif
                     <td>
-                        {{ $data->subs->harga_rupiah ? 'Rp ' . number_format($data->subs->harga_rupiah, 0, ',', '.') : '-' }}
+                        {{ isset($subsSnapshot->harga_rupiah) ? 'Rp ' . number_format($subsSnapshot->harga_rupiah, 0, ',', '.') : '-' }}
                     </td>
                     <td>
-                        {{ $data->subs->start_date ? \Carbon\Carbon::parse($data->subs->start_date)->translatedFormat('d F Y') : '-' }}
+                        {{ !empty($subsSnapshot->start_date) ? \Carbon\Carbon::parse($subsSnapshot->start_date)->translatedFormat('d F Y') : '-' }}
                     </td>
                     <td>
-                        {{ $data->subs->end_date ? \Carbon\Carbon::parse($data->subs->end_date)->translatedFormat('d F Y') : '-' }}
+                        {{ !empty($subsSnapshot->end_date) ? \Carbon\Carbon::parse($subsSnapshot->end_date)->translatedFormat('d F Y') : '-' }}
                     </td>
                 </tr>
             </tbody>

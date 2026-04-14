@@ -10,7 +10,6 @@ use App\Models\KetentuanForm;
 use App\Models\listexam;
 use App\Models\Materi;
 use App\Models\Peluang;
-use App\Models\Aktivitas;
 use App\Models\Perusahaan;
 use App\Models\RegisForm;
 use App\Models\RKM;
