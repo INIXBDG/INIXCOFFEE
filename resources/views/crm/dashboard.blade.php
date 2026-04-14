@@ -622,12 +622,12 @@
                                 @foreach ($PA as $item)
                                     <tr>
                                         <td>{{ $loop->iteration }}</td>
-                                        <td>{{ $item->rkm->perusahaan->nama_perusahaan ?? '-' }}</td>
-                                        <td>{{ $item->rkm->materi->nama_materi ?? '-' }}</td>
+                                        <td>{{ $item->rkm?->perusahaan?->nama_perusahaan ?? '-' }}</td>
+                                        <td>{{ $item->rkm?->materi?->nama_materi ?? '-' }}</td>
                                         <td>
-                                            {{ \Carbon\Carbon::parse($item->rkm->tanggal_awal)->translatedFormat('d M Y') ?? '-' }}
+                                            {{ \Carbon\Carbon::parse($item->rkm?->tanggal_awal)->translatedFormat('d M Y') ?? '-' }}
                                             -
-                                            {{ \Carbon\Carbon::parse($item->rkm->tanggal_akhir)->translatedFormat('d M Y') ?? '-' }}
+                                            {{ \Carbon\Carbon::parse($item->rkm?->tanggal_akhir)->translatedFormat('d M Y') ?? '-' }}
                                         </td>
                                         <td>
                                             {{ number_format(
@@ -643,10 +643,18 @@
                                         </td>
                                         <td>{{ $item->trackingNetSales->tracking ?? '-' }}</td>      
                                         <td>
-                                            <a class="btn btn-sm btn-outline-primary" 
-                                            href="{{ route('detail.peluang', $item->rkm->peluang->id) }}" 
-                                            target="_blank">View</a>
-                                        </td>
+											@php
+												$peluangId = optional(optional($item->rkm)->peluang)->id;
+											@endphp
+
+											@if($peluangId)
+												<a class="btn btn-sm btn-outline-primary" 
+												   href="{{ route('detail.peluang', $peluangId) }}" 
+												   target="_blank">View</a>
+											@else
+												-
+											@endif
+										</td>
                                     </tr>
                                 @endforeach
                             </tbody>

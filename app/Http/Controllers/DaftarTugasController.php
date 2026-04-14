@@ -319,4 +319,79 @@ class DaftarTugasController extends Controller
 
         return $pdf->stream('Laporan_Tugas_' . $reportType . '_' . date('Y-m-d') . '.pdf');
     }
+
+    public function updateKategori(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|exists:kategori_daftar_tugas,id',
+            'judul_kategori' => 'required|string|max:255',
+            'tipe' => 'required|in:Harian,Mingguan,Bulanan,Quartal,Semester,Tahunan',
+            'tipe_turunan' => 'nullable|in:Shift 1,Shift 2',
+        ]);
+        $kategori = KategoriDaftarTugas::findOrFail($request->id);
+        if (Auth::id() !== $kategori->id_user && Auth::user()->jabatan !== 'HRD') {
+            return response()->json(['message' => 'Tidak berhak mengedit kategori ini'], 403);
+        }
+
+        $tipe_turunan = null;
+        if ($request->tipe === 'Harian' && !empty($request->tipe_turunan)) {
+            $tipe_turunan = $request->tipe_turunan;
+        }
+
+        $kategori->update([
+            'judul_kategori' => $request->judul_kategori,
+            'Tipe' => $request->tipe,
+            'tipe_turunan' => $tipe_turunan,
+            'id_user' => Auth()->user()->id,
+        ]);
+        return response()->json(['success' => true, 'message' => 'Kategori berhasil diperbarui']);
+    }
+
+    public function bulkUpdateTipeTurunan(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:kategori_daftar_tugas,id',
+            'tipe_turunan' => 'nullable|in:Shift 1,Shift 2',
+        ]);
+
+        $user = Auth::user();
+        $updated = 0;
+
+        foreach ($request->ids as $id) {
+            $kategori = KategoriDaftarTugas::findOrFail($id);
+
+            if (Auth::id() !== $kategori->id_user && $user->jabatan !== 'HRD') {
+                continue;
+            }
+
+            if ($kategori->Tipe !== 'Harian') {
+                continue;
+            }
+
+            $kategori->update([
+                'tipe_turunan' => $request->tipe_turunan,
+            ]);
+            $updated++;
+        }
+
+        return response()->json(['success' => true, 'message' => "{$updated} kategori berhasil diperbarui"]);
+    }
+
+    public function deleteKategori(Request $request)
+    {
+        $request->validate(['id' => 'required|exists:kategori_daftar_tugas,id']);
+        $kategori = KategoriDaftarTugas::findOrFail($request->id);
+        if (Auth::id() !== $kategori->id_user && Auth::user()->jabatan !== 'HRD') {
+            return response()->json(['message' => 'Tidak berhak menghapus kategori ini'], 403);
+        }
+        KontrolTugas::where('id_DaftarTugas', $kategori->id)->each(function ($tugas) {
+            if ($tugas->bukti && Storage::disk('public')->exists($tugas->bukti)) {
+                Storage::disk('public')->delete($tugas->bukti);
+            }
+            $tugas->delete();
+        });
+        $kategori->delete();
+        return response()->json(['success' => true, 'message' => 'Kategori dan tugas terkait berhasil dihapus']);
+    }
 }
