@@ -103,10 +103,13 @@ class TagihanPerusahaanController extends Controller
             $dueDate = Carbon::parse($tracking->tanggal_perkiraan_mulai);
         }
 
-        if ($request->tanggal_selesai !== null && $dueDate < $request->tanggal_selesai && !in_array($request->status, ['selesai', 'pending'])) {
+        if ($request->tanggal_selesai !== null && $dueDate < $request->tanggal_selesai && !in_array($request->status, ['selesai', 'pending']) && !in_array($tracking->status, ['selesai', 'pending'])) {
             $tracking->status = 'telat';
             $tracking->save();
         } else if ($request->tanggal_selesai !== null && $dueDate >= $request->tanggal_selesai && $tracking->status !== 'telat') {
+            $tracking->status = 'selesai';
+            $tracking->save();
+        } else if ($request->tanggal_selesai !== null && in_array($tracking->status, ['selesai', 'pending'])) {
             $tracking->status = 'selesai';
             $tracking->save();
         }

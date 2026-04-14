@@ -43,8 +43,8 @@
                                 <select name="status" class="form-select">
                                     <option value="pending">Pending</option>
                                     <option value="proses">Proses</option>
-                                    <option value="selesai">Selesai</option>
-                                    <option value="terlambat">Terlambat</option>
+                                    <option value="selesai" disabled hidden>Selesai</option>
+                                    <option value="terlambat" disabled hidden>Terlambat</option>
                                 </select>
                             </div>
                             
@@ -290,11 +290,15 @@
 
                         // isi input
                         $('#modalEditAdministrasi input[name="nama_administrasi"]').val(res.nama_administrasi);
-                        $('#modalEditAdministrasi input[name="dateline"]').val(res.dateline);
+                        $('#modalEditAdministrasi input[name="dateline"]').val(res.dateline).attr("disabled", "disabled");
                         $('#modalEditAdministrasi select[name="status"]').val(res.status);
                         $('#modalEditAdministrasi input[name="tanggal_selesai"]').val(res.tanggal_selesai);
                         $('#modalEditAdministrasi textarea[name="keterangan"]').val(res.keterangan);
 
+                        if (res.status === 'selesai' || res.status === 'terlambat' ) {
+                            $('#modalEditAdministrasi select[name="status"]').attr("disabled", "disabled");
+                        }
+                        
                         if(res.bukti_transfer){
                             $('#pathBuktiTransfer').html(
                                 `<a href="/storage/${res.bukti_transfer}" target="_blank">

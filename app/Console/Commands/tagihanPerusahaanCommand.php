@@ -82,7 +82,7 @@ class tagihanPerusahaanCommand extends Command
                 $dueDate = Carbon::parse($tracking->tanggal_perkiraan_mulai);
             }         
             
-            if ($dueDate < $now && !in_array($tracking->status, ['selesai', 'pending'])) {
+            if ($dueDate->day < $now->day && !in_array($tracking->status, ['selesai', 'pending'])) {
                 $tracking->status = 'telat';
                 $tracking->save();
                 $this->info('status tagihan terupdate');
