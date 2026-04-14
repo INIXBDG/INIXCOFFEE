@@ -129,6 +129,8 @@
                 <th width="10%">Budget</th>
                 <th width="10%">Total Biaya</th>
                 <th width="10%">Sisa</th>
+                <th width="10%">KM Awal</th>
+                <th width="10%">KM Akhir</th>
                 <th width="8%">Status</th>
                 <th width="20%">Detail Rute</th>
             </tr>
@@ -170,11 +172,14 @@
                     <td>{{ \Carbon\Carbon::parse($pickup->created_at)->format('d/m/Y') }}</td>
                     <td>{{ $pickup->karyawan->nama_lengkap ?? '-' }}</td>
                     <td>{{ $pickup->kendaraan ?? '-' }}</td>
-                    <td class="text-right">{{ $pickup->budget ? 'Rp ' . number_format($pickup->budget, 0, ',', '.') : '-' }}
+                    <td class="text-right">
+                        {{ $pickup->budget ? 'Rp ' . number_format($pickup->budget, 0, ',', '.') : '-' }}
                     </td>
                     <td class="text-right">Rp {{ number_format($totalBiaya, 0, ',', '.') }}</td>
                     <td class="text-right">
                         {{ $sisaBudget !== null ? 'Rp ' . number_format($sisaBudget, 0, ',', '.') : '-' }}</td>
+                    <td>{{ $pickup->KM_awal ?? '-' }}</td>
+                    <td>{{ $pickup->KM_akhir ?? '-' }}</td>
                     <td class="text-center"><span class="{{ $statusClass }}">{{ $statusText }}</span></td>
                     <td>{!! $detailRute !!}</td>
                 </tr>
@@ -184,7 +189,7 @@
                 <td class="text-right">Rp {{ number_format($grandTotalBudget, 0, ',', '.') }}</td>
                 <td class="text-right">Rp {{ number_format($grandTotalBiaya, 0, ',', '.') }}</td>
                 <td class="text-right">Rp {{ number_format($grandTotalBudget - $grandTotalBiaya, 0, ',', '.') }}</td>
-                <td colspan="2"></td>
+                <td colspan="4"></td>
             </tr>
         </tbody>
     </table>

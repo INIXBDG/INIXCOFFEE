@@ -1,6 +1,29 @@
 @extends($extends)
 
 @section($section)
+    <style>
+        .form-control.is-invalid {
+            border-color: #dc3545 !important;
+            background-image: none !important;
+            animation: shake 0.3s;
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
+        }
+    </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
         integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -58,9 +81,9 @@
                         <div class="row mb-3">
                             <label class="col-md-4 col-form-label">Kendaraan</label>
                             <div class="col-md-6">
-                                <select name="kendaraan" id="kendaraan" class="form-select" required>
+                                <select name="kendaraan" id="kendaraan" class="form-select" required
+                                    data-remaining-budget='@json($budgetPerKendaraan)'>
                                     <option selected disabled>Pilih Kendaraan</option>
-
                                     @forelse($kendaraan as $item)
                                         <option value="{{ $item }}">{{ $item }}</option>
                                     @empty
@@ -155,7 +178,7 @@
                             <label class="col-md-4 col-form-label">Budget Transportasi</label>
                             <div class="col-md-6">
                                 <input type="text" id="budget_view" class="form-control"
-                                    placeholder="contoh : 20.000 (by system jika tipe perjalanan Operasional Kantor)">
+                                    placeholder="contoh : 20.000 (by system jika tipe perjalanan Operasional Kantor)" readonly>
                                 <small id="info_budget" class="text-muted"></small>
                                 <input type="hidden" name="budget" id="budget">
                             </div>
@@ -185,7 +208,84 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-        const budgetPerKendaraan = @json($budgetPerjalanan);
+        const BASE_BUDGET = 1000000;
+        const remainingBudgetMap = $('#kendaraan').data('remaining-budget') || {};
+
+        function formatRupiah(number) {
+            return 'Rp ' + number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        }
+
+        function parseRupiah(str) {
+            return parseInt(str.replace(/[^0-9]/g, '')) || 0;
+        }
+
+        function getRemainingBudget(kendaraan) {
+            return remainingBudgetMap[kendaraan] !== undefined ? remainingBudgetMap[kendaraan] : BASE_BUDGET;
+        }
+
+        function updateBudgetInfo() {
+            const kendaraan = $('#kendaraan').val();
+            const tipe = $('.tipe-select').last().val();
+            const budgetView = $('#budget_view');
+            const budgetHidden = $('#budget');
+            const infoBudget = $('#info_budget');
+
+            if (tipe === 'Operasional Kantor' && kendaraan) {
+                const sisa = getRemainingBudget(kendaraan);
+                infoBudget.text('Sisa budget minggu ini: ' + formatRupiah(sisa));
+                budgetView.val(formatRupiah(sisa));
+                budgetHidden.val(sisa);
+                budgetView.removeClass('is-invalid').prop('readonly', true);
+            } else {
+                infoBudget.text('');
+                budgetView.val('').prop('readonly', false);
+                budgetHidden.val('');
+            }
+        }
+
+        $('#kendaraan').on('change', function() {
+            updateBudgetInfo();
+        });
+
+        $(document).on('change', '.tipe-select', function() {
+            updateBudgetInfo();
+        });
+
+        $('#budget_view').on('input', function() {
+            const kendaraan = $('#kendaraan').val();
+            const tipe = $('.tipe-select').last().val();
+
+            if (tipe !== 'Operasional Kantor' || !kendaraan) return;
+
+            const sisa = getRemainingBudget(kendaraan);
+            let value = parseRupiah($(this).val());
+
+            if (value > sisa) {
+                $(this).addClass('is-invalid');
+                setTimeout(() => {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Budget Melebihi Limit!',
+                        text: `Maksimal budget untuk ${kendaraan}: ${formatRupiah(sisa)}`,
+                        timer: 2500,
+                        showConfirmButton: false
+                    });
+                    $(this).val(formatRupiah(sisa));
+                    $('#budget').val(sisa);
+                    $(this).removeClass('is-invalid');
+                }, 300);
+            } else {
+                $(this).removeClass('is-invalid');
+                $('#budget').val(value);
+            }
+
+            const formatted = value ? formatRupiah(value) : '';
+            $(this).val(formatted);
+        });
+
+        $(document).on('change', '.tipe-select, #kendaraan', function() {
+            $('#budget_view').removeClass('is-invalid');
+        });
 
         $('#createForm').on('submit', function(e) {
             e.preventDefault();
@@ -229,8 +329,8 @@
                             } else {
                                 $('#createForm')[0].reset();
                                 $('#koordinasi-wrapper').html($(
-                                    '#koordinasi-wrapper .koordinasi-item:first')
-                                .clone());
+                                        '#koordinasi-wrapper .koordinasi-item:first')
+                                    .clone());
                                 $('#info_budget').text('');
                                 $('#budget_view').val('');
                                 $('#budget').val('');
@@ -246,7 +346,6 @@
 
                     const response = xhr.responseJSON;
 
-                    // Handle validation errors
                     if (xhr.status === 422 && response?.errors) {
                         let errorMsg = '<ul class="mb-0 ps-3">';
                         Object.values(response.errors).forEach(err => {
@@ -268,7 +367,6 @@
             });
         });
 
-        // === DYNAMIC ROW: Add/Remove ===
         $(document).on('click', '#addRow', function() {
             let html = `
 <div class="koordinasi-item border rounded p-3 mb-3">
@@ -349,43 +447,6 @@
                     $(this).closest('.koordinasi-item').remove();
                 }
             });
-        });
-
-        $('#kendaraan').on('change', function() {
-            let kendaraan = $(this).val();
-            let data = budgetPerKendaraan.find(item => item.kendaraan === kendaraan);
-            if (data) {
-                $('#info_budget').text('Sisa budget minggu ini: Rp ' + data.sisa_budget.toLocaleString('id-ID'));
-            }
-        });
-
-        $(document).on('change', '.tipe-select', function() {
-            let tipe = $(this).val();
-            let kendaraan = $('#kendaraan').val();
-
-            if (tipe === 'Operasional Kantor' && kendaraan) {
-                let data = budgetPerKendaraan.find(item => item.kendaraan === kendaraan);
-                if (data) {
-                    let sisa = data.sisa_budget;
-                    $('#info_budget').text('Sisa budget minggu ini: Rp ' + sisa.toLocaleString('id-ID'));
-                    if (sisa <= 0) {
-                        Swal.fire('Budget Habis', 'Budget kendaraan ini sudah habis minggu ini', 'warning');
-                        $('#budget_view').val('');
-                        $('#budget').val('');
-                    }
-                }
-            } else {
-                $('#info_budget').text('');
-            }
-        });
-
-        const budgetView = document.getElementById('budget_view');
-        const budgetReal = document.getElementById('budget');
-
-        budgetView?.addEventListener('input', function() {
-            let value = this.value.replace(/[^0-9]/g, '');
-            budgetReal.value = value;
-            this.value = value ? 'Rp ' + value.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '';
         });
 
         $(document).ready(function() {

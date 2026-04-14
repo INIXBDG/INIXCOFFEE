@@ -35,6 +35,11 @@
             z-index: 1060 !important;
         }
 
+        .modal-body {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
         .form-select,
         .form-control,
         .form-control:focus,
@@ -117,6 +122,63 @@
         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ModalTambah">
             <i class="fas fa-plus me-1"></i> Ajukan Biaya
         </button>
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalExportFilter">
+            <i class="fas fa-file-export me-1"></i> Export
+        </button>
+
+        {{-- Modal Filter Export --}}
+        <div class="modal fade" id="modalExportFilter" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Filter Export</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form id="formExportFilter">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label">Tanggal Mulai</label>
+                                <input type="date" name="start_date" class="form-control">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Tanggal Akhir</label>
+                                <input type="date" name="end_date" class="form-control">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Tipe Biaya</label>
+                                <select name="tipe" class="form-select">
+                                    <option value="">Semua</option>
+                                    <option value="BBM">BBM</option>
+                                    <option value="TOL">TOL</option>
+                                    <option value="Parkir">Parkir</option>
+                                    <option value="Lainnya">Lainnya</option>
+                                    <option value="Budget Lebih">Budget Lebih</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Status</label>
+                                <select name="status" class="form-select">
+                                    <option value="">Semua</option>
+                                    <option value="Menunggu">Menunggu</option>
+                                    <option value="Diajukan dan Sedang Ditinjau">Diajukan dan Sedang Ditinjau</option>
+                                    <option value="Disetujui">Disetujui</option>
+                                    <option value="Ditolak">Ditolak</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                            <button type="button" class="btn btn-primary" onclick="exportData('excel')">
+                                <i class="fas fa-file-excel me-1"></i> Export Excel
+                            </button>
+                            <button type="button" class="btn btn-danger" onclick="exportData('pdf')">
+                                <i class="fas fa-file-pdf me-1"></i> Export PDF
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="container-fluid px-0 px-md-3">
@@ -229,10 +291,11 @@
                             <label class="form-label fw-bold">Pilih Koordinasi Pickup</label>
                             <select name="id_pickup_driver" class="form-select" required>
                                 <option value="">-- Pilih Pickup --</option>
+                                <option value="999999999">Diluar Koordinasi Driver</option>
                                 @foreach ($dataPickup ?? [] as $pickup)
                                     <option value="{{ $pickup->id }}">
-                                        {{ $pickup->karyawan->nama_lengkap }} -
-                                        {{ $pickup->detailPickupDriver->first()->lokasi ?? '-' }}
+                                        {{ $pickup->karyawan->nama_lengkap ?? ($pickup->driver_name ?? '-') }} -
+                                        {{ $pickup->detailPickupDriver->first()->lokasi ?? ($pickup->lokasi ?? '-') }}
                                     </option>
                                 @endforeach
                             </select>
@@ -301,6 +364,69 @@
             minimumFractionDigits: 0
         });
         const dateFormat = d => moment(d).format('DD MMM YYYY');
+        const OUTSIDE_OPS_ID = '999999999';
+
+        function isOutsideOps(pickupId) {
+            return String(pickupId) === OUTSIDE_OPS_ID;
+        }
+
+        function getKoordinasiLabel(item) {
+            if (isOutsideOps(item.id_pickup_driver)) {
+                return 'Diluar Koordinasi Driver';
+            }
+
+            let namaDriver = '-';
+            let lokasi = '-';
+
+            if (item.karyawan?.nama_lengkap) {
+                namaDriver = item.karyawan.nama_lengkap;
+            } else if (item.driver_name) {
+                namaDriver = item.driver_name;
+            } else if (item.pickupDriver?.karyawan?.nama_lengkap) {
+                namaDriver = item.pickupDriver.karyawan.nama_lengkap;
+            } else if (item.pickup_driver?.karyawan?.nama_lengkap) {
+                namaDriver = item.pickup_driver.karyawan.nama_lengkap;
+            } else if (item.pickupDriver?.nama_driver) {
+                namaDriver = item.pickupDriver.nama_driver;
+            } else if (item.pickup_driver?.nama_driver) {
+                namaDriver = item.pickup_driver.nama_driver;
+            }
+
+            if (item.detailPickupDriver?.[0]?.lokasi) {
+                lokasi = item.detailPickupDriver[0].lokasi;
+            } else if (item.detail_pickup_driver?.[0]?.lokasi) {
+                lokasi = item.detail_pickup_driver[0].lokasi;
+            } else if (item.lokasi) {
+                lokasi = item.lokasi;
+            } else if (item.pickupDriver?.detailPickupDriver?.[0]?.lokasi) {
+                lokasi = item.pickupDriver.detailPickupDriver[0].lokasi;
+            } else if (item.pickupDriver?.detail_pickup_driver?.[0]?.lokasi) {
+                lokasi = item.pickupDriver.detail_pickup_driver[0].lokasi;
+            } else if (item.pickup_driver?.detailPickupDriver?.[0]?.lokasi) {
+                lokasi = item.pickup_driver.detailPickupDriver[0].lokasi;
+            } else if (item.pickup_driver?.detail_pickup_driver?.[0]?.lokasi) {
+                lokasi = item.pickup_driver.detail_pickup_driver[0].lokasi;
+            }
+
+            return `${namaDriver} | ${lokasi}`;
+        }
+
+        function exportData(type) {
+            const formData = new FormData(document.getElementById('formExportFilter'));
+            const params = new URLSearchParams(formData);
+
+            let url = '';
+            if (type === 'excel') {
+                url = "{{ route('office.biayaTransportasi.exportExcel') }}?" + params.toString();
+            } else {
+                url = "{{ route('office.biayaTransportasi.exportPdf') }}?" + params.toString();
+            }
+
+            window.open(url, '_blank');
+
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalExportFilter'));
+            modal.hide();
+        }
 
         function loadData() {
             $.get("{{ route('office.biayaTransportasi.get') }}", function(res) {
@@ -320,9 +446,7 @@
                     const rowspan = items.length;
                     const first = items[0];
 
-                    const namaDriver = first.pickup_driver?.karyawan?.nama_lengkap ?? '-';
-                    const lokasi = first.pickup_driver?.detail_pickup_driver?.[0]?.lokasi ?? '-';
-                    const koordinasi = `${namaDriver} | ${lokasi}`;
+                    const koordinasi = getKoordinasiLabel(first);
 
                     const images = items
                         .map(i => i.bukti ? `{{ asset('storage') }}/${i.bukti}` : null)
@@ -336,28 +460,28 @@
                         <tr>
                             ${showAction ? `<td rowspan="${rowspan}" class="text-center">${no++}</td><td rowspan="${rowspan}">${koordinasi}</td>` : ''}
                             <td>${d.tipe ?? '-'}</td>
-                            <td class="text-end">${currencyFormat.format(d.harga ?? 0)}</td>
+                            <td class="text-end">${currencyFormat.format(Number(d.harga) || 0)}</td>
                             ${showBukti ? `<td rowspan="${rowspan}" class="text-center">
-                                    <button class="btn btn-secondary btn-sm lihat-bukti" data-images='${JSON.stringify(images)}'>
-                                        <i class="fas fa-image"></i> Lihat
-                                    </button>
-                                </td>` : ''}
-                            <td>${d.pengajuan_barang?.tracking?.tracking ?? 'Menunggu'}</td>
+                                                            <button class="btn btn-secondary btn-sm lihat-bukti" data-images='${JSON.stringify(images)}'>
+                                                                <i class="fas fa-image"></i> Lihat
+                                                            </button>
+                                                        </td>` : ''}
+                            <td>${d.pengajuan_barang?.tracking?.tracking ?? d.status ?? 'Menunggu'}</td>
                             ${showAction ? `
-                                <td rowspan="${rowspan}">${dateFormat(d.created_at)}</td>
-                                <td rowspan="${rowspan}" class="text-center" style="font-size: 20px">
-                                    <div class="btn-group btn-group-sm" role="group">
-                                        <button class="btn btn-info btn-detail" data-pickup="${pickup}">
-                                            <i class="fas fa-info-circle"></i> Detail
-                                        </button>
-                                        <button class="btn btn-primary btn-edit" data-pickup="${pickup}">
-                                            <i class="fas fa-edit"></i> Edit
-                                        </button>
-                                        <button class="btn btn-danger btn-delete" data-pickup="${pickup}">
-                                            <i class="fas fa-trash"></i> Hapus
-                                        </button>
-                                    </div>
-                                </td>` : ''}
+                                                        <td rowspan="${rowspan}">${dateFormat(d.created_at)}</td>
+                                                        <td rowspan="${rowspan}" class="text-center" style="font-size: 20px">
+                                                            <div class="btn-group btn-group-sm" role="group">
+                                                                <button class="btn btn-info btn-detail" data-pickup="${pickup}">
+                                                                    <i class="fas fa-info-circle"></i> Detail
+                                                                </button>
+                                                                <button class="btn btn-primary btn-edit" data-pickup="${pickup}">
+                                                                    <i class="fas fa-edit"></i> Edit
+                                                                </button>
+                                                                <button class="btn btn-danger btn-delete" data-pickup="${pickup}">
+                                                                    <i class="fas fa-trash"></i> Hapus
+                                                                </button>
+                                                            </div>
+                                                        </td>` : ''}
                         </tr>`;
                         tbody.append(row);
                     });
@@ -366,8 +490,8 @@
                 $("#dataCountBadge").text(Object.keys(grouped).length + " data");
                 window.groupedData = grouped;
             }).fail(function(xhr) {
-                console.error('Error loading data:', xhr);
-                Swal.fire('Error', 'Gagal memuat data: ' + (xhr.responseText || 'Unknown error'), 'error');
+                console.error('Error loading ', xhr);
+                Swal.fire('Error', 'Gagal memuat  ' + (xhr.responseText || 'Unknown error'), 'error');
             });
         }
 
@@ -420,7 +544,7 @@
 
             const html = `
                 <div class="edit-item-row border rounded p-3 mb-3 position-relative" data-idx="${idx}">
-                    <button type="button" class="btn btn-danger btn-sm btn-remove-item mb-">
+                    <button type="button" class="btn btn-danger btn-sm btn-remove-item">
                         <i class="fas fa-trash"></i> Hapus
                     </button>
 
@@ -521,11 +645,13 @@
                 $.ajax({
                     url: "{{ route('office.biayaTransportasi.create') }}",
                     type: 'POST',
-                    data: formData,
+                    formData,
                     processData: false,
                     contentType: false,
                     success: () => {
-                        bootstrap.Modal.getInstance($('#ModalTambah')[0])?.hide();
+                        const modalEl = document.getElementById('ModalTambah');
+                        const modal = bootstrap.Modal.getInstance(modalEl);
+                        if (modal) modal.hide();
                         $('#formCreate')[0].reset();
                         $('#biayaItemsContainer').empty();
                         loadData();
@@ -549,15 +675,16 @@
                 $.ajax({
                     url: `/office/biaya-transportasi/update/${pickupId}`,
                     type: 'POST',
-                    data: formData,
+                    formData,
                     processData: false,
                     contentType: false,
                     headers: {
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                     },
                     success: function(res) {
-                        bootstrap.Modal.getInstance(document.getElementById('ModalEdit'))
-                    .hide();
+                        const modalEl = document.getElementById('ModalEdit');
+                        const modal = bootstrap.Modal.getInstance(modalEl);
+                        if (modal) modal.hide();
                         location.reload();
                     },
                     error: function(err) {
@@ -586,14 +713,14 @@
                     tracking = 'Menunggu';
 
                 items.forEach(i => {
-                    total += Number(i.harga);
+                    total += Number(i.harga) || 0;
                     const bukti = i.bukti ?
                         `<a href="{{ asset('storage') }}/${i.bukti}" target="_blank" class="btn btn-sm btn-info"><i class="fas fa-eye"></i> Lihat</a>` :
                         '-';
                     rows += `<tr>
-                            <td>${i.pengajuan_barang?.tipe ?? '-'}</td>
+                            <td>${i.pengajuan_barang?.tipe ?? i.tipe_pengajuan ?? '-'}</td>
                             <td>${i.tipe}</td>
-                            <td class="text-end">${currencyFormat.format(i.harga)}</td>
+                            <td class="text-end">${currencyFormat.format(Number(i.harga) || 0)}</td>
                             <td>${i.keterangan ?? '-'}</td>
                             <td class="text-center">${bukti}</td>
                             <td>${moment(i.created_at).format('DD MMM YYYY HH:mm')}</td>
@@ -625,9 +752,41 @@
                 const first = items[0] || {};
 
                 $('#edit_pickup').val(pickup);
-                $('#edit_pickup_label').val(
-                    `${first.pickup_driver?.karyawan?.nama_lengkap ?? ''} | ${first.pickup_driver?.detail_pickup_driver?.[0]?.lokasi ?? '-'}`
-                );
+
+                if (isOutsideOps(pickup)) {
+                    $('#edit_pickup_label').val('Diluar Koordinasi Driver');
+                } else {
+                    let namaDriver = '-';
+                    let lokasi = '-';
+
+                    if (first.karyawan?.nama_lengkap) {
+                        namaDriver = first.karyawan.nama_lengkap;
+                    } else if (first.driver_name) {
+                        namaDriver = first.driver_name;
+                    } else if (first.pickupDriver?.karyawan?.nama_lengkap) {
+                        namaDriver = first.pickupDriver.karyawan.nama_lengkap;
+                    } else if (first.pickup_driver?.karyawan?.nama_lengkap) {
+                        namaDriver = first.pickup_driver.karyawan.nama_lengkap;
+                    }
+
+                    if (first.detailPickupDriver?.[0]?.lokasi) {
+                        lokasi = first.detailPickupDriver[0].lokasi;
+                    } else if (first.detail_pickup_driver?.[0]?.lokasi) {
+                        lokasi = first.detail_pickup_driver[0].lokasi;
+                    } else if (first.lokasi) {
+                        lokasi = first.lokasi;
+                    } else if (first.pickupDriver?.detailPickupDriver?.[0]?.lokasi) {
+                        lokasi = first.pickupDriver.detailPickupDriver[0].lokasi;
+                    } else if (first.pickupDriver?.detail_pickup_driver?.[0]?.lokasi) {
+                        lokasi = first.pickupDriver.detail_pickup_driver[0].lokasi;
+                    } else if (first.pickup_driver?.detailPickupDriver?.[0]?.lokasi) {
+                        lokasi = first.pickup_driver.detailPickupDriver[0].lokasi;
+                    } else if (first.pickup_driver?.detail_pickup_driver?.[0]?.lokasi) {
+                        lokasi = first.pickup_driver.detail_pickup_driver[0].lokasi;
+                    }
+
+                    $('#edit_pickup_label').val(`${namaDriver} | ${lokasi}`);
+                }
 
                 $('#editItemsContainer').empty();
 
@@ -678,7 +837,8 @@
             $(document).on('click', '.btn-delete', function() {
                 const pickup = $(this).data('pickup');
                 const items = window.groupedData[pickup] || [];
-                let list = items.map(i => `<li>${i.tipe}: ${currencyFormat.format(i.harga)}</li>`).join('');
+                let list = items.map(i =>
+                    `<li>${i.tipe}: ${currencyFormat.format(Number(i.harga) || 0)}</li>`).join('');
 
                 Swal.fire({
                     title: 'Hapus semua biaya ini?',
@@ -711,8 +871,9 @@
                 $('body').removeClass('modal-open').css('padding-right', '');
             });
 
-            $('#ModalTambah').on('shown.bs.modal', function() {
-                $(this).find('select[name="id_pickup_driver"]').focus();
+            $('#ModalTambah, #ModalEdit').on('shown.bs.modal', function() {
+                $(this).find('.modal-body').css('max-height', '70vh').css('overflow-y', 'auto');
+                $(this).find('select[name="id_pickup_driver"], select[name^="items["]').first().focus();
             });
         });
     </script>
