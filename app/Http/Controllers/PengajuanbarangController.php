@@ -108,14 +108,14 @@ class PengajuanBarangController extends Controller
         $karyawan = karyawan::findOrfail($user);
         $jabatan = $karyawan->jabatan;
         $divisi = $karyawan->divisi;
-        // dd($year);
+        // dd($year, $month);
         if ($jabatan == 'Finance & Accounting') {
             $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')->whereMonth('created_at', $month)->whereYear('created_at', $year)->get();
         } elseif ($jabatan == 'Office Manager' || $jabatan == 'Education Manager' || $jabatan == 'SPV Sales' || $jabatan == 'Koordinator ITSM') {
             $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')
                 ->whereHas('karyawan', function ($query) use ($divisi) {
                     $query->where('divisi', $divisi);
-                })
+                })->whereMonth('created_at', $month)->whereYear('created_at', $year)
                 ->latest()
                 ->get();
         } elseif ($jabatan == 'GM' || $jabatan == 'Koordinator Office') {
@@ -124,7 +124,7 @@ class PengajuanBarangController extends Controller
             $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')
                 ->whereHas('karyawan', function ($query) use ($user) {
                     $query->where('id', $user);
-                })
+                })->whereMonth('created_at', $month)->whereYear('created_at', $year)
                 ->latest()
                 ->get();
         }

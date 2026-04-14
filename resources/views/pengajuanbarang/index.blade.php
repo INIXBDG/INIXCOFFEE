@@ -78,12 +78,14 @@
                     <img src="{{ asset('icon/plus.svg') }}" width="30px"> Ajukan Barang
                 </a>
             @endif
+                <a href="/jurnalakuntansi" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Ajukan Barang">
+                    <img src="{{ asset('icon/archive-white.svg') }}" width="30px"> Jurnal Akutansi
+                </a>
 
             </div>
             @php
                 $jabatan = auth()->user()->jabatan;
             @endphp
-            @if ($jabatan == 'Finance & Accounting')
             <div class="card" style="width: 100%">
                 <div class="card-body d-flex justify-content-center">
                     <div class="col-md-4 mx-1">
@@ -117,93 +119,98 @@
                     </div>
 
                     <div class="col-md-4 mx-1">
-                        <button type="submit" onclick="tableFinance()" class="btn click-primary" style="margin-top: 37px">Cari Data</button>
-                        <button type="button" onclick="exportAllToExcel()" class="btn btn-success" style="margin-top: 37px">
-                            <img src="{{ asset('icon/file-text.svg') }}" width="20px"> Export All to Excel
-                        </button>
+                        @if ($jabatan == 'Finance & Accounting')
+                            <button type="submit" onclick="tableFinance()" class="btn click-primary" style="margin-top: 37px">Cari Data</button>
+                            <button type="button" onclick="exportAllToExcel()" class="btn btn-success" style="margin-top: 37px">
+                                <img src="{{ asset('icon/file-text.svg') }}" width="20px"> Export All to Excel
+                            </button>
+                        @else
+                        <button type="submit" onclick="tableKaryawan()" class="btn click-primary" style="margin-top: 37px">Cari Data</button>
+                        @endif
                     </div>
                 </div>
             </div>
-            <div class="card m-4">
-                <div class="card-body table-responsive">
-                    <h3 class="card-title text-center my-1">{{ __('Data Pengajuan Barang (Hold)') }}</h3>
-                    <table class="table table-striped" id="databelum">
-                        <thead>
-                            <tr>
-                                <th scope="col">Tanggal Pengajuan</th>
-                                <th scope="col">Nama Karyawan</th>
-                                <th scope="col">Divisi</th>
-                                <th scope="col">Jabatan</th>
-                                <th scope="col">Tipe</th>
-                                <th scope="col">Status</th>
-                                <th scope="col">Nama Barang</th>
-                                <th scope="col">Total Item</th>
-                                <th scope="col">Total Pengajuan</th>
-                                <th scope="col">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+            @if ($jabatan == 'Finance & Accounting')
+                <div class="card m-4">
+                    <div class="card-body table-responsive">
+                        <h3 class="card-title text-center my-1">{{ __('Data Pengajuan Barang (Hold)') }}</h3>
+                        <table class="table table-striped" id="databelum">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Tanggal Pengajuan</th>
+                                    <th scope="col">Nama Karyawan</th>
+                                    <th scope="col">Divisi</th>
+                                    <th scope="col">Jabatan</th>
+                                    <th scope="col">Tipe</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Nama Barang</th>
+                                    <th scope="col">Total Item</th>
+                                    <th scope="col">Total Pengajuan</th>
+                                    <th scope="col">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
 
-                        </tbody>
-                        <tfoot>
+                            </tbody>
+                            <tfoot>
 
-                        </tfoot>
-                    </table>
+                            </tfoot>
+                        </table>
+                    </div>
                 </div>
-            </div>
-            <div class="card m-4">
-                <div class="card-body table-responsive">
-                    <h3 class="card-title text-center my-1">{{ __('Data Pengajuan Barang (Has Invoice)') }}</h3>
-                    <table class="table table-striped" id="datasudahinv">
-                        <thead>
-                            <tr>
-                                <th scope="col">Tanggal Pengajuan</th>
-                                <th scope="col">Nama Karyawan</th>
-                                <th scope="col">Divisi</th>
-                                <th scope="col">Jabatan</th>
-                                <th scope="col">Tipe</th>
-                                <th scope="col">Status</th>
-                                <th scope="col">Nama Barang</th>
-                                <th scope="col">Total Item</th>
-                                <th scope="col">Total Pengajuan</th>
-                                <th scope="col">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                <div class="card m-4">
+                    <div class="card-body table-responsive">
+                        <h3 class="card-title text-center my-1">{{ __('Data Pengajuan Barang (Has Invoice)') }}</h3>
+                        <table class="table table-striped" id="datasudahinv">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Tanggal Pengajuan</th>
+                                    <th scope="col">Nama Karyawan</th>
+                                    <th scope="col">Divisi</th>
+                                    <th scope="col">Jabatan</th>
+                                    <th scope="col">Tipe</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Nama Barang</th>
+                                    <th scope="col">Total Item</th>
+                                    <th scope="col">Total Pengajuan</th>
+                                    <th scope="col">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
 
-                        </tbody>
-                        <tfoot>
+                            </tbody>
+                            <tfoot>
 
-                        </tfoot>
-                    </table>
+                            </tfoot>
+                        </table>
+                    </div>
                 </div>
-            </div>
-            <div class="card m-4">
-                <div class="card-body table-responsive">
-                    <h3 class="card-title text-center my-1">{{ __('Data Pengajuan Barang (Selesai)') }}</h3>
-                    <table class="table table-striped" id="datasudah">
-                        <thead>
-                                <th scope="col">Tanggal Pengajuan</th>
-                                <th scope="col">Nama Karyawan</th>
-                                <th scope="col">Divisi</th>
-                                <th scope="col">Jabatan</th>
-                                <th scope="col">Tipe</th>
-                                <th scope="col">Status</th>
-                                <th scope="col">Nama Barang</th>
-                                <th scope="col">Total Item</th>
-                                <th scope="col">Total Pengajuan</th>
-                                <th scope="col">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                <div class="card m-4">
+                    <div class="card-body table-responsive">
+                        <h3 class="card-title text-center my-1">{{ __('Data Pengajuan Barang (Selesai)') }}</h3>
+                        <table class="table table-striped" id="datasudah">
+                            <thead>
+                                    <th scope="col">Tanggal Pengajuan</th>
+                                    <th scope="col">Nama Karyawan</th>
+                                    <th scope="col">Divisi</th>
+                                    <th scope="col">Jabatan</th>
+                                    <th scope="col">Tipe</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Nama Barang</th>
+                                    <th scope="col">Total Item</th>
+                                    <th scope="col">Total Pengajuan</th>
+                                    <th scope="col">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
 
-                        </tbody>
-                        <tfoot>
+                            </tbody>
+                            <tfoot>
 
-                        </tfoot>
-                    </table>
+                            </tfoot>
+                        </table>
+                    </div>
                 </div>
-            </div>
             @else
             <div class="card m-4">
                 <div class="card-body table-responsive">
@@ -337,6 +344,7 @@
 
 function tableKaryawan() {
     var tahun = $('#tahun').val();
+    var bulan = $('#bulan').val();
 
     // Jika DataTable sudah ada → destroy dulu
     if ($.fn.DataTable.isDataTable('#barangTable')) {
@@ -352,7 +360,7 @@ function tableKaryawan() {
         autoWidth: false,
         ajax: {
             url: "{{ route('getPengajuanBarang', ['month' => ':month', 'year' => ':year'] ) }}"
-                .replace(':month', 'All')
+                .replace(':month', bulan)
                 .replace(':year', tahun),
             type: "GET",
             beforeSend: function () {
@@ -551,17 +559,17 @@ function tableFinance(){
         success: function(data) {
             $('#loadingModal').modal('hide');
             console.log(data.data);
-var dataSelesai = data.data.filter(item =>
-    item.tracking.tracking === 'Selesai' || item.tracking.tracking.includes("tolak")
-);
+            var dataSelesai = data.data.filter(item =>
+                item.tracking.tracking === 'Selesai' || item.tracking.tracking.includes("tolak")
+            );
 
-var dataHasInvoice = data.data.filter(item =>
-    item.invoice && item.tracking.tracking !== 'Selesai' && !item.tracking.tracking.includes("tolak")
-);
+            var dataHasInvoice = data.data.filter(item =>
+                item.invoice && item.tracking.tracking !== 'Selesai' && !item.tracking.tracking.includes("tolak")
+            );
 
-var dataBelum = data.data.filter(item =>
-    !item.invoice && item.tracking.tracking !== 'Selesai' && !item.tracking.tracking.includes("tolak")
-);
+            var dataBelum = data.data.filter(item =>
+                !item.invoice && item.tracking.tracking !== 'Selesai' && !item.tracking.tracking.includes("tolak")
+            );
 
             let totalItemsSelesai = dataSelesai.length;
             let totalHargaSelesai = 0;
