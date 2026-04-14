@@ -1036,7 +1036,6 @@
                 <div class="modal-header">
                     <h5 class="modal-title" id="exampleModalLabel">Absensi</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    <!-- Tombol X -->
                 </div>
                 <div class="modal-body d-flex flex-column align-items-center justify-content-center">
                     <div id="camera"
@@ -2229,6 +2228,24 @@
                                                                             <p class="card-text">Data rekapan mengajar
                                                                                 instruktur.
                                                                             </p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-sm-6 mt-2">
+                                                                <div class="card" id="card-hover">
+                                                                    <div class="card-body d-flex">
+                                                                        <div class="col-md-2">
+                                                                            <img src="{{ asset('icon/feather.svg') }}"
+                                                                                class="img-responsive" width="30px">
+                                                                        </div>
+                                                                        <div class="col-md-10" style="margin-left: 10px">
+                                                                            <a href="/pengajuanklaimmodul"
+                                                                                class="link stretched-link text-decoration-none">
+                                                                                <h5 class="card-title"> Klaim Modul
+                                                                                </h5>
+                                                                            </a>
+                                                                            <p class="card-text">Klaim pembuatan/pengajuan modul.</p>
                                                                         </div>
                                                                     </div>
                                                                 </div>
