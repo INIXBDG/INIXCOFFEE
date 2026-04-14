@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Storage;
 use App\Exports\DaftarTugasReportExport;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\DaftarTugasImport;
+use Illuminate\Support\Facades\Validator;
 
 class DaftarTugasController extends Controller
 {
@@ -218,6 +220,81 @@ class DaftarTugasController extends Controller
         return response()->json(['success' => true, 'message' => 'Tugas berhasil dihapus']);
     }
 
+    public function updateKategori(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|exists:kategori_daftar_tugas,id',
+            'judul_kategori' => 'required|string|max:255',
+            'tipe' => 'required|in:Harian,Mingguan,Bulanan,Quartal,Semester,Tahunan',
+            'tipe_turunan' => 'nullable|in:Shift 1,Shift 2',
+        ]);
+        $kategori = KategoriDaftarTugas::findOrFail($request->id);
+        if (Auth::id() !== $kategori->id_user && Auth::user()->jabatan !== 'HRD') {
+            return response()->json(['message' => 'Tidak berhak mengedit kategori ini'], 403);
+        }
+
+        $tipe_turunan = null;
+        if ($request->tipe === 'Harian' && !empty($request->tipe_turunan)) {
+            $tipe_turunan = $request->tipe_turunan;
+        }
+
+        $kategori->update([
+            'judul_kategori' => $request->judul_kategori,
+            'Tipe' => $request->tipe,
+            'tipe_turunan' => $tipe_turunan,
+            'id_user' => Auth()->user()->id,
+        ]);
+        return response()->json(['success' => true, 'message' => 'Kategori berhasil diperbarui']);
+    }
+
+    public function bulkUpdateTipeTurunan(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:kategori_daftar_tugas,id',
+            'tipe_turunan' => 'nullable|in:Shift 1,Shift 2',
+        ]);
+
+        $user = Auth::user();
+        $updated = 0;
+
+        foreach ($request->ids as $id) {
+            $kategori = KategoriDaftarTugas::findOrFail($id);
+
+            if (Auth::id() !== $kategori->id_user && $user->jabatan !== 'HRD') {
+                continue;
+            }
+
+            if ($kategori->Tipe !== 'Harian') {
+                continue;
+            }
+
+            $kategori->update([
+                'tipe_turunan' => $request->tipe_turunan,
+            ]);
+            $updated++;
+        }
+
+        return response()->json(['success' => true, 'message' => "{$updated} kategori berhasil diperbarui"]);
+    }
+
+    public function deleteKategori(Request $request)
+    {
+        $request->validate(['id' => 'required|exists:kategori_daftar_tugas,id']);
+        $kategori = KategoriDaftarTugas::findOrFail($request->id);
+        if (Auth::id() !== $kategori->id_user && Auth::user()->jabatan !== 'HRD') {
+            return response()->json(['message' => 'Tidak berhak menghapus kategori ini'], 403);
+        }
+        KontrolTugas::where('id_DaftarTugas', $kategori->id)->each(function ($tugas) {
+            if ($tugas->bukti && Storage::disk('public')->exists($tugas->bukti)) {
+                Storage::disk('public')->delete($tugas->bukti);
+            }
+            $tugas->delete();
+        });
+        $kategori->delete();
+        return response()->json(['success' => true, 'message' => 'Kategori dan tugas terkait berhasil dihapus']);
+    }
+
     public function exportExcel(Request $request)
     {
         $request->validate([
@@ -318,5 +395,77 @@ class DaftarTugasController extends Controller
         ]);
 
         return $pdf->stream('Laporan_Tugas_' . $reportType . '_' . date('Y-m-d') . '.pdf');
+    }
+
+    public function importExcel(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
+            'karyawan_id' => 'nullable|exists:karyawans,id',
+        ]);
+
+        $user = auth()->user();
+
+        if ($user->jabatan !== 'HRD' && $request->filled('karyawan_id')) {
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Hanya HRD yang dapat mengimport untuk karyawan lain',
+                ],
+                403,
+            );
+        }
+
+        $targetUserId = $request->filled('karyawan_id') ? $request->karyawan_id : $user->id;
+        $jabatanPembuat = $user->jabatan === 'HRD' ? Karyawan::find($targetUserId)?->jabatan : $user->jabatan;
+
+        try {
+            $import = new DaftarTugasImport($targetUserId, $jabatanPembuat);
+            Excel::import($import, $request->file('file'));
+
+            $stats = $import->getStats();
+
+            $message = 'Import selesai. ';
+            if ($stats['created'] > 0) {
+                $message .= "✅ {$stats['created']} tugas baru dibuat. ";
+            }
+            if ($stats['skipped'] > 0) {
+                $message .= "⏭️ {$stats['skipped']} baris dilewati. ";
+            }
+
+            $response = [
+                'success' => true,
+                'message' => trim($message),
+                'stats' => $stats,
+            ];
+
+            if (!empty($stats['errors'])) {
+                $response['warnings'] = array_slice($stats['errors'], 0, 10);
+            }
+
+            return response()->json($response);
+        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+            $failures = $e->failures();
+            $errors = [];
+            foreach ($failures as $failure) {
+                $errors[] = "Baris {$failure->row()}: " . implode(', ', $failure->errors());
+            }
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Validasi gagal',
+                    'errors' => array_slice($errors, 0, 10),
+                ],
+                422,
+            );
+        } catch (\Exception $e) {
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Import gagal: ' . $e->getMessage(),
+                ],
+                500,
+            );
+        }
     }
 }

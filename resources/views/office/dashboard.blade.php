@@ -57,7 +57,7 @@
         @if (Auth::user()->jabatan === 'Finance & Accounting')
         <div class="row g-4 mb-5">
             <div class="col-12">
-                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden glass-force">
+                <div class="card border-0 shadow-lg h-100 rounded-4 overflow-hidden  glass-force">
                     <div class="card-header border-bottom-0 pb-0 d-flex justify-content-between">
                         <h5 class="mb-0 fw-semibold text-dark d-flex align-items-center">
                             <i class="bx bx-task text-primary me-2" style="font-size: 1.5rem;"></i>

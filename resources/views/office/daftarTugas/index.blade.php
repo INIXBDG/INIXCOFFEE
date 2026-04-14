@@ -74,7 +74,90 @@
                     <i class="bx bx-plus"></i>Buat Kategori Baru
                 </button>
                 <div class="btn-group">
-                    <button class="btn btn-outline-success px-3 shadow-sm d-flex align-items-center gap-2" type="button"
+                    <button class="btn btn-outline-primary px-3 shadow-sm d-flex align-items-center gap-2" type="button"
+                        data-bs-toggle="dropdown">
+                        <i class="bx bx-file-import"></i> Import
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#modalImport">
+                                <i class="bx bx-upload me-2"></i> Import Tugas
+                            </a></li>
+                        <li><a class="dropdown-item" href="{{ asset('templates/daftar_tugas_template.xlsx') }}" download>
+                                <i class="bx bx-download me-2"></i> Download Template
+                            </a></li>
+                    </ul>
+                </div>
+
+                <div class="modal fade" id="modalImport" tabindex="-1" data-bs-backdrop="static">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <form id="formImport" enctype="multipart/form-data">
+                                @csrf
+                                <div class="modal-header">
+                                    <h5 class="modal-title fw-bold">
+                                        <i class="bx bx-file-import me-2"></i>Import Tugas Historis
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="alert alert-info small">
+                                        <i class="bx bx-info-circle me-1"></i>
+                                        Import tugas dengan tanggal deadline untuk data historis.
+                                        <a href="{{ asset('templates/daftar_tugas_template.xlsx') }}" class="ms-1"
+                                            download>
+                                            📥 Download template
+                                        </a>
+                                    </div>
+
+                                    @if (Auth::user()->jabatan === 'HRD')
+                                        <div class="mb-3">
+                                            <label class="form-label fw-semibold small">Import untuk Office Boy</label>
+                                            <select name="karyawan_id" class="form-select form-select-sm">
+                                                <option value="">
+                                                    Pembuat Saat Ini
+                                                    ({{ Auth::user()->karyawan->nama_lengkap ?? Auth::user()->name }})
+                                                </option>
+                                                @foreach ($officeBoy as $ob)
+                                                    <option value="{{ $ob->id }}">{{ $ob->nama_lengkap }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    @endif
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold small">File Excel</label>
+                                        <input type="file" name="file" class="form-control" accept=".xlsx,.xls,.csv"
+                                            required>
+                                        <div class="form-text">Maksimal 10MB. Format: XLSX, XLS, atau CSV</div>
+                                    </div>
+
+                                    <div id="importPreview" class="d-none">
+                                        <div class="border rounded p-2 bg-light small">
+                                            <strong>📄 File terpilih:</strong>
+                                            <ul id="previewList" class="mb-0 ps-3 mt-1"></ul>
+                                        </div>
+                                    </div>
+
+                                    <div class="alert alert-warning small mb-0">
+                                        <i class="bx bx-time me-1"></i>
+                                        <strong>Penting:</strong> Setiap baris akan membuat tugas dengan
+                                        <code>deadline_date</code> yang sesuai. Pastikan tanggal sudah benar.
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary btn-sm"
+                                        data-bs-dismiss="modal">Batal</button>
+                                    <button type="submit" class="btn btn-primary btn-sm" id="btnSubmitImport">
+                                        <span class="spinner-border spinner-border-sm d-none" id="importSpinner"></span>
+                                        <span id="importBtnText">Import Data</span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-outline-success shadow-sm d-flex align-items-center gap-2" type="button"
                         data-bs-toggle="dropdown">
                         <i class="bx bx-file-export"></i> Export
                     </button>
@@ -129,8 +212,8 @@
                                 <option value="Shift 1">Shift 1</option>
                                 <option value="Shift 2">Shift 2</option>
                             </select>
-                            <input type="date" id="filterTanggal" class="form-control form-control-sm" style="width:auto"
-                                value="{{ now()->format('Y-m-d') }}">
+                            <input type="date" id="filterTanggal" class="form-control form-control-sm"
+                                style="width:auto" value="{{ now()->format('Y-m-d') }}">
                             <button class="btn btn-outline-secondary btn-sm" id="btnResetFilter" title="Reset Filter"><i
                                     class="bx bx-reset"></i></button>
                         </div>
@@ -514,7 +597,7 @@
                 const tipeText = t === 'all' ? 'Semua Tipe' : t;
                 $('#dynamicTitle').text(
                     `Tugas Aktif ${tipeText} - ${dt.toLocaleDateString('id-ID', {weekday:'long',year:'numeric',month:'long',day:'numeric'})}`
-                    );
+                );
             }
 
             function loadData() {
@@ -532,7 +615,7 @@
                         if (!r.data || !r.data.length) {
                             tb.append(
                                 `<tr><td colspan="6" class="text-center py-5"><div class="d-flex flex-column align-items-center gap-3"><div class="bg-light rounded-circle p-4"><i class="bx bx-clipboard text-muted" style="font-size:3rem"></i></div><h5 class="text-muted mb-1">Belum ada Tugas Aktif</h5><p class="text-muted small mb-3">Pilih tugas dari kategori yang tersedia untuk mulai mengerjakan</p></div></td></tr>`
-                                );
+                            );
                             return;
                         }
                         r.data.forEach(function(it) {
@@ -551,11 +634,89 @@
                             tb.append(
                                 `<tr class="${done?'bg-light':''}"><td class="ps-4"><div class="form-check"><input class="form-check-input checkStatus" type="checkbox" data-id="${it.id}" ${chk}></div></td><td class="task-text ${done} fw-medium">${kat}</td><td class="task-text ${done}"><span class="badge bg-secondary">${tipe}</span></td><td class="task-text ${done}"><span class="badge bg-info text-dark">${turunan}</span></td><td class="task-text ${done} small fw-semibold">${karyawan}</td>
                                 <td class="task-text ${done} small">${dl}</td><td class="text-center"><div class="btn-group"><button class="btn btn-outline-danger btn-sm btn-hapus" data-id="${it.id}"><i class="bx bx-trash"></i></button>${bukti}</div></td></tr>`
-                                );
+                            );
                         });
                     }
                 });
             }
+
+            $('#formImport input[name="file"]').on('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const validTypes = [
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    'application/vnd.ms-excel',
+                    'text/csv'
+                ];
+
+                if (!validTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls|csv)$/i)) {
+                    alert('Format file tidak didukung. Gunakan XLSX, XLS, atau CSV.');
+                    $(this).val('');
+                    return;
+                }
+
+                if (file.size > 10 * 1024 * 1024) {
+                    alert('Ukuran file terlalu besar. Maksimal 10MB.');
+                    $(this).val('');
+                    return;
+                }
+
+                $('#importPreview').removeClass('d-none');
+                $('#previewList').html(
+                    `<li>${file.name} <span class="text-muted">(${(file.size/1024).toFixed(1)} KB)</span></li>`
+                );
+            });
+
+            $('#formImport').on('submit', function(e) {
+                e.preventDefault();
+
+                const formData = new FormData(this);
+                const btn = $('#btnSubmitImport');
+                const spinner = $('#importSpinner');
+                const btnText = $('#importBtnText');
+
+                btn.prop('disabled', true);
+                spinner.removeClass('d-none');
+                btnText.text('Memproses...');
+
+                $.ajax({
+                    url: "{{ route('office.DaftarTugas.import') }}",
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function(r) {
+                        let msg = r.message;
+
+                        if (r.warnings?.length) {
+                            msg += `\n\n⚠️ Beberapa baris dilewati:`;
+                            r.warnings.forEach(w => msg += `\n• ${w}`);
+                        }
+
+                        $('#formImport')[0].reset();
+                        loadData();
+                    },
+                    error: function(xhr) {
+                        let msg = xhr.responseJSON?.message || 'Import gagal';
+
+                        if (xhr.responseJSON?.errors?.length) {
+                            msg += `\n\n❌ Error validasi:`;
+                            xhr.responseJSON.errors.forEach(e => msg += `\n• ${e}`);
+                        }
+
+                        showNotification('Import Gagal', msg, 'danger');
+                    },
+                    complete: function() {
+                        btn.prop('disabled', false);
+                        spinner.addClass('d-none');
+                        btnText.text('Import Data');
+                    }
+                });
+            });
 
             function refreshKategoriTable() {
                 $.ajax({
@@ -567,13 +728,13 @@
                         if (!d.length) {
                             tb.append(
                                 '<tr><td colspan="6" class="text-center py-3 text-muted">Belum ada kategori.</td></tr>'
-                                );
+                            );
                             return;
                         }
                         d.forEach(function(it) {
                             tb.append(
                                 `<tr data-id="${it.id}"><td><input type="checkbox" class="chk-bulk-kategori" value="${it.id}" data-tipe="${it.Tipe}"></td><td>${it.judul_kategori}</td><td><span class="badge bg-info text-dark">${it.Tipe}</span></td><td><span class="badge bg-secondary">${it.tipe_turunan || '-'}</span></td><td>${it.karyawan?.nama_lengkap||'-'}</td><td><div class="btn-group btn-group-sm w-100"><button class="btn btn-outline-primary btn-edit-kategori" data-id="${it.id}" data-judul="${it.judul_kategori}" data-tipe="${it.Tipe}" data-turunan="${it.tipe_turunan}" data-user="${it.karyawan?.nama_lengkap||'N/A'}"><i class="bx bx-edit"></i></button><button class="btn btn-outline-danger btn-delete-kategori" data-id="${it.id}" data-judul="${it.judul_kategori}"><i class="bx bx-trash"></i></button></div></td></tr>`
-                                );
+                            );
                         });
                     }
                 });
@@ -882,17 +1043,17 @@
                 if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) {
                     body.html(
                         `<img src="${bukti}" class="img-fluid rounded shadow" style="max-height:500px">`
-                        );
+                    );
                     $('#previewDownloadLink').attr('href', bukti).show();
                 } else if (ext === 'pdf') {
                     body.html(
                         `<iframe src="${bukti}" width="100%" height="400px" class="border rounded"></iframe>`
-                        );
+                    );
                     $('#previewDownloadLink').attr('href', bukti).show();
                 } else {
                     body.html(
                         `<div class="d-flex flex-column align-items-center gap-3"><i class="bx bx-file text-primary" style="font-size:3rem"></i><p class="mb-0">File: ${bukti.split('/').pop()}</p></div>`
-                        );
+                    );
                     $('#previewDownloadLink').attr('href', bukti).show();
                 }
             });

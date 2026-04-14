@@ -131,21 +131,6 @@ class KendaraanController extends Controller
             }
         }
 
-        $penerima = User::where('jabatan', 'Finance & Accounting')->get();
-        $karyawan = Karyawan::findOrFail($request->user_id);
-
-        $data = [
-            'user' => $karyawan->nama_lengkap,
-            'kendaraan' => $request->jenis_kendaraan,
-            'tanggal_pemeriksaan' => $request->tanggal_pemeriksaan,
-        ];
-
-        $path = '/office/kendaraan/detail/kondisi/' . $kondisi->id;
-
-        $receiverId = $penerima->id;
-
-        Notification::send($penerima, new NotificationsKondisiKendaraan($data, $path, $receiverId));
-
         return redirect()->back()->with('success', 'Data kondisi kendaraan berhasil disimpan.');
     }
 

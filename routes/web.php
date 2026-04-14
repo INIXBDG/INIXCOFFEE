@@ -945,6 +945,8 @@ Route::prefix('office')
                 Route::get('/get', [BiayaTransportasiController::class, 'get'])->name('get');
                 Route::post('/update/{id_pickup_driver}', [BiayaTransportasiController::class, 'update'])->name('update');
                 Route::delete('/delete/{id_pickup_driver}', [BiayaTransportasiController::class, 'destroy'])->name('destroy');
+                Route::get('/export-excel', [BiayaTransportasiController::class, 'exportExcel'])->name('exportExcel');
+                Route::get('/export-pdf', [BiayaTransportasiController::class, 'exportPdf'])->name('exportPdf');
             });
             
         Route::prefix('feedback')
@@ -1069,6 +1071,8 @@ Route::prefix('office')
             
             // [TAMBAHAN] Bulk update tipe turunan (Shift)
             Route::post('kategori/bulk-update-turunan', [DaftarTugasController::class, 'bulkUpdateTipeTurunan'])->name('bulkUpdateTipeTurunan');
+
+            Route::post('import', [DaftarTugasController::class, 'importExcel'])->name('import');
         });
 
 Route::prefix('/rekomendasi-lanjutan')

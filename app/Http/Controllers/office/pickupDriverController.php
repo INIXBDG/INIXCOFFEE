@@ -63,34 +63,30 @@ class pickupDriverController extends Controller
         $dataDriver = karyawan::where('jabatan', 'Driver')
             ->where('status_aktif', '1')
             ->where(function ($query) {
-                $query->whereDoesntHave('pickupDriver')
-                    ->orWhereHas('pickupDriver', function ($q) {
-                        $q->where('status_driver', 'Selesai, Driver Ready');
-                    });
+                $query->whereDoesntHave('pickupDriver')->orWhereHas('pickupDriver', function ($q) {
+                    $q->where('status_driver', 'Selesai, Driver Ready');
+                });
             })
             ->get();
 
         $startOfWeek = Carbon::now()->startOfWeek();
         $endOfWeek = Carbon::now()->endOfWeek();
 
-        $budgetPerjalanan = pickupDriver::select('kendaraan')
-            ->selectRaw('COALESCE(SUM(pickup_drivers.budget), 0) as total_budget')
-            ->where('tipe_perjalanan', 'Operasional Kantor')
+        $budgetPerKendaraan = pickupDriver::select('kendaraan')
+            ->selectRaw('COALESCE(SUM(biaya_transportasi_drivers.harga), 0) as total_terpakai')
+            ->join('biaya_transportasi_drivers', 'pickup_drivers.id', '=', 'biaya_transportasi_drivers.id_pickup_driver')
+            ->where('pickup_drivers.tipe_perjalanan', 'Operasional Kantor')
             ->whereHas('detailPickupDriver', function ($q) use ($startOfWeek, $endOfWeek) {
                 $q->whereBetween('tanggal_keberangkatan', [$startOfWeek, $endOfWeek]);
             })
-            ->groupBy('kendaraan')
+            ->groupBy('pickup_drivers.kendaraan')
             ->get()
-            ->map(function ($item) {
-                $item->sisa_budget = 1000000 - $item->total_budget;
-                return $item;
+            ->mapWithKeys(function ($item) {
+                $sisa = 1000000 - $item->total_terpakai;
+                return [$item->kendaraan => max(0, $sisa)];
             });
 
-        $kendaraanSedangDipakai = pickupDriver::where('status_apply', 1)
-            ->whereNotNull('kendaraan')
-            ->where('kendaraan', '!=', '')
-            ->pluck('kendaraan')
-            ->unique();
+        $kendaraanSedangDipakai = pickupDriver::where('status_apply', 1)->whereNotNull('kendaraan')->where('kendaraan', '!=', '')->pluck('kendaraan')->unique();
 
         $allKendaraan = collect(['H1', 'Innova']);
 
@@ -111,14 +107,9 @@ class pickupDriverController extends Controller
         $extends = 'layouts_office.app';
         $section = 'office_contents';
 
-        return view('office.pickupdriver.create', compact(
-            'dataDriver',
-            'budgetPerjalanan',
-            'kendaraan',
-            'extends',
-            'section'
-        ));
+        return view('office.pickupdriver.create', compact('dataDriver', 'budgetPerKendaraan', 'kendaraan', 'extends', 'section'));
     }
+
     public function store(Request $request)
     {
         $request->validate([
@@ -142,15 +133,24 @@ class pickupDriverController extends Controller
         $endOfWeek = Carbon::now()->endOfWeek();
 
         if (in_array('Operasional Kantor', $request->tipe) && $budget) {
-            $total = pickupDriver::where('kendaraan', $request->kendaraan)
+            $totalTerpakai = pickupDriver::where('kendaraan', $request->kendaraan)
                 ->where('tipe_perjalanan', 'Operasional Kantor')
                 ->whereHas('detailPickupDriver', function ($q) use ($startOfWeek, $endOfWeek) {
                     $q->whereBetween('tanggal_keberangkatan', [$startOfWeek, $endOfWeek]);
                 })
-                ->sum('budget');
+                ->join('biaya_transportasi_drivers', 'pickup_drivers.id', '=', 'biaya_transportasi_drivers.id_pickup_driver')
+                ->sum('biaya_transportasi_drivers.harga');
 
-            if ($total + $budget > 1000000) {
-                return response()->json(['success' => false, 'message' => 'Budget kendaraan minggu ini sudah melebihi batas'], 422);
+            $sisaBudget = 1000000 - $totalTerpakai;
+
+            if ($budget > $sisaBudget) {
+                return response()->json(
+                    [
+                        'success' => false,
+                        'message' => "Budget melebihi batas. Sisa budget untuk {$request->kendaraan} minggu ini: Rp " . number_format($sisaBudget, 0, ',', '.'),
+                    ],
+                    422,
+                );
             }
         }
 
@@ -803,12 +803,19 @@ class pickupDriverController extends Controller
         $request->validate([
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
-            'tipe' => 'nullable|string|in:Outstanding PA,Lunas',
-            'status' => 'nullable|string',
-            'karyawan' => 'nullable|integer',
+            'kendaraan' => 'nullable|string',
+            'status' => 'nullable|integer|in:0,1,2',
         ]);
 
-        $query = outstanding::with(['rkm.perusahaan', 'rkm.materi', 'rkm.sales', 'tracking_outstanding']);
+        $query = pickupDriver::with([
+            'karyawan',
+            'pembuat',
+            'detailPickupDriver',
+            'Tracking',
+            'biayaTransportasi' => function ($q) {
+                $q->with('karyawan');
+            },
+        ]);
 
         if ($request->start_date) {
             $query->whereDate('created_at', '>=', $request->start_date);
@@ -818,51 +825,37 @@ class pickupDriverController extends Controller
             $query->whereDate('created_at', '<=', $request->end_date);
         }
 
-        if ($request->tipe === 'Outstanding PA') {
-            $query->where(function ($q) {
-                $q->whereNotNull('net_sales')
-                ->where('net_sales', '!=', 0)
-                ->where('net_sales', '!=', '0.00');
-            });
-        } elseif ($request->tipe === 'Lunas') {
-            $query->where('status_pembayaran', 1);
+        if ($request->kendaraan) {
+            $query->where('kendaraan', $request->kendaraan);
         }
 
-        if ($request->karyawan) {
-            $query->whereHas('rkm.sales', function ($q) use ($request) {
-                $q->where('id', $request->karyawan);
-            });
+        if ($request->status !== null) {
+            $query->where('status_apply', $request->status);
         }
 
-        $data = $query->orderBy('due_date')
-            ->orderBy('created_at', 'desc')
-            ->get() ?? collect();
+        $data = $query->orderBy('created_at', 'desc')->get();
 
-        $title = match ($request->tipe) {
-            'Outstanding PA' => 'LAPORAN OUTSTANDING PA',
-            'Lunas' => 'LAPORAN OUTSTANDING LUNAS',
-            default => 'LAPORAN OUTSTANDING',
+        $filterStatusText = match ($request->status) {
+            0 => 'Menunggu',
+            1 => 'Diterima',
+            2 => 'Selesai',
+            default => 'Semua',
         };
 
-        $user = Auth::check()
-            ? (optional(Auth::user()->karyawan)->nama_lengkap ?? Auth::user()->username)
-            : 'System';
+        $user = Auth::check() ? optional(Auth::user()->karyawan)->nama_lengkap ?? Auth::user()->username : 'System';
 
-        $pdf = Pdf::loadView('office.reports.outstanding_pdf', [
-            'data' => $data ?? collect(),
-            'title' => $title,
+        $pdf = Pdf::loadView('office.reports.pickup_driver_pdf', [
+            'data' => $data,
             'startDate' => $request->start_date,
             'endDate' => $request->end_date,
-            'filterTipe' => $request->tipe,
+            'filterKendaraan' => $request->kendaraan,
+            'filterStatusText' => $filterStatusText,
             'user' => $user,
             'generatedAt' => Carbon::now()->format('d M Y H:i:s'),
         ]);
 
-        $pdf->setPaper('A4', 'landscape')
-            ->setOption('defaultFont', 'DejaVu Sans')
-            ->setOption('isHtml5ParserEnabled', true)
-            ->setOption('isRemoteEnabled', true);
+        $pdf->setPaper('A4', 'landscape')->setOption('defaultFont', 'DejaVu Sans')->setOption('isHtml5ParserEnabled', true)->setOption('isRemoteEnabled', true);
 
-        return $pdf->stream('Laporan_Outstanding_' . date('Y-m-d_His') . '.pdf');
+        return $pdf->stream('Laporan_PickupDriver_' . date('Y-m-d_His') . '.pdf');
     }
 }

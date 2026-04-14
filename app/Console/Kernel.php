@@ -225,7 +225,7 @@ class Kernel extends ConsoleKernel
 
         $schedule->command('uptime:check')->everySecond();
 
-        $schedule->command('assign:shift2')->dailyAt('15:12');
+        $schedule->command('assign:shift2')->dailyAt('17.30');
 
 
         // Di dalam method schedule(Schedule $schedule)
