@@ -645,7 +645,7 @@
                 $.ajax({
                     url: "{{ route('office.biayaTransportasi.create') }}",
                     type: 'POST',
-                    formData,
+                    data: formData,
                     processData: false,
                     contentType: false,
                     success: () => {
