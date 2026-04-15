@@ -5,7 +5,6 @@
     <meta charset="UTF-8" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Data Total Mengajar Instruktur</title>
-
     <style>
         * {
             margin: 0;
@@ -15,9 +14,9 @@
 
         body {
             font-family: DejaVu Sans, sans-serif;
-            font-size: 11px;
+            font-size: 9px;
             color: #333;
-            line-height: 1.4;
+            line-height: 1.3;
         }
 
         .container {
@@ -28,104 +27,39 @@
         .header {
             background-color: #667eea;
             color: white;
-            padding: 20px;
+            padding: 12px;
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
         }
 
         .header h1 {
-            font-size: 20px;
+            font-size: 14px;
             font-weight: bold;
             margin: 0;
         }
 
         .content {
-            padding: 0 15px;
+            padding: 0 8px;
         }
 
         .info-section {
             background-color: #f8f9fa;
             border-left: 3px solid #667eea;
-            padding: 15px;
-            margin-bottom: 20px;
+            padding: 8px;
+            margin-bottom: 12px;
         }
 
         .section-title {
-            font-size: 14px;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 10px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #667eea;
-        }
-
-        .info-grid {
-            width: 100%;
-        }
-
-        .info-row {
-            width: 100%;
-            margin-bottom: 10px;
-        }
-
-        .info-row::after {
-            content: "";
-            display: table;
-            clear: both;
-        }
-
-        .info-item {
-            float: left;
-            width: 48%;
-            margin-right: 2%;
-            margin-bottom: 8px;
-        }
-
-        .info-item:nth-child(even) {
-            margin-right: 0;
-        }
-
-        .info-label {
-            font-size: 9px;
-            text-transform: uppercase;
-            color: #666;
-            font-weight: bold;
-            display: block;
-            margin-bottom: 3px;
-        }
-
-        .info-value {
             font-size: 11px;
-            color: #333;
-            font-weight: normal;
-            display: block;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 10px;
-            font-size: 10px;
             font-weight: bold;
-            background-color: #e8f5e9;
-            color: #388e3c;
-        }
-
-        .badge.online {
-            background-color: #e8f5e9;
-            color: #388e3c;
-        }
-
-        .badge.offline {
-            background-color: #fff3e0;
-            color: #f57c00;
+            color: #333;
+            margin-bottom: 6px;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
         }
 
         table thead {
@@ -134,18 +68,17 @@
 
         table th {
             color: white;
-            padding: 10px 8px;
+            padding: 6px 4px;
             text-align: left;
             font-weight: bold;
-            font-size: 10px;
-            text-transform: uppercase;
+            font-size: 8px;
             border: 1px solid #5568d3;
         }
 
         table td {
-            padding: 8px;
+            padding: 5px 4px;
             border: 1px solid #dee2e6;
-            font-size: 10px;
+            font-size: 8px;
             vertical-align: top;
         }
 
@@ -153,27 +86,27 @@
             background-color: #f8f9fa;
         }
 
-        .footer {
-            margin-top: 20px;
-            padding-top: 15px;
-            border-top: 1px solid #dee2e6;
-            font-size: 9px;
-            color: #666;
-            text-align: right;
-        }
-
-        /* Ensure proper page breaks */
-        .page-break {
-            page-break-after: always;
-        }
-
-        .no-break {
+        .instructor-section {
+            margin-bottom: 15px;
             page-break-inside: avoid;
         }
 
-        /* Remove unsupported properties for DomPDF */
-        .clear {
-            clear: both;
+        .instructor-title {
+            background-color: #e8eaf6;
+            padding: 5px 8px;
+            font-weight: bold;
+            font-size: 10px;
+            border-left: 3px solid #667eea;
+            margin-bottom: 5px;
+        }
+
+        .footer {
+            margin-top: 12px;
+            padding-top: 8px;
+            border-top: 1px solid #dee2e6;
+            font-size: 8px;
+            color: #666;
+            text-align: right;
         }
     </style>
 </head>
@@ -183,48 +116,100 @@
         <div class="header">
             <h1>Data Total Mengajar Instruktur</h1>
         </div>
-
         <div class="content">
-            <div class="info-section no-break">
-                <div class="section-title">Periode : 
-                    {{ $rentangWaktu }}
-                </div>
-                <div class="info-grid">
-                    <div class="info-row">
-                        <div class="info-iten">
-                            <span class="info-label">Total Instruktur</span>
-                            <span class="info-value">{{ count($dataMengajar) }} Instruktur</span>
-                        </div>
-                    </div>
-                </div>
+            <div class="info-section">
+                <div class="section-title">Periode: {{ $rentangWaktu ?? 'Semua Data' }}</div>
+                <div style="font-size: 8px;">Total Instruktur:
+                    {{ is_array($dataMengajar ?? []) ? count($dataMengajar) : 0 }}</div>
             </div>
 
-            <div class="section-title">Daftar Instruktur</div>
+            @php $noGlobal = 1; @endphp
+            @foreach ($dataMengajar ?? [] as $item)
+                <div class="instructor-section">
+                    <div class="instructor-title">
+                        {{ $noGlobal }}. {{ $item['namaKaryawan'] ?? '-' }} ({{ $item['kodeKaryawan'] ?? '-' }})
+                        - Total: {{ $item['totalMengajar'] ?? 0 }} sesi
+                        - Avg Feedback: {{ $item['overall_feedback'] ?? '-' }}
+                    </div>
 
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width: 5%;">No</th>
-                        <th style="width: 55%;">Nama Instruktur</th>
-                        <th style="width: 20%;">Kode Karyawan</th>
-                        <th style="width: 20%;">Total Mengajar</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($dataMengajar as $item)
-                        <tr>
-                            <td style="text-align: center;">{{ $loop->iteration }}</td>
-                            <td>{{ $item['namaKaryawan'] }}</td>
-                            <td>{{ $item['kodeKaryawan'] }}</td>
-                            <td>{{ $item['totalMengajar'] }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 5%;">No</th>
+                                <th style="width: 25%;">Bulan/Periode</th>
+                                <th style="width: 15%;">Instruktur</th>
+                                <th style="width: 10%;">Feedback</th>
+                                <th style="width: 15%;">Metode</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($item['periods'] ?? [] as $index => $period)
+                                <tr>
+                                    <td style="text-align: center;">{{ $index + 1 }}</td>
+                                    <td>{{ $period['periode'] ?? '-' }}</td>
+                                    <td>{{ $item['namaKaryawan'] ?? '-' }}</td>
+                                    <td style="text-align: center;">{{ $period['feedback_avg'] ?? '-' }}</td>
+                                    <td>{{ $period['metode'] ?? '-' }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                @php $noGlobal++; @endphp
+            @endforeach
+
+            @if (empty($dataMengajar ?? []) || count($dataMengajar ?? []) === 0)
+                <div style="text-align: center; padding: 30px; color: #666; font-size: 10px;">
+                    Tidak ada data mengajar untuk periode ini.
+                </div>
+            @endif
 
             <div class="footer">
                 <div>Dicetak pada: {{ \Carbon\Carbon::now()->translatedFormat('d F Y, H:i') }} WIB</div>
             </div>
+        </div>
+
+        <div style="page-break-before: always; margin: 12px;">
+            <div class="section-title" style="margin-top: 20px; margin-bottom: 10px;">Analisa Efektivitas</div>
+
+            @php
+                // Hitung total seluruh kelas dari semua instruktur untuk dasar persentase
+                $grandTotalKelas = 0;
+                foreach ($dataMengajar ?? [] as $d) {
+                    $grandTotalKelas += $d['totalMengajar'] ?? 0;
+                }
+            @endphp
+
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 25%; text-align: left;">Nama</th>
+                        <th style="width: 15%; text-align: center;">Jumlah Kelas</th>
+                        <th style="width: 20%; text-align: right;">Percentage of Contribution</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($dataMengajar ?? [] as $item)
+                        @php
+                            $totalKelas = $item['totalMengajar'] ?? 0;
+                            $percentage = $grandTotalKelas > 0 ? ($totalKelas / $grandTotalKelas) * 100 : 0;
+                            $percentageFormatted = number_format($percentage, 2, ',', '') . '%';
+                        @endphp
+
+                        <tr>
+                            <td style="text-transform: capitalize;">{{ $item['namaKaryawan'] ?? '-' }}</td>
+                            <td style="text-align: center;">{{ $totalKelas }}</td>
+                            <td style="text-align: right;">{{ $percentageFormatted }}</td>
+                        </tr>
+                    @endforeach
+
+                    <tr style="font-weight: bold; background-color: #f1f1f1;">
+                        <td>TOTAL</td>
+                        <td style="text-align: center;">{{ $grandTotalKelas }}</td>
+                        <td style="text-align: right;">100,00%</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </body>

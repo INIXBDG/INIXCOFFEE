@@ -28,7 +28,7 @@ class DaftarPesertaExamController extends Controller
             $registrasis = Registrasi::with([
                 'peserta:id,nama',
                 'materi:id,nama_materi',
-                'rkm:id,tanggal_akhir',
+                'rkm:id,tanggal_akhir,exam',
                 'dokumentasiExam'
             ])
                 ->select(
@@ -37,6 +37,9 @@ class DaftarPesertaExamController extends Controller
                     'registrasis.id_materi',
                     'registrasis.id_rkm'
                 )
+                ->whereHas('rkm', function ($query) {
+                    $query->where('exam', '1');
+                })
                 ->orderBy('registrasis.created_at', 'desc')
                 ->get();
 

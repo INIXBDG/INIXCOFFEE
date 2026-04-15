@@ -31,7 +31,6 @@
             </button>
         </div>
 
-        {{-- Card Table --}}
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden glass-force">
             <div class="card-header border-0 py-3">
                 <div class="row align-items-center">
@@ -77,7 +76,6 @@
                                             </small>
                                         @endif
                                     </td>
-
                                     <td>
                                         @if ($item->tipe === 'pembelian' || $item->tipe === 'rekrutmen')
                                             <span class="badge bg-light text-dark border">-</span>
@@ -87,7 +85,6 @@
                                             </span>
                                         @endif
                                     </td>
-
                                     <td>
                                         <span class="fw-medium text-dark">{{ $item->pic }}</span>
                                     </td>
@@ -98,16 +95,12 @@
                                         <div class="d-flex gap-2 justify-content-center">
                                             <a href="{{ route('office.downloadPdfRab', $item->id) }}">
                                                 <button
-                                                    class="btn btn-sm btn-outline-success d-flex align-items-center gap-1">
-                                                    PDF
-                                                </button>
+                                                    class="btn btn-sm btn-outline-success d-flex align-items-center gap-1">PDF</button>
                                             </a>
                                             <a href="{{ route('office.showRincian', $item->id) }}">
-                                                <button class="btn btn-sm btn-outline-info d-flex align-items-center gap-1">
-                                                    Detail
-                                                </button>
+                                                <button
+                                                    class="btn btn-sm btn-outline-info d-flex align-items-center gap-1">Detail</button>
                                             </a>
-
                                             <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
                                                 data-bs-toggle="modal" data-bs-target="#editModal"
                                                 data-id="{{ $item->id }}" data-nama="{{ $item->nama_kegiatan }}"
@@ -116,16 +109,13 @@
                                                 data-durasi="{{ $item->lama_kegiatan }}" data-pic="{{ $item->pic }}">
                                                 Edit
                                             </button>
-
                                             <form action="{{ route('office.deleteKegiatan', $item->id) }}" method="POST"
                                                 class="d-inline"
                                                 onsubmit="return confirm('Apakah Anda yakin ingin menghapus kegiatan ini?')">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit"
-                                                    class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1">
-                                                    Delete
-                                                </button>
+                                                    class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1">Delete</button>
                                             </form>
                                         </div>
                                     </td>
@@ -155,23 +145,19 @@
         </div>
     </div>
 
-    {{-- Modal Tambah --}}
     <div class="modal fade" id="createModal" tabindex="-1" aria-labelledby="createModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <form action="{{ route('office.storeKegiatan') }}" method="POST"
                 class="modal-content shadow-lg border-0 rounded-4">
                 @csrf
-
                 <div class="modal-header border-0 pb-0">
                     <div>
                         <h5 class="modal-title fw-bold" id="createModalLabel">Pengajuan RAB Baru</h5>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-
                 <div class="modal-body pt-3">
                     <div class="row g-3">
-
                         <div class="col-12">
                             <label class="form-label fw-semibold">
                                 <i class="fas fa-file-invoice text-primary me-2"></i>Nama RAB
@@ -179,7 +165,6 @@
                             <input type="text" name="nama_kegiatan" class="form-control form-control-lg"
                                 placeholder="Masukkan nama" required>
                         </div>
-
                         <div class="col-12 mb-2">
                             <label class="form-label fw-semibold">
                                 <i class="fas fa-layer-group text-primary me-2"></i>Tipe RAB
@@ -191,11 +176,10 @@
                                 <option value="rekrutmen">Rekrutmen</option>
                             </select>
                         </div>
-
                         <div id="pickupDriverCondition">
                             <hr class="hidePickup">
-                            <small class="hidePickup text-danger">* digunakan hanya jika kegiatan diperlukan pengantaran driver!</small>
-
+                            <small class="hidePickup text-danger">* digunakan hanya jika kegiatan diperlukan pengantaran
+                                driver!</small>
                             <div class="col-12 mb-2 hidePickup" style="display: none;">
                                 <label class="form-label fw-semibold">
                                     <i class="fas fa-car text-primary me-2"></i>Pilih Driver
@@ -207,17 +191,14 @@
                                     @endforeach
                                 </select>
                             </div>
-
                             <div class="col-12 mb-2 hidePickup" style="display: none;">
                                 <label class="form-label fw-semibold">
                                     <i class="fas fa-car text-primary me-2"></i>Budget Kendaraan
                                 </label>
                                 <input type="text" id="budgetInput" class="form-control form-control-lg"
                                     placeholder="Rp 0 (opsional)">
-
                                 <input type="hidden" name="budget" id="budgetHidden">
                             </div>
-
                             <div class="col-12 mb-2 hidePickup" style="display: none;">
                                 <label class="form-label fw-semibold">
                                     <i class="fas fa-car text-primary me-2"></i>Lokasi Pengantaran
@@ -225,11 +206,8 @@
                                 <input type="text" class="form-control form-control-lg"
                                     placeholder="lokasi kegiatan (opsional untuk driver)" name="lokasi">
                             </div>
-
                             <hr class="hidePickup">
                         </div>
-
-                        {{-- Wrapper untuk field kondisional (Create) --}}
                         <div id="kegiatanFields" style="display: contents;">
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">
@@ -238,7 +216,6 @@
                                 <input type="datetime-local" name="waktu_kegiatan" class="form-control form-control-lg"
                                     required>
                             </div>
-
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">
                                     <i class="fas fa-hourglass-half text-primary me-2"></i>Durasi
@@ -247,7 +224,6 @@
                                     placeholder="Contoh: 2 jam" required>
                             </div>
                         </div>
-
                         <div class="col-12">
                             <label class="form-label fw-semibold">
                                 <i class="fas fa-user text-primary me-2"></i>PIC
@@ -255,25 +231,16 @@
                             <input type="text" name="pic" class="form-control form-control-lg"
                                 placeholder="Masukkan nama PIC" required>
                         </div>
-
                     </div>
                 </div>
-
                 <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">
-                        Batal
-                    </button>
-                    <button type="submit" class="btn btn-primary px-4">
-                        Ajukan
-                    </button>
+                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary px-4">Ajukan</button>
                 </div>
-
             </form>
         </div>
     </div>
 
-
-    {{-- Modal Edit --}}
     <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <form action="" method="POST" id="editForm" class="modal-content shadow-lg border-0 rounded-4">
@@ -294,8 +261,6 @@
                             <input type="text" name="nama_kegiatan" id="edit_nama_kegiatan"
                                 class="form-control form-control-lg" placeholder="Masukkan nama kegiatan" required>
                         </div>
-
-                        {{-- Wrapper untuk field kondisional (Edit) --}}
                         <div id="edit_kegiatanFields" style="display: contents;">
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">
@@ -312,7 +277,6 @@
                                     class="form-control form-control-lg" placeholder="Contoh: 2 jam" required>
                             </div>
                         </div>
-
                         <div class="col-12">
                             <label class="form-label fw-semibold">
                                 <i class="fas fa-user text-primary me-2"></i>PIC
@@ -323,17 +287,12 @@
                     </div>
                 </div>
                 <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">
-                        Batal
-                    </button>
-                    <button type="submit" class="btn btn-primary px-4">
-                        Simpan Perubahan
-                    </button>
+                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary px-4">Simpan Perubahan</button>
                 </div>
             </form>
         </div>
     </div>
-
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
@@ -344,25 +303,17 @@
             const driverSelect = pickupDriverCondition.querySelector('select');
 
             tipeSelect.addEventListener('change', function() {
-
                 if (this.value === 'kegiatan') {
-
                     pickupDriverCondition.style.display = 'block';
-
                     driverFields.forEach(field => {
                         field.style.display = 'block';
                     });
-
                     driverSelect.setAttribute('required', true);
-
                 } else {
-
                     pickupDriverCondition.style.display = 'none';
-
                     driverFields.forEach(field => {
                         field.style.display = 'none';
                     });
-
                     driverSelect.removeAttribute('required');
                 }
             });
@@ -371,43 +322,31 @@
             const hidden = document.getElementById("budgetHidden");
 
             input.addEventListener("input", function(e) {
-
                 let value = e.target.value.replace(/\D/g, "");
-
                 if (!value) {
                     hidden.value = "";
                     input.value = "";
                     return;
                 }
-
                 hidden.value = value;
                 input.value = "Rp " + parseInt(value).toLocaleString("id-ID");
             });
         });
 
         document.addEventListener('DOMContentLoaded', function() {
-
-            // ==========================================
-            // 1. LOGIKA MODAL CREATE (Dropdown Change)
-            // ==========================================
             const tipeSelect = document.getElementById('tipeRAB');
             const createFields = document.getElementById('kegiatanFields');
 
             function toggleCreateFields() {
                 if (!tipeSelect || !createFields) return;
-
                 if (tipeSelect.value === 'pembelian' || tipeSelect.value === 'rekrutmen') {
-                    // Sembunyikan field
                     createFields.style.display = 'none';
-                    // Hapus required
                     createFields.querySelectorAll('input').forEach(input => {
                         input.removeAttribute('required');
-                        input.value = ''; // Reset nilai
+                        input.value = '';
                     });
                 } else {
-                    // Tampilkan field (contents agar grid tetap rapi)
                     createFields.style.display = 'contents';
-                    // Tambah required
                     createFields.querySelectorAll('input').forEach(input => {
                         input.setAttribute('required', 'required');
                     });
@@ -416,52 +355,39 @@
 
             if (tipeSelect) {
                 tipeSelect.addEventListener('change', toggleCreateFields);
-                toggleCreateFields(); // Inisialisasi awal
+                toggleCreateFields();
             }
 
-            // ==========================================
-            // 2. LOGIKA MODAL EDIT (Button Click)
-            // ==========================================
             const editModal = document.getElementById('editModal');
             const editFields = document.getElementById('edit_kegiatanFields');
 
             if (editModal) {
                 editModal.addEventListener('show.bs.modal', event => {
-                    // Button yang memicu modal
                     const button = event.relatedTarget;
-
-                    // Ambil data dari attribute
                     const id = button.getAttribute('data-id');
                     const nama = button.getAttribute('data-nama');
-                    const tipe = button.getAttribute('data-tipe'); // Atribut baru
+                    const tipe = button.getAttribute('data-tipe');
                     const waktu = button.getAttribute('data-waktu');
                     const durasi = button.getAttribute('data-durasi');
                     const pic = button.getAttribute('data-pic');
 
-                    // Isi form dasar
                     editModal.querySelector('#edit_nama_kegiatan').value = nama;
                     editModal.querySelector('#edit_pic').value = pic;
 
-                    // Set action form ke route update
                     const form = editModal.querySelector('#editForm');
                     form.action = `/office/kegiatan/update/${id}`;
 
-                    // Logika Kondisional berdasarkan Tipe
                     if (editFields) {
                         const inputs = editFields.querySelectorAll('input');
-
                         if (tipe === 'pembelian' || tipe === 'rekrutmen') {
-                            // Jika tipe pembelian: sembunyikan kolom waktu & durasi
                             editFields.style.display = 'none';
                             inputs.forEach(input => {
                                 input.removeAttribute('required');
                                 input.value = '';
                             });
                         } else {
-                            // Jika tipe kegiatan: tampilkan & isi nilai
                             editFields.style.display = 'contents';
                             inputs.forEach(input => input.setAttribute('required', 'required'));
-
                             editModal.querySelector('#edit_waktu_kegiatan').value = waktu;
                             editModal.querySelector('#edit_lama_kegiatan').value = durasi;
                         }

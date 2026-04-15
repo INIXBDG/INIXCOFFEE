@@ -269,25 +269,31 @@
                             return data ? moment(data).format('DD-MM-YYYY') : '-';
                         }
                     },
-                    { data: 'id', render: function(id, type, data) {
-                        const rkm = data.rkm_formatted;
-                        const isLost = data.tahap?.toLowerCase() === 'lost';
-                        let rkmButton = '';
+                    {
+                        data: 'id',
+                        render: function(id, type, data) {
+                            const rkm = data.rkm_formatted;
+                            const isLost = data.tahap?.toLowerCase() === 'lost';
+                            const isMerah = data.tahap === 'merah';
 
-                        if (isLost || !rkm) {
-                            rkmButton = `<span class="btn btn-sm btn-info disabled w-100" style="pointer-events: none; opacity: 0.5;">RKM</span>`;
-                        } else {
-                            rkmButton = `<a class="btn btn-sm btn-info w-100" target="_blank" href="/rkm/${rkm.materi_key}ixb${rkm.tanggal_awal_day}ie${rkm.tanggal_awal_year}ie${rkm.tanggal_awal_month}ixb${rkm.metode_kelas}">RKM</a>`;
+                            let rkmButton = '';
+                            let lostDisabled = isMerah ? 'disabled' : '';
+
+                            if (isLost || !rkm) {
+                                rkmButton = `<span class="btn btn-sm btn-info disabled w-100" style="pointer-events: none; opacity: 0.5;">RKM</span>`;
+                            } else {
+                                rkmButton = `<a class="btn btn-sm btn-info w-100" target="_blank" href="/rkm/${rkm.materi_key}ixb${rkm.tanggal_awal_day}ie${rkm.tanggal_awal_year}ie${rkm.tanggal_awal_month}ixb${rkm.metode_kelas}">RKM</a>`;
+                            }
+
+                            return `
+                                <div class="d-flex flex-column gap-2" style="min-width: 80px;">
+                                    <a href="/crm/peluang/detail/${id}" class="btn btn-sm btn-warning w-100">Detail</a>
+                                    ${rkmButton}
+                                    <button onclick="hapusPeluang(${id})" class="btn btn-sm btn-danger w-100" ${lostDisabled}>LOST</button>
+                                </div>
+                            `;
                         }
-
-                        return `
-                            <div class="d-flex flex-column gap-2" style="min-width: 80px;">
-                                <a href="/crm/peluang/detail/${id}" class="btn btn-sm btn-warning w-100">Detail</a>
-                                ${rkmButton}
-                                <button onclick="hapusPeluang(${id})" class="btn btn-sm btn-danger w-100">LOST</button>
-                            </div>
-                        `;
-                    }}
+                    }
                 ],
             });
 

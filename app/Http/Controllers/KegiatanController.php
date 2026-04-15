@@ -100,7 +100,8 @@ class KegiatanController extends Controller
         return $pdf->download($filename);
     }
 
-    public function updateRealisasi(Request $request) {
+    public function updateRealisasi(Request $request)
+    {
         $dataKegiatan = Kegiatan::findOrFail($request->id);
 
         $dataKegiatan->realisasi = $request->input('realisasi');
@@ -139,18 +140,18 @@ class KegiatanController extends Controller
 
         $kegiatan->save();
 
-        if ($kegiatan->tipe === "kegiatan") {
+        if ($kegiatan->tipe === 'kegiatan' && $request->id_driver != null) {
             $pickupDriver = new pickupDriver();
-            $pickupDriver->id_karyawan = $request->id_driver;
-            $pickupDriver->id_pembuat = Auth()->user()->id;
+            $pickupDriver->id_karyawan = $request->id_driver ?? null;
+            $pickupDriver->id_pembuat = Auth()->user()->id ?? null;
             $pickupDriver->status_apply = 0;
-            $pickupDriver->budget = $request->budget;
+            $pickupDriver->budget = $request->budget ?? null;
             $pickupDriver->save();
 
-            if ($pickupDriver) {
+            if ($pickupDriver->id_karyawan != null) {
                 $detailPickupDriver = new DetailPickupDriver();
                 $detailPickupDriver->pickup_driver_id = $pickupDriver->id;
-                $detailPickupDriver->tipe = "Pengantaran";
+                $detailPickupDriver->tipe = 'Pengantaran';
                 $detailPickupDriver->lokasi = $request->lokasi;
 
                 $waktuKegiatan = Carbon::parse($validated['waktu_kegiatan']);
@@ -158,11 +159,11 @@ class KegiatanController extends Controller
 
                 $detailPickupDriver->tanggal_keberangkatan = $waktuBerangkat->format('Y-m-d');
                 $detailPickupDriver->waktu_keberangkatan = $waktuBerangkat->format('H:i:s');
-                $detailPickupDriver->detail = "-";
+                $detailPickupDriver->detail = '-';
                 $detailPickupDriver->save();
             }
 
-            if ($pickupDriver) {
+            if ($pickupDriver->id_karyawan != null) {
                 $trackingPickupDriver = new TrackingPickupDriver();
                 $trackingPickupDriver->pickup_driver_id = $pickupDriver->id;
                 $trackingPickupDriver->status = auth()->user()->username . ' telah membuat koordinasi baru';
@@ -406,5 +407,42 @@ class KegiatanController extends Controller
         $kegiatan->selesai = Carbon::now();
         $kegiatan->save();
         return redirect()->back()->with('success', 'Status berhasil diupdate');
+    }
+
+    public function getAvailablePengajuanBarang($id)
+    {
+        $kegiatan = Kegiatan::findOrFail($id);
+        $userId = auth()->user()->id;
+
+        $startDate = Carbon::parse($kegiatan->waktu_kegiatan)->subWeek();
+        $endDate = Carbon::parse($kegiatan->kegiatan)->addWeeks(2);
+
+        $pengajuanBarang = PengajuanBarang::with(['karyawan', 'detail'])
+            ->whereHas('karyawan', function ($q) use ($userId) {
+                $q->where('id', $userId); 
+            })
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->whereNull('id_kegiatan')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $pengajuanBarang,
+            'range' => [
+                'start' => $startDate->format('d M Y'),
+                'end' => $endDate->format('d M Y'),
+            ],
+        ]);
+    }
+
+    public function linkPengajuanBarang(Request $request, $id)
+    {
+        $updated = PengajuanBarang::whereIn('id', $request->pengajuan_ids)
+            ->whereNull('id_kegiatan') 
+            ->update(['id_kegiatan' => $id]);
+
+        return redirect()
+            ->back()
+            ->with('success', "Berhasil menghubungkan {$updated} pengajuan barang ke kegiatan.");
     }
 }

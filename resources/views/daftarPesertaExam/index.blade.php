@@ -109,8 +109,7 @@
 
     function deleteData(id) {
         if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
-            alert('Delete function - ID: ' + id);
-            // TODO: Implement delete functionality
+           window.location.href = `/listexam/delete/${id}`;
         }
     }
 
@@ -134,6 +133,9 @@
                     if (response.data.length > 0) {
                         $.each(response.data, function(index, item) {
                             console.log( "item : ",item);
+                            let url = `{{ route('registrasi.destroy', ':id') }}`;
+                            url = url.replace(':id', item.id);
+
                             html += `
                                 <tr>
                                     <td>${item.no}</td>
@@ -159,9 +161,15 @@
                                             <button class="btn btn-primary btn-action" onclick="editData(${item.id})">
                                                 Edit
                                             </button>
-                                            <button class="btn btn-danger btn-action" onclick="deleteData(${item.id})">
-                                                Hapus
-                                            </button>
+                                            <form action="${url}" method="POST" style="display:inline;">
+                                                <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                                                <input type="hidden" name="_method" value="DELETE">
+
+                                                <button type="submit" class="btn btn-danger btn-action"
+                                                    onclick="return confirm('Yakin hapus data ini?')">
+                                                    Hapus
+                                                </button>
+                                            </form>
                                         </div>
                                     </td>
                                 </tr>

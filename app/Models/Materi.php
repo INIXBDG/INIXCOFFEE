@@ -31,4 +31,9 @@ class Materi extends Model
     {
         return $this->hasMany(Peluang::class, 'materi', 'id');
     }
+
+    public function labs()
+    {
+        return $this->belongsToMany(Lab::class, 'lab_materi', 'materi_id', 'lab_id');
+    }
 }
