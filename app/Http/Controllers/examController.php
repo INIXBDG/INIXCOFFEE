@@ -31,12 +31,9 @@ class examController extends Controller
     {
         $this->middleware('auth');
     }
+
     public function index()
     {
-        // $rkm = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan', 'instruktur2', 'asisten'])
-        //     ->where('exam', '1')
-        //     ->get();
-        //     return $rkm;
         return view('exam.index');
     }
 
@@ -68,14 +65,12 @@ class examController extends Controller
         ));
     }
 
-    // Modified storeOnly method
     public function storeOnly(Request $request)
     {
         $currentUser = auth()->user();
         $currentKaryawan = $currentUser->karyawan;
         $isSPVSales = $currentKaryawan && $currentKaryawan->jabatan === 'SPV Sales';
 
-        // Base validation rules
         $validationRules = [
             'materi' => 'required|integer|exists:materis,id',
             'tanggal' => 'required|date',
@@ -94,7 +89,6 @@ class examController extends Controller
             'total_final' => 'required|string',
         ];
 
-        // Extra rule if SPV Sales
         if ($isSPVSales) {
             $validationRules['selected_sales'] = 'required|integer|exists:karyawans,id';
         }
@@ -102,7 +96,6 @@ class examController extends Controller
         $request->validate($validationRules);
 
         try {
-            // Parsing angka
             $harga = (float) str_replace('.', '', $request->harga);
             $kurs = (float) str_replace('.', '', $request->kurs ?? 0);
             $kursDollar = (float) str_replace('.', '', $request->kurs_dollar);
@@ -114,7 +107,6 @@ class examController extends Controller
             $totalFinal = (float) str_replace('.', '', $request->total_final);
             $hargaTotalRupiah = (float) str_replace('.', '', $request->harga_total_rupiah);
 
-            // Verifikasi perhitungan
             $totalHarga = 0;
             switch ($request->mata_uang) {
                 case 'Rupiah':
@@ -134,7 +126,6 @@ class examController extends Controller
                     ->withInput();
             }
 
-            // Tentukan sales key - PERBAIKAN
             if ($isSPVSales) {
                 $salesEmployee = Karyawan::where('jabatan', 'like', '%Sales%')
                     ->where('divisi', 'like', '%Sales%')
@@ -146,9 +137,9 @@ class examController extends Controller
                         ->withInput();
                 }
 
-                $salesKey = $salesEmployee->kode_karyawan; // FIXED: Gunakan kode_karyawan
+                $salesKey = $salesEmployee->kode_karyawan;
             } else {
-                $salesKey = $currentUser->karyawan->kode_karyawan ?? null; // FIXED: Gunakan kode_karyawan
+                $salesKey = $currentUser->karyawan->kode_karyawan ?? null;
                 if (!$salesKey) {
                     return redirect()->back()
                         ->withErrors(['sales_key' => 'Akun Anda belum memiliki Sales Key. Hubungi admin.'])
@@ -158,7 +149,6 @@ class examController extends Controller
 
             $instrukturKey = $currentUser->id_instruktur ?? null;
 
-            // Debug logging (hapus setelah berhasil)
             Log::info('Exam Only Debug', [
                 'isSPVSales' => $isSPVSales,
                 'selected_sales' => $request->selected_sales ?? 'N/A',
@@ -167,7 +157,6 @@ class examController extends Controller
                 'currentUser' => $currentUser->username,
             ]);
 
-            // DB Transaction
             DB::transaction(function () use ($request, $harga, $pa, $biayaAdmin, $kurs, $kursDollar, $totalFinal, $hargaTotalRupiah, $salesKey, $instrukturKey) {
 
                 $year = date('Y');
@@ -177,7 +166,6 @@ class examController extends Controller
                 $index = RKM::count() % count($bulanData);
                 $bulanValue = $bulanData[$index] . ' ' . $year;
 
-                // 1. Buat RKM untuk Exam Only
                 $rkm = RKM::create([
                     'materi_key' => $request->materi,
                     'tanggal_awal' => $request->tanggal,
@@ -188,7 +176,7 @@ class examController extends Controller
                     'metode_kelas' => 'Exam Only',
                     'status' => '3',
                     'harga_jual' => $totalFinal ?? 0,
-                    'sales_key' => $salesKey, // Menggunakan kode_karyawan
+                    'sales_key' => $salesKey,
                     'bulan' => $bulanValue,
                     'ruang' => 'Exam',
                     'exam' => '1',
@@ -198,17 +186,14 @@ class examController extends Controller
                     throw new \Exception('Gagal membuat RKM untuk Exam Only');
                 }
 
-                // Log setelah RKM dibuat
                 Log::info('RKM Created', [
                     'rkm_id' => $rkm->id,
                     'sales_key' => $rkm->sales_key,
                     'metode_kelas' => $rkm->metode_kelas
                 ]);
 
-                // 2. Buat invoice
                 $invoice = 'INV-' . $this->generateInvoiceNumber();
 
-                // 3. Buat Exam
                 $exam = eksam::create([
                     'tanggal_pengajuan' => now(),
                     'materi' => $request->materi,
@@ -225,16 +210,15 @@ class examController extends Controller
                     'pa' => $pa,
                     'diskon' => $request->diskon,
                     'total' => $totalFinal,
-                    'status' => '3', // exam only
+                    'status' => '3',
                     'invoice' => $invoice,
                     'mata_uang' => $request->mata_uang,
                     'kode_exam' => $request->kode_exam,
                 ]);
 
-                // 4. Buat approval
                 approvalexam::create([
                     'id_exam' => $exam->id,
-                    'sales' => $salesKey, // Menggunakan kode_karyawan yang sama
+                    'sales' => $salesKey,
                     'spv_sales' => false,
                     'technical_support' => false,
                     'office_manager' => false,
@@ -251,13 +235,11 @@ class examController extends Controller
 
     public function getExam()
     {
-        // Ambil semua id_rkm yang sudah ada di tabel exam
         $existingRKMs = eksam::pluck('id_rkm')->toArray();
 
-        // Ambil data RKM yang memiliki 'exam' = 1, tetapi belum ada di tabel exam
         $rkm = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan', 'instruktur2', 'asisten'])
             ->where('exam', '1')
-            ->whereNotIn('id', $existingRKMs) // Mengecualikan id_rkm yang sudah ada di exam
+            ->whereNotIn('id', $existingRKMs)
             ->orderBy('tanggal_awal', 'desc')
             ->get();
 
@@ -339,16 +321,10 @@ class examController extends Controller
         }
     }
 
-    /**
-     * create
-     *
-     * @return View
-     */
     public function create($id)
     {
         $rkm = RKM::with('perusahaan', 'materi')->findOrFail($id);
         $kode_exam = listexam::all();
-        // return $rkm;
         return view('exam.create', compact('rkm', 'kode_exam'));
     }
 
@@ -372,38 +348,24 @@ class examController extends Controller
         return $invoiceNumber;
     }
 
-    /**
-     * store
-     *
-     * @param  mixed $request
-     * @return RedirectResponse
-     */
     public function store(Request $request)
     {
-        // dd($request->all());
         $harga_rupiah = preg_replace('/[^\d]/', '', $request->harga_rupiah);
-        // $request->harga_rupiah = $harga_rupiah;
         $total = preg_replace('/[^\d]/', '', $request->total);
         $user = auth()->user()->id_sales;
         $harga = str_replace(',', '.', $request->harga);
-        // return $user;
-
-        // Remove any non-numeric characters except dots
         $harga = preg_replace('/[^\d.]/', '', $harga);
 
-        // Assign the sanitized value back to the request
         $request->merge([
             'harga' => $harga,
             'total' => $total,
             'harga_rupiah' => $harga_rupiah,
         ]);
-        // return $request->all();
 
-        // return $user;
         try {
-            $rkm = RKM::with('materi', 'perusahaan')->where('id', $request->id_rkm)->first();
-            if ($request->pax > $rkm->pax) {
-                return redirect()->back()->with('error', 'Pax tidak boleh lebih dari ' . $rkm->pax);
+            $rkmSource = RKM::with('materi', 'perusahaan')->where('id', $request->id_rkm)->first();
+            if ($request->pax > $rkmSource->pax) {
+                return redirect()->back()->with('error', 'Pax tidak boleh lebih dari ' . $rkmSource->pax);
             }
             $data = $request->validate([
                 'tanggal_pengajuan' => 'required|date',
@@ -419,65 +381,92 @@ class examController extends Controller
                 'total' => 'required|string',
                 'kode_exam' => 'nullable|string',
             ]);
-            // dd($request->harga_rupiah);
 
             $invoice = 'INV-' . $this->generateInvoiceNumber();
-            // return $invoice;
             $status = 'Belum Approval SPV Sales';
-            $exam = eksam::create([
-                'tanggal_pengajuan' => $request->tanggal_pengajuan,
-                'materi' => $request->materi,
-                'id_rkm' => $request->id_rkm,
-                'perusahaan' => $request->perusahaan,
-                'mata_uang' => $request->mata_uang,
-                'harga' => $request->harga,
-                'biaya_admin' => $request->biaya_admin,
-                'harga_rupiah' => $request->harga_rupiah,
-                'kurs' => $request->kurs,
-                'kurs_dollar' => $request->kurs_dollar,
-                'pax' => $request->pax,
-                'total_pax' => $request->pax,
-                'total' => $request->total,
-                'kode_exam' => $request->kode_exam,
-                'status' => $request->status,
-                'invoice' => $invoice
-            ]);
 
-            approvalexam::create([
-                'id_exam' => $exam->id,
-                'sales' => $rkm->sales_key,
-                'spv_sales' => false,
-                'technical_support' => false,
-                'office_manager' => false,
-                'status' => $status,
-            ]);
+            DB::transaction(function () use ($request, $rkmSource, $invoice, $status) {
+
+                $newRkm = RKM::create([
+                    'sales_key' => $rkmSource->sales_key,
+                    'materi_key' => $rkmSource->materi_key,
+                    'perusahaan_key' => $rkmSource->perusahaan_key,
+                    'harga_jual' => $rkmSource->harga_jual,
+                    'pax' => $request->pax,
+                    'isi_pax' => $request->pax,
+                    'tanggal_awal' => $rkmSource->tanggal_awal,
+                    'tanggal_akhir' => $rkmSource->tanggal_akhir,
+                    'metode_kelas' => $rkmSource->metode_kelas,
+                    'event' => $rkmSource->event,
+                    'ruang' => $rkmSource->ruang,
+                    'instruktur_key' => $rkmSource->instruktur_key,
+                    'instruktur_key2' => $rkmSource->instruktur_key2,
+                    'asisten_key' => $rkmSource->asisten_key,
+                    'status' => $rkmSource->status,
+                    'exam' => '1',
+                    'authorize' => $rkmSource->authorize,
+                    'registrasi_form' => $rkmSource->registrasi_form,
+                    'quartal' => $rkmSource->quartal,
+                    'bulan' => $rkmSource->bulan,
+                    'tahun' => $rkmSource->tahun,
+                    'makanan' => $rkmSource->makanan,
+                ]);
+
+                $exam = eksam::create([
+                    'tanggal_pengajuan' => $request->tanggal_pengajuan,
+                    'materi' => $request->materi,
+                    'id_rkm' => $newRkm->id,
+                    'perusahaan' => $request->perusahaan,
+                    'mata_uang' => $request->mata_uang,
+                    'harga' => $request->harga,
+                    'biaya_admin' => $request->biaya_admin,
+                    'harga_rupiah' => $request->harga_rupiah,
+                    'kurs' => $request->kurs,
+                    'kurs_dollar' => $request->kurs_dollar,
+                    'pax' => $request->pax,
+                    'total_pax' => $request->pax,
+                    'total' => $request->total,
+                    'kode_exam' => $request->kode_exam,
+                    'status' => $request->status,
+                    'invoice' => $invoice
+                ]);
+
+                approvalexam::create([
+                    'id_exam' => $exam->id,
+                    'sales' => $newRkm->sales_key,
+                    'spv_sales' => false,
+                    'technical_support' => false,
+                    'office_manager' => false,
+                    'status' => $status,
+                ]);
+            });
+
             $data = [
-                'nama_materi' => $rkm->materi->nama_materi,
-                'nama_perusahaan' => $rkm->perusahaan->nama_perusahaan,
+                'nama_materi' => $rkmSource->materi->nama_materi,
+                'nama_perusahaan' => $rkmSource->perusahaan->nama_perusahaan,
             ];
             $finance = karyawan::where('jabatan', 'Finance & Accounting')->first();
             $kooroff = karyawan::where('jabatan', 'Koordinator Office')->first();
             $Eduman = karyawan::where('jabatan', 'Education Manager')->first();
             $SPVSales = karyawan::where('jabatan', 'SPV Sales')->first();
             $GM = karyawan::where('jabatan', 'GM')->first();
-            // Mengambil pengguna yang terlibat
             $users = array_map(function ($user) {
                 return $user === '-' ? null : $user;
             }, [
-                $rkm->sales_key,
+                $rkmSource->sales_key,
                 $Eduman->kode_karyawan,
                 $finance->kode_karyawan,
                 $kooroff->kode_karyawan,
                 $SPVSales->kode_karyawan,
                 $GM->kode_karyawan,
-                'NF'  // GM
+                'NF'
             ]);
 
             $users = User::whereHas('karyawan', function ($query) use ($users) {
                 $query->whereIn('kode_karyawan', array_filter($users));
             })->get();
 
-            $path = '/exam/' . $exam->id;
+            $path = '/exam/' . eksam::latest()->first()->id;
 
             foreach ($users as $user) {
                 $receiverId = $user->id;
@@ -490,12 +479,6 @@ class examController extends Controller
         }
     }
 
-    /**
-     * show
-     *
-     * @param  mixed $id
-     * @return View
-     */
     public function show(string $id)
     {
         $rkm = eksam::with('rkm')->findOrFail($id);
@@ -504,35 +487,23 @@ class examController extends Controller
         $biaya_admin = $rkm->biaya_admin * $rkm->kurs_dollar;
         $harga = $rkm->harga * $rkm->kurs;
 
-        Log::info('Exam Show - ID: ' . $id . ', RKM: ' . json_encode($rkm)); // Debug
+        Log::info('Exam Show - ID: ' . $id . ', RKM: ' . json_encode($rkm));
         return view('exam.show', compact('rkm', 'exam', 'approvalexam', 'biaya_admin', 'harga'));
     }
 
-    /**
-     * edit
-     *
-     * @param  mixed $id
-     * @return View
-     */
     public function edit(string $id)
     {
-        //get post by ID
         $kode_exam = listexam::all();
         $exam = eksam::with('rkm', 'karyawan')->findOrFail($id);
-        // return $exam;
-
-        //render view with post
         return view('exam.edit', compact('exam', 'kode_exam'));
     }
 
     public function update(Request $request, $id)
     {
-        // dd($request->all());
         $harga_rupiah = preg_replace('/[^\d]/', '', $request->harga_rupiah);
         $request->merge(['harga_rupiah' => $harga_rupiah]);
         $total = preg_replace('/[^\d]/', '', $request->total);
         $request->merge(['total' => $total]);
-        // $user = auth()->user()->id_sales;
         $id_karyawan = auth()->user()->karyawan_id;
         $karyawan = karyawan::findOrFail($id_karyawan);
         $kode_karyawan = $karyawan->kode_karyawan;
@@ -593,20 +564,20 @@ class examController extends Controller
         }
     }
 
-    /**
-     * destroy
-     *
-     * @param  mixed $post
-     * @return void
-     */
     public function destroy($id): RedirectResponse
     {
         $exam = eksam::findOrFail($id);
+
+        $rkm = $exam->rkm;
 
         approvalexam::where('id_exam', $exam->id)->delete();
         changeexam::where('id_exam', $exam->id)->delete();
 
         $exam->delete();
+
+        if ($rkm) {
+            $rkm->delete();
+        }
 
         return redirect()
             ->route('exam.index')
@@ -623,9 +594,7 @@ class examController extends Controller
 
     public function sendapprovalexam(Request $request, $id)
     {
-        // dd($request->all());
         $approval = approvalexam::where('id_exam', $id)->first();
-        // return $approval;
 
         $id_karyawan = auth()->user()->karyawan_id;
         $karyawan = karyawan::findOrFail($id_karyawan);
@@ -644,7 +613,6 @@ class examController extends Controller
                 'ttd_sales' => $kode_karyawan,
             ]);
             $data = eksam::findOrfail($id);
-            // return $data;
             $finance = karyawan::where('jabatan', 'Finance & Accounting')->first();
             $kooroff = karyawan::where('jabatan', 'Koordinator Office')->first();
             $GM = karyawan::where('jabatan', 'GM')->first();
@@ -699,7 +667,6 @@ class examController extends Controller
             ]);
 
             $data = eksam::findOrfail($id);
-            // return $data;
             $users = array_map(function ($user) {
                 return $user === '-' ? null : $user;
             }, [
@@ -751,7 +718,6 @@ class examController extends Controller
                 'ttd_ts' => $kode_karyawan,
             ]);
             $data = eksam::findOrfail($id);
-            // return $data;
             $users = array_map(function ($user) {
                 return $user === '-' ? null : $user;
             }, [
@@ -770,7 +736,6 @@ class examController extends Controller
             }
 
             $finance = karyawan::where('jabatan', 'Finance & Accounting')->first();
-            // return $finance;
             $users = array_map(function ($user) {
                 return $user === '-' ? null : $user;
             }, [
@@ -805,19 +770,16 @@ class examController extends Controller
         $data = eksam::with('rkm', 'kodeeksam', 'registexam', 'approvalexam')->findOrFail($id);
         $sales = karyawan::where('kode_karyawan', $data->approvalexam->sales)->first() ?? '-';
         if (!$data->approvalexam->ttd_sales) {
-            // $spv_sales = '-';
             $spv_sales = karyawan::where('jabatan', 'SPV Sales')->first();
         } else {
             $spv_sales = karyawan::where('kode_karyawan', $data->approvalexam->ttd_sales)->first();
         }
         if (!$data->approvalexam->ttd_off) {
-            // $office_manager = '-';
             $office_manager = karyawan::where('jabatan', 'Finance & Accounting')->first();
         } else {
             $office_manager = karyawan::where('kode_karyawan', $data->approvalexam->ttd_off)->first();
         }
         if (!$data->approvalexam->ttd_ts) {
-            // $technical_support = '-';
             $technical_support = karyawan::where('jabatan', 'Technical Support')->first();
         } else {
             $technical_support = karyawan::where('kode_karyawan', $data->approvalexam->ttd_ts)->first();
@@ -826,42 +788,32 @@ class examController extends Controller
         $harga = $data->harga * $data->kurs;
         $totalharga = $harga * $data->pax;
         $totalbiayadmin = $biaya_admin * $data->pax;
-        // return $spv_sales;
         return view('exam.invoice', compact('data', 'spv_sales', 'technical_support', 'office_manager', 'sales', 'harga', 'biaya_admin', 'totalharga', 'totalbiayadmin'));
 
     }
 
-    /**
-     * Redirect to management kelas for room assignment
-     */
     public function assignRoom($id)
     {
         $exam = eksam::with(['rkm', 'materi', 'perusahaan'])->findOrFail($id);
 
-        // Hanya exam only yang bisa assign ruangan
         if ($exam->status != '3') {
             return redirect()->back()->with('error', 'Hanya Exam Only yang dapat di-assign ruangan.');
         }
 
-        // Store exam ID in session untuk digunakan setelah assign room
         session(['exam_assign_id' => $id]);
         session([
             'exam_assign_data' => [
-                'materi' => $exam->materi->nama_materi ?? 'N/A', // PERBAIKAN: gunakan materi bukan materis
+                'materi' => $exam->materi->nama_materi ?? 'N/A',
                 'perusahaan' => $exam->perusahaan->nama_perusahaan ?? 'N/A',
                 'pax' => $exam->pax,
                 'invoice' => $exam->invoice
             ]
         ]);
 
-        // Redirect ke management kelas dengan parameter
         return redirect()->route('managementKelas.index', ['assign_mode' => 'exam', 'exam_id' => $id])
             ->with('info', 'Pilih ruangan dan tanggal untuk exam: ' . ($exam->materi->nama_materi ?? 'N/A'));
     }
 
-    /**
-     * Process room assignment from management kelas
-     */
     public function processRoomAssignment(Request $request)
     {
         $examId = session('exam_assign_id');
@@ -887,16 +839,13 @@ class examController extends Controller
 
         try {
             DB::transaction(function () use ($request, $exam) {
-                // 1. Update RKM dengan data ruangan
                 $exam->rkm->update([
                     'ruang' => $request->ruang,
                     'tanggal_awal' => $request->tanggal,
                     'tanggal_akhir' => $request->tanggal,
-                    'metode_kelas' => 'Offline' // Change from Exam Only to Offline
+                    'metode_kelas' => 'Offline'
                 ]);
 
-                // 2. PERBAIKAN: Buat entry di manajemen_ruangans
-                // Ini yang menyebabkan warna tidak muncul - data harus ada di kedua tabel
                 \App\Models\manajemenRuangan::create([
                     'ruangan' => $request->ruang,
                     'tanggal' => $request->tanggal,
@@ -912,7 +861,6 @@ class examController extends Controller
                 ]);
             });
 
-            // Clear session
             session()->forget(['exam_assign_id', 'exam_assign_data']);
 
             return redirect()->route('exam.index')->with('success', 'Ruangan berhasil di-assign untuk exam.');
@@ -923,19 +871,16 @@ class examController extends Controller
         }
     }
 
-    // TAMBAHAN: Method untuk menghapus assignment jika diperlukan
     public function removeRoomAssignment($id)
     {
         try {
             $exam = eksam::with('rkm')->findOrFail($id);
 
             DB::transaction(function () use ($exam) {
-                // Hapus dari manajemen_ruangans
                 \App\Models\manajemenRuangan::where('ruangan', $exam->rkm->ruang)
                     ->where('kebutuhan', 'LIKE', 'Exam - %')
                     ->delete();
 
-                // Reset RKM
                 $exam->rkm->update([
                     'ruang' => null,
                     'metode_kelas' => 'Exam Only'
@@ -951,7 +896,6 @@ class examController extends Controller
 
     public function rekapExam()
     {
-
         return view('exam.rekapexam');
     }
 

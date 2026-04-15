@@ -386,7 +386,7 @@
                                 var canDelete = (userJabatan.trim() === 'SPV Sales') || (examSalesKey === userIdSales);
 
                                 if (canDelete) {
-                                    actions += '<form onsubmit="return confirm(\'⚠️ Yakin ingin menghapus Exam ini? Tindakan tidak dapat dibatalkan.\');" action="{{ url('/exam') }}/' + row.id + '" method="POST">';
+                                    actions += '<form onsubmit="return confirm(\'Yakin ingin menghapus Exam ini? Tindakan tidak dapat dibatalkan.\');" action="{{ url('/exam') }}/' + row.id + '" method="POST">';
                                     actions += '@csrf @method("DELETE")';
                                     actions += '<button type="submit" class="dropdown-item text-danger"><i class="fas fa-trash"></i> Hapus</button>';
                                     actions += '</form>';
