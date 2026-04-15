@@ -22,9 +22,11 @@ class JurnalAkuntansi extends Model
      * @var array
      */
     protected $fillable = [
+        'nomor_kk',
         'id_pengajuan_barang',
         'tanggal_transaksi',
         'keterangan',
+        'no_akun',
         'debit',
         'kredit',
     ];

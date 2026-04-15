@@ -108,14 +108,14 @@ class PengajuanBarangController extends Controller
         $karyawan = karyawan::findOrfail($user);
         $jabatan = $karyawan->jabatan;
         $divisi = $karyawan->divisi;
-        // dd($year);
+        // dd($year, $month);
         if ($jabatan == 'Finance & Accounting') {
             $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')->whereMonth('created_at', $month)->whereYear('created_at', $year)->get();
         } elseif ($jabatan == 'Office Manager' || $jabatan == 'Education Manager' || $jabatan == 'SPV Sales' || $jabatan == 'Koordinator ITSM') {
             $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')
                 ->whereHas('karyawan', function ($query) use ($divisi) {
                     $query->where('divisi', $divisi);
-                })
+                })->whereMonth('created_at', $month)->whereYear('created_at', $year)
                 ->latest()
                 ->get();
         } elseif ($jabatan == 'GM' || $jabatan == 'Koordinator Office') {
@@ -124,7 +124,7 @@ class PengajuanBarangController extends Controller
             $PengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')
                 ->whereHas('karyawan', function ($query) use ($user) {
                     $query->where('id', $user);
-                })
+                })->whereMonth('created_at', $month)->whereYear('created_at', $year)
                 ->latest()
                 ->get();
         }
@@ -307,7 +307,8 @@ class PengajuanBarangController extends Controller
      * Memperbarui Pengajuan Barang di dalam database.
      */
     public function update(Request $request, $id)
-    {
+    {   
+        // dd($request->all());
         $data = PengajuanBarang::with('karyawan')->findOrFail($id);
         $detail = detailPengajuanBarang::where('id_pengajuan_barang', $id)->get();
         $tracking = tracking_pengajuan_barang::where('id_pengajuan_barang', $id)->latest()->first();
@@ -317,7 +318,8 @@ class PengajuanBarangController extends Controller
 
         if ($request->approval == '1' && $jabatan == 'Finance & Accounting') {
             $status = $request->status;
-
+            
+            
             $e = tracking_pengajuan_barang::create([
                 'id_pengajuan_barang' => $id,
                 'tracking' => $status,
@@ -326,9 +328,11 @@ class PengajuanBarangController extends Controller
             $data->update([
                 'id_tracking' => $e->id,
             ]);
-            $perbaikanKendaraan->update([
-                'status' => $status
-            ]);
+            if ($perbaikanKendaraan) {
+                $perbaikanKendaraan->update([
+                    'status' => $status
+                ]);
+            }
             $users = [$data->karyawan->kode_karyawan];
 
             // Perbaikan logika status "Pencairan Sudah Selesai"
@@ -345,9 +349,11 @@ class PengajuanBarangController extends Controller
                     $data->update([
                         'id_tracking' => $e2->id,
                     ]);
-                    $perbaikanKendaraan->update([
-                        'status' => $status
-                    ]);
+                    if ($perbaikanKendaraan) {
+                        $perbaikanKendaraan->update([
+                            'status' => $status
+                        ]);
+                    }
 
                     $totalPengeluaran = 0;
                     foreach ($detail as $item) {
@@ -356,7 +362,6 @@ class PengajuanBarangController extends Controller
                         $hargaValue = (float) $harga[0];
                         $totalPengeluaran += ($qtyValue * $hargaValue);
                     }
-
                     // Cek apakah jurnal untuk pengajuan ini sudah ada agar tidak duplikat
                     $jurnalExist = JurnalAkuntansi::where('id_pengajuan_barang', $id)->first();
                     if (!$jurnalExist) {
@@ -386,6 +391,10 @@ class PengajuanBarangController extends Controller
                         'status' => $status,
                     ];
                 }
+                    $updatePayload = ['id_tracking' => $e->id];
+                    $updatePayload['no_kk'] = $request->no_kk;
+                    $updatePayload['tanggal_pencairan'] = $request->tanggal_pencairan ?? now();
+                    $data->update($updatePayload);
             } elseif ($status === 'Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager') {
                 $to = $data->karyawan->nama_lengkap;
                 $path = '/pengajuanbarang';
@@ -442,9 +451,11 @@ class PengajuanBarangController extends Controller
             $data->update([
                 'id_tracking' => $e->id,
             ]);
-            $perbaikanKendaraan->update([
-                'status' => $status
-            ]);
+            if ($perbaikanKendaraan) {
+                $perbaikanKendaraan->update([
+                    'status' => $status
+                ]);
+            }
             $users = [$data->karyawan->kode_karyawan];
             $userObjs = User::whereHas('karyawan', function ($query) use ($users) {
                 $query->whereIn('kode_karyawan', array_filter($users));
@@ -463,9 +474,12 @@ class PengajuanBarangController extends Controller
                 NotificationFacade::send($user, new ApprovalbarangNotification($notifData, $path, $to, $type, $receiverId));
             }
 
-            return redirect()
-                ->route('pengajuanbarang.index')
-                ->with(['success' => 'Data berhasil diperbarui!']);
+            return response()->json([
+                'success' => true,
+                'message' => 'Data berhasil diperbarui!',
+                'status' => $status,
+                'id_pengajuan' => $id
+            ], 200);
         }
 
         // Logika status approval dari role lainnya (Office Manager, GM, dll)
@@ -506,10 +520,19 @@ class PengajuanBarangController extends Controller
             $data->update([
                 'id_tracking' => $e->id,
             ]);
+
+            $exists = tracking_pengajuan_barang::where('id_pengajuan_barang', $id)
+                ->where('tracking', 'like', '%diproses oleh Finance%')
+                ->exists();
+            // dd($exists);
+            if ($exists) {
+                $data->update(['tanggal_terima_finance' => now()]);
+            }
         } else {
-            return redirect()
-                ->route('pengajuanbarang.index')
-                ->with(['error' => 'Tidak Bisa mengubah Approval!']);
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak Bisa mengubah Approval!'
+            ], 403);
         }
 
         $usersCodes = [$data->karyawan->kode_karyawan, $users->kode_karyawan];
@@ -530,7 +553,12 @@ class PengajuanBarangController extends Controller
             NotificationFacade::send($user, new ApprovalbarangNotification($notifData, $path, $to, $type, $receiverId));
         }
 
-        return redirect()->route('pengajuanbarang.index')->with('success', 'Pengajuan Barang berhasil diperbarui.');
+       return response()->json([
+            'success' => true,
+            'message' => 'Pengajuan Barang berhasil diperbarui.',
+            'status' => $status,
+            'id_pengajuan' => $id
+        ], 200);
     }
 
     /**

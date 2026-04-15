@@ -170,7 +170,16 @@
                 {"data": "karyawan.jabatan"},
                 {"data": "karyawan.divisi"},
                 {"data": "karyawan.kode_karyawan"},
-                {"data": "karyawan.cuti"},
+                {
+                    "data": 'karyawan.cuti',
+                    "render": function(data) {
+                        @can('Edit DataKaryawan')
+                            return '<p>' + (data ?? '-') + '</p>';
+                        @else
+                            return '-';
+                        @endcan
+                    }
+                },
                 {
                 "data": null,
                 "render": function(data, type, row) {

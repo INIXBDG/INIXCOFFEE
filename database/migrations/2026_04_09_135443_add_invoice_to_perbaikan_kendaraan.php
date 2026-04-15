@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('perbaikan_kendaraans', function (Blueprint $table) {
             $table->foreignId('pengajuanbarangs_id')->nullable()->constrained()->nullOnDelete()->after('bukti');
-            $table->date('tanggal_perbaikan')->nullable()->after('pengajuanbarangs_id');
+            // $table->date('tanggal_perbaikan')->nullable()->after('pengajuanbarangs_id');
             $table->string('invoice')->nullable()->after('tanggal_perbaikan');
             $table->text('deskripsi_perbaikan')->nullable()->after('invoice');
         });

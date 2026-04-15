@@ -1292,6 +1292,8 @@ Route::post('/jurnalakuntansi/store-manual/{id}', [JurnalAkuntansiController::cl
 Route::get('/jurnalakuntansi/{id}/edit', [JurnalAkuntansiController::class, 'edit'])->name('jurnalakuntansi.edit');
 Route::put('/jurnalakuntansi/{id}', [JurnalAkuntansiController::class, 'update'])->name('jurnalakuntansi.update');
 Route::post('/jurnalakuntansi/petty-cash', [JurnalAkuntansiController::class, 'storePettyCash'])->name('jurnalakuntansi.storePettyCash');
+Route::post('/jurnalakuntansi/import-excel', [App\Http\Controllers\JurnalAkuntansiController::class, 'importExcel'])->name('jurnalakuntansi.importExcel');
+
 Route::middleware(['auth'])->group(function () {
     // Route Administrasi Project
     // Route::post('/projects/{project}/administrasi', [ProjectAdministrationController::class, 'updateStage'])

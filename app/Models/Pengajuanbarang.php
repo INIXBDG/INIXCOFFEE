@@ -21,7 +21,17 @@ class PengajuanBarang extends Model
      *
      * @var array
      */
-    protected $fillable = ['id_karyawan', 'id_kegiatan', 'id_tracking', 'tipe', 'invoice'];
+    protected $fillable = [
+        'id_karyawan',
+        'id_kegiatan',
+        'id_tracking',
+        'tipe',
+        'invoice',
+        'no_kk',
+        'tanggal_pencairan',
+        'tanggal_terima_finance',
+
+    ];
 
     /**
      * Tipe data untuk atribut yang didefinisikan.

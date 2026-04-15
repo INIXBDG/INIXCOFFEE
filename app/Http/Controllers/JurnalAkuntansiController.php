@@ -21,6 +21,25 @@ class JurnalAkuntansiController extends Controller
         return view('jurnalakuntansi.index');
     }
 
+    private function generateNomorKK($tanggal_transaksi)
+    {
+        $tahun = \Carbon\Carbon::parse($tanggal_transaksi)->format('Y');
+
+        // Mencari nilai nomor_kk tertinggi di tahun transaksi tersebut
+        $maxNomor = JurnalAkuntansi::whereYear('tanggal_transaksi', $tahun)->max('nomor_kk');
+
+        if ($maxNomor) {
+            // Memecah 'KK-0005' mengambil 4 digit terakhir, lalu menjadikannya integer (+1)
+            $lastNumber = (int) substr($maxNomor, 3);
+            $newNumber = $lastNumber + 1;
+        } else {
+            $newNumber = 1; // Jika belum ada data di tahun tersebut
+        }
+
+        // Format kembali menjadi KK-XXXX
+        return 'KK-' . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
+    }
+
     /**
      * Mengembalikan data JSON untuk DataTables.
      */
@@ -99,9 +118,12 @@ class JurnalAkuntansiController extends Controller
             $totalPengeluaran += ($qtyValue * $hargaValue);
         }
 
+        $tanggal_transaksi = now(); // Atau ambil dari input jika ada
+
         JurnalAkuntansi::create([
+            'nomor_kk' => $this->generateNomorKK($tanggal_transaksi), // GENERATE DISINI
             'id_pengajuan_barang' => $id,
-            'tanggal_transaksi' => now(),
+            'tanggal_transaksi' => $tanggal_transaksi,
             'keterangan' => 'Pengeluaran untuk Pengajuan Barang ID: ' . $id . ' (' . $pengajuan->tipe . ')',
             'debit' => $totalPengeluaran,
             'kredit' => 0,
@@ -142,6 +164,7 @@ class JurnalAkuntansiController extends Controller
                 'keterangan' => 'required|string',
                 'tipe_transaksi' => 'required|in:debit,kredit',
                 'nominal' => 'required|numeric|min:0',
+                'no_akun' => 'nullable|min:0',
             ]);
 
             $debit = $request->tipe_transaksi === 'debit' ? $request->nominal : 0;
@@ -150,6 +173,7 @@ class JurnalAkuntansiController extends Controller
             $jurnal->update([
                 'tanggal_transaksi' => $request->tanggal_transaksi,
                 'keterangan' => $request->keterangan,
+                'no_akun' => $request->no_akun,
                 'debit' => $debit,
                 'kredit' => $kredit,
             ]);
@@ -158,12 +182,15 @@ class JurnalAkuntansiController extends Controller
                 'tanggal_transaksi' => 'required|date',
                 'keterangan' => 'required|string',
                 'kredit' => 'required|numeric|min:0',
+                'no_akun' => 'nullable|min:0',
+
             ]);
 
             $jurnal->update([
                 'tanggal_transaksi' => $request->tanggal_transaksi,
                 'keterangan' => $request->keterangan,
                 'kredit' => $request->kredit,
+                'no_akun' => $request->no_akun,
             ]);
         }
 
@@ -189,7 +216,8 @@ class JurnalAkuntansiController extends Controller
         $kredit = $request->tipe_transaksi === 'kredit' ? $request->nominal : 0;
 
         JurnalAkuntansi::create([
-            'id_pengajuan_barang' => null, // Kosong karena tidak merujuk ke pengajuan
+            'nomor_kk' => $this->generateNomorKK($request->tanggal_transaksi), // GENERATE DISINI
+            'id_pengajuan_barang' => null, 
             'tanggal_transaksi' => $request->tanggal_transaksi,
             'keterangan' => '[Kas Kecil] ' . $request->keterangan,
             'debit' => $debit,
@@ -200,5 +228,65 @@ class JurnalAkuntansiController extends Controller
             'success' => true, 
             'message' => 'Data Kas Kecil berhasil ditambahkan.'
         ]);
+    }
+
+    /**
+     * Memproses dan menyimpan data dari file Excel.
+     */
+    public function importExcel(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv|max:10240',
+        ]);
+
+        try {
+            $file = $request->file('file');
+            $data = \Maatwebsite\Excel\Facades\Excel::toArray([], $file);
+            $sheet = $data[0];
+
+            foreach ($sheet as $key => $row) {
+                // Melewati baris pertama (index 0) yang berisi Header Kolom
+                if ($key === 0) continue; 
+
+                // Mengabaikan baris jika Tanggal atau Keterangan kosong
+                if (empty($row[1]) || empty($row[2])) continue;
+
+                // Konversi format tanggal (mendukung Serial Date Excel maupun String Date biasa)
+                $tanggal = $row[1];
+                if (is_numeric($tanggal)) {
+                    $tanggal = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($tanggal)->format('Y-m-d');
+                } else {
+                    $tanggal = \Carbon\Carbon::parse($tanggal)->format('Y-m-d');
+                }
+
+                // Menentukan Nomor KK: Gunakan dari file Excel, jika kosong jalankan method generator
+                $nomor_kk = !empty($row[0]) ? $row[0] : $this->generateNomorKK($tanggal);
+
+                // Normalisasi string mata uang menjadi float
+                $debit = isset($row[4]) ? (float) preg_replace('/[^0-9.]/', '', $row[4]) : 0;
+                $kredit = isset($row[5]) ? (float) preg_replace('/[^0-9.]/', '', $row[5]) : 0;
+
+                JurnalAkuntansi::create([
+                    'nomor_kk' => $nomor_kk,
+                    'id_pengajuan_barang' => null,
+                    'tanggal_transaksi' => $tanggal,
+                    'keterangan' => $row[2],
+                    'no_akun' => $row[3] ?? null,
+                    'debit' => $debit,
+                    'kredit' => $kredit,
+                ]);
+            }
+
+            return response()->json([
+                'success' => true, 
+                'message' => 'Data Jurnal Akuntansi dari Excel berhasil diimpor.'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'Gagal mengimpor data: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }
