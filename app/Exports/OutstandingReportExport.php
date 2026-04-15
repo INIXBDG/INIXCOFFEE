@@ -2,227 +2,307 @@
 
 namespace App\Exports;
 
-use Maatwebsite\Excel\Concerns\FromCollection;
 use App\Models\Outstanding;
-use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\WithTitle;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use Maatwebsite\Excel\Concerns\WithEvents;
-use Maatwebsite\Excel\Events\AfterSheet;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Concerns\{
+    FromCollection,
+    ShouldAutoSize,
+    WithEvents,
+    WithHeadings,
+    WithMapping,
+    WithStyles,
+    WithTitle
+};
+use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class OutstandingReportExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithTitle, ShouldAutoSize, WithEvents
+class OutstandingReportExport implements
+    FromCollection,
+    WithHeadings,
+    WithMapping,
+    WithStyles,
+    WithTitle,
+    ShouldAutoSize,
+    WithEvents
 {
-    protected $startDate;
-    protected $endDate;
-    protected $filterTipe;
-    protected $filterStatus;
-    protected $filterKaryawan;
-    protected $reportType;
-    protected $rowNumber = 0; // ✅ Counter persisten untuk nomor urut
+    protected $filters;
+    protected $rowNumber = 0;
+    protected $potonganTypes = [];
+    protected $data;
+    protected $isDataLoaded = false;
 
-    public function __construct($reportType = 'tugas', $startDate = null, $endDate = null, $tipe = null, $status = null, $karyawan = null)
+    public function __construct($reportType = 'tugas', $filters = [])
     {
-        $this->reportType = $reportType;
-        $this->startDate = $startDate;
-        $this->endDate = $endDate;
-        $this->filterTipe = $tipe;
-        $this->filterStatus = $status;
-        $this->filterKaryawan = $karyawan;
+        $this->filters = collect($filters);
     }
 
-    protected function formatJsonPotongan($value, $type = 'jumlah')
+    protected function baseQuery()
     {
-        if (empty($value)) {
-            return '-';
+        $query = Outstanding::with(['rkm.perusahaan', 'rkm.materi', 'rkm.sales', 'rkm.invoice']);
+
+        if ($this->filters->get('start_date') && $this->filters->get('end_date')) {
+            return $query->whereBetween('created_at', [
+                $this->filters->get('start_date') . ' 00:00:00',
+                $this->filters->get('end_date') . ' 23:59:59'
+            ]);
         }
 
-        $data = is_string($value) ? json_decode($value, true) : $value;
+        $preset  = $this->filters->get('filter_preset');
+        $year    = $this->filters->get('filter_year');
+        $month   = $this->filters->get('filter_month');
+        $quarter = $this->filters->get('filter_quarter');
 
-        if (!is_array($data) || empty($data)) {
-            return '-';
+        if ($preset === 'tahun' && $year) {
+            $query->whereYear('created_at', $year);
         }
 
-        // Cek jika array numerik sederhana
-        if (count($data) === count(array_filter(array_keys($data), 'is_numeric')) && !isset($data[0]['jenis']) && !isset($data[0]['nilai'])) {
-            return implode(', ', array_map(fn($v) => number_format((float)$v, 0, ',', '.'), $data));
+        if ($preset === 'bulan' && $year && $month) {
+            $query->whereYear('created_at', $year)
+                  ->whereMonth('created_at', $month);
         }
 
-        $result = [];
-        foreach ($data as $item) {
-            if (is_array($item)) {
-                if ($type === 'jenis') {
-                    $result[] = $item['jenis'] ?? ($item['type'] ?? ($item['name'] ?? '-'));
-                } else {
-                    $val = $item['nilai'] ?? ($item['amount'] ?? ($item['jumlah'] ?? 0));
-                    $result[] = number_format((float)$val, 0, ',', '.');
-                }
+        if ($preset === 'triwulan' && $year && $quarter) {
+            $quarters = [
+                1 => [1, 3],
+                2 => [4, 6],
+                3 => [7, 9],
+                4 => [10, 12]
+            ];
+
+            if (isset($quarters[$quarter])) {
+                [$start, $end] = $quarters[$quarter];
+
+                $query->whereYear('created_at', $year)
+                      ->whereBetween(DB::raw('MONTH(created_at)'), [$start, $end]);
             }
         }
-        return empty($result) ? '-' : implode('; ', $result);
+
+        if ($this->filters->get('karyawan')) {
+            $query->whereHas('rkm.sales', fn ($q) =>
+                $q->where('id', $this->filters->get('karyawan'))
+            );
+        }
+
+        return $query;
     }
 
     public function collection()
     {
-        $query = Outstanding::with(['rkm.perusahaan', 'rkm.materi', 'rkm.sales', 'tracking_outstanding']);
-
-        if ($this->startDate) {
-            $query->whereDate('created_at', '>=', $this->startDate);
-        }
-        if ($this->endDate) {
-            $query->whereDate('created_at', '<=', $this->endDate);
+        if ($this->isDataLoaded) {
+            return $this->data;
         }
 
-        if ($this->filterTipe === 'Outstanding PA') {
-            $query->where(function ($q) {
-                $q->whereNotNull('net_sales')->where('net_sales', '!=', 0)->where('net_sales', '!=', '0.00');
-            });
-        } elseif ($this->filterTipe === 'Lunas') {
-            $query->where('status_pembayaran', 1);
+        $this->data = $this->baseQuery()
+            ->orderBy('due_date')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $this->isDataLoaded = true;
+        $this->loadPotonganTypes();
+
+        return $this->data;
+    }
+
+    protected function decodeJsonField($value)
+    {
+        if (empty($value)) return null;
+
+        $decoded = is_string($value) ? json_decode($value, true) : $value;
+
+        return is_string($decoded) ? json_decode($decoded, true) : $decoded;
+    }
+
+    protected function loadPotonganTypes()
+    {
+        if (!empty($this->potonganTypes)) return;
+
+        $types = [];
+
+        foreach ($this->collection() as $item) {
+            $attr = $item->getAttributes();
+
+            $jenis = $this->decodeJsonField($attr['jenis_potongan'] ?? null);
+            if (is_array($jenis)) {
+                foreach ($jenis as $j) {
+                    if (!empty($j)) $types[] = trim($j);
+                }
+            }
+
+            $jumlah = $this->decodeJsonField($attr['jumlah_potongan'] ?? null);
+            if (is_array($jumlah)) {
+                foreach ($jumlah as $p) {
+                    if (!empty($p['jenis'])) {
+                        $types[] = trim($p['jenis']);
+                    }
+                }
+            }
         }
 
-        return $query->orderBy('due_date')->orderBy('created_at', 'desc')->get();
+        $this->potonganTypes = array_values(array_unique($types));
     }
 
     public function headings(): array
     {
-        $start = $this->startDate ? Carbon::parse($this->startDate)->format('d M Y') : 'Awal';
-        $end = $this->endDate ? Carbon::parse($this->endDate)->format('d M Y') : 'Sekarang';
-        $user = Auth::check() ? (Auth::user()->karyawan->nama_lengkap ?? Auth::user()->username) : 'System';
+        $this->loadPotonganTypes();
 
-        $title = match($this->filterTipe) {
-            'Outstanding PA' => 'LAPORAN OUTSTANDING PA',
-            'Lunas' => 'LAPORAN OUTSTANDING LUNAS',
-            default => 'LAPORAN OUTSTANDING'
-        };
-
-        $commonHeaders = [
-            [$title],
-            ['Periode: ' . $start . ' s/d ' . $end],
+        $meta = [
+            ['LAPORAN OUTSTANDING'],
+            ['Periode: ' . $this->getPeriodLabel()],
             ['Diexport pada: ' . Carbon::now()->format('d M Y H:i:s')],
-            ['Oleh: ' . $user],
+            ['Oleh: ' . (Auth::user()->username ?? 'System')],
             []
         ];
 
-        if ($this->filterTipe === 'Outstanding PA') {
-            $dataHeaders = ['No', 'Perusahaan', 'Materi', 'Periode Latihan', 'Net Sales', 'PIC', 'Sales'];
-        } elseif ($this->filterTipe === 'Lunas') {
-            $dataHeaders = [
-                'No', 'Perusahaan', 'Materi', 'Periode Latihan', 'Net Sales', 'PIC', 'Sales',
-                'Tenggat Waktu', 'Status Pembayaran', 'Jenis Potongan', 'Jumlah Potongan',
-                'Jumlah Pembayaran', 'Tanggal Bayar',
-            ];
-        } else {
-            $dataHeaders = [
-                'No', 'Perusahaan', 'Materi', 'Periode Latihan', 'Net Sales', 'PIC', 'Sales',
-                'Tenggat Waktu', 'Status Pembayaran', 'Invoice', 'Faktur Pajak', 'Dokumen Tambahan',
-                'Konfirmasi Pengiriman RPX', 'Konfirmasi No. Resi', 'Status Pengiriman',
-                'Konfirmasi PIC', 'Pembayaran', 'No. Resi', 'Keterangan PIC'
-            ];
+        $columns = array_merge(
+            [
+                'No',
+                'Perusahaan',
+                'Kelas',
+                'Sales',
+                'Tanggal',
+                'Tagihan',
+                'Jatuh Tempo',
+                'Tanggal Bayar',
+                'Nominal Pembayaran',
+            ],
+            $this->potonganTypes,
+            ['Uang Diterima', 'Status', 'Info']
+        );
+
+        return array_merge($meta, [$columns]);
+    }
+
+    protected function getPeriodLabel(): string
+    {
+        if ($this->filters->get('start_date') && $this->filters->get('end_date')) {
+            return Carbon::parse($this->filters->get('start_date'))->format('d M Y')
+                . ' s/d ' .
+                Carbon::parse($this->filters->get('end_date'))->format('d M Y');
         }
 
-        $commonHeaders[] = $dataHeaders;
-        return $commonHeaders;
+        $preset  = $this->filters->get('filter_preset');
+        $year    = $this->filters->get('filter_year');
+        $month   = $this->filters->get('filter_month');
+        $quarter = $this->filters->get('filter_quarter');
+
+        if ($preset === 'tahun' && $year) return "Tahun $year";
+
+        if ($preset === 'bulan' && $year && $month) {
+            return Carbon::create()->month($month)->translatedFormat('F') . " $year";
+        }
+
+        if ($preset === 'triwulan' && $year && $quarter) {
+            return "Triwulan $quarter / $year";
+        }
+
+        return 'Semua Data Outstanding';
     }
 
     public function map($item): array
     {
-        $this->rowNumber++; // ✅ Increment counter persisten
-        $rkm = $item->rkm;
-        $perusahaan = optional($rkm?->perusahaan)->nama_perusahaan ?? '-';
-        $materi = optional($rkm?->materi)->nama_materi ?? '-';
-        $sales = optional($rkm?->sales)->nama_lengkap ?? '-';
-        $periode = ($rkm?->tanggal_awal && $rkm?->tanggal_akhir) 
-            ? Carbon::parse($rkm->tanggal_awal)->format('d M Y') . ' s/d ' . Carbon::parse($rkm->tanggal_akhir)->format('d M Y') 
+        $this->rowNumber++;
+        $this->loadPotonganTypes();
+
+        $rkm  = $item->rkm;
+        $attr = $item->getAttributes();
+
+        $potonganData = [];
+
+        $decoded = $this->decodeJsonField($attr['jumlah_potongan'] ?? null);
+        if (is_array($decoded)) {
+            foreach ($decoded as $p) {
+                if (!empty($p['jenis'])) {
+                    $potonganData[trim($p['jenis'])] = $p['jumlah'] ?? 0;
+                }
+            }
+        }
+
+        $mappedPotongan = array_map(function ($type) use ($potonganData) {
+            $val = $potonganData[$type] ?? 0;
+            return $val > 0 ? number_format($val, 0, ',', '.') : '0';
+        }, $this->potonganTypes);
+
+        $tanggalAkhir = optional($rkm)->tanggal_akhir;
+        $amount = optional($rkm?->invoice)->amount;
+
+        $jatuhTempo = $tanggalAkhir
+            ? Carbon::parse($tanggalAkhir)->addMonths(6)->format('d M Y')
             : '-';
 
-        if ($this->filterTipe === 'Outstanding PA') {
-            return [
+        return array_merge(
+            [
                 $this->rowNumber,
-                $perusahaan,
-                $materi,
-                $periode,
-                number_format((float)($item->net_sales ?? 0), 0, ',', '.'),
-                $item->pic ?? '-',
-                $sales
-            ];
-        } elseif ($this->filterTipe === 'Lunas') {
-            return [
-                $this->rowNumber,
-                $perusahaan,
-                $materi,
-                $periode,
-                number_format((float)($item->net_sales ?? 0), 0, ',', '.'),
-                $item->pic ?? '-',
-                $sales,
-                $item->due_date ? Carbon::parse($item->due_date)->format('d M Y') : '-',
-                $item->status_pembayaran === '1' ? 'Lunas' : 'Belum',
-                $this->formatJsonPotongan($item->jenis_potongan, 'jenis'),
-                $this->formatJsonPotongan($item->jumlah_potongan, 'jumlah'),
-                number_format((float)($item->jumlah_pembayaran ?? 0), 0, ',', '.'),
-                $item->tanggal_bayar ? Carbon::parse($item->tanggal_bayar)->format('d M Y H:i') : '-',
-            ];
-        } else {
-            $tracking = $item->tracking_outstanding;
-            return [
-                $this->rowNumber,
-                $perusahaan,
-                $materi,
-                $periode,
-                number_format((float)($item->net_sales ?? 0), 0, ',', '.'),
-                $item->pic ?? '-',
-                $sales,
-                $item->due_date ? Carbon::parse($item->due_date)->format('d M Y') : '-',
-                $item->status_pembayaran === '1' ? 'Lunas' : 'Belum',
-                optional($tracking)->invoice ? '(Ada)' : '-',
-                optional($tracking)->faktur_pajak ? 'Ada' : '-',
-                optional($tracking)->dokumen_tambahan ? 'Ada' : '-',
-                optional($tracking)->konfir_cs ? 'Ada' : '-',
-                optional($tracking)->no_resi ? 'Ada' : '-',
-                optional($tracking)->status_resi ? 'Ada' : '-',
-                optional($tracking)->konfir_pic ? 'Ada' : '-',
-                optional($tracking)->pembayaran ? 'Ada' : '-',
-                optional($tracking)->status_resi ?? '-',
-                optional($tracking)->keterangan_pic ?? '-',
-            ];
-        }
+                optional($rkm?->perusahaan)->nama_perusahaan ?? '-',
+                optional($rkm?->materi)->nama_materi ?? '-',
+                optional($rkm?->sales)->nama_lengkap ?? '-',
+                $tanggalAkhir ?? '-',
+                optional($rkm?->invoice)->amount ?? '-',
+                $jatuhTempo,
+                $item->tanggal_bayar
+                    ? Carbon::parse($item->tanggal_bayar)->format('d M Y H:i')
+                    : '-',
+                optional($rkm?->invoice)->amount ?? '-',
+            ],
+            $mappedPotongan,
+            [
+                number_format($item->jumlah_pembayaran ?? 0, 0, ',', '.'),
+                $item->tanggal_bayar ? 'LUNAS' : 'BELUM BAYAR',
+                $amount ? 'Sesuai' : ' ',
+            ]
+        );
     }
 
     public function styles(Worksheet $sheet)
     {
         return [
-            1 => ['font' => ['bold' => true, 'size' => 14], 'alignment' => ['horizontal' => 'center']],
-            2 => ['font' => ['italic' => true], 'alignment' => ['horizontal' => 'center']],
-            3 => ['font' => ['italic' => true], 'alignment' => ['horizontal' => 'center']],
-            4 => ['font' => ['italic' => true], 'alignment' => ['horizontal' => 'center']],
-            6 => ['font' => ['bold' => true], 'fill' => ['fillType' => 'solid', 'startColor' => ['argb' => 'FFE0E0E0']]],
+            1 => ['font' => ['bold' => true]],
+            2 => ['font' => ['bold' => true]],
+            3 => ['font' => ['bold' => true]],
+            4 => ['font' => ['bold' => true]],
+            6 => [
+                'font' => ['bold' => true],
+                'fill' => [
+                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => 'CCCCCC']
+                ]
+            ],
         ];
     }
 
     public function title(): string
     {
-        return $this->reportType === 'kategori' ? 'Kategori Tugas' : 'Pelaksanaan Tugas';
+        return 'Outstanding';
     }
 
     public function registerEvents(): array
     {
         return [
-            AfterSheet::class => function (AfterSheet $event) {
+            AfterSheet::class => function ($event) {
                 $sheet = $event->sheet->getDelegate();
-                $lastRow = $sheet->getHighestRow();
 
-                $summaryRow = $lastRow + 2;
-                $sheet->setCellValue('A' . $summaryRow, 'RINGKASAN:');
-                $sheet->setCellValue('A' . ($summaryRow + 1), 'Tipe Filter: ' . ($this->filterTipe ?? 'Semua'));
-                
-                $sheet->getStyle('A' . $summaryRow . ':A' . ($summaryRow + 1))
+                $lastColumn = $sheet->getHighestColumn();
+                $sheet->mergeCells("A1:{$lastColumn}1");
+
+                $sheet->getStyle('A1')
+                    ->getAlignment()
+                    ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+                $lastRow = $sheet->getHighestRow();
+                $total   = $this->collection()->sum('jumlah_pembayaran');
+
+                $rowTotal = $lastRow + 2;
+
+                $sheet->setCellValue(
+                    "A{$rowTotal}",
+                    'Total Uang Diterima: Rp ' . number_format($total, 0, ',', '.')
+                );
+
+                $sheet->getStyle("A{$rowTotal}")
                     ->getFont()
                     ->setBold(true);
-            },
+            }
         ];
     }
 }

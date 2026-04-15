@@ -1,51 +1,6 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="modal fade" id="modalExport" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <form id="formExport" method="GET">
-                    <div class="modal-header">
-                        <h5 class="modal-title"><i class="fas fa-filter me-2"></i>Filter Export Laporan
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Tanggal Mulai</label>
-                                <input type="date" name="start_date" class="form-control">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Tanggal Akhir</label>
-                                <input type="date" name="end_date" class="form-control">
-                            </div>
-                            <div class="col-md-12">
-                                <label class="form-label">Tipe Outstandig</label>
-                                <select name="tipe_outstanding" class="form-select">
-                                    <option value="">Semua Outstanding</option>
-                                    <option value="Outstanding">Outstanding</option>
-                                    <option value="Outstanding PA">Outstanding PA</option>
-                                    <option value="Lunas">Lunas</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-success"
-                            formaction="{{ route('outstanding.export.excel') }}">
-                            <i class="fas fa-file-excel me-1"></i> Export Excel
-                        </button>
-                        <button type="submit" class="btn btn-danger"
-                            formaction="{{ route('outstanding.export.pdf') }}">
-                            <i class="fas fa-file-pdf me-1"></i> Export PDF
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
     <div class="container-fluid">
         <div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="spinnerModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
@@ -61,10 +16,10 @@
             <div class="col-md-12">
                 <div class="d-flex justify-content-end">
                     @can('Create Outstanding')
-                        <a href="{{ route('outstanding.create') }}" class="btn btn-md click-primary mx-4" data-toggle="tooltip"
+                        <a href="{{ route('outstanding.create') }}" class="btn btn-md click-primary mx-2" data-toggle="tooltip"
                             data-placement="top" title="Tambah User"><img src="{{ asset('icon/plus.svg') }}" class=""
                                 width="30px"> List Outstanding</a>
-                        <button type="button" class="btn click-primary dropdown-toggle dropdown-toggle-split"
+                        <button type="button" class="btn click-primary dropdown-toggle dropdown-toggle-split mx-4"
                             data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <span class="sr-only">Singkron Data</span>
                         </button>
@@ -74,33 +29,122 @@
                             <a class="dropdown-item" href="#" data-bs-toggle="modal"
                                 data-bs-target="#modalSinkron">Singkron Data</a>
                         </div>
+
+                        <div class="btn-group">
+                            <button class="btn btn-success dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-file-export me-1"></i> Export Laporan
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="#" data-bs-toggle="modal"
+                                        data-bs-target="#modalExport">
+                                        <i class="fas fa-cog me-2"></i> Export dengan Filter
+                                    </a>
+                                </li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('outstanding.export.excel') }}">
+                                        <i class="fas fa-file-excel text-success me-2"></i> Export Excel
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('outstanding.export.pdf') }}">
+                                        <i class="fas fa-file-pdf text-danger me-2"></i> Export PDF
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                     @endcan
                 </div>
-                    <div class="btn-group">
-                        <button class="btn btn-success dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-file-export me-1"></i> Export Laporan
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li>
-                                <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#modalExport">
-                                    <i class="fas fa-cog me-2"></i> Export dengan Filter
-                                </a>
-                            </li>
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="{{ route('outstanding.export.excel') }}">
-                                    <i class="fas fa-file-excel text-success me-2"></i> Excel (Semua Data)
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="{{ route('outstanding.export.pdf') }}">
-                                    <i class="fas fa-file-pdf text-danger me-2"></i> PDF (Semua Data)
-                                </a>
-                            </li>
-                        </ul>
+
+                <div class="modal fade" id="modalExport" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered modal-lg">
+                        <div class="modal-content">
+                            <form id="formExport" method="GET">
+                                <div class="modal-header text-white">
+                                    <h5 class="modal-title text-dark"><i class="fas fa-filter me-2"></i>Filter Export Laporan
+                                    </h5>
+                                    <button type="button" class="btn-close btn-close-white"
+                                        data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="alert alert-info py-2 mb-3">
+                                        <i class="fas fa-info-circle me-1"></i> Pilih salah satu: Preset Waktu
+                                        <strong>atau</strong> Tanggal Manual
+                                    </div>
+
+                                    <div class="row g-3 mb-3">
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-bold">Filter Cepat</label>
+                                            <select name="filter_preset" id="filterPreset" class="form-select">
+                                                <option value="">-- Pilih Preset --</option>
+                                                <option value="tahun">Per Tahun</option>
+                                                <option value="bulan">Per Bulan</option>
+                                                <option value="triwulan">Per Triwulan</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-md-4 preset-input" id="inputTahun" style="display:none;">
+                                            <label class="form-label">Tahun</label>
+                                            <select name="filter_year" class="form-select">
+                                                @for ($y = date('Y'); $y >= date('Y') - 5; $y--)
+                                                    <option value="{{ $y }}">{{ $y }}</option>
+                                                @endfor
+                                            </select>
+                                        </div>
+
+                                        <div class="col-md-4 preset-input" id="inputBulan" style="display:none;">
+                                            <label class="form-label">Bulan</label>
+                                            <select name="filter_month" class="form-select">
+                                                @foreach (['01' => 'Januari', '02' => 'Februari', '03' => 'Maret', '04' => 'April', '05' => 'Mei', '06' => 'Juni', '07' => 'Juli', '08' => 'Agustus', '09' => 'September', '10' => 'Oktober', '11' => 'November', '12' => 'Desember'] as $k => $v)
+                                                    <option value="{{ $k }}">{{ $v }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+
+                                        <div class="col-md-4 preset-input" id="inputTriwulan" style="display:none;">
+                                            <label class="form-label">Triwulan</label>
+                                            <select name="filter_quarter" class="form-select">
+                                                <option value="1">Triwulan 1 (Jan-Mar)</option>
+                                                <option value="2">Triwulan 2 (Apr-Jun)</option>
+                                                <option value="3">Triwulan 3 (Jul-Sep)</option>
+                                                <option value="4">Triwulan 4 (Okt-Des)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <hr class="my-3">
+
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-bold">Tanggal Mulai (Manual)</label>
+                                            <input type="date" name="start_date" id="startDate" class="form-control">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-bold">Tanggal Akhir (Manual)</label>
+                                            <input type="date" name="end_date" id="endDate" class="form-control">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary"
+                                        data-bs-dismiss="modal">Batal</button>
+                                    <button type="submit" class="btn btn-success"
+                                        formaction="{{ route('outstanding.export.excel') }}">
+                                        <i class="fas fa-file-excel me-1"></i> Export Excel
+                                    </button>
+                                    <button type="submit" class="btn btn-danger"
+                                        formaction="{{ route('outstanding.export.pdf') }}">
+                                        <i class="fas fa-file-pdf me-1"></i> Export PDF
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
+                </div>
+                
                 <div class="modal fade" id="modalSinkron" tabindex="-1" role="dialog"
                     aria-labelledby="modalSinkronLabel" aria-hidden="true">
                     <div class="modal-dialog" role="document">
@@ -859,6 +903,44 @@
                     tablePA.ajax.reload();
                 });
 
+            });
+
+            document.addEventListener('DOMContentLoaded', function() {
+                const preset = document.getElementById('filterPreset');
+                const inputs = document.querySelectorAll('.preset-input');
+                const startDate = document.getElementById('startDate');
+                const endDate = document.getElementById('endDate');
+
+                preset.addEventListener('change', function() {
+                    inputs.forEach(el => el.style.display = 'none');
+
+                    if (this.value === 'tahun') {
+                        document.getElementById('inputTahun').style.display = 'block';
+                        startDate.value = '';
+                        endDate.value = '';
+                    } else if (this.value === 'bulan') {
+                        document.getElementById('inputBulan').style.display = 'block';
+                        startDate.value = '';
+                        endDate.value = '';
+                    } else if (this.value === 'triwulan') {
+                        document.getElementById('inputTriwulan').style.display = 'block';
+                        startDate.value = '';
+                        endDate.value = '';
+                    }
+                });
+
+                startDate.addEventListener('change', function() {
+                    if (this.value) {
+                        preset.value = '';
+                        inputs.forEach(el => el.style.display = 'none');
+                    }
+                });
+                endDate.addEventListener('change', function() {
+                    if (this.value) {
+                        preset.value = '';
+                        inputs.forEach(el => el.style.display = 'none');
+                    }
+                });
             });
         </script>
     @endpush
