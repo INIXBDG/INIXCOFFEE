@@ -176,10 +176,23 @@
                             </div>
                         </div>
 
+                        <div class="row mb-4" id="budgetSection" style="display:none;">
+                            <label class="col-md-3 col-form-label fw-semibold">Budget</label>
+                            <div class="col-md-9">
+                                <div class="input-group">
+                                    <span class="input-group-text">Rp</span>
+                                    <input type="text" name="budget" id="edit_budget_input" class="form-control"
+                                        placeholder="0" autocomplete="off">
+                                    <input type="hidden" name="budget_value" id="edit_budget_hidden">
+                                </div>
+                                <small class="text-muted">Opsional. Kosongkan jika tidak ada budget khusus.</small>
+                            </div>
+                        </div>
+
                         <div class="row mb-4" id="vehicleSection" style="display:none;">
                             <label class="col-md-3 col-form-label fw-semibold">Kendaraan</label>
                             <div class="col-md-9">
-                                <select name="kendaraan" class="form-select">
+                                <select name="budget" class="form-select">
                                     <option value="">Belum Dipilih</option>
                                     @foreach ($kendaraan as $data)
                                         <option value="{{ $data }}">{{ $data }}</option>
@@ -428,6 +441,31 @@
             initSearchAndPagination();
         });
 
+        const budgetInput = document.getElementById('edit_budget_input');
+        const budgetHidden = document.getElementById('edit_budget_hidden');
+
+        if (budgetInput) {
+            budgetInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                budgetHidden.value = value;
+                this.value = value ? 'Rp ' + parseInt(value).toLocaleString('id-ID') : '';
+            });
+        }
+
+        $(document).on('change', 'select[name="id_driver"]', function() {
+            const driverId = $(this).val();
+            const statusApply = $('#edit_id').val() ?
+                allData.find(d => d.id == $('#edit_id').val())?.status_apply : 0;
+
+            if (driverId && (statusApply == 1 || statusApply == 2)) {
+                $('#budgetSection').slideDown();
+            } else {
+                $('#budgetSection').slideUp();
+                $('#edit_budget_input').val('');
+                $('#edit_budget_hidden').val('');
+            }
+        });
+
         function initSearchAndPagination() {
             // Debounce search
             let searchTimeout;
@@ -647,6 +685,16 @@
             } else {
                 $('#vehicleSection').hide();
                 $('select[name="kendaraan"]').val('');
+            }
+            if (item.budget) {
+                $('#budgetSection').show();
+                const budgetVal = Number(item.budget);
+                $('#edit_budget_hidden').val(budgetVal);
+                $('#edit_budget_input').val('Rp ' + budgetVal.toLocaleString('id-ID'));
+            } else {
+                $('#budgetSection').hide();
+                $('#edit_budget_input').val('');
+                $('#edit_budget_hidden').val('');
             }
             const body = $('#editDetailBody');
             body.empty();

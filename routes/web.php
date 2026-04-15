@@ -1030,6 +1030,9 @@ Route::prefix('office')
             Route::put('/update/{id}', [KegiatanController::class, 'updateKegiatan'])->name('updateKegiatan');
             Route::delete('/delete/{id}', [KegiatanController::class, 'deleteKegiatan'])->name('deleteKegiatan');
 
+            Route::get('{id}/available-pengajuan', [KegiatanController::class, 'getAvailablePengajuanBarang'])->name('availablePengajuan');
+            Route::post('{id}/link-pengajuan', [KegiatanController::class, 'linkPengajuanBarang'])->name('linkPengajuan');
+
             Route::get('/show/{id}', [KegiatanController::class, 'show'])->name('showRincian');
             Route::post('/store/rincian/{id}', [KegiatanController::class, 'storeRincian'])->name('storeRincian');
             Route::put('/update/rincian/{id}', [KegiatanController::class, 'updateRincian'])->name('updateRincian');

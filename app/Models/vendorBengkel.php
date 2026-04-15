@@ -12,6 +12,9 @@ class vendorBengkel extends Model
         'nama',
         'is_active',
         'foto',
-        'keterangan'
+        'keterangan',
+        'no_hp',
+        'no_rekening',
+        'alamat'
     ];
 }

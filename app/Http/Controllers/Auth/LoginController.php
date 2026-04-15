@@ -67,11 +67,11 @@ class LoginController extends Controller
             $targetShift = 'Shift 1';
         }
 
-        $isEndOfWeek = $now->isSaturday();
+        $isEndOfWeek = $now->isSaturday() || $now->isSunday();
         $isEndOfMonth = $now->day == $now->daysInMonth;
 
         if ($isEndOfMonth && $isEndOfWeek) {
-            $tipeAktif = ['Bulanan', 'Mingguan'];
+            $tipeAktif = ['Bulanan', 'Mingguan', 'Harian'];
             $skipHarian = true;
         } elseif ($isEndOfMonth) {
             $tipeAktif = ['Bulanan', 'Harian'];

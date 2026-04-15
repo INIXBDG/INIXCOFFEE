@@ -584,68 +584,84 @@ class pickupDriverController extends Controller
         $request->validate([
             'pickup_driver_id' => 'required|exists:pickup_drivers,id',
             'id_driver' => 'required|exists:karyawans,id',
-            'kendaraan' => 'nullable',
+            'kendaraan' => 'nullable|string|max:255',
+            'budget_value' => 'nullable|numeric|min:0',
             'details' => 'required|array|min:1',
             'details.*.tipe' => 'required|in:Penjemputan,Pengantaran',
-            'details.*.lokasi' => 'required|string',
+            'details.*.lokasi' => 'required|string|max:255',
             'details.*.tanggal' => 'required|date',
-            'details.*.waktu' => 'required',
+            'details.*.waktu' => 'required|date_format:H:i',
         ]);
 
         $pickup = pickupDriver::with('detailPickupDriver', 'karyawan')->findOrFail($request->pickup_driver_id);
-        $oldDetails = $pickup->detailPickupDriver
-            ->map(
-                fn($item) => [
-                    'id' => $item->id,
-                    'tipe' => $item->tipe,
-                    'lokasi' => $item->lokasi,
-                    'tanggal' => $item->tanggal_keberangkatan,
-                    'waktu' => substr($item->waktu_keberangkatan, 0, 5),
-                ],
-            )
-            ->keyBy('id');
+
+        $oldData = [
+            'id_karyawan' => $pickup->id_karyawan,
+            'kendaraan' => $pickup->kendaraan,
+            'budget' => $pickup->budget,
+            'details' => $pickup->detailPickupDriver
+                ->map(
+                    fn($d) => [
+                        'tipe' => $d->tipe,
+                        'lokasi' => $d->lokasi,
+                        'tanggal' => $d->tanggal_keberangkatan,
+                        'waktu' => substr($d->waktu_keberangkatan, 0, 5),
+                    ],
+                )
+                ->all(),
+        ];
 
         $changes = [];
+
         if ($pickup->id_karyawan != $request->id_driver) {
-            $oldDriver = $pickup->karyawan->nama_lengkap ?? 'Tidak diketahui';
+            $oldDriver = $pickup->karyawan?->nama_lengkap ?? 'Tidak diketahui';
             $newDriver = karyawan::find($request->id_driver)?->nama_lengkap ?? 'Tidak diketahui';
             $changes[] = "Driver: {$oldDriver} → {$newDriver}";
         }
-        if ($pickup->kendaraan != ($request->kendaraan ?? null)) {
-            $changes[] = 'Kendaraan: ' . ($pickup->kendaraan ?: 'tidak ada') . ' → ' . ($request->kendaraan ?: 'tidak ada');
+
+        $oldKendaraan = $pickup->kendaraan ?? 'tidak ada';
+        $newKendaraan = $request->filled('kendaraan') ? $request->kendaraan : null;
+        $newKendaraanDisplay = $newKendaraan ?? 'tidak ada';
+
+        if ($oldKendaraan !== $newKendaraan) {
+            $changes[] = "Kendaraan: {$oldKendaraan} → {$newKendaraanDisplay}";
         }
 
-        $newDetailsRaw = collect($request->details)->map(
-            fn($d) => [
-                'tipe' => $d['tipe'],
-                'lokasi' => $d['lokasi'],
-                'tanggal' => $d['tanggal'],
-                'waktu' => $d['waktu'],
+        $newBudget = $request->filled('budget_value') ? (float) $request->budget_value : null;
+        $oldBudgetDisplay = $pickup->budget ? 'Rp ' . number_format($pickup->budget, 0, ',', '.') : 'tidak ada';
+        $newBudgetDisplay = $newBudget ? 'Rp ' . number_format($newBudget, 0, ',', '.') : 'tidak ada';
+
+        if ($pickup->budget !== $newBudget) {
+            $changes[] = "Budget: {$oldBudgetDisplay} → {$newBudgetDisplay}";
+        }
+
+        $newDetailsKeyed = collect($request->details)->mapWithKeys(
+            fn($d, $i) => [
+                $i => $d['tipe'] . '|' . $d['lokasi'] . '|' . $d['tanggal'] . '|' . $d['waktu'],
             ],
         );
 
-        $deleted = [];
-        foreach ($oldDetails as $id => $old) {
-            if (!$newDetailsRaw->first(fn($n) => $old['tipe'] === $n['tipe'] && $old['lokasi'] === $n['lokasi'] && $old['tanggal'] == $n['tanggal'] && $old['waktu'] === $n['waktu'])) {
-                $deleted[] = "Dihapus: {$old['tipe']} ke {$old['lokasi']} ({$old['tanggal']} {$old['waktu']})";
-            }
-        }
-        $added = [];
-        foreach ($newDetailsRaw as $new) {
-            if (!$oldDetails->first(fn($o) => $o['tipe'] === $new['tipe'] && $o['lokasi'] === $new['lokasi'] && $o['tanggal'] == $new['tanggal'] && $o['waktu'] === $new['waktu'])) {
-                $added[] = "Ditambah: {$new['tipe']} ke {$new['lokasi']} ({$new['tanggal']} {$new['waktu']})";
-            }
-        }
+        $oldDetailsKeyed = collect($oldData['details'])->mapWithKeys(
+            fn($d, $i) => [
+                $i => $d['tipe'] . '|' . $d['lokasi'] . '|' . $d['tanggal'] . '|' . $d['waktu'],
+            ],
+        );
+
+        $deleted = $oldDetailsKeyed->diff($newDetailsKeyed)->map(fn($v, $k) => "Dihapus: {$oldData['details'][$k]['tipe']} ke {$oldData['details'][$k]['lokasi']} ({$oldData['details'][$k]['tanggal']} {$oldData['details'][$k]['waktu']})")->all();
+
+        $added = $newDetailsKeyed->diff($oldDetailsKeyed)->map(fn($v, $k) => "Ditambah: {$request->details[$k]['tipe']} ke {$request->details[$k]['lokasi']} ({$request->details[$k]['tanggal']} {$request->details[$k]['waktu']})")->all();
 
         if (empty($changes) && empty($deleted) && empty($added)) {
             return response()->json(['success' => true, 'message' => 'Tidak ada perubahan.']);
         }
 
         $pickup->id_karyawan = $request->id_driver;
-        $pickup->kendaraan = $request->filled('kendaraan') ? $request->kendaraan : null;
+        $pickup->budget = $newBudget;
+        $pickup->kendaraan = $newKendaraan;
         $pickup->save();
 
         DetailPickupDriver::where('pickup_driver_id', $pickup->id)->delete();
+
         foreach ($request->details as $detail) {
             DetailPickupDriver::create([
                 'pickup_driver_id' => $pickup->id,
@@ -657,25 +673,28 @@ class pickupDriverController extends Controller
         }
 
         $user = auth()->user()->username;
-        $logMsg = $user . ' memperbarui: ' . implode('; ', array_merge($changes, $deleted, $added));
-        TrackingPickupDriver::create([
-            'pickup_driver_id' => $pickup->id,
-            'status' => $logMsg,
-            'diubah_oleh' => auth()->user()->id,
-        ]);
+        $logParts = array_merge($changes, $deleted, $added);
+
+        if (!empty($logParts)) {
+            TrackingPickupDriver::create([
+                'pickup_driver_id' => $pickup->id,
+                'status' => $user . ' memperbarui: ' . implode('; ', $logParts),
+                'diubah_oleh' => auth()->user()->id,
+            ]);
+        }
 
         $creator = auth()->user();
         $creatorKaryawan = $creator->karyawan;
         $driver = karyawan::findOrFail($request->id_driver);
         $recipients = [];
 
-        if ($creatorKaryawan->jabatan == 'HRD') {
+        if ($creatorKaryawan?->jabatan == 'HRD') {
             $CS = karyawan::where('jabatan', 'Customer Care')->first();
             if ($CS) {
                 $recipients[] = $CS->kode_karyawan;
             }
             $recipients[] = $driver->kode_karyawan;
-        } elseif ($creatorKaryawan->jabatan == 'Customer Care') {
+        } elseif ($creatorKaryawan?->jabatan == 'Customer Care') {
             $HRD = karyawan::where('jabatan', 'HRD')->first();
             if ($HRD) {
                 $recipients[] = $HRD->kode_karyawan;
@@ -706,18 +725,18 @@ class pickupDriverController extends Controller
         $telegramPayload = [
             'title' => '✏️ Koordinasi Diperbarui',
             'id_pengajuan' => $pickup->id,
-            'creator_name' => $creatorKaryawan->nama_lengkap,
+            'creator_name' => $creatorKaryawan?->nama_lengkap ?? '-',
             'driver_name' => $driver->nama ?? ($driver->nama_lengkap ?? '-'),
-            'budget' => $pickup->budget,
+            'budget' => $newBudget,
             'tanggal_pembuatan' => now(),
             'status_text' => 'Diperbarui',
             'status_apply' => $pickup->status_apply,
             'tipe' => $detailTipe,
-            'lokasi' => [],
-            'tanggal' => [],
-            'waktu' => [],
-            'detail' => [],
-            'log_text' => implode("\n", array_merge($changes, $deleted, $added)),
+            'lokasi' => collect($request->details)->pluck('lokasi')->toArray(),
+            'tanggal' => collect($request->details)->pluck('tanggal')->toArray(),
+            'waktu' => collect($request->details)->pluck('waktu')->toArray(),
+            'detail' => collect($request->details)->pluck('detail')->toArray(),
+            'log_text' => implode("\n", $logParts),
             'path' => '/office/pickup-driver/index',
         ];
 

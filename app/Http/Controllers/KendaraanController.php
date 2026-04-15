@@ -9,6 +9,7 @@ use App\Models\KondisiKendaraan;
 use App\Models\PengajuanBarang;
 use App\Models\PerbaikanKendaraan;
 use App\Models\User;
+use App\Models\vendorBengkel;
 use App\Notifications\KondisiKendaraan as NotificationsKondisiKendaraan;
 use App\Notifications\NotificationPerbaikanKendaraan;
 use Illuminate\Http\Request;
@@ -202,13 +203,16 @@ class KendaraanController extends Controller
     public function indexPerbaikan()
     {
         $perbaikan = PerbaikanKendaraan::with('user.karyawan')->get();
-        return view('office.kendaraan.indexPerbaikan', compact('perbaikan'));
+        $vendor = vendorBengkel::all();
+
+        return view('office.kendaraan.indexPerbaikan', compact('perbaikan', 'vendor'));
     }
 
     public function detailPerbaikan($id)
     {
-        $perbaikan = PerbaikanKendaraan::with('user.karyawan')->findOrFail($id);
-        return view('office.kendaraan.updatePerbaikan', compact('perbaikan'));
+        $perbaikan = PerbaikanKendaraan::with('user.karyawan','vendor')->findOrFail($id);
+        $dataVendor = vendorBengkel::all();
+        return view('office.kendaraan.updatePerbaikan', compact('perbaikan', 'dataVendor'));
     }
 
     public function storePerbaikan(Request $request)
@@ -222,6 +226,7 @@ class KendaraanController extends Controller
             'estimasi' => 'required',
             'deskripsi_kondisi' => 'required|string',
             'status' => 'sometimes|in:Diajukan,Diproses,Selesai,Ditolak',
+            'vendor' => 'nullable',
 
             'bukti' => 'nullable|file|mimes:jpg,jpeg,png,mp4,mov,avi|max:20480',
         ]);
@@ -232,6 +237,7 @@ class KendaraanController extends Controller
         $perbaikan->type_condition = $request->type_condition ?? 'Perawatan';
         $perbaikan->type_vehicle_condition = $request->type_vehicle_condition;
         $perbaikan->type_repair = $request->type_repair;
+        $perbaikan->id_vendor = $request->vendor;
 
         if ($request->type_condition === 'Kecelakaan') {
             $perbaikan->tanggal_kejadian = $request->tanggal_kejadian;
@@ -293,6 +299,8 @@ class KendaraanController extends Controller
             'tanggal_perbaikan' => 'nullable|date',
             'deskripsi_perbaikan' => 'nullable|string',
 
+            'vendor' => 'nullable',
+
             'invoice' => 'nullable'
         ]);
 
@@ -304,6 +312,7 @@ class KendaraanController extends Controller
         $perbaikan->deskripsi_kondisi = $request->deskripsi_kondisi;
         $perbaikan->deskripsi_perbaikan = $request->deskripsi_perbaikan;
         $perbaikan->tanggal_perbaikan = $request->tanggal_perbaikan ;
+        $perbaikan->id_vendor = $request->vendor ;
 
         if ($request->type_condition === 'Kecelakaan') {
             $perbaikan->tanggal_kejadian = $request->tanggal_kejadian;
