@@ -27,6 +27,9 @@ class PengajuanBarang extends Model
         'id_tracking',
         'tipe',
         'invoice',
+        'no_kk',
+        'tanggal_pencairan',
+        'tanggal_terima_finance',
 
     ];
 

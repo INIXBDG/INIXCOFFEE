@@ -43,8 +43,9 @@
                             $jabatan = auth()->user()->jabatan;
                         @endphp
                         @if ($jabatan == 'Finance & Accounting')
-                            <div class="row my-2">
-                                <select name="status" id="status" class="form-select">
+                            <div class="row my-0 mx-0">
+                                    <label for="status" class="form-label">Status</label>
+                                <select name="status" id="status" class="form-select" onchange="toggleFinanceInputs(this.value)">
                                     <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager">Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager</option>
                                     <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi">Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi</option>
                                     <option value="Finance Menunggu Approve Direksi">Finance Menunggu Approve Direksi</option>
@@ -54,6 +55,12 @@
                                     <option value="Selesai">Selesai</option>
                                     {{-- <option value="Pencairan Sudah Selesai">Pencairan Sudah Selesai</option> --}}
                                 </select>
+                            </div>
+                            <div id="finance_extra_inputs" style="display: none;">
+                                <div class="mb-3">
+                                    <label for="no_kk" class="form-label">No KK</label>
+                                    <input type="text" class="form-control" name="no_kk" id="no_kk">
+                                </div>
                             </div>
                         @endif
                 </div>
@@ -199,6 +206,9 @@
                                     <th scope="col">Nama Barang</th>
                                     <th scope="col">Total Item</th>
                                     <th scope="col">Total Pengajuan</th>
+                                    <th scope="col">No KK</th>
+                                    <th scope="col">Tanggal Pencairan</th>
+                                    <th scope="col">SLA</th>
                                     <th scope="col">Aksi</th>
                                 </tr>
                             </thead>
@@ -340,7 +350,11 @@
     }else{
         tableKaryawan();
     }
+
+    
 });
+
+
 
 function tableKaryawan() {
     var tahun = $('#tahun').val();
@@ -657,6 +671,35 @@ function tableFinance(){
                                 }).format(total);
                             }
                             return '-';
+                        }
+                    },
+                    {
+                        "data": "no_kk",
+                        "render": function(data) { return data ? data : '-'; }
+                    },
+                    // KOLOM BARU: TANGGAL PENCAIRAN
+                    {
+                        "data": "tanggal_pencairan",
+                        "render": function(data) {
+                            return data ? moment(data).format('DD-MM-YYYY') : '-';
+                        }
+                    },
+                    // KOLOM BARU: SLA (LOGIKA HITUNG 7 HARI)
+                    {
+                        "data": null,
+                        "render": function(data, type, row) {
+                            if (row.tanggal_pencairan && row.tanggal_terima_finance) {
+                                let tglFinance = moment(row.tanggal_terima_finance);
+                                let tglCair = moment(row.tanggal_pencairan);
+                                let selisihHari = tglCair.diff(tglFinance, 'days');
+
+                                if (selisihHari <= 7) {
+                                    return `<span class="badge bg-success">Berhasil (${selisihHari} Hari)</span>`;
+                                } else {
+                                    return `<span class="badge bg-danger">Gagal (${selisihHari} Hari)</span>`;
+                                }
+                            }
+                            return '<span class="badge bg-secondary">Data Tidak Lengkap</span>';
                         }
                     },
                     {
@@ -1031,6 +1074,12 @@ function openApproveModal(id, jabatan) {
     var approveUrl = "{{ url('/pengajuanbarang') }}/" + id;
     $('#approveForm').attr('action', approveUrl);
     $('#approveModal').modal('show');
+
+    // trigger toggle saat modal dibuka
+    const status = document.getElementById('status');
+    if (status) {
+        toggleFinanceInputs(status.value);
+    }
 }
 
 function toggleAlasanManager(show) {
@@ -1042,6 +1091,15 @@ function toggleAlasanManager(show) {
         document.getElementById('alasan_manager').value = '';
     }
 }
+
+function toggleFinanceInputs(status) {
+        const extraInputs = document.getElementById('finance_extra_inputs');
+        if (status !== 'Selesai') {
+            extraInputs.style.display = 'block';
+        } else {
+            extraInputs.style.display = 'none';
+        }
+    }
 
  $('#approveForm').on('submit', function(e) {
         e.preventDefault();
