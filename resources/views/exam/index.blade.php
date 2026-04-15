@@ -12,6 +12,29 @@
             </div>
         </div>
     </div>
+    <div class="modal fade" id="uploadInvoiceModal" tabindex="-1" aria-labelledby="uploadInvoiceModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadInvoiceModalLabel">Upload Invoice</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="formUploadInvoice" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="form-group mb-3">
+                            <label for="file_invoice" class="form-label">Pilih File Invoice (Bisa pilih 1 atau banyak file sekaligus. Max 10MB/file)</label>
+                            <input type="file" class="form-control" id="file_invoice" name="file_invoice[]" required accept=".pdf,.jpg,.jpeg,.png" multiple>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                        <button type="submit" class="btn btn-primary">Upload</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
     <div class="row justify-content-center">
         <div class="col-md-12 d-flex my-2 justify-content-end">
             @can('Create Exam')
@@ -312,8 +335,31 @@
                         actions += '<button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>';
                         actions += '<div class="dropdown-menu">';
                         actions += '<a class="dropdown-item" href="{{ url('/exam') }}/' + row.id + '">Detail</a>';
-                        
-                        // Add Assign Room option for Exam Only (status = 3) and if room not yet assigned
+
+                        if (row.approvalexam && row.approvalexam.spv_sales == 1) {
+                            var files = row.file_invoice;
+                            if (typeof files === 'string') {
+                                try { files = JSON.parse(files); } catch(e) { files = []; }
+                            }
+
+                            if (files && Array.isArray(files) && files.length > 0) {
+                                files.forEach(function(file, index) {
+                                    var fileUrl = "{{ asset('uploads/invoices') }}/" + file;
+                                    actions += '<a class="dropdown-item text-primary" href="' + fileUrl + '" target="_blank"><i class="fas fa-file-invoice"></i> Lihat File ' + (index + 1) + '</a>';
+                                    actions += '<form onsubmit="return confirm(\'Apakah Anda yakin ingin menghapus File ' + (index + 1) + ' ini?\');" action="/exam/' + row.id + '/delete-invoice/' + file + '" method="POST" style="display:inline; margin:0; padding:0;">';
+                                    actions += '@csrf @method("DELETE")';
+                                    actions += '<button type="submit" class="dropdown-item text-danger"><i class="fas fa-trash"></i> Hapus File ' + (index + 1) + '</button>';
+                                    actions += '</form>';
+                                });
+
+                                actions += '<div class="dropdown-divider"></div>';
+                                actions += '<a class="dropdown-item text-success" href="javascript:void(0)" onclick="openUploadModal(' + row.id + ')"><i class="fas fa-plus"></i> Tambah Invoice Lagi</a>';
+                            } else {
+                                actions += '<a class="dropdown-item text-success" href="javascript:void(0)" onclick="openUploadModal(' + row.id + ')"><i class="fas fa-upload"></i> Upload Invoice</a>';
+                            }
+                            actions += '<div class="dropdown-divider"></div>';
+                        }
+
                         if (row.status == '3') {
                             var roomAssigned = row.rkm && row.rkm.ruang && row.rkm.ruang !== 'Exam';
                             if (!roomAssigned) {
@@ -322,7 +368,7 @@
                                 actions += '<a class="dropdown-item text-success" href="#"><i class="fas fa-check"></i> Ruangan: ' + (row.rkm.ruang || '-') + '</a>';
                             }
                         }
-                        
+
                         actions += '@can("Edit Exam")<a class="dropdown-item" href="{{ url('/exam') }}/' + row.id + '/edit">Edit</a>@endcan';
                         actions += '@can("Delete Exam")<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/exam') }}/' + row.id + '" method="POST">@csrf @method("DELETE")<button type="submit" class="dropdown-item">Hapus</button></form>@endcan';
                         actions += '</div></div>';
@@ -339,6 +385,12 @@
             }
         });
     });
+    function openUploadModal(id) {
+        var form = document.getElementById('formUploadInvoice');
+        form.action = '/exam/' + id + '/upload-invoice';
+        var uploadModal = new bootstrap.Modal(document.getElementById('uploadInvoiceModal'));
+        uploadModal.show();
+    }
 </script>
 @endpush
 @endsection

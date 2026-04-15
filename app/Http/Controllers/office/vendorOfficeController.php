@@ -17,16 +17,16 @@ class vendorOfficeController extends Controller
         $itemValue = $request->segment(3);
 
         switch ($itemValue) {
-            case "souvenir":
+            case 'souvenir':
                 $data = vendorSouvenir::orderBy('created_at', 'desc')->paginate(10);
                 break;
-            case "makansiang":
+            case 'makansiang':
                 $data = vendorMakansiang::orderBy('created_at', 'desc')->paginate(10);
                 break;
-            case "coffeebreak":
+            case 'coffeebreak':
                 $data = vendorCoffeeBreak::orderBy('created_at', 'desc')->paginate(10);
                 break;
-            case "bengkel":
+            case 'bengkel':
                 $data = vendorBengkel::orderBy('created_at', 'desc')->paginate(10);
                 break;
             default:
@@ -44,11 +44,14 @@ class vendorOfficeController extends Controller
             'nama' => 'required',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'keterangan' => 'nullable|string',
+
+            'no_hp' => $request->segment(3) == 'bengkel' ? 'required' : 'nullable',
+            'no_rekening' => $request->segment(3) == 'bengkel' ? 'required' : 'nullable',
+            'alamat' => $request->segment(3) == 'bengkel' ? 'required' : 'nullable',
         ]);
 
         $itemValue = $request->segment(3);
 
-        // Upload foto
         $fotoPath = null;
         if ($request->hasFile('foto')) {
             $fotoPath = $request->file('foto')->store('vendor_foto', 'public');
@@ -61,23 +64,35 @@ class vendorOfficeController extends Controller
         ];
 
         switch ($itemValue) {
-            case "souvenir":
+            case 'souvenir':
                 vendorSouvenir::create($payload);
                 break;
-            case "makansiang":
+
+            case 'makansiang':
                 vendorMakansiang::create($payload);
                 break;
-            case "coffeebreak":
+
+            case 'coffeebreak':
                 vendorCoffeeBreak::create($payload);
                 break;
-            case "bengkel":
-                vendorBengkel::create($payload);
+
+            case 'bengkel':
+                $payloadBengkel = array_merge($payload, [
+                    'is_active' => $request->is_active ?? 1,
+                    'no_hp' => $request->no_hp,
+                    'no_rekening' => $request->no_rekening,
+                    'alamat' => $request->alamat,
+                ]);
+
+                vendorBengkel::create($payloadBengkel);
                 break;
+
             default:
                 abort(404);
         }
 
-        return redirect()->route('office.vendor.' . $itemValue . '.index')
+        return redirect()
+            ->route('office.vendor.' . $itemValue . '.index')
             ->with('success', 'Vendor created successfully.');
     }
 
@@ -86,16 +101,16 @@ class vendorOfficeController extends Controller
         $itemValue = $request->segment(3);
 
         switch ($itemValue) {
-            case "souvenir":
+            case 'souvenir':
                 $data = vendorSouvenir::findOrFail($id);
                 break;
-            case "makansiang":
+            case 'makansiang':
                 $data = vendorMakansiang::findOrFail($id);
                 break;
-            case "coffeebreak":
+            case 'coffeebreak':
                 $data = vendorCoffeeBreak::findOrFail($id);
                 break;
-            case "bengkel":
+            case 'bengkel':
                 $data = vendorBengkel::findOrFail($id);
                 break;
             default:
@@ -104,7 +119,8 @@ class vendorOfficeController extends Controller
 
         $data->delete();
 
-        return redirect()->route('office.vendor.' . $itemValue . '.index')
+        return redirect()
+            ->route('office.vendor.' . $itemValue . '.index')
             ->with('success', 'Vendor deleted successfully');
     }
 }

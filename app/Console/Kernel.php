@@ -225,6 +225,9 @@ class Kernel extends ConsoleKernel
 
         $schedule->command('uptime:check')->everySecond();
 
+        $schedule->command('assign:shift2')->dailyAt('17.30');
+
+
         // Di dalam method schedule(Schedule $schedule)
         $schedule->call(function () {
             // Tentukan tanggal akhir minggu yang harus dikunci (e.g., dua minggu yang lalu)
@@ -245,6 +248,9 @@ class Kernel extends ConsoleKernel
 
         // update tagihan Perusahaan
         $schedule->command('app:tagihan-perusahaan-command')->daily();
+
+        // update administrasi karyawan
+        $schedule->command('app:update-administrasi-karyawan')->daily();
 
         // update libur nasional
         $schedule->command('app:generate-libur-nasional')->daily();

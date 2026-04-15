@@ -14,7 +14,7 @@
             </a>
         </div>
 
-        <div class="card shadow-sm">
+        <div class="card shadow-sm glass-force">
             <div class="card-body">
                 <form action="{{ route('office.updatePerbaikanKendaraan', $perbaikan->id) }}" method="POST"
                     enctype="multipart/form-data">
@@ -126,7 +126,7 @@
                         </div>
 
                         {{-- Estimasi --}}
-                        <div class="col-md-12">
+                        <div class="col-md-6">
                             <label class="form-label fw-semibold">Estimasi Biaya</label>
 
                             <input type="text" id="estimasi_display" class="form-control"
@@ -134,6 +134,56 @@
 
                             <input type="hidden" name="estimasi" id="estimasi"
                                 value="{{ old('estimasi', $perbaikan->estimasi) }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Vendor</label>
+
+                            <select name="vendor" class="form-control" id="vendor">
+                                @foreach ($dataVendor as $vendor)
+                                    <option
+                                        value="{{ $vendor->id }} {{ old('vendor', $perbaikan->vendor->id) == $vendor->id ? 'selected' : '' }}">
+                                        {{ $vendor->nama }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="card border-0 glass-force">
+                            <p class="mt-3">Ringkasan Vendor</p>
+                            <div class="card-body">
+                                <div class="row g-3">
+
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted small">No. Vendor</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light">
+                                                <i class="fa fa-phone"></i>
+                                            </span>
+                                            <input type="text" class="form-control bg-light border-0"
+                                                value="{{ $perbaikan->vendor->no_hp }}" readonly>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted small">No. Rekening</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light">
+                                                <i class="fa fa-credit-card"></i>
+                                            </span>
+                                            <input type="text" class="form-control bg-light border-0"
+                                                value="{{ $perbaikan->vendor->no_rekening }}" readonly>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-12">
+                                        <label class="form-label text-muted small">Alamat</label>
+                                        <div class="bg-light rounded p-3" style="min-height: 120px;">
+                                            {{ $perbaikan->vendor->alamat }}
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
                         </div>
 
                         {{-- Deskripsi --}}
@@ -186,14 +236,15 @@
                                 @disabled($isReadOnly)>
                         </div>
 
-                        
+
                         <h5 class="mt-5">Detail Perbaikan dan Invoice</h5>
 
                         <div class="row g-4 mt-0">
 
                             <div class="col-12">
                                 <label class="form-label fw-semibold">Tanggal Perbaikan</label>
-                                <input type="date" name="tanggal_perbaikan" class="form-control" @disabled($isReadOnly) value="{{ $perbaikan->tanggal_perbaikan }}">
+                                <input type="date" name="tanggal_perbaikan" class="form-control"
+                                    @disabled($isReadOnly) value="{{ $perbaikan->tanggal_perbaikan }}">
                             </div>
 
                             <div class="col-12">
@@ -202,8 +253,7 @@
                             </div>
 
                             <div class="col-12">
-                                <label class="form-label fw-semibold">Invoice<span
-                                        style="text-danger">*</span></label>
+                                <label class="form-label fw-semibold">Invoice<span style="text-danger">*</span></label>
                                 @php
                                     $extension = strtolower(pathinfo($perbaikan->invoice, PATHINFO_EXTENSION));
                                     $fileUrl = asset('storage/' . $perbaikan->invoice);
@@ -214,22 +264,18 @@
                                     @if (in_array($extension, ['jpg', 'jpeg', 'png', 'webp']))
                                         <img src="{{ $fileUrl }}" class="img-fluid rounded shadow-sm border"
                                             style="max-height:250px;">
-
                                     @elseif (in_array($extension, ['mp4', 'mov', 'avi', 'webm']))
                                         <video class="rounded shadow-sm border" style="max-height:250px;" controls>
                                             <source src="{{ $fileUrl }}">
                                             Browser tidak mendukung video.
                                         </video>
-
                                     @elseif ($extension === 'pdf')
                                         <iframe src="{{ $fileUrl }}" class="w-100 border rounded"
                                             style="height:400px;"></iframe>
-
                                     @elseif (in_array($extension, ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx']))
                                         <div class="alert alert-info">
                                             File dokumen tidak bisa ditampilkan langsung. Harap download file<br>
                                         </div>
-
                                     @elseif (!$perbaikan->invoice)
                                     @else
                                         <div class="alert alert-warning">

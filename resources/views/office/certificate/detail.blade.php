@@ -14,8 +14,8 @@
     <div class="row g-4 mb-4">
         <!-- Info RKM Card -->
         <div class="col-12">
-            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
-                <div class="card-header bg-white border-bottom py-3">
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden glass-force">
+                <div class="card-header border-bottom py-3">
                     <h5 class="card-title mb-0 fw-semibold">
                         <i class="bx bx-info-circle text-primary me-2" style="font-size: 1.5rem;"></i>
                         Informasi RKM
@@ -88,8 +88,8 @@
     <!-- List Peserta -->
     <div class="row g-3">
         <div class="col-12">
-            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
-                <div class="card-header bg-white border-bottom py-3">
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden glass-force">
+                <div class="card-header border-bottom py-3">
                     <div class="d-flex align-items-center justify-content-between">
                         <h5 class="card-title mb-0 fw-semibold">
                             <i class="bx bx-user-check text-primary me-2" style="font-size: 1.5rem;"></i>
