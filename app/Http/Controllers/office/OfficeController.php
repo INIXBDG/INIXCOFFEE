@@ -301,6 +301,7 @@ class OfficeController extends Controller
             ->get(); 
         
         $administrasis = AdministrasiKaryawan::orderBy('dateline', 'desc')
+            ->whereBetween('dateline', [$startOfThisWeek, $endOfNextWeek])
             ->where('status', '!=', 'selesai')
             ->get();
 

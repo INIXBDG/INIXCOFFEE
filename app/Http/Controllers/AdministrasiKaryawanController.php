@@ -47,6 +47,18 @@ class AdministrasiKaryawanController extends Controller
 
         $administrasi->update($updateData);
 
+        // set status
+        if ($request->tanggal_selesai !== null && $administrasi->dateline < $request->tanggal_selesai && !in_array($request->status, ['selesai', 'pending']) && !in_array($administrasi->status, ['selesai', 'pending'])) {
+            $administrasi->status = 'terlambat';
+            $administrasi->save();
+        } else if ($request->tanggal_selesai !== null && $administrasi->dateline >= $request->tanggal_selesai && $administrasi->status !== 'terlambat') {
+            $administrasi->status = 'selesai';
+            $administrasi->save();
+        } else if ($request->tanggal_selesai !== null && in_array($administrasi->status, ['selesai', 'pending'])) {
+            $administrasi->status = 'selesai';
+            $administrasi->save();
+        }
+
         return back()->with('success_administrasi', 'Administrasi Karyawan berhasil diperbaharui.');
     }
 
