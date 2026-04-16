@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\JurnalAkuntansi;
 use Illuminate\Http\Request;
 use App\Models\PengajuanBarang;
+use App\Models\perhitunganNetSales;
 
 class JurnalAkuntansiController extends Controller
 {
@@ -99,11 +100,85 @@ class JurnalAkuntansiController extends Controller
     }
 
     /**
+     * Mengembalikan data JSON Perhitungan Net Sales yang belum memiliki jurnal.
+     */
+    public function getBelumJurnalNetSales()
+    {
+        $data = perhitunganNetSales::with(['karyawan', 'trackingNetSales', 'rkm.materi', 'rkm.perusahaan'])
+            ->whereDoesntHave('jurnalAkuntansi')
+            ->get();
+        // return $data;
+        $formattedData = $data->map(function($item) {
+            // Kalkulasi total pengeluaran Net Sales
+            $totalHarga = $item->transportasi + $item->akomodasi_peserta + $item->akomodasi_tim + 
+                          $item->fresh_money + $item->entertaint + $item->souvenir + 
+                          $item->cashback + $item->sewa_laptop;
+
+            return [
+                'id' => $item->id,
+                'nama_materi' => $item->rkm->materi->nama_materi ?? '-',
+                'nama_perusahaan' => $item->rkm->perusahaan->nama_perusahaan ?? '-',
+                'tipe' => 'Payment Advanced',
+                'tanggal' => $item->created_at->format('Y-m-d'),
+                'total' => $totalHarga,
+                'detail_biaya' => [
+                    'Transportasi' => $item->transportasi,
+                    'Akomodasi Peserta' => $item->akomodasi_peserta,
+                    'Akomodasi Tim' => $item->akomodasi_tim,
+                    'Fresh Money' => $item->fresh_money,
+                    'Entertaint' => $item->entertaint,
+                    'Souvenir' => $item->souvenir,
+                    'Cashback' => $item->cashback,
+                    'Sewa Laptop' => $item->sewa_laptop
+                ]
+            ];
+        });
+
+        return response()->json(['data' => $formattedData]);
+    }
+
+    /**
+     * Menyimpan jurnal akuntansi secara manual dari Perhitungan Net Sales.
+     */
+    public function storeManualNetSales($id)
+    {
+        $netSales = \App\Models\perhitunganNetSales::with('rkm.materi', 'rkm.perusahaan')->findOrFail($id);
+        
+        $jurnalExist = JurnalAkuntansi::where('id_perhitungan_net_sales', $id)->first();
+        if ($jurnalExist) {
+            return response()->json(['success' => false, 'message' => 'Jurnal untuk Net Sales ini sudah ada!']);
+        }
+
+        $totalPengeluaran = $netSales->transportasi + $netSales->akomodasi_peserta + $netSales->akomodasi_tim + 
+                            $netSales->fresh_money + $netSales->entertaint + $netSales->souvenir + 
+                            $netSales->cashback + $netSales->sewa_laptop;
+
+        $tanggal_transaksi = now();
+        $materi = $netSales->rkm->materi->nama_materi ?? '-';
+        $perusahaan = $netSales->rkm->perusahaan->nama_perusahaan ?? '-';
+        $bulan = $netSales->rkm->bulan ?? '-';
+
+        $keterangan = "Pengeluaran Payment Advanced - {$materi} | {$perusahaan} | {$bulan}";
+        // return $netSales;
+
+        JurnalAkuntansi::create([
+            'nomor_kk' => $this->generateNomorKK($tanggal_transaksi),
+            'id_perhitungan_net_sales' => $id,
+            'tanggal_transaksi' => $tanggal_transaksi,
+            'keterangan' => $keterangan,
+            'debit' => $totalPengeluaran,
+            'kredit' => 0,
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Jurnal Net Sales berhasil dibuat!']);
+    }
+
+    /**
      * Menyimpan jurnal akuntansi secara manual dari pengajuan barang.
      */
     public function storeManual($id)
     {
-        $pengajuan = PengajuanBarang::with('detail')->findOrFail($id);
+        $pengajuan = PengajuanBarang::with('detail', 'karyawan')->findOrFail($id);
         
         $jurnalExist = JurnalAkuntansi::where('id_pengajuan_barang', $id)->first();
         if ($jurnalExist) {
@@ -120,11 +195,12 @@ class JurnalAkuntansiController extends Controller
 
         $tanggal_transaksi = now(); // Atau ambil dari input jika ada
 
+        // return $pengajuan;
         JurnalAkuntansi::create([
-            'nomor_kk' => $this->generateNomorKK($tanggal_transaksi), // GENERATE DISINI
+            'nomor_kk' => $pengajuan->no_kk ?? $this->generateNomorKK($tanggal_transaksi), // GENERATE DISINI
             'id_pengajuan_barang' => $id,
             'tanggal_transaksi' => $tanggal_transaksi,
-            'keterangan' => 'Pengeluaran untuk Pengajuan Barang ID: ' . $id . ' (' . $pengajuan->tipe . ')',
+            'keterangan' => 'Pengeluaran untuk Pengajuan Barang dari : ' . $pengajuan->karyawan->nama_lengkap . ' (' . $pengajuan->tipe . ')',
             'debit' => $totalPengeluaran,
             'kredit' => 0,
         ]);
@@ -288,5 +364,63 @@ class JurnalAkuntansiController extends Controller
                 'message' => 'Gagal mengimpor data: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Memproses export data berdasarkan periode yang dipilih.
+     */
+    public function export(Request $request)
+    {
+        $tipe_periode = $request->tipe_periode;
+        $tanggal_acuan = \Carbon\Carbon::parse($request->tanggal_acuan);
+        $format = $request->format_export;
+
+        $query = JurnalAkuntansi::query();
+
+        // Logika Filter Periode
+        switch ($tipe_periode) {
+            case 'harian':
+                $query->whereDate('tanggal_transaksi', $tanggal_acuan->format('Y-m-d'));
+                $labelPeriode = "Harian (" . $tanggal_acuan->format('d M Y') . ")";
+                break;
+            case 'mingguan':
+                $query->whereBetween('tanggal_transaksi', [
+                    $tanggal_acuan->copy()->startOfWeek()->format('Y-m-d'),
+                    $tanggal_acuan->copy()->endOfWeek()->format('Y-m-d')
+                ]);
+                $labelPeriode = "Mingguan (" . $tanggal_acuan->copy()->startOfWeek()->format('d M Y') . " - " . $tanggal_acuan->copy()->endOfWeek()->format('d M Y') . ")";
+                break;
+            case 'bulanan':
+                $query->whereMonth('tanggal_transaksi', $tanggal_acuan->month)
+                      ->whereYear('tanggal_transaksi', $tanggal_acuan->year);
+                $labelPeriode = "Bulanan (" . $tanggal_acuan->format('F Y') . ")";
+                break;
+            case 'triwulan':
+                $query->whereBetween('tanggal_transaksi', [
+                    $tanggal_acuan->copy()->firstOfQuarter()->format('Y-m-d'),
+                    $tanggal_acuan->copy()->lastOfQuarter()->format('Y-m-d')
+                ]);
+                $labelPeriode = "Triwulan (" . $tanggal_acuan->copy()->firstOfQuarter()->format('d M Y') . " - " . $tanggal_acuan->copy()->lastOfQuarter()->format('d M Y') . ")";
+                break;
+            case 'tahunan':
+                $query->whereYear('tanggal_transaksi', $tanggal_acuan->year);
+                $labelPeriode = "Tahunan (" . $tanggal_acuan->format('Y') . ")";
+                break;
+            default:
+                $labelPeriode = "Semua Data";
+                break;
+        }
+
+        $data = $query->orderBy('tanggal_transaksi', 'asc')->get();
+        $periode = $labelPeriode;
+        if ($format === 'excel') {
+            return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\JurnalAkuntansiExport($data, $labelPeriode), 'Jurnal_Akuntansi_' . time() . '.xlsx');
+        } elseif ($format === 'pdf') {
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('jurnalakuntansi.export_template', compact('data', 'periode'))
+                        ->setPaper('a4', 'landscape');
+            return $pdf->download('Jurnal_Akuntansi_' . time() . '.pdf');
+        }
+
+        return redirect()->back()->with('error', 'Format eksport tidak valid.');
     }
 }
