@@ -267,6 +267,22 @@ class examController extends Controller
         ]);
     }
 
+    public function updateTanggal(Request $request, $id)
+    {
+        $request->validate([
+            'tanggal_mulai' => 'required|date',
+            'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
+        ]);
+
+        $exam = eksam::findOrFail($id);
+
+        $exam->tanggal_mulai = $request->tanggal_mulai;
+        $exam->tanggal_selesai = $request->tanggal_selesai;
+        $exam->save();
+
+        return redirect()->back()->with('success', 'Tanggal Mulai dan Selesai Exam berhasil diperbarui.');
+    }
+
     public function uploadInvoice(Request $request, $id)
     {
         $request->validate([
