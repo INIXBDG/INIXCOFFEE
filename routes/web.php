@@ -908,12 +908,16 @@ Route::prefix('office')->group(function () {
     Route::post('administrasi-karyawan/update/{id}', [AdministrasiKaryawanController::class, 'update'])->name('administrasi.karyawan.update');
     Route::delete('administrasi-karyawan/destroy/{id}', [AdministrasiKaryawanController::class, 'destroy'])->name('administrasi.karyawan.destroy');
 
-        Route::get('analysis', [AnalysisReportController::class, 'index'])->name('index.analysis');
-        Route::post('analysis/store', [AnalysisReportController::class, 'store'])->name('store.analysis');
-        Route::put('analysis/update/{id}', [AnalysisReportController::class, 'update'])->name('update.analysis');
-        Route::delete('analysis/destroy/{id}', [AnalysisReportController::class, 'destroy'])->name('destroy.analysis');
-        Route::get('analysis/download/{id}/{index}', [AnalysisReportController::class, 'download'])->name('download.analysis');
-        Route::post('analysis/year-description', [AnalysisReportController::class, 'updateYearDescription'])->name('update.year.description.analysis');
+    Route::get('analysis', [AnalysisReportController::class, 'index'])->name('index.analysis');
+    Route::post('analysis/store', [AnalysisReportController::class, 'store'])->name('store.analysis');
+    Route::put('analysis/update/{id}', [AnalysisReportController::class, 'update'])->name('update.analysis');
+    Route::delete('analysis/destroy/{id}', [AnalysisReportController::class, 'destroy'])->name('destroy.analysis');
+    Route::get('analysis/download/{id}/{index}', [AnalysisReportController::class, 'download'])->name('download.analysis');
+    Route::post('analysis/year-description', [AnalysisReportController::class, 'updateYearDescription'])->name('update.year.description.analysis');
+    Route::post('analysis/update-quarter-description', [AnalysisReportController::class, 'updateQuarterDescription'])->name('update.quarter.description.analysis');
+    Route::get('/analysis/download-quarter/{year}/{quarter}/{index}', [AnalysisReportController::class, 'downloadQuarter'])->name('download.quarter.analysis');
+    Route::post('/analysis/update-annual', [AnalysisReportController::class, 'updateAnnualReport'])->name('update.annual.description.analysis');
+    Route::get('/analysis/download-annual/{year}/{index}', [AnalysisReportController::class, 'downloadAnnual'])->name('download.annual.analysis');
 });
 
 Route::prefix('dashboard-sla/{team}')->group(function () {
@@ -1081,7 +1085,7 @@ Route::prefix('office')
             // Kategori
             Route::post('kategori/update', [DaftarTugasController::class, 'updateKategori'])->name('updateKategori');
             Route::post('kategori/hapus', [DaftarTugasController::class, 'deleteKategori'])->name('deleteKategori');
-            
+
             // [TAMBAHAN] Bulk update tipe turunan (Shift)
             Route::post('kategori/bulk-update-turunan', [DaftarTugasController::class, 'bulkUpdateTipeTurunan'])->name('bulkUpdateTipeTurunan');
 
