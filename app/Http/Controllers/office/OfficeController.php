@@ -120,35 +120,6 @@ class OfficeController extends Controller
             ->take(7)
             ->get();
 
-        // 4. RKM
-        $rkm = RKM::with('materi', 'perusahaan', 'peluang')
-            ->where('tanggal_awal', '<=', Carbon::now())
-            ->where('tanggal_akhir', '>=', Carbon::now())
-            ->where('status', '0')
-            ->get();
-
-        // 5. Jumlah Peserta
-        $jumlahPeserta = RKM::where('tanggal_awal', '<=', Carbon::now())
-            ->where('tanggal_akhir', '>=', Carbon::now())
-            ->where('status', '0')
-            ->sum('pax');
-
-        // 6. Jumlah Instruktur
-        $jumlahInstruktur = RKM::where('tanggal_awal', '<=', now())
-            ->where('tanggal_akhir', '>=', now())
-            ->where('status', '0')
-            ->get()
-            ->sum(
-                fn($rkm) =>
-                collect([
-                    $rkm->instruktur_key,
-                    $rkm->instruktur_key2,
-                    $rkm->asisten_key,
-                ])
-                    ->filter(fn($v) => $v !== '-' && !is_null($v))
-                    ->count()
-            );
-
 
         // detail rkm
         $now = Carbon::now();
@@ -172,7 +143,7 @@ class OfficeController extends Controller
         ->whereDoesntHave('peluang', function ($query) {
             $query->where('tentatif', 1);
         })
-        ->orderBy('status', 'asc')
+        ->where('status', '0')
         ->orderBy('tanggal_awal', 'asc')
         ->get()
         ->groupBy(function ($item) {
@@ -194,12 +165,16 @@ class OfficeController extends Controller
                 'ruang' => $first->ruang,
                 'metode_kelas' => $first->metode_kelas,
                 'event' => $first->event,
+                'harga_jual' => $first->harga_jual,
+                'pax' => $first->pax,
                 'exam' => $items->pluck('exam')->implode(', '),
+                'instruktur_key' => $first->instruktur_key,
+                'instruktur_key2' => $first->instruktur_key2,
+                'asisten_key' => $first->asisten_key,
                 'makanan' => $items->pluck('makanan')->implode(', '),
-                'instruktur_all' => $items->pluck('instruktur_key')->implode(', '),
                 'perusahaan_all' => $items->pluck('perusahaan_key')->implode(', '),
                 'sales_all' => $items->pluck('sales_key')->implode(', '),
-                'status_all' => $items->contains('status', 0)
+                'status' => $items->contains('status', 0)
                     ? 0
                     : $items->min('status'),
                 'total_pax' => $items->sum('pax'),
@@ -299,7 +274,27 @@ class OfficeController extends Controller
             }
         }
 
+        // Jumlah Peserta
+        $jumlahPeserta = $rkms
+            ->where('status', '0')
+            ->sum('pax');
+
+        // Jumlah Instruktur
+        $jumlahInstruktur = $rkms
+            ->where('status', '0')
+            ->sum(
+                fn($rkms) =>
+                collect([
+                    $rkms->instruktur_key,
+                    $rkms->instruktur_key2,
+                    $rkms->asisten_key,
+                ])
+                    ->filter(fn($v) => $v !== '-' && !is_null($v))
+                    ->count()
+            );
+
         $endOfNextWeek = $now->copy()->addWeek()->endOfWeek();
+
         // Tagihan Perusaaan
         $trackingTagihanPerusahaans = trackingTagihanPerusahaan::with('tagihanPerusahaan')
             ->whereBetween('tanggal_perkiraan_selesai', [$startOfThisWeek, $endOfNextWeek])
@@ -307,6 +302,7 @@ class OfficeController extends Controller
             ->get(); 
         
         $administrasis = AdministrasiKaryawan::orderBy('dateline', 'desc')
+            ->whereBetween('dateline', [$startOfThisWeek, $endOfNextWeek])
             ->where('status', '!=', 'selesai')
             ->get();
 
@@ -316,7 +312,6 @@ class OfficeController extends Controller
             'kehadiranChart',
             'tidakHadirList',
             'ticket',
-            'rkm',
             'jumlahPeserta',
             'jumlahInstruktur',
             'rkms',
@@ -583,7 +578,6 @@ public function TableOutstanding(Request $request)
 
         $query = Nilaifeedback::with('rkm.instruktur');
 
-        // === FILTER ===
         if ($filter === 'tahun' && is_numeric($value)) {
             $query->whereYear('created_at', $value);
             $rentangWaktu = "Tahun $value";
@@ -591,17 +585,14 @@ public function TableOutstanding(Request $request)
         } elseif ($filter === 'bulan' && is_numeric($value)) {
             $query->whereYear('created_at', $tahun)
                 ->whereMonth('created_at', $value);
-
             $rentangWaktu = \Carbon\Carbon::createFromDate($tahun, $value, 1)
                 ->translatedFormat('F Y');
 
         } elseif ($filter === 'triwulan' && is_numeric($value)) {
             $bulanMulai = ($value - 1) * 3 + 1;
             $bulanSelesai = $bulanMulai + 2;
-
             $query->whereYear('created_at', $tahun)
                 ->whereBetween(DB::raw('MONTH(created_at)'), [$bulanMulai, $bulanSelesai]);
-
             $rentangWaktu = "Triwulan $value Tahun $tahun";
         } else {
             $rentangWaktu = "Semua Data";
@@ -609,40 +600,101 @@ public function TableOutstanding(Request $request)
 
         $feedbacks = $query->get();
 
-        // === GROUP & HITUNG NILAI ===
-        $data = $feedbacks
+        $groupedFeedback = $feedbacks
             ->filter(fn($f) => $f->rkm && $f->rkm->instruktur)
-            ->groupBy(fn($f) => $f->rkm->instruktur->nama_lengkap)
-            ->map(function ($items) {
-
-                $instruktur = $items->first()->rkm->instruktur;
-
-                return [
-                    'nama' => $instruktur->nama_lengkap,
-                    'nilai' => round(
-                        $items->avg(function ($row) {
-                            return collect([
-                                $row->I1,
-                                $row->I2,
-                                $row->I3,
-                                $row->I4,
-                                $row->I5,
-                                $row->I6,
-                                $row->I7,
-                                $row->I8
-                            ])->avg();
-                        }),
-                        2
-                    )
-                ];
+            ->groupBy(function($f) {
+                return $f->rkm->instruktur->id . '_' . 
+                    \Carbon\Carbon::parse($f->created_at)->format('Y_m');
             })
+            ->map(function($items) {
+                $first = $items->first();
+                $avg = $items->avg(function($row) {
+                    return collect([
+                        $row->I1, $row->I2, $row->I3, $row->I4,
+                        $row->I5, $row->I6, $row->I7, $row->I8
+                    ])->avg();
+                });
+                
+                return [
+                    'instruktur_id' => $first->rkm->instruktur->id,
+                    'nama' => $first->rkm->instruktur->nama_lengkap,
+                    'feedback' => round($avg, 2),
+                    'bulan' => \Carbon\Carbon::parse($first->created_at)->translatedFormat('F'),
+                    'bulan_num' => \Carbon\Carbon::parse($first->created_at)->month,
+                    'kelas' => $first->rkm->nama_rkm ?? '-',
+                ];
+            });
+
+        $feedbackTerendah = $groupedFeedback
+            ->filter(fn($f) => $f['feedback'] <= 3.3)
+            ->sortBy('feedback')
             ->values();
 
+        $feedbackTertinggi = $groupedFeedback
+            ->filter(fn($f) => $f['feedback'] >= 4.0)
+            ->sortByDesc('feedback')
+            ->values();
+
+        $summaryInstrukturTerendah = $feedbackTerendah
+            ->groupBy('nama')
+            ->map(fn($items) => [
+                'nama' => $items->first()['nama'],
+                'jumlah' => $items->count(),
+                'kelas' => $items->first()['kelas']
+            ])
+            ->sortByDesc('jumlah')
+            ->values();
+
+        $summaryInstrukturTertinggi = $feedbackTertinggi
+            ->groupBy('nama')
+            ->map(fn($items) => [
+                'nama' => $items->first()['nama'],
+                'jumlah' => $items->count(),
+                'kelas' => $items->first()['kelas']
+            ])
+            ->sortByDesc('jumlah')
+            ->values();
+
+        $summaryBulanTerendah = $feedbackTerendah
+            ->groupBy('bulan_num')
+            ->map(fn($items) => [
+                'bulan' => $items->first()['bulan'],
+                'bulan_num' => $items->first()['bulan_num'],
+                'jumlah' => $items->count()
+            ])
+            ->sortBy('bulan_num')
+            ->values();
+
+        $summaryBulanTertinggi = $feedbackTertinggi
+            ->groupBy('bulan_num')
+            ->map(fn($items) => [
+                'bulan' => $items->first()['bulan'],
+                'bulan_num' => $items->first()['bulan_num'],
+                'jumlah' => $items->count()
+            ])
+            ->sortBy('bulan_num')
+            ->values();
+        $allFeedbacks = $groupedFeedback->pluck('feedback');
+        $stats = [
+            'total_feedback' => $groupedFeedback->count(),
+            'total_terendah' => $feedbackTerendah->count(),
+            'total_tertinggi' => $feedbackTertinggi->count(),
+            'rata_rata' => round($allFeedbacks->avg() ?? 0, 2),
+            'nilai_tertinggi' => round($allFeedbacks->max() ?? 0, 2),
+            'nilai_terendah' => round($allFeedbacks->min() ?? 0, 2),
+            'total_instruktur' => $groupedFeedback->unique('nama')->count(),
+        ];
 
         $pdf = Pdf::loadView('office.feedbackinstrukturpdf', [
-            'data' => $data,
+            'feedbackTerendah' => $feedbackTerendah,
+            'feedbackTertinggi' => $feedbackTertinggi,
+            'summaryInstrukturTerendah' => $summaryInstrukturTerendah,
+            'summaryInstrukturTertinggi' => $summaryInstrukturTertinggi,
+            'summaryBulanTerendah' => $summaryBulanTerendah,
+            'summaryBulanTertinggi' => $summaryBulanTertinggi,
+            'stats' => $stats,
             'rentangWaktu' => $rentangWaktu
-        ])->setPaper('A4', 'portrait');
+        ])->setPaper('A4', 'landscape');
 
         return $pdf->download('Laporan_Feedback_Instruktur.pdf');
     }
@@ -711,72 +763,150 @@ public function TableOutstanding(Request $request)
         ]);
     }
 
-    public function dataMengajar(Request $request){
-
-         Carbon::setLocale('id');
+    public function dataMengajar(Request $request)
+    {
+        Carbon::setLocale('id');
 
         $filter = $request->filter;
         $value  = $request->value;
+        $tahun = is_numeric($request->tahun) ? (int) $request->tahun : now()->year;
 
-        $tahun = is_numeric($request->tahun)
-            ? (int) $request->tahun
-            : now()->year;
-
-        $query = DB::table('r_k_m_s')
-            ->select('instruktur_key as kode_karyawan', 'tanggal_awal')
+        $baseQuery = DB::table('r_k_m_s')
+            ->select('instruktur_key as kode_karyawan', 'tanggal_awal', 'materi_key', 'perusahaan_key', 'id as rkm_id', 'metode_kelas')
             ->whereNotNull('instruktur_key')
             ->unionAll(
                 DB::table('r_k_m_s')
-                    ->select('instruktur_key2 as kode_karyawan', 'tanggal_awal')
+                    ->select('instruktur_key2 as kode_karyawan', 'tanggal_awal', 'materi_key', 'perusahaan_key', 'id as rkm_id', 'metode_kelas')
                     ->whereNotNull('instruktur_key2')
             )
             ->unionAll(
                 DB::table('r_k_m_s')
-                    ->select('asisten_key as kode_karyawan', 'tanggal_awal')
+                    ->select('asisten_key as kode_karyawan', 'tanggal_awal', 'materi_key', 'perusahaan_key', 'id as rkm_id', 'metode_kelas')
                     ->whereNotNull('asisten_key')
             );
 
-        $dataMengajar = DB::table(DB::raw("({$query->toSql()}) as t"))
-            ->mergeBindings($query)
-            ->join('karyawans', 't.kode_karyawan', '=', 'karyawans.kode_karyawan')
-            ->when($filter === 'tahun' && is_numeric($value), fn($query) => 
-                $query->whereYear('t.tanggal_awal', $value))
-            ->when($filter === 'bulan' && is_numeric($value), fn($query) => 
-                $query->whereYear('t.tanggal_awal', $tahun)
-                    ->whereMonth('t.tanggal_awal', $value))
-            ->when($filter === 'triwulan' && is_numeric($value), function ($query) use ($value, $tahun) {
+        $query = DB::table(DB::raw("({$baseQuery->toSql()}) as t"))
+            ->mergeBindings($baseQuery)
+            ->join('karyawans', 't.kode_karyawan', '=', 'karyawans.kode_karyawan');
+
+        $query->when($filter === 'tahun' && is_numeric($value), fn($q) => 
+            $q->whereYear('t.tanggal_awal', $value))
+            ->when($filter === 'bulan' && is_numeric($value), fn($q) => 
+                $q->whereYear('t.tanggal_awal', $tahun)->whereMonth('t.tanggal_awal', $value))
+            ->when($filter === 'triwulan' && is_numeric($value), function ($q) use ($value, $tahun) {
                 $bulanMulai = ($value - 1) * 3 + 1;
-                $query->whereYear('t.tanggal_awal', $tahun)
-                    ->whereBetween( DB::raw('MONTH(t.tanggal_awal)'), [$bulanMulai, $bulanMulai + 2]);
-            })
-            ->select('t.kode_karyawan', 'karyawans.nama_lengkap', DB::raw('COUNT(*) as total_mengajar'))
-            ->groupBy('t.kode_karyawan', 'karyawans.nama_lengkap')
-            ->orderByDesc('total_mengajar')
-            ->get()
-            ->map(function ($item) {
-            return [
-                'namaKaryawan' => $item->nama_lengkap,
-                'kodeKaryawan' => $item->kode_karyawan,
-                'totalMengajar' => $item->total_mengajar,
+                $q->whereYear('t.tanggal_awal', $tahun)
+                ->whereBetween(DB::raw('MONTH(t.tanggal_awal)'), [$bulanMulai, $bulanMulai + 2]);
+            });
+
+        $results = $query->select(
+                't.kode_karyawan',
+                'karyawans.nama_lengkap',
+                't.tanggal_awal',
+                't.rkm_id',
+                't.materi_key',
+                't.perusahaan_key',
+                't.metode_kelas'
+            )
+            ->orderBy('t.tanggal_awal')
+            ->get();
+
+        $groupedByKaryawan = $results->groupBy('kode_karyawan');
+        $finalData = [];
+
+        foreach ($groupedByKaryawan as $kode => $sessions) {
+            $namaKaryawan = $sessions->first()->nama_lengkap;
+
+            if ($filter === 'triwulan' && is_numeric($value)) {
+                $periodType = 'bulan';
+            } elseif ($filter === 'bulan' && is_numeric($value)) {
+                $periodType = 'minggu';
+            } elseif ($filter === 'tahun' && is_numeric($value)) {
+                $periodType = 'bulan';
+            } else {
+                $periodType = 'minggu';
+            }
+
+            $groupedByPeriod = $sessions->groupBy(function ($item) use ($periodType) {
+                $date = Carbon::parse($item->tanggal_awal);
+                
+                if ($periodType === 'bulan') {
+                    return $date->translatedFormat('F Y');
+                } else {
+                    return 'Minggu ke-' . $date->weekOfMonth . ' (' . $date->translatedFormat('d M Y') . ')';
+                }
+            });
+
+            $periodsData = [];
+            $totalFeedback = 0;
+            $feedbackCount = 0;
+
+            foreach ($groupedByPeriod as $periodLabel => $periodSessions) {
+                $rkmIds = $periodSessions->pluck('rkm_id')->filter()->toArray();
+                $feedbackAvg = 0;
+                
+                if (!empty($rkmIds)) {
+                    $feedbacks = Nilaifeedback::whereIn('id_rkm', $rkmIds)->get();
+                    
+                    if (!$feedbacks->isEmpty()) {
+                        $allScores = [];
+                        
+                        $fields = ['I1', 'I2', 'I3', 'I4', 'I5', 'I6', 'I7', 'I8', 
+                                'I1b', 'I2b', 'I3b', 'I4b', 'I5b', 'I6b', 'I7b', 'I8b',
+                                'I1as', 'I2as', 'I3as', 'I4as', 'I5as', 'I6as', 'I7as', 'I8as'];
+                        
+                        foreach ($fields as $col) {
+                            $values = $feedbacks->pluck($col)->filter(fn($v) => is_numeric($v))->toArray();
+                            $allScores = array_merge($allScores, $values);
+                        }
+                        
+                        if (!empty($allScores)) {
+                            $feedbackAvg = round(array_sum($allScores) / count($allScores), 2);
+                            $totalFeedback += $feedbackAvg;
+                            $feedbackCount++;
+                        }
+                    }
+                }
+
+                $periodsData[] = [
+                    'periode' => $periodLabel,
+                    'total_mengajar' => $periodSessions->count(),
+                    'materi' => $periodSessions->unique('materi_key')->pluck('materi_key')->join(', '),
+                    'metode' => $periodSessions->unique('metode')->filter()->pluck('metode')->join(', ') ?: '-',
+                    'feedback_avg' => $feedbackAvg > 0 ? $feedbackAvg : '-'
+                ];
+            }
+
+            $overallFeedback = $feedbackCount > 0 ? round($totalFeedback / $feedbackCount, 2) : '-';
+
+            $finalData[] = [
+                'namaKaryawan' => $namaKaryawan,
+                'kodeKaryawan' => $kode,
+                'totalMengajar' => $sessions->count(),
+                'periods' => $periodsData,
+                'overall_feedback' => $overallFeedback
             ];
-        });
+        }
+
+        usort($finalData, fn($a, $b) => $b['totalMengajar'] <=> $a['totalMengajar']);
 
         $rentangWaktu = match ($filter) {
             'tahun' => "Tahun $value",
             'bulan' => Carbon::createFromDate($tahun, $value, 1)->translatedFormat('F Y'),
             'triwulan' => "Triwulan $value Tahun $tahun",
-            default => ""
+            default => "Semua Data"
         };
 
-        if ($request->boolean('exportTotalMengajar')){
-            $pdf = Pdf::loadView('office.totalMengajarPdf', compact('dataMengajar', 'rentangWaktu'));
+        if ($request->boolean('exportTotalMengajar')) {
+            $dataMengajar = $finalData;
+            $pdf = Pdf::loadView('office.totalMengajarPdf', compact('dataMengajar', 'rentangWaktu', 'filter'));
             return $pdf->download('Laporan_Total_Mengajar.pdf');
         }
 
         return response()->json([
-            'dataMengajar' => $dataMengajar,
+            'dataMengajar' => $finalData,
             'rentangWaktu' => $rentangWaktu
-            ]);
+        ]);
     }
 
     // Function hari Libur

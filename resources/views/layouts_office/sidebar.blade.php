@@ -1,10 +1,10 @@
-<aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
+<aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme glass-force">
     <div class="app-brand demo">
         <a href="{{ route('office.dashboard') }}" class="app-brand-link">
             <span class="app-brand-logo demo text-primary">
                 {{-- Logo SVG atau Image --}}
             </span>
-            <span class="app-brand-text demo menu-text fw-bold ms-2">INIX - OFFICE</span>
+            <span class="app-brand-text demo menu-text fw-bold ms-2">INIXCOFFEE</span>
         </a>
         <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto d-xl-none">
             <i class="bx bx-chevron-left bx-sm align-middle"></i>
@@ -29,17 +29,6 @@
                 'Admin Holding',
             ];
         @endphp
-
-        <li class="menu-header small text-uppercase">
-            <span class="menu-header-text"></span>
-        </li>
-
-        <li class="menu-item mt-4 pb-3" style="padding-left: 12px; padding-right: 12px;">
-            <a href="{{ route('home') }}"
-                class="btn btn-primary d-flex align-items-center justify-content-center w-100">
-                <i class="bx bx-home me-2"></i>BACK TO INIXCOFFE
-            </a>
-        </li>
 
         <li class="menu-header small text-uppercase">
             <span class="menu-header-text">Office</span>
@@ -214,7 +203,7 @@
         @if(auth()->check() && isset(auth()->user()->karyawan) && in_array(auth()->user()->karyawan->jabatan, ['Finance & Accounting', 'GM']))
 
             <li class="menu-header small text-uppercase">
-                <span class="menu-header-text">Finance</span>
+                <span class="menu-header-text">Accounting</span>
             </li>
 
             <li class="menu-item {{ request()->routeIs('index.analysis') ? 'active open' : '' }}">
@@ -232,5 +221,13 @@
             </li>
 
         @endif
+
+        <li class="menu-header mt-4 pb-3" style="padding-left: 12px; padding-right: 12px;">
+            <a href="{{ route('home') }}"
+                class="btn btn-primary d-flex align-items-center justify-content-center w-100">
+                <i class="bx bx-home me-2"></i>BACK TO INIXCOFFE
+            </a>
+        </li>
+
     </ul>
 </aside>

@@ -12,115 +12,57 @@
         }
 
         body {
-            font-family: "DejaVu Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
-            font-size: 10px;
-            color: #333;
-            line-height: 1.4;
+            font-family: "DejaVu Sans", sans-serif;
+            font-size: 7px;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             border-bottom: 2px solid #2c3e50;
-            padding-bottom: 10px;
+            padding-bottom: 8px;
         }
 
         .header h1 {
-            font-size: 16px;
-            font-weight: bold;
-            color: #2c3e50;
-            margin-bottom: 5px;
+            font-size: 12px;
         }
 
         .header-info {
-            font-size: 9px;
-            color: #555;
-            margin: 2px 0;
-        }
-
-        .period-badge {
-            display: inline-block;
-            background: #3498db;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 3px;
-            font-size: 9px;
-            margin: 5px 0;
+            font-size: 7px;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin: 10px 0;
-            font-size: 9px;
+            table-layout: fixed;
+        }
+
+        th,
+        td {
+            border: 1px solid #000;
+            padding: 2px;
+            font-size: 6px;
+            word-wrap: break-word;
+            overflow: hidden;
         }
 
         th {
             background: #2c3e50;
-            color: white;
-            padding: 6px 4px;
-            text-align: left;
-            font-weight: bold;
-            border: 1px solid #1a252f;
+            color: #fff;
+            text-align: center;
         }
 
-        td {
-            padding: 5px 4px;
-            border: 1px solid #ddd;
-            vertical-align: top;
-        }
-
-        tr:nth-child(even) {
-            background: #f9f9f9;
-        }
-
-        tr:hover {
-            background: #f1f5f9;
-        }
-
-        .text-right {
+        td.text-right {
             text-align: right;
         }
 
-        .text-center {
+        td.text-center {
             text-align: center;
-        }
-
-        .status-lunas {
-            background: #27ae60;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 8px;
-        }
-
-        .status-belum {
-            background: #e74c3c;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 8px;
         }
 
         .summary {
-            margin-top: 20px;
-            padding: 10px;
-            background: #ecf0f1;
-            border-left: 4px solid #3498db;
-            font-size: 9px;
-        }
-
-        .summary-title {
-            font-weight: bold;
-            color: #2c3e50;
-            margin-bottom: 5px;
-        }
-
-        .no-data {
-            text-align: center;
-            padding: 20px;
-            color: #7f8c8d;
-            font-style: italic;
+            margin-top: 10px;
+            font-size: 8px;
         }
 
         .footer {
@@ -128,14 +70,7 @@
             bottom: 0;
             width: 100%;
             text-align: center;
-            font-size: 8px;
-            color: #999;
-            padding: 10px 0;
-            border-top: 1px solid #eee;
-        }
-
-        @page {
-            margin: 15mm 10mm;
+            font-size: 6px;
         }
     </style>
 </head>
@@ -144,134 +79,102 @@
 
     <div class="header">
         <h1>{{ $title }}</h1>
-        <div class="period-badge">{{ $startDate ? \Carbon\Carbon::parse($startDate)->format('d M Y') : 'Awal' }} s/d
-            {{ $endDate ? \Carbon\Carbon::parse($endDate)->format('d M Y') : 'Sekarang' }}</div>
-        <div class="header-info">Diexport: {{ \Carbon\Carbon::now()->format('d M Y H:i:s') }}</div>
+        <div class="period-badge">{{ $periodLabel }}</div>
+        <div class="header-info">Diexport: {{ $generatedAt }}</div>
         <div class="header-info">Oleh: {{ $user }}</div>
-        @if ($filterTipe)
-            <div class="header-info">Filter: <strong>{{ $filterTipe }}</strong></div>
-        @endif
     </div>
 
-    @php
-        $dataCollection = $data ?? collect();
-    @endphp
+    @php $dataCollection = $data ?? collect(); @endphp
 
     @if ($dataCollection->count() > 0)
         <table>
             <thead>
                 <tr>
-                    <th class="text-center" width="5%">No</th>
+                    <th>No</th>
                     <th>Perusahaan</th>
-                    <th>Materi</th>
-                    <th class="text-center">Periode Latihan</th>
-                    <th class="text-right">Net Sales</th>
-                    <th>PIC</th>
+                    <th>Kelas</th>
                     <th>Sales</th>
-                    @if ($filterTipe !== 'Outstanding PA')
-                        <th class="text-center">Tenggat</th>
-                        <th class="text-center">Status</th>
-                    @endif
-                    @if ($filterTipe === 'Lunas')
-                        <th>Jenis Potongan</th>
-                        <th class="text-right">Jml Potongan</th>
-                        <th class="text-right">Jml Bayar</th>
-                        <th class="text-center">Tgl Bayar</th>
-                    @elseif($filterTipe === null)
-                        <th>Invoice</th>
-                        <th>Faktur</th>
-                        <th>Dokumen</th>
-                        <th>Konfir CS</th>
-                        <th>No. Resi</th>
-                        <th>Status Resi</th>
-                        <th>Konfir PIC</th>
-                        <th>Pembayaran</th>
-                        <th>Keterangan</th>
-                    @endif
+                    <th>Tanggal</th>
+                    <th>Tagihan</th>
+                    <th>Jatuh Tempo</th>
+                    <th>Tanggal Bayar</th>
+                    <th>Nominal Pembayaran</th>
+                    @foreach ($potonganTypes as $type)
+                        <th>{{ $type }}</th>
+                    @endforeach
+                    <th>Uang Diterima</th>
+                    <th>Status</th>
+                    <th>Info</th>
                 </tr>
             </thead>
+
             <tbody>
                 @foreach ($dataCollection as $index => $item)
                     @php
                         $rkm = $item->rkm;
-                        $perusahaan = optional($rkm?->perusahaan)->nama_perusahaan ?? '-';
-                        $materi = optional($rkm?->materi)->nama_materi ?? '-';
-                        $sales = optional($rkm?->sales)->nama_lengkap ?? '-';
-                        $periode =
-                            $rkm?->tanggal_awal && $rkm?->tanggal_akhir
-                                ? \Carbon\Carbon::parse($rkm->tanggal_awal)->format('d M Y') .
-                                    ' s/d ' .
-                                    \Carbon\Carbon::parse($rkm->tanggal_akhir)->format('d M Y')
-                                : '-';
-                        $netSales = number_format((float) ($item->net_sales ?? 0), 0, ',', '.');
+                        $tanggalAkhir = $rkm?->tanggal_akhir;
+                        $jatuhTempo = $tanggalAkhir
+                            ? \Carbon\Carbon::parse($tanggalAkhir)->addMonths(6)->format('d M Y')
+                            : '-';
+
+                        $decodeJson = function ($value) {
+                            if (empty($value)) {
+                                return null;
+                            }
+                            $decoded = is_string($value) ? json_decode($value, true) : $value;
+                            return is_string($decoded) ? json_decode($decoded, true) : $decoded;
+                        };
+
+                        $potonganData = [];
+                        $decoded = $decodeJson($item->jumlah_potongan ?? null);
+
+                        if (is_array($decoded)) {
+                            foreach ($decoded as $p) {
+                                if (!empty($p['jenis'])) {
+                                    $potonganData[trim($p['jenis'])] = $p['jumlah'] ?? 0;
+                                }
+                            }
+                        }
                     @endphp
+
                     <tr>
-                        <td class="text-center">{{ $index + 1 }}</td>
-                        <td><strong>{{ $perusahaan }}</strong></td>
-                        <td>{{ $materi }}</td>
-                        <td class="text-center">{{ $periode }}</td>
-                        <td class="text-right"><strong>Rp {{ $netSales }}</strong></td>
-                        <td>{{ $item->pic ?? '-' }}</td>
-                        <td>{{ $sales }}</td>
-
-                        @if ($filterTipe !== 'Outstanding PA')
-                            <td class="text-center">
-                                {{ $item->due_date ? \Carbon\Carbon::parse($item->due_date)->format('d M Y') : '-' }}
+                        <td>{{ $index + 1 }}</td>
+                        <td>{{ optional($rkm?->perusahaan)->nama_perusahaan ?? '-' }}</td>
+                        <td>{{ optional($rkm?->materi)->nama_materi ?? '-' }}</td>
+                        <td>{{ optional($rkm?->sales)->nama_lengkap ?? '-' }}</td>
+                        <td>{{ $tanggalAkhir ? \Carbon\Carbon::parse($tanggalAkhir)->format('d M Y') : '-' }}</td>
+                        <td class="text-right">{{ number_format(optional($rkm?->invoice)->amount ?? 0, 0, ',', '.') }}
+                        </td>
+                        <td>{{ $jatuhTempo }}</td>
+                        <td>{{ $item->tanggal_bayar ? \Carbon\Carbon::parse($item->tanggal_bayar)->format('d M Y H:i') : '-' }}
+                        </td>
+                        <td class="text-right">{{ number_format(optional($rkm?->invoice)->amount ?? 0, 0, ',', '.') }}
+                        </td>
+                        @foreach ($potonganTypes as $type)
+                            <td class="text-right">
+                                {{ isset($potonganData[$type]) && $potonganData[$type] > 0
+                                    ? number_format($potonganData[$type], 0, ',', '.')
+                                    : '0' }}
                             </td>
-                            <td class="text-center">
-                                @if ($item->status_pembayaran == '1')
-                                    <span class="status-lunas">Lunas</span>
-                                @else
-                                    <span class="status-belum">Belum</span>
-                                @endif
-                            </td>
-                        @endif
-
-                        @if ($filterTipe === 'Lunas')
-                            <td>{{ formatJsonPotongan($item->jenis_potongan, 'jenis') }}</td>
-                            <td class="text-right">{{ formatJsonPotongan($item->jumlah_potongan, 'jumlah') }}</td>
-                            <td class="text-right"><strong>Rp
-                                    {{ number_format((float) ($item->jumlah_pembayaran ?? 0), 0, ',', '.') }}</strong>
-                            </td>
-                            <td class="text-center">
-                                {{ $item->tanggal_bayar ? \Carbon\Carbon::parse($item->tanggal_bayar)->format('d M Y') : '-' }}
-                            </td>
-                        @elseif($filterTipe === null)
-                            @php $tracking = $item->tracking_outstanding; @endphp
-                            <td class="text-center">{{ optional($tracking)->invoice ? 'Ada' : '-' }}</td>
-                            <td class="text-center">{{ optional($tracking)->faktur_pajak ? 'Ada' : '-' }}</td>
-                            <td class="text-center">{{ optional($tracking)->dokumen_tambahan ? 'Ada' : '-' }}</td>
-                            <td class="text-center">{{ optional($tracking)->konfir_cs ? 'Ada' : '-' }}</td>
-                            <td class="text-center">{{ optional($tracking)->no_resi ? 'Ada' : '-' }}</td>
-                            <td class="text-center">{{ optional($tracking)->status_resi ?? '-' }}</td>
-                            <td class="text-center">{{ optional($tracking)->konfir_pic ? 'Ada' : '-' }}</td>
-                            <td class="text-center">{{ optional($tracking)->pembayaran ? 'Ada' : '-' }}</td>
-                            <td>{{ optional($tracking)->keterangan_pic ?? '-' }}</td>
-                        @endif
+                        @endforeach
+                        <td class="text-right">{{ number_format($item->jumlah_pembayaran ?? 0, 0, ',', '.') }}</td>
+                        <td class="text-center">{{ $item->tanggal_bayar ? 'LUNAS' : 'BELUM BAYAR' }}</td>
+                        <td class="text-right">
+                            {{ number_format(optional($rkm?->invoice)->amount ?? 0, 0, ',', '.') ? 'Sesuai' : ' ' }}
+                        </td>
                     </tr>
                 @endforeach
             </tbody>
         </table>
 
         <div class="summary">
-            <div class="summary-title">RINGKASAN DATA</div>
-            <div>• Total Record: <strong>{{ $dataCollection->count() }}</strong></div>
-            <div>• Tipe Filter: <strong>{{ $filterTipe ?? 'Semua' }}</strong></div>
-            @if ($filterTipe === 'Lunas')
-                <div>• Total Pembayaran: <strong>Rp
-                        {{ number_format($dataCollection->sum('jumlah_pembayaran'), 0, ',', '.') }}</strong></div>
-            @endif
-            <div>• Generated: {{ \Carbon\Carbon::now()->format('d M Y H:i:s') }}</div>
-        </div>
-    @else
-        <div class="no-data">
-            <p>Tidak ada data yang ditemukan untuk kriteria ini.</p>
-            <p>Silakan periksa kembali filter tanggal atau tipe laporan.</p>
+            Total Data: {{ $dataCollection->count() }}<br>
+            Total Uang Diterima: Rp {{ number_format($dataCollection->sum('jumlah_pembayaran'), 0, ',', '.') }}
         </div>
     @endif
 
     <div class="footer">
-        Halaman {PAGENO} dari {nb} • Laporan Internal • {{ config('app.name') }}
+        Halaman {PAGENO} dari {nb}
     </div>
 
 </body>

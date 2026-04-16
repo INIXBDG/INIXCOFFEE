@@ -34,6 +34,11 @@
                             <label for="edit_keterangan" class="form-label">Keterangan</label>
                             <textarea class="form-control" id="edit_keterangan" name="keterangan" rows="3" required></textarea>
                         </div>
+
+                        <div class="mb-3">
+                            <label for="no_akun" class="form-label">No Akun</label>
+                            <input type="text" class="form-control" id="no_akun" name="no_akun">
+                        </div>
                         
                         <div id="form-pengajuan-group" style="display: none;">
                             <div class="mb-3">
@@ -86,6 +91,11 @@
                             <label for="pettycash_keterangan" class="form-label">Keterangan</label>
                             <textarea class="form-control" id="pettycash_keterangan" name="keterangan" rows="3" placeholder="Contoh: Pembelian galon air minum" required></textarea>
                         </div>
+
+                        <div class="mb-3">
+                            <label for="no_akun" class="form-label">No Akun</label>
+                            <input type="text" class="form-control" id="no_akun" name="no_akun">
+                        </div>
                         
                         <div class="mb-3">
                             <label for="pettycash_tipe" class="form-label">Tipe Transaksi</label>
@@ -109,11 +119,47 @@
             </div>
         </div>
     </div>
+    <div class="modal fade" id="importExcelModal" tabindex="-1" aria-labelledby="importExcelModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="importExcelModalLabel">Import Data Jurnal (Excel)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="importExcelForm" enctype="multipart/form-data">
+                        @csrf
+                        <div class="mb-3">
+                            <label for="file_excel" class="form-label">Pilih File Excel (.xlsx, .xls, .csv)</label>
+                            <input class="form-control" type="file" id="file_excel" name="file" accept=".xlsx, .xls, .csv" required>
+                            <div class="form-text text-muted mt-2">
+                                <b>Format Kolom Wajib (Kiri ke Kanan):</b><br>
+                                1. No (Kosongkan untuk Auto-Generate)<br>
+                                2. Tanggal Transaksi<br>
+                                3. Keterangan<br>
+                                4. Cat. (No Akun)<br>
+                                5. Debit (Rp)<br>
+                                6. Kredit (Rp)<br>
+                                <i>*Baris pertama pada file akan diabaikan (sebagai Header).</i>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-success" id="btn-submit-import">Mulai Import</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="row justify-content-center">
         <div class="col-md-12">
             <div class="d-flex justify-content-end mb-3 ">
                 <button type="button" class="btn click-primary" id="btn-tambah-pettycash">
                     + Tambah Kas Kecil
+                </button>
+                <button type="button" class="btn btn-success ms-2" id="btn-import-excel">
+                    Import Excel
                 </button>
             </div>
             <div class="card m-4">
@@ -141,8 +187,9 @@
                                 <thead>
                                     <tr>
                                         <th scope="col">No</th>
-                                        <th scope="col">Tanggal Transaksi</th>
+                                        <th scope="col">Tanggal</th>
                                         <th scope="col">Keterangan</th>
+                                        <th scope="col">Cat.</th>
                                         <th scope="col">Debit (Rp)</th>
                                         <th scope="col">Kredit (Rp)</th>
                                         <th scope="col">Aksi</th>
@@ -152,7 +199,7 @@
                                 </tbody>
                                 <tfoot>
                                     <tr>
-                                        <th colspan="3" style="text-align:right">Total:</th>
+                                        <th colspan="4" style="text-align:right">Total:</th>
                                         <th id="total-debit">0</th>
                                         <th id="total-kredit">0</th>
                                         <th></th>
@@ -268,9 +315,9 @@
             },
             "columns": [
                 {
-                    "data": null,
+                    "data": "nomor_kk",
                     "render": function (data, type, row, meta) {
-                        return meta.row + meta.settings._iDisplayStart + 1;
+                        return data ? data : '-'; // Menampilkan '-' jika data lama belum ada nomor_kk nya
                     }
                 },
                 {
@@ -281,6 +328,7 @@
                     }
                 },
                 {"data": "keterangan"},
+                {"data": "no_akun"},
                 {
                     "data": "debit",
                     "render": function(data, type, row) {
@@ -314,7 +362,7 @@
 
                 // Kalkulasi total Debit dari seluruh data yang difilter
                 var debitTotal = api
-                    .column(3, { search: 'applied' })
+                    .column(4, { search: 'applied' })
                     .data()
                     .reduce(function (a, b) {
                         return intVal(a) + intVal(b);
@@ -322,15 +370,15 @@
 
                 // Kalkulasi total Kredit dari seluruh data yang difilter
                 var kreditTotal = api
-                    .column(4, { search: 'applied' })
+                    .column(5, { search: 'applied' })
                     .data()
                     .reduce(function (a, b) {
                         return intVal(a) + intVal(b);
                     }, 0);
 
                 // Menampilkan hasil kalkulasi pada elemen footer dengan fungsi formatRupiah
-                $(api.column(3).footer()).html(formatRupiah(debitTotal));
-                $(api.column(4).footer()).html(formatRupiah(kreditTotal));
+                $(api.column(4).footer()).html(formatRupiah(debitTotal));
+                $(api.column(5).footer()).html(formatRupiah(kreditTotal));
             }
         });
 
@@ -550,6 +598,7 @@
                 }
             });
         });
+
         function formatRupiah(angka) {
             // Memastikan angka dikonversi menjadi integer untuk menghindari bug pada nilai desimal
             let parsedAngka = Math.round(parseFloat(angka));
@@ -567,6 +616,60 @@
 
             return rupiah;
         }
+
+        // Event listener untuk membuka Modal Import Excel
+        $('#btn-import-excel').click(function() {
+            $('#importExcelForm')[0].reset();
+            $('#importExcelModal').modal('show');
+        });
+
+        // Event listener untuk eksekusi proses Import via AJAX
+        $('#btn-submit-import').click(function() {
+            var formElement = document.getElementById('importExcelForm');
+            var formData = new FormData(formElement);
+            var urlImport = "{{ route('jurnalakuntansi.importExcel') }}";
+
+            // Validasi file kosong
+            if ($('#file_excel').val() === '') {
+                alert('Pilih file Excel terlebih dahulu.');
+                return;
+            }
+
+            $.ajax({
+                url: urlImport,
+                type: 'POST',
+                data: formData,
+                contentType: false, // Wajib false untuk upload file
+                processData: false, // Wajib false untuk upload file
+                beforeSend: function() {
+                    $('#importExcelModal').modal('hide');
+                    $('#loadingModal').modal('show');
+                    $('#loadingModal').removeAttr('inert');
+                },
+                success: function(response) {
+                    $('#loadingModal').modal('hide');
+                    $('#loadingModal').attr('inert', true);
+                    
+                    if (response.success) {
+                        alert(response.message);
+                        table.ajax.reload(null, false); // Reload tabel tanpa reset pagination
+                    } else {
+                        alert('Kegagalan sistem saat impor data.');
+                    }
+                },
+                error: function(xhr) {
+                    $('#loadingModal').modal('hide');
+                    $('#loadingModal').attr('inert', true);
+                    
+                    var errorMsg = 'Terjadi kesalahan sistem saat mengimpor file.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    }
+                    alert(errorMsg);
+                }
+            });
+        });
+
     });
 </script>
 @endpush

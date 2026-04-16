@@ -41,8 +41,8 @@
         </div>
 
         <!-- Card Table -->
-        <div class="card h-100 shadow-lg border-0 rounded-4 overflow-hidden">
-            <div class="card-header bg-white border-bottom py-3">
+        <div class="card h-100 shadow-lg border-0 rounded-4 overflow-hidden glass-force">
+            <div class="card-header border-bottom py-3">
                 <div class="d-flex align-items-center justify-content-between">
                     <h5 class="card-title mb-0 fw-semibold">
                         <i class="bx bx-list-ul text-primary me-2" style="font-size: 1.5rem;"></i>
@@ -54,7 +54,7 @@
             <div class="card-body p-0">
                 <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
                     <table class="table table-hover align-middle mb-0">
-                        <thead class="sticky-top bg-white">
+                        <thead class="sticky-top">
                             <tr>
                                 <th class="border-0 ps-4" style="min-width: 60px;">No</th>
                                 <th class="border-0" style="min-width: 250px;">Materi</th>

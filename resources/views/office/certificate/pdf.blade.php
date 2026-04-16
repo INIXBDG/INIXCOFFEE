@@ -139,6 +139,7 @@
             {{ $namaPeserta }}
         </div>
 
+
         <div class="course-name">
             {{ $certificate->nama_materi }}
         </div>

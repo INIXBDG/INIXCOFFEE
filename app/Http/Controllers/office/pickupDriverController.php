@@ -63,34 +63,30 @@ class pickupDriverController extends Controller
         $dataDriver = karyawan::where('jabatan', 'Driver')
             ->where('status_aktif', '1')
             ->where(function ($query) {
-                $query->whereDoesntHave('pickupDriver')
-                    ->orWhereHas('pickupDriver', function ($q) {
-                        $q->where('status_driver', 'Selesai, Driver Ready');
-                    });
+                $query->whereDoesntHave('pickupDriver')->orWhereHas('pickupDriver', function ($q) {
+                    $q->where('status_driver', 'Selesai, Driver Ready');
+                });
             })
             ->get();
 
         $startOfWeek = Carbon::now()->startOfWeek();
         $endOfWeek = Carbon::now()->endOfWeek();
 
-        $budgetPerjalanan = pickupDriver::select('kendaraan')
-            ->selectRaw('COALESCE(SUM(pickup_drivers.budget), 0) as total_budget')
-            ->where('tipe_perjalanan', 'Operasional Kantor')
+        $budgetPerKendaraan = pickupDriver::select('kendaraan')
+            ->selectRaw('COALESCE(SUM(biaya_transportasi_drivers.harga), 0) as total_terpakai')
+            ->join('biaya_transportasi_drivers', 'pickup_drivers.id', '=', 'biaya_transportasi_drivers.id_pickup_driver')
+            ->where('pickup_drivers.tipe_perjalanan', 'Operasional Kantor')
             ->whereHas('detailPickupDriver', function ($q) use ($startOfWeek, $endOfWeek) {
                 $q->whereBetween('tanggal_keberangkatan', [$startOfWeek, $endOfWeek]);
             })
-            ->groupBy('kendaraan')
+            ->groupBy('pickup_drivers.kendaraan')
             ->get()
-            ->map(function ($item) {
-                $item->sisa_budget = 1000000 - $item->total_budget;
-                return $item;
+            ->mapWithKeys(function ($item) {
+                $sisa = 1000000 - $item->total_terpakai;
+                return [$item->kendaraan => max(0, $sisa)];
             });
 
-        $kendaraanSedangDipakai = pickupDriver::where('status_apply', 1)
-            ->whereNotNull('kendaraan')
-            ->where('kendaraan', '!=', '')
-            ->pluck('kendaraan')
-            ->unique();
+        $kendaraanSedangDipakai = pickupDriver::where('status_apply', 1)->whereNotNull('kendaraan')->where('kendaraan', '!=', '')->pluck('kendaraan')->unique();
 
         $allKendaraan = collect(['H1', 'Innova']);
 
@@ -111,14 +107,9 @@ class pickupDriverController extends Controller
         $extends = 'layouts_office.app';
         $section = 'office_contents';
 
-        return view('office.pickupdriver.create', compact(
-            'dataDriver',
-            'budgetPerjalanan',
-            'kendaraan',
-            'extends',
-            'section'
-        ));
+        return view('office.pickupdriver.create', compact('dataDriver', 'budgetPerKendaraan', 'kendaraan', 'extends', 'section'));
     }
+
     public function store(Request $request)
     {
         $request->validate([
@@ -142,15 +133,24 @@ class pickupDriverController extends Controller
         $endOfWeek = Carbon::now()->endOfWeek();
 
         if (in_array('Operasional Kantor', $request->tipe) && $budget) {
-            $total = pickupDriver::where('kendaraan', $request->kendaraan)
+            $totalTerpakai = pickupDriver::where('kendaraan', $request->kendaraan)
                 ->where('tipe_perjalanan', 'Operasional Kantor')
                 ->whereHas('detailPickupDriver', function ($q) use ($startOfWeek, $endOfWeek) {
                     $q->whereBetween('tanggal_keberangkatan', [$startOfWeek, $endOfWeek]);
                 })
-                ->sum('budget');
+                ->join('biaya_transportasi_drivers', 'pickup_drivers.id', '=', 'biaya_transportasi_drivers.id_pickup_driver')
+                ->sum('biaya_transportasi_drivers.harga');
 
-            if ($total + $budget > 1000000) {
-                return response()->json(['success' => false, 'message' => 'Budget kendaraan minggu ini sudah melebihi batas'], 422);
+            $sisaBudget = 1000000 - $totalTerpakai;
+
+            if ($budget > $sisaBudget) {
+                return response()->json(
+                    [
+                        'success' => false,
+                        'message' => "Budget melebihi batas. Sisa budget untuk {$request->kendaraan} minggu ini: Rp " . number_format($sisaBudget, 0, ',', '.'),
+                    ],
+                    422,
+                );
             }
         }
 
@@ -406,7 +406,7 @@ class pickupDriverController extends Controller
             'waktu_kepulangan' => 'required',
             'KM_awal' => 'nullable',
             'KM_akhir' => 'nullable',
-            'total_pemakaian' => 'nullable|integer|min:0',
+            'total_pemakaian' => 'nullable',
         ]);
 
         $pickupDriver = pickupDriver::findOrFail($request->pickup_driver_id);
@@ -584,68 +584,84 @@ class pickupDriverController extends Controller
         $request->validate([
             'pickup_driver_id' => 'required|exists:pickup_drivers,id',
             'id_driver' => 'required|exists:karyawans,id',
-            'kendaraan' => 'nullable',
+            'kendaraan' => 'nullable|string|max:255',
+            'budget_value' => 'nullable|numeric|min:0',
             'details' => 'required|array|min:1',
             'details.*.tipe' => 'required|in:Penjemputan,Pengantaran',
-            'details.*.lokasi' => 'required|string',
+            'details.*.lokasi' => 'required|string|max:255',
             'details.*.tanggal' => 'required|date',
-            'details.*.waktu' => 'required',
+            'details.*.waktu' => 'required|date_format:H:i',
         ]);
 
         $pickup = pickupDriver::with('detailPickupDriver', 'karyawan')->findOrFail($request->pickup_driver_id);
-        $oldDetails = $pickup->detailPickupDriver
-            ->map(
-                fn($item) => [
-                    'id' => $item->id,
-                    'tipe' => $item->tipe,
-                    'lokasi' => $item->lokasi,
-                    'tanggal' => $item->tanggal_keberangkatan,
-                    'waktu' => substr($item->waktu_keberangkatan, 0, 5),
-                ],
-            )
-            ->keyBy('id');
+
+        $oldData = [
+            'id_karyawan' => $pickup->id_karyawan,
+            'kendaraan' => $pickup->kendaraan,
+            'budget' => $pickup->budget,
+            'details' => $pickup->detailPickupDriver
+                ->map(
+                    fn($d) => [
+                        'tipe' => $d->tipe,
+                        'lokasi' => $d->lokasi,
+                        'tanggal' => $d->tanggal_keberangkatan,
+                        'waktu' => substr($d->waktu_keberangkatan, 0, 5),
+                    ],
+                )
+                ->all(),
+        ];
 
         $changes = [];
+
         if ($pickup->id_karyawan != $request->id_driver) {
-            $oldDriver = $pickup->karyawan->nama_lengkap ?? 'Tidak diketahui';
+            $oldDriver = $pickup->karyawan?->nama_lengkap ?? 'Tidak diketahui';
             $newDriver = karyawan::find($request->id_driver)?->nama_lengkap ?? 'Tidak diketahui';
             $changes[] = "Driver: {$oldDriver} → {$newDriver}";
         }
-        if ($pickup->kendaraan != ($request->kendaraan ?? null)) {
-            $changes[] = 'Kendaraan: ' . ($pickup->kendaraan ?: 'tidak ada') . ' → ' . ($request->kendaraan ?: 'tidak ada');
+
+        $oldKendaraan = $pickup->kendaraan ?? 'tidak ada';
+        $newKendaraan = $request->filled('kendaraan') ? $request->kendaraan : null;
+        $newKendaraanDisplay = $newKendaraan ?? 'tidak ada';
+
+        if ($oldKendaraan !== $newKendaraan) {
+            $changes[] = "Kendaraan: {$oldKendaraan} → {$newKendaraanDisplay}";
         }
 
-        $newDetailsRaw = collect($request->details)->map(
-            fn($d) => [
-                'tipe' => $d['tipe'],
-                'lokasi' => $d['lokasi'],
-                'tanggal' => $d['tanggal'],
-                'waktu' => $d['waktu'],
+        $newBudget = $request->filled('budget_value') ? (float) $request->budget_value : null;
+        $oldBudgetDisplay = $pickup->budget ? 'Rp ' . number_format($pickup->budget, 0, ',', '.') : 'tidak ada';
+        $newBudgetDisplay = $newBudget ? 'Rp ' . number_format($newBudget, 0, ',', '.') : 'tidak ada';
+
+        if ($pickup->budget !== $newBudget) {
+            $changes[] = "Budget: {$oldBudgetDisplay} → {$newBudgetDisplay}";
+        }
+
+        $newDetailsKeyed = collect($request->details)->mapWithKeys(
+            fn($d, $i) => [
+                $i => $d['tipe'] . '|' . $d['lokasi'] . '|' . $d['tanggal'] . '|' . $d['waktu'],
             ],
         );
 
-        $deleted = [];
-        foreach ($oldDetails as $id => $old) {
-            if (!$newDetailsRaw->first(fn($n) => $old['tipe'] === $n['tipe'] && $old['lokasi'] === $n['lokasi'] && $old['tanggal'] == $n['tanggal'] && $old['waktu'] === $n['waktu'])) {
-                $deleted[] = "Dihapus: {$old['tipe']} ke {$old['lokasi']} ({$old['tanggal']} {$old['waktu']})";
-            }
-        }
-        $added = [];
-        foreach ($newDetailsRaw as $new) {
-            if (!$oldDetails->first(fn($o) => $o['tipe'] === $new['tipe'] && $o['lokasi'] === $new['lokasi'] && $o['tanggal'] == $new['tanggal'] && $o['waktu'] === $new['waktu'])) {
-                $added[] = "Ditambah: {$new['tipe']} ke {$new['lokasi']} ({$new['tanggal']} {$new['waktu']})";
-            }
-        }
+        $oldDetailsKeyed = collect($oldData['details'])->mapWithKeys(
+            fn($d, $i) => [
+                $i => $d['tipe'] . '|' . $d['lokasi'] . '|' . $d['tanggal'] . '|' . $d['waktu'],
+            ],
+        );
+
+        $deleted = $oldDetailsKeyed->diff($newDetailsKeyed)->map(fn($v, $k) => "Dihapus: {$oldData['details'][$k]['tipe']} ke {$oldData['details'][$k]['lokasi']} ({$oldData['details'][$k]['tanggal']} {$oldData['details'][$k]['waktu']})")->all();
+
+        $added = $newDetailsKeyed->diff($oldDetailsKeyed)->map(fn($v, $k) => "Ditambah: {$request->details[$k]['tipe']} ke {$request->details[$k]['lokasi']} ({$request->details[$k]['tanggal']} {$request->details[$k]['waktu']})")->all();
 
         if (empty($changes) && empty($deleted) && empty($added)) {
             return response()->json(['success' => true, 'message' => 'Tidak ada perubahan.']);
         }
 
         $pickup->id_karyawan = $request->id_driver;
-        $pickup->kendaraan = $request->filled('kendaraan') ? $request->kendaraan : null;
+        $pickup->budget = $newBudget;
+        $pickup->kendaraan = $newKendaraan;
         $pickup->save();
 
         DetailPickupDriver::where('pickup_driver_id', $pickup->id)->delete();
+
         foreach ($request->details as $detail) {
             DetailPickupDriver::create([
                 'pickup_driver_id' => $pickup->id,
@@ -657,25 +673,28 @@ class pickupDriverController extends Controller
         }
 
         $user = auth()->user()->username;
-        $logMsg = $user . ' memperbarui: ' . implode('; ', array_merge($changes, $deleted, $added));
-        TrackingPickupDriver::create([
-            'pickup_driver_id' => $pickup->id,
-            'status' => $logMsg,
-            'diubah_oleh' => auth()->user()->id,
-        ]);
+        $logParts = array_merge($changes, $deleted, $added);
+
+        if (!empty($logParts)) {
+            TrackingPickupDriver::create([
+                'pickup_driver_id' => $pickup->id,
+                'status' => $user . ' memperbarui: ' . implode('; ', $logParts),
+                'diubah_oleh' => auth()->user()->id,
+            ]);
+        }
 
         $creator = auth()->user();
         $creatorKaryawan = $creator->karyawan;
         $driver = karyawan::findOrFail($request->id_driver);
         $recipients = [];
 
-        if ($creatorKaryawan->jabatan == 'HRD') {
+        if ($creatorKaryawan?->jabatan == 'HRD') {
             $CS = karyawan::where('jabatan', 'Customer Care')->first();
             if ($CS) {
                 $recipients[] = $CS->kode_karyawan;
             }
             $recipients[] = $driver->kode_karyawan;
-        } elseif ($creatorKaryawan->jabatan == 'Customer Care') {
+        } elseif ($creatorKaryawan?->jabatan == 'Customer Care') {
             $HRD = karyawan::where('jabatan', 'HRD')->first();
             if ($HRD) {
                 $recipients[] = $HRD->kode_karyawan;
@@ -706,18 +725,18 @@ class pickupDriverController extends Controller
         $telegramPayload = [
             'title' => '✏️ Koordinasi Diperbarui',
             'id_pengajuan' => $pickup->id,
-            'creator_name' => $creatorKaryawan->nama_lengkap,
+            'creator_name' => $creatorKaryawan?->nama_lengkap ?? '-',
             'driver_name' => $driver->nama ?? ($driver->nama_lengkap ?? '-'),
-            'budget' => $pickup->budget,
+            'budget' => $newBudget,
             'tanggal_pembuatan' => now(),
             'status_text' => 'Diperbarui',
             'status_apply' => $pickup->status_apply,
             'tipe' => $detailTipe,
-            'lokasi' => [],
-            'tanggal' => [],
-            'waktu' => [],
-            'detail' => [],
-            'log_text' => implode("\n", array_merge($changes, $deleted, $added)),
+            'lokasi' => collect($request->details)->pluck('lokasi')->toArray(),
+            'tanggal' => collect($request->details)->pluck('tanggal')->toArray(),
+            'waktu' => collect($request->details)->pluck('waktu')->toArray(),
+            'detail' => collect($request->details)->pluck('detail')->toArray(),
+            'log_text' => implode("\n", $logParts),
             'path' => '/office/pickup-driver/index',
         ];
 
@@ -803,12 +822,19 @@ class pickupDriverController extends Controller
         $request->validate([
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
-            'tipe' => 'nullable|string|in:Outstanding PA,Lunas',
-            'status' => 'nullable|string',
-            'karyawan' => 'nullable|integer',
+            'kendaraan' => 'nullable|string',
+            'status' => 'nullable|integer|in:0,1,2',
         ]);
 
-        $query = outstanding::with(['rkm.perusahaan', 'rkm.materi', 'rkm.sales', 'tracking_outstanding']);
+        $query = pickupDriver::with([
+            'karyawan',
+            'pembuat',
+            'detailPickupDriver',
+            'Tracking',
+            'biayaTransportasi' => function ($q) {
+                $q->with('karyawan');
+            },
+        ]);
 
         if ($request->start_date) {
             $query->whereDate('created_at', '>=', $request->start_date);
@@ -818,51 +844,37 @@ class pickupDriverController extends Controller
             $query->whereDate('created_at', '<=', $request->end_date);
         }
 
-        if ($request->tipe === 'Outstanding PA') {
-            $query->where(function ($q) {
-                $q->whereNotNull('net_sales')
-                ->where('net_sales', '!=', 0)
-                ->where('net_sales', '!=', '0.00');
-            });
-        } elseif ($request->tipe === 'Lunas') {
-            $query->where('status_pembayaran', 1);
+        if ($request->kendaraan) {
+            $query->where('kendaraan', $request->kendaraan);
         }
 
-        if ($request->karyawan) {
-            $query->whereHas('rkm.sales', function ($q) use ($request) {
-                $q->where('id', $request->karyawan);
-            });
+        if ($request->status !== null) {
+            $query->where('status_apply', $request->status);
         }
 
-        $data = $query->orderBy('due_date')
-            ->orderBy('created_at', 'desc')
-            ->get() ?? collect();
+        $data = $query->orderBy('created_at', 'desc')->get();
 
-        $title = match ($request->tipe) {
-            'Outstanding PA' => 'LAPORAN OUTSTANDING PA',
-            'Lunas' => 'LAPORAN OUTSTANDING LUNAS',
-            default => 'LAPORAN OUTSTANDING',
+        $filterStatusText = match ($request->status) {
+            0 => 'Menunggu',
+            1 => 'Diterima',
+            2 => 'Selesai',
+            default => 'Semua',
         };
 
-        $user = Auth::check()
-            ? (optional(Auth::user()->karyawan)->nama_lengkap ?? Auth::user()->username)
-            : 'System';
+        $user = Auth::check() ? optional(Auth::user()->karyawan)->nama_lengkap ?? Auth::user()->username : 'System';
 
-        $pdf = Pdf::loadView('office.reports.outstanding_pdf', [
-            'data' => $data ?? collect(),
-            'title' => $title,
+        $pdf = Pdf::loadView('office.reports.pickup_driver_pdf', [
+            'data' => $data,
             'startDate' => $request->start_date,
             'endDate' => $request->end_date,
-            'filterTipe' => $request->tipe,
+            'filterKendaraan' => $request->kendaraan,
+            'filterStatusText' => $filterStatusText,
             'user' => $user,
             'generatedAt' => Carbon::now()->format('d M Y H:i:s'),
         ]);
 
-        $pdf->setPaper('A4', 'landscape')
-            ->setOption('defaultFont', 'DejaVu Sans')
-            ->setOption('isHtml5ParserEnabled', true)
-            ->setOption('isRemoteEnabled', true);
+        $pdf->setPaper('A4', 'landscape')->setOption('defaultFont', 'DejaVu Sans')->setOption('isHtml5ParserEnabled', true)->setOption('isRemoteEnabled', true);
 
-        return $pdf->stream('Laporan_Outstanding_' . date('Y-m-d_His') . '.pdf');
+        return $pdf->stream('Laporan_PickupDriver_' . date('Y-m-d_His') . '.pdf');
     }
 }

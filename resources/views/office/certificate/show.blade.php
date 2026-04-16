@@ -22,7 +22,7 @@
         <div class="row">
             <div class="col-lg-8 mx-auto">
                 <!-- Success Animation Card -->
-                <div class="card shadow-lg border-0 rounded-4 overflow-hidden mb-4">
+                <div class="card shadow-lg border-0 rounded-4 overflow-hidden mb-4 glass-force">
                     <div class="card-body p-5 text-center">
                         <div class="success-animation mb-4">
                             <div class="avatar-xl mx-auto mb-3 position-relative">
@@ -38,8 +38,8 @@
                 </div>
 
                 <!-- Card Info Sertifikat -->
-                <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
-                    <div class="card-header bg-white border-bottom py-3">
+                <div class="card shadow-lg border-0 rounded-4 overflow-hidden glass-force">
+                    <div class="card-header border-bottom py-3">
                         <h5 class="card-title mb-0 fw-semibold">
                             <i class="bx bx-award text-primary me-2" style="font-size: 1.5rem;"></i>
                             Informasi Sertifikat

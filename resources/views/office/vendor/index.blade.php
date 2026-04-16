@@ -5,7 +5,6 @@
 
     <div class="container-fluid py-4">
 
-        <!-- Modal Detail -->
         <div class="modal fade" id="detailModal" tabindex="-1">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
@@ -29,6 +28,8 @@
                             <p id="detailKeterangan"></p>
                         </div>
 
+                        <div id="extraDetail" class="mt-3"></div>
+
                     </div>
 
                     <div class="modal-footer">
@@ -39,7 +40,6 @@
             </div>
         </div>
 
-        <!-- Modal Tambah -->
         <div class="modal fade" id="exampleModal" tabindex="-1">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -68,6 +68,28 @@
                                 <label class="form-label">Keterangan</label>
                                 <textarea name="keterangan" class="form-control" rows="3"></textarea>
                             </div>
+
+                            @if ($itemValue == 'bengkel')
+                                <div class="mb-3">
+                                    <label class="form-label">No HP</label>
+                                    <input type="text" name="no_hp" class="form-control">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">No Rekening</label>
+                                    <input type="text" name="no_rekening" class="form-control">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Alamat</label>
+                                    <textarea name="alamat" class="form-control" rows="2"></textarea>
+                                </div>
+
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="is_active" value="1" checked>
+                                    <label class="form-check-label">Aktif</label>
+                                </div>
+                            @endif
                     </div>
 
                     <div class="modal-footer">
@@ -80,7 +102,6 @@
             </div>
         </div>
 
-        <!-- Modal Ajukan -->
         <div class="modal fade" id="exampleModalAjukan" tabindex="-1">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -91,18 +112,20 @@
                     </div>
 
                     <div class="modal-body" id="itemContainer">
-                        <form action="{{ route('pengajuanbarang.store') }}" method="post"
-                            enctype="multipart/form-data">
+                        <form action="{{ route('pengajuanbarang.store') }}" method="post" enctype="multipart/form-data">
                             @csrf
 
                             <input type="hidden" name="id_karyawan" value="{{ $karyawan->id }}">
 
                             <div class="mb-3">
-                                <label class="form-label">Tipe</label>      
+                                <label class="form-label">Tipe</label>
                                 <select name="tipe" id="tipe" class="form-select form-select-lg">
-                                    <option value="Makan Siang" {{ $itemValue == 'makansiang' ? 'selected' : '' }}>Makan Siang</option>
-                                    <option value="Coffee Break" {{ $itemValue == 'coffeebreak' ? 'selected' : '' }}>Coffee Break</option>
-                                    <option value="Bengkel" {{ $itemValue == 'bengkel' ? 'selected' : '' }}>Bengkel</option>
+                                    <option value="Makan Siang" {{ $itemValue == 'makansiang' ? 'selected' : '' }}>Makan
+                                        Siang</option>
+                                    <option value="Coffee Break" {{ $itemValue == 'coffeebreak' ? 'selected' : '' }}>Coffee
+                                        Break</option>
+                                    <option value="Bengkel" {{ $itemValue == 'bengkel' ? 'selected' : '' }}>Bengkel
+                                    </option>
                                 </select>
                             </div>
 
@@ -118,7 +141,7 @@
 
                             <div class="mb-3">
                                 <label class="form-label">Harga Barang (dalam Rp.)</label>
-                                <input type="number" name="barang[harga_barang][]" class="form-control">
+                                <input type="text" name="barang[harga_barang][]" class="form-control">
                             </div>
 
                             <div class="mb-3">
@@ -137,7 +160,6 @@
             </div>
         </div>
 
-        <!-- Page Header -->
         <div class="d-flex justify-content-between align-items-center mb-5">
             <h4 class="fw-bold text-dark">Data Vendor {{ $itemValue }}</h4>
             <small class="text-muted fw-medium">{{ now()->translatedFormat('l, d F Y') }}</small>
@@ -147,7 +169,6 @@
             <div class="alert alert-success">{{ session('success') }}</div>
         @endif
 
-        <!-- Card -->
         <div class="card shadow-lg border-0 rounded-4">
             <div class="card-header bg-white">
                 <div class="d-flex justify-content-between">
@@ -163,9 +184,9 @@
                 </div>
             </div>
 
-            <div class="card-body p-0">
+            <div class="card-body p-0 glass-force">
                 <div class="table-responsive" style="max-height: 600px;">
-                    <table class="table table-hover align-middle mb-0">
+                    <table class="table align-middle mb-0">
                         <thead class="table-light">
                             <tr>
                                 <th>No</th>
@@ -182,7 +203,9 @@
                             @forelse($data as $index => $item)
                                 <tr class="vendor-row" data-nama="{{ $item->nama }}"
                                     data-foto="{{ $item->foto ? asset('storage/' . $item->foto) : '' }}"
-                                    data-keterangan="{{ $item->keterangan }}">
+                                    data-keterangan="{{ $item->keterangan }}" data-nohp="{{ $item->no_hp ?? '' }}"
+                                    data-rekening="{{ $item->no_rekening ?? '' }}"
+                                    data-alamat="{{ $item->alamat ?? '' }}">
 
                                     <td>{{ $index + 1 }}</td>
 
@@ -204,10 +227,14 @@
                                     </td>
 
                                     <td class="text-center">
-                                        @if ($item->is_active == '0')
-                                            <span class="badge bg-warning-subtle text-warning">Tidak Aktif</span>
+                                        @if ($itemValue == 'bengkel')
+                                            @if ($item->is_active == '0')
+                                                <span class="badge bg-warning-subtle text-warning">Tidak Aktif</span>
+                                            @else
+                                                <span class="badge bg-success-subtle text-success">Aktif</span>
+                                            @endif
                                         @else
-                                            <span class="badge bg-success-subtle text-success">Aktif</span>
+                                            <span class="text-muted">-</span>
                                         @endif
                                     </td>
 
@@ -249,7 +276,6 @@
         </div>
     </div>
 
-    <!-- TRUNCATE CSS -->
     <style>
         .truncate-text {
             max-width: 160px;
@@ -269,11 +295,14 @@
         document.querySelectorAll('.vendor-row').forEach(row => {
             row.addEventListener('click', function(e) {
 
-                if (e.target.tagName === 'BUTTON' || e.target.tagName === 'FORM') return;
+                if (e.target.tagName === 'BUTTON' || e.target.closest('form')) return;
 
                 let nama = this.dataset.nama;
                 let foto = this.dataset.foto;
                 let keterangan = this.dataset.keterangan;
+                let nohp = this.dataset.nohp;
+                let rekening = this.dataset.rekening;
+                let alamat = this.dataset.alamat;
 
                 document.getElementById('detailNama').innerText = nama;
 
@@ -282,42 +311,70 @@
 
                 document.getElementById('detailKeterangan').innerText = keterangan;
 
+                let extraHtml = '';
+
+                if (nohp || rekening || alamat) {
+                    extraHtml = `
+                        <hr>
+                        <div style="border:1px solid #e5e7eb; border-radius:8px; padding:12px; background:#f9fafb;">
+                            
+                            <div style="margin-bottom:8px;">
+                                <strong>No HP:</strong><br>
+                                <span>${nohp || '-'}</span>
+                            </div>
+
+                            <div style="margin-bottom:8px;">
+                                <strong>No Rekening:</strong><br>
+                                <span>${rekening || '-'}</span>
+                            </div>
+
+                            <div>
+                                <strong>Alamat:</strong><br>
+                                <span>${alamat || '-'}</span>
+                            </div>
+
+                        </div>
+                    `;
+                }
+
+                document.getElementById('extraDetail').innerHTML = extraHtml;
+
                 var modal = new bootstrap.Modal(document.getElementById('detailModal'));
                 modal.show();
             });
         });
 
-        $(document).ready(function () {
-            setupInputFormatter('#itemContainer input[name="barang[harga_barang][]"]'); 
-            $('form').on('submit', function (e) {  
-                e.preventDefault();  
-                $('#itemContainer input[name="barang[harga_barang][]"]').each(function() {  
-                    $(this).val($(this).val().replace(/\./g, ''));  
-                });   
+        $(document).ready(function() {
+            setupInputFormatter('#itemContainer input[name="barang[harga_barang][]"]');
+
+            $('form').on('submit', function(e) {
+                e.preventDefault();
+                $('#itemContainer input[name="barang[harga_barang][]"]').each(function() {
+                    $(this).val($(this).val().replace(/\./g, ''));
+                });
                 this.submit();
             });
-            function formatRupiah(angka, prefix) {
+
+            function formatRupiah(angka) {
                 var number_string = angka.replace(/[^,\d]/g, '').toString(),
-                        split = number_string.split(','),
-                        sisa = split[0].length % 3,
-                        rupiah = split[0].substr(0, sisa),
-                        ribuan = split[0].substr(sisa).match(/\d{3}/gi);
-    
-                    if (ribuan) {
-                        separator = sisa ? '.' : '';
-                        rupiah += separator + ribuan.join('.');
-                    }
-    
-                    rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
-                    return prefix == undefined ? rupiah : (rupiah ? 'Rp. ' + rupiah : '');
-            }
-    
-            function setupInputFormatter(selector) {
-                    var $input = $(selector);
-                    $input.on('input', function() {
-                        $input.val(formatRupiah(this.value));
-                    });
+                    split = number_string.split(','),
+                    sisa = split[0].length % 3,
+                    rupiah = split[0].substr(0, sisa),
+                    ribuan = split[0].substr(sisa).match(/\d{3}/gi);
+
+                if (ribuan) {
+                    let separator = sisa ? '.' : '';
+                    rupiah += separator + ribuan.join('.');
                 }
+
+                return split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
+            }
+
+            function setupInputFormatter(selector) {
+                $(document).on('input', selector, function() {
+                    this.value = formatRupiah(this.value);
+                });
+            }
         });
     </script>
 @endsection

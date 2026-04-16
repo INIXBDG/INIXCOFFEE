@@ -5,6 +5,7 @@ namespace App\Http\Controllers\office;
 use App\Http\Controllers\Controller;
 use App\Models\tagihanPerusahaan;
 use App\Models\trackingTagihanPerusahaan;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class TagihanPerusahaanController extends Controller
@@ -37,6 +38,8 @@ class TagihanPerusahaanController extends Controller
         ]);
 
         trackingTagihanPerusahaan::create([
+            'kegiatan' => $request->kegiatan,
+            'tipe' => $request->tipe,
             'id_tagihan_perusahaan' => $tagihan->id,
             'nominal' => $request->nominal ?? null,
             'keterangan' => $request->keterangan ?? null,
@@ -57,7 +60,10 @@ class TagihanPerusahaanController extends Controller
 
     public function hapusTagihanPerusahaan($id) 
     {
-        trackingTagihanPerusahaan::findOrFail($id)->delete();
+        $tracking = trackingTagihanPerusahaan::findOrFail($id);
+        tagihanPerusahaan::where('id', $tracking->id_tagihan_perusahaan)->delete();
+
+        $tracking->delete();
 
         return back()->with('success_tagihan', 'Tagihan perusahaan berhasil dihapus.');
     }
@@ -83,7 +89,30 @@ class TagihanPerusahaanController extends Controller
             'tanggal_selesai' => $request->tanggal_selesai ?? $tracking->tanggal_selesai,
             'tanggal_perkiraan_mulai' => $tagihan->tanggal_perkiraan_mulai,
             'tanggal_perkiraan_selesai' => $tagihan->tanggal_perkiraan_selesai ?? $tagihan->tanggal_perkiraan_selesai,
+            'keterangan' => $request->keterangan ?? $tracking->keterangan,
+            'kegiatan' => $request->kegiatan ?? $tagihan->kegiatan,
+            'tipe' => $request->tipe ?? $tagihan->tipe,
         ]);
+
+        // set status otomatis
+        $dueDate = null;
+
+        if($tracking->tanggal_perkiraan_selesai) {
+            $dueDate = Carbon::parse($tracking->tanggal_perkiraan_selesai);
+        } else {
+            $dueDate = Carbon::parse($tracking->tanggal_perkiraan_mulai);
+        }
+
+        if ($request->tanggal_selesai !== null && $dueDate < $request->tanggal_selesai && !in_array($request->status, ['selesai', 'pending']) && !in_array($tracking->status, ['selesai', 'pending'])) {
+            $tracking->status = 'telat';
+            $tracking->save();
+        } else if ($request->tanggal_selesai !== null && $dueDate >= $request->tanggal_selesai && $tracking->status !== 'telat') {
+            $tracking->status = 'selesai';
+            $tracking->save();
+        } else if ($request->tanggal_selesai !== null && in_array($tracking->status, ['selesai', 'pending'])) {
+            $tracking->status = 'selesai';
+            $tracking->save();
+        }
 
         return back()->with('success_tagihan', 'Tagihan berhasil diperbaharui.');
     }

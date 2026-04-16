@@ -4,6 +4,31 @@
 @section('content')
 <div class="container-fluid">
     <div class="row justify-content-center">
+        <div class="modal fade" id="uploadInvoiceModal" tabindex="-1" aria-labelledby="uploadInvoiceModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="uploadInvoiceModalLabel">Upload Invoice</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form id="formUploadInvoice" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <div class="modal-body">
+                            <div class="form-group mb-3">
+                                <label for="file_invoice" class="form-label">Pilih File Invoice (Bisa lebih dari 1 file. Max 10MB/file)</label>
+
+                                <input type="file" class="form-control" id="file_invoice" name="file_invoice[]" required accept=".pdf,.jpg,.jpeg,.png" multiple>
+
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                            <button type="submit" class="btn btn-primary">Upload</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
         <div class="col-md-12">
             <div class="card">
                 <div class="card-body">
@@ -87,6 +112,49 @@
                                 </div>
                                 <div class="col-md-7 col-sm-7 col-xs-7">
                                     <p>{{ $rkm->rkm->sales_key }}</p>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4 col-sm-4 col-xs-4">
+                                    <p>File Invoice</p>
+                                </div>
+                                <div class="col-md-1 col-sm-1 col-xs-1">
+                                    <p>:</p>
+                                </div>
+                                <div class="col-md-7 col-sm-7 col-xs-7">
+                                    @if ($approvalexam && $approvalexam->spv_sales == '1')
+                                        @php
+                                            // Memastikan data dibaca sebagai array
+                                            $files = is_string($rkm->file_invoice) ? json_decode($rkm->file_invoice, true) : $rkm->file_invoice;
+                                        @endphp
+
+                                        @if (!empty($files) && is_array($files))
+                                            @foreach ($files as $index => $file)
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <a href="{{ asset('uploads/invoices/' . $file) }}" target="_blank" class="btn btn-sm btn-primary" style="margin-right: 5px;">
+                                                        <i class="fas fa-file-invoice"></i> File {{ $index + 1 }}
+                                                    </a>
+
+                                                    <form onsubmit="return confirm('Apakah Anda yakin ingin menghapus File {{ $index + 1 }} ini?');" action="{{ route('exam.deleteSpecificInvoice', ['id' => $rkm->id, 'filename' => $file]) }}" method="POST" style="margin: 0;">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-sm btn-danger">
+                                                            <i class="fas fa-trash"></i> Hapus
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            @endforeach
+                                            <button type="button" class="btn btn-sm btn-success mt-1" onclick="openUploadModal({{ $rkm->id }})">
+                                                <i class="fas fa-plus"></i> Tambah Invoice Lagi
+                                            </button>
+                                        @else
+                                            <button type="button" class="btn btn-sm btn-success mb-1" onclick="openUploadModal({{ $rkm->id }})">
+                                                <i class="fas fa-upload"></i> Upload Invoice
+                                            </button>
+                                        @endif
+                                    @else
+                                        <p class="text-muted">Menunggu Approval SPV Sales</p>
+                                    @endif
                                 </div>
                             </div>
                             <div class="row">
@@ -399,4 +467,14 @@
     }
 
 </style>
+@push('js')
+<script>
+    function openUploadModal(id) {
+        var form = document.getElementById('formUploadInvoice');
+        form.action = '/exam/' + id + '/upload-invoice';
+        var uploadModal = new bootstrap.Modal(document.getElementById('uploadInvoiceModal'));
+        uploadModal.show();
+    }
+</script>
+@endpush
 @endsection
