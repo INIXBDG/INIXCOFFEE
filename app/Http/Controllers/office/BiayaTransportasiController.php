@@ -16,13 +16,18 @@ use App\Models\karyawan;
 use App\Models\User;
 use App\Notifications\PengajuanbarangNotification;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\BiayaTransportasiExport;
 
 class BiayaTransportasiController extends Controller
 {
+    const OUTSIDE_OPS_ID = '999999999';
+
     public function index()
     {
         $dataPickup = pickupDriver::with(['karyawan', 'detailPickupDriver'])
-            ->where('created_at', '>=', Carbon::now()->subDays(2))
+            ->where('created_at', '>=', Carbon::now()->subDays(7))
             ->latest()
             ->get();
 
@@ -32,11 +37,11 @@ class BiayaTransportasiController extends Controller
     public function create(Request $request)
     {
         $validated = $request->validate([
-            'id_pickup_driver' => 'required|exists:pickup_drivers,id',
+            'id_pickup_driver' => 'required',
             'biaya' => 'required|array|min:1',
             'biaya.*.tipe' => 'required|in:BBM,TOL,Parkir,Lainnya,Budget Lebih',
             'biaya.*.harga' => 'required|numeric|min:500',
-            'biaya.*.bukti' => 'required|image|mimes:jpg,jpeg,png|max:2048',
+            'biaya.*.bukti' => 'required|image|',
             'biaya.*.keterangan' => 'nullable|string|max:255',
         ]);
 
@@ -120,12 +125,14 @@ class BiayaTransportasiController extends Controller
 
     public function get()
     {
-        $data = BiayaTransportasiDriver::with(['pengajuanBarang.tracking', 'karyawan', 'pickupDriver.karyawan', 'pickupDriver.detailPickupDriver'])
+        $data = BiayaTransportasiDriver::with(['pengajuanBarang.tracking', 'karyawan', 'pickupDriver.karyawan', 'pickupDriver.detailPickupDriver', 'pickupDriver'])
             ->orderBy('id_pickup_driver')
             ->orderBy('created_at', 'desc')
             ->get();
 
         $transformed = $data->map(function ($item) {
+            $isOutsideOps = (string) $item->id_pickup_driver === self::OUTSIDE_OPS_ID;
+
             return [
                 'id' => $item->id,
                 'id_karyawan' => $item->id_karyawan,
@@ -137,7 +144,19 @@ class BiayaTransportasiController extends Controller
                 'keterangan' => $item->keterangan,
                 'created_at' => $item->created_at,
                 'updated_at' => $item->updated_at,
-
+                'pickupDriver' => $isOutsideOps
+                    ? null
+                    : ($item->pickupDriver
+                        ? [
+                            'id' => $item->pickupDriver->id,
+                            'karyawan' => $item->pickupDriver->karyawan
+                                ? [
+                                    'nama_lengkap' => $item->pickupDriver->karyawan->nama_lengkap,
+                                ]
+                                : null,
+                            'detail_pickup_driver' => $item->pickupDriver->detailPickupDriver ? $item->pickupDriver->detailPickupDriver->map(fn($d) => ['lokasi' => $d->lokasi]) : [],
+                        ]
+                        : null),
                 'pengajuan_barang' => $item->pengajuanBarang
                     ? [
                         'id' => $item->pengajuanBarang->id,
@@ -146,18 +165,7 @@ class BiayaTransportasiController extends Controller
                                 'tracking' => $item->pengajuanBarang->tracking->tracking,
                             ]
                             : null,
-                    ]
-                    : null,
-
-                'pickup_driver' => $item->pickupDriver
-                    ? [
-                        'id' => $item->pickupDriver->id,
-                        'karyawan' => $item->pickupDriver->karyawan
-                            ? [
-                                'nama_lengkap' => $item->pickupDriver->karyawan->nama_lengkap,
-                            ]
-                            : null,
-                        'detail_pickup_driver' => $item->pickupDriver->detailPickupDriver ? $item->pickupDriver->detailPickupDriver->map(fn($d) => ['lokasi' => $d->lokasi]) : [],
+                        'tipe' => $item->pengajuanBarang->tipe ?? null,
                     ]
                     : null,
             ];
@@ -173,7 +181,7 @@ class BiayaTransportasiController extends Controller
             'items.*.tipe' => 'required|in:BBM,TOL,Parkir,Lainnya,Budget Lebih',
             'items.*.harga' => 'required|numeric|min:500',
             'items.*.keterangan' => 'nullable|string|max:255',
-            'items.*.bukti' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'items.*.bukti' => 'nullable|image',
         ]);
 
         $existingItems = BiayaTransportasiDriver::where('id_pickup_driver', $id_pickup_driver)->where('id_karyawan', Auth::id())->get();
@@ -309,5 +317,61 @@ class BiayaTransportasiController extends Controller
             'success' => true,
             'message' => 'Data berhasil dihapus.',
         ]);
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $request->validate([
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'tipe' => 'nullable|string',
+            'status' => 'nullable|string',
+        ]);
+
+        $filename = 'Laporan_Biaya_Transportasi_' . date('Y-m-d_His') . '.xlsx';
+
+        return Excel::download(new BiayaTransportasiExport($request->start_date, $request->end_date, $request->tipe, $request->status), $filename);
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $request->validate([
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'tipe' => 'nullable|string',
+            'status' => 'nullable|string',
+        ]);
+
+        $query = BiayaTransportasiDriver::with(['pickupDriver.karyawan', 'pickupDriver.detailPickupDriver', 'PengajuanBarang.tracking']);
+
+        if ($request->start_date) {
+            $query->whereDate('created_at', '>=', $request->start_date);
+        }
+        if ($request->end_date) {
+            $query->whereDate('created_at', '<=', $request->end_date);
+        }
+        if ($request->tipe) {
+            $query->where('tipe', $request->tipe);
+        }
+        if ($request->status) {
+            $query->whereHas('PengajuanBarang.tracking', function ($q) use ($request) {
+                $q->where('tracking', 'like', "%{$request->status}%");
+            });
+        }
+
+        $data = $query->orderBy('created_at', 'desc')->get();
+
+        $pdf = Pdf::loadView('office.reports.biaya_transportasi_pdf', [
+            'data' => $data,
+            'startDate' => $request->start_date,
+            'endDate' => $request->end_date,
+            'filterTipe' => $request->tipe,
+            'filterStatus' => $request->status,
+            'generatedAt' => now()->format('d M Y H:i:s'),
+        ]);
+
+        $pdf->setPaper('A4', 'landscape');
+
+        return $pdf->stream('Laporan_Biaya_Transportasi_' . date('Y-m-d_His') . '.pdf');
     }
 }

@@ -1633,8 +1633,6 @@ class DatabaseKPIController extends Controller
                     ->pluck('kode_kategori')
                     ->unique();
 
-                dd($filledKategori);
-
                 $remaining = $kategoriIds->diff($filledKategori);
 
                 if ($remaining->isEmpty()) {

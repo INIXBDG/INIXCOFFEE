@@ -14,10 +14,10 @@
         <div class="row g-4 mb-4">
             <div class="col-12">
 
-                <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+                <div class="card shadow-lg border-0 rounded-4 overflow-hidden glass-force">
 
                     <!-- Header -->
-                    <div class="card-header bg-white border-bottom py-3">
+                    <div class="card-header border-bottom py-3">
                         <h5 class="card-title mb-0 fw-semibold">
                             <i class="bx bx-info-circle text-primary me-2" style="font-size:1.5rem;"></i>
                             Informasi Tagihan
@@ -50,7 +50,7 @@
                                     </label>
 
                                     <input type="text" name="kegiatan" class="form-control fw-semibold text-capitalize"
-                                        value="{{ $tagihan->tagihanPerusahaan->kegiatan }}">
+                                        value="{{ $tagihan->tagihanPerusahaan->kegiatan ?? $tagihan->kegiatan }}">
                                 </div>
 
 
@@ -77,11 +77,11 @@
 
                                     <select name="tipe" id="tipe" class="form-select">
 
-                                        <option value="tahunan" {{ $tagihan->tagihanPerusahaan->tipe === 'tahunan' ? 'selected' : '' }}>
+                                        <option value="tahunan" {{ $tagihan->tagihanPerusahaan->tipe ?? $tagihan->kegiatan === 'tahunan' ? 'selected' : '' }}>
                                             Tahunan
                                         </option>
 
-                                        <option value="bulanan" {{ $tagihan->tagihanPerusahaan->tipe === 'bulanan' ? 'selected' : '' }}>
+                                        <option value="bulanan" {{ $tagihan->tagihanPerusahaan->tipe ?? $tagihan->kegiatan === 'bulanan' ? 'selected' : '' }}>
                                             Bulanan
                                         </option>
 
@@ -96,7 +96,7 @@
                                         Status
                                     </label>
 
-                                    <select name="status" id="status" class="form-select">
+                                    <select name="status" id="status" class="form-select" {{ in_array($tagihan->status, ['selesai', 'telat']) ? 'disabled' : '' }}>
 
                                         <option value="pending" {{ $tagihan->status === 'pending' ? 'selected' : '' }}>
                                             Pending
@@ -106,12 +106,12 @@
                                             Proses
                                         </option>
 
-                                        <option value="selesai" {{ $tagihan->status === 'selesai' ? 'selected' : '' }}>
+                                        <option value="selesai" {{ $tagihan->status === 'selesai' ? 'selected' : '' }} {{ $tagihan->status === 'pending' && $tagihan->tanggal_selesai ? '' : 'disabled hidden' }}>
                                             Selesai
                                         </option>
 
-                                        <option value="telat" {{ $tagihan->status === 'telat' ? 'selected' : '' }}>
-                                            Telat
+                                        <option value="telat" {{ $tagihan->status === 'telat' ? 'selected' : '' }} disabled hidden>
+                                            Terlambat
                                         </option>
 
                                     </select>
@@ -169,7 +169,7 @@
                                     
                                     <div>
                                         <input type="date" name="tanggal_perkiraan_mulai" class="form-control col-md-6"
-                                            value="{{ $tagihan->tagihanPerusahaan->tanggal_perkiraan_mulai }}">
+                                            value="{{ $tagihan->tagihanPerusahaan->tanggal_perkiraan_mulai ?? $tagihan->tanggal_perkiraan_mulai }}">
                                     </div>
                                 </div>
                                 
@@ -181,14 +181,14 @@
                                     
                                     <div>
                                         <input type="date" name="tanggal_perkiraan_selesai" class="form-control col-md-6"
-                                            value="{{ $tagihan->tagihanPerusahaan->tanggal_perkiraan_selesai }}">
+                                            value="{{ $tagihan->tagihanPerusahaan->tanggal_perkiraan_selesai ?? $tagihan->tanggal_perkiraan_selesai }}">
                                     </div>
                                 </div>
                                 
                                 <!-- Tanggal Selesai -->
                                 <div class="col-md-4">
                                     <label class="form-label text-muted small text-uppercase">
-                                        Tanggal Selesai
+                                        Tanggal Realisasi
                                     </label>
                                     
                                     <div>

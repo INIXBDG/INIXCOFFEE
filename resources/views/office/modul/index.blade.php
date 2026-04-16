@@ -17,7 +17,7 @@
             </div>
         @endif
 
-        <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card border-0 shadow-sm rounded-4 mb-4 glass-force">
             <div class="card-body p-4">
                 <div
                     class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-4">
@@ -80,7 +80,7 @@
             </form>
         @endif
 
-        <div class="card">
+        <div class="card glass-force">
             <div class="card-body">
                 <h5 class="mb-2">Daftar Modul</h5>
                 <table class="table table-bordered table-striped table-hover">

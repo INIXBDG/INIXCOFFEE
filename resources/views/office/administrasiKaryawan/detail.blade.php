@@ -3,7 +3,7 @@
 @section('office_contents')
 <div class="container mt-4">
 
-    <div class="card shadow-sm">
+    <div class="card shadow-sm glass-force">
         
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Detail Administrasi Karyawan</h5>
@@ -39,21 +39,22 @@
 
                     <div class="col-md-3">
                         <label class="form-label text-uppercase">Dateline</label>
-                        <input type="date" name="dateline" class="form-control" value="{{ $administrasi->dateline }}">
+                        <input type="date" name="dateline" class="form-control" value="{{ $administrasi->dateline }}" disabled>
                     </div>
+                    
                     <div class="col-md-3">
-                        <label class="form-label text-uppercase">Tanggal Selesai</label>
-                        <input type="date" name="tanggal_selesai" class="form-control" value="{{ $administrasi->tanggal_selesai }}">
+                        <label class="form-label text-muted text-uppercase">Status</label>
+                        <select name="status" id="status" class="form-select" {{ in_array($administrasi->status, ['selesai', 'terlambat']) ? 'disabled' : '' }}>
+                            <option value="pending" {{ $administrasi->status === 'pending' ? 'selected' : '' }}>Pending</option>
+                            <option value="proses" {{ $administrasi->status === 'proses' ? 'selected' : '' }}>Proses</option>
+                            <option value="selesai" {{ $administrasi->status === 'selesai' ? 'selected' : '' }} hidden>Selesai</option>
+                            <option value="terlambat" {{ $administrasi->status === 'terlambat' ? 'selected' : '' }} hidden>Terlambat</option>
+                        </select>
                     </div>
 
                     <div class="col-md-3">
-                        <label class="form-label text-muted text-uppercase">Status</label>
-                        <select name="status" id="status" class="form-select">
-                            <option value="pending" {{ $administrasi->status === 'pending' ? 'selected' : '' }}>Pending</option>
-                            <option value="proses" {{ $administrasi->status === 'proses' ? 'selected' : '' }}>Proses</option>
-                            <option value="selesai" {{ $administrasi->status === 'selesai' ? 'selected' : '' }}>Selesai</option>
-                            <option value="terlambat" {{ $administrasi->status === 'terlambat' ? 'selected' : '' }}>Terlambat</option>
-                        </select>
+                        <label class="form-label text-uppercase">Tanggal Selesai</label>
+                        <input type="date" name="tanggal_selesai" class="form-control" value="{{ $administrasi->tanggal_selesai }}">
                     </div>
 
                     <div class="col-md-3">

@@ -128,9 +128,17 @@
             No. {{ $certificate->nomor_sertifikat }}
         </div>
 
-        <div class="participant-name">
-            {{ $certificate->nama_peserta }}
+       @php
+            $namaPeserta = $certificate->nama_peserta;
+            $fontSize = 52;
+            if (mb_strlen($namaPeserta) > 20) {
+                $fontSize = 36;
+            }
+        @endphp
+        <div class="participant-name" style="font-size: {{ $fontSize }}px;">
+            {{ $namaPeserta }}
         </div>
+
 
         <div class="course-name">
             {{ $certificate->nama_materi }}
