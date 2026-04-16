@@ -16,7 +16,7 @@
                         <span>Total Responden:</span>
                         <span id="modalTotalResponden" class="badge bg-primary"></span>
                     </div>
-                    
+
                     <div class="d-flex justify-content-between mb-2">
                         <span>Total Nilai:</span>
                         <span id="modalTotalNilai" class="badge bg-secondary"></span>
@@ -69,7 +69,6 @@
                         <select id="tahun" class="form-select">
                             @php
                             $tahun_sekarang = now()->year;
-                            // Menampilkan rentang tahun dari 2020 hingga 2 tahun ke depan
                             for ($tahun = 2020; $tahun <= $tahun_sekarang + 2; $tahun++) {
                                 $selected = $tahun == $tahun_sekarang ? 'selected' : '';
                                 echo "<option value=\"$tahun\" $selected>$tahun</option>";
@@ -90,7 +89,7 @@
                             @endphp
                         </select>
                     </div>
-                    <div class="col-md-2 mx-1"> 
+                    <div class="col-md-2 mx-1">
                         <button type="button" onclick="filterData()" class="btn click-primary" style="margin-top: 32px">Cari Data</button>
                     </div>
                 </div>
@@ -106,7 +105,8 @@
                                 <th scope="col">No</th>
                                 <th scope="col">Kode Exam</th>
                                 <th scope="col">Nama Materi</th>
-                                <th scope="col">Tanggal Periode</th>
+                                <th scope="col">Tanggal Pengajuan</th>
+                                <th scope="col">Tanggal Pelaksanaan</th>
                                 <th scope="col">Nama Perusahaan</th>
                                 <th scope="col">Pax</th>
                                 <th scope="col">Total Nilai</th>
@@ -180,7 +180,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/locale/id.min.js"></script>
 
 <script>
-    var table; 
+    var table;
 
     $(document).ready(function(){
         var tableIndex = 1;
@@ -190,8 +190,8 @@
                 "type": "GET",
                 "dataSrc": "data",
                 "data": function (d) {
-                    d.tahun = $('#tahun').val(); 
-                    d.bulan = $('#bulan').val(); 
+                    d.tahun = $('#tahun').val();
+                    d.bulan = $('#bulan').val();
                 },
                 "beforeSend": function () {
                     $('#loadingModal').modal('show');
@@ -228,12 +228,18 @@
                     }
                 },
                 {
+                    "data": "tanggal_pengajuan",
+                    "render": function (data) {
+                        return data ? moment(data).format('LL') : '-';
+                    }
+                },
+                {
                     "data": null,
                     "render": function (data, type, row) {
-                        if (data.tanggal_awal && data.tanggal_akhir) {
-                            var tanggalAwal = moment(data.tanggal_awal).format('LL');
-                            var tanggalAkhir = moment(data.tanggal_akhir).format('LL');
-                            return tanggalAwal + " s/d " + tanggalAkhir;
+                        if (data.tanggal_mulai && data.tanggal_selesai) {
+                            var tanggalMulai = moment(data.tanggal_mulai).format('LL');
+                            var tanggalSelesai = moment(data.tanggal_selesai).format('LL');
+                            return tanggalMulai + " s/d " + tanggalSelesai;
                         } else {
                             return "-";
                         }
@@ -258,22 +264,24 @@
                     "render": function (data, type, row) {
                         var detailJSON = row.detail ? JSON.stringify(row.detail).replace(/'/g, "&#39;") : '{}';
                         var namaMateri = row.nama_materi ? row.nama_materi.replace(/'/g, "&#39;").replace(/"/g, "&quot;") : '-';
-                        
-                        return `<button class="btn btn-sm click-primary btn-lihat-detail" data-materi="${namaMateri}" data-total="${row.total_nilai}" data-detail='${detailJSON}'>Detail</button>`;
+
+                        // Saya juga menambahkan icon fa-clipboard-check pada tombol Detail
+                        return `<button class="btn btn-sm click-primary btn-lihat-detail" data-materi="${namaMateri}" data-total="${row.total_nilai}" data-detail='${detailJSON}'><i class="fa-solid fa-clipboard-check"></i> Detail</button>`;
                     }
                 }
             ],
-            "order": [[3, 'desc']] 
+            // Perbarui indeks sorting default karena kita menambahkan satu kolom baru
+            "order": [[4, 'desc']]
         });
 
         $('#rekappenilaiantable tbody').on('click', '.btn-lihat-detail', function () {
             var materi = $(this).data('materi');
-            var total = $(this).data('total'); 
+            var total = $(this).data('total');
             var detail = $(this).data('detail');
 
             $('#modalNamaMateri').text('Materi: ' + materi);
             $('#modalTotalResponden').text(detail.total_responden + ' Orang');
-            $('#modalTotalNilai').text(total); 
+            $('#modalTotalNilai').text(total);
             $('#modalSangatBaik').text(detail.sangat_baik);
             $('#modalBaik').text(detail.baik);
             $('#modalCukup').text(detail.cukup);

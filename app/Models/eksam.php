@@ -12,6 +12,8 @@ class eksam extends Model
         'invoice',
         'file_invoice',
         'tanggal_pengajuan',
+        'tanggal_mulai',
+        'tanggal_selesai',
         'id_rkm',
         'materi',
         'perusahaan',
