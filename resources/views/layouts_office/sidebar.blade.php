@@ -224,6 +224,13 @@
                 </a>
             </li>
 
+            <li class="menu-item {{ request()->is('outstanding') ? 'active open' : '' }}">
+                <a href="/outstanding" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-task"></i>
+                    <div class="text-truncate" data-i18n="contact">Outstanding</div>
+                </a>
+            </li>
+
         @endif
     </ul>
 </aside>

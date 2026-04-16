@@ -126,6 +126,7 @@ class RKMController extends Controller
 
         return response()->json(['filename' => $path]);
     }
+
     public function RKMAPIabsensi($year, $month)
     {
         $bulan = $month + 1;
@@ -147,13 +148,16 @@ class RKMController extends Controller
                 $start = $startOfWeek->format('Y-m-d');
                 $end = $endOfWeek->format('Y-m-d');
                 $startOfWeek = $startOfWeek->addWeek();
-                $rows = RKM::with(['materi', 'peluang', 'exam', 'approvalexam'])
+                $rows = RKM::with(['materi', 'peluang', 'exam', 'exam.approvalexam'])
                     ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
                     ->whereBetween('r_k_m_s.tanggal_awal', [$start, $end])
                     ->whereDoesntHave('peluang', function ($query) {
                         $query->where('tentatif', 1);
-                    })->whereHas('approvalexam', function ($query) {
-                        $query->where('technical_support', 1);
+                    })->where(function ($query) {
+                        $query->whereHas('exam.approvalexam', function ($q) {
+                            $q->where('technical_support', 1);
+                        })
+                        ->orWhereDoesntHave('exam.approvalexam');
                     })
                     ->select(
                         DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'),

@@ -288,12 +288,16 @@ class OutstandingController extends Controller
             'sales_key' => 'required',
         ]);
 
+        $rkm = RKM::where('id', $request->id_rkm)->first();
+        $tanggal_akhir = $rkm->tanggal_akhir;
+        $duedate = $tanggal_akhir->addMonth(6)->toDateString();
+
         // Simpan data outstanding
         $outstanding = Outstanding::create([
             'id_rkm' => $request->id_rkm,
             'net_sales' => $request->net_sales,
             'status_pembayaran' => $request->status_pembayaran,
-            'due_date' => $request->due_date,
+            'due_date' => $duedate,
             'pic' => $request->pic,
             'sales_key' => $request->sales_key,
             'tanggal_bayar' => $request->tanggal_bayar,
@@ -409,6 +413,12 @@ class OutstandingController extends Controller
         $outstanding = outstanding::findOrFail($id);
         $tracking_outstanding = trackingOutstanding::where('id_outstanding', $id)->first();
 
+        $potongan = [];
+
+        if (!empty($outstanding->jumlah_potongan)) {
+            $potongan = $outstanding->jumlah_potongan ?? [];
+        }
+
         if ($tracking_outstanding == null || $tracking_outstanding == '') {
             $tracking_outstanding = [
                 'invoice' => 0,
@@ -443,7 +453,7 @@ class OutstandingController extends Controller
             ];
         }
 
-        return view('outstanding.edit', compact('outstanding', 'tracking_outstanding'));
+        return view('outstanding.edit', compact('outstanding', 'tracking_outstanding', 'potongan'));
     }
 
     public function update(Request $request, $id)
@@ -598,6 +608,19 @@ class OutstandingController extends Controller
             }
         }
 
+        $potonganData = [];
+
+        if ($request->jumlah_potongan && $request->jenis_potongan) {
+            foreach ($request->jumlah_potongan as $index => $jumlah) {
+                if ($jumlah && $request->jenis_potongan[$index]) {
+                    $potonganData[] = [
+                        'jenis' => $request->jenis_potongan[$index],
+                        'jumlah' => (int) str_replace('.', '', $jumlah)
+                    ];
+                }
+            }
+        }
+
         $post->update([
             'id_rkm'     => $request->id_rkm,
             'net_sales'     => $request->net_sales,
@@ -611,6 +634,8 @@ class OutstandingController extends Controller
             'tanggal_bayar' => $request->tanggal_bayar,
             'path_faktur_pajak' => $fakturPath ?? $post->path_faktur_pajak,
             'path_dokumen_tambahan' => $dokumenTambahanPath ?? $post->path_dokumen_tambahan,
+            'jumlah_potongan' => !empty($potonganData) ? $potonganData : null,
+            'jenis_potongan' => !empty($potonganData) ? array_column($potonganData, 'jenis') : null,
         ]);
 
         $status_tracking = [

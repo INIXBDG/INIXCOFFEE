@@ -118,7 +118,7 @@ public function index(): View
      */
     public function create(string $id): View
     {
-        $rkm = RKM::with('perusahaan', 'materi')->findOrFail($id);
+        $rkm = RKM::with('perusahaan', 'materi', 'registrasi.peserta')->findOrFail($id);
         return view('invoice.create', compact('rkm'));
     }
 
@@ -158,12 +158,19 @@ public function store(Request $request)
         'bank_name' => 'nullable|string|max:255',
         'account_number' => 'nullable|string|max:50',
         'terbilang' => 'nullable|string',
+        'peserta' => 'nullable|array',
+        'peserta.*' => 'nullable|string|max:255',
     ]);
+
+    $pesertaList = $request->input('peserta', []);
+    $rkm = RKM::where('id', $request->id_rkm)->first();
+    $tanggal_akhir = $rkm->tanggal_akhir;
+    $duedate = $tanggal_akhir->addMonth(6)->toDateString();
 
     $invoice = Invoice::create([
         'invoice_number' => $request->input('invoice_number'),
         'tanggal_invoice' => $request->input('tanggal_invoice'),
-        'due_date' => $request->input('due_date'), 
+        'due_date' => $duedate, 
         'purchase_order' => $request->input('purchase_order'), 
         'id_rkm' => $request->input('id_rkm'),
         'amount' => $request->input('amount'),
@@ -185,7 +192,7 @@ public function store(Request $request)
         $outstanding->update();
     }
 
-    return $this->downloadPdf($invoice->id);
+    return $this->downloadPdf($invoice->id, $pesertaList);
 
     // return redirect()->route('invoice.index')->with(['success' => 'Invoice berhasil dibuat!']);
 }
@@ -462,7 +469,7 @@ public function exportExcel($id)
     }, $fileName);
 }
 
-public function downloadPdf($id)
+public function downloadPdf($id, $pesertaList = [])
 {
     $invoice = Invoice::with(['rkm.perusahaan', 'rkm.materi'])
         ->findOrFail($id);
@@ -482,7 +489,7 @@ public function downloadPdf($id)
     }
     
 
-    $pdf = Pdf::loadView('invoice.pdf', compact('invoice', 'terbilang', 'karyawan'))
+    $pdf = Pdf::loadView('invoice.pdf', compact('invoice', 'terbilang', 'karyawan', 'pesertaList'))
         ->setPaper('a4', 'portrait')
         ->setOptions([
             'isRemoteEnabled' => true,

@@ -11,6 +11,7 @@ use App\Models\Feedback;
 use App\Models\HariLibur;
 use App\Models\karyawan;
 use App\Models\Nilaifeedback;
+use App\Models\outstanding;
 use App\Models\pengajuancuti;
 use App\Models\Perusahaan;
 use App\Models\RKM;
@@ -324,6 +325,194 @@ class OfficeController extends Controller
         ));
     }
 
+public function TableOutstanding(Request $request)
+{
+    $query = outstanding::with('rkm.perusahaan', 'rkm.materi', 'rkm.sales', 'rkm.invoice')
+        ->whereYear('created_at', Carbon::now()->year)
+        ->whereHas('rkm')
+        ->latest();
+
+    if ($search = $request->search) {
+        $query->where(function ($q) use ($search) {
+            $q->whereHas('rkm.materi', function ($m) use ($search) {
+                $m->where('nama_materi', 'LIKE', "%{$search}%");
+            })
+            ->orWhereHas('rkm.perusahaan', function ($p) use ($search) {
+                $p->where('nama_perusahaan', 'LIKE', "%{$search}%");
+            })
+            ->orWhere('sales_key', 'LIKE', "%{$search}%");
+        });
+    }
+
+    $perPage = $request->get('length', 10);
+
+    $outstanding = $query->paginate($perPage);
+
+    $data = $outstanding->map(function ($item) {
+        if ($item->status_pembayaran == 0 && is_null($item->tanggal_bayar)) {
+            $status = "Belum Bayar";
+        } elseif ($item->status_pembayaran == 1 && $item->tanggal_bayar) {
+            if ($item->tanggal_bayar <= $item->due_date) {
+                $status = "Tepat Waktu";
+            } else {
+                $status = "Terlambat";
+            }
+        } else {
+            $status = "Belum Bayar";
+        }
+
+        if ($status === "Belum Bayar") {
+            $info = '-';
+        } elseif ($item->rkm->invoice?->amount !== null && (int) $item->rkm->invoice->amount) {
+            $info = 'Sesuai';
+        } else {
+            $info = 'Tidak Sesuai';
+        }
+
+        $admin_transfer = 0;
+        $nominal_pph23 = 0;
+        $nominal_ppn = 0;
+        $jumlah_potongan_as_array = [];
+
+        $jenis_potongan_raw = $item->jenis_potongan;
+        $jumlah_potongan_raw = $item->jumlah_potongan;
+
+        if ($jenis_potongan_raw && $jenis_potongan_raw !== '-' && $jumlah_potongan_raw && $jumlah_potongan_raw !== '-') {
+            if (is_string($jenis_potongan_raw)) {
+                $jenis_arr = array_map('trim', explode(',', $jenis_potongan_raw));
+            } elseif (is_array($jenis_potongan_raw)) {
+                $jenis_arr = [];
+                foreach ($jenis_potongan_raw as $jp) {
+                    if (is_string($jp)) {
+                        $jenis_arr[] = trim($jp);
+                    } elseif (is_object($jp) && isset($jp->jenis)) {
+                        $jenis_arr[] = trim($jp->jenis);
+                    } elseif (is_array($jp) && isset($jp['jenis'])) {
+                        $jenis_arr[] = trim($jp['jenis']);
+                    }
+                }
+            } else {
+                $jenis_arr = [];
+            }
+
+            if (is_string($jumlah_potongan_raw)) {
+                $jumlah_arr_temp = array_map('trim', explode(',', $jumlah_potongan_raw));
+                $jumlah_arr = array_map('intval', $jumlah_arr_temp);
+            } elseif (is_array($jumlah_potongan_raw)) {
+                $jumlah_arr = [];
+                foreach ($jumlah_potongan_raw as $jp) {
+                    if (is_numeric($jp)) {
+                        $jumlah_arr[] = (int)$jp;
+                    } elseif (is_object($jp) && isset($jp->jumlah)) {
+                        $jumlah_arr[] = (int)$jp->jumlah;
+                    } elseif (is_array($jp) && isset($jp['jumlah'])) {
+                        $jumlah_arr[] = (int)$jp['jumlah'];
+                    }
+                }
+            } else {
+                $jumlah_arr = [];
+            }
+
+            $jumlah_potongan_as_array = $jumlah_arr; 
+
+            foreach ($jenis_arr as $index => $jenis) {
+                $jumlah = isset($jumlah_arr[$index]) ? $jumlah_arr[$index] : 0;
+
+                if (stripos($jenis, 'Admin Transfer') !== false) {
+                    $admin_transfer = $jumlah;
+                } elseif (stripos($jenis, 'Nominal PPH23') !== false) {
+                    $nominal_pph23 = $jumlah;
+                } elseif (stripos($jenis, 'Nominal PPN') !== false) {
+                    $nominal_ppn = $jumlah;
+                }
+            }
+        }
+
+        return [
+            'perusahaan' => $item->rkm->perusahaan->nama_perusahaan ?? '-',
+            'kelas' => $item->rkm->materi->nama_materi ?? '-',
+            'sales' => $item->sales_key ?? '-',
+            'tanggal' => $item->rkm->tanggal_akhir,
+            'tagihan' => $item->rkm->invoice?->amount !== null ? (int) $item->rkm->invoice->amount : '-',
+            'tenggat_waktu' => $item->due_date ?? '-',
+            'tanggal_bayar' => $item->tanggal_bayar ?? '-',
+            'nominal_pembayaran' => $item->rkm->invoice?->amount !== null ? (int) $item->rkm->invoice->amount : '-',
+            'admin_transfer' => $admin_transfer,
+            'nominal_pph23' => $nominal_pph23,
+            'nominal_ppn' => $nominal_ppn,
+            'jumlah_potongan' => !empty($jumlah_potongan_as_array) ? implode(', ', $jumlah_potongan_as_array) : '-',
+            'uang_diterima' => (int) $item->jumlah_pembayaran ?? '-',
+            // 'total' => $item->jumlah_pembayaran
+            //     ? ($item->jumlah_pembayaran + array_sum($jumlah_potongan_as_array))
+            //     : '-',
+            'status' => $status,
+            'info' => $info,
+        ];
+    });
+
+    return response()->json([
+        'data' => $data,
+        'current_page' => $outstanding->currentPage(),
+        'last_page' => $outstanding->lastPage(),
+        'total' => $outstanding->total(),
+    ]);
+}
+
+    public function GrafikOutstanding(Request $request)
+    {
+        $year = $request->year ?? Carbon::now()->year;
+
+        $data = outstanding::whereYear('created_at', $year)->get();
+
+        $belum_bayar = 0;
+        $tepat_waktu = 0;
+        $terlambat = 0;
+
+        foreach ($data as $item) {
+
+            if ($item->status_pembayaran == 0 && is_null($item->tanggal_bayar)) {
+                $belum_bayar++;
+            }
+            elseif ($item->status_pembayaran == 1 && $item->tanggal_bayar) {
+
+                if ($item->tanggal_bayar <= $item->due_date) {
+                    $tepat_waktu++;
+                } else {
+                    $terlambat++;
+                }
+            }
+        }
+
+        return response()->json([
+            'labels' => ['Belum Bayar', 'Tepat Waktu', 'Terlambat'],
+            'data' => [$belum_bayar, $tepat_waktu, $terlambat],
+            'total' => $belum_bayar + $tepat_waktu + $terlambat,
+        ]);
+    }
+
+    public function GrafikKetepatanWaktu(Request $request)
+    {
+        $year = $request->year ?? Carbon::now()->year;
+
+        $data = outstanding::with('rkm.invoice')
+            ->whereYear('created_at', $year)
+            ->get();
+
+        $total = $data->count();
+
+        $sesuai = $data->filter(function ($item) {
+            return optional($item->rkm?->invoice)->amount !== null;
+        })->count();
+
+        $persen = $total > 0 ? round(($sesuai / $total) * 100, 2) : 0;
+
+        return response()->json([
+            'labels' => ['Sesuai', 'Tidak Sesuai'],
+            'data' => [$sesuai, $total - $sesuai],
+            'persen' => $persen,
+        ]);
+    }
+    
     public function getNilaiInstruktur(Request $request)
     {
         $filter = $request->filter;

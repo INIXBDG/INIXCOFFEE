@@ -145,8 +145,16 @@
                                 Sampai Dengan: <input type="date" class="form-control" id="tanggal_akhir"
                                     name="tanggal_akhir"
                                     value="{{ \Carbon\Carbon::parse($rkm->tanggal_akhir)->format('Y-m-d') }}" required><br>
-                                Peserta: <input type="text" class="form-control" name="peserta"
-                                    value="{{ $rkm->pax ?? '-' }} orang">
+                                Peserta:
+                                    <br>
+                                    @foreach ($rkm->registrasi as $item)
+                                          <input 
+                                            type="text" 
+                                            name="peserta[]" 
+                                            class="form-control"
+                                            value="{{ $item->peserta->nama ?? '-' }}"
+                                        >
+                                    @endforeach
                             </td>
                             <td>
                                 <input type="number" class="form-control" id="pax" name="pax"
